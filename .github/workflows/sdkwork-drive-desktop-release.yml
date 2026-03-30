@@ -1,0 +1,309 @@
+name: sdkwork-drive-desktop-release
+
+on:
+  push:
+    tags:
+      - 'sdkwork-drive-release-*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to publish
+        required: true
+        type: string
+      git_ref:
+        description: Git ref to build; defaults to refs/tags/<release_tag>
+        required: false
+        type: string
+      sdk_app_ref:
+        description: Git ref for @sdkwork/app-sdk
+        required: false
+        default: main
+        type: string
+      sdk_common_ref:
+        description: Git ref for @sdkwork/sdk-common
+        required: false
+        default: main
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sdkwork-drive-desktop-release-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  SDKWORK_DRIVE_APP_ROOT: sdkwork-drive-pc-react
+  SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR: ${{ runner.temp }}/sdkwork-drive-release-workspace
+  SDKWORK_DRIVE_RELEASE_APP_SDK_REPO_URL: https://github.com/Sdkwork-Cloud/sdkwork-sdk-app.git
+  SDKWORK_DRIVE_RELEASE_COMMON_SDK_REPO_URL: https://github.com/Sdkwork-Cloud/sdkwork-sdk-commons.git
+  SDKWORK_DRIVE_RELEASE_APP_SDK_REF: ${{ github.event.inputs.sdk_app_ref || 'main' }}
+  SDKWORK_DRIVE_RELEASE_COMMON_SDK_REF: ${{ github.event.inputs.sdk_common_ref || 'main' }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.resolve.outputs.release_tag }}
+      git_ref: ${{ steps.resolve.outputs.git_ref }}
+    steps:
+      - name: Resolve release target
+        id: resolve
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            release_tag="${GITHUB_REF_NAME}"
+            git_ref="${GITHUB_REF}"
+          else
+            release_tag="${{ github.event.inputs.release_tag }}"
+            git_ref="${{ github.event.inputs.git_ref }}"
+            if [[ -z "$git_ref" ]]; then
+              git_ref="refs/tags/$release_tag"
+            fi
+          fi
+
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+          echo "git_ref=$git_ref" >> "$GITHUB_OUTPUT"
+
+  verify-release:
+    name: Verify release inputs
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release ref
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.git_ref }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: sdkwork-drive-pc-react/pnpm-lock.yaml
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            sdkwork-drive-pc-react/packages/sdkwork-drive-desktop/src-tauri
+
+      - name: Install Linux desktop dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            file \
+            libfuse2t64 \
+            libgbm-dev \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            libpipewire-0.3-dev \
+            libssl-dev \
+            librsvg2-dev \
+            libwayland-dev \
+            libxkbcommon-dev \
+            pkg-config \
+            rpm \
+            patchelf
+
+      - name: Prepare release workspace
+        shell: bash
+        working-directory: ${{ env.SDKWORK_DRIVE_APP_ROOT }}
+        run: |
+          node scripts/prepare-sdkwork-drive-release-workspace.mjs \
+            --output-dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR"
+
+      - name: Materialize git-backed SDK sources
+        shell: bash
+        working-directory: ${{ env.SDKWORK_DRIVE_APP_ROOT }}
+        run: |
+          node scripts/materialize-sdkwork-drive-release-sdks.mjs \
+            --workspace-root "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR"
+
+      - name: Install release workspace dependencies
+        shell: bash
+        run: pnpm install --dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR" --no-frozen-lockfile
+
+      - name: Build release SDK packages
+        shell: bash
+        run: |
+          pnpm --dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR" run prepare:release-sdk-builds
+
+      - name: Run release verification
+        shell: bash
+        run: |
+          pnpm --dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR" typecheck
+          pnpm --dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR" test
+          pnpm --dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR" build
+          pnpm --dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR" release:desktop:list-targets
+          cargo test --manifest-path "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR/packages/sdkwork-drive-desktop/src-tauri/Cargo.toml"
+
+  desktop-release:
+    name: Desktop release (${{ matrix.platform }}-${{ matrix.arch }})
+    needs: [prepare, verify-release]
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2022
+            platform: windows
+            arch: x64
+            target: x86_64-pc-windows-msvc
+          - runner: windows-11-arm
+            platform: windows
+            arch: arm64
+            target: aarch64-pc-windows-msvc
+          - runner: ubuntu-24.04
+            platform: linux
+            arch: x64
+            target: x86_64-unknown-linux-gnu
+          - runner: ubuntu-24.04-arm
+            platform: linux
+            arch: arm64
+            target: aarch64-unknown-linux-gnu
+          - runner: macos-15-intel
+            platform: macos
+            arch: x64
+            target: x86_64-apple-darwin
+          - runner: macos-15
+            platform: macos
+            arch: arm64
+            target: aarch64-apple-darwin
+    steps:
+      - name: Checkout release ref
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.git_ref }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: sdkwork-drive-pc-react/pnpm-lock.yaml
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            sdkwork-drive-pc-react/packages/sdkwork-drive-desktop/src-tauri
+
+      - name: Install Linux desktop dependencies
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            file \
+            libfuse2t64 \
+            libgbm-dev \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            libpipewire-0.3-dev \
+            libssl-dev \
+            librsvg2-dev \
+            libwayland-dev \
+            libxkbcommon-dev \
+            pkg-config \
+            rpm \
+            patchelf
+
+      - name: Prepare release workspace
+        shell: bash
+        working-directory: ${{ env.SDKWORK_DRIVE_APP_ROOT }}
+        run: |
+          node scripts/prepare-sdkwork-drive-release-workspace.mjs \
+            --output-dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR"
+
+      - name: Materialize git-backed SDK sources
+        shell: bash
+        working-directory: ${{ env.SDKWORK_DRIVE_APP_ROOT }}
+        run: |
+          node scripts/materialize-sdkwork-drive-release-sdks.mjs \
+            --workspace-root "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR"
+
+      - name: Install release workspace dependencies
+        shell: bash
+        run: pnpm install --dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR" --no-frozen-lockfile
+
+      - name: Build release SDK packages
+        shell: bash
+        run: |
+          pnpm --dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR" run prepare:release-sdk-builds
+
+      - name: Build desktop bundle on Windows
+        if: matrix.platform == 'windows'
+        shell: bash
+        env:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          HOST_CMAKE_GENERATOR: Visual Studio 17 2022
+        run: |
+          pnpm --dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR" release:desktop \
+            --platform "${{ matrix.platform }}" \
+            --arch "${{ matrix.arch }}"
+
+      - name: Build desktop bundle on Unix
+        if: matrix.platform != 'windows'
+        shell: bash
+        run: |
+          pnpm --dir "$SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR" release:desktop \
+            --platform "${{ matrix.platform }}" \
+            --arch "${{ matrix.arch }}"
+
+      - name: Upload desktop release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdkwork-drive-desktop-${{ matrix.platform }}-${{ matrix.arch }}
+          path: ${{ env.SDKWORK_DRIVE_RELEASE_WORKSPACE_DIR }}/packages/sdkwork-drive-desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub release
+    needs:
+      - prepare
+      - verify-release
+      - desktop-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download packaged release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sdkwork-drive-desktop-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.release_tag }}
+          name: SDKWork Drive ${{ needs.prepare.outputs.release_tag }}
+          generate_release_notes: true
+          overwrite_files: true
+          fail_on_unmatched_files: true
+          files: |
+            release-assets/**/*
