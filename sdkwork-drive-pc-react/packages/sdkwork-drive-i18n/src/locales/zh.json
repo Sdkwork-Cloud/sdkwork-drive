@@ -1,0 +1,339 @@
+{
+  "common": {
+    "productName": "SDKWork 网盘",
+    "loading": "加载中",
+    "loadingView": "正在加载工作区",
+    "clear": "清空",
+    "copy": "复制",
+    "copied": "已复制",
+    "yes": "是",
+    "no": "否",
+    "close": "关闭",
+    "cancel": "取消"
+  },
+  "sidebar": {
+    "workspace": "工作区",
+    "drive": "网盘",
+    "starred": "星标",
+    "recent": "最近",
+    "trash": "回收站",
+    "settings": "设置"
+  },
+  "shell": {
+    "header": {
+      "workspace": "网盘工作台",
+      "searchPlaceholder": "搜索文件、文件夹和内容",
+      "searchShortcut": "Ctrl/Cmd K",
+      "operator": "网盘操作者"
+    }
+  },
+  "auth": {
+    "qrLogin": "扫码登录",
+    "qrDesc": "使用微信或其他已接入客户端扫码，快速完成桌面端登录。",
+    "openApp": "打开微信",
+    "welcomeBack": "欢迎回来",
+    "createAccount": "创建账号",
+    "resetPassword": "重置密码",
+    "loginDesc": "登录后即可访问云端文件、最近动态与个人工作区。",
+    "registerDesc": "创建账号，开始在多设备之间统一管理文件。",
+    "resetDesc": "输入你的邮箱以接收安全重置链接。",
+    "name": "姓名",
+    "email": "邮箱",
+    "password": "密码",
+    "forgotPassword": "忘记密码？",
+    "signIn": "登录",
+    "signUp": "创建账号",
+    "sendResetLink": "发送重置链接",
+    "continueWith": "或使用以下方式继续",
+    "noAccount": "还没有账号？",
+    "hasAccount": "已经有账号？",
+    "backToLogin": "返回登录",
+    "placeholders": {
+      "name": "例如：Ada Lovelace",
+      "email": "you@example.com",
+      "password": "输入你的密码"
+    },
+    "providers": {
+      "wechat": "微信",
+      "douyin": "抖音",
+      "github": "GitHub",
+      "google": "Google"
+    },
+    "qrAlt": "登录二维码",
+    "qrRefresh": "刷新二维码",
+    "qrScannedHint": "二维码已扫描，请在移动端确认登录。",
+    "qrWeChatHint": "扫码登录能力跟随后端当前启用的登录渠道。",
+    "qrStatus": {
+      "loading": "正在准备二维码...",
+      "pending": "请扫码继续",
+      "scanned": "已扫码",
+      "confirmed": "已确认登录",
+      "expired": "二维码已过期",
+      "error": "二维码状态不可用"
+    },
+    "errors": {
+      "signInFailed": "登录失败。",
+      "passwordResetFailed": "发送重置请求失败。",
+      "oauthStartFailed": "发起社交登录失败。",
+      "qrGenerateFailed": "加载二维码失败。",
+      "qrStatusFailed": "刷新二维码状态失败。",
+      "invalidQrPayload": "后端返回的二维码数据无效。"
+    },
+    "oauth": {
+      "badge": "OAuth",
+      "processingTitle": "正在完成登录",
+      "processingDesc": "正在校验三方回调并创建你的登录会话。",
+      "processingHint": "请保持此页面打开片刻。",
+      "failedTitle": "登录失败",
+      "failed": "完成 OAuth 登录失败。",
+      "invalidProvider": "不支持的 OAuth 提供方。",
+      "missingCode": "缺少授权码。"
+    }
+  },
+  "drive": {
+    "hero": {
+      "badge": "桌面云盘",
+      "title": "把所有文件收束到同一个高效率工作台",
+      "description": "在一个针对键盘与鼠标精细打磨的桌面壳层中，统一浏览个人文件、星标内容、最近更新与回收站。",
+      "storage": "存储",
+      "items": "项目数",
+      "search": "搜索",
+      "ofTotal": "总容量 {{value}}",
+      "fileCount": "当前视图中的可见项目",
+      "noSearch": "当前未搜索",
+      "searchActive": "正在过滤当前视图",
+      "searchIdle": "可在顶部搜索框中快速缩小范围"
+    },
+    "sidebar": {
+      "quickAccess": "快捷访问",
+      "myDrive": "我的网盘",
+      "starred": "星标",
+      "recent": "最近",
+      "trash": "回收站"
+    },
+    "storage": {
+      "title": "云端存储",
+      "subtitle": "当前账号占用情况",
+      "usedPercent": "已使用 {{value}}%"
+    },
+    "table": {
+      "name": "名称",
+      "size": "大小",
+      "updated": "更新时间"
+    },
+    "item": {
+      "folder": "文件夹",
+      "file": "文件"
+    },
+    "empty": {
+      "title": "这里还没有内容",
+      "description": "你可以上传文件、创建文件夹，或切换其他视图继续整理工作区。",
+      "searchTitle": "没有找到“{{query}}”相关结果",
+      "searchDescription": "可以尝试更宽泛的关键词，或清除当前搜索后回到完整视图。",
+      "filterTitle": "这里没有“{{filter}}”",
+      "filterDescription": "当前目录下没有项目符合正在启用的文件类型筛选。",
+      "trashTitle": "回收站是空的",
+      "trashDescription": "被删除的项目会先停留在这里，直到你彻底清空回收站。",
+      "clearSearch": "清除搜索",
+      "clearFilter": "清除筛选"
+    },
+    "dropzone": {
+      "title": "松开以上传文件",
+      "description": "直接把文件放到当前文件夹，无需离开当前视图。"
+    },
+    "filters": {
+      "all": "全部文件",
+      "document": "文档",
+      "sheet": "表格",
+      "presentation": "演示文稿",
+      "image": "图片",
+      "video": "视频",
+      "audio": "音频",
+      "archive": "压缩包",
+      "code": "代码",
+      "font": "字体",
+      "3d": "3D 资源"
+    },
+    "sort": {
+      "name": "名称",
+      "date": "更新时间",
+      "size": "大小",
+      "asc": "升序",
+      "desc": "降序"
+    },
+    "selection": {
+      "selected": "已选择 {{count}} 项",
+      "totalSize": "已选总大小 {{size}}"
+    },
+    "dialogs": {
+      "namePlaceholder": "请输入名称",
+      "newFolderTitle": "创建文件夹",
+      "newFolderDescription": "在当前目录下新建一个文件夹。",
+      "renameTitle": "重命名项目",
+      "renameDescription": "为当前项目设置一个更清晰的名称。"
+    },
+    "preview": {
+      "unavailable": "当前文件暂不支持预览。",
+      "empty": "该文件没有可预览的文本内容。",
+      "downloadReady": "已开始下载。",
+      "detailsTitle": "文件详情",
+      "copyPath": "复制路径",
+      "copyPathFailed": "复制文件路径失败。",
+      "badges": {
+        "starred": "已星标",
+        "shared": "已共享"
+      },
+      "fields": {
+        "type": "类型",
+        "size": "大小",
+        "location": "位置",
+        "updated": "更新时间",
+        "created": "创建时间",
+        "starred": "星标",
+        "shared": "共享"
+      }
+    },
+    "actions": {
+      "up": "返回上级",
+      "selectAll": "全选",
+      "download": "下载",
+      "newFolder": "新建文件夹",
+      "upload": "上传",
+      "refresh": "刷新",
+      "open": "打开",
+      "preview": "预览",
+      "rename": "重命名",
+      "removeStar": "取消星标",
+      "addStar": "添加星标",
+      "moveToTrash": "移入回收站",
+      "restore": "恢复",
+      "emptyTrash": "清空回收站",
+      "clearSelection": "清空选择",
+      "toggleSelectionStar": "切换星标",
+      "create": "创建"
+    }
+  },
+  "settings": {
+    "general": {
+      "title": "工作区偏好",
+      "description": "调整桌面网盘在当前设备上的主题、语言与启动行为。",
+      "themeMode": "主题模式",
+      "themeColor": "主题颜色",
+      "language": "语言",
+      "launchOnStartup": "开机启动",
+      "launchOnStartupDescription": "在设备登录后自动启动桌面网盘。",
+      "startMinimized": "后台启动",
+      "startMinimizedDescription": "启动后优先停留在后台，而不是抢占前台焦点。",
+      "savePreferences": "保存偏好设置",
+      "themeModes": {
+        "light": "浅色",
+        "dark": "深色",
+        "system": "跟随系统"
+      },
+      "themeColors": {
+        "tech-blue": "科技蓝",
+        "lobster": "龙虾红",
+        "green-tech": "科技绿",
+        "zinc": "锌灰",
+        "violet": "紫罗兰",
+        "rose": "玫瑰红"
+      },
+      "languages": {
+        "system": "跟随系统",
+        "zh": "简体中文",
+        "en": "English"
+      },
+      "toasts": {
+        "updated": "偏好设置已更新。",
+        "updateFailed": "更新偏好设置失败。"
+      }
+    },
+    "account": {
+      "hero": {
+        "badge": "资料与安全"
+      },
+      "description": "管理你的身份资料、外观默认值，以及这个桌面工作区的安全偏好。",
+      "profileTitle": "个人资料",
+      "profileDescription": "让账号身份信息保持清晰、稳定、可同步。",
+      "firstName": "名",
+      "lastName": "姓",
+      "email": "邮箱",
+      "displayNameLabel": "显示名称预览",
+      "saveChanges": "保存资料",
+      "resetChanges": "重置修改",
+      "dangerZone": "危险操作",
+      "signOut": "退出登录",
+      "signOutDescription": "断开当前设备与此账号的登录会话。",
+      "guestName": "网盘操作者",
+      "metrics": {
+        "completeness": "资料完整度",
+        "theme": "主题",
+        "language": "语言"
+      },
+      "completion": {
+        "complete": "资料状态良好。",
+        "next": {
+          "firstName": "建议先补全名字",
+          "lastName": "建议先补全姓氏",
+          "email": "建议先补全邮箱"
+        }
+      },
+      "errors": {
+        "email_required": "保存前必须填写邮箱。",
+        "email_invalid": "请输入有效的邮箱地址。"
+      },
+      "validationNeedsAttention": "资料需要关注",
+      "validationHealthy": "资料校验状态良好",
+      "toasts": {
+        "loadFailed": "加载个人资料失败。",
+        "updated": "个人资料已更新。",
+        "updateFailed": "更新个人资料失败。",
+        "signedOut": "已成功退出登录。",
+        "signOutFailed": "退出登录失败。"
+      }
+    },
+    "notifications": {
+      "title": "通知与安全",
+      "description": "选择哪些重要信号需要持续到达你。",
+      "systemUpdates": "系统更新",
+      "systemUpdatesDescription": "接收服务运行与系统维护通知。",
+      "taskFailures": "任务失败提醒",
+      "taskFailuresDescription": "当自动化任务失败时及时提醒我。",
+      "securityAlerts": "安全提醒",
+      "securityAlertsDescription": "发现敏感账号活动时优先提示我。",
+      "newMessages": "新消息提醒",
+      "newMessagesDescription": "在应用内展示新的消息提醒。"
+    },
+    "privacy": {
+      "shareUsageData": "共享使用数据",
+      "shareUsageDataDescription": "允许汇总后的诊断数据用于提升产品稳定性。"
+    },
+    "security": {
+      "loginAlerts": "登录提醒",
+      "loginAlertsDescription": "当账号在新的上下文中登录时提醒我。"
+    }
+  },
+  "market": {
+    "labels": {
+      "installCount": "已安装 {{count, number}} 次"
+    }
+  },
+  "community": {
+    "postDetail": {
+      "meta": {
+        "views": "{{count, number}} 次浏览"
+      }
+    }
+  },
+  "repositoryCard": {
+    "actions": {
+      "clone": "克隆",
+      "download": "下载"
+    },
+    "stats": {
+      "downloads": "下载量",
+      "forks": "分叉",
+      "stars": "星标"
+    }
+  }
+}

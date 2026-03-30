@@ -1,0 +1,24 @@
+{
+  "name": "@sdkwork/drive-core",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sdkwork/app-sdk": "workspace:*",
+    "@sdkwork/drive-i18n": "workspace:*",
+    "@sdkwork/drive-commons": "workspace:*",
+    "react": "^19.0.0",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "^3.2.4"
+  }
+}

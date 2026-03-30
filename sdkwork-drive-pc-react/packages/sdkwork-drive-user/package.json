@@ -1,0 +1,27 @@
+{
+  "name": "@sdkwork/drive-user",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sdkwork/drive-core": "workspace:*",
+    "@sdkwork/drive-ui": "workspace:*",
+    "lucide-react": "^0.546.0",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-i18next": "^16.1.0",
+    "react-router-dom": "^7.13.1",
+    "sonner": "^2.0.7"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "^3.2.4"
+  }
+}

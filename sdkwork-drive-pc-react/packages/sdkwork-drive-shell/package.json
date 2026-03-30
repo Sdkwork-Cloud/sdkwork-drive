@@ -1,0 +1,32 @@
+{
+  "name": "@sdkwork/drive-shell",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sdkwork/drive-auth": "workspace:*",
+    "@sdkwork/drive-core": "workspace:*",
+    "@sdkwork/drive-drive": "workspace:*",
+    "@sdkwork/drive-i18n": "workspace:*",
+    "@sdkwork/drive-ui": "workspace:*",
+    "@sdkwork/drive-user": "workspace:*",
+    "@tanstack/react-query": "^5.90.21",
+    "lucide-react": "^0.546.0",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-i18next": "^16.1.0",
+    "react-router-dom": "^7.13.1",
+    "sonner": "^2.0.7"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "^3.2.4"
+  }
+}
