@@ -4,7 +4,7 @@ import {
   type DesktopPlatformBridge,
 } from '@sdkwork/drive-core';
 import { DESKTOP_COMMANDS, type DesktopCommandName } from './catalog';
-import { waitForTauriRuntime } from './runtime';
+import { getDesktopWindow, isTauriRuntime, waitForTauriRuntime } from './runtime';
 
 interface DesktopAppInfo {
   name: string;
@@ -86,6 +86,14 @@ const driveDesktopBridge: DesktopPlatformBridge = {
       });
     },
   },
+  window: {
+    minimize: () => minimizeWindow(),
+    maximize: () => maximizeWindow(),
+    restore: () => restoreWindow(),
+    isMaximized: () => isWindowMaximized(),
+    subscribeMaximized: (listener) => subscribeWindowMaximized(listener),
+    close: () => closeWindow(),
+  },
 };
 
 export function configureDriveDesktopPlatformBridge() {
@@ -94,4 +102,126 @@ export function configureDriveDesktopPlatformBridge() {
 
 export function getAppInfo() {
   return invokeDriveDesktopCommand<DesktopAppInfo>(DESKTOP_COMMANDS.appInfo);
+}
+
+export async function minimizeWindow(): Promise<void> {
+  const currentWindow = getDesktopWindow();
+  if (!currentWindow) {
+    return;
+  }
+
+  await currentWindow.minimize();
+}
+
+export async function maximizeWindow(): Promise<void> {
+  const currentWindow = getDesktopWindow();
+  if (!currentWindow) {
+    return;
+  }
+
+  if (await currentWindow.isFullscreen()) {
+    await currentWindow.setFullscreen(false);
+  }
+
+  await currentWindow.maximize();
+}
+
+export async function restoreWindow(): Promise<void> {
+  const currentWindow = getDesktopWindow();
+  if (!currentWindow) {
+    return;
+  }
+
+  const [
+    isFullscreenWindow,
+    isMaximizedWindow,
+    isMinimizedWindow,
+    isHiddenWindow,
+  ] = await Promise.all([
+    currentWindow.isFullscreen(),
+    currentWindow.isMaximized(),
+    currentWindow.isMinimized(),
+    currentWindow.isVisible().then((isVisibleWindow) => !isVisibleWindow),
+  ]);
+
+  if (isHiddenWindow) {
+    await currentWindow.show();
+  }
+
+  if (isFullscreenWindow) {
+    await currentWindow.setFullscreen(false);
+  }
+
+  if (isMinimizedWindow) {
+    await currentWindow.unminimize();
+  }
+
+  if (isMaximizedWindow) {
+    await currentWindow.unmaximize();
+  }
+
+  if (isFullscreenWindow || isMinimizedWindow || isHiddenWindow) {
+    await currentWindow.setFocus().catch(() => {});
+  }
+}
+
+export async function isWindowMaximized(): Promise<boolean> {
+  const currentWindow = getDesktopWindow();
+  if (!currentWindow) {
+    return false;
+  }
+
+  const [isFullscreenWindow, isMaximizedWindow] = await Promise.all([
+    currentWindow.isFullscreen(),
+    currentWindow.isMaximized(),
+  ]);
+
+  return isFullscreenWindow || isMaximizedWindow;
+}
+
+export async function subscribeWindowMaximized(
+  listener: (isMaximized: boolean) => void,
+): Promise<() => void> {
+  if (!isTauriRuntime()) {
+    return async () => {};
+  }
+
+  const currentWindow = getDesktopWindow();
+  if (!currentWindow) {
+    return async () => {};
+  }
+
+  let active = true;
+
+  const emitWindowState = async () => {
+    if (!active) {
+      return;
+    }
+
+    listener(await isWindowMaximized());
+  };
+
+  await emitWindowState();
+
+  const unlistenResize = await currentWindow.onResized(() => {
+    void emitWindowState();
+  });
+
+  const unlistenMove = await currentWindow.onMoved(() => {
+    void emitWindowState();
+  });
+
+  return async () => {
+    active = false;
+    await Promise.all([unlistenResize(), unlistenMove()]);
+  };
+}
+
+export async function closeWindow(): Promise<void> {
+  const currentWindow = getDesktopWindow();
+  if (!currentWindow) {
+    return;
+  }
+
+  await currentWindow.hide();
 }

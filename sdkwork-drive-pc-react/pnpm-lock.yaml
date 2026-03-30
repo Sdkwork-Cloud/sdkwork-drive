@@ -155,9 +155,15 @@ importers:
       '@sdkwork/drive-i18n':
         specifier: workspace:*
         version: link:../sdkwork-drive-i18n
+      lucide-react:
+        specifier: ^0.546.0
+        version: 0.546.0(react@19.2.4)
       react:
         specifier: ^19.0.0
         version: 19.2.4
+      react-i18next:
+        specifier: ^16.1.0
+        version: 16.6.6(i18next@25.10.10(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
       zustand:
         specifier: ^5.0.8
         version: 5.0.12(@types/react@19.2.14)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))

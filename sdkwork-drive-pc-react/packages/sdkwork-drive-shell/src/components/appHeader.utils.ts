@@ -2,6 +2,30 @@ export function getSearchValue(search: string) {
   return new URLSearchParams(search).get('q') || '';
 }
 
+export function resolveAppHeaderSectionLabelKey(pathname: string) {
+  if (pathname.startsWith('/drive/starred')) {
+    return 'drive.sidebar.starred';
+  }
+
+  if (pathname.startsWith('/drive/recent')) {
+    return 'drive.sidebar.recent';
+  }
+
+  if (pathname.startsWith('/drive/trash')) {
+    return 'drive.sidebar.trash';
+  }
+
+  if (pathname.startsWith('/settings')) {
+    return 'sidebar.settings';
+  }
+
+  if (pathname.startsWith('/drive')) {
+    return 'drive.sidebar.myDrive';
+  }
+
+  return null;
+}
+
 export function buildNextSearch(search: string, nextQuery: string) {
   const params = new URLSearchParams(search);
   if (nextQuery.trim()) {

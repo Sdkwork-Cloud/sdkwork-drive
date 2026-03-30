@@ -38,6 +38,39 @@ function inferDriveItemKind(item: DriveItem) {
   return 'File';
 }
 
+export function buildPreviewHighlightFacts(facts: PreviewFact[]) {
+  const priority: PreviewFact['id'][] = ['type', 'size', 'updated', 'location'];
+
+  return priority.flatMap((id) => {
+    const fact = facts.find((candidate) => candidate.id === id);
+    return fact ? [{ id: fact.id, value: fact.value }] : [];
+  });
+}
+
+export function resolvePreviewRevealPath(item: DriveItem) {
+  const itemPath = item.path || '/';
+
+  if (item.type === 'folder') {
+    return itemPath;
+  }
+
+  return pathUtils.dirname(itemPath) || '/';
+}
+
+export function buildPreviewStatusFlagIds(item: DriveItem) {
+  const flags: Array<'starred' | 'shared'> = [];
+
+  if (item.isStarred) {
+    flags.push('starred');
+  }
+
+  if (item.isShared) {
+    flags.push('shared');
+  }
+
+  return flags;
+}
+
 export function resolveDriveEmptyStateMode(
   options: ResolveDriveEmptyStateModeOptions,
 ): DriveEmptyStateMode {

@@ -32,6 +32,14 @@ describe('platformRuntime desktop bridge', () => {
         requestBinary: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
         downloadToFile: vi.fn().mockResolvedValue(undefined),
       },
+      window: {
+        minimize: vi.fn().mockResolvedValue(undefined),
+        maximize: vi.fn().mockResolvedValue(undefined),
+        restore: vi.fn().mockResolvedValue(undefined),
+        isMaximized: vi.fn().mockResolvedValue(true),
+        subscribeMaximized: vi.fn().mockResolvedValue(async () => {}),
+        close: vi.fn().mockResolvedValue(undefined),
+      },
     };
 
     module.configureDesktopPlatformBridge(bridge);
@@ -64,5 +72,19 @@ describe('platformRuntime desktop bridge', () => {
     await expect(module.platform.readFileBinary('C:/Users/admin/Desktop/contract.pdf')).resolves.toEqual(
       new Uint8Array([7, 8, 9]),
     );
+    await expect(module.platform.isWindowMaximized()).resolves.toBe(true);
+    const unsubscribe = await module.platform.subscribeWindowMaximized(() => {});
+    await module.platform.minimizeWindow();
+    await module.platform.maximizeWindow();
+    await module.platform.restoreWindow();
+    await module.platform.closeWindow();
+    await unsubscribe();
+
+    expect(bridge.window.minimize).toHaveBeenCalledTimes(1);
+    expect(bridge.window.maximize).toHaveBeenCalledTimes(1);
+    expect(bridge.window.restore).toHaveBeenCalledTimes(1);
+    expect(bridge.window.isMaximized).toHaveBeenCalledTimes(1);
+    expect(bridge.window.subscribeMaximized).toHaveBeenCalledTimes(1);
+    expect(bridge.window.close).toHaveBeenCalledTimes(1);
   });
 });

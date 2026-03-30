@@ -6,10 +6,13 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  CheckCircle2,
   Clock3,
+  FolderOpen,
   Download,
   Eye,
-  FolderOpen,
+  MapPin,
+  Circle,
   Star,
   Undo2,
 } from 'lucide-react';
@@ -28,7 +31,12 @@ import {
   shouldHandleDriveItemKeyboardEvent,
   type DriveQuickAction,
 } from '../utils/interaction.ts';
+import {
+  buildDriveItemBadges,
+  resolveDriveItemKindLabel,
+} from '../utils/driveItemPresentation.ts';
 import { FileIcon } from './FileIcon.tsx';
+import { DriveItemVisual } from './DriveItemVisual.tsx';
 
 function formatUpdatedAt(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, {
@@ -46,6 +54,7 @@ export interface DriveGridProps {
   sortBy: SortOption;
   sortDirection: SortDirection;
   isTrashView: boolean;
+  isVirtualView: boolean;
   onItemOpen: (item: DriveItem) => void;
   onItemPreview: (item: DriveItem) => void;
   onItemDownload: (item: DriveItem) => void;
@@ -65,6 +74,7 @@ export function DriveGrid({
   sortBy,
   sortDirection,
   isTrashView,
+  isVirtualView,
   onItemOpen,
   onItemPreview,
   onItemDownload,
@@ -221,6 +231,77 @@ export function DriveGrid({
     );
   }
 
+  function renderMetadataBadges(item: DriveItem, className = 'mt-2 flex flex-wrap items-center gap-2') {
+    const badges = buildDriveItemBadges({
+      item,
+      isVirtualView,
+      myDriveLabel: t('drive.sidebar.myDrive'),
+      sharedLabel: t('drive.preview.badges.shared'),
+      starredLabel: t('drive.preview.badges.starred'),
+    });
+
+    if (badges.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className={className}>
+        {badges.map((badge) => (
+          <span
+            key={`${item.id}-${badge.key}`}
+            className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${
+              badge.key === 'starred'
+                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                : badge.key === 'shared'
+                  ? 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300'
+                  : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
+            }`}
+          >
+            {badge.key === 'location' ? <MapPin className="mr-1.5 h-3 w-3" /> : null}
+            {badge.label}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  function renderSelectionToggle(item: DriveItem, selected: boolean) {
+    const Icon = selected ? CheckCircle2 : Circle;
+
+    return (
+      <button
+        type="button"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onItemSelect(item.id, true);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+            event.stopPropagation();
+          }
+        }}
+        className={`inline-flex h-6 w-6 items-center justify-center rounded-full transition-colors ${
+          selected
+            ? 'text-primary-600 dark:text-primary-300'
+            : 'text-zinc-300 hover:text-primary-500 dark:text-zinc-600 dark:hover:text-primary-300'
+        }`}
+        aria-label={selected ? t('drive.actions.unselectItem') : t('drive.actions.selectItem')}
+        title={selected ? t('drive.actions.unselectItem') : t('drive.actions.selectItem')}
+      >
+        <Icon className={`h-4 w-4 ${selected ? 'fill-current' : ''}`} />
+      </button>
+    );
+  }
+
+  function renderKindBadge(item: DriveItem) {
+    return (
+      <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300">
+        {resolveDriveItemKindLabel(item)}
+      </span>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <div
@@ -308,15 +389,16 @@ export function DriveGrid({
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="rounded-2xl bg-zinc-100 p-3 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                    <FileIcon item={item} className="h-5 w-5" />
-                  </div>
+                  {renderSelectionToggle(item, selected)}
+                  <DriveItemVisual item={item} variant="list" />
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                       {item.name}
                     </div>
-                    <div className="truncate text-xs text-zinc-500 dark:text-zinc-400">
-                      {item.path}
+                    <div className="truncate text-xs text-zinc-500 dark:text-zinc-400">{item.path}</div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {renderKindBadge(item)}
+                      {renderMetadataBadges(item, 'flex flex-wrap items-center gap-2')}
                     </div>
                   </div>
                 </div>
@@ -370,16 +452,19 @@ export function DriveGrid({
               }`}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="rounded-[22px] bg-zinc-100 p-4 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                  <FileIcon item={item} className="h-7 w-7" />
-                </div>
+                {renderSelectionToggle(item, selected)}
                 {item.isStarred ? <Star className="h-4 w-4 fill-current text-amber-400" /> : null}
+              </div>
+
+              <div className="mt-4">
+                <DriveItemVisual item={item} variant="card" />
               </div>
 
               <div className="mt-5">
                 <div className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                   {item.name}
                 </div>
+                {renderMetadataBadges(item)}
                 <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
                   <Clock3 className="h-3.5 w-3.5" />
                   {formatUpdatedAt(item.updatedAt)}
@@ -387,13 +472,14 @@ export function DriveGrid({
               </div>
 
               <div className="mt-4 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                <span>{item.type === 'folder' ? t('drive.item.folder') : t('drive.item.file')}</span>
+                <span>{resolveDriveItemKindLabel(item)}</span>
                 <span>{item.type === 'folder' ? '--' : formatBytes(item.size)}</span>
               </div>
 
               <div className="mt-4 flex items-center justify-between gap-3">
-                <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-zinc-400">
-                  {t('drive.table.updated')}
+                <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-zinc-400">
+                  <FolderOpen className="h-3.5 w-3.5" />
+                  {item.type === 'folder' ? t('drive.actions.open') : t('drive.actions.preview')}
                 </div>
                 {renderQuickActions(item, selected)}
               </div>

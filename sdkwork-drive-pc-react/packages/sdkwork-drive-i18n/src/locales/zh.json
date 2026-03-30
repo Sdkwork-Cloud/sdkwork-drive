@@ -9,7 +9,11 @@
     "yes": "是",
     "no": "否",
     "close": "关闭",
-    "cancel": "取消"
+    "cancel": "取消",
+    "minimizeWindow": "最小化窗口",
+    "maximizeWindow": "最大化窗口",
+    "restoreWindow": "还原窗口",
+    "closeWindow": "关闭窗口"
   },
   "sidebar": {
     "workspace": "工作区",
@@ -17,7 +21,9 @@
     "starred": "星标",
     "recent": "最近",
     "trash": "回收站",
-    "settings": "设置"
+    "settings": "设置",
+    "expand": "展开侧边栏",
+    "collapse": "收起侧边栏"
   },
   "shell": {
     "header": {
@@ -98,11 +104,54 @@
       "storage": "存储",
       "items": "项目数",
       "search": "搜索",
+      "focus": "当前焦点",
       "ofTotal": "总容量 {{value}}",
       "fileCount": "当前视图中的可见项目",
       "noSearch": "当前未搜索",
       "searchActive": "正在过滤当前视图",
-      "searchIdle": "可在顶部搜索框中快速缩小范围"
+      "searchIdle": "可在顶部搜索框中快速缩小范围",
+      "filterActive": "当前已聚焦到特定文件类型",
+      "resultsChip": "可见 {{count}} 项",
+      "breakdownChip": "{{files}} 个文件 · {{folders}} 个文件夹",
+      "searchChip": "搜索：{{query}}",
+      "filterChip": "筛选：{{filter}}",
+      "selectionChip": "已选 {{count}} 项",
+      "views": {
+        "drive": {
+          "badge": "个人云端工作区",
+          "title": "把所有文件收束到同一个高效率工作台",
+          "description": "持续管理你的主层级结构，快速上传新内容，并让桌面端始终围绕高频文件操作保持专注。",
+          "short": "主工作区",
+          "hint": "这里适合承载你的日常主目录与完整层级。"
+        },
+        "starred": {
+          "badge": "重点文件",
+          "title": "让重要文件始终保持一键可达",
+          "description": "把星标项作为高信号工作通道，用来沉淀反复访问的资料、文件夹与正在推进的关键内容。",
+          "short": "星标聚焦",
+          "hint": "星标最适合作为你每天都会回到的优先通道。"
+        },
+        "recent": {
+          "badge": "最近动态",
+          "title": "第一时间回到刚刚发生变化的内容",
+          "description": "无需层层进入目录，就能快速回看最近编辑、上传或重新活跃起来的文件与资料。",
+          "short": "近期动线",
+          "hint": "最近视图适合快速续接正在进行中的工作。"
+        },
+        "trash": {
+          "badge": "恢复区",
+          "title": "在彻底清理前先完成审阅与恢复",
+          "description": "集中查看已删除项目，恢复仍有价值的内容，并在最终清空前维持可控的保留策略。",
+          "short": "恢复队列",
+          "hint": "回收站是永久清理之前的最后一道恢复界面。"
+        }
+      }
+    },
+    "toolbar": {
+      "scope": "当前范围",
+      "results": "{{count}} 条结果",
+      "breakdown": "{{files}} 个文件 · {{folders}} 个文件夹",
+      "selection": "已选 {{count}} 项"
     },
     "sidebar": {
       "quickAccess": "快捷访问",
@@ -165,6 +214,82 @@
       "selected": "已选择 {{count}} 项",
       "totalSize": "已选总大小 {{size}}"
     },
+    "details": {
+      "overviewTitle": "工作区洞察",
+      "itemTitle": "项目详情",
+      "selectionTitle": "已选择 {{count}} 项",
+      "selectionDescription": "当你对比文件、文件夹和当前筛选条件时，批量操作会一直保持可用。",
+      "quickActions": "快捷操作",
+      "none": "无",
+      "storageValue": "{{used}} / {{total}}",
+      "labels": {
+        "view": "视图",
+        "results": "可见结果",
+        "breakdown": "构成",
+        "storage": "存储",
+        "usage": "占用率",
+        "search": "搜索",
+        "filter": "筛选",
+        "selection": "已选大小",
+        "files": "文件",
+        "folders": "文件夹"
+      },
+      "hints": {
+        "drive": "你可以在这里创建文件夹、上传内容，并持续整理主层级结构。",
+        "starred": "将星标区作为每天高频回访的文件与文件夹短名单。",
+        "recent": "最近动态是回到活跃工作最快的入口，无需重新浏览整棵目录树。",
+        "trash": "在永久清空前，先在这里审阅删除项并恢复仍有价值的内容。"
+      },
+      "storageHealth": "存储健康度",
+      "selectionPreviewTitle": "当前已选",
+      "focusTitle": "建议关注",
+      "focusMore": "另外 {{count}} 项",
+      "storageStates": {
+        "healthy": "容量健康",
+        "attention": "容量需要关注"
+      },
+      "focusReasons": {
+        "shared": "共享",
+        "starred": "星标",
+        "recent": "最近",
+        "selected": "已选",
+        "trash": "已移除"
+      },
+      "recommendations": {
+        "organize": {
+          "title": "整理下一层结构",
+          "description": "从主网盘根目录新建文件夹，再把接下来的一批文件归入更清晰的结构中。"
+        },
+        "search": {
+          "title": "搜索正在收窄当前画布",
+          "description": "如果你想回到完整工作区并浏览相邻文件，可以先清除当前搜索词。"
+        },
+        "filter": {
+          "title": "当前启用了文件类型筛选",
+          "description": "清除筛选后，就可以重新同时比较文档、媒体和文件夹。"
+        },
+        "recent": {
+          "title": "最近工作触手可及",
+          "description": "先从这里快速重新打开最近文件，再决定是否回到完整层级继续整理。"
+        },
+        "starred": {
+          "title": "你的星标短名单已就绪",
+          "description": "让这个视图保持精炼和克制，这里的项目才会持续成为日常启动台。"
+        },
+        "trash": {
+          "title": "回收站需要最终决策",
+          "description": "先复核最近移除的内容，再恢复真正重要的部分，或在确认后清空回收站。"
+        },
+        "selection": {
+          "title": "批量操作已就绪",
+          "description": "在一次性下载、加星或移入回收站前，先确认当前选中的项目集合。"
+        },
+        "selectionTrash": {
+          "title": "有意识地恢复",
+          "description": "先检查这些已移除项目，再只恢复真正应该回到工作区的内容。"
+        }
+      }
+    },
     "dialogs": {
       "namePlaceholder": "请输入名称",
       "newFolderTitle": "创建文件夹",
@@ -196,6 +321,8 @@
     "actions": {
       "up": "返回上级",
       "selectAll": "全选",
+      "selectItem": "选择项目",
+      "unselectItem": "取消选择项目",
       "download": "下载",
       "newFolder": "新建文件夹",
       "upload": "上传",
@@ -210,6 +337,7 @@
       "emptyTrash": "清空回收站",
       "clearSelection": "清空选择",
       "toggleSelectionStar": "切换星标",
+      "showInDrive": "在网盘中显示（{{path}}）",
       "create": "创建"
     }
   },

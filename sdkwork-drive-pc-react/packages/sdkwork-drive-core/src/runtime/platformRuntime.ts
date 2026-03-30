@@ -13,6 +13,14 @@ export interface PlatformRuntime {
     requestBinary(url: string, options?: RequestInit): Promise<Uint8Array>;
     downloadToFile(url: string, destinationPath: string, options?: RequestInit): Promise<void>;
   };
+  window: {
+    minimize(): Promise<void>;
+    maximize(): Promise<void>;
+    restore(): Promise<void>;
+    isMaximized(): Promise<boolean>;
+    subscribeMaximized(listener: (isMaximized: boolean) => void): Promise<() => void>;
+    close(): Promise<void>;
+  };
 }
 
 export interface DesktopPlatformBridge {
@@ -28,6 +36,14 @@ export interface DesktopPlatformBridge {
   network: {
     requestBinary(url: string, options?: RequestInit): Promise<Uint8Array>;
     downloadToFile(url: string, destinationPath: string, options?: RequestInit): Promise<void>;
+  };
+  window: {
+    minimize(): Promise<void>;
+    maximize(): Promise<void>;
+    restore(): Promise<void>;
+    isMaximized(): Promise<boolean>;
+    subscribeMaximized(listener: (isMaximized: boolean) => void): Promise<() => void>;
+    close(): Promise<void>;
   };
 }
 
@@ -90,6 +106,18 @@ const webRuntime: PlatformRuntime = {
       await webRuntime.fileSystem.writeBinary(destinationPath, bytes);
     },
   },
+  window: {
+    async minimize() {},
+    async maximize() {},
+    async restore() {},
+    async isMaximized() {
+      return false;
+    },
+    async subscribeMaximized() {
+      return async () => {};
+    },
+    async close() {},
+  },
 };
 
 function getDesktopRuntime(): PlatformRuntime | null {
@@ -111,6 +139,14 @@ function getDesktopRuntime(): PlatformRuntime | null {
       downloadToFile: (url, destinationPath, options) =>
         desktopPlatformBridge!.network.downloadToFile(url, destinationPath, options),
     },
+    window: {
+      minimize: () => desktopPlatformBridge!.window.minimize(),
+      maximize: () => desktopPlatformBridge!.window.maximize(),
+      restore: () => desktopPlatformBridge!.window.restore(),
+      isMaximized: () => desktopPlatformBridge!.window.isMaximized(),
+      subscribeMaximized: (listener) => desktopPlatformBridge!.window.subscribeMaximized(listener),
+      close: () => desktopPlatformBridge!.window.close(),
+    },
   };
 }
 
@@ -130,6 +166,26 @@ export const platform = {
     }
 
     throw new Error('Native file path reading is not available in the web runtime.');
+  },
+  async minimizeWindow(): Promise<void> {
+    return getPlatformRuntime().window.minimize();
+  },
+  async maximizeWindow(): Promise<void> {
+    return getPlatformRuntime().window.maximize();
+  },
+  async restoreWindow(): Promise<void> {
+    return getPlatformRuntime().window.restore();
+  },
+  async isWindowMaximized(): Promise<boolean> {
+    return getPlatformRuntime().window.isMaximized();
+  },
+  async subscribeWindowMaximized(
+    listener: (isMaximized: boolean) => void,
+  ): Promise<() => void> {
+    return getPlatformRuntime().window.subscribeMaximized(listener);
+  },
+  async closeWindow(): Promise<void> {
+    return getPlatformRuntime().window.close();
   },
 };
 

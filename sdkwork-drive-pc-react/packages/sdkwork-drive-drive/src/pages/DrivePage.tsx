@@ -1,19 +1,21 @@
 import type { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CloudUpload, Download, Star, Trash2, Undo2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { formatBytes } from '@sdkwork/drive-commons';
+import { formatBytes, pathUtils } from '@sdkwork/drive-commons';
 import { Button } from '@sdkwork/drive-ui';
 import type { DriveItem } from '../entities/drive.entity.ts';
 import {
   DriveBreadcrumbs,
   DriveContextMenu,
+  DriveDetailsPanel,
   DriveEmptyState,
   DriveGrid,
   DriveNameDialog,
+  DriveLoadingState,
   DriveSidebar,
-  DriveStatCards,
   DriveToolbar,
+  DriveWorkspaceHero,
   FilePreviewModal,
 } from '../components/index.ts';
 import { useDriveStore } from '../store/driveStore.tsx';
@@ -21,6 +23,10 @@ import { getSelectedItemsTotalBytes } from '../store/driveStore.helpers.ts';
 import { hasFilesInDataTransfer, resolveBatchStarStatus } from '../utils/interaction.ts';
 import { isTypingElement, resolveDriveKeyboardAction } from '../utils/keyboard.ts';
 import { resolveDriveEmptyStateMode } from '../utils/viewState.ts';
+import {
+  buildDriveDetailsPanelModel,
+  buildDriveWorkspaceSummary,
+} from '../utils/workspacePresentation.ts';
 
 export function DrivePage() {
   const { t } = useTranslation();
@@ -48,6 +54,7 @@ export function DrivePage() {
     selectedItems,
     sortBy,
     sortDirection,
+    stats,
     toggleSelection,
     toggleStar,
     toggleStars,
@@ -65,6 +72,7 @@ export function DrivePage() {
   const dragDepthRef = useRef(0);
 
   const isTrashView = currentPath === 'virtual://trash';
+  const isVirtualView = currentPath.startsWith('virtual://');
   const canUpload = !currentPath.startsWith('virtual://');
   const nextBatchStarStatus = resolveBatchStarStatus(selectedItems);
   const selectedTotalBytes = getSelectedItemsTotalBytes(selectedItems);
@@ -74,6 +82,30 @@ export function DrivePage() {
     filterType,
     isTrashView,
   });
+  const workspaceSummary = useMemo(
+    () =>
+      buildDriveWorkspaceSummary({
+        currentPath,
+        items,
+        selectedItems,
+        searchQuery,
+        filterType,
+        stats,
+      }),
+    [currentPath, filterType, items, searchQuery, selectedItems, stats],
+  );
+  const detailsPanelModel = useMemo(
+    () =>
+      buildDriveDetailsPanelModel({
+        currentPath,
+        items,
+        selectedItems,
+        searchQuery,
+        filterType,
+        stats,
+      }),
+    [currentPath, filterType, items, searchQuery, selectedItems, stats],
+  );
 
   function handleOpenItem(item: DriveItem) {
     if (item.type === 'folder') {
@@ -225,33 +257,15 @@ export function DrivePage() {
         onDragLeave={handleDragLeave}
         onDrop={(event) => void handleDrop(event)}
       >
-        <div className="rounded-[32px] border border-white/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.94),rgba(240,249,255,0.92))] p-6 shadow-2xl shadow-zinc-950/5 backdrop-blur dark:border-zinc-800 dark:bg-[linear-gradient(135deg,rgba(24,24,27,0.92),rgba(15,23,42,0.92))]">
-          <div className="flex flex-wrap items-start gap-4">
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold uppercase tracking-[0.24em] text-primary-500">
-                {t('drive.hero.badge')}
-              </div>
-              <h1 className="mt-3 text-3xl font-black tracking-tight text-zinc-950 dark:text-zinc-50">
-                {t('drive.hero.title')}
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600 dark:text-zinc-300">
-                {t('drive.hero.description')}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" onClick={navigateUp}>
-                {t('drive.actions.up')}
-              </Button>
-              <Button variant="ghost" onClick={selectAll}>
-                {t('drive.actions.selectAll')}
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <DriveStatCards />
-          </div>
-        </div>
+        <DriveWorkspaceHero
+          summary={workspaceSummary}
+          searchQuery={searchQuery}
+          filterType={filterType}
+          isTrashView={isTrashView}
+          onNavigateUp={navigateUp}
+          onSelectAll={selectAll}
+          onEmptyTrash={() => void emptyTrash()}
+        />
 
         <div className="relative space-y-4 rounded-[32px] border border-white/60 bg-white/85 p-5 shadow-2xl shadow-zinc-950/5 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/85">
           <DriveBreadcrumbs />
@@ -304,9 +318,7 @@ export function DrivePage() {
           ) : null}
 
           {isLoading ? (
-            <div className="flex min-h-[360px] items-center justify-center text-sm text-zinc-500 dark:text-zinc-400">
-              {t('common.loading')}
-            </div>
+            <DriveLoadingState viewMode={viewMode} />
           ) : items.length === 0 ? (
             <DriveEmptyState
               mode={emptyStateMode}
@@ -318,6 +330,10 @@ export function DrivePage() {
                   setFilterType('all');
                 }
               }}
+              onCreateFolder={
+                canUpload ? () => setNameDialogState({ mode: 'create', item: null }) : undefined
+              }
+              onUpload={canUpload ? () => void uploadFiles() : undefined}
             />
           ) : (
             <DriveGrid
@@ -327,6 +343,7 @@ export function DrivePage() {
               sortBy={sortBy}
               sortDirection={sortDirection}
               isTrashView={isTrashView}
+              isVirtualView={isVirtualView}
               onItemOpen={handleOpenItem}
               onItemPreview={setPreviewItem}
               onItemDownload={(item) => void downloadItems([item.id])}
@@ -364,6 +381,30 @@ export function DrivePage() {
           ) : null}
         </div>
       </section>
+
+      <DriveDetailsPanel
+        model={detailsPanelModel}
+        items={items}
+        selectedItems={selectedItems}
+        searchQuery={searchQuery}
+        filterType={filterType}
+        onCreateFolder={() => setNameDialogState({ mode: 'create', item: null })}
+        onUpload={() => void uploadFiles()}
+        onClearSearch={() => navigateTo(currentPath)}
+        onClearFilter={() => {
+          if (filterType !== 'all') {
+            setFilterType('all');
+          }
+        }}
+        onClearSelection={clearSelection}
+        onOpenItem={handleOpenItem}
+        onPreviewItem={setPreviewItem}
+        onDownloadItems={(ids) => void downloadItems(ids)}
+        onToggleStars={(ids, status) => void toggleStars(ids, status)}
+        onDeleteItems={(ids) => void deleteItems(ids)}
+        onRestoreItems={(ids) => void restoreItems(ids)}
+        onEmptyTrash={() => void emptyTrash()}
+      />
 
       {contextMenu ? (
         <DriveContextMenu
@@ -417,7 +458,15 @@ export function DrivePage() {
         }}
       />
 
-      <FilePreviewModal item={previewItem} onClose={() => setPreviewItem(null)} />
+      <FilePreviewModal
+        item={previewItem}
+        onClose={() => setPreviewItem(null)}
+        onRevealInDrive={(item) => {
+          const targetPath =
+            item.type === 'folder' ? item.path || '/' : pathUtils.dirname(item.path || '/') || '/';
+          navigateTo(targetPath || '/');
+        }}
+      />
     </div>
   );
 }

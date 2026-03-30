@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Copy, Download, LoaderCircle, Share2, Star } from 'lucide-react';
+import { Copy, Download, LoaderCircle, MapPin, Share2, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
@@ -13,7 +13,14 @@ import {
 } from '@sdkwork/drive-ui';
 import type { DriveItem } from '../entities/drive.entity.ts';
 import { driveBusinessService } from '../services/driveBusinessService.ts';
-import { buildPreviewFacts } from '../utils/viewState.ts';
+import { resolveDriveItemKindLabel } from '../utils/driveItemPresentation.ts';
+import {
+  buildPreviewFacts,
+  buildPreviewHighlightFacts,
+  buildPreviewStatusFlagIds,
+  resolvePreviewRevealPath,
+} from '../utils/viewState.ts';
+import { FileIcon } from './FileIcon.tsx';
 
 function isRenderableImage(item: DriveItem) {
   return Boolean(item.previewUrl && (item.mimeType || '').startsWith('image/'));
@@ -34,9 +41,10 @@ function isRenderablePdf(item: DriveItem) {
 export interface FilePreviewModalProps {
   item: DriveItem | null;
   onClose: () => void;
+  onRevealInDrive?: (item: DriveItem) => void;
 }
 
-export function FilePreviewModal({ item, onClose }: FilePreviewModalProps) {
+export function FilePreviewModal({ item, onClose, onRevealInDrive }: FilePreviewModalProps) {
   const { t } = useTranslation();
   const [textContent, setTextContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -95,6 +103,9 @@ export function FilePreviewModal({ item, onClose }: FilePreviewModalProps) {
   }
 
   const previewFacts = buildPreviewFacts(item);
+  const highlightFacts = buildPreviewHighlightFacts(previewFacts);
+  const previewStatusFlags = buildPreviewStatusFlagIds(item);
+  const revealPath = resolvePreviewRevealPath(item);
 
   function resolveFactValue(id: string, value: string) {
     if (id === 'starred' || id === 'shared') {
@@ -128,21 +139,71 @@ export function FilePreviewModal({ item, onClose }: FilePreviewModalProps) {
 
   return (
     <Dialog open={Boolean(item)} onOpenChange={(open) => (!open ? onClose() : undefined)}>
-      <DialogContent className="max-w-6xl">
-        <DialogHeader>
-          <DialogTitle>{item.name}</DialogTitle>
-          <DialogDescription>{item.path}</DialogDescription>
+      <DialogContent className="max-w-6xl overflow-hidden border-white/70 bg-white/96 p-0 shadow-2xl shadow-zinc-950/15 dark:border-zinc-800 dark:bg-zinc-950/96">
+        <DialogHeader className="border-b border-zinc-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.92))] px-6 py-5 dark:border-zinc-800 dark:bg-[linear-gradient(135deg,rgba(24,24,27,0.96),rgba(15,23,42,0.92))]">
+          <div className="flex flex-wrap items-start gap-4">
+            <div className="rounded-[26px] border border-white/70 bg-white/92 p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/92">
+              <FileIcon item={item} className="h-7 w-7" />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-full border border-primary-200/80 bg-primary-50/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-700 dark:border-primary-500/30 dark:bg-primary-950/40 dark:text-primary-300">
+                  {resolveDriveItemKindLabel(item)}
+                </span>
+                {previewStatusFlags.map((flag) => (
+                  <span
+                    key={flag}
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                      flag === 'starred'
+                        ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                        : 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300'
+                    }`}
+                  >
+                    {flag === 'starred' ? (
+                      <Star className="h-3.5 w-3.5 fill-current" />
+                    ) : (
+                      <Share2 className="h-3.5 w-3.5" />
+                    )}
+                    {t(`drive.preview.badges.${flag}`)}
+                  </span>
+                ))}
+              </div>
+              <DialogTitle className="mt-3 truncate text-2xl font-black tracking-tight text-zinc-950 dark:text-zinc-50">
+                {item.name}
+              </DialogTitle>
+              <DialogDescription className="mt-2 break-all text-sm text-zinc-500 dark:text-zinc-400">
+                {item.path}
+              </DialogDescription>
+            </div>
+
+            <div className="flex max-w-full flex-wrap justify-end gap-2">
+              {highlightFacts.map((fact) => (
+                <div
+                  key={fact.id}
+                  className="rounded-2xl border border-white/70 bg-white/92 px-3 py-2 text-right shadow-sm dark:border-zinc-700 dark:bg-zinc-900/92"
+                >
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    {t(`drive.preview.fields.${fact.id}`)}
+                  </div>
+                  <div className="mt-1 max-w-[11rem] break-all text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                    {resolveFactValue(fact.id, fact.value)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-          <div className="min-h-[420px] overflow-hidden rounded-[24px] border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="grid gap-4 p-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="min-h-[420px] overflow-hidden rounded-[28px] border border-zinc-200/70 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.08),_transparent_52%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,244,245,0.92))] shadow-inner shadow-zinc-950/5 dark:border-zinc-800 dark:bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.14),_transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(15,23,42,0.94))]">
             {isRenderableImage(item) ? (
-              <img src={item.previewUrl} alt={item.name} className="h-full w-full object-contain" />
+              <img src={item.previewUrl} alt={item.name} className="h-full max-h-[70vh] w-full object-contain" />
             ) : isRenderableVideo(item) ? (
-              <video src={item.previewUrl} className="h-full w-full" controls autoPlay />
+              <video src={item.previewUrl} className="h-full max-h-[70vh] w-full" controls autoPlay />
             ) : isRenderableAudio(item) ? (
-              <div className="flex h-full items-center justify-center px-8">
-                <audio src={item.previewUrl} className="w-full" controls autoPlay />
+              <div className="flex h-full min-h-[420px] items-center justify-center px-8">
+                <audio src={item.previewUrl} className="w-full max-w-2xl" controls autoPlay />
               </div>
             ) : isRenderablePdf(item) ? (
               <iframe src={item.previewUrl} title={item.name} className="h-[70vh] w-full" />
@@ -162,21 +223,57 @@ export function FilePreviewModal({ item, onClose }: FilePreviewModalProps) {
             )}
           </div>
 
-          <aside className="space-y-4 rounded-[24px] border border-white/60 bg-white/90 p-5 shadow-xl shadow-zinc-950/5 dark:border-zinc-800 dark:bg-zinc-900/90">
-            <div className="flex flex-wrap items-center gap-2">
-              {item.isStarred ? (
-                <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                  <Star className="h-3.5 w-3.5 fill-current" />
-                  {t('drive.preview.badges.starred')}
-                </div>
-              ) : null}
-              {item.isShared ? (
-                <div className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
-                  <Share2 className="h-3.5 w-3.5" />
-                  {t('drive.preview.badges.shared')}
-                </div>
-              ) : null}
+          <aside className="space-y-4 rounded-[28px] border border-white/60 bg-white/90 p-5 shadow-xl shadow-zinc-950/5 dark:border-zinc-800 dark:bg-zinc-900/90">
+            <div className="rounded-[24px] border border-zinc-200/70 bg-zinc-50/85 p-4 dark:border-zinc-800 dark:bg-zinc-950/70">
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-400">
+                {t('drive.details.quickActions')}
+              </div>
+              <div className="mt-4 grid gap-2">
+                <Button className="w-full justify-start" onClick={() => void handleDownload()}>
+                  <Download className="h-4 w-4" />
+                  {t('drive.actions.download')}
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => void handleCopyPath()}>
+                  <Copy className="h-4 w-4" />
+                  {t('drive.preview.copyPath')}
+                </Button>
+                {onRevealInDrive ? (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      onRevealInDrive(item);
+                      onClose();
+                    }}
+                  >
+                    <MapPin className="h-4 w-4" />
+                    {t('drive.actions.showInDrive', { path: revealPath })}
+                  </Button>
+                ) : null}
+              </div>
             </div>
+
+            {previewStatusFlags.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {previewStatusFlags.map((flag) => (
+                  <div
+                    key={`aside-${flag}`}
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                      flag === 'starred'
+                        ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                        : 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300'
+                    }`}
+                  >
+                    {flag === 'starred' ? (
+                      <Star className="h-3.5 w-3.5 fill-current" />
+                    ) : (
+                      <Share2 className="h-3.5 w-3.5" />
+                    )}
+                    {t(`drive.preview.badges.${flag}`)}
+                  </div>
+                ))}
+              </div>
+            ) : null}
 
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-400">
@@ -198,15 +295,10 @@ export function FilePreviewModal({ item, onClose }: FilePreviewModalProps) {
                 ))}
               </div>
             </div>
-
-            <Button variant="outline" className="w-full justify-start" onClick={() => void handleCopyPath()}>
-              <Copy className="h-4 w-4" />
-              {t('drive.preview.copyPath')}
-            </Button>
           </aside>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t border-zinc-200/70 px-6 py-4 dark:border-zinc-800">
           <Button variant="outline" onClick={onClose}>
             {t('common.close')}
           </Button>

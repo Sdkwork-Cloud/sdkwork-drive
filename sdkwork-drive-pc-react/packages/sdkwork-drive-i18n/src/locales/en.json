@@ -9,7 +9,11 @@
     "yes": "Yes",
     "no": "No",
     "close": "Close",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "minimizeWindow": "Minimize window",
+    "maximizeWindow": "Maximize window",
+    "restoreWindow": "Restore window",
+    "closeWindow": "Close window"
   },
   "sidebar": {
     "workspace": "Workspace",
@@ -17,7 +21,9 @@
     "starred": "Starred",
     "recent": "Recent",
     "trash": "Trash",
-    "settings": "Settings"
+    "settings": "Settings",
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar"
   },
   "shell": {
     "header": {
@@ -98,11 +104,54 @@
       "storage": "Storage",
       "items": "Items",
       "search": "Search",
+      "focus": "Focus",
       "ofTotal": "of {{value}} total",
       "fileCount": "Visible items in the current view",
       "noSearch": "No active search",
       "searchActive": "Filtering the current drive view",
-      "searchIdle": "Use the header search to narrow results"
+      "searchIdle": "Use the header search to narrow results",
+      "filterActive": "Filtered down to a specific file type",
+      "resultsChip": "{{count}} visible",
+      "breakdownChip": "{{files}} files • {{folders}} folders",
+      "searchChip": "Search: {{query}}",
+      "filterChip": "Filter: {{filter}}",
+      "selectionChip": "{{count}} selected",
+      "views": {
+        "drive": {
+          "badge": "Personal cloud workspace",
+          "title": "Keep every file in one disciplined workspace",
+          "description": "Maintain your primary hierarchy, upload new material quickly, and keep the desktop shell focused on fast everyday file work.",
+          "short": "Primary workspace",
+          "hint": "Use this view to manage your main hierarchy."
+        },
+        "starred": {
+          "badge": "Priority files",
+          "title": "Keep important files one click away",
+          "description": "Use starred items as a high-signal lane for recurring work, reference material, and folders you revisit all day.",
+          "short": "Starred focus",
+          "hint": "Starred items work best as a fast priority lane."
+        },
+        "recent": {
+          "badge": "Recent activity",
+          "title": "Jump back into what changed most recently",
+          "description": "Review the latest edits and newly active files without drilling through your full hierarchy.",
+          "short": "Recent momentum",
+          "hint": "Recent is ideal for returning to active work quickly."
+        },
+        "trash": {
+          "badge": "Recovery zone",
+          "title": "Review and restore before anything is gone",
+          "description": "Inspect deleted items, recover what still matters, and keep retention under control before permanent cleanup.",
+          "short": "Recovery queue",
+          "hint": "Trash is a temporary recovery surface before cleanup."
+        }
+      }
+    },
+    "toolbar": {
+      "scope": "Visible now",
+      "results": "{{count}} results",
+      "breakdown": "{{files}} files • {{folders}} folders",
+      "selection": "{{count}} selected"
     },
     "sidebar": {
       "quickAccess": "Quick access",
@@ -165,6 +214,82 @@
       "selected": "{{count}} selected",
       "totalSize": "Selected size {{size}}"
     },
+    "details": {
+      "overviewTitle": "Workspace insights",
+      "itemTitle": "Item details",
+      "selectionTitle": "{{count}} items selected",
+      "selectionDescription": "Batch actions stay available while you compare files, folders, and the current workspace filters.",
+      "quickActions": "Quick actions",
+      "none": "None",
+      "storageValue": "{{used}} of {{total}}",
+      "labels": {
+        "view": "View",
+        "results": "Visible results",
+        "breakdown": "Breakdown",
+        "storage": "Storage",
+        "usage": "Usage",
+        "search": "Search",
+        "filter": "Filter",
+        "selection": "Selected size",
+        "files": "Files",
+        "folders": "Folders"
+      },
+      "hints": {
+        "drive": "Create folders, upload files, and keep your main hierarchy clean from here.",
+        "starred": "Use starred items as a short list of files and folders that matter every day.",
+        "recent": "Recent activity is the fastest way to jump back into active work without browsing the whole tree.",
+        "trash": "Review deleted items here before you restore them or clear the trash permanently."
+      },
+      "storageHealth": "Storage health",
+      "selectionPreviewTitle": "Selected now",
+      "focusTitle": "Keep in view",
+      "focusMore": "+{{count}} more",
+      "storageStates": {
+        "healthy": "Healthy capacity",
+        "attention": "Capacity watch"
+      },
+      "focusReasons": {
+        "shared": "Shared",
+        "starred": "Starred",
+        "recent": "Recent",
+        "selected": "Selected",
+        "trash": "Removed"
+      },
+      "recommendations": {
+        "organize": {
+          "title": "Shape the next layer",
+          "description": "Create a new folder from your main drive root, then move the next wave of files into a cleaner structure."
+        },
+        "search": {
+          "title": "Search is narrowing the canvas",
+          "description": "Clear the current query when you want to expand back into the full workspace and browse adjacent files."
+        },
+        "filter": {
+          "title": "A file-type filter is active",
+          "description": "Clear the current filter to compare documents, media, and folders together again."
+        },
+        "recent": {
+          "title": "Recent work stays close",
+          "description": "Use this panel to reopen the latest files quickly before you jump back into the full hierarchy."
+        },
+        "starred": {
+          "title": "Your starred shortlist is ready",
+          "description": "Keep this view lean and intentional so the items here remain a daily launch pad."
+        },
+        "trash": {
+          "title": "Trash needs a final decision",
+          "description": "Review the most recent removals, then restore what matters or clear the bin when the cleanup is complete."
+        },
+        "selection": {
+          "title": "Batch work is ready",
+          "description": "Review the current selection before you download, star, or move items to trash in one pass."
+        },
+        "selectionTrash": {
+          "title": "Restore with intent",
+          "description": "Review the selected removed items, then restore only what should return to the active workspace."
+        }
+      }
+    },
     "dialogs": {
       "namePlaceholder": "Enter a name",
       "newFolderTitle": "Create folder",
@@ -196,6 +321,8 @@
     "actions": {
       "up": "Up",
       "selectAll": "Select all",
+      "selectItem": "Select item",
+      "unselectItem": "Unselect item",
       "download": "Download",
       "newFolder": "New folder",
       "upload": "Upload",
@@ -210,6 +337,7 @@
       "emptyTrash": "Empty trash",
       "clearSelection": "Clear selection",
       "toggleSelectionStar": "Toggle star",
+      "showInDrive": "Show in Drive ({{path}})",
       "create": "Create"
     }
   },

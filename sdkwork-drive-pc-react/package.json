@@ -11,7 +11,7 @@
     "build:web": "pnpm --filter @sdkwork/drive-web build",
     "build:desktop": "pnpm --filter @sdkwork/drive-desktop build",
     "check:structure": "node scripts/check-sdkwork-drive-structure.mjs",
-    "test:structure": "node --test scripts/check-sdkwork-drive-structure.test.mjs scripts/sdkwork-drive-desktop-structure.test.mjs scripts/sdkwork-drive-desktop-release.test.mjs scripts/sdkwork-drive-release-workspace.test.mjs scripts/sdkwork-drive-release-sdks.test.mjs",
+    "test:structure": "node --test scripts/check-sdkwork-drive-structure.test.mjs scripts/sdkwork-drive-desktop-structure.test.mjs scripts/sdkwork-drive-desktop-release.test.mjs scripts/sdkwork-drive-tauri-dev-command.test.mjs scripts/sdkwork-drive-release-workspace.test.mjs scripts/sdkwork-drive-release-sdks.test.mjs",
     "test:packages": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
     "prepare:release-workspace": "node scripts/prepare-sdkwork-drive-release-workspace.mjs",

@@ -9,6 +9,11 @@ import {
   listDesktopReleaseTargets,
   resolveDesktopReleaseTarget,
 } from './sdkwork-drive-desktop-release-targets.mjs';
+import {
+  createTauriCommandEnv,
+  desktopDir,
+  ensureRustToolchainAvailable,
+} from './sdkwork-drive-tauri-env.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -115,13 +120,17 @@ function runCli() {
     return;
   }
 
+  const env = createTauriCommandEnv(process.env, {
+    cargoTargetDir: path.join(desktopDir, '.tauri-target', 'release', plan.target.target),
+    nodeEnv: 'production',
+    viteAppEnv: 'production',
+  });
+
+  ensureRustToolchainAvailable(env);
+
   const child = spawn(plan.command, plan.args, {
     cwd: plan.cwd,
-    env: {
-      ...process.env,
-      NODE_ENV: 'production',
-      VITE_APP_ENV: 'production',
-    },
+    env,
     stdio: 'inherit',
     shell: process.platform === 'win32',
     windowsHide: true,

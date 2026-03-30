@@ -26,21 +26,66 @@ struct TrayNavigatePayload {
     route: String,
 }
 
+#[derive(Clone, Copy)]
+struct TrayMenuLabels {
+    quick_access: &'static str,
+    my_drive: &'static str,
+    starred: &'static str,
+    recent: &'static str,
+    trash: &'static str,
+    settings: &'static str,
+    open_window: &'static str,
+    quit_app: &'static str,
+}
+
+fn resolve_tray_menu_labels() -> TrayMenuLabels {
+    let locale = sys_locale::get_locale()
+        .map(|value| value.to_ascii_lowercase())
+        .unwrap_or_default();
+    let is_chinese = locale.starts_with("zh");
+
+    if is_chinese {
+        return TrayMenuLabels {
+            quick_access: "快捷访问",
+            my_drive: "我的网盘",
+            starred: "星标",
+            recent: "最近",
+            trash: "回收站",
+            settings: "设置",
+            open_window: "打开窗口",
+            quit_app: "退出 SDKWork 网盘",
+        };
+    }
+
+    TrayMenuLabels {
+        quick_access: "Quick Access",
+        my_drive: "My Drive",
+        starred: "Starred",
+        recent: "Recent",
+        trash: "Trash",
+        settings: "Settings",
+        open_window: "Open Window",
+        quit_app: "Quit SDKWork Drive",
+    }
+}
+
 fn build_tray_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
-    let quick_access_menu = SubmenuBuilder::new(app, "Quick Access")
-        .text(TRAY_MENU_ID_OPEN_DRIVE, "My Drive")
-        .text(TRAY_MENU_ID_OPEN_STARRED, "Starred")
-        .text(TRAY_MENU_ID_OPEN_RECENT, "Recent")
-        .text(TRAY_MENU_ID_OPEN_TRASH, "Trash")
-        .text(TRAY_MENU_ID_OPEN_SETTINGS, "Settings")
+    let labels = resolve_tray_menu_labels();
+
+    let quick_access_menu = SubmenuBuilder::new(app, labels.quick_access)
+        .text(TRAY_MENU_ID_OPEN_DRIVE, labels.my_drive)
+        .text(TRAY_MENU_ID_OPEN_STARRED, labels.starred)
+        .text(TRAY_MENU_ID_OPEN_RECENT, labels.recent)
+        .text(TRAY_MENU_ID_OPEN_TRASH, labels.trash)
+        .text(TRAY_MENU_ID_OPEN_SETTINGS, labels.settings)
         .build()?;
 
     MenuBuilder::new(app)
-        .text(TRAY_MENU_ID_SHOW_WINDOW, "Open Window")
+        .text(TRAY_MENU_ID_SHOW_WINDOW, labels.open_window)
         .separator()
         .item(&quick_access_menu)
         .separator()
-        .text(TRAY_MENU_ID_QUIT_APP, "Quit SDKWork Drive")
+        .text(TRAY_MENU_ID_QUIT_APP, labels.quit_app)
         .build()
 }
 

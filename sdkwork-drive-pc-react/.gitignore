@@ -1,7 +1,13 @@
 node_modules
 dist
 .turbo
+.vite
 .release-workspace*
 .DS_Store
 coverage
 *.log
+target/
+src-tauri/target/
+packages/*/src-tauri/target/
+packages/*/src-tauri/gen/
+packages/*/.tauri-target/

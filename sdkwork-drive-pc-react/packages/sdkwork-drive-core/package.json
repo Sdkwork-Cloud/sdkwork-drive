@@ -14,7 +14,9 @@
     "@sdkwork/app-sdk": "workspace:*",
     "@sdkwork/drive-i18n": "workspace:*",
     "@sdkwork/drive-commons": "workspace:*",
+    "lucide-react": "^0.546.0",
     "react": "^19.0.0",
+    "react-i18next": "^16.1.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

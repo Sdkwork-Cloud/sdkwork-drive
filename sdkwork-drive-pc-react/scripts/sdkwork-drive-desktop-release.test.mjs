@@ -49,6 +49,17 @@ test('workspace root exposes release scripts for cross-platform desktop bundles'
   assert.equal(packageJson.scripts['release:desktop:macos:arm64'], 'node scripts/run-sdkwork-drive-desktop-release.mjs --platform macos --arch arm64');
 });
 
+test('desktop release runner prepares tauri rust environment before spawning target builds', () => {
+  const releaseRunnerSource = readFileSync(
+    path.join(rootDir, 'scripts', 'run-sdkwork-drive-desktop-release.mjs'),
+    'utf8',
+  );
+
+  assert.match(releaseRunnerSource, /createTauriCommandEnv/);
+  assert.match(releaseRunnerSource, /ensureRustToolchainAvailable/);
+  assert.match(releaseRunnerSource, /\.tauri-target', 'release'/);
+});
+
 test('desktop tauri host is configured for tray persistence and bundle packaging', () => {
   const cargoToml = readFileSync(path.join(desktopPackageDir, 'src-tauri', 'Cargo.toml'), 'utf8');
   const tauriConfig = readJson(path.join(desktopPackageDir, 'src-tauri', 'tauri.conf.json'));
@@ -69,7 +80,11 @@ test('desktop tauri host is configured for tray persistence and bundle packaging
   ]);
 
   assert.match(rustAssemblySource, /\.manage\(state::ShutdownIntent::default\(\)\)/);
-  assert.match(rustAssemblySource, /\.setup\(app::bootstrap::setup\)/);
+  assert.doesNotMatch(rustAssemblySource, /\.setup\(app::bootstrap::setup\)/);
+  assert.match(
+    rustAssemblySource,
+    /\.setup\(\|app\|\s*app::bootstrap::setup\(app\)\.map_err\(Into::into\)\)/,
+  );
   assert.match(rustAssemblySource, /\.on_window_event\(app::bootstrap::handle_window_event\)/);
 
   assert.match(rustBootstrapSource, /TrayIconBuilder/);

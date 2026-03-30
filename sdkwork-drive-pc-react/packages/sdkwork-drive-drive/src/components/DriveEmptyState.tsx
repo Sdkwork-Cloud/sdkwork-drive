@@ -10,6 +10,8 @@ export interface DriveEmptyStateProps {
   filterType: FileTypeFilter;
   onClearSearch: () => void;
   onClearFilter: () => void;
+  onCreateFolder?: () => void;
+  onUpload?: () => void;
 }
 
 export function DriveEmptyState({
@@ -18,6 +20,8 @@ export function DriveEmptyState({
   filterType,
   onClearSearch,
   onClearFilter,
+  onCreateFolder,
+  onUpload,
 }: DriveEmptyStateProps) {
   const { t } = useTranslation();
 
@@ -61,11 +65,23 @@ export function DriveEmptyState({
       </div>
       <h3 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{config.title}</h3>
       <p className="mt-2 max-w-md text-sm leading-7 text-zinc-500 dark:text-zinc-400">{config.description}</p>
-      {config.actionLabel && config.onAction ? (
-        <Button className="mt-5" variant="outline" onClick={config.onAction}>
-          {config.actionLabel}
-        </Button>
-      ) : null}
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+        {config.actionLabel && config.onAction ? (
+          <Button variant="outline" onClick={config.onAction}>
+            {config.actionLabel}
+          </Button>
+        ) : null}
+        {mode === 'default' && onCreateFolder ? (
+          <Button onClick={onCreateFolder}>
+            {t('drive.actions.newFolder')}
+          </Button>
+        ) : null}
+        {mode === 'default' && onUpload ? (
+          <Button variant="outline" onClick={onUpload}>
+            {t('drive.actions.upload')}
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }

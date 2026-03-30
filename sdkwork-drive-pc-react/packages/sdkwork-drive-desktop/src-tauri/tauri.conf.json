@@ -15,12 +15,13 @@
         "label": "main",
         "title": "SDKWork Drive",
         "width": 1440,
-        "height": 920,
+        "height": 900,
         "minWidth": 1240,
         "minHeight": 760,
         "visible": false,
         "fullscreen": false,
-        "resizable": true
+        "resizable": true,
+        "decorations": false
       }
     ],
     "security": {

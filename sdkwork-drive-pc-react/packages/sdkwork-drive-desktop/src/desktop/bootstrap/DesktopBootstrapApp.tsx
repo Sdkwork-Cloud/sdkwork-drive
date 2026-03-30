@@ -329,6 +329,32 @@ export function applyStartupAppearanceHints(appearance: StartupAppearanceSnapsho
   document.body.style.color = appearance.isDark ? '#f8fafc' : '#0f172a';
 }
 
+async function prepareDesktopWindowForStartup() {
+  const desktopWindow = getDesktopWindow();
+  if (!desktopWindow) {
+    return null;
+  }
+
+  await desktopWindow.setFullscreen(false).catch(() => {
+    // Ignore startup fullscreen reset failures and continue booting.
+  });
+
+  await desktopWindow
+    .isMaximized()
+    .then((isMaximizedWindow) => {
+      if (!isMaximizedWindow) {
+        return;
+      }
+
+      return desktopWindow.unmaximize();
+    })
+    .catch(() => {
+      // Ignore startup size reset failures and continue booting.
+    });
+
+  return desktopWindow;
+}
+
 export function DesktopBootstrapApp({
   appName,
   hasNativeRuntime,
@@ -362,7 +388,7 @@ export function DesktopBootstrapApp({
           await getAppInfo();
           await waitForNextPaint();
 
-          const desktopWindow = getDesktopWindow();
+          const desktopWindow = await prepareDesktopWindowForStartup();
           if (desktopWindow) {
             await desktopWindow.show();
             await desktopWindow.setFocus().catch(() => {

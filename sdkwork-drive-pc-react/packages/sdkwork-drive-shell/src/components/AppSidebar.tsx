@@ -1,36 +1,8 @@
-import { FolderKanban, History, PanelLeftClose, PanelLeftOpen, Settings2, Star, Trash2 } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import { useAppStore } from '@sdkwork/drive-core';
-import { ROUTE_PATHS } from '../application/router/routePaths.ts';
-
-const NAV_ITEMS = [
-  {
-    to: ROUTE_PATHS.DRIVE,
-    icon: FolderKanban,
-    labelKey: 'sidebar.drive',
-  },
-  {
-    to: ROUTE_PATHS.DRIVE_STARRED,
-    icon: Star,
-    labelKey: 'sidebar.starred',
-  },
-  {
-    to: ROUTE_PATHS.DRIVE_RECENT,
-    icon: History,
-    labelKey: 'sidebar.recent',
-  },
-  {
-    to: ROUTE_PATHS.DRIVE_TRASH,
-    icon: Trash2,
-    labelKey: 'sidebar.trash',
-  },
-  {
-    to: ROUTE_PATHS.SETTINGS,
-    icon: Settings2,
-    labelKey: 'sidebar.settings',
-  },
-] as const;
+import { APP_SIDEBAR_NAV_ITEMS, resolveSidebarToggleLabelKey } from './appSidebar.utils.ts';
 
 export function AppSidebar() {
   const { t } = useTranslation();
@@ -63,6 +35,8 @@ export function AppSidebar() {
         <button
           type="button"
           onClick={toggleSidebar}
+          title={t(resolveSidebarToggleLabelKey(collapsed))}
+          aria-label={t(resolveSidebarToggleLabelKey(collapsed))}
           className="rounded-2xl p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
         >
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -70,11 +44,13 @@ export function AppSidebar() {
       </div>
 
       <nav className="space-y-2">
-        {NAV_ITEMS.map((item) => (
+        {APP_SIDEBAR_NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end
+            title={collapsed ? t(item.labelKey) : undefined}
+            aria-label={t(item.labelKey)}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-[22px] px-3 py-3 text-sm transition-colors ${
                 isActive

@@ -37,11 +37,24 @@ export interface DriveSidebarProps {
 
 export function DriveSidebar({ onCreateFolder }: DriveSidebarProps) {
   const { t } = useTranslation();
-  const { currentPath, stats, navigateHome, navigateTo, uploadFiles } = useDriveStore();
+  const { currentPath, items, navigateHome, navigateTo, searchQuery, selection, stats, uploadFiles } = useDriveStore();
 
   const usagePercent = stats?.totalBytes
     ? Math.min(100, Math.round((stats.usedBytes / stats.totalBytes) * 100))
     : 0;
+
+  const currentViewLabel = (() => {
+    switch (currentPath) {
+      case 'virtual://starred':
+        return t('drive.sidebar.starred');
+      case 'virtual://recent':
+        return t('drive.sidebar.recent');
+      case 'virtual://trash':
+        return t('drive.sidebar.trash');
+      default:
+        return t('drive.sidebar.myDrive');
+    }
+  })();
 
   return (
     <aside className="hidden shrink-0 self-start lg:sticky lg:top-0 lg:flex lg:w-[244px] lg:flex-col lg:gap-4 xl:w-[280px]">
@@ -87,6 +100,31 @@ export function DriveSidebar({ onCreateFolder }: DriveSidebarProps) {
             label={t('drive.sidebar.trash')}
             onClick={() => navigateTo('virtual://trash')}
           />
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border border-white/60 bg-white/85 p-5 shadow-xl shadow-zinc-950/5 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/85">
+        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-400">
+          {t('drive.toolbar.scope')}
+        </div>
+        <div className="mt-3 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+          {currentViewLabel}
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <div className="rounded-full border border-white/65 bg-white/90 px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/88 dark:text-zinc-300">
+            {t('drive.toolbar.results', { count: items.length })}
+          </div>
+          {selection.size > 0 ? (
+            <div className="rounded-full border border-primary-200/80 bg-primary-50/90 px-3 py-1.5 text-xs font-medium text-primary-700 shadow-sm dark:border-primary-500/30 dark:bg-primary-950/30 dark:text-primary-300">
+              {t('drive.toolbar.selection', { count: selection.size })}
+            </div>
+          ) : null}
+          {searchQuery ? (
+            <div className="rounded-full border border-white/65 bg-white/90 px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/88 dark:text-zinc-300">
+              {t('drive.hero.searchChip', { query: searchQuery })}
+            </div>
+          ) : null}
         </div>
       </div>
 

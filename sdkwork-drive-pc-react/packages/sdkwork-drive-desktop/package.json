@@ -9,10 +9,10 @@
     "build": "vite build --mode production",
     "preview": "vite preview --host 127.0.0.1 --port 4176",
     "typecheck": "tsc --noEmit",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
+    "tauri:dev": "node ../../scripts/run-sdkwork-drive-tauri-dev.mjs",
+    "tauri:build": "node ../../scripts/run-sdkwork-drive-tauri-build.mjs",
     "tauri:icon": "tauri icon src-tauri/app-icon.svg",
-    "tauri:info": "tauri info"
+    "tauri:info": "node ../../scripts/run-sdkwork-drive-tauri-info.mjs"
   },
   "dependencies": {
     "@sdkwork/drive-core": "workspace:*",

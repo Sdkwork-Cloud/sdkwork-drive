@@ -6,7 +6,7 @@ mod state;
 pub fn run() {
     tauri::Builder::default()
         .manage(state::ShutdownIntent::default())
-        .setup(app::bootstrap::setup)
+        .setup(|app| app::bootstrap::setup(app).map_err(Into::into))
         .on_window_event(app::bootstrap::handle_window_event)
         .invoke_handler(tauri::generate_handler![
             commands::app_info::desktop_get_app_info,

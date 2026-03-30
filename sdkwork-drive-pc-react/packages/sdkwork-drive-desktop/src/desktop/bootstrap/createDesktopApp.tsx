@@ -1,4 +1,3 @@
-import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { configureDriveDesktopPlatformBridge } from '../tauriBridge';
 import { waitForTauriRuntime } from '../runtime';
@@ -22,12 +21,10 @@ export async function createDesktopApp() {
   }
 
   createRoot(rootElement).render(
-    <StrictMode>
-      <DesktopBootstrapApp
-        appName={bootstrapContext.appName}
-        hasNativeRuntime={hasNativeRuntime}
-        initialAppearance={bootstrapContext.initialAppearance}
-      />
-    </StrictMode>,
+    <DesktopBootstrapApp
+      appName={bootstrapContext.appName}
+      hasNativeRuntime={hasNativeRuntime}
+      initialAppearance={bootstrapContext.initialAppearance}
+    />,
   );
 }

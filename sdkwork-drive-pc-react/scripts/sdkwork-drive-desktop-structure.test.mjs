@@ -74,3 +74,88 @@ test('workspace includes a dedicated drive desktop package', () => {
   assert.equal(desktopPackageJson.dependencies['@sdkwork/drive-core'], 'workspace:*');
   assert.ok(desktopPackageJson.dependencies['@tauri-apps/api']);
 });
+
+test('desktop host grants a capability set aligned with drive window bootstrap usage', () => {
+  const capabilityJson = readJson(
+    path.join(desktopPackageDir, 'src-tauri', 'capabilities', 'default.json'),
+  );
+  const runtimeSource = readFileSync(
+    path.join(desktopPackageDir, 'src', 'desktop', 'runtime.ts'),
+    'utf8',
+  );
+  const bootstrapSource = readFileSync(
+    path.join(desktopPackageDir, 'src', 'desktop', 'bootstrap', 'DesktopBootstrapApp.tsx'),
+    'utf8',
+  );
+  const appHeaderSource = readFileSync(
+    path.join(rootDir, 'packages', 'sdkwork-drive-shell', 'src', 'components', 'AppHeader.tsx'),
+    'utf8',
+  );
+  const createDesktopAppSource = readFileSync(
+    path.join(
+      desktopPackageDir,
+      'src',
+      'desktop',
+      'bootstrap',
+      'createDesktopApp.tsx',
+    ),
+    'utf8',
+  );
+  const tauriConfig = readJson(path.join(desktopPackageDir, 'src-tauri', 'tauri.conf.json'));
+
+  assert.equal(capabilityJson.identifier, 'default');
+  assert.deepEqual(capabilityJson.windows, ['main']);
+  assert.ok(Array.isArray(capabilityJson.permissions));
+  assert.match(capabilityJson.description, /title bar|window|desktop/i);
+
+  assert.match(runtimeSource, /listen(?:<[^>]+>)?\(/);
+  assert.match(runtimeSource, /isTauri/);
+  assert.match(runtimeSource, /__TAURI_INTERNALS__/);
+  assert.match(runtimeSource, /typeof tauriInternals\.invoke === 'function'/);
+  assert.equal(tauriConfig.app?.withGlobalTauri, undefined);
+  assert.match(bootstrapSource, /desktopWindow\.show\(\)/);
+  assert.match(bootstrapSource, /desktopWindow\.setFocus\(\)/);
+  assert.match(bootstrapSource, /desktopWindow\s*\.\s*setFullscreen\(false\)/);
+  assert.match(bootstrapSource, /desktopWindow\s*\.\s*isMaximized\(\)/);
+  assert.match(bootstrapSource, /desktopWindow\s*\.\s*unmaximize\(\)/);
+  assert.match(bootstrapSource, /data-app-platform/);
+  assert.match(bootstrapSource, /setAttribute\('data-app-platform', 'desktop'\)/);
+  assert.match(appHeaderSource, /DesktopWindowControls/);
+  assert.match(appHeaderSource, /variant="header"/);
+  assert.match(appHeaderSource, /data-tauri-drag-region/);
+  assert.match(appHeaderSource, /data-tauri-drag-region="false"/);
+  assert.match(appHeaderSource, /h-12/);
+  assert.doesNotMatch(appHeaderSource, /<header[^>]*data-tauri-drag-region/);
+  assert.doesNotMatch(createDesktopAppSource, /StrictMode/);
+  assert.equal(tauriConfig.app?.windows?.[0]?.decorations, false);
+  assert.equal(tauriConfig.app?.windows?.[0]?.visible, false);
+  assert.equal(tauriConfig.app?.windows?.[0]?.fullscreen, false);
+  assert.equal(tauriConfig.app?.windows?.[0]?.height, 900);
+
+  const requiredPermissions = [
+    'core:default',
+    'core:window:allow-close',
+    'core:window:allow-hide',
+    'core:window:allow-internal-toggle-maximize',
+    'core:window:allow-is-fullscreen',
+    'core:window:allow-is-maximized',
+    'core:window:allow-is-minimized',
+    'core:window:allow-is-visible',
+    'core:window:allow-maximize',
+    'core:window:allow-minimize',
+    'core:window:allow-set-fullscreen',
+    'core:window:allow-show',
+    'core:window:allow-start-dragging',
+    'core:window:allow-set-focus',
+    'core:window:allow-toggle-maximize',
+    'core:window:allow-unmaximize',
+    'core:window:allow-unminimize',
+  ];
+
+  for (const permission of requiredPermissions) {
+    assert.ok(
+      capabilityJson.permissions.includes(permission),
+      `expected drive desktop capability to include ${permission}`,
+    );
+  }
+});

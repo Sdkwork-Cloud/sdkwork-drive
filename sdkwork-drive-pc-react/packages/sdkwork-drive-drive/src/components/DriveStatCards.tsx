@@ -1,34 +1,70 @@
-import { HardDrive, Layers3, Search } from 'lucide-react';
+import { Filter, HardDrive, Layers3, Search, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatBytes } from '@sdkwork/drive-commons';
-import { useDriveStore } from '../store/driveStore.tsx';
+import type { FileTypeFilter } from '../store/driveStore.helpers.ts';
+import type { DriveWorkspaceSummary } from '../utils/workspacePresentation.ts';
 
-export function DriveStatCards() {
+export interface DriveStatCardsProps {
+  summary: DriveWorkspaceSummary;
+  searchQuery: string;
+  filterType: FileTypeFilter;
+}
+
+export function DriveStatCards({
+  summary,
+  searchQuery,
+  filterType,
+}: DriveStatCardsProps) {
   const { t } = useTranslation();
-  const { items, searchQuery, stats } = useDriveStore();
+  const focusCard = summary.selectedCount > 0
+    ? {
+        icon: Sparkles,
+        label: t('drive.hero.focus'),
+        value: t('drive.hero.selectionChip', { count: summary.selectedCount }),
+        hint: t('drive.selection.totalSize', {
+          size: formatBytes(summary.selectedTotalBytes),
+        }),
+      }
+    : summary.hasActiveSearch
+      ? {
+          icon: Search,
+          label: t('drive.hero.search'),
+          value: `"${searchQuery}"`,
+          hint: t('drive.hero.searchActive'),
+        }
+      : summary.hasActiveFilter
+        ? {
+            icon: Filter,
+            label: t('drive.hero.focus'),
+            value: t(`drive.filters.${filterType}`),
+            hint: t('drive.hero.filterActive'),
+          }
+        : {
+            icon: Sparkles,
+            label: t('drive.hero.focus'),
+            value: t(`drive.hero.views.${summary.viewKind}.short`),
+            hint: t(`drive.hero.views.${summary.viewKind}.hint`),
+          };
 
   const cards = [
     {
       key: 'storage',
       icon: HardDrive,
       label: t('drive.hero.storage'),
-      value: formatBytes(stats?.usedBytes || 0),
-      hint: t('drive.hero.ofTotal', { value: formatBytes(stats?.totalBytes || 0) }),
+      value: formatBytes(summary.usedBytes),
+      hint: t('drive.hero.ofTotal', { value: formatBytes(summary.totalBytes) }),
     },
     {
       key: 'items',
       icon: Layers3,
       label: t('drive.hero.items'),
-      value: `${items.length}`,
-      hint: t('drive.hero.fileCount'),
+      value: `${summary.resultCount}`,
+      hint: t('drive.hero.breakdownChip', {
+        files: summary.fileCount,
+        folders: summary.folderCount,
+      }),
     },
-    {
-      key: 'search',
-      icon: Search,
-      label: t('drive.hero.search'),
-      value: searchQuery ? `"${searchQuery}"` : t('drive.hero.noSearch'),
-      hint: searchQuery ? t('drive.hero.searchActive') : t('drive.hero.searchIdle'),
-    },
+    { key: 'focus', ...focusCard },
   ];
 
   return (
