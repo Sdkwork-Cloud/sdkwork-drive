@@ -1,0 +1,10 @@
+[package]
+name = "sdkwork-drive-product"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait = "0.1"
+sdkwork-drive-core = { path = "../../crates/sdkwork-drive-core" }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite", "postgres"] }
+tokio.workspace = true

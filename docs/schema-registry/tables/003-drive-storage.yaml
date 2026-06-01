@@ -1,0 +1,82 @@
+module: drive
+owner: sdkwork-drive
+tables:
+  - table: drive_storage_provider
+    domain: drive
+    description: Configured object storage provider.
+    columns:
+      - name: id
+        type: bigint
+      - name: uuid
+        type: varchar(64)
+      - name: provider_kind
+        type: varchar(64)
+        constraints:
+          - "enum: [local_filesystem, s3_compatible, azure_blob, google_cloud_storage, aliyun_oss]"
+          - "extensible_pattern: ^(local_filesystem|s3_compatible|azure_blob|google_cloud_storage|aliyun_oss|custom:[a-z0-9_-]{2,32})$"
+      - name: name
+        type: varchar(128)
+      - name: endpoint_url
+        type: varchar(512)
+      - name: region
+        type: varchar(128)
+      - name: bucket
+        type: varchar(255)
+      - name: path_style
+        type: boolean
+      - name: credential_ref
+        type: varchar(255)
+      - name: server_side_encryption_mode
+        type: varchar(64)
+      - name: default_storage_class
+        type: varchar(64)
+      - name: status
+        type: varchar(32)
+      - name: created_at
+        type: timestamp
+      - name: updated_at
+        type: timestamp
+  - table: drive_storage_object
+    domain: drive
+    description: Object storage fact.
+    columns:
+      - name: id
+        type: bigint
+      - name: uuid
+        type: varchar(64)
+      - name: tenant_id
+        type: bigint
+      - name: provider_id
+        type: bigint
+      - name: bucket
+        type: varchar(255)
+      - name: object_key
+        type: varchar(2048)
+      - name: size_bytes
+        type: bigint
+      - name: status
+        type: varchar(32)
+      - name: created_at
+        type: timestamp
+      - name: updated_at
+        type: timestamp
+  - table: drive_upload_session
+    domain: drive
+    description: Upload session state.
+    columns:
+      - name: id
+        type: bigint
+      - name: uuid
+        type: varchar(64)
+      - name: tenant_id
+        type: bigint
+      - name: space_id
+        type: bigint
+      - name: object_key
+        type: varchar(2048)
+      - name: idempotency_key
+        type: varchar(255)
+      - name: state
+        type: varchar(32)
+      - name: expires_at
+        type: timestamp

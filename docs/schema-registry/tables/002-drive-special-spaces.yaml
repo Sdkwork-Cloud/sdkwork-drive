@@ -1,0 +1,65 @@
+module: drive
+owner: sdkwork-drive
+tables:
+  - table: drive_knowledge_space_profile
+    domain: drive
+    description: Knowledge-base space profile.
+    columns:
+      - name: id
+        type: bigint
+      - name: uuid
+        type: varchar(64)
+      - name: tenant_id
+        type: bigint
+      - name: space_id
+        type: bigint
+      - name: knowledge_base_id
+        type: bigint
+      - name: index_status
+        type: varchar(32)
+      - name: created_at
+        type: timestamp
+      - name: updated_at
+        type: timestamp
+  - table: drive_ai_generation_space_profile
+    domain: drive
+    description: AI-generated asset space profile.
+    columns:
+      - name: id
+        type: bigint
+      - name: uuid
+        type: varchar(64)
+      - name: tenant_id
+        type: bigint
+      - name: space_id
+        type: bigint
+      - name: generation_scope
+        type: varchar(32)
+      - name: prompt_storage_policy
+        type: varchar(32)
+      - name: created_at
+        type: timestamp
+      - name: updated_at
+        type: timestamp
+  - table: drive_app_upload_space_profile
+    domain: drive
+    description: App upload space profile.
+    columns:
+      - name: id
+        type: bigint
+      - name: uuid
+        type: varchar(64)
+      - name: tenant_id
+        type: bigint
+      - name: space_id
+        type: bigint
+      - name: app_id
+        type: bigint
+      - name: upload_scope
+        type: varchar(32)
+      - name: retention_mode
+        type: varchar(32)
+      - name: created_at
+        type: timestamp
+      - name: updated_at
+        type: timestamp

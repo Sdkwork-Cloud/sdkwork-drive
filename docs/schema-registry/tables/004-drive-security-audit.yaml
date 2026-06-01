@@ -1,0 +1,89 @@
+module: drive
+owner: sdkwork-drive
+tables:
+  - table: drive_permission
+    domain: drive
+    description: ACL permission entries.
+    columns:
+      - name: id
+        type: bigint
+      - name: uuid
+        type: varchar(64)
+      - name: tenant_id
+        type: bigint
+      - name: resource_type
+        type: varchar(32)
+      - name: resource_id
+        type: bigint
+      - name: subject_type
+        type: varchar(32)
+      - name: role
+        type: varchar(32)
+      - name: created_at
+        type: timestamp
+      - name: updated_at
+        type: timestamp
+  - table: drive_share_link
+    domain: drive
+    description: Shared link records with hashed token.
+    columns:
+      - name: id
+        type: bigint
+      - name: uuid
+        type: varchar(64)
+      - name: token_hash
+        type: varchar(255)
+      - name: resource_type
+        type: varchar(32)
+      - name: resource_id
+        type: bigint
+      - name: expires_at
+        type: timestamp
+      - name: revoked_at
+        type: timestamp
+  - table: drive_audit_event
+    domain: drive
+    description: Append-only drive audit events.
+    columns:
+      - name: id
+        type: bigint
+      - name: uuid
+        type: varchar(64)
+      - name: tenant_id
+        type: bigint
+      - name: action
+        type: varchar(128)
+      - name: resource_type
+        type: varchar(32)
+      - name: resource_id
+        type: bigint
+      - name: operator_id
+        type: varchar(128)
+      - name: request_id
+        type: varchar(64)
+      - name: trace_id
+        type: varchar(128)
+      - name: created_at
+        type: timestamp
+    indexes:
+      - name: ix_drive_audit_event_tenant_created
+        columns:
+          - tenant_id
+          - created_at
+      - name: ix_drive_audit_event_resource
+        columns:
+          - resource_type
+          - resource_id
+          - created_at
+      - name: ix_drive_audit_event_action_created
+        columns:
+          - action
+          - created_at
+      - name: ix_drive_audit_event_request_created
+        columns:
+          - request_id
+          - created_at
+      - name: ix_drive_audit_event_trace_created
+        columns:
+          - trace_id
+          - created_at

@@ -1,0 +1,12 @@
+{
+  "sdkName": "drive-backend-sdk",
+  "packageName": "sdkwork-drive-backend-api-generated-typescript",
+  "generatorName": "sdkwork_sdk_generator_stub",
+  "sdkType": "backend",
+  "language": "typescript",
+  "baseUrl": "http://127.0.0.1:18080",
+  "apiPrefix": "/backend/v3/api",
+  "standardProfile": "sdkwork-v3",
+  "fixedSdkVersion": "0.1.0",
+  "operationCount": 11
+}

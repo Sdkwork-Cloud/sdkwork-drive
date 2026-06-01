@@ -1,0 +1,6 @@
+[package]
+name = "sdkwork-drive-http"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

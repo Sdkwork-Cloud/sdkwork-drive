@@ -1,0 +1,28 @@
+[workspace]
+members = [
+    "crates/sdkwork-drive-contract",
+    "crates/sdkwork-drive-core",
+    "crates/sdkwork-drive-config",
+    "crates/sdkwork-drive-http",
+    "crates/sdkwork-drive-security",
+    "crates/sdkwork-drive-observability",
+    "crates/sdkwork-drive-storage-contract",
+    "crates/sdkwork-drive-storage-local",
+    "crates/sdkwork-drive-storage-s3",
+    "crates/sdkwork-drive-test-support",
+    "services/sdkwork-drive-product",
+    "services/sdkwork-drive-app-api",
+    "services/sdkwork-drive-admin-api",
+    "services/sdkwork-drive-installer",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+
+[workspace.dependencies]
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }

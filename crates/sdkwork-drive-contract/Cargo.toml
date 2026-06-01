@@ -1,0 +1,9 @@
+[package]
+name = "sdkwork-drive-contract"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+serde_json.workspace = true

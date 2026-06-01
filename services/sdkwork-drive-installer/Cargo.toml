@@ -1,0 +1,7 @@
+[package]
+name = "sdkwork-drive-installer"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+sdkwork-drive-product = { path = "../sdkwork-drive-product" }

@@ -1,0 +1,61 @@
+use async_trait::async_trait;
+
+use crate::domain::storage_provider::DriveStorageProvider;
+use crate::DriveProductError;
+
+#[derive(Debug, Clone)]
+pub struct NewDriveStorageProvider {
+    pub id: String,
+    pub provider_kind: String,
+    pub name: String,
+    pub endpoint_url: String,
+    pub region: Option<String>,
+    pub bucket: String,
+    pub path_style: bool,
+    pub credential_ref: Option<String>,
+    pub server_side_encryption_mode: Option<String>,
+    pub default_storage_class: Option<String>,
+    pub status: String,
+    pub created_by: String,
+    pub updated_by: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct UpdateDriveStorageProvider {
+    pub name: String,
+    pub endpoint_url: String,
+    pub region: Option<String>,
+    pub bucket: String,
+    pub path_style: bool,
+    pub credential_ref: Option<String>,
+    pub server_side_encryption_mode: Option<String>,
+    pub default_storage_class: Option<String>,
+    pub status: String,
+    pub updated_by: String,
+}
+
+#[async_trait]
+pub trait DriveStorageProviderStore: Send + Sync {
+    async fn insert_storage_provider(
+        &self,
+        new_provider: &NewDriveStorageProvider,
+    ) -> Result<DriveStorageProvider, DriveProductError>;
+
+    async fn list_storage_providers(
+        &self,
+        status: Option<&str>,
+    ) -> Result<Vec<DriveStorageProvider>, DriveProductError>;
+
+    async fn find_storage_provider(
+        &self,
+        provider_id: &str,
+    ) -> Result<Option<DriveStorageProvider>, DriveProductError>;
+
+    async fn update_storage_provider(
+        &self,
+        provider_id: &str,
+        patch: &UpdateDriveStorageProvider,
+    ) -> Result<DriveStorageProvider, DriveProductError>;
+
+    async fn delete_storage_provider(&self, provider_id: &str) -> Result<bool, DriveProductError>;
+}

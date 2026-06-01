@@ -1,0 +1,19 @@
+[package]
+name = "sdkwork-drive-admin-api"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+axum = "0.7"
+http = "1.4"
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+sdkwork-drive-observability = { path = "../../crates/sdkwork-drive-observability" }
+sdkwork-drive-product = { path = "../sdkwork-drive-product" }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite"] }
+tokio.workspace = true
+tower = { version = "0.5", features = ["util"] }
+tracing = "0.1"
+
+[dev-dependencies]
+tracing-subscriber = { version = "0.3", features = ["fmt"] }

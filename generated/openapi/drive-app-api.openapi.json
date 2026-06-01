@@ -1,0 +1,611 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "sdkwork-drive app api",
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/app/v3/api/drive/spaces": {
+      "get": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "spaces.list",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ownerSubjectType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ownerSubjectId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSpacesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "spaces.create",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSpaceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveSpace"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/app/v3/api/drive/upload_sessions": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "uploadSessions.create",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUploadSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveUploadSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/app/v3/api/drive/download_urls": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "downloadUrls.create",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDownloadUrlRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDownloadUrlResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/app/v3/api/drive/download_tokens/{token}": {
+      "get": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "downloadTokens.resolve",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "Temporary Redirect"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateSpaceRequest": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenantId",
+          "ownerSubjectType",
+          "ownerSubjectId",
+          "displayName",
+          "spaceType",
+          "operatorId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "ownerSubjectType": {
+            "type": "string"
+          },
+          "ownerSubjectId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "spaceType": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "team",
+              "knowledge_base",
+              "ai_generated",
+              "app_upload"
+            ]
+          },
+          "operatorId": {
+            "type": "string"
+          }
+        }
+      },
+      "DriveSpace": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenantId",
+          "ownerSubjectType",
+          "ownerSubjectId",
+          "displayName",
+          "spaceType",
+          "lifecycleStatus",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "ownerSubjectType": {
+            "type": "string"
+          },
+          "ownerSubjectId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "spaceType": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "team",
+              "knowledge_base",
+              "ai_generated",
+              "app_upload"
+            ]
+          },
+          "lifecycleStatus": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ListSpacesResponse": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriveSpace"
+            }
+          }
+        }
+      },
+      "CreateUploadSessionRequest": {
+        "type": "object",
+        "required": [
+          "sessionId",
+          "tenantId",
+          "spaceId",
+          "nodeId",
+          "bucket",
+          "objectKey",
+          "idempotencyKey",
+          "operatorId",
+          "expiresAtEpochMs"
+        ],
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "spaceId": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "bucket": {
+            "type": "string"
+          },
+          "objectKey": {
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "type": "string"
+          },
+          "operatorId": {
+            "type": "string"
+          },
+          "expiresAtEpochMs": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "DriveUploadSession": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenantId",
+          "spaceId",
+          "nodeId",
+          "bucket",
+          "objectKey",
+          "idempotencyKey",
+          "state",
+          "expiresAtEpochMs",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "spaceId": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "bucket": {
+            "type": "string"
+          },
+          "objectKey": {
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "created",
+              "uploading",
+              "completed",
+              "aborted",
+              "expired"
+            ]
+          },
+          "expiresAtEpochMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CreateDownloadUrlRequest": {
+        "type": "object",
+        "required": [
+          "tenantId",
+          "nodeId"
+        ],
+        "properties": {
+          "tenantId": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "requestedTtlSeconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 300
+          }
+        }
+      },
+      "CreateDownloadUrlResponse": {
+        "type": "object",
+        "required": [
+          "downloadUrl",
+          "expiresAtEpochMs",
+          "method"
+        ],
+        "properties": {
+          "downloadUrl": {
+            "type": "string"
+          },
+          "expiresAtEpochMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "method": {
+            "type": "string"
+          }
+        }
+      },
+      "ProblemDetail": {
+        "type": "object",
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "code",
+          "traceId",
+          "requestId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

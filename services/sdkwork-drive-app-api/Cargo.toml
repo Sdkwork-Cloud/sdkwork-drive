@@ -1,0 +1,22 @@
+[package]
+name = "sdkwork-drive-app-api"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait = "0.1"
+axum = "0.7"
+serde = { workspace = true, features = ["derive"] }
+http = "1.4"
+serde_json.workspace = true
+sdkwork-drive-observability = { path = "../../crates/sdkwork-drive-observability" }
+sdkwork-drive-product = { path = "../sdkwork-drive-product" }
+sdkwork-drive-storage-contract = { path = "../../crates/sdkwork-drive-storage-contract" }
+sdkwork-drive-storage-s3 = { path = "../../crates/sdkwork-drive-storage-s3" }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite"] }
+tokio.workspace = true
+tower = { version = "0.5", features = ["util"] }
+tracing = "0.1"
+
+[dev-dependencies]
+tracing-subscriber = { version = "0.3", features = ["fmt"] }

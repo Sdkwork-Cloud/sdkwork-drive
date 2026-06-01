@@ -1,0 +1,15 @@
+[package]
+name = "sdkwork-drive-storage-local"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait = "0.1"
+sdkwork-drive-storage-contract = { path = "../sdkwork-drive-storage-contract" }
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"
+tokio.workspace = true
+
+[dev-dependencies]
+tempfile = "3.12"
