@@ -1,0 +1,1411 @@
+#!/usr/bin/env node
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const workspaceRoot = path.resolve(scriptDir, "..");
+
+const HTTP_METHODS = new Set([
+  "get",
+  "post",
+  "put",
+  "patch",
+  "delete",
+  "head",
+  "options",
+  "trace",
+]);
+const SDK_OWNER = "sdkwork-drive";
+const SDK_AUTHORITIES = {
+  open: "sdkwork-drive.open",
+  app: "sdkwork-drive.app",
+  backend: "sdkwork-drive.backend",
+  adminStorage: "sdkwork-drive.admin.storage",
+};
+const APPBASE_APP_PATH_PREFIXES = [
+  "/app/v3/api/auth/",
+  "/app/v3/api/iam/",
+  "/app/v3/api/open_platform/",
+  "/app/v3/api/system/iam/",
+];
+const APPBASE_BACKEND_PATH_PREFIXES = [
+  "/backend/v3/api/auth/",
+  "/backend/v3/api/iam/",
+  "/backend/v3/api/open_platform/",
+  "/backend/v3/api/system/iam/",
+];
+const APPBASE_SCHEMA_PREFIXES = ["Iam"];
+const APPBASE_TAGS = new Set(["auth", "iam", "openPlatform", "system"]);
+const APPBASE_APP_OPENAPI_PATH = path.resolve(
+  workspaceRoot,
+  ".sdkwork",
+  "dependencies",
+  "sdkwork-appbase",
+  "sdks",
+  "sdkwork-appbase-app-sdk",
+  "openapi",
+  "sdkwork-appbase-app-api.openapi.yaml",
+);
+const APPBASE_APP_OPERATION_IDS = new Set([
+  "oauthAuthorizationUrls.retrieve",
+  "oauthSessions.create",
+  "passwordResetRequests.create",
+  "passwordResets.create",
+  "registrations.create",
+  "sessions.create",
+  "sessions.current.delete",
+  "sessions.current.retrieve",
+  "sessions.current.update",
+  "sessions.refresh",
+  "verificationCodes.create",
+  "verificationCodes.verify",
+  "qrAuth.sessions.create",
+  "qrAuth.sessions.retrieve",
+  "qrAuth.sessions.scans.create",
+  "qrAuth.sessions.passwords.create",
+  "iam.runtime.retrieve",
+  "iam.verificationPolicy.retrieve",
+  "users.current.retrieve",
+]);
+const APP_STORAGE_ADMIN_PATH_PREFIXES = [
+  "/app/v3/api/drive/storage_providers",
+  "/app/v3/api/drive/storage_provider_bindings",
+];
+const APP_STORAGE_ADMIN_SCHEMA_NAMES = new Set([
+  "CopyProviderObjectRequest",
+  "CreateStorageProviderRequest",
+  "DeleteStorageProviderResponse",
+  "ListStorageProvidersResponse",
+  "ProviderBucket",
+  "ProviderBucketMutation",
+  "ProviderObject",
+  "ProviderObjectList",
+  "ProviderObjectMutation",
+  "RotateStorageProviderCredentialRequest",
+  "SetDefaultStorageProviderBindingRequest",
+  "StorageProvider",
+  "StorageProviderBinding",
+  "StorageProviderCapabilities",
+  "TestStorageProviderRequest",
+  "TestStorageProviderResponse",
+  "UpdateStorageProviderRequest",
+]);
+const STORAGE_PROVIDER_KIND_ENUM = [
+  "local_filesystem",
+  "s3_compatible",
+  "google_cloud_storage",
+  "aliyun_oss",
+  "tencent_cos",
+  "huawei_obs",
+  "volcengine_tos",
+];
+const DRIVE_SPACE_TYPE_ENUM = [
+  "personal",
+  "team",
+  "knowledge_base",
+  "ai_generated",
+  "git_repository",
+  "deployment",
+  "app_upload",
+  "im",
+  "rtc",
+  "notary",
+];
+const STORAGE_PROVIDER_KIND_PATTERN =
+  "^(local_filesystem|s3_compatible|google_cloud_storage|aliyun_oss|tencent_cos|huawei_obs|volcengine_tos|custom:[a-z0-9_-]{2,32})$";
+const OBJECT_KEY_PATTERN =
+  "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\u0000).*(?:[^/])$";
+const OBJECT_KEY_DESCRIPTION =
+  "Drive object key. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments.";
+const OBJECT_KEY_PATH_DESCRIPTION =
+  "Drive object key path tail. The runtime accepts slash-separated tail paths such as objects/file.bin and URL-encoded keys where / is encoded as %2F. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments.";
+const S3_BUCKET_NAME_PATTERN =
+  "^(?!xn--)(?!sthree-)(?!.*\\.\\.)(?!.*\\.-)(?!.*-\\.)(?!\\d+\\.\\d+\\.\\d+\\.\\d+$)(?!.*(-s3alias|--ol-s3|\\.mrap|--x-s3)$)[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$";
+const S3_BUCKET_NAME_DESCRIPTION =
+  "S3-compatible bucket name. DNS-compatible 3-63 characters; lowercase letters, digits, dots, and hyphens only; must start and end with a letter or digit; no IPv4-looking names, adjacent dots, dot-hyphen adjacency, or reserved S3 affixes.";
+const OPERATOR_ID_DESCRIPTION =
+  "Drive administration operator subject identifier used for audit events.";
+const STORAGE_CREDENTIAL_REF_PATTERN = "^(plain|env|secret|kms|vault):.+$";
+const STORAGE_CREDENTIAL_REF_DESCRIPTION =
+  "Drive storage credential reference. Supported forms: plain:<accessKeyId>:<secretAccessKey>[:<sessionToken>], env:<accessKeyEnv>:<secretKeyEnv>[:<sessionTokenEnv>], secret:<ref>, kms:<ref>, or vault:<ref>. secret/kms/vault refs are materialized at runtime from SDKWORK_DRIVE_STORAGE_CREDENTIAL__<sanitized_ref>__ACCESS_KEY_ID, __SECRET_ACCESS_KEY, and optional __SESSION_TOKEN environment variables.";
+const OBJECT_KEY_SCHEMA = {
+  type: "string",
+  minLength: 1,
+  maxLength: 1024,
+  pattern: OBJECT_KEY_PATTERN,
+  description: OBJECT_KEY_DESCRIPTION,
+};
+const STORAGE_ROOT_PREFIX_SCHEMA = {
+  type: "string",
+  minLength: 1,
+  maxLength: 512,
+  pattern: OBJECT_KEY_PATTERN,
+  description:
+    "Storage binding root prefix. UTF-8 1-512 bytes, trimmed relative prefix; no leading/trailing slash, double slash, NUL, or period-only path segments.",
+};
+const S3_BUCKET_NAME_SCHEMA = {
+  type: "string",
+  minLength: 3,
+  maxLength: 63,
+  pattern: S3_BUCKET_NAME_PATTERN,
+  description: S3_BUCKET_NAME_DESCRIPTION,
+};
+const OPERATOR_ID_SCHEMA = {
+  type: "string",
+  minLength: 1,
+  maxLength: 128,
+  pattern: "^[A-Za-z0-9._:@-]+$",
+  description: OPERATOR_ID_DESCRIPTION,
+};
+const USAGE_CONTEXT_SCHEMA = {
+  type: "string",
+  minLength: 1,
+  maxLength: 128,
+  pattern: "^[A-Za-z0-9._:@-]+$",
+  description:
+    "Drive uploader usage context identifier. Optional semantic context for idempotency, ownership, and cleanup scoping.",
+};
+const UPLOADER_SHARE_TOKEN_SCHEMA = {
+  type: "string",
+  minLength: 1,
+  maxLength: 512,
+  description:
+    "Optional Drive share token authorizing anonymous or external uploads into an explicit target folder. The raw token is accepted only on prepare requests and is never returned.",
+};
+const STORAGE_PROVIDER_STRICT_TLS_SCHEMA = {
+  type: "boolean",
+  description:
+    "Provider-level TLS policy. HTTPS endpoints default to true, private HTTP endpoints default to false, and true requires an HTTPS endpoint.",
+};
+const STORAGE_CREDENTIAL_REF_SCHEMA = {
+  type: "string",
+  minLength: 1,
+  maxLength: 255,
+  pattern: STORAGE_CREDENTIAL_REF_PATTERN,
+  description: STORAGE_CREDENTIAL_REF_DESCRIPTION,
+};
+
+const generatedOpenapiDir = path.join(workspaceRoot, "generated", "openapi");
+const defaultOpenOpenapiPath = path.join(
+  generatedOpenapiDir,
+  "drive-open-api.openapi.json",
+);
+const defaultAppOpenapiPath = path.join(
+  generatedOpenapiDir,
+  "drive-app-api.openapi.json",
+);
+const defaultBackendOpenapiPath = path.join(
+  generatedOpenapiDir,
+  "drive-backend-api.openapi.json",
+);
+const defaultAdminStorageOpenapiPath = path.join(
+  generatedOpenapiDir,
+  "drive-admin-storage-api.openapi.json",
+);
+
+function fail(message) {
+  process.stderr.write(`[drive_openapi_export] ${message}\n`);
+  process.exit(1);
+}
+
+function resolveWorkspacePath(inputPath) {
+  if (!inputPath) {
+    fail("path argument cannot be empty");
+  }
+  if (path.isAbsolute(inputPath)) {
+    return inputPath;
+  }
+  return path.resolve(workspaceRoot, inputPath);
+}
+
+function ensureReadableJson(filePath) {
+  if (!existsSync(filePath)) {
+    fail(`missing OpenAPI file: ${filePath}`);
+  }
+  try {
+    return JSON.parse(readFileSync(filePath, "utf8"));
+  } catch (error) {
+    fail(`invalid JSON in ${filePath}: ${error.message}`);
+  }
+}
+
+function maybeReadJson(filePath, label) {
+  if (!filePath) {
+    return null;
+  }
+  if (!existsSync(filePath)) {
+    return null;
+  }
+  try {
+    return JSON.parse(readFileSync(filePath, "utf8"));
+  } catch (error) {
+    fail(`invalid JSON in ${label}: ${error.message}`);
+  }
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function lowerInitial(value) {
+  if (!value) {
+    return value;
+  }
+  return `${value.charAt(0).toLowerCase()}${value.slice(1)}`;
+}
+
+function upperInitial(value) {
+  if (!value) {
+    return value;
+  }
+  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+}
+
+function normalizeTagName(tagName) {
+  const raw = String(tagName || "").trim();
+  if (!raw) {
+    return raw;
+  }
+
+  const words = raw
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .split(/[^A-Za-z0-9]+/)
+    .map((word) => word.trim())
+    .filter(Boolean);
+
+  if (words.length === 0) {
+    return raw;
+  }
+
+  return words
+    .map((word, index) => (index === 0 ? lowerInitial(word) : upperInitial(lowerInitial(word))))
+    .join("");
+}
+
+function normalizeOperationTags(document) {
+  const tagNameMap = new Map();
+
+  if (Array.isArray(document.tags)) {
+    for (const tag of document.tags) {
+      if (!tag || typeof tag !== "object" || typeof tag.name !== "string") {
+        continue;
+      }
+      const normalized = normalizeTagName(tag.name);
+      tagNameMap.set(tag.name, normalized);
+      tag.name = normalized;
+    }
+  }
+
+  for (const pathItem of Object.values(document.paths || {})) {
+    if (!pathItem || typeof pathItem !== "object") {
+      continue;
+    }
+    for (const [methodName, operation] of Object.entries(pathItem)) {
+      if (!HTTP_METHODS.has(methodName) || !operation || typeof operation !== "object") {
+        continue;
+      }
+      if (!Array.isArray(operation.tags)) {
+        continue;
+      }
+      operation.tags = operation.tags.map((tag) => {
+        const current = String(tag || "");
+        return tagNameMap.get(current) || normalizeTagName(current);
+      });
+    }
+  }
+}
+
+function problemDetailMediaType() {
+  return {
+    schema: {
+      $ref: "#/components/schemas/ProblemDetail",
+    },
+  };
+}
+
+function findContentKey(content, expectedMediaType) {
+  const expected = expectedMediaType.toLowerCase();
+  return Object.keys(content).find((key) => key.toLowerCase() === expected);
+}
+
+function normalizeErrorResponseContent(document) {
+  for (const pathItem of Object.values(document.paths || {})) {
+    if (!pathItem || typeof pathItem !== "object") {
+      continue;
+    }
+    for (const [methodName, operation] of Object.entries(pathItem)) {
+      if (!HTTP_METHODS.has(methodName) || !operation || typeof operation !== "object") {
+        continue;
+      }
+      for (const [statusCode, response] of Object.entries(operation.responses || {})) {
+        const numericStatus = Number(statusCode);
+        if (!Number.isFinite(numericStatus) || numericStatus < 400) {
+          continue;
+        }
+        if (!response || typeof response !== "object") {
+          continue;
+        }
+
+        const content =
+          response.content && typeof response.content === "object" ? response.content : {};
+        const problemKey = findContentKey(content, "application/problem+json");
+        if (problemKey) {
+          if (problemKey !== "application/problem+json") {
+            response.content = {
+              "application/problem+json": content[problemKey],
+              ...content,
+            };
+          }
+          continue;
+        }
+
+        const jsonKey = findContentKey(content, "application/json");
+        response.content = {
+          "application/problem+json": jsonKey ? content[jsonKey] : problemDetailMediaType(),
+          ...content,
+        };
+      }
+    }
+  }
+}
+
+function operationExclusionKey(method, pathKey) {
+  return `${method.toLowerCase()} ${pathKey}`;
+}
+
+function removeDependencyOwnedOperations(document, {
+  dependencyWorkspace,
+  dependencyAuthority,
+  exactOperationKeys = new Set(),
+  pathPrefixes = [],
+  schemaPrefixes = [],
+  tagNames = new Set(),
+}) {
+  const removed = [];
+  const paths = document.paths && typeof document.paths === "object" ? document.paths : {};
+  for (const [pathKey, pathItem] of Object.entries(paths)) {
+    if (!pathItem || typeof pathItem !== "object") {
+      continue;
+    }
+    for (const [methodName, operation] of Object.entries(pathItem)) {
+      if (!HTTP_METHODS.has(methodName.toLowerCase())) {
+        continue;
+      }
+      const key = operationExclusionKey(methodName, pathKey);
+      const matched = exactOperationKeys.has(key)
+        || pathPrefixes.some((prefix) => pathKey.startsWith(prefix));
+      if (!matched) {
+        continue;
+      }
+      removed.push({
+        method: methodName.toUpperCase(),
+        path: pathKey,
+        operationId: operation?.operationId ? String(operation.operationId) : "",
+        dependencyWorkspace,
+        apiAuthority: dependencyAuthority,
+      });
+      delete pathItem[methodName];
+    }
+    const remainingMethods = Object.keys(pathItem).filter((methodName) =>
+      HTTP_METHODS.has(methodName.toLowerCase()),
+    );
+    if (remainingMethods.length === 0) {
+      delete paths[pathKey];
+    }
+  }
+
+  if (document.components?.schemas && schemaPrefixes.length > 0) {
+    for (const schemaName of Object.keys(document.components.schemas)) {
+      if (schemaPrefixes.some((prefix) => schemaName.startsWith(prefix))) {
+        delete document.components.schemas[schemaName];
+      }
+    }
+  }
+
+  if (Array.isArray(document.tags) && tagNames.size > 0) {
+    document.tags = document.tags.filter((tag) => !tagNames.has(String(tag?.name || "")));
+  }
+
+  return removed;
+}
+
+function annotateOwnerOnlyOpenapi(document, { authority, dependencyExclusions = {} }) {
+  document["x-sdkwork-owner"] = SDK_OWNER;
+  document["x-sdkwork-api-authority"] = authority;
+  document.info = document.info || {};
+  document.info["x-sdkwork-owner"] = SDK_OWNER;
+  document.info["x-sdkwork-api-authority"] = authority;
+
+  const nonEmptyExclusions = Object.fromEntries(
+    Object.entries(dependencyExclusions).filter(([, operations]) => operations.length > 0),
+  );
+  if (Object.keys(nonEmptyExclusions).length > 0) {
+    document["x-sdkwork-dependency-exclusions"] = nonEmptyExclusions;
+  } else {
+    delete document["x-sdkwork-dependency-exclusions"];
+  }
+
+  for (const pathItem of Object.values(document.paths || {})) {
+    if (!pathItem || typeof pathItem !== "object") {
+      continue;
+    }
+    for (const [methodName, operation] of Object.entries(pathItem)) {
+      if (!HTTP_METHODS.has(methodName.toLowerCase()) || !operation || typeof operation !== "object") {
+        continue;
+      }
+      operation["x-sdkwork-owner"] = SDK_OWNER;
+      operation["x-sdkwork-api-authority"] = authority;
+    }
+  }
+}
+
+function ensureComponentContainer(document, componentName) {
+  document.components = document.components || {};
+  document.components[componentName] = document.components[componentName] || {};
+  return document.components[componentName];
+}
+
+function mergeSecuritySchemes(targetDocument, sourceDocument) {
+  const sourceSchemes = sourceDocument.components?.securitySchemes;
+  if (!sourceSchemes || typeof sourceSchemes !== "object") {
+    return;
+  }
+  const targetSchemes = ensureComponentContainer(targetDocument, "securitySchemes");
+  for (const [schemeName, scheme] of Object.entries(sourceSchemes)) {
+    targetSchemes[schemeName] = cloneJson(scheme);
+  }
+}
+
+function mergeTags(targetDocument, sourceDocument, tagNames) {
+  const existingNames = new Set(
+    Array.isArray(targetDocument.tags)
+      ? targetDocument.tags.map((tag) => String(tag?.name || ""))
+      : [],
+  );
+  targetDocument.tags = Array.isArray(targetDocument.tags) ? targetDocument.tags : [];
+  for (const tag of sourceDocument.tags || []) {
+    const tagName = String(tag?.name || "");
+    if (!tagNames.has(tagName) || existingNames.has(tagName)) {
+      continue;
+    }
+    targetDocument.tags.push(cloneJson(tag));
+    existingNames.add(tagName);
+  }
+  targetDocument.tags.sort((left, right) =>
+    String(left?.name || "").localeCompare(String(right?.name || "")),
+  );
+}
+
+function collectSchemaRefs(value, refs = new Set()) {
+  if (!value || typeof value !== "object") {
+    return refs;
+  }
+  if (typeof value.$ref === "string") {
+    const prefix = "#/components/schemas/";
+    if (value.$ref.startsWith(prefix)) {
+      refs.add(value.$ref.slice(prefix.length));
+    }
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectSchemaRefs(item, refs);
+    }
+    return refs;
+  }
+  for (const nested of Object.values(value)) {
+    collectSchemaRefs(nested, refs);
+  }
+  return refs;
+}
+
+function copyReferencedSchemas(targetDocument, sourceDocument, rootSchemaNames) {
+  const sourceSchemas = sourceDocument.components?.schemas;
+  if (!sourceSchemas || typeof sourceSchemas !== "object") {
+    return;
+  }
+  const targetSchemas = ensureComponentContainer(targetDocument, "schemas");
+  const queue = [...rootSchemaNames];
+  const copied = new Set();
+  while (queue.length > 0) {
+    const schemaName = queue.shift();
+    if (!schemaName || copied.has(schemaName)) {
+      continue;
+    }
+    const sourceSchema = sourceSchemas[schemaName];
+    if (!sourceSchema) {
+      continue;
+    }
+    targetSchemas[schemaName] = cloneJson(sourceSchema);
+    copied.add(schemaName);
+    for (const nestedName of collectSchemaRefs(sourceSchema)) {
+      if (!copied.has(nestedName)) {
+        queue.push(nestedName);
+      }
+    }
+  }
+}
+
+function removePathsByPrefix(document, pathPrefixes) {
+  if (!document.paths || typeof document.paths !== "object") {
+    return [];
+  }
+  const removed = [];
+  for (const pathKey of Object.keys(document.paths)) {
+    if (pathPrefixes.some((prefix) => pathKey === prefix || pathKey.startsWith(`${prefix}/`))) {
+      delete document.paths[pathKey];
+      removed.push(pathKey);
+    }
+  }
+  return removed;
+}
+
+function removeSchemasByName(document, schemaNames) {
+  const schemas = document.components?.schemas;
+  if (!schemas || typeof schemas !== "object") {
+    return [];
+  }
+  const removed = [];
+  for (const schemaName of schemaNames) {
+    if (schemas[schemaName]) {
+      delete schemas[schemaName];
+      removed.push(schemaName);
+    }
+  }
+  return removed;
+}
+
+function pruneUnreferencedSchemas(document) {
+  const schemas = document.components?.schemas;
+  if (!schemas || typeof schemas !== "object") {
+    return [];
+  }
+  const referenced = collectSchemaRefs(document.paths || {});
+  const queue = [...referenced];
+  while (queue.length > 0) {
+    const schemaName = queue.shift();
+    const schema = schemas[schemaName];
+    if (!schema) {
+      continue;
+    }
+    for (const nestedName of collectSchemaRefs(schema)) {
+      if (!referenced.has(nestedName)) {
+        referenced.add(nestedName);
+        queue.push(nestedName);
+      }
+    }
+  }
+  const removed = [];
+  for (const schemaName of Object.keys(schemas)) {
+    if (!referenced.has(schemaName)) {
+      delete schemas[schemaName];
+      removed.push(schemaName);
+    }
+  }
+  return removed;
+}
+
+function removeAppStorageAdminSurface(document) {
+  removePathsByPrefix(document, APP_STORAGE_ADMIN_PATH_PREFIXES);
+  removeSchemasByName(document, APP_STORAGE_ADMIN_SCHEMA_NAMES);
+  pruneUnreferencedSchemas(document);
+}
+
+function adminStoragePathFromBackendPath(pathKey) {
+  const providerPrefix = "/backend/v3/api/drive/storage_providers";
+  const bindingPath = "/backend/v3/api/drive/storage_provider_bindings/default";
+  if (pathKey === bindingPath) {
+    return "/admin/v3/api/drive/storage/bindings/default";
+  }
+  if (pathKey.startsWith(providerPrefix)) {
+    return pathKey.replace(
+      providerPrefix,
+      "/admin/v3/api/drive/storage/providers",
+    );
+  }
+  return null;
+}
+
+function deriveAdminStorageOpenapiFromBackend(backendDocument) {
+  const target = {
+    openapi: backendDocument.openapi || "3.1.0",
+    info: {
+      title: "SDKWork Drive Admin Storage API",
+      version: backendDocument.info?.version || "0.1.0",
+    },
+    servers: cloneJson(backendDocument.servers || [{ url: "/" }]),
+    tags: [
+      {
+        name: "storageAdmin",
+        description: "Drive storage administration resources.",
+        "x-sdk-nested-resource-surface": true,
+      },
+    ],
+    paths: {},
+    components: {
+      securitySchemes: cloneJson(backendDocument.components?.securitySchemes || {}),
+      schemas: {},
+    },
+  };
+
+  const rootSchemaNames = new Set();
+  for (const [pathKey, pathItem] of Object.entries(backendDocument.paths || {})) {
+    const adminPath = adminStoragePathFromBackendPath(pathKey);
+    if (!adminPath || !pathItem || typeof pathItem !== "object") {
+      continue;
+    }
+    target.paths[adminPath] = target.paths[adminPath] || {};
+    for (const [methodName, operation] of Object.entries(pathItem)) {
+      if (!HTTP_METHODS.has(methodName.toLowerCase()) || !operation || typeof operation !== "object") {
+        continue;
+      }
+      const adminOperation = cloneJson(operation);
+      adminOperation.tags = ["storageAdmin"];
+      target.paths[adminPath][methodName] = adminOperation;
+      for (const schemaName of collectSchemaRefs(adminOperation)) {
+        rootSchemaNames.add(schemaName);
+      }
+    }
+  }
+
+  if (Object.keys(target.paths).length === 0) {
+    fail("cannot derive admin storage OpenAPI: backend storage provider routes are missing");
+  }
+  copyReferencedSchemas(target, backendDocument, rootSchemaNames);
+  addAdminStorageBucketDiscoveryOpenapi(target);
+  addAdminStorageBindingManagementOpenapi(target);
+  return target;
+}
+
+function addAdminStorageBucketDiscoveryOpenapi(targetDocument) {
+  const schemas = ensureComponentContainer(targetDocument, "schemas");
+  schemas.ProviderBucketListItem = {
+    type: "object",
+    required: ["bucket", "configured"],
+    properties: {
+      bucket: {
+        type: "string",
+        minLength: 1,
+        maxLength: 255,
+      },
+      configured: {
+        type: "boolean",
+      },
+      creationDateEpochMs: {
+        type: "integer",
+        format: "int64",
+        minimum: 0,
+      },
+    },
+  };
+  schemas.ProviderBucketList = {
+    type: "object",
+    required: ["providerId", "configuredBucket", "items"],
+    properties: {
+      providerId: {
+        type: "string",
+        minLength: 1,
+        maxLength: 64,
+      },
+      configuredBucket: {
+        type: "string",
+        minLength: 1,
+        maxLength: 255,
+      },
+      items: {
+        type: "array",
+        items: {
+          $ref: "#/components/schemas/ProviderBucketListItem",
+        },
+      },
+    },
+  };
+  targetDocument.paths["/admin/v3/api/drive/storage/providers/{providerId}/buckets"] = {
+    get: {
+      tags: ["storageAdmin"],
+      summary: "List buckets visible to a Drive storage provider account",
+      operationId: "storageProviders.buckets.list",
+      parameters: [
+        {
+          name: "providerId",
+          in: "path",
+          required: true,
+          schema: { type: "string", minLength: 1, maxLength: 64 },
+        },
+      ],
+      responses: {
+        200: {
+          description: "Drive storage provider bucket list.",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/ProviderBucketList",
+              },
+            },
+          },
+        },
+        400: problemDetailResponse("Bad Request"),
+        404: problemDetailResponse("Not Found"),
+        409: problemDetailResponse("Conflict"),
+        500: problemDetailResponse("Internal Server Error"),
+      },
+      security: [{ AuthToken: [], AccessToken: [] }],
+    },
+  };
+}
+
+function addAdminStorageBindingManagementOpenapi(targetDocument) {
+  const schemas = ensureComponentContainer(targetDocument, "schemas");
+  schemas.StorageProviderBindingListResponse = {
+    type: "object",
+    required: ["items"],
+    properties: {
+      items: {
+        type: "array",
+        items: {
+          $ref: "#/components/schemas/StorageProviderBinding",
+        },
+      },
+    },
+  };
+  schemas.DeleteStorageProviderBindingResponse = {
+    type: "object",
+    required: ["deleted"],
+    properties: {
+      deleted: {
+        type: "boolean",
+      },
+    },
+  };
+
+  targetDocument.paths["/admin/v3/api/drive/storage/bindings"] = {
+    get: {
+      tags: ["storageAdmin"],
+      summary: "List Drive storage provider bindings",
+      operationId: "storageProviderBindings.list",
+      parameters: [
+        {
+          name: "tenantId",
+          in: "query",
+          required: true,
+          schema: { type: "string", minLength: 1, maxLength: 64 },
+        },
+        {
+          name: "spaceId",
+          in: "query",
+          required: false,
+          schema: { type: "string", minLength: 1, maxLength: 64 },
+        },
+        {
+          name: "providerId",
+          in: "query",
+          required: false,
+          schema: { type: "string", minLength: 1, maxLength: 64 },
+        },
+        {
+          name: "lifecycleStatus",
+          in: "query",
+          required: false,
+          schema: {
+            type: "string",
+            enum: ["active", "disabled", "deleted"],
+            default: "active",
+          },
+        },
+      ],
+      responses: {
+        200: {
+          description: "Drive storage provider bindings.",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/StorageProviderBindingListResponse",
+              },
+            },
+          },
+        },
+        400: problemDetailResponse("Bad Request"),
+        500: problemDetailResponse("Internal Server Error"),
+      },
+      security: [{ AuthToken: [], AccessToken: [] }],
+    },
+  };
+
+  targetDocument.paths["/admin/v3/api/drive/storage/bindings/default"] =
+    targetDocument.paths["/admin/v3/api/drive/storage/bindings/default"] || {};
+  targetDocument.paths["/admin/v3/api/drive/storage/bindings/default"].delete = {
+    tags: ["storageAdmin"],
+    summary: "Delete a Drive default storage provider binding",
+    operationId: "storageProviderBindings.default.delete",
+    parameters: [
+      {
+        name: "tenantId",
+        in: "query",
+        required: true,
+        schema: { type: "string", minLength: 1, maxLength: 64 },
+      },
+      {
+        name: "spaceId",
+        in: "query",
+        required: false,
+        schema: { type: "string", minLength: 1, maxLength: 64 },
+      },
+      {
+        name: "operatorId",
+        in: "query",
+        required: true,
+        description: OPERATOR_ID_DESCRIPTION,
+        schema: cloneJson(OPERATOR_ID_SCHEMA),
+      },
+    ],
+    responses: {
+      200: {
+        description: "Drive storage provider binding deletion result.",
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/DeleteStorageProviderBindingResponse",
+            },
+          },
+        },
+      },
+      400: problemDetailResponse("Bad Request"),
+      500: problemDetailResponse("Internal Server Error"),
+    },
+    security: [{ AuthToken: [], AccessToken: [] }],
+  };
+}
+
+function problemDetailResponse(description) {
+  return {
+    description,
+    content: {
+      "application/problem+json": problemDetailMediaType(),
+    },
+  };
+}
+
+function composeAppbaseIamAppOperations(targetDocument, sourceDocument) {
+  const existingOperationIds = new Set();
+  for (const pathItem of Object.values(targetDocument.paths || {})) {
+    if (!pathItem || typeof pathItem !== "object") {
+      continue;
+    }
+    for (const [methodName, operation] of Object.entries(pathItem)) {
+      if (!HTTP_METHODS.has(methodName.toLowerCase()) || !operation || typeof operation !== "object") {
+        continue;
+      }
+      existingOperationIds.add(String(operation.operationId || ""));
+    }
+  }
+  const missingOperationIds = [...APPBASE_APP_OPERATION_IDS].filter(
+    (operationId) => !existingOperationIds.has(operationId),
+  );
+  if (missingOperationIds.length === 0) {
+    return;
+  }
+  if (!sourceDocument) {
+    fail(`missing appbase app OpenAPI at ${APPBASE_APP_OPENAPI_PATH}; run sdkwork-appbase materializer or pass --appbase-app-input`);
+  }
+  const normalizedSource = normalizeOpenapiDocument(sourceDocument, "appbase app openapi");
+  const copiedOperationIds = new Set();
+  const copiedTags = new Set();
+  const rootSchemaNames = new Set();
+  for (const [pathKey, pathItem] of Object.entries(normalizedSource.paths || {})) {
+    if (!pathItem || typeof pathItem !== "object") {
+      continue;
+    }
+    for (const [methodName, operation] of Object.entries(pathItem)) {
+      if (!HTTP_METHODS.has(methodName.toLowerCase()) || !operation || typeof operation !== "object") {
+        continue;
+      }
+      if (!APPBASE_APP_OPERATION_IDS.has(String(operation.operationId || ""))) {
+        continue;
+      }
+      if (existingOperationIds.has(String(operation.operationId || ""))) {
+        continue;
+      }
+      if (targetDocument.paths?.[pathKey]?.[methodName]) {
+        fail(`cannot compose appbase IAM operation ${operation.operationId}: ${methodName.toUpperCase()} ${pathKey} already exists`);
+      }
+      targetDocument.paths = targetDocument.paths || {};
+      targetDocument.paths[pathKey] = targetDocument.paths[pathKey] || {};
+      const composedOperation = cloneJson(operation);
+      composedOperation["x-sdkwork-composed-from-owner"] =
+        operation["x-sdkwork-owner"] || "sdkwork-appbase";
+      composedOperation["x-sdkwork-composed-from-api-authority"] =
+        operation["x-sdkwork-api-authority"] || "sdkwork-appbase.app";
+      targetDocument.paths[pathKey][methodName] = composedOperation;
+      copiedOperationIds.add(String(operation.operationId));
+      for (const tagName of composedOperation.tags || []) {
+        copiedTags.add(String(tagName));
+      }
+      for (const schemaName of collectSchemaRefs(composedOperation)) {
+        rootSchemaNames.add(schemaName);
+      }
+    }
+  }
+  for (const operationId of missingOperationIds) {
+    if (!copiedOperationIds.has(operationId)) {
+      fail(`appbase app OpenAPI missing required IAM operationId: ${operationId}`);
+    }
+  }
+  mergeSecuritySchemes(targetDocument, normalizedSource);
+  mergeTags(targetDocument, normalizedSource, copiedTags);
+  copyReferencedSchemas(targetDocument, normalizedSource, rootSchemaNames);
+}
+
+function materializeOwnerOnlyOpenapi(document, {
+  authority,
+  dependencyExclusions = [],
+  composeAppbaseIam = false,
+  appbaseAppOpenapi = null,
+}) {
+  const normalized = normalizeOpenapiDocument(document, `${authority} openapi`);
+  const exclusionsByWorkspace = {};
+  for (const exclusion of dependencyExclusions) {
+    const removed = removeDependencyOwnedOperations(normalized, exclusion);
+    if (removed.length > 0) {
+      exclusionsByWorkspace[exclusion.dependencyWorkspace] = [
+        ...(exclusionsByWorkspace[exclusion.dependencyWorkspace] || []),
+        ...removed,
+      ];
+    }
+  }
+  if (authority === SDK_AUTHORITIES.app) {
+    removeAppStorageAdminSurface(normalized);
+  }
+  if (composeAppbaseIam) {
+    composeAppbaseIamAppOperations(normalized, appbaseAppOpenapi);
+  }
+  annotateOwnerOnlyOpenapi(normalized, {
+    authority,
+    dependencyExclusions: exclusionsByWorkspace,
+  });
+  return normalized;
+}
+
+function normalizeOpenapiDocument(document, label) {
+  if (!document || typeof document !== "object") {
+    fail(`${label} is not a JSON object`);
+  }
+  if (!document.openapi || !String(document.openapi).startsWith("3.1")) {
+    fail(`${label} must use OpenAPI 3.1.x`);
+  }
+  if (!document.info || typeof document.info !== "object") {
+    fail(`${label} missing info object`);
+  }
+
+  const normalized = cloneJson(document);
+  normalizeOperationTags(normalized);
+  normalizeErrorResponseContent(normalized);
+  normalizeStorageProviderSchemas(normalized);
+  normalizeStorageProviderBindingSchemas(normalized);
+  normalizeDriveSpaceTypeSchemas(normalized);
+  normalizeStorageCredentialRefSchemas(normalized);
+  normalizeObjectKeyContract(normalized);
+  normalizeUploaderUsageContextSchemas(normalized);
+  normalizeAdminStorageMutationOperatorContract(normalized);
+  return normalized;
+}
+
+function normalizeDriveSpaceTypeSchemas(document) {
+  const schemas = document.components?.schemas;
+  if (!schemas || typeof schemas !== "object") {
+    return;
+  }
+  const driveNode = schemas.DriveNode;
+  if (driveNode && typeof driveNode === "object") {
+    driveNode.properties =
+      driveNode.properties && typeof driveNode.properties === "object"
+        ? driveNode.properties
+        : {};
+    driveNode.properties.spaceType =
+      driveNode.properties.spaceType && typeof driveNode.properties.spaceType === "object"
+        ? driveNode.properties.spaceType
+        : {};
+    driveNode.required = Array.isArray(driveNode.required)
+      ? driveNode.required.filter((value, index, values) => values.indexOf(value) === index)
+      : [];
+    if (!driveNode.required.includes("spaceType")) {
+      driveNode.required.push("spaceType");
+    }
+  }
+  for (const schemaName of ["CreateSpaceRequest", "DriveSpace", "SpaceResponse", "DriveNode"]) {
+    const spaceType = schemas[schemaName]?.properties?.spaceType;
+    if (!spaceType || typeof spaceType !== "object") {
+      continue;
+    }
+    spaceType.type = "string";
+    spaceType.enum = [...DRIVE_SPACE_TYPE_ENUM];
+  }
+}
+
+function normalizeStorageProviderSchemas(document) {
+  const schemas = document.components?.schemas;
+  if (!schemas || typeof schemas !== "object") {
+    return;
+  }
+  for (const schemaName of ["CreateStorageProviderRequest", "StorageProvider"]) {
+    const providerKind = schemas[schemaName]?.properties?.providerKind;
+    if (!providerKind || typeof providerKind !== "object") {
+      continue;
+    }
+    providerKind.type = "string";
+    providerKind.enum = [...STORAGE_PROVIDER_KIND_ENUM];
+    providerKind.pattern = STORAGE_PROVIDER_KIND_PATTERN;
+  }
+  for (const schemaName of [
+    "CreateStorageProviderRequest",
+    "UpdateStorageProviderRequest",
+    "StorageProvider",
+  ]) {
+    const schema = schemas[schemaName];
+    if (!schema || typeof schema !== "object") {
+      continue;
+    }
+    schema.properties =
+      schema.properties && typeof schema.properties === "object" ? schema.properties : {};
+    schema.properties.strictTls = {
+      ...cloneJson(STORAGE_PROVIDER_STRICT_TLS_SCHEMA),
+      ...(schema.properties.strictTls || {}),
+    };
+  }
+  const storageProvider = schemas.StorageProvider;
+  if (storageProvider && typeof storageProvider === "object") {
+    storageProvider.required = Array.isArray(storageProvider.required)
+      ? storageProvider.required.filter((value, index, values) => values.indexOf(value) === index)
+      : [];
+    if (!storageProvider.required.includes("strictTls")) {
+      storageProvider.required.push("strictTls");
+    }
+  }
+}
+
+function normalizeStorageCredentialRefSchemas(document) {
+  const schemas = document.components?.schemas;
+  if (!schemas || typeof schemas !== "object") {
+    return;
+  }
+  for (const schemaName of [
+    "CreateStorageProviderRequest",
+    "UpdateStorageProviderRequest",
+    "RotateStorageProviderCredentialRequest",
+    "StorageProvider",
+  ]) {
+    const schema = schemas[schemaName];
+    if (!schema || typeof schema !== "object") {
+      continue;
+    }
+    schema.properties =
+      schema.properties && typeof schema.properties === "object" ? schema.properties : {};
+    if (!schema.properties.credentialRef) {
+      continue;
+    }
+    schema.properties.credentialRef = {
+      ...cloneJson(STORAGE_CREDENTIAL_REF_SCHEMA),
+      ...(schema.properties.credentialRef || {}),
+      description: STORAGE_CREDENTIAL_REF_DESCRIPTION,
+      pattern: STORAGE_CREDENTIAL_REF_PATTERN,
+      minLength: 1,
+      maxLength: 255,
+      type: "string",
+    };
+  }
+}
+
+function normalizeStorageProviderBindingSchemas(document) {
+  const schemas = document.components?.schemas;
+  if (!schemas || typeof schemas !== "object") {
+    return;
+  }
+  const bindingRequest = schemas.SetDefaultStorageProviderBindingRequest;
+  if (bindingRequest && typeof bindingRequest === "object") {
+    bindingRequest.properties =
+      bindingRequest.properties && typeof bindingRequest.properties === "object"
+        ? bindingRequest.properties
+        : {};
+    bindingRequest.properties.storageRootPrefix = cloneJson(STORAGE_ROOT_PREFIX_SCHEMA);
+  }
+
+  const binding = schemas.StorageProviderBinding;
+  if (binding && typeof binding === "object") {
+    binding.properties =
+      binding.properties && typeof binding.properties === "object"
+        ? binding.properties
+        : {};
+    binding.properties.storageRootPrefix = cloneJson(STORAGE_ROOT_PREFIX_SCHEMA);
+    binding.required = Array.isArray(binding.required)
+      ? binding.required.filter((value, index, values) => values.indexOf(value) === index)
+      : [];
+    if (!binding.required.includes("storageRootPrefix")) {
+      binding.required.push("storageRootPrefix");
+    }
+  }
+}
+
+function normalizeObjectKeyContract(document) {
+  normalizeObjectKeySchemas(document);
+  normalizeObjectKeyPathParameters(document);
+}
+
+function normalizeUploaderUsageContextSchemas(document) {
+  const schemas = document.components?.schemas;
+  if (!schemas || typeof schemas !== "object") {
+    return;
+  }
+  for (const schemaName of ["PrepareUploaderUploadRequest", "UploaderUploadItem", "DriveNode"]) {
+    const schema = schemas[schemaName];
+    if (!schema || typeof schema !== "object") {
+      continue;
+    }
+    schema.properties =
+      schema.properties && typeof schema.properties === "object" ? schema.properties : {};
+    for (const propertyName of ["scene", "source"]) {
+      schema.properties[propertyName] = {
+        ...cloneJson(USAGE_CONTEXT_SCHEMA),
+        ...(schema.properties[propertyName] || {}),
+      };
+    }
+    schema.required = Array.isArray(schema.required)
+      ? schema.required.filter((value) => value !== "scene" && value !== "source")
+      : [];
+  }
+
+  const prepareRequest = schemas.PrepareUploaderUploadRequest;
+  if (prepareRequest && typeof prepareRequest === "object") {
+    prepareRequest.properties =
+      prepareRequest.properties && typeof prepareRequest.properties === "object"
+        ? prepareRequest.properties
+        : {};
+    prepareRequest.properties.shareToken = {
+      ...cloneJson(UPLOADER_SHARE_TOKEN_SCHEMA),
+      ...(prepareRequest.properties.shareToken || {}),
+    };
+    prepareRequest.required = Array.isArray(prepareRequest.required)
+      ? prepareRequest.required.filter((value) => value !== "shareToken")
+      : [];
+  }
+}
+
+function normalizeObjectKeySchemas(document) {
+  const schemas = document.components?.schemas;
+  if (!schemas || typeof schemas !== "object") {
+    return;
+  }
+
+  const providerObjectKey = schemas.ProviderObject?.properties?.objectKey;
+  if (providerObjectKey && typeof providerObjectKey === "object") {
+    Object.assign(providerObjectKey, cloneJson(OBJECT_KEY_SCHEMA));
+  }
+
+  const copyRequestProperties = schemas.CopyProviderObjectRequest?.properties;
+  if (copyRequestProperties && typeof copyRequestProperties === "object") {
+    for (const propertyName of ["sourceObjectKey", "destinationObjectKey"]) {
+      const property = copyRequestProperties[propertyName];
+      if (property && typeof property === "object") {
+        Object.assign(property, cloneJson(OBJECT_KEY_SCHEMA));
+      }
+    }
+    if (
+      copyRequestProperties.destinationBucket &&
+      typeof copyRequestProperties.destinationBucket === "object"
+    ) {
+      Object.assign(copyRequestProperties.destinationBucket, cloneJson(S3_BUCKET_NAME_SCHEMA));
+    }
+  }
+}
+
+function normalizeObjectKeyPathParameters(document) {
+  for (const [pathKey, pathItem] of Object.entries(document.paths || {})) {
+    if (
+      !pathKey.includes("/storage_providers/{providerId}/objects/{objectKey}") &&
+      !pathKey.includes("/storage/providers/{providerId}/objects/{objectKey}")
+    ) {
+      continue;
+    }
+    for (const [methodName, operation] of Object.entries(pathItem || {})) {
+      if (!HTTP_METHODS.has(methodName.toLowerCase()) || !operation || typeof operation !== "object") {
+        continue;
+      }
+      for (const parameter of operation.parameters || []) {
+        if (parameter?.name !== "objectKey" || parameter?.in !== "path") {
+          continue;
+        }
+        parameter.description = OBJECT_KEY_PATH_DESCRIPTION;
+        parameter.schema = cloneJson(OBJECT_KEY_SCHEMA);
+        parameter.schema.description = OBJECT_KEY_DESCRIPTION;
+      }
+    }
+  }
+}
+
+function normalizeAdminStorageMutationOperatorContract(document) {
+  if (!document.paths?.["/admin/v3/api/drive/storage/providers/{providerId}/objects/copy"]) {
+    return;
+  }
+  ensureAdminStorageMutationQueryOperator(
+    document,
+    "/admin/v3/api/drive/storage/providers/{providerId}/bucket",
+    "put",
+  );
+  ensureAdminStorageMutationQueryOperator(
+    document,
+    "/admin/v3/api/drive/storage/providers/{providerId}/bucket",
+    "delete",
+  );
+  ensureAdminStorageMutationQueryOperator(
+    document,
+    "/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
+    "delete",
+  );
+  ensureAdminStorageMutationQueryOperator(
+    document,
+    "/admin/v3/api/drive/storage/bindings/default",
+    "delete",
+  );
+
+  const copyRequest = document.components?.schemas?.CopyProviderObjectRequest;
+  if (!copyRequest || typeof copyRequest !== "object") {
+    return;
+  }
+  copyRequest.properties = copyRequest.properties || {};
+  copyRequest.properties.operatorId = cloneJson(OPERATOR_ID_SCHEMA);
+  copyRequest.required = Array.isArray(copyRequest.required)
+    ? copyRequest.required.filter((value, index, values) => values.indexOf(value) === index)
+    : [];
+  if (!copyRequest.required.includes("operatorId")) {
+    copyRequest.required.push("operatorId");
+  }
+}
+
+function ensureAdminStorageMutationQueryOperator(document, pathKey, methodName) {
+  const operation = document.paths?.[pathKey]?.[methodName];
+  if (!operation || typeof operation !== "object") {
+    return;
+  }
+  operation.parameters = Array.isArray(operation.parameters)
+    ? operation.parameters
+    : [];
+  const existing = operation.parameters.find(
+    (parameter) => parameter?.in === "query" && parameter?.name === "operatorId",
+  );
+  const parameter = existing || {
+    name: "operatorId",
+    in: "query",
+  };
+  parameter.required = true;
+  parameter.description = OPERATOR_ID_DESCRIPTION;
+  parameter.schema = cloneJson(OPERATOR_ID_SCHEMA);
+  if (!existing) {
+    operation.parameters.push(parameter);
+  }
+}
+
+function parseArgs(argv) {
+  const parsed = {
+    check: false,
+    outputDir: generatedOpenapiDir,
+    openInput: defaultOpenOpenapiPath,
+    appInput: defaultAppOpenapiPath,
+    backendInput: defaultBackendOpenapiPath,
+    adminStorageInput: null,
+    appbaseAppInput: APPBASE_APP_OPENAPI_PATH,
+  };
+  for (let index = 0; index < argv.length; index += 1) {
+    const current = argv[index];
+    if (current === "--check") {
+      parsed.check = true;
+      continue;
+    }
+    if (current === "--open-input") {
+      parsed.openInput = resolveWorkspacePath(argv[index + 1] || "");
+      index += 1;
+      continue;
+    }
+    if (current === "--app-input") {
+      parsed.appInput = resolveWorkspacePath(argv[index + 1] || "");
+      index += 1;
+      continue;
+    }
+    if (current === "--backend-input") {
+      parsed.backendInput = resolveWorkspacePath(argv[index + 1] || "");
+      index += 1;
+      continue;
+    }
+    if (current === "--admin-storage-input") {
+      parsed.adminStorageInput = resolveWorkspacePath(argv[index + 1] || "");
+      index += 1;
+      continue;
+    }
+    if (current === "--appbase-app-input") {
+      parsed.appbaseAppInput = resolveWorkspacePath(argv[index + 1] || "");
+      index += 1;
+      continue;
+    }
+    if (current === "--output-dir") {
+      parsed.outputDir = resolveWorkspacePath(argv[index + 1] || "");
+      index += 1;
+      continue;
+    }
+    fail(`unknown argument: ${current}`);
+  }
+  return parsed;
+}
+
+const args = parseArgs(process.argv.slice(2));
+const appbaseAppOpenapi = maybeReadJson(args.appbaseAppInput, args.appbaseAppInput);
+const openOpenapi = materializeOwnerOnlyOpenapi(ensureReadableJson(args.openInput), {
+  authority: SDK_AUTHORITIES.open,
+});
+const appOpenapi = materializeOwnerOnlyOpenapi(ensureReadableJson(args.appInput), {
+  authority: SDK_AUTHORITIES.app,
+  composeAppbaseIam: true,
+  appbaseAppOpenapi,
+});
+const backendOpenapi = materializeOwnerOnlyOpenapi(ensureReadableJson(args.backendInput), {
+  authority: SDK_AUTHORITIES.backend,
+  dependencyExclusions: [
+    {
+      dependencyWorkspace: "sdkwork-appbase-backend-sdk",
+      dependencyAuthority: "sdkwork-appbase.backend",
+      pathPrefixes: APPBASE_BACKEND_PATH_PREFIXES,
+      schemaPrefixes: APPBASE_SCHEMA_PREFIXES,
+      tagNames: APPBASE_TAGS,
+    },
+  ],
+});
+const adminStorageInputOpenapi = maybeReadJson(args.adminStorageInput, args.adminStorageInput);
+const adminStorageOpenapi = materializeOwnerOnlyOpenapi(
+  adminStorageInputOpenapi || deriveAdminStorageOpenapiFromBackend(backendOpenapi),
+  {
+    authority: SDK_AUTHORITIES.adminStorage,
+  },
+);
+
+if (!args.check) {
+  mkdirSync(args.outputDir, { recursive: true });
+  writeFileSync(
+    path.join(args.outputDir, "drive-open-api.openapi.json"),
+    `${JSON.stringify(openOpenapi, null, 2)}\n`,
+    "utf8",
+  );
+  writeFileSync(
+    path.join(args.outputDir, "drive-app-api.openapi.json"),
+    `${JSON.stringify(appOpenapi, null, 2)}\n`,
+    "utf8",
+  );
+  writeFileSync(
+    path.join(args.outputDir, "drive-backend-api.openapi.json"),
+    `${JSON.stringify(backendOpenapi, null, 2)}\n`,
+    "utf8",
+  );
+  writeFileSync(
+    path.join(args.outputDir, "drive-admin-storage-api.openapi.json"),
+    `${JSON.stringify(adminStorageOpenapi, null, 2)}\n`,
+    "utf8",
+  );
+}
+
+process.stdout.write("[drive_openapi_export] ok\n");

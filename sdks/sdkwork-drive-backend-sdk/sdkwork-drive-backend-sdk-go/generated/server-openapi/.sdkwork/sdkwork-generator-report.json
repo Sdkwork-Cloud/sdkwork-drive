@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "artifacts": {
+    "stateDir": ".sdkwork",
+    "manifestPath": ".sdkwork/sdkwork-generator-manifest.json",
+    "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
+    "executionReportPath": ".sdkwork/sdkwork-generator-report.json",
+    "manualBackupDir": ".sdkwork/manual-backups"
+  },
+  "status": "ok",
+  "mode": "apply",
+  "hasChanges": false,
+  "hasDestructiveChanges": false,
+  "changeFingerprint": "aa14a8189647ea70dcddfe569d29897e053dc764dcd4d1bf6cabe3df4ba0bee7",
+  "changeImpact": {
+    "schemaVersion": 1,
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+  },
+  "executionDecision": {
+    "schemaVersion": 1,
+    "riskLevel": "low",
+    "nextAction": "skip",
+    "requiresManualReview": false,
+    "applyRequiresExpectedFingerprint": false,
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "reasons": [
+      "no-actionable-changes"
+    ]
+  },
+  "executionHandoff": {
+    "schemaVersion": 1,
+    "summary": "No further commands are required.",
+    "steps": []
+  },
+  "verificationPlan": {
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
+  },
+  "sdk": {
+    "name": "sdkwork-drive-backend-sdk",
+    "version": "0.1.0",
+    "language": "go",
+    "sdkType": "backend",
+    "outputPath": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-go\\generated\\server-openapi",
+    "packageName": "sdkwork-drive-backend-sdk-generated-go"
+  },
+  "versioning": {
+    "resolvedVersion": "0.1.0",
+    "localVersions": []
+  },
+  "stats": {
+    "totalFiles": 56,
+    "models": 36,
+    "apis": 2,
+    "types": 0
+  },
+  "warnings": [],
+  "syncSummary": {
+    "dryRun": false,
+    "writtenFiles": 0,
+    "skippedScaffoldFiles": 1,
+    "skippedUnchangedGeneratedFiles": 55,
+    "deletedGeneratedFiles": 0,
+    "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
+    "changeFingerprint": "aa14a8189647ea70dcddfe569d29897e053dc764dcd4d1bf6cabe3df4ba0bee7",
+    "changes": {
+      "createdGeneratedFiles": [],
+      "updatedGeneratedFiles": [],
+      "unchangedGeneratedFiles": [
+        "api/base.go",
+        "api/doc.go",
+        "api/drive.go",
+        "api/labels.go",
+        "api/paths.go",
+        "bin/publish-core.mjs",
+        "bin/publish.ps1",
+        "bin/publish.sh",
+        "CHANGELOG.md",
+        "doc.go",
+        "go.mod",
+        "http/client.go",
+        "http/doc.go",
+        "LICENSE",
+        "README.md",
+        "sdk.go",
+        "sdkwork-sdk.json",
+        "types/audit_event_page.go",
+        "types/audit_event.go",
+        "types/common.go",
+        "types/copy_provider_object_request.go",
+        "types/create_label_request.go",
+        "types/create_storage_provider_request.go",
+        "types/delete_label_response.go",
+        "types/delete_storage_provider_response.go",
+        "types/doc.go",
+        "types/download_package_page.go",
+        "types/download_package.go",
+        "types/drive_label.go",
+        "types/drive_space.go",
+        "types/label_list_response.go",
+        "types/list_spaces_response.go",
+        "types/list_storage_providers_response.go",
+        "types/maintenance_job_page.go",
+        "types/maintenance_job.go",
+        "types/operator_request.go",
+        "types/problem_detail.go",
+        "types/provider_bucket_mutation.go",
+        "types/provider_bucket.go",
+        "types/provider_object_list.go",
+        "types/provider_object_mutation.go",
+        "types/provider_object.go",
+        "types/quota_summary.go",
+        "types/rotate_storage_provider_credential_request.go",
+        "types/set_default_storage_provider_binding_request.go",
+        "types/storage_provider_binding.go",
+        "types/storage_provider_capabilities.go",
+        "types/storage_provider.go",
+        "types/sweep_object_store_request.go",
+        "types/sweep_response.go",
+        "types/sweep_upload_sessions_request.go",
+        "types/test_storage_provider_request.go",
+        "types/test_storage_provider_response.go",
+        "types/update_label_request.go",
+        "types/update_storage_provider_request.go"
+      ],
+      "deletedGeneratedFiles": [],
+      "scaffoldedFiles": [],
+      "preservedScaffoldFiles": [
+        "custom/README.md"
+      ],
+      "backedUpFiles": []
+    },
+    "impact": {
+      "schemaVersion": 1,
+      "areas": [],
+      "details": [],
+      "requiresVerification": false,
+      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+    },
+    "verificationPlan": {
+      "shouldRun": false,
+      "runPhase": "skip",
+      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+      "steps": []
+    },
+    "executionDecision": {
+      "schemaVersion": 1,
+      "riskLevel": "low",
+      "nextAction": "skip",
+      "requiresManualReview": false,
+      "applyRequiresExpectedFingerprint": false,
+      "summary": "No actionable changes were detected. No apply or verification step is required.",
+      "reasons": [
+        "no-actionable-changes"
+      ]
+    },
+    "backedUpFiles": [],
+    "preservedLegacyFiles": false
+  }
+}

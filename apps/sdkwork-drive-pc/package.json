@@ -1,0 +1,60 @@
+{
+  "name": "sdkwork-drive-pc",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5183 --strictPort",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "desktop:dev": "pnpm --filter sdkwork-drive-pc-desktop desktop:dev",
+    "desktop:build:local": "pnpm --filter sdkwork-drive-pc-desktop desktop:build:local"
+  },
+  "dependencies": {
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "react-router-dom": "^7.17.0",
+    "@sdkwork/appbase-app-sdk": "workspace:*",
+    "@sdkwork/appbase-pc-react": "workspace:*",
+    "@sdkwork/auth-pc-react": "workspace:*",
+    "@sdkwork/auth-runtime-pc-react": "workspace:*",
+    "@sdkwork/drive-app-sdk": "workspace:*",
+    "@sdkwork/drive-admin-storage-sdk": "workspace:*",
+    "@sdkwork/i18n-pc-react": "workspace:*",
+    "@sdkwork/ui-pc-react": "workspace:*",
+    "sdkwork-drive-pc-types": "workspace:*",
+    "sdkwork-drive-pc-commons": "workspace:*",
+    "sdkwork-drive-pc-file": "workspace:*",
+    "sdkwork-drive-pc-transfer": "workspace:*",
+    "sdkwork-drive-pc-core": "workspace:*",
+    "sdkwork-drive-pc-admin-storage-providers": "workspace:*"
+  },
+  "peerDependencies": {
+    "@sdkwork/appbase-app-sdk": "*",
+    "@sdkwork/appbase-pc-react": "*",
+    "@sdkwork/auth-pc-react": "*"
+  },
+  "peerDependenciesMeta": {
+    "@sdkwork/appbase-app-sdk": {
+      "optional": true
+    },
+    "@sdkwork/appbase-pc-react": {
+      "optional": true
+    },
+    "@sdkwork/auth-pc-react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.14",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "autoprefixer": "^10.4.21",
+    "tailwindcss": "^4.1.14",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3",
+    "vitest": "^3.2.6"
+  }
+}

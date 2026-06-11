@@ -1,0 +1,373 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+const testDir = path.dirname(fileURLToPath(import.meta.url));
+const sdkRoot = path.resolve(testDir, "..");
+const sdkName = "sdkwork-drive-app-sdk";
+const apiPrefix = "/app/v3/api";
+const languages = ["typescript", "rust", "java", "python", "go"];
+const requiredOperations = [
+  "spaces.list",
+  "spaces.create",
+  "spaces.get",
+  "spaces.update",
+  "spaces.delete",
+  "nodes.files.create",
+  "nodes.shortcuts.create",
+  "nodes.get",
+  "nodes.path.get",
+  "nodes.capabilities.get",
+  "nodeProperties.list",
+  "nodeProperties.set",
+  "nodeProperties.delete",
+  "nodeLabels.list",
+  "nodeLabels.apply",
+  "nodeLabels.remove",
+  "nodes.move",
+  "nodes.copy",
+  "nodes.delete",
+  "nodes.downloadUrls.create",
+  "archiveEntries.list",
+  "archiveEntries.extract",
+  "trash.empty",
+  "trash.list",
+  "recent.list",
+  "sharedWithMe.list",
+  "favorites.list",
+  "favorites.set",
+  "favorites.delete",
+  "quotas.summary",
+  "uploadSessions.get",
+  "uploader.uploads.prepare",
+  "uploader.uploads.parts.markUploaded",
+  "uploadSessions.parts.presign",
+  "uploadSessions.complete",
+  "uploadSessions.abort",
+  "changes.startPageToken.get",
+  "changes.watch",
+  "nodes.watch",
+  "watchChannels.list",
+  "watchChannels.get",
+  "watchChannels.stop",
+  "permissions.get",
+  "permissions.update",
+  "permissions.effective.list",
+  "shareLinks.get",
+  "shareLinks.list",
+  "shareLinks.update",
+  "comments.list",
+  "comments.create",
+  "comments.get",
+  "comments.update",
+  "comments.delete",
+  "commentReplies.list",
+  "commentReplies.create",
+  "commentReplies.get",
+  "commentReplies.update",
+  "commentReplies.delete",
+  "versions.get",
+  "versions.delete",
+];
+const forbiddenStorageAdminOperations = [
+  "storageProviders.list",
+  "storageProviders.create",
+  "storageProviders.get",
+  "storageProviders.update",
+  "storageProviders.delete",
+  "storageProviders.test",
+  "storageProviders.capabilities.get",
+  "storageProviders.activate",
+  "storageProviders.deactivate",
+  "storageProviders.credentials.rotate",
+  "storageProviders.bucket.head",
+  "storageProviders.bucket.create",
+  "storageProviders.bucket.delete",
+  "storageProviders.objects.list",
+  "storageProviders.objects.head",
+  "storageProviders.objects.delete",
+  "storageProviders.objects.copy",
+  "storageProviderBindings.default.get",
+  "storageProviderBindings.default.set",
+];
+const forbiddenStorageAdminSchemas = [
+  "CopyProviderObjectRequest",
+  "CreateStorageProviderRequest",
+  "DeleteStorageProviderResponse",
+  "ListStorageProvidersResponse",
+  "OperatorRequest",
+  "ProviderBucket",
+  "ProviderBucketMutation",
+  "ProviderObject",
+  "ProviderObjectList",
+  "ProviderObjectMutation",
+  "RotateStorageProviderCredentialRequest",
+  "SetDefaultStorageProviderBindingRequest",
+  "StorageProvider",
+  "StorageProviderBinding",
+  "StorageProviderCapabilities",
+  "TestStorageProviderRequest",
+  "TestStorageProviderResponse",
+  "UpdateStorageProviderRequest",
+];
+const forbiddenAppbaseAppOperations = [
+  "oauthAuthorizationUrls.retrieve",
+  "oauthSessions.create",
+  "passwordResetRequests.create",
+  "passwordResets.create",
+  "registrations.create",
+  "sessions.create",
+  "sessions.current.delete",
+  "sessions.current.retrieve",
+  "sessions.current.update",
+  "sessions.refresh",
+  "verificationCodes.create",
+  "verificationCodes.verify",
+  "qrAuth.sessions.create",
+  "qrAuth.sessions.retrieve",
+  "qrAuth.sessions.scans.create",
+  "qrAuth.sessions.passwords.create",
+  "iam.runtime.retrieve",
+  "iam.verificationPolicy.retrieve",
+  "users.current.retrieve",
+];
+const forbiddenAppbaseTags = ["auth", "iam", "openPlatform", "system"];
+const forbiddenAppbaseSchemas = ["AppbaseApiResult", "AppbaseOperationCommand"];
+
+function collectPathOperationIds(openapi) {
+  const operationIds = [];
+  for (const pathItem of Object.values(openapi.paths || {})) {
+    for (const [method, operation] of Object.entries(pathItem || {})) {
+      if (!["get", "put", "post", "patch", "delete", "head", "options", "trace"].includes(method)) {
+        continue;
+      }
+      if (operation?.operationId) {
+        operationIds.push(String(operation.operationId));
+      }
+    }
+  }
+  return operationIds;
+}
+
+test("sdkwork-drive-app-sdk uses sdkwork-v3 profile", () => {
+  const source = readFileSync(path.join(sdkRoot, "bin/generate-sdk.mjs"), "utf8");
+  assert.match(source, /--standard-profile/);
+  assert.match(source, /sdkwork-v3/);
+});
+
+test("sdkwork-drive-app-sdk records family metadata outside generated output for every official language", () => {
+  const manifest = JSON.parse(readFileSync(path.join(sdkRoot, "sdk-manifest.json"), "utf8"));
+  assert.equal(manifest.sdkName, sdkName);
+  assert.equal(manifest.apiPrefix, apiPrefix);
+  assert.equal(manifest.standardProfile, "sdkwork-v3");
+  assert.ok(
+    manifest.ownerOnlyOperationCount >= 72,
+    "family manifest should include the completed app drive operation surface",
+  );
+  assert.equal(manifest.sdkOwner, "sdkwork-drive");
+  assert.equal(manifest.apiAuthority, "sdkwork-drive.app");
+  assert.deepEqual(
+    manifest.sdkDependencies?.map((dependency) => ({
+      workspace: dependency.workspace,
+      apiAuthority: dependency.apiAuthority,
+      dependencyMode: dependency.dependencyMode,
+      generatedTransportImportPolicy: dependency.generatedTransportImportPolicy,
+    })),
+    [
+      {
+        workspace: "sdkwork-appbase-app-sdk",
+        apiAuthority: "sdkwork-appbase.app",
+        dependencyMode: "consumer-sdk",
+        generatedTransportImportPolicy: "forbidden",
+      },
+    ],
+  );
+
+  for (const language of languages) {
+    const generatedOutput = `${sdkName}-${language}/generated/server-openapi`;
+    assert.deepEqual(
+      manifest.generatedPackages?.[language],
+      {
+        language,
+        packageName: `${sdkName}-generated-${language}`,
+        generatedOutput,
+      },
+      `${language} family manifest must record the generated package`,
+    );
+    assert.equal(
+      existsSync(path.join(sdkRoot, generatedOutput, "sdk-manifest.json")),
+      false,
+      `${language} generated output must not carry SDK ownership manifest`,
+    );
+
+    const sourceOpenapi = JSON.parse(readFileSync(
+      path.join(
+        sdkRoot,
+        `${sdkName}-${language}`,
+        "generated/server-openapi/source-openapi.json",
+      ),
+      "utf8",
+    ));
+    const generatedOperationIds = collectPathOperationIds(sourceOpenapi);
+    const generatedTags = (sourceOpenapi.tags || []).map((tag) => String(tag.name || ""));
+    for (const operationId of requiredOperations) {
+      assert(
+        generatedOperationIds.includes(operationId),
+        `${language} generated source OpenAPI should include ${operationId}`,
+      );
+    }
+    for (const operationId of forbiddenAppbaseAppOperations) {
+      assert(
+        !generatedOperationIds.includes(operationId),
+        `${language} generated source OpenAPI must consume appbase IAM operation ${operationId} through sdkDependencies`,
+      );
+    }
+    for (const operationId of forbiddenStorageAdminOperations) {
+      assert(
+        !generatedOperationIds.includes(operationId),
+        `${language} generated source OpenAPI must not expose storage administration operation ${operationId}`,
+      );
+    }
+    for (const tagName of forbiddenAppbaseTags) {
+      assert(
+        !generatedTags.includes(tagName),
+        `${language} generated source OpenAPI must not expose appbase tag ${tagName}`,
+      );
+    }
+    for (const schemaName of forbiddenAppbaseSchemas) {
+      assert(
+        !sourceOpenapi.components?.schemas?.[schemaName],
+        `${language} generated source OpenAPI must not expose appbase schema ${schemaName}`,
+      );
+    }
+    for (const schemaName of forbiddenStorageAdminSchemas) {
+      assert(
+        !sourceOpenapi.components?.schemas?.[schemaName],
+        `${language} generated source OpenAPI must not expose storage administration schema ${schemaName}`,
+      );
+    }
+  }
+});
+
+test("sdkwork-drive-app-sdk composed TypeScript operations include completed drive operations", () => {
+  const source = readFileSync(
+    path.join(
+      sdkRoot,
+      "sdkwork-drive-app-sdk-typescript",
+      "composed/operations.ts",
+    ),
+    "utf8",
+  );
+  for (const operationId of requiredOperations) {
+    assert.match(source, new RegExp(`"${operationId.replace(".", "\\.")}"`));
+  }
+  for (const operationId of forbiddenAppbaseAppOperations) {
+    assert.doesNotMatch(source, new RegExp(`"${operationId.replace(".", "\\.")}"`));
+  }
+  for (const operationId of forbiddenStorageAdminOperations) {
+    assert.doesNotMatch(source, new RegExp(`"${operationId.replace(".", "\\.")}"`));
+  }
+});
+
+test("sdkwork-drive-app-sdk composed TypeScript exposes high-level uploader client", () => {
+  const composedRoot = path.join(sdkRoot, "sdkwork-drive-app-sdk-typescript", "composed");
+  const uploaderEntry = path.join(composedRoot, "uploader/index.ts");
+  const uploaderClient = path.join(composedRoot, "uploader/uploaderClient.ts");
+  const uploaderTypes = path.join(composedRoot, "uploader/types.ts");
+  const uploadPlanner = path.join(composedRoot, "uploader/uploadPlanner.ts");
+  const uploadStateStore = path.join(composedRoot, "uploader/uploadStateStore.ts");
+
+  for (const filePath of [
+    uploaderEntry,
+    uploaderClient,
+    uploaderTypes,
+    uploadPlanner,
+    uploadStateStore,
+  ]) {
+    assert.equal(existsSync(filePath), true, `${path.basename(filePath)} should exist`);
+  }
+
+  const clientSource = readFileSync(uploaderClient, "utf8");
+  for (const methodName of [
+    "upload(",
+    "uploadVideo(",
+    "uploadImage(",
+    "uploadAudio(",
+    "uploadDocument(",
+    "uploadArchive(",
+    "uploadText(",
+    "uploadDataset(",
+    "uploadAttachment(",
+    "uploadAvatar(",
+    "uploadThumbnail(",
+  ]) {
+    assert.match(clientSource, new RegExp(methodName.replace("(", "\\(")));
+  }
+  assert.match(clientSource, /uploader\.uploads\.prepare/);
+  assert.match(clientSource, /shareToken:\s*normalized\.shareToken/);
+  assert.match(clientSource, /uploadSessions\.parts\.presign/);
+  assert.match(clientSource, /uploader\.uploads\.parts\.markUploaded/);
+  assert.match(clientSource, /uploadSessions\.complete/);
+
+  const entrySource = readFileSync(uploaderEntry, "utf8");
+  assert.match(entrySource, /createDriveUploaderClient/);
+  assert.match(entrySource, /createInMemoryUploaderStateStore/);
+});
+
+test("sdkwork-drive-app-sdk generated TypeScript does not carry ownership metadata", () => {
+  const source = readFileSync(
+    path.join(
+      sdkRoot,
+      "sdkwork-drive-app-sdk-typescript",
+      "generated/server-openapi/src/index.ts",
+    ),
+    "utf8",
+  );
+  assert.doesNotMatch(source, /sdkMetadata/);
+  assert.doesNotMatch(source, /sdkDependencies/);
+});
+
+test("sdkwork-drive-app-sdk generated TypeScript exposes a real client surface", () => {
+  const source = readFileSync(
+    path.join(
+      sdkRoot,
+      "sdkwork-drive-app-sdk-typescript",
+      "generated/server-openapi/src/index.ts",
+    ),
+    "utf8",
+  );
+  assert.match(source, /createClient/);
+  assert.match(source, /export \* from ['"]\.\/api['"]/);
+});
+
+test("sdkwork-drive-app-sdk generated TypeScript exposes DriveNode usage context", () => {
+  const source = readFileSync(
+    path.join(
+      sdkRoot,
+      "sdkwork-drive-app-sdk-typescript",
+      "generated/server-openapi/src/types/drive-node.ts",
+    ),
+    "utf8",
+  );
+  assert.match(source, /scene\?: string/);
+  assert.match(source, /source\?: string/);
+});
+
+test("sdkwork-drive-app-sdk generated TypeScript does not export appbase dependency models", () => {
+  const typeIndex = readFileSync(
+    path.join(
+      sdkRoot,
+      "sdkwork-drive-app-sdk-typescript",
+      "generated/server-openapi/src/types/index.ts",
+    ),
+    "utf8",
+  );
+  for (const schemaName of forbiddenAppbaseSchemas) {
+    assert.doesNotMatch(typeIndex, new RegExp(schemaName));
+  }
+  for (const schemaName of forbiddenStorageAdminSchemas) {
+    assert.doesNotMatch(typeIndex, new RegExp(schemaName));
+  }
+});

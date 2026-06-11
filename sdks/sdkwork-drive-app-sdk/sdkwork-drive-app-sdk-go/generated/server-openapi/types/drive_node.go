@@ -1,0 +1,16 @@
+package types
+
+
+type DriveNode struct {
+	Id string `json:"id"`
+	TenantId string `json:"tenantId"`
+	SpaceId string `json:"spaceId"`
+	ParentNodeId string `json:"parentNodeId"`
+	NodeType string `json:"nodeType"`
+	NodeName string `json:"nodeName"`
+	LifecycleStatus string `json:"lifecycleStatus"`
+	Version int `json:"version"`
+	ShortcutTargetNodeId string `json:"shortcutTargetNodeId"`
+	Scene string `json:"scene"`
+	Source string `json:"source"`
+}

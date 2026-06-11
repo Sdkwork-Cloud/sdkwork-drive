@@ -1,0 +1,14 @@
+package types
+
+
+type DriveShareLink struct {
+	Id string `json:"id"`
+	TenantId string `json:"tenantId"`
+	NodeId string `json:"nodeId"`
+	Role string `json:"role"`
+	ExpiresAtEpochMs int `json:"expiresAtEpochMs"`
+	DownloadLimit int `json:"downloadLimit"`
+	DownloadCount int `json:"downloadCount"`
+	LifecycleStatus string `json:"lifecycleStatus"`
+	Version int `json:"version"`
+}

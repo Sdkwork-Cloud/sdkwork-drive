@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-admin-storage-sdk",
+    "version": "0.1.0",
+    "language": "go",
+    "sdkType": "custom",
+    "packageName": "sdkwork-drive-admin-storage-sdk-generated-go"
+  },
+  "generatedFiles": [
+    {
+      "path": "api/base.go",
+      "sha256": "833b0d8166ef868c8d4112e3f9f92951f5e17ded3d9836736b1722b02c33ed81"
+    },
+    {
+      "path": "api/doc.go",
+      "sha256": "78e6fbaa7eadbb53f2c772c7683b97d1c24ace1592f95675572a6e62128b6955"
+    },
+    {
+      "path": "api/drive.go",
+      "sha256": "24b499e978b8c1d30c707cc01d17faa1169dd4723657a455e512fc149fe11324"
+    },
+    {
+      "path": "api/paths.go",
+      "sha256": "a26f322595c1229aa83a2c9ddb59de781488f3e4df624d0c3f4fd488222d5e03"
+    },
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "b86912c73f0f0e62915246690fbb006213bcaf7e612729a59403d5893903e003"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "bb05183d134a4057090fcc04e51d2e06d191d43a3e5e133f9451bd7552a961d7"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "doc.go",
+      "sha256": "e5719359e391e53fb81f47ffa0b016e608aaac65f875cc16de9a8b26827524ac"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "9015c3274d24b4ee0a197606cc420160ec70737a748cf1c03de9630f0d49e76a"
+    },
+    {
+      "path": "http/client.go",
+      "sha256": "8eb80a7718afbcbe5f83dcee1c4e5be529a8bba1707204e79d583dfe79a959c6"
+    },
+    {
+      "path": "http/doc.go",
+      "sha256": "c10cde7f73279702bb79338f1801b8e2be7fd630801d81673fb75977dffebc22"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "README.md",
+      "sha256": "a2750aeaad7223c8047cd47b42d1d201b710481f6b37823cf0dbad7b7dbb763d"
+    },
+    {
+      "path": "sdk.go",
+      "sha256": "d703f733e68757424336a2d23130a81122b5e186e80b8c878ab78c9afe8a7494"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "92b546334b7dd000b52c4c50241a9cfb1c78835c11ff7c2df1cf8a1b68d13afd"
+    },
+    {
+      "path": "types/common.go",
+      "sha256": "6e7e501a9c98d11b736cae0ee81c729da6273ebdb0fb0f2c15a0b13d6bce47c0"
+    },
+    {
+      "path": "types/copy_provider_object_request.go",
+      "sha256": "577a7aed4ab0bfd9464d0550932f22950b0785a05200cfe0cb2494d456b0ed60"
+    },
+    {
+      "path": "types/create_storage_provider_request.go",
+      "sha256": "0f07f024ba6904e9bd35db168c571f7d26be1ecc3bb90fd7640c859a37ef4dfb"
+    },
+    {
+      "path": "types/delete_storage_provider_binding_response.go",
+      "sha256": "b9df94498e3222ee816da8746b7a9436008ea901c1fa2ceaeb049ee5dd03d165"
+    },
+    {
+      "path": "types/delete_storage_provider_response.go",
+      "sha256": "0350ac3fa9eb5c4ee976328c8091e320452efd963a6e1870ab17c3ca6e7dec7c"
+    },
+    {
+      "path": "types/doc.go",
+      "sha256": "184ccb754c9d8815dd4e0621451171de7b3c00deed52befcb96ac65606907d47"
+    },
+    {
+      "path": "types/list_storage_providers_response.go",
+      "sha256": "7a9b8a077a47770b0264882e19a068f3825950e634358152ab46da4fb61963da"
+    },
+    {
+      "path": "types/operator_request.go",
+      "sha256": "9c8386626d55132489973ef60000941f7ebc4cc1715d98e2b7adf9ebe99b5dba"
+    },
+    {
+      "path": "types/problem_detail.go",
+      "sha256": "c9f6433fc4f77e2d5d7ef4b7e29b520c75e3fc03b609aad63211255a9a77dc72"
+    },
+    {
+      "path": "types/provider_bucket_list_item.go",
+      "sha256": "c3906d0fcdace6cf6e3562de9115e96fadd8b1d1d45c3fe54fd56840a343d19d"
+    },
+    {
+      "path": "types/provider_bucket_list.go",
+      "sha256": "221a8a960fabbf3389dffeeb52792b01e57f9ce4cfbb82b4a828d39df788c313"
+    },
+    {
+      "path": "types/provider_bucket_mutation.go",
+      "sha256": "f41289a7e51a3a7a1817cedc232acde04de84b35bc76ff906d71036bfe19b879"
+    },
+    {
+      "path": "types/provider_bucket.go",
+      "sha256": "ff73361c4dbe11a7ea3304d83f201ae086a99abf6f667e7f2a8d86b72bede5a3"
+    },
+    {
+      "path": "types/provider_object_list.go",
+      "sha256": "5aeb83ad0541327e0102eaf2a578617696e5fa732a6018fa0f9514a953d49b21"
+    },
+    {
+      "path": "types/provider_object_mutation.go",
+      "sha256": "d68798278bec24696a26da337ddcd0b9d81c9e650da7234a75a0bc7fb2442f33"
+    },
+    {
+      "path": "types/provider_object.go",
+      "sha256": "a42cd47eb3d24c1d71346514fd7cdb2e930d11ce29467dbc30f87d452597a455"
+    },
+    {
+      "path": "types/rotate_storage_provider_credential_request.go",
+      "sha256": "af96845525b164a6643aa0a35253afee3a7b717f171938c87d7530a6ac0ca391"
+    },
+    {
+      "path": "types/set_default_storage_provider_binding_request.go",
+      "sha256": "3162fd8b11bd7c1e31a16f3bfedeabc3837d13bf906fb3fad618a6c6da96dafb"
+    },
+    {
+      "path": "types/storage_provider_binding_list_response.go",
+      "sha256": "de8f67e98d6846f3eff97095e5c59c6b9984edba6ae177c1f6758c866b5258ae"
+    },
+    {
+      "path": "types/storage_provider_binding.go",
+      "sha256": "fe8045eae9d044cd7cd60330ad2c2f7271a5f5ed8d992fde0305c72a823aa958"
+    },
+    {
+      "path": "types/storage_provider_capabilities.go",
+      "sha256": "41935f3e39a271f7b1e5a4fc93d210803f5f1200bae91ecd740f8b33c90d5f62"
+    },
+    {
+      "path": "types/storage_provider.go",
+      "sha256": "5eb59d46b97c958e2b13a5063432fecf50e594d7b3b804e16cc85c94e67732de"
+    },
+    {
+      "path": "types/test_storage_provider_request.go",
+      "sha256": "66749768f4e3006de57b8fabfea3108907fa6bde620d4bbe0198211fc8351aa9"
+    },
+    {
+      "path": "types/test_storage_provider_response.go",
+      "sha256": "14292a1ed7296953abe71686af4e65d642cacb5260e0dfc4c456b91c1e54da61"
+    },
+    {
+      "path": "types/update_storage_provider_request.go",
+      "sha256": "19fb80acd12061abdc4fda890b50ed99791f31874ef69de9c4a3c5311ded07af"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

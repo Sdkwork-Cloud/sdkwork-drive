@@ -1,0 +1,6 @@
+[package]
+name = "sdkwork-drive-test-support"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

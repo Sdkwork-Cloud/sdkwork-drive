@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-sdk",
+    "version": "0.1.0",
+    "language": "python",
+    "sdkType": "custom",
+    "packageName": "sdkwork-drive-sdk-generated-python"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "b383d4f7233b567acd36fa2ff644448730007738901cf1770cb02746f88fbb05"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "6fd65ff5011e48b24018ab691edd8803c4b1fd293d013b75d1adb3bcd26f7cde"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "MANIFEST.in",
+      "sha256": "e7b7a2a1eaae04b6186934924ec5f009c040a7e6404ea740079fae78fadcd7bd"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "ae88508a43e62c7752be0883df587c065cbdd18c2bdd2ec61b0a4ea6ee9e2173"
+    },
+    {
+      "path": "README.md",
+      "sha256": "7db10e916b393ce1186e6d3bec9edad0cb331c1f1a22258dd2cd9b90481804de"
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "5f3072c051f89b9af1b681381406e0b2466895fb150660d583c85c84396001c8"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/__init__.py",
+      "sha256": "9af4020bc886c38cb040a98dc814c72f64c19bbcc3c54d3acb73d343bfb6a450"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/api/__init__.py",
+      "sha256": "61f7ca1771c78f693de5e20350787caf434b9647ced55085551da1262102d4b1"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/api/drive.py",
+      "sha256": "c27903be34835879129e75efd1806240c244244b800a9e4d742e9f878bbdb35a"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/client.py",
+      "sha256": "71a9b348044fc4b3dc199eff378811648ca4559788b6f2cf85431df1ff3e8466"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/http_client.py",
+      "sha256": "2f2d56fa537b032e1eee8825f89944b6ff78d919e5a1c684d21325cfcc7bc398"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/models/__init__.py",
+      "sha256": "d66026423f7a970969f1941f3047c03f45e4eb60ee7e8521d0278d43ff37b3d5"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/models/create_open_download_url_request.py",
+      "sha256": "50d7f1e951442a7b2fe33dbf2aff21de32f124b4946633d16ec2e569f6c449e3"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/models/drive_open_share_link.py",
+      "sha256": "efbcbb86b7fce9b3834492b6271b0f9bdeac75eced980ac140605501b0bf6a1d"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/models/open_download_url_response.py",
+      "sha256": "c17e549250b5f6e71ff7f3a52648985f31573cbb91316b6d8dba46d835264772"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/models/open_node.py",
+      "sha256": "bf8e4e17cbd0e53fb444cf31cd7fcdcccf8074557eea1298ebe10d051528ba4c"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/models/problem_detail.py",
+      "sha256": "1a33811e7ef22f28e8cba9c0b1e040e787ee8119ab0a0ab95d0f8773c16288bd"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "8809aaf690213c823ea8f57422c1bf78113bcf9055ebe9272e702dc28c591112"
+    },
+    {
+      "path": "setup.py",
+      "sha256": "843ac26c38a41abae578250bc0f9419194b320a0f67327d941037a4268f6cfe7"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

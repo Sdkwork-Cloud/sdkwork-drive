@@ -1,0 +1,5 @@
+identifier = "default"
+description = "Allow narrow SDKWork Drive desktop host capabilities."
+commands.allow = [
+  "window_control"
+]

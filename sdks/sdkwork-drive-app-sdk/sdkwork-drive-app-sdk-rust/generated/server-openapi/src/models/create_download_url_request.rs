@@ -1,0 +1,14 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CreateDownloadUrlRequest {
+    #[serde(rename = "tenantId")]
+    pub tenant_id: String,
+
+    #[serde(rename = "nodeId")]
+    pub node_id: String,
+
+    #[serde(rename = "requestedTtlSeconds")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requested_ttl_seconds: Option<i64>,
+}

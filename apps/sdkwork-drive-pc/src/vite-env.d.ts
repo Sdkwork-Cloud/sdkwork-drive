@@ -1,0 +1,20 @@
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_DRIVE_PC_ENVIRONMENT?: string;
+  readonly VITE_DRIVE_PC_CONFIG_PROFILE?: string;
+  readonly VITE_DRIVE_PC_BUILD_MODE?: string;
+  readonly VITE_DRIVE_PC_DEPLOYMENT_MODE?: string;
+  readonly VITE_DRIVE_PC_RUNTIME_TARGET?: string;
+  readonly VITE_DRIVE_PC_APP_API_BASE_URL?: string;
+  readonly VITE_DRIVE_PC_BACKEND_API_BASE_URL?: string;
+  readonly VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL?: string;
+  readonly VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL?: string;
+  readonly VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL?: string;
+  readonly VITE_DRIVE_PC_TOKEN_MANAGER_MODE?: string;
+  readonly VITE_DRIVE_PC_TOKEN_STORAGE?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}

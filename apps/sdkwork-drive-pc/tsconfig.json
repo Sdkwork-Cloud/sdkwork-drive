@@ -1,0 +1,113 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "module": "ESNext",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "sdkwork-drive-pc-types": [
+        "./packages/sdkwork-drive-pc-types/src"
+      ],
+      "sdkwork-drive-pc-commons": [
+        "./packages/sdkwork-drive-pc-commons/src"
+      ],
+      "sdkwork-drive-pc-file": [
+        "./packages/sdkwork-drive-pc-file/src"
+      ],
+      "sdkwork-drive-pc-transfer": [
+        "./packages/sdkwork-drive-pc-transfer/src"
+      ],
+      "sdkwork-drive-pc-core": [
+        "./packages/sdkwork-drive-pc-core/src"
+      ],
+      "sdkwork-drive-pc-admin-storage-providers": [
+        "./packages/sdkwork-drive-pc-admin-storage-providers/src"
+      ],
+      "sdkwork-drive-pc-core/config/runtimeConfig": [
+        "./packages/sdkwork-drive-pc-core/src/config/runtimeConfig.ts"
+      ],
+      "sdkwork-drive-pc-core/session/sessionStore": [
+        "./packages/sdkwork-drive-pc-core/src/session/sessionStore.ts"
+      ],
+      "react": [
+        "./node_modules/@types/react/index.d.ts"
+      ],
+      "react-dom": [
+        "./node_modules/@types/react-dom/index.d.ts"
+      ],
+      "react/jsx-runtime": [
+        "./node_modules/@types/react/jsx-runtime.d.ts"
+      ],
+      "react/jsx-dev-runtime": [
+        "./node_modules/@types/react/jsx-dev-runtime.d.ts"
+      ],
+      "react-router-dom": [
+        "./node_modules/react-router-dom/dist/index.d.ts"
+      ],
+      "@sdkwork/appbase-pc-react": [
+        "../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react/src/index.ts"
+      ],
+      "@sdkwork/auth-pc-react": [
+        "./src/bootstrap/sdkworkAuthPcReactShim.d.ts"
+      ],
+      "@sdkwork/appbase-app-sdk": [
+        "../../../sdkwork-appbase/sdks/sdkwork-appbase-app-sdk/sdkwork-appbase-app-sdk-typescript/generated/server-openapi/src/index.ts"
+      ],
+      "@sdkwork/appbase-backend-sdk": [
+        "../../../sdkwork-appbase/sdks/sdkwork-appbase-backend-sdk/sdkwork-appbase-backend-sdk-typescript/generated/server-openapi/src/index.ts"
+      ],
+      "@sdkwork/auth-runtime-pc-react": [
+        "../../../sdkwork-appbase/packages/pc-react/iam/sdkwork-auth-runtime-pc-react/src/index.ts"
+      ],
+      "@sdkwork/drive-app-sdk": [
+        "../../sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/src/index.ts"
+      ],
+      "@sdkwork/drive-admin-storage-sdk": [
+        "../../sdks/sdkwork-drive-admin-storage-sdk/sdkwork-drive-admin-storage-sdk-typescript/src/index.ts"
+      ],
+      "@sdkwork/core-pc-react": [
+        "./src/bootstrap/sdkworkCorePcReactShim.ts"
+      ],
+      "@sdkwork/i18n-pc-react": [
+        "../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react/src/index.ts"
+      ],
+      "@sdkwork/iam-contracts": [
+        "../../../sdkwork-appbase/packages/common/iam/sdkwork-iam-contracts/src/index.ts"
+      ],
+      "@sdkwork/iam-runtime": [
+        "../../../sdkwork-appbase/packages/common/iam/sdkwork-iam-runtime/src/index.ts"
+      ],
+      "@sdkwork/iam-sdk-ports": [
+        "../../../sdkwork-appbase/packages/common/iam/sdkwork-iam-sdk-ports/src/index.ts"
+      ],
+      "@sdkwork/iam-service": [
+        "../../../sdkwork-appbase/packages/common/iam/sdkwork-iam-service/src/index.ts"
+      ],
+      "@sdkwork/runtime-bootstrap": [
+        "../../../sdkwork-appbase/packages/common/foundation/sdkwork-runtime-bootstrap/src/index.ts"
+      ],
+      "@sdkwork/sdk-common": [
+        "../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/src/index.ts"
+      ],
+      "@sdkwork/ui-pc-react": [
+        "../../../sdkwork-ui/sdkwork-ui-pc-react/src/index.ts"
+      ]
+    },
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  }
+}

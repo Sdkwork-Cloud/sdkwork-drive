@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "2026-06-06.sdkwork.workflow.v1",
+  "app": {
+    "id": "sdkwork-drive",
+    "name": "SDKWork Drive",
+    "repository": "Sdkwork-Cloud/sdkwork-drive",
+    "sourcePath": ".",
+    "configPath": "sdkwork.app.config.json"
+  },
+  "release": {
+    "artifactPrefix": "sdkwork-drive",
+    "defaultVersion": "0.1.0",
+    "changelog": {
+      "source": "auto",
+      "maxCommitSubjects": 50
+    }
+  },
+  "dependencies": [
+    {
+      "id": "sdkwork-appbase",
+      "repository": "Sdkwork-Cloud/sdkwork-appbase",
+      "ref": "b74a1413d387c803b524df96dc150fb02ce8c25f",
+      "refInput": "SDKWORK_APPBASE_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-ui",
+      "repository": "Sdkwork-Cloud/sdkwork-ui",
+      "ref": "e2dea9c788f93c3a59d25c1791c7bb8c0ad0bb38",
+      "refInput": "SDKWORK_UI_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-sdk-commons",
+      "repository": "Sdkwork-Cloud/sdkwork-sdk-commons",
+      "ref": "c9adc5a02fed0d9ce70ab719e5d2155ed40676da",
+      "refInput": "SDKWORK_SDK_COMMONS_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-sdk-generator",
+      "repository": "Sdkwork-Cloud/sdkwork-sdk-generator",
+      "ref": "0b0e984ffbdec49a28c2da3edebcdddab4087e62",
+      "refInput": "SDKWORK_SDK_GENERATOR_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    }
+  ],
+  "toolchains": {
+    "node": "22",
+    "pnpm": "10.33.0",
+    "rust": "stable"
+  },
+  "lifecycle": {
+    "install": [
+      {
+        "name": "Install workspace dependencies",
+        "shell": "pwsh",
+        "run": "pnpm install --no-frozen-lockfile"
+      }
+    ],
+    "build": [
+      {
+        "name": "Run SDKWork Drive contract checks",
+        "shell": "pwsh",
+        "run": "pnpm run check:dependency-management\npnpm run check:drive-pc-standard\npnpm run check:drive-package-standard"
+      }
+    ],
+    "package": [
+      {
+        "name": "Write package evidence manifest",
+        "shell": "pwsh",
+        "run": "$ErrorActionPreference = \"Stop\"\nNew-Item -ItemType Directory -Force -Path \"artifacts/release\" | Out-Null\n$manifest = [ordered]@{\n  appId = $env:SDKWORK_APP_ID\n  packageId = $env:SDKWORK_PACKAGE_ID\n  packageVersion = $env:SDKWORK_PACKAGE_VERSION\n  targetId = $env:SDKWORK_PACKAGE_TARGET_ID\n  dependencyWorkspace = \"..\"\n}\n$manifest | ConvertTo-Json -Depth 5 | Set-Content -Path \"artifacts/release/sdkwork-drive-$env:SDKWORK_PACKAGE_ID.json\" -Encoding utf8"
+      }
+    ],
+    "validate": [
+      {
+        "name": "Validate package evidence",
+        "shell": "pwsh",
+        "run": "$ErrorActionPreference = \"Stop\"\nif (-not (Test-Path \"artifacts/release/sdkwork-drive-$env:SDKWORK_PACKAGE_ID.json\")) {\n  throw \"Missing package evidence manifest for $env:SDKWORK_PACKAGE_ID\"\n}"
+      }
+    ]
+  },
+  "targets": [
+    {
+      "id": "linux-x64-server-tar-gz",
+      "profile": "server",
+      "platform": "linux",
+      "architecture": "x64",
+      "formats": ["tar.gz"],
+      "runner": "ubuntu-24.04",
+      "outputGlobs": ["artifacts/release/**/*"]
+    }
+  ],
+  "security": {
+    "artifactAttestations": true,
+    "sbomRequired": false,
+    "signingRequired": false
+  },
+  "publish": {
+    "workflowArtifact": true,
+    "githubRelease": false,
+    "retentionDays": 30
+  }
+}

@@ -1,0 +1,94 @@
+use crate::dto::DriveNodeResponse;
+use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail};
+use crate::mappers::map_node_row;
+use crate::space_repository::validate_space_exists;
+use axum::http::StatusCode;
+use axum::Json;
+use sqlx::AnyPool;
+use std::collections::{BTreeSet, VecDeque};
+
+pub(crate) async fn find_node(
+    pool: &AnyPool,
+    tenant_id: &str,
+    node_id: &str,
+) -> Result<DriveNodeResponse, (StatusCode, Json<ProblemDetail>)> {
+    let row = sqlx::query(
+        "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, node_type, node_name, scene, source, lifecycle_status, version
+         FROM dr_drive_node
+         WHERE tenant_id=$1 AND id=$2 AND lifecycle_status != 'deleted'",
+    )
+    .bind(tenant_id)
+    .bind(node_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(internal_sql_error("find dr_drive_node failed"))?;
+    let Some(row) = row else {
+        return Err(not_found_problem("node not found"));
+    };
+    Ok(map_node_row(&row))
+}
+
+pub(crate) async fn find_active_node(
+    pool: &AnyPool,
+    tenant_id: &str,
+    node_id: &str,
+) -> Result<DriveNodeResponse, (StatusCode, Json<ProblemDetail>)> {
+    let node = find_node(pool, tenant_id, node_id).await?;
+    if node.lifecycle_status != "active" {
+        return Err(not_found_problem("node not found"));
+    }
+    validate_space_exists(pool, tenant_id, &node.space_id).await?;
+    Ok(node)
+}
+
+pub(crate) async fn collect_node_subtree(
+    pool: &AnyPool,
+    tenant_id: &str,
+    root: &DriveNodeResponse,
+) -> Result<Vec<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let mut nodes = vec![root.clone()];
+    let mut queue = VecDeque::from([(root.id.clone(), 0_usize)]);
+    let mut visited = BTreeSet::from([root.id.clone()]);
+
+    while let Some((parent_id, depth)) = queue.pop_front() {
+        if depth > 128 {
+            return Err(problem(
+                StatusCode::CONFLICT,
+                "conflict",
+                "node hierarchy exceeds maximum lifecycle depth",
+                "drive.conflict",
+            ));
+        }
+
+        let rows = sqlx::query(
+            "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id,
+                    node_type, node_name, scene, source, lifecycle_status, version
+             FROM dr_drive_node
+             WHERE tenant_id=$1
+               AND parent_node_id=$2
+               AND lifecycle_status != 'deleted'
+             ORDER BY node_type ASC, node_name ASC, id ASC",
+        )
+        .bind(tenant_id)
+        .bind(&parent_id)
+        .fetch_all(pool)
+        .await
+        .map_err(internal_sql_error("collect dr_drive_node subtree failed"))?;
+
+        for row in rows {
+            let child = map_node_row(&row);
+            if !visited.insert(child.id.clone()) {
+                return Err(problem(
+                    StatusCode::CONFLICT,
+                    "conflict",
+                    "node hierarchy contains a cycle",
+                    "drive.conflict",
+                ));
+            }
+            queue.push_back((child.id.clone(), depth + 1));
+            nodes.push(child);
+        }
+    }
+
+    Ok(nodes)
+}

@@ -1,0 +1,13 @@
+[package]
+name = "sdkwork-drive-storage-opendal"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait = "0.1"
+http = "1.4"
+opendal = { version = "0.57.0", default-features = false, features = ["services-s3", "reqwest-rustls-tls", "executors-tokio"] }
+sdkwork-drive-storage-contract.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

@@ -1,0 +1,141 @@
+import {
+  createGeneratedDriveAdminStorageClient,
+  operations,
+  sdkMetadata,
+} from '@sdkwork/drive-admin-storage-sdk';
+import type { DriveRuntimeConfig } from '../config/runtimeConfig';
+import type { DriveSessionTokenManager } from '../session/sessionTokenManager';
+import {
+  buildGeneratedSdkPath,
+  compactQuery,
+  normalizeGeneratedSdkBaseUrl,
+  normalizeGeneratedSdkError,
+  type TokenManagerAwareGeneratedSdkClient,
+} from './generatedSdkTransport';
+
+export type DriveAdminStorageOperationId = keyof typeof operations;
+
+export interface DriveAdminStorageSdkRequest {
+  operationId: DriveAdminStorageOperationId;
+  pathParams?: Record<string, string | number>;
+  query?: Record<string, string | number | boolean | undefined>;
+  body?: unknown;
+  signal?: AbortSignal;
+}
+
+export interface DriveAdminStorageSdkClient {
+  metadata: typeof sdkMetadata;
+  operations: typeof operations;
+  request<T>(request: DriveAdminStorageSdkRequest): Promise<T>;
+  setTokenManager(manager: DriveSessionTokenManager): void;
+}
+
+export interface DriveAdminStorageSdkClientOptions {
+  config: DriveRuntimeConfig;
+  sdkClient?: TokenManagerAwareGeneratedSdkClient;
+  tokenManager: DriveSessionTokenManager;
+}
+
+export class DriveAdminStorageSdkError extends Error {
+  readonly operationId: DriveAdminStorageOperationId;
+  readonly status: number;
+  readonly title?: string;
+  readonly detail?: string;
+  readonly code?: string;
+  readonly traceId?: string;
+  readonly requestId?: string;
+
+  constructor({
+    operationId,
+    status,
+    title,
+    detail,
+    code,
+    traceId,
+    requestId,
+  }: {
+    operationId: DriveAdminStorageOperationId;
+    status: number;
+    title?: string;
+    detail?: string;
+    code?: string;
+    traceId?: string;
+    requestId?: string;
+  }) {
+    super(detail || title || `Drive Admin Storage API ${operationId} failed with HTTP ${status}`);
+    this.name = 'DriveAdminStorageSdkError';
+    this.operationId = operationId;
+    this.status = status;
+    this.title = title;
+    this.detail = detail;
+    this.code = code;
+    this.traceId = traceId;
+    this.requestId = requestId;
+  }
+}
+
+function buildSdkError(
+  operationId: DriveAdminStorageOperationId,
+  error: unknown,
+): DriveAdminStorageSdkError {
+  const details = normalizeGeneratedSdkError(error);
+  return new DriveAdminStorageSdkError({
+    operationId,
+    status: details.status,
+    title: details.title,
+    detail: details.detail,
+    code: details.code,
+    traceId: details.traceId,
+    requestId: details.requestId,
+  });
+}
+
+export function createDriveAdminStorageSdkClient({
+  config,
+  sdkClient,
+  tokenManager,
+}: DriveAdminStorageSdkClientOptions): DriveAdminStorageSdkClient {
+  const generatedClient = sdkClient ?? createGeneratedDriveAdminStorageClient({
+    authMode: 'dual-token',
+    baseUrl: normalizeGeneratedSdkBaseUrl(
+      config.adminStorageApiBaseUrl,
+      sdkMetadata.apiPrefix,
+    ),
+    tokenManager,
+  }) as TokenManagerAwareGeneratedSdkClient;
+  generatedClient.setTokenManager(tokenManager);
+
+  return {
+    metadata: {
+      ...sdkMetadata,
+      baseUrl: config.adminStorageApiBaseUrl,
+    },
+    operations,
+    async request<T>({
+      operationId,
+      pathParams,
+      query,
+      body,
+      signal,
+    }: DriveAdminStorageSdkRequest): Promise<T> {
+      const operation = operations[operationId];
+      try {
+        return await generatedClient.http.request<T>(
+          buildGeneratedSdkPath(operation.path, pathParams),
+          {
+            method: operation.method,
+            params: compactQuery(query),
+            body,
+            contentType: body === undefined ? undefined : 'application/json',
+            signal,
+          },
+        );
+      } catch (error) {
+        throw buildSdkError(operationId, error);
+      }
+    },
+    setTokenManager(manager: DriveSessionTokenManager) {
+      generatedClient.setTokenManager(manager);
+    },
+  };
+}

@@ -1,0 +1,33 @@
+{
+  "name": "sdkwork-drive-pc-core",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./config/runtimeConfig": {
+      "import": "./src/config/runtimeConfig.ts",
+      "types": "./src/config/runtimeConfig.ts"
+    },
+    "./session/sessionStore": {
+      "import": "./src/session/sessionStore.ts",
+      "types": "./src/session/sessionStore.ts"
+    }
+  },
+  "dependencies": {
+    "@sdkwork/drive-admin-storage-sdk": "workspace:*",
+    "@sdkwork/drive-app-sdk": "workspace:*",
+    "sdkwork-drive-pc-types": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit --project ../../tsconfig.json"
+  }
+}

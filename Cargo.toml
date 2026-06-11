@@ -1,0 +1,43 @@
+[workspace]
+members = [
+    "crates/sdkwork-drive-contract",
+    "crates/sdkwork-drive-core",
+    "crates/sdkwork-drive-config",
+    "crates/sdkwork-drive-http",
+    "crates/sdkwork-drive-security",
+    "crates/sdkwork-drive-observability",
+    "crates/sdkwork-drive-storage-contract",
+    "crates/sdkwork-drive-storage-local",
+    "crates/sdkwork-drive-storage-opendal",
+    "crates/sdkwork-drive-storage-s3",
+    "crates/sdkwork-drive-test-support",
+    "services/sdkwork-drive-product",
+    "services/sdkwork-drive-open-api",
+    "services/sdkwork-drive-app-api",
+    "services/sdkwork-drive-admin-storage-api",
+    "services/sdkwork-drive-backend-api",
+    "services/sdkwork-drive-installer",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+
+[workspace.dependencies]
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
+toml = "0.8"
+
+# SDKWork workspace members - declared once at workspace root
+sdkwork-drive-contract = { path = "crates/sdkwork-drive-contract" }
+sdkwork-drive-config = { path = "crates/sdkwork-drive-config" }
+sdkwork-drive-observability = { path = "crates/sdkwork-drive-observability" }
+sdkwork-drive-product = { path = "services/sdkwork-drive-product" }
+sdkwork-drive-security = { path = "crates/sdkwork-drive-security" }
+sdkwork-drive-storage-contract = { path = "crates/sdkwork-drive-storage-contract" }
+sdkwork-drive-storage-opendal = { path = "crates/sdkwork-drive-storage-opendal" }
+sdkwork-drive-storage-s3 = { path = "crates/sdkwork-drive-storage-s3" }
+sdkwork_id = { path = "../sdkwork-appbase/packages/native-rust/foundation/sdkwork-id-rust" }

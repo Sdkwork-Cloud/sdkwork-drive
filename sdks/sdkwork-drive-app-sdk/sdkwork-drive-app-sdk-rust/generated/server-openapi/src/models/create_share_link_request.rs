@@ -1,0 +1,25 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CreateShareLinkRequest {
+    pub id: String,
+
+    #[serde(rename = "tenantId")]
+    pub tenant_id: String,
+
+    pub token: String,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+
+    #[serde(rename = "expiresAtEpochMs")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at_epoch_ms: Option<i64>,
+
+    #[serde(rename = "downloadLimit")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub download_limit: Option<i64>,
+
+    #[serde(rename = "operatorId")]
+    pub operator_id: String,
+}

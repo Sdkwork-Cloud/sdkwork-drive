@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-sdk",
+    "version": "0.1.0",
+    "language": "go",
+    "sdkType": "custom",
+    "packageName": "sdkwork-drive-sdk-generated-go"
+  },
+  "generatedFiles": [
+    {
+      "path": "api/base.go",
+      "sha256": "18b009fb533e6995e44559f5522e1aaadf74822bc02598b91e8e6bdcca648d01"
+    },
+    {
+      "path": "api/doc.go",
+      "sha256": "79ca63ecc1958a1e3bfdea2393f8525cc697f93e8b4141e254148d37057db671"
+    },
+    {
+      "path": "api/drive.go",
+      "sha256": "b71ecba11ca2b33ea8d64779e965b674fe8508ea5260af53f694677ebc682272"
+    },
+    {
+      "path": "api/paths.go",
+      "sha256": "c3137d139b843c6e72af14e94632f006822aa84f3818a3b5de77db3caf44d07d"
+    },
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "b86912c73f0f0e62915246690fbb006213bcaf7e612729a59403d5893903e003"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "bb05183d134a4057090fcc04e51d2e06d191d43a3e5e133f9451bd7552a961d7"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "doc.go",
+      "sha256": "e59f2170c33f527828f00f5ecb2447f174c96e33f11a7f7a7a4e421f9a38cc59"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "f38a8c184c10570c68432c371b7b0c6fd893e5fb8a9ed270c1abd3dfa718dc00"
+    },
+    {
+      "path": "http/client.go",
+      "sha256": "ac5f01ef342d75a462f6290495c4351fe1147cfd7ae988dd388f9fbd969949b5"
+    },
+    {
+      "path": "http/doc.go",
+      "sha256": "c5eba59eb1e01f2a186c4a852ac66e07d7702eed1e560560be49ab9eba8651a6"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "README.md",
+      "sha256": "3a3943d47ebf0a41d2e693c870e865ae92297e6c63336302ebfe4592612c3fb0"
+    },
+    {
+      "path": "sdk.go",
+      "sha256": "328eca1e9ee6e0716a9e7af12d17e2c5a7798b1d1fd1d8d8e205f13a188cb69c"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "befd7656bd5a151d1e0c15e340fc68ef84d2659312a8fdf790acb1fc1d81125e"
+    },
+    {
+      "path": "types/common.go",
+      "sha256": "6e7e501a9c98d11b736cae0ee81c729da6273ebdb0fb0f2c15a0b13d6bce47c0"
+    },
+    {
+      "path": "types/create_open_download_url_request.go",
+      "sha256": "190fa4ff097c7b6a079046f95f0870edbf2ef124b18a5effff62d56ed0461b42"
+    },
+    {
+      "path": "types/doc.go",
+      "sha256": "b952d5836ff5091648a311b4cb8aa0f0b6519622c9726d6ae22b0f9b67f18161"
+    },
+    {
+      "path": "types/drive_open_share_link.go",
+      "sha256": "253b40d505aa9d0a1c295836e75eef563f0b2de55e08fb78e1a9cea57dbd8402"
+    },
+    {
+      "path": "types/open_download_url_response.go",
+      "sha256": "f539b7d81f2443100313723006af9da9b924f2c9f1cfd43756f47d24c0d30ba6"
+    },
+    {
+      "path": "types/open_node.go",
+      "sha256": "d6392be84b52c950167b969f6a8e4d2737678e16179ef28d8e90c70e03b1b3f0"
+    },
+    {
+      "path": "types/problem_detail.go",
+      "sha256": "c9f6433fc4f77e2d5d7ef4b7e29b520c75e3fc03b609aad63211255a9a77dc72"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

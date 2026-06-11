@@ -1,0 +1,17 @@
+export default {
+  transfersQueue: 'Transfers Queue',
+  minimize: 'Minimize',
+  clearAll: 'Clear All',
+  connecting: 'Connecting',
+  compressing: 'Compressing Zip',
+  downloading: 'Downloading',
+  uploading: 'Uploading',
+  scanningVirus: 'Scanning virus',
+  ready: 'Ready',
+  completed: 'Completed',
+  paused: 'Paused',
+  cancelled: 'Cancelled',
+  failed: 'Failed',
+  retry: 'Retry',
+  itemsRemaining: '{count} items remaining',
+};

@@ -1,0 +1,13 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct QuotaSummary {
+    #[serde(rename = "tenantId")]
+    pub tenant_id: String,
+
+    #[serde(rename = "usedBytes")]
+    pub used_bytes: i64,
+
+    #[serde(rename = "objectCount")]
+    pub object_count: i64,
+}

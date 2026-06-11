@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-admin-storage-sdk",
+    "version": "0.1.0",
+    "language": "typescript",
+    "sdkType": "custom",
+    "packageName": "sdkwork-drive-admin-storage-sdk-generated-typescript"
+  },
+  "changeFingerprint": "67396866c0f36176bc5bed9958f854a165c8554eea09bdac7a9ce26b486429b5",
+  "changes": {
+    "createdGeneratedFiles": [],
+    "updatedGeneratedFiles": [],
+    "unchangedGeneratedFiles": [
+      "bin/publish-core.mjs",
+      "bin/publish.ps1",
+      "bin/publish.sh",
+      "bin/sdk-gen.bat",
+      "bin/sdk-gen.sh",
+      "CHANGELOG.md",
+      "LICENSE",
+      "package.json",
+      "README.md",
+      "sdkwork-sdk.json",
+      "src/api/base.ts",
+      "src/api/drive.ts",
+      "src/api/index.ts",
+      "src/api/paths.ts",
+      "src/auth/index.ts",
+      "src/http/client.ts",
+      "src/http/index.ts",
+      "src/index.ts",
+      "src/sdk.ts",
+      "src/types/common.ts",
+      "src/types/copy-provider-object-request.ts",
+      "src/types/create-storage-provider-request.ts",
+      "src/types/delete-storage-provider-binding-response.ts",
+      "src/types/delete-storage-provider-response.ts",
+      "src/types/index.ts",
+      "src/types/list-storage-providers-response.ts",
+      "src/types/operator-request.ts",
+      "src/types/problem-detail.ts",
+      "src/types/provider-bucket-list-item.ts",
+      "src/types/provider-bucket-list.ts",
+      "src/types/provider-bucket-mutation.ts",
+      "src/types/provider-bucket.ts",
+      "src/types/provider-object-list.ts",
+      "src/types/provider-object-mutation.ts",
+      "src/types/provider-object.ts",
+      "src/types/rotate-storage-provider-credential-request.ts",
+      "src/types/set-default-storage-provider-binding-request.ts",
+      "src/types/storage-provider-binding-list-response.ts",
+      "src/types/storage-provider-binding.ts",
+      "src/types/storage-provider-capabilities.ts",
+      "src/types/storage-provider.ts",
+      "src/types/test-storage-provider-request.ts",
+      "src/types/test-storage-provider-response.ts",
+      "src/types/update-storage-provider-request.ts",
+      "tsconfig.json"
+    ],
+    "deletedGeneratedFiles": [],
+    "scaffoldedFiles": [],
+    "preservedScaffoldFiles": [
+      "custom/build-runtime.mjs",
+      "custom/README.md"
+    ],
+    "backedUpFiles": []
+  },
+  "impact": {
+    "schemaVersion": 1,
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+  },
+  "verificationPlan": {
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
+  },
+  "executionDecision": {
+    "schemaVersion": 1,
+    "riskLevel": "low",
+    "nextAction": "skip",
+    "requiresManualReview": false,
+    "applyRequiresExpectedFingerprint": false,
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "reasons": [
+      "no-actionable-changes"
+    ]
+  },
+  "preservedLegacyFiles": false
+}

@@ -1,0 +1,26 @@
+{
+  "name": "sdkwork-drive-workspace",
+  "private": true,
+  "license": "SEE LICENSE IN LICENSE",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "node scripts/run-drive-product.mjs server --dev-env-file .env.postgres",
+    "dev:pc": "pnpm --dir apps/sdkwork-drive-pc dev",
+    "tauri:dev": "pnpm --dir apps/sdkwork-drive-pc desktop:dev",
+    "dev:server": "node scripts/run-drive-product.mjs server --dev-env-file .env.postgres",
+    "dev:postgres": "node scripts/run-drive-product.mjs server --dev-env-file .env.postgres",
+    "dev:sqlite": "node scripts/run-drive-product.mjs server -- --database-url sqlite://target/dev/sdkwork-drive.sqlite",
+    "server:plan": "node scripts/run-drive-product.mjs plan",
+    "server:plan:postgres": "node scripts/run-drive-product.mjs plan --dev-env-file .env.postgres",
+    "server:plan:sqlite": "node scripts/run-drive-product.mjs plan -- --database-url sqlite://target/dev/sdkwork-drive.sqlite",
+    "test": "cargo test --workspace",
+    "fmt:rust": "cargo fmt --all",
+    "fmt:rust:check": "cargo fmt --all -- --check",
+    "check:dependency-management": "node tools/check_sdkwork_drive_dependency_management.mjs",
+    "check:drive-app-sdk-consumers": "node tools/check_drive_app_sdk_consumer_integration.mjs",
+    "check:drive-pc-standard": "node tools/check_sdkwork_drive_pc_standard.mjs",
+    "check:drive-package-standard": "node tools/check_sdkwork_drive_package_standard.mjs",
+    "verify": "cargo fmt --all -- --check && cargo test --workspace"
+  }
+}

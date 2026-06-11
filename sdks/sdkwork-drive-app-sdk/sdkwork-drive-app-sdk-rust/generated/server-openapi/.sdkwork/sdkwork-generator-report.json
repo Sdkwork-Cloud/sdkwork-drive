@@ -1,0 +1,352 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "artifacts": {
+    "stateDir": ".sdkwork",
+    "manifestPath": ".sdkwork/sdkwork-generator-manifest.json",
+    "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
+    "executionReportPath": ".sdkwork/sdkwork-generator-report.json",
+    "manualBackupDir": ".sdkwork/manual-backups"
+  },
+  "status": "ok",
+  "mode": "apply",
+  "hasChanges": true,
+  "hasDestructiveChanges": false,
+  "changeFingerprint": "1cf3cf70760202f76e591525c1c603a11a59dc8476c94aca3ff6e271a1efc708",
+  "changeImpact": {
+    "schemaVersion": 1,
+    "areas": [
+      "models"
+    ],
+    "details": [
+      {
+        "area": "models",
+        "paths": [
+          "src/models/drive_node.rs"
+        ]
+      }
+    ],
+    "requiresVerification": true,
+    "summary": "Detected impact areas: models. Verification is required."
+  },
+  "executionDecision": {
+    "schemaVersion": 1,
+    "riskLevel": "medium",
+    "nextAction": "verify",
+    "requiresManualReview": false,
+    "applyRequiresExpectedFingerprint": false,
+    "summary": "Changes have been applied. Run the required verification plan now.",
+    "reasons": [
+      "verification-required"
+    ]
+  },
+  "executionHandoff": {
+    "schemaVersion": 1,
+    "summary": "Run the required verification commands now.",
+    "steps": [
+      {
+        "id": "verify-check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "rust",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action check"
+      },
+      {
+        "id": "verify-build",
+        "title": "Unified package build",
+        "required": true,
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "rust",
+          "--project-dir",
+          ".",
+          "--action",
+          "build"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action build"
+      }
+    ]
+  },
+  "verificationPlan": {
+    "shouldRun": true,
+    "runPhase": "now",
+    "summary": "Detected impact areas: models. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "steps": [
+      {
+        "id": "check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "rust",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action check"
+      },
+      {
+        "id": "build",
+        "title": "Unified package build",
+        "required": true,
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "rust",
+          "--project-dir",
+          ".",
+          "--action",
+          "build"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action build"
+      }
+    ]
+  },
+  "sdk": {
+    "name": "sdkwork-drive-app-sdk",
+    "version": "0.1.0",
+    "language": "rust",
+    "sdkType": "app",
+    "outputPath": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
+    "packageName": "sdkwork-drive-app-sdk-generated-rust"
+  },
+  "versioning": {
+    "resolvedVersion": "0.1.0",
+    "localVersions": []
+  },
+  "stats": {
+    "totalFiles": 112,
+    "models": 89,
+    "apis": 5,
+    "types": 91
+  },
+  "warnings": [],
+  "syncSummary": {
+    "dryRun": false,
+    "writtenFiles": 1,
+    "skippedScaffoldFiles": 1,
+    "skippedUnchangedGeneratedFiles": 110,
+    "deletedGeneratedFiles": 0,
+    "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
+    "changeFingerprint": "1cf3cf70760202f76e591525c1c603a11a59dc8476c94aca3ff6e271a1efc708",
+    "changes": {
+      "createdGeneratedFiles": [],
+      "updatedGeneratedFiles": [
+        "src/models/drive_node.rs"
+      ],
+      "unchangedGeneratedFiles": [
+        "bin/publish-core.mjs",
+        "bin/publish.ps1",
+        "bin/publish.sh",
+        "Cargo.toml",
+        "CHANGELOG.md",
+        "LICENSE",
+        "README.md",
+        "sdkwork-sdk.json",
+        "src/api/base.rs",
+        "src/api/drive.rs",
+        "src/api/mod.rs",
+        "src/api/node_labels.rs",
+        "src/api/node_properties.rs",
+        "src/api/nodes.rs",
+        "src/api/paths.rs",
+        "src/api/watch_channels.rs",
+        "src/client.rs",
+        "src/http/client.rs",
+        "src/http/mod.rs",
+        "src/lib.rs",
+        "src/models/apply_node_label_request.rs",
+        "src/models/archive_entry_list_response.rs",
+        "src/models/archive_entry.rs",
+        "src/models/change_list_response.rs",
+        "src/models/change.rs",
+        "src/models/comment_list_response.rs",
+        "src/models/comment_replies_delete_response.rs",
+        "src/models/comment_reply_list_response.rs",
+        "src/models/comments_delete_response.rs",
+        "src/models/common.rs",
+        "src/models/complete_upload_session_request.rs",
+        "src/models/completed_upload_part.rs",
+        "src/models/copy_node_request.rs",
+        "src/models/create_comment_reply_request.rs",
+        "src/models/create_comment_request.rs",
+        "src/models/create_download_package_request.rs",
+        "src/models/create_download_url_request.rs",
+        "src/models/create_download_url_response.rs",
+        "src/models/create_file_request.rs",
+        "src/models/create_file_response.rs",
+        "src/models/create_folder_request.rs",
+        "src/models/create_permission_request.rs",
+        "src/models/create_share_link_request.rs",
+        "src/models/create_shortcut_request.rs",
+        "src/models/create_space_request.rs",
+        "src/models/create_upload_session_request.rs",
+        "src/models/create_watch_channel_request.rs",
+        "src/models/delete_node_property_response.rs",
+        "src/models/delete_node_response.rs",
+        "src/models/delete_space_response.rs",
+        "src/models/delete_version_response.rs",
+        "src/models/download_package_item.rs",
+        "src/models/download_package_response.rs",
+        "src/models/drive_comment_reply.rs",
+        "src/models/drive_comment.rs",
+        "src/models/drive_label_summary.rs",
+        "src/models/drive_node_property.rs",
+        "src/models/drive_permission.rs",
+        "src/models/drive_share_link.rs",
+        "src/models/drive_space.rs",
+        "src/models/drive_upload_session.rs",
+        "src/models/drive_watch_channel_list_response.rs",
+        "src/models/drive_watch_channel.rs",
+        "src/models/effective_permission_list_response.rs",
+        "src/models/effective_permission.rs",
+        "src/models/empty_trash_request.rs",
+        "src/models/empty_trash_response.rs",
+        "src/models/extract_archive_entries_request.rs",
+        "src/models/extract_archive_entries_response.rs",
+        "src/models/favorite_node_request.rs",
+        "src/models/favorite_node_response.rs",
+        "src/models/field_error.rs",
+        "src/models/file_version.rs",
+        "src/models/list_spaces_response.rs",
+        "src/models/mark_uploader_part_uploaded_request.rs",
+        "src/models/mod.rs",
+        "src/models/move_node_request.rs",
+        "src/models/node_capabilities_response.rs",
+        "src/models/node_command_request.rs",
+        "src/models/node_label_list_response.rs",
+        "src/models/node_label.rs",
+        "src/models/node_list_response.rs",
+        "src/models/node_path_response.rs",
+        "src/models/node_property_list_response.rs",
+        "src/models/permission_list_response.rs",
+        "src/models/permissions_delete_response.rs",
+        "src/models/prepare_uploader_upload_request.rs",
+        "src/models/prepare_uploader_upload_response.rs",
+        "src/models/presign_upload_part_request.rs",
+        "src/models/presigned_upload_part.rs",
+        "src/models/problem_detail.rs",
+        "src/models/quota_summary.rs",
+        "src/models/remove_node_label_response.rs",
+        "src/models/set_node_property_request.rs",
+        "src/models/share_link_list_response.rs",
+        "src/models/share_links_revoke_response.rs",
+        "src/models/start_page_token_response.rs",
+        "src/models/stop_watch_channel_request.rs",
+        "src/models/stop_watch_channel_response.rs",
+        "src/models/update_comment_reply_request.rs",
+        "src/models/update_comment_request.rs",
+        "src/models/update_node_request.rs",
+        "src/models/update_permission_request.rs",
+        "src/models/update_share_link_request.rs",
+        "src/models/update_space_request.rs",
+        "src/models/upload_session_mutation_response.rs",
+        "src/models/uploader_retention_request.rs",
+        "src/models/uploader_upload_item.rs",
+        "src/models/uploader_upload_part.rs",
+        "src/models/version_list_response.rs"
+      ],
+      "deletedGeneratedFiles": [],
+      "scaffoldedFiles": [],
+      "preservedScaffoldFiles": [
+        "custom/README.md"
+      ],
+      "backedUpFiles": []
+    },
+    "impact": {
+      "schemaVersion": 1,
+      "areas": [
+        "models"
+      ],
+      "details": [
+        {
+          "area": "models",
+          "paths": [
+            "src/models/drive_node.rs"
+          ]
+        }
+      ],
+      "requiresVerification": true,
+      "summary": "Detected impact areas: models. Verification is required."
+    },
+    "verificationPlan": {
+      "shouldRun": true,
+      "runPhase": "now",
+      "summary": "Detected impact areas: models. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "steps": [
+        {
+          "id": "check",
+          "title": "Unified package check",
+          "required": true,
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: models.",
+          "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
+          "command": "node",
+          "args": [
+            "./bin/publish-core.mjs",
+            "--language",
+            "rust",
+            "--project-dir",
+            ".",
+            "--action",
+            "check"
+          ],
+          "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action check"
+        },
+        {
+          "id": "build",
+          "title": "Unified package build",
+          "required": true,
+          "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: models.",
+          "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
+          "command": "node",
+          "args": [
+            "./bin/publish-core.mjs",
+            "--language",
+            "rust",
+            "--project-dir",
+            ".",
+            "--action",
+            "build"
+          ],
+          "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action build"
+        }
+      ]
+    },
+    "executionDecision": {
+      "schemaVersion": 1,
+      "riskLevel": "medium",
+      "nextAction": "verify",
+      "requiresManualReview": false,
+      "applyRequiresExpectedFingerprint": false,
+      "summary": "Changes have been applied. Run the required verification plan now.",
+      "reasons": [
+        "verification-required"
+      ]
+    },
+    "backedUpFiles": [],
+    "preservedLegacyFiles": false
+  }
+}

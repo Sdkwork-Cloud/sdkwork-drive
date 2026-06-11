@@ -1,0 +1,437 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "artifacts": {
+    "stateDir": ".sdkwork",
+    "manifestPath": ".sdkwork/sdkwork-generator-manifest.json",
+    "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
+    "executionReportPath": ".sdkwork/sdkwork-generator-report.json",
+    "manualBackupDir": ".sdkwork/manual-backups"
+  },
+  "status": "ok",
+  "mode": "apply",
+  "hasChanges": true,
+  "hasDestructiveChanges": false,
+  "changeFingerprint": "702322355d42b2d69474562b8084c3897a3319f682fae04e15cca3795832c8d1",
+  "changeImpact": {
+    "schemaVersion": 1,
+    "areas": [
+      "api-surface",
+      "models",
+      "runtime",
+      "build-metadata",
+      "documentation"
+    ],
+    "details": [
+      {
+        "area": "api-surface",
+        "paths": [
+          "src/http/client.ts",
+          "src/sdk.ts"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "src/types/common.ts",
+          "src/types/create-space-request.ts",
+          "src/types/drive-space.ts",
+          "src/types/file-version.ts"
+        ]
+      },
+      {
+        "area": "runtime",
+        "paths": [
+          "src/http/client.ts"
+        ]
+      },
+      {
+        "area": "build-metadata",
+        "paths": [
+          "package.json"
+        ]
+      },
+      {
+        "area": "documentation",
+        "paths": [
+          "README.md"
+        ]
+      }
+    ],
+    "requiresVerification": true,
+    "summary": "Detected impact areas: api-surface, models, runtime, build-metadata, documentation. Verification is required."
+  },
+  "executionDecision": {
+    "schemaVersion": 1,
+    "riskLevel": "medium",
+    "nextAction": "verify",
+    "requiresManualReview": false,
+    "applyRequiresExpectedFingerprint": false,
+    "summary": "Changes have been applied. Run the required verification plan now.",
+    "reasons": [
+      "verification-required"
+    ]
+  },
+  "executionHandoff": {
+    "schemaVersion": 1,
+    "summary": "Run the required verification commands now.",
+    "steps": [
+      {
+        "id": "verify-check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, documentation.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "typescript",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action check"
+      },
+      {
+        "id": "verify-build",
+        "title": "Unified package build",
+        "required": true,
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, build-metadata, documentation.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "typescript",
+          "--project-dir",
+          ".",
+          "--action",
+          "build"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action build"
+      }
+    ]
+  },
+  "verificationPlan": {
+    "shouldRun": true,
+    "runPhase": "now",
+    "summary": "Detected impact areas: api-surface, models, runtime, build-metadata, documentation. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "steps": [
+      {
+        "id": "check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, documentation.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "typescript",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action check"
+      },
+      {
+        "id": "build",
+        "title": "Unified package build",
+        "required": true,
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, build-metadata, documentation.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "typescript",
+          "--project-dir",
+          ".",
+          "--action",
+          "build"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action build"
+      }
+    ]
+  },
+  "sdk": {
+    "name": "sdkwork-drive-app-sdk",
+    "version": "0.1.0",
+    "language": "typescript",
+    "sdkType": "app",
+    "outputPath": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
+    "packageName": "sdkwork-drive-app-sdk-generated-typescript"
+  },
+  "versioning": {
+    "resolvedVersion": "0.1.0",
+    "localVersions": []
+  },
+  "stats": {
+    "totalFiles": 133,
+    "models": 104,
+    "apis": 6,
+    "types": 106
+  },
+  "warnings": [],
+  "syncSummary": {
+    "dryRun": false,
+    "writtenFiles": 8,
+    "skippedScaffoldFiles": 2,
+    "skippedUnchangedGeneratedFiles": 123,
+    "deletedGeneratedFiles": 0,
+    "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
+    "changeFingerprint": "702322355d42b2d69474562b8084c3897a3319f682fae04e15cca3795832c8d1",
+    "changes": {
+      "createdGeneratedFiles": [],
+      "updatedGeneratedFiles": [
+        "package.json",
+        "README.md",
+        "src/http/client.ts",
+        "src/sdk.ts",
+        "src/types/common.ts",
+        "src/types/create-space-request.ts",
+        "src/types/drive-space.ts",
+        "src/types/file-version.ts"
+      ],
+      "unchangedGeneratedFiles": [
+        "bin/publish-core.mjs",
+        "bin/publish.ps1",
+        "bin/publish.sh",
+        "bin/sdk-gen.bat",
+        "bin/sdk-gen.sh",
+        "CHANGELOG.md",
+        "LICENSE",
+        "sdkwork-sdk.json",
+        "src/api/assets.ts",
+        "src/api/base.ts",
+        "src/api/drive.ts",
+        "src/api/index.ts",
+        "src/api/node-labels.ts",
+        "src/api/node-properties.ts",
+        "src/api/nodes.ts",
+        "src/api/paths.ts",
+        "src/api/watch-channels.ts",
+        "src/auth/index.ts",
+        "src/http/index.ts",
+        "src/index.ts",
+        "src/types/apply-node-label-request.ts",
+        "src/types/archive-entry-list-response.ts",
+        "src/types/archive-entry.ts",
+        "src/types/asset-action-request.ts",
+        "src/types/asset-collection-item.ts",
+        "src/types/asset-collection-page.ts",
+        "src/types/asset-collection.ts",
+        "src/types/asset-item.ts",
+        "src/types/asset-page.ts",
+        "src/types/asset-relation.ts",
+        "src/types/change-list-response.ts",
+        "src/types/change.ts",
+        "src/types/comment-list-response.ts",
+        "src/types/comment-replies-delete-response.ts",
+        "src/types/comment-reply-list-response.ts",
+        "src/types/comments-delete-response.ts",
+        "src/types/complete-upload-session-request.ts",
+        "src/types/completed-upload-part.ts",
+        "src/types/copy-node-request.ts",
+        "src/types/create-asset-collection-item-request.ts",
+        "src/types/create-asset-collection-request.ts",
+        "src/types/create-asset-relation-request.ts",
+        "src/types/create-asset-request.ts",
+        "src/types/create-comment-reply-request.ts",
+        "src/types/create-comment-request.ts",
+        "src/types/create-download-package-request.ts",
+        "src/types/create-download-url-request.ts",
+        "src/types/create-download-url-response.ts",
+        "src/types/create-file-request.ts",
+        "src/types/create-file-response.ts",
+        "src/types/create-folder-request.ts",
+        "src/types/create-permission-request.ts",
+        "src/types/create-share-link-request.ts",
+        "src/types/create-shortcut-request.ts",
+        "src/types/create-upload-session-request.ts",
+        "src/types/create-watch-channel-request.ts",
+        "src/types/delete-asset-collection-item-response.ts",
+        "src/types/delete-asset-relation-response.ts",
+        "src/types/delete-node-property-response.ts",
+        "src/types/delete-node-response.ts",
+        "src/types/delete-space-response.ts",
+        "src/types/delete-version-response.ts",
+        "src/types/download-package-item.ts",
+        "src/types/download-package-response.ts",
+        "src/types/drive-comment-reply.ts",
+        "src/types/drive-comment.ts",
+        "src/types/drive-label-summary.ts",
+        "src/types/drive-node-property.ts",
+        "src/types/drive-node.ts",
+        "src/types/drive-permission.ts",
+        "src/types/drive-share-link.ts",
+        "src/types/drive-upload-session.ts",
+        "src/types/drive-watch-channel-list-response.ts",
+        "src/types/drive-watch-channel.ts",
+        "src/types/effective-permission-list-response.ts",
+        "src/types/effective-permission.ts",
+        "src/types/empty-trash-request.ts",
+        "src/types/empty-trash-response.ts",
+        "src/types/extract-archive-entries-request.ts",
+        "src/types/extract-archive-entries-response.ts",
+        "src/types/favorite-node-request.ts",
+        "src/types/favorite-node-response.ts",
+        "src/types/field-error.ts",
+        "src/types/index.ts",
+        "src/types/list-spaces-response.ts",
+        "src/types/mark-uploader-part-uploaded-request.ts",
+        "src/types/media-resource.ts",
+        "src/types/move-node-request.ts",
+        "src/types/node-capabilities-response.ts",
+        "src/types/node-command-request.ts",
+        "src/types/node-label-list-response.ts",
+        "src/types/node-label.ts",
+        "src/types/node-list-response.ts",
+        "src/types/node-path-response.ts",
+        "src/types/node-property-list-response.ts",
+        "src/types/permission-list-response.ts",
+        "src/types/permissions-delete-response.ts",
+        "src/types/prepare-uploader-upload-request.ts",
+        "src/types/prepare-uploader-upload-response.ts",
+        "src/types/presign-upload-part-request.ts",
+        "src/types/presigned-upload-part.ts",
+        "src/types/problem-detail.ts",
+        "src/types/quota-summary.ts",
+        "src/types/remove-node-label-response.ts",
+        "src/types/set-node-property-request.ts",
+        "src/types/share-link-list-response.ts",
+        "src/types/share-links-revoke-response.ts",
+        "src/types/start-page-token-response.ts",
+        "src/types/stop-watch-channel-request.ts",
+        "src/types/stop-watch-channel-response.ts",
+        "src/types/update-asset-request.ts",
+        "src/types/update-comment-reply-request.ts",
+        "src/types/update-comment-request.ts",
+        "src/types/update-node-request.ts",
+        "src/types/update-permission-request.ts",
+        "src/types/update-share-link-request.ts",
+        "src/types/update-space-request.ts",
+        "src/types/upload-session-mutation-response.ts",
+        "src/types/uploader-retention-request.ts",
+        "src/types/uploader-upload-item.ts",
+        "src/types/uploader-upload-part.ts",
+        "src/types/version-list-response.ts",
+        "tsconfig.json"
+      ],
+      "deletedGeneratedFiles": [],
+      "scaffoldedFiles": [],
+      "preservedScaffoldFiles": [
+        "custom/build-runtime.mjs",
+        "custom/README.md"
+      ],
+      "backedUpFiles": []
+    },
+    "impact": {
+      "schemaVersion": 1,
+      "areas": [
+        "api-surface",
+        "models",
+        "runtime",
+        "build-metadata",
+        "documentation"
+      ],
+      "details": [
+        {
+          "area": "api-surface",
+          "paths": [
+            "src/http/client.ts",
+            "src/sdk.ts"
+          ]
+        },
+        {
+          "area": "models",
+          "paths": [
+            "src/types/common.ts",
+            "src/types/create-space-request.ts",
+            "src/types/drive-space.ts",
+            "src/types/file-version.ts"
+          ]
+        },
+        {
+          "area": "runtime",
+          "paths": [
+            "src/http/client.ts"
+          ]
+        },
+        {
+          "area": "build-metadata",
+          "paths": [
+            "package.json"
+          ]
+        },
+        {
+          "area": "documentation",
+          "paths": [
+            "README.md"
+          ]
+        }
+      ],
+      "requiresVerification": true,
+      "summary": "Detected impact areas: api-surface, models, runtime, build-metadata, documentation. Verification is required."
+    },
+    "verificationPlan": {
+      "shouldRun": true,
+      "runPhase": "now",
+      "summary": "Detected impact areas: api-surface, models, runtime, build-metadata, documentation. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "steps": [
+        {
+          "id": "check",
+          "title": "Unified package check",
+          "required": true,
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, documentation.",
+          "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
+          "command": "node",
+          "args": [
+            "./bin/publish-core.mjs",
+            "--language",
+            "typescript",
+            "--project-dir",
+            ".",
+            "--action",
+            "check"
+          ],
+          "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action check"
+        },
+        {
+          "id": "build",
+          "title": "Unified package build",
+          "required": true,
+          "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, build-metadata, documentation.",
+          "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
+          "command": "node",
+          "args": [
+            "./bin/publish-core.mjs",
+            "--language",
+            "typescript",
+            "--project-dir",
+            ".",
+            "--action",
+            "build"
+          ],
+          "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action build"
+        }
+      ]
+    },
+    "executionDecision": {
+      "schemaVersion": 1,
+      "riskLevel": "medium",
+      "nextAction": "verify",
+      "requiresManualReview": false,
+      "applyRequiresExpectedFingerprint": false,
+      "summary": "Changes have been applied. Run the required verification plan now.",
+      "reasons": [
+        "verification-required"
+      ]
+    },
+    "backedUpFiles": [],
+    "preservedLegacyFiles": false
+  }
+}

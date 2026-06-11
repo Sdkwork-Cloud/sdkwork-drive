@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-admin-storage-sdk",
+    "version": "0.1.0",
+    "language": "typescript",
+    "sdkType": "custom",
+    "packageName": "sdkwork-drive-admin-storage-sdk-generated-typescript"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "78c6419400b988409d9393c2ecd85aa02dd6760f73edb3cc84cb28fefc51b41e"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "899087c23e670b6951a12a13490fd557f761c96d78fabfb7e58a37e367db889f"
+    },
+    {
+      "path": "bin/sdk-gen.bat",
+      "sha256": "22d4c9b71d0d722b795098598c01ceb4ca7aec230eb189a517c714c472849777"
+    },
+    {
+      "path": "bin/sdk-gen.sh",
+      "sha256": "b24c21c7b42fa17fffb3c7c563a7329722624441696b1d6a841e2a7520da7260"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "package.json",
+      "sha256": "bfb11c16ad82216ea02ac3c58bdb6963d229eabe4df683c346992c73e0b7fcef"
+    },
+    {
+      "path": "README.md",
+      "sha256": "76dae448adcb16b1938c77185a8d8993b2b1221220cec4d87d8f64ca5216ba92"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "6077c74542b592ee04c48fcb2c60ebf14d94cfe233250160088571bafa9e7ccc"
+    },
+    {
+      "path": "src/api/base.ts",
+      "sha256": "02ad25e6bf331ff241ba387c2947ddf1900dd849038e08c2757416a3aa788a04"
+    },
+    {
+      "path": "src/api/drive.ts",
+      "sha256": "e5f5e7727395984d9bc0a63216fb1f25f4a529ad0408d71eed8857873c63ee12"
+    },
+    {
+      "path": "src/api/index.ts",
+      "sha256": "c46c4f41f4b9ee14aee1f01446015eded1f1709a3529dd6fb0c074a423efc415"
+    },
+    {
+      "path": "src/api/paths.ts",
+      "sha256": "cb59d7f1f15fe589c9325729413d9f215f748df4d548161da2e016c165e1ed10"
+    },
+    {
+      "path": "src/auth/index.ts",
+      "sha256": "657fc63738bdcd61d83133120732a477dd127448cf2c51229b05d21f5e1f5c04"
+    },
+    {
+      "path": "src/http/client.ts",
+      "sha256": "a5d424bb008a1bf571016c759a76142c904b87d1aeb592a1bfba2d3b28c5c7ca"
+    },
+    {
+      "path": "src/http/index.ts",
+      "sha256": "fc204fbe89750b9d25ecaffe41003e6ac243a1a895b65e65856202ab825d2dbe"
+    },
+    {
+      "path": "src/index.ts",
+      "sha256": "be1ba971d7c153f90af599aff97d71c8047fbb6b97a0adb57c2fceaaca4a4749"
+    },
+    {
+      "path": "src/sdk.ts",
+      "sha256": "8de3b4cd97a763ab4c0ec4e65798d9c15d01e6e1a2d734f2d2b7c0f48e43eef5"
+    },
+    {
+      "path": "src/types/common.ts",
+      "sha256": "f6ea44d92201138da3187960f57829052dce27f4f4a1d12f50d542e4794cece6"
+    },
+    {
+      "path": "src/types/copy-provider-object-request.ts",
+      "sha256": "0aae603e49322b8ef359dd9fdd6de3863e49aa10069dac2b152bd028562409f3"
+    },
+    {
+      "path": "src/types/create-storage-provider-request.ts",
+      "sha256": "ee342e49aeb1520ae22f5779b20ac3c3f0e218ffd9703a13e852b8e979677b91"
+    },
+    {
+      "path": "src/types/delete-storage-provider-binding-response.ts",
+      "sha256": "efaa5dcc388ce98bd73807fea73f5f67262ec33d43e2cf32b430fd824f01ca87"
+    },
+    {
+      "path": "src/types/delete-storage-provider-response.ts",
+      "sha256": "caed15bf856a20c1d681947beb278ba4d0b4ef642d40857b2c9dc40ac2514670"
+    },
+    {
+      "path": "src/types/index.ts",
+      "sha256": "4ff91e02fa48af2ae1516eecbed85c1e80328c36fb505ecfc871ef7371588f79"
+    },
+    {
+      "path": "src/types/list-storage-providers-response.ts",
+      "sha256": "8ff334ae9635705537e9f8c71ffc36c2157d9835bbffa74968f15bcc44577efa"
+    },
+    {
+      "path": "src/types/operator-request.ts",
+      "sha256": "2dc09d74ff9b3982a67536a1b6b67ce6c222c257389b44c3565c15a0f8100d58"
+    },
+    {
+      "path": "src/types/problem-detail.ts",
+      "sha256": "4ae6f09328af91c3ed4b2588db2df51c1a28964fda0d041118bcaa77d47dc30e"
+    },
+    {
+      "path": "src/types/provider-bucket-list-item.ts",
+      "sha256": "f7c0e342a14ba6c489016f015be5fbc8c3137b4a355c12ce0d94a760e93ea702"
+    },
+    {
+      "path": "src/types/provider-bucket-list.ts",
+      "sha256": "45af5e281ed66362d12c58f7935635739488995fc7ec4822477885c8295c73c4"
+    },
+    {
+      "path": "src/types/provider-bucket-mutation.ts",
+      "sha256": "6f0b9f9cf8e7fc329978103d458fe29db30ac77e21b37c51cfb4b4fb9178259a"
+    },
+    {
+      "path": "src/types/provider-bucket.ts",
+      "sha256": "1cfbf52494828aae33a15d5a8eb0810c108969883e883e7092b46db6dd49838b"
+    },
+    {
+      "path": "src/types/provider-object-list.ts",
+      "sha256": "81f1cfbf14a148b5c6fab67419d24ddf76a59560a9ce81d0b2b0c4c962de610d"
+    },
+    {
+      "path": "src/types/provider-object-mutation.ts",
+      "sha256": "f235c49a601615c7baa8cc598de69927c6c051f7b11bf4b2894ce03ac001c7ea"
+    },
+    {
+      "path": "src/types/provider-object.ts",
+      "sha256": "7a435bcde3702c2622b16206283a61a799665463782970460dea027711e6c656"
+    },
+    {
+      "path": "src/types/rotate-storage-provider-credential-request.ts",
+      "sha256": "30ce2326d7601172ba7c3fdb1a5a8fa744876c4ba17f7f1a5f395b97be314fd3"
+    },
+    {
+      "path": "src/types/set-default-storage-provider-binding-request.ts",
+      "sha256": "f349827b25f15bed492361aeb39e6d9cea1715a6ce921800293c65d26102574b"
+    },
+    {
+      "path": "src/types/storage-provider-binding-list-response.ts",
+      "sha256": "afd37b1efb6f3aed7c7851b103a27a8056bc745f60f47864c505ce5e183db25f"
+    },
+    {
+      "path": "src/types/storage-provider-binding.ts",
+      "sha256": "4aed0f58f57c7e3a99aa8c247007c2b7c0da4b9c88a2b57311f37f77306d33b8"
+    },
+    {
+      "path": "src/types/storage-provider-capabilities.ts",
+      "sha256": "5a9f2ae158032e46bab502979acf8170f847aa187a18c979bf58004fa0cff71f"
+    },
+    {
+      "path": "src/types/storage-provider.ts",
+      "sha256": "cfbc2d2c7c53c26a9e87a8da811fae68b2ee1bd7d5204c21da9ecaf276656370"
+    },
+    {
+      "path": "src/types/test-storage-provider-request.ts",
+      "sha256": "70c922c52102246d4ea63ae56fae1bef13000e343846adac7f4d441ac8913ab1"
+    },
+    {
+      "path": "src/types/test-storage-provider-response.ts",
+      "sha256": "1cfc21e0d5d8f33b6ac62abbf546bab7cf2491775f4674988c88594a134ccfde"
+    },
+    {
+      "path": "src/types/update-storage-provider-request.ts",
+      "sha256": "5290ba6a185d17b138f943165d117992812e39c6f41928faeb255eb5be020a67"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "7c8a6c2b00fb208ec28e1e6045194487d1b3e563d6c44cef4783fd4fe0e8ffad"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/build-runtime.mjs",
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-backend-sdk",
+    "version": "0.1.0",
+    "language": "python",
+    "sdkType": "backend",
+    "packageName": "sdkwork-drive-backend-sdk-generated-python"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "b383d4f7233b567acd36fa2ff644448730007738901cf1770cb02746f88fbb05"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "6fd65ff5011e48b24018ab691edd8803c4b1fd293d013b75d1adb3bcd26f7cde"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "MANIFEST.in",
+      "sha256": "b42ab6a5c1d4986ae272209373aba77e4d9bc1c41b190dde6fe78a9be9a999a6"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "90d54c34dd3b77892db24aa8602483cf6c48938b5abad15d1fe26e6bb1a73070"
+    },
+    {
+      "path": "README.md",
+      "sha256": "f0dd713e8f86c59c0194bd71ed0abdb9dfab29a93406fe8070b4fc5ad7f8db52"
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "5f3072c051f89b9af1b681381406e0b2466895fb150660d583c85c84396001c8"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/__init__.py",
+      "sha256": "310d0a08b033b3c2da22bc5622e9ee24836f221b25bb7d027610a14372ed2a3e"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/api/__init__.py",
+      "sha256": "2e4389a95e5bf53f99af9bc401bb305808ba1228f676790db91c7118c0864699"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/api/drive.py",
+      "sha256": "a9a01bfa2ee9fce60a6bb814974e2e3ebb177a1c3a50ea9ce2dd0c3e3a263944"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/api/labels.py",
+      "sha256": "a9796d62d01387bf2b7a5f3e77dd3a886cd1d8714c20d9eaae7f63b96d85918c"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/client.py",
+      "sha256": "b01d23e28afbae840b964c9e5eb6dee3596f9f598d9f611457d2f8113b84aa23"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/http_client.py",
+      "sha256": "c423af289dbbe0eef7d8be5ee0aec13cedf64df967b3d64ad7306a78ac394a82"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/__init__.py",
+      "sha256": "ac5fac25ace480fdd8c67208115586ebf1bcb09633929048777750962d8ffa81"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/audit_event_page.py",
+      "sha256": "77ffdb1bbc3dba042af5daff70d37e7986ab8b5dc4c719f4751df877a6a14b02"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/audit_event.py",
+      "sha256": "f344971e3c601f0a3596ab27ab9d03e55fab79e7d664a7f7d307b2ee8ca22a02"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/copy_provider_object_request.py",
+      "sha256": "bc764e059995b32719e9b35f75aff6ee7891821eb8c72b061c88be1f3bfcd550"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/create_label_request.py",
+      "sha256": "8fc8e2fe3e02537dde7191c876d6b24913b7efa3d2733a4a916412b3c5725583"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/create_storage_provider_request.py",
+      "sha256": "f8fe5d0947b7bd86c97931c7f84bde4d4fe872fcb5e7e420a9da90b3869c4178"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/delete_label_response.py",
+      "sha256": "64d936c233dd1563b47898ac89234f45e314efb9683a827b7ec0cd2c771fed29"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/delete_storage_provider_response.py",
+      "sha256": "9fe76ec407b0b3816b523692e75967163328a253223753a251640d446d82c3c2"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/download_package_page.py",
+      "sha256": "aad2a2b1c61e68d655d78fe0a7fa9d7f38fb86b3370e8a27163d5fa4fc97aec1"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/download_package.py",
+      "sha256": "e1612d3a5c2cacd3a1d422e50fa41146b4e37e92ab97e390a3e189a894e0b047"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/drive_label.py",
+      "sha256": "6817b7d0f11d57ed3f30144b17b3fdd07b109e06f5cd29813634bd717fe1bb25"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/drive_space.py",
+      "sha256": "a6f0ea75e3f5da6a558cde8d1fc68ef09bf0baf8e177d8106df9a94adcee4865"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/label_list_response.py",
+      "sha256": "d1db91c31c6b43c59e4877ff862028b6c86abe3afa6213e6150fb52d553a58e7"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/list_spaces_response.py",
+      "sha256": "5efa9a9ffb49460d2ef86ba7f502a58eb20e629ec181419b3ec47d2f26518b8f"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/list_storage_providers_response.py",
+      "sha256": "39e629a656ce3d7575202712e99e5e82cf3aa8667bc2930e1bde62184f6bd6ef"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/maintenance_job_page.py",
+      "sha256": "aacd3db6791700289cc5bdc479a3aa9302df929d878d170369762fe2c16eb1e8"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/maintenance_job.py",
+      "sha256": "352a7d3c6e05b3ccb5c7063f51f1d3e00b50d657f912a4a2792d7715ac91b29c"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/operator_request.py",
+      "sha256": "8dc98e53b16385e636af267745ac7eb8e120a9780f2e3cbdc6982fac28b9196a"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/problem_detail.py",
+      "sha256": "1a33811e7ef22f28e8cba9c0b1e040e787ee8119ab0a0ab95d0f8773c16288bd"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/provider_bucket_mutation.py",
+      "sha256": "453fbef9b1c7af9f8063a46266783d921b80114535fa49bc1ab65c700c7945de"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/provider_bucket.py",
+      "sha256": "c3eafbd6d04733353d633f6453dd21d1283f41b3af346f5a0d657ee653d9e52a"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/provider_object_list.py",
+      "sha256": "786a00a50bcb6e1eedfa45336bf5da88cdb703f59c410985968234b541ccc419"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/provider_object_mutation.py",
+      "sha256": "11b14a09895d4bb3e57c5fe7d6f79c90914c0c98cd19f5a861fad8b794fa3427"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/provider_object.py",
+      "sha256": "5322230f675807edf40dc18ac6a58de956dc747e1410a774838f97d4e513c584"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/quota_summary.py",
+      "sha256": "86f2779acc9e937103d1a01e34d4908f6ca5548322db784e8286a7fef9c57956"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/rotate_storage_provider_credential_request.py",
+      "sha256": "fc907eba78f4e24d49f0bb73f41e0d9c72b90f08008c6757fd8e37138b42a96c"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/set_default_storage_provider_binding_request.py",
+      "sha256": "5140e00f67be13e438aaf9fa35270f0d040f7f82552f9e982be522d923d1e3e0"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/storage_provider_binding.py",
+      "sha256": "6921fef39875257e42149c0c051baa6e647e891df274ddda8d4fe76cd2001cfa"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/storage_provider_capabilities.py",
+      "sha256": "d8f79ebd24e16e1997fca042022d87e7771e24abdc619139a0f77b1333896862"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/storage_provider.py",
+      "sha256": "247bbd9082b365f2f2575e4a90d0c96266be44d0decf95c2e6b27073d8f00fd2"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sweep_object_store_request.py",
+      "sha256": "7db72626321d244ad6699e86b90b2d10f22f09838280a2c8cd26086abd849c6f"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sweep_response.py",
+      "sha256": "152fe48483b7cefbbd06fd8c2d7bb40d5de01a3d542642cc8ede0cc74bd16d4c"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sweep_upload_sessions_request.py",
+      "sha256": "2e9c08227f72cee63d39082e7747dad5f530b043571847bfe02640cb0cdcfcff"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/test_storage_provider_request.py",
+      "sha256": "0565592f81062ce2f46071666ef986eed08986bb2aede30099f5fd912dd5cede"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/test_storage_provider_response.py",
+      "sha256": "d19db9309a332eb95c64e103a70549b537b0f754dd74c75a92bbea6ef3659ee1"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/update_label_request.py",
+      "sha256": "58cd22b78d694564e6fc511c0464ad13885f055e52a3a95c0ba424b42b0a595a"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/update_storage_provider_request.py",
+      "sha256": "68b225aea604753fd2f7de7040638f0a9d47a96d9c2d0a5ec50467fad43f190e"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "e935e342f6bee9b6ef050713b5008c86bcb9d0cea3d65ace2447615cedd7c88d"
+    },
+    {
+      "path": "setup.py",
+      "sha256": "843ac26c38a41abae578250bc0f9419194b320a0f67327d941037a4268f6cfe7"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

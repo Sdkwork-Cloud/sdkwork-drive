@@ -1,0 +1,21 @@
+[package]
+name = "sdkwork-drive-open-api"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+axum = "0.7"
+http = "1.4"
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+sdkwork-drive-config.workspace = true
+sdkwork-drive-product.workspace = true
+sdkwork-drive-storage-contract.workspace = true
+sdkwork-drive-storage-s3.workspace = true
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "any", "sqlite", "postgres"] }
+tokio.workspace = true
+tower = { version = "0.5", features = ["util"] }
+tracing = "0.1"
+
+[dev-dependencies]
+tracing-subscriber = { version = "0.3", features = ["fmt"] }

@@ -1,0 +1,105 @@
+import type {
+  DriveStorageSummary,
+  SessionSnapshot,
+  SessionStore,
+} from 'sdkwork-drive-pc-core';
+
+export interface DriveAccountViewModel {
+  id: string;
+  displayName: string;
+  email?: string;
+  avatarUrl?: string;
+  initials: string;
+  tenantId?: string;
+  organizationId?: string;
+  sessionId?: string;
+  environmentLabel: string;
+  authLevel: string;
+  planLabel?: string;
+  storageUsedLabel?: string;
+  storageTotalLabel?: string;
+  storageUsagePercent?: number;
+  storageObjectCount?: number;
+}
+
+export function createDriveAccountViewModel(
+  session: SessionSnapshot,
+  storageSummary?: DriveStorageSummary,
+): DriveAccountViewModel {
+  const userId = session.user?.id ?? session.context?.userId ?? 'drive-user';
+  const displayName = session.user?.displayName?.trim() || 'SDKWork Drive User';
+  const environment = session.context?.environment?.trim();
+  const deploymentMode = session.context?.deploymentMode?.trim();
+  const storageUsedLabel = storageSummary ? formatBytes(storageSummary.usedBytes) : undefined;
+  const storageTotalLabel = storageSummary?.totalBytes
+    ? formatBytes(storageSummary.totalBytes)
+    : undefined;
+
+  const account: DriveAccountViewModel = {
+    id: userId,
+    displayName,
+    email: session.user?.email,
+    avatarUrl: session.user?.avatarUrl,
+    initials: buildInitials(displayName, userId),
+    tenantId: session.context?.tenantId,
+    organizationId: session.context?.organizationId,
+    sessionId: session.sessionId ?? session.context?.sessionId,
+    environmentLabel:
+      environment && deploymentMode
+        ? `${environment} / ${deploymentMode}`
+        : environment || deploymentMode || 'standard',
+    authLevel: session.context?.authLevel ?? 'standard',
+  };
+
+  if (storageUsedLabel) {
+    account.storageUsedLabel = storageUsedLabel;
+  }
+  if (storageTotalLabel) {
+    account.storageTotalLabel = storageTotalLabel;
+  }
+  if (storageSummary?.usagePercent !== undefined) {
+    account.storageUsagePercent = storageSummary.usagePercent;
+  }
+  if (storageSummary?.objectCount !== undefined) {
+    account.storageObjectCount = storageSummary.objectCount;
+  }
+
+  return account;
+}
+
+export function signOutDriveAccount(
+  session: SessionStore,
+): void {
+  session.clearSession();
+}
+
+function buildInitials(displayName: string, fallbackId: string): string {
+  const normalized = displayName.trim();
+  if (normalized) {
+    const asciiWords = normalized.match(/[A-Za-z0-9]+/g);
+    if (asciiWords?.length) {
+      return asciiWords
+        .slice(0, 2)
+        .map((word) => word.charAt(0).toUpperCase())
+        .join('');
+    }
+    return Array.from(normalized).slice(0, 2).join('');
+  }
+
+  return fallbackId.charAt(0).toUpperCase() || 'S';
+}
+
+function formatBytes(bytes: number): string {
+  const normalized = Number.isFinite(bytes) && bytes > 0 ? bytes : 0;
+  if (normalized < 1024) return `${normalized} B`;
+  if (normalized < 1024 * 1024) return `${trimNumber(normalized / 1024)} KB`;
+  if (normalized < 1024 * 1024 * 1024) return `${trimNumber(normalized / (1024 * 1024))} MB`;
+  if (normalized < 1024 * 1024 * 1024 * 1024) {
+    return `${trimNumber(normalized / (1024 * 1024 * 1024))} GB`;
+  }
+  return `${trimNumber(normalized / (1024 * 1024 * 1024 * 1024))} TB`;
+}
+
+function trimNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
