@@ -126,30 +126,38 @@ Required behavior:
 
 ## App SDK IAM Contract
 
-Drive app SDK must expose the appbase IAM app operations needed by the PC auth
-route host:
+Drive app SDK declares `sdkwork-appbase-app-sdk` as the dependency for appbase
+IAM app operations needed by the PC auth route host:
 
 - `auth.sessions.create`
 - `auth.sessions.current.retrieve`
 - `auth.sessions.current.delete`
 - `auth.sessions.current.update`
 - `auth.sessions.refresh`
+- `auth.sessions.organizationSelection.create`
 - `auth.registrations.create`
-- `auth.verificationCodes.create`
-- `auth.verificationCodes.verify`
 - `auth.passwordResetRequests.create`
 - `auth.passwordResets.create`
-- `auth.oauthAuthorizationUrls.retrieve`
-- `auth.oauthSessions.create`
+- `oauth.authorizationUrls.create`
+- `oauth.sessions.create`
+- `oauth.deviceAuthorizations.create`
+- `oauth.deviceAuthorizations.retrieve`
+- `oauth.deviceAuthorizations.scans.create`
+- `oauth.deviceAuthorizations.passwordCompletions.create`
 - `system.iam.runtime.retrieve`
 - `system.iam.verificationPolicy.retrieve`
 - `iam.users.current.retrieve`
-- `openPlatform.qrAuth.sessions.*`
 
-These operations are composed from
-`sdkwork-appbase/packages/common/iam/sdkwork-iam-contracts/src/index.ts` into
-`generated/openapi/drive-app-api.openapi.json` by `tools/drive_openapi_export.mjs`.
-The composed OpenAPI is then passed to the canonical SDK generator. Do not add
+Verification-code delivery and verification are not appbase app operations in
+the current architecture. They must be consumed through the messaging app SDK
+surface (`messaging.verificationCodes.create` and
+`messaging.verificationCodes.verify`) or an approved appbase auth wrapper that
+delegates to that injected messaging client.
+
+These operations are composed from the appbase app OpenAPI into
+`apis/app-api/drive/drive-app-api.openapi.json` by `tools/drive_openapi_export.mjs`
+for runtime contract visibility. The Drive app SDK generator receives the
+owner-only input after appbase dependency operations are removed. Do not add
 these methods by hand to generated SDK output or by handwritten PC HTTP clients.
 
 ## Verification

@@ -85,9 +85,9 @@
     "apiAuthority": {
       "name": "sdkwork-drive.open",
       "prefix": "/open/v3/api",
-      "authorityOpenApi": "../../generated/openapi/drive-open-api.openapi.json",
+      "authorityOpenApi": "../../apis/open-api/drive/drive-open-api.openapi.json",
       "derivedOpenApi": [
-        "../../generated/openapi/drive-open-api.openapi.json"
+        "../../apis/open-api/drive/drive-open-api.openapi.json"
       ],
       "owner": "sdkwork-drive",
       "standard": "../../../../sdkwork-specs/SDK_WORKSPACE_GENERATION_SPEC.md"

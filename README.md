@@ -12,6 +12,31 @@ This repository is scaffolded for contract-first and TDD-first delivery.
 - S3-compatible object-storage abstraction with extension-ready provider boundary.
 - PostgreSQL-first database configuration with SQLite local/private mode.
 
+## SDKWork Standard Project Root
+
+This repository is a SDKWork standard project root governed by
+`../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md`.
+
+- `apis/` contains Drive-owned API contract sources and materialized OpenAPI inputs.
+- `apps/` contains runnable Drive application roots such as the PC/Tauri app.
+- `crates/` contains Rust service crates, route crates, workers, host/server crates, and reusable Rust libraries.
+- `sdks/` contains SDK family workspaces and generated SDK output.
+- `jobs/` is reserved for independently packaged Drive workers and scheduled jobs.
+- `tools/` contains deterministic developer, validation, and generation tools.
+- `plugins/` is reserved for Drive application/runtime plugin source.
+- `examples/` is reserved for runnable examples and SDK/API usage samples.
+- `configs/` contains safe checked-in config templates.
+- `deployments/` contains deployment descriptors.
+- `scripts/` contains thin command entrypoints.
+- `docs/` contains architecture notes, runbooks, and standards docs.
+- `tests/` is reserved for cross-package tests and shared fixtures.
+- `.sdkwork/` contains repository/application development metadata, local skills, and local agent plugins.
+
+`apis/` and `sdks/` are separate boundaries: API contracts and materialized
+OpenAPI inputs live under `apis/`; SDK family metadata, generation manifests,
+generated language workspaces, and generated transport output live under
+`sdks/`.
+
 ## Database Development Modes
 
 ```bash
@@ -26,18 +51,18 @@ Database policy and current runtime boundaries are documented in
 
 The local backend launch plan starts the four runtime API services together:
 
-- App API: `sdkwork-drive-app-api` on `127.0.0.1:18080`.
-- Backend API: `sdkwork-drive-backend-api` on `127.0.0.1:18081`.
-- Open API: `sdkwork-drive-open-api` on `127.0.0.1:18082`.
-- Admin storage API: `sdkwork-drive-admin-storage-api` on `127.0.0.1:18083`.
+- App API route crate: `sdkwork-router-drive-app-api` on `127.0.0.1:18080`.
+- Backend API route crate: `sdkwork-router-drive-backend-api` on `127.0.0.1:18081`.
+- Open API route crate: `sdkwork-router-drive-open-api` on `127.0.0.1:18082`.
+- Storage backend route crate: `sdkwork-router-storage-backend-api` on `127.0.0.1:18083`.
 
 Runtime services also accept `SDKWORK_DRIVE_CONFIG_FILE` pointing at a TOML file
-with a `[database]` section, for example `etc/drive.database.example.toml`.
+with a `[database]` section, for example `configs/drive.database.example.toml`.
 `SDKWORK_DRIVE_DATABASE_URL` remains the highest-priority override.
 
 ## IAM Login Integration
 
-Drive does not implement product-local login, refresh, logout, or current-session
+Drive does not implement application-local login, refresh, logout, or current-session
 routes. Login/session UX and transport are owned by SDKWork appbase; Drive
 consumes the resulting SDKWork dual-token and AppContext projection.
 Drive-specific standalone and embeddable IAM boundaries are documented in
@@ -68,9 +93,9 @@ runtime; Drive only consumes the host-provided SDKWork session projection.
 
 ```bash
 cargo test -p sdkwork-drive-contract
-cargo test -p sdkwork-drive-product
-cargo test -p sdkwork-drive-app-api
-cargo test -p sdkwork-drive-backend-api
+cargo test -p sdkwork-drive-workspace-service
+cargo test -p sdkwork-router-drive-app-api
+cargo test -p sdkwork-router-drive-backend-api
 ```
 
 ## OpenAPI And SDK Tooling
@@ -79,10 +104,11 @@ SDK family naming and app integration rules are documented in
 `docs/drive-sdk-integration-standard.md`. The canonical SDK families are
 `sdkwork-drive-sdk`, `sdkwork-drive-app-sdk`,
 `sdkwork-drive-backend-sdk`, and `sdkwork-drive-admin-storage-sdk`.
-API services and OpenAPI authority names still use
-`sdkwork-drive-open-api`, `sdkwork-drive-app-api`, and
-`sdkwork-drive-backend-api`; the dedicated storage administration module uses
-`sdkwork-drive-admin-storage-api`.
+OpenAPI authority names still use `sdkwork-drive-open-api`,
+`sdkwork-drive-app-api`, and `sdkwork-drive-backend-api`; the dedicated storage
+administration authority uses `sdkwork-drive-admin-storage-api`. Runtime Rust
+route crates use the standard `sdkwork-router-<capability>-<surface>` package
+family under `crates/`.
 
 Check contracts and schema quality without running SDK generation:
 
@@ -94,9 +120,9 @@ Check with explicit OpenAPI inputs (useful for CI workspace variants):
 
 ```bash
 node tools/drive_sdk_generate.mjs --check \
-  --app-input generated/openapi/drive-app-api.openapi.json \
-  --backend-input generated/openapi/drive-backend-api.openapi.json \
-  --admin-storage-input generated/openapi/drive-admin-storage-api.openapi.json
+  --app-input apis/app-api/drive/drive-app-api.openapi.json \
+  --backend-input apis/backend-api/drive/drive-backend-api.openapi.json \
+  --admin-storage-input apis/backend-api/drive/drive-admin-storage-api.openapi.json
 ```
 
 Run the generation pipeline after installing the native workspace dependencies.
@@ -119,7 +145,7 @@ node tools/drive_sdk_generate.mjs --language rust
 
 Domain: drive
 Capability: workspace
-Package type: rust-crate
+Package type: app
 Status: standard
 
 ### Public API

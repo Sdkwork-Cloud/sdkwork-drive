@@ -3,10 +3,10 @@
   "title": "SDKWork Drive App API SDK",
   "apiVersion": "0.1.0",
   "openapiVersion": "3.1.2",
-  "authoritySpec": "../../generated/openapi/drive-app-api.openapi.json",
-  "generationInputSpec": "../../generated/openapi/drive-app-api.openapi.json",
+  "authoritySpec": "../../apis/app-api/drive/drive-app-api.openapi.json",
+  "generationInputSpec": "../../apis/app-api/drive/drive-app-api.openapi.json",
   "derivedSpecs": {
-    "default": "../../generated/openapi/drive-app-api.openapi.json"
+    "default": "../../apis/app-api/drive/drive-app-api.openapi.json"
   },
   "apiAuthority": "sdkwork-drive.app",
   "discoverySurface": {
@@ -87,7 +87,7 @@
       "required": true,
       "dependencyMode": "consumer-sdk",
       "apiPrefix": "/app/v3/api",
-      "apiAuthority": "sdkwork-appbase.app",
+      "apiAuthority": "sdkwork-appbase-app-api",
       "generatedTransportImportPolicy": "forbidden",
       "packageByLanguage": {
         "typescript": "@sdkwork/appbase-app-sdk",

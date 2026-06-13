@@ -2,10 +2,10 @@
   "workspace": "sdkwork-drive-admin-storage-sdk",
   "sdkOwner": "sdkwork-drive",
   "apiAuthority": "sdkwork-drive.admin.storage",
-  "authoritySpec": "../../generated/openapi/drive-admin-storage-api.openapi.json",
-  "generationInputSpec": "../../generated/openapi/drive-admin-storage-api.openapi.json",
+  "authoritySpec": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json",
+  "generationInputSpec": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json",
   "derivedSpecs": {
-    "default": "../../generated/openapi/drive-admin-storage-api.openapi.json"
+    "default": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json"
   },
   "discoverySurface": {
     "sdkTarget": "custom",
@@ -22,7 +22,7 @@
       "required": true,
       "dependencyMode": "consumer-sdk",
       "apiPrefix": "/backend/v3/api",
-      "apiAuthority": "sdkwork-appbase.backend",
+      "apiAuthority": "sdkwork-appbase-backend-api",
       "generatedTransportImportPolicy": "forbidden",
       "packageByLanguage": {
         "typescript": "@sdkwork/appbase-backend-sdk",

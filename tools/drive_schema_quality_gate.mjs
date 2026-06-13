@@ -8,26 +8,30 @@ const workspaceRoot = path.resolve(scriptDir, "..");
 
 const defaultOpenOpenapiPath = path.join(
   workspaceRoot,
-  "generated",
-  "openapi",
+  "apis",
+  "open-api",
+  "drive",
   "drive-open-api.openapi.json",
 );
 const defaultAppOpenapiPath = path.join(
   workspaceRoot,
-  "generated",
-  "openapi",
+  "apis",
+  "app-api",
+  "drive",
   "drive-app-api.openapi.json",
 );
 const defaultBackendOpenapiPath = path.join(
   workspaceRoot,
-  "generated",
-  "openapi",
+  "apis",
+  "backend-api",
+  "drive",
   "drive-backend-api.openapi.json",
 );
 const defaultAdminStorageOpenapiPath = path.join(
   workspaceRoot,
-  "generated",
-  "openapi",
+  "apis",
+  "backend-api",
+  "drive",
   "drive-admin-storage-api.openapi.json",
 );
 const defaultSpecialSpacesSchemaPath = path.join(
@@ -101,6 +105,7 @@ const SDK_AUTHORITIES = {
 const APPBASE_DEPENDENCY_PATH_PREFIXES = [
   "/app/v3/api/auth/",
   "/app/v3/api/iam/",
+  "/app/v3/api/oauth/",
   "/app/v3/api/open_platform/",
   "/app/v3/api/system/iam/",
   "/backend/v3/api/auth/",
@@ -115,8 +120,8 @@ const APPBASE_BACKEND_DEPENDENCY_PATH_PREFIXES = [
   "/backend/v3/api/system/iam/",
 ];
 const APPBASE_APP_OPERATION_IDS = [
-  "oauthAuthorizationUrls.retrieve",
-  "oauthSessions.create",
+  "oauth.authorizationUrls.create",
+  "oauth.sessions.create",
   "passwordResetRequests.create",
   "passwordResets.create",
   "registrations.create",
@@ -124,13 +129,12 @@ const APPBASE_APP_OPERATION_IDS = [
   "sessions.current.delete",
   "sessions.current.retrieve",
   "sessions.current.update",
+  "sessions.organizationSelection.create",
   "sessions.refresh",
-  "verificationCodes.create",
-  "verificationCodes.verify",
-  "qrAuth.sessions.create",
-  "qrAuth.sessions.retrieve",
-  "qrAuth.sessions.scans.create",
-  "qrAuth.sessions.passwords.create",
+  "oauth.deviceAuthorizations.create",
+  "oauth.deviceAuthorizations.retrieve",
+  "oauth.deviceAuthorizations.scans.create",
+  "oauth.deviceAuthorizations.passwordCompletions.create",
   "iam.runtime.retrieve",
   "iam.verificationPolicy.retrieve",
   "users.current.retrieve",
@@ -352,19 +356,18 @@ function assertOperationSecurity(document, operationId, expectedSecurity, label)
 
 function assertIamAppbaseSecurity(document, label) {
   for (const operationId of [
-    "oauthAuthorizationUrls.retrieve",
-    "oauthSessions.create",
+    "oauth.authorizationUrls.create",
+    "oauth.sessions.create",
     "passwordResetRequests.create",
     "passwordResets.create",
     "registrations.create",
     "sessions.create",
+    "sessions.organizationSelection.create",
     "sessions.refresh",
-    "verificationCodes.create",
-    "verificationCodes.verify",
-    "qrAuth.sessions.create",
-    "qrAuth.sessions.retrieve",
-    "qrAuth.sessions.scans.create",
-    "qrAuth.sessions.passwords.create",
+    "oauth.deviceAuthorizations.create",
+    "oauth.deviceAuthorizations.retrieve",
+    "oauth.deviceAuthorizations.scans.create",
+    "oauth.deviceAuthorizations.passwordCompletions.create",
     "iam.runtime.retrieve",
     "iam.verificationPolicy.retrieve",
   ]) {

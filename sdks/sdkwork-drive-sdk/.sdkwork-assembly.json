@@ -3,10 +3,10 @@
   "title": "SDKWork Drive Open API SDK",
   "apiVersion": "0.1.0",
   "openapiVersion": "3.1.2",
-  "authoritySpec": "../../generated/openapi/drive-open-api.openapi.json",
-  "generationInputSpec": "../../generated/openapi/drive-open-api.openapi.json",
+  "authoritySpec": "../../apis/open-api/drive/drive-open-api.openapi.json",
+  "generationInputSpec": "../../apis/open-api/drive/drive-open-api.openapi.json",
   "derivedSpecs": {
-    "default": "../../generated/openapi/drive-open-api.openapi.json"
+    "default": "../../apis/open-api/drive/drive-open-api.openapi.json"
   },
   "apiAuthority": "sdkwork-drive.open",
   "discoverySurface": {
@@ -79,5 +79,6 @@
       "description": "Generator-owned Go transport SDK for sdkwork-drive open API."
     }
   ],
-  "sdkOwner": "sdkwork-drive"
+  "sdkOwner": "sdkwork-drive",
+  "sdkDependencies": []
 }

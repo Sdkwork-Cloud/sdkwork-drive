@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the Drive-local SDK family naming and frontend/backend integration boundary. It is a product-local implementation note, not a replacement for the global SDK standards.
+This document defines the Drive-local SDK family naming and frontend/backend integration boundary. It is a Drive-local implementation note, not a replacement for the global SDK standards.
 
 Normative order:
 
@@ -12,12 +12,12 @@ Normative order:
 
 ## API Authority And SDK Family Mapping
 
-API services, OpenAPI files, and Rust service crates keep the `*-api` naming because they describe runtime API authority:
+OpenAPI files keep the `*-api` naming because they describe runtime API authority. Runtime Rust route crates use the standard `sdkwork-router-<capability>-<surface>` naming:
 
-- `services/sdkwork-drive-open-api` -> `generated/openapi/drive-open-api.openapi.json`
-- `services/sdkwork-drive-app-api` -> `generated/openapi/drive-app-api.openapi.json`
-- `services/sdkwork-drive-backend-api` -> `generated/openapi/drive-backend-api.openapi.json`
-- `services/sdkwork-drive-admin-storage-api` -> `generated/openapi/drive-admin-storage-api.openapi.json`
+- `crates/sdkwork-router-drive-open-api` -> `apis/open-api/drive/drive-open-api.openapi.json`
+- `crates/sdkwork-router-drive-app-api` -> `apis/app-api/drive/drive-app-api.openapi.json`
+- `crates/sdkwork-router-drive-backend-api` -> `apis/backend-api/drive/drive-backend-api.openapi.json`
+- `crates/sdkwork-router-storage-backend-api` -> `apis/backend-api/drive/drive-admin-storage-api.openapi.json`
 
 Generated SDK families use `*-sdk` naming because they are consumable client SDK workspaces:
 
@@ -56,7 +56,7 @@ Canonical generated package names:
 
 The SDK family root `sdk-manifest.json`, assembly `workspace`, generator `SDK_NAME`, and generator `--sdk-name` value must all use the canonical SDK family name. Generated `sdkwork-sdk.json` also uses the SDK family name, but generated source files must not be post-processed with Drive ownership metadata.
 
-Do not infer SDK family names from service crate names. The service crates are API authority implementations; the SDK families are client distribution workspaces. When adding or reviewing any generated SDK surface, apply this mapping mechanically:
+Do not infer SDK family names from route crate names. The route crates are API authority implementations; the SDK families are client distribution workspaces. When adding or reviewing any generated SDK surface, apply this mapping mechanically:
 
 | API authority or service | SDK family | TypeScript output | Generated package base |
 | --- | --- | --- | --- |
@@ -76,7 +76,7 @@ Forbidden SDK family directories:
 - `sdks/drive-backend-sdk`
 - `sdks/drive-admin-storage-sdk`
 
-`sdkwork-drive-open-api`, `sdkwork-drive-app-api`, `sdkwork-drive-backend-api`, and `sdkwork-drive-admin-storage-api` are valid only for runtime API services, Cargo packages, OpenAPI authority naming, generated OpenAPI filenames, and service health metadata. They are not valid SDK family names.
+`sdkwork-drive-open-api`, `sdkwork-drive-app-api`, `sdkwork-drive-backend-api`, and `sdkwork-drive-admin-storage-api` are valid only for OpenAPI authority naming, generated OpenAPI filenames, and API/SDK metadata. Runtime Rust packages use `sdkwork-router-*`. The API authority names are not valid SDK family names.
 
 Forbidden SDK metadata and package values:
 
@@ -156,7 +156,7 @@ Canonical call path:
 ```text
 feature UI -> injected DriveFileService -> @sdkwork/drive-pc-core service facade
   -> createDriveAppSdkClient -> sdks/sdkwork-drive-app-sdk/... composed operations + generated transport
-  -> services/sdkwork-drive-app-api
+  -> crates/sdkwork-router-drive-app-api
 ```
 
 Rules:
@@ -191,7 +191,7 @@ node sdks\test\verify-sdk-ownership-boundaries.test.mjs
 Before completing SDK family changes, scan for forbidden SDK family paths and metadata:
 
 ```powershell
-rg -n "sdks/sdkwork-drive-(open|app|backend|admin-storage)-api|sdks/drive-(open|app|backend|admin-storage)-sdk|sdkName\": \"sdkwork-drive-(open|app|backend|admin-storage)-api" README.md docs apps sdks tools crates services -S
+rg -n "sdks/sdkwork-drive-(open|app|backend|admin-storage)-api|sdks/drive-(open|app|backend|admin-storage)-sdk|sdkName\": \"sdkwork-drive-(open|app|backend|admin-storage)-api" README.md docs apps sdks tools crates -S
 ```
 
 Use targeted scans when the shell makes regex quoting ambiguous:
@@ -201,7 +201,7 @@ Get-ChildItem sdks | Select-Object Name
 rg -n 'sdkwork-drive-(open|app|backend|admin-storage)-api' sdks -S
 rg -n 'sdkwork-drive-(open|app|backend|admin-storage)-api-generated|name: "sdkwork-drive-(open|app|backend|admin-storage)-api"|"sdkName": "sdkwork-drive-(open|app|backend|admin-storage)-api"' sdks apps tools crates -S
 rg -n 'sdkOwner|apiAuthority|sdkDependencies|standardProfile' sdks/*/*/generated/server-openapi -g 'sdk-manifest.json' -g '*.ts' -g '*.json'
-rg -n 'sdks/sdkwork-drive-(open|app|backend)-api|sdks/drive-(open|app|backend)-sdk' README.md docs apps tools crates services -S
+rg -n 'sdks/sdkwork-drive-(open|app|backend)-api|sdks/drive-(open|app|backend)-sdk' README.md docs apps tools crates -S
 ```
 
 Expected results:

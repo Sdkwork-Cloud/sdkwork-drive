@@ -84,7 +84,7 @@ Object-key routes accept slash-separated key tails and `%2F`-encoded keys; route
 
 ### Admin Storage API
 
-`services/sdkwork-drive-admin-storage-api` is the first `sdkwork-drive-admin-xxx` module. It owns application-level storage administration and uses `/admin/v3/api/drive/storage/...` routes:
+`crates/sdkwork-router-storage-backend-api` owns application-level storage administration and uses `/admin/v3/api/drive/storage/...` routes:
 
 - `GET|POST /admin/v3/api/drive/storage/providers`
 - `GET|PATCH|DELETE /admin/v3/api/drive/storage/providers/{providerId}`
@@ -109,9 +109,9 @@ Admin-storage runtime routes under `/admin/v3/api/drive/storage/*` require the s
 
 All admin-storage mutation routes must receive a real non-empty `operatorId` and record a Drive audit event. Provider and binding mutations carry `operatorId` in the JSON body except provider deletion, bucket create/delete, object delete, and default binding deletion, which use the required `operatorId` query parameter. Object copy carries `operatorId` in the request body. Low-level bucket and object audit events use the storage provider id as the audit resource id; object keys remain operational parameters, not audit resource identifiers.
 
-Future admin modules must follow the `services/sdkwork-drive-admin-xxx-api` naming pattern, where `xxx` is a bounded business domain such as `storage`, `audit`, `workspace`, `policy`, or `repair`. Each module must expose only its own admin surface and reuse product services/contracts instead of duplicating Drive business logic.
+Future backend-admin route modules must follow the `crates/sdkwork-router-<capability>-backend-api` naming pattern, where `<capability>` is a bounded business capability such as `storage`, `audit`, `workspace`, `policy`, or `repair`. Each module must expose only its own backend-admin surface and reuse Drive service crates/contracts instead of duplicating Drive business logic.
 
-The corresponding generated SDK family is `sdks/sdkwork-drive-admin-storage-sdk`, not `sdks/sdkwork-drive-admin-storage-api`. Its authority is `sdkwork-drive.admin.storage`, its OpenAPI input is `generated/openapi/drive-admin-storage-api.openapi.json`, and it exposes the storage administration operations through a dedicated client surface. Because the canonical `sdkwork-v3` backend generator profile is reserved for `/backend/v3/api`, this SDK uses generator type `custom` with Drive-local profile metadata `sdkwork-drive-admin-storage-v3`; it still declares dual-token security and appbase backend IAM dependency metadata.
+The corresponding generated SDK family is `sdks/sdkwork-drive-admin-storage-sdk`, not `sdks/sdkwork-drive-admin-storage-api`. Its authority is `sdkwork-drive.admin.storage`, its OpenAPI input is `apis/backend-api/drive/drive-admin-storage-api.openapi.json`, and it exposes the storage administration operations through a dedicated client surface. Because the canonical `sdkwork-v3` backend generator profile is reserved for `/backend/v3/api`, this SDK uses generator type `custom` with Drive-local profile metadata `sdkwork-drive-admin-storage-v3`; it still declares dual-token security and appbase backend IAM dependency metadata.
 
 ## Storage Contract
 
@@ -162,7 +162,7 @@ Rules:
 - OpenDAL is opt-in plugin infrastructure, not the default production S3 path.
 - The admin storage crate exposes the optional Cargo feature `opendal-s3-plugin`; default builds do not enable it.
 - Runtime selection is explicit through `SDKWORK_DRIVE_ADMIN_STORAGE_OBJECT_STORE_ADAPTER`. The default value is `aws_sdk_s3`; `opendal_s3` is accepted only when the admin storage module is built with the `opendal-s3-plugin` feature.
-- Selecting `opendal_s3` affects filesystem-style object operations in `services/sdkwork-drive-admin-storage-api`; app/open/backend APIs and the Drive product layer continue to use the full AWS SDK S3 adapter.
+- Selecting `opendal_s3` affects filesystem-style object operations in `crates/sdkwork-router-storage-backend-api`; app/open/backend APIs and the Drive workspace service continue to use the full AWS SDK S3 adapter.
 - OpenDAL configuration must receive and enforce the persisted provider `strict_tls` value; it must reject `strict_tls=true` for `http://` endpoints just like the full AWS SDK S3 adapter.
 - The plugin adapts OpenDAL S3 to `DriveObjectStore` for filesystem-style object operations: put, head, delete, range read, list, copy, and presigned download where supported by OpenDAL.
 - It does not fake Drive multipart semantics. Drive multipart upload, upload-part presign, complete, and abort remain the responsibility of `sdkwork-drive-storage-s3`.
@@ -187,8 +187,8 @@ crates/
   sdkwork-drive-storage-local/
     src/local_store.rs
 
-services/
-  sdkwork-drive-product/
+crates/
+  sdkwork-drive-workspace-service/
     src/domain/storage_provider.rs
     src/domain/upload.rs
     src/application/storage_provider_service.rs
@@ -199,18 +199,18 @@ services/
     src/infrastructure/sql/storage_provider_store.rs
     src/infrastructure/sql/upload_session_store.rs
     src/infrastructure/sql/storage_object_store.rs
-  sdkwork-drive-app-api/
+  sdkwork-router-drive-app-api/
     src/lib.rs
-  sdkwork-drive-backend-api/
+  sdkwork-router-drive-backend-api/
     src/lib.rs
-  sdkwork-drive-admin-storage-api/
+  sdkwork-router-storage-backend-api/
     src/lib.rs
     src/main.rs
-  sdkwork-drive-admin-xxx-api/
+  sdkwork-router-<capability>-backend-api/
     src/lib.rs
     src/main.rs
 
-generated/
+apis/
   openapi/
     drive-app-api.openapi.json
     drive-backend-api.openapi.json
@@ -237,7 +237,7 @@ Rules:
 - Admin API modules own application management operations such as provider accounts, bucket/object administration, and space storage binding.
 - OpenAPI files must reflect every exposed route and response field.
 - App OpenAPI and App SDK must not expose storage administration paths, operationIds, request/response schemas, or generated client methods. Storage administration belongs to backend/admin SDK families only.
-- Generated admin SDKs must live under `sdks/sdkwork-drive-admin-xxx-sdk` and must use the canonical `../../sdkwork-sdk-generator/bin/sdkgen.js` generator through Drive wrapper scripts.
+- Generated backend-admin SDKs must live under the owning SDK family in `sdks/` and must use the canonical `../../sdkwork-sdk-generator/bin/sdkgen.js` generator through Drive wrapper scripts.
 
 ## Current Implementation Notes
 

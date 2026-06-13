@@ -1,6 +1,8 @@
 use std::path::PathBuf;
-use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+mod common;
+use common::run_node_command_in;
 
 const GLOBAL_CANONICAL_SDK_GENERATOR_ROOT: &str = r"..\sdkwork-sdk-generator";
 const GLOBAL_CANONICAL_SDK_GENERATOR_BIN: &str = r"..\sdkwork-sdk-generator\bin\sdkgen.js";
@@ -26,12 +28,7 @@ fn sdkwork_root() -> PathBuf {
 
 fn assert_node_script_succeeds(args: &[PathBuf]) {
     let root = workspace_root();
-    let mut command = Command::new("node");
-    command.current_dir(&root);
-    for arg in args {
-        command.arg(arg);
-    }
-    let output = command.output().expect("node command should start");
+    let output = run_node_command_in(&root, args.iter()).expect("node command should start");
     assert!(
         output.status.success(),
         "stdout:\n{}\nstderr:\n{}",
@@ -47,13 +44,13 @@ fn openapi_export_supports_explicit_input_flags() {
         root.join("tools/drive_openapi_export.mjs"),
         PathBuf::from("--check"),
         PathBuf::from("--open-input"),
-        root.join("generated/openapi/drive-open-api.openapi.json"),
+        root.join("apis/open-api/drive/drive-open-api.openapi.json"),
         PathBuf::from("--app-input"),
-        root.join("generated/openapi/drive-app-api.openapi.json"),
+        root.join("apis/app-api/drive/drive-app-api.openapi.json"),
         PathBuf::from("--backend-input"),
-        root.join("generated/openapi/drive-backend-api.openapi.json"),
+        root.join("apis/backend-api/drive/drive-backend-api.openapi.json"),
         PathBuf::from("--admin-storage-input"),
-        root.join("generated/openapi/drive-admin-storage-api.openapi.json"),
+        root.join("apis/backend-api/drive/drive-admin-storage-api.openapi.json"),
     ]);
 }
 
@@ -71,13 +68,13 @@ fn openapi_export_normalizes_sdkwork_v3_problem_details_and_tags() {
         PathBuf::from("--output-dir"),
         output_dir.clone(),
         PathBuf::from("--open-input"),
-        root.join("generated/openapi/drive-open-api.openapi.json"),
+        root.join("apis/open-api/drive/drive-open-api.openapi.json"),
         PathBuf::from("--app-input"),
-        root.join("generated/openapi/drive-app-api.openapi.json"),
+        root.join("apis/app-api/drive/drive-app-api.openapi.json"),
         PathBuf::from("--backend-input"),
-        root.join("generated/openapi/drive-backend-api.openapi.json"),
+        root.join("apis/backend-api/drive/drive-backend-api.openapi.json"),
         PathBuf::from("--admin-storage-input"),
-        root.join("generated/openapi/drive-admin-storage-api.openapi.json"),
+        root.join("apis/backend-api/drive/drive-admin-storage-api.openapi.json"),
     ]);
 
     let app: serde_json::Value = serde_json::from_str(
@@ -122,13 +119,13 @@ fn schema_quality_gate_supports_explicit_input_flags() {
     assert_node_script_succeeds(&[
         root.join("tools/drive_schema_quality_gate.mjs"),
         PathBuf::from("--open-openapi"),
-        root.join("generated/openapi/drive-open-api.openapi.json"),
+        root.join("apis/open-api/drive/drive-open-api.openapi.json"),
         PathBuf::from("--app-openapi"),
-        root.join("generated/openapi/drive-app-api.openapi.json"),
+        root.join("apis/app-api/drive/drive-app-api.openapi.json"),
         PathBuf::from("--backend-openapi"),
-        root.join("generated/openapi/drive-backend-api.openapi.json"),
+        root.join("apis/backend-api/drive/drive-backend-api.openapi.json"),
         PathBuf::from("--admin-storage-openapi"),
-        root.join("generated/openapi/drive-admin-storage-api.openapi.json"),
+        root.join("apis/backend-api/drive/drive-admin-storage-api.openapi.json"),
         PathBuf::from("--special-spaces-schema"),
         root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml"),
         PathBuf::from("--security-audit-schema"),
@@ -147,13 +144,13 @@ fn sdk_generate_check_supports_explicit_openapi_and_language_flags() {
         PathBuf::from("--language"),
         PathBuf::from("rust"),
         PathBuf::from("--open-input"),
-        root.join("generated/openapi/drive-open-api.openapi.json"),
+        root.join("apis/open-api/drive/drive-open-api.openapi.json"),
         PathBuf::from("--app-input"),
-        root.join("generated/openapi/drive-app-api.openapi.json"),
+        root.join("apis/app-api/drive/drive-app-api.openapi.json"),
         PathBuf::from("--backend-input"),
-        root.join("generated/openapi/drive-backend-api.openapi.json"),
+        root.join("apis/backend-api/drive/drive-backend-api.openapi.json"),
         PathBuf::from("--admin-storage-input"),
-        root.join("generated/openapi/drive-admin-storage-api.openapi.json"),
+        root.join("apis/backend-api/drive/drive-admin-storage-api.openapi.json"),
     ]);
 }
 
@@ -170,7 +167,7 @@ fn local_sdk_generator_stub_can_generate_typescript_output() {
         root.join("tools/sdkwork_sdk_generator_stub.mjs"),
         PathBuf::from("generate"),
         PathBuf::from("--input"),
-        root.join("generated/openapi/drive-app-api.openapi.json"),
+        root.join("apis/app-api/drive/drive-app-api.openapi.json"),
         PathBuf::from("--output"),
         output_dir.clone(),
         PathBuf::from("--name"),
@@ -210,7 +207,7 @@ fn local_sdk_generator_stub_can_generate_typescript_output() {
 }
 
 #[test]
-fn sdk_family_generators_prefer_spring_ai_plus_sdk_generator() {
+fn sdk_family_generators_prefer_canonical_sibling_sdk_generator() {
     let root = workspace_root();
     let runner_path = root.join("tools/drive_sdk_generator_runner.mjs");
     let runner = std::fs::read_to_string(&runner_path)
@@ -220,11 +217,19 @@ fn sdk_family_generators_prefer_spring_ai_plus_sdk_generator() {
         "shared SDK generator runner should expose resolveSdkGeneratorInvocation"
     );
     assert!(
-        runner.contains(r#".sdkwork"#)
-            && runner.contains(r#"dependencies"#)
+        runner.contains(r#""..""#)
             && runner.contains("sdkwork-sdk-generator")
             && runner.contains("sdkgen.js"),
-        "shared SDK generator runner should use the standard materialized SDK generator path"
+        "shared SDK generator runner should use the canonical sibling SDK generator path"
+    );
+    let retired_unix_dependency_root = [".sdkwork", "dependencies"].join("/");
+    let retired_windows_dependency_root = [".sdkwork", "dependencies"].join("\\");
+    assert!(
+        !runner.contains(r#"" .sdkwork", "dependencies"#)
+            && !runner.contains(r#"".sdkwork", "dependencies"#)
+            && !runner.contains(&retired_unix_dependency_root)
+            && !runner.contains(&retired_windows_dependency_root),
+        "shared SDK generator runner must not use root .sdkwork as a dependency source"
     );
     assert!(
         !runner.contains("legacy-java-plus-workspace"),
@@ -418,9 +423,8 @@ fn generated_drive_sdks_use_canonical_family_names_and_sdkgen_manifests() {
                     required_path.display()
                 );
             }
-            assert_eq!(
-                output_root.join("sdk-manifest.json").exists(),
-                false,
+            assert!(
+                !output_root.join("sdk-manifest.json").exists(),
                 "{sdk_name}/{language} generated output must not carry SDK ownership manifest"
             );
             assert_eq!(
@@ -484,8 +488,8 @@ fn schema_quality_gate_fails_when_maintenance_job_enum_is_missing() {
     let temp_dir = std::env::temp_dir().join(format!("sdkwork-drive-schema-gate-{nonce}"));
     std::fs::create_dir_all(&temp_dir).expect("temp directory should be created");
 
-    let app_src = root.join("generated/openapi/drive-app-api.openapi.json");
-    let backend_src = root.join("generated/openapi/drive-backend-api.openapi.json");
+    let app_src = root.join("apis/app-api/drive/drive-app-api.openapi.json");
+    let backend_src = root.join("apis/backend-api/drive/drive-backend-api.openapi.json");
     let app_dst = temp_dir.join("drive-app-api.openapi.json");
     let backend_dst = temp_dir.join("drive-backend-api.openapi.json");
     std::fs::copy(&app_src, &app_dst).expect("app openapi should be copied");
@@ -509,21 +513,23 @@ fn schema_quality_gate_fails_when_maintenance_job_enum_is_missing() {
     std::fs::write(&backend_dst, format!("{patched}\n"))
         .expect("patched backend openapi should be writable");
 
-    let output = Command::new("node")
-        .current_dir(&root)
-        .arg(root.join("tools/drive_schema_quality_gate.mjs"))
-        .arg("--app-openapi")
-        .arg(&app_dst)
-        .arg("--backend-openapi")
-        .arg(&backend_dst)
-        .arg("--special-spaces-schema")
-        .arg(root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml"))
-        .arg("--security-audit-schema")
-        .arg(root.join("docs/schema-registry/tables/004-drive-security-audit.yaml"))
-        .arg("--storage-schema")
-        .arg(root.join("docs/schema-registry/tables/003-drive-storage.yaml"))
-        .output()
-        .expect("schema quality gate command should start");
+    let output = run_node_command_in(
+        &root,
+        [
+            root.join("tools/drive_schema_quality_gate.mjs"),
+            PathBuf::from("--app-openapi"),
+            app_dst.clone(),
+            PathBuf::from("--backend-openapi"),
+            backend_dst.clone(),
+            PathBuf::from("--special-spaces-schema"),
+            root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml"),
+            PathBuf::from("--security-audit-schema"),
+            root.join("docs/schema-registry/tables/004-drive-security-audit.yaml"),
+            PathBuf::from("--storage-schema"),
+            root.join("docs/schema-registry/tables/003-drive-storage.yaml"),
+        ],
+    )
+    .expect("schema quality gate command should start");
     assert!(
         !output.status.success(),
         "schema quality gate should fail when enum is missing, stdout:\n{}\nstderr:\n{}",
@@ -542,8 +548,8 @@ fn schema_quality_gate_fails_when_maintenance_jobs_query_enum_is_missing() {
     let temp_dir = std::env::temp_dir().join(format!("sdkwork-drive-schema-gate-query-{nonce}"));
     std::fs::create_dir_all(&temp_dir).expect("temp directory should be created");
 
-    let app_src = root.join("generated/openapi/drive-app-api.openapi.json");
-    let backend_src = root.join("generated/openapi/drive-backend-api.openapi.json");
+    let app_src = root.join("apis/app-api/drive/drive-app-api.openapi.json");
+    let backend_src = root.join("apis/backend-api/drive/drive-backend-api.openapi.json");
     let app_dst = temp_dir.join("drive-app-api.openapi.json");
     let backend_dst = temp_dir.join("drive-backend-api.openapi.json");
     std::fs::copy(&app_src, &app_dst).expect("app openapi should be copied");
@@ -574,21 +580,23 @@ fn schema_quality_gate_fails_when_maintenance_jobs_query_enum_is_missing() {
     std::fs::write(&backend_dst, format!("{patched}\n"))
         .expect("patched backend openapi should be writable");
 
-    let output = Command::new("node")
-        .current_dir(&root)
-        .arg(root.join("tools/drive_schema_quality_gate.mjs"))
-        .arg("--app-openapi")
-        .arg(&app_dst)
-        .arg("--backend-openapi")
-        .arg(&backend_dst)
-        .arg("--special-spaces-schema")
-        .arg(root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml"))
-        .arg("--security-audit-schema")
-        .arg(root.join("docs/schema-registry/tables/004-drive-security-audit.yaml"))
-        .arg("--storage-schema")
-        .arg(root.join("docs/schema-registry/tables/003-drive-storage.yaml"))
-        .output()
-        .expect("schema quality gate command should start");
+    let output = run_node_command_in(
+        &root,
+        [
+            root.join("tools/drive_schema_quality_gate.mjs"),
+            PathBuf::from("--app-openapi"),
+            app_dst.clone(),
+            PathBuf::from("--backend-openapi"),
+            backend_dst.clone(),
+            PathBuf::from("--special-spaces-schema"),
+            root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml"),
+            PathBuf::from("--security-audit-schema"),
+            root.join("docs/schema-registry/tables/004-drive-security-audit.yaml"),
+            PathBuf::from("--storage-schema"),
+            root.join("docs/schema-registry/tables/003-drive-storage.yaml"),
+        ],
+    )
+    .expect("schema quality gate command should start");
     assert!(
         !output.status.success(),
         "schema quality gate should fail when maintenance jobs query enum is missing, stdout:\n{}\nstderr:\n{}",
@@ -607,8 +615,8 @@ fn schema_quality_gate_fails_when_maintenance_jobs_operator_id_pattern_is_missin
     let temp_dir = std::env::temp_dir().join(format!("sdkwork-drive-schema-gate-pattern-{nonce}"));
     std::fs::create_dir_all(&temp_dir).expect("temp directory should be created");
 
-    let app_src = root.join("generated/openapi/drive-app-api.openapi.json");
-    let backend_src = root.join("generated/openapi/drive-backend-api.openapi.json");
+    let app_src = root.join("apis/app-api/drive/drive-app-api.openapi.json");
+    let backend_src = root.join("apis/backend-api/drive/drive-backend-api.openapi.json");
     let app_dst = temp_dir.join("drive-app-api.openapi.json");
     let backend_dst = temp_dir.join("drive-backend-api.openapi.json");
     std::fs::copy(&app_src, &app_dst).expect("app openapi should be copied");
@@ -639,21 +647,23 @@ fn schema_quality_gate_fails_when_maintenance_jobs_operator_id_pattern_is_missin
     std::fs::write(&backend_dst, format!("{patched}\n"))
         .expect("patched backend openapi should be writable");
 
-    let output = Command::new("node")
-        .current_dir(&root)
-        .arg(root.join("tools/drive_schema_quality_gate.mjs"))
-        .arg("--app-openapi")
-        .arg(&app_dst)
-        .arg("--backend-openapi")
-        .arg(&backend_dst)
-        .arg("--special-spaces-schema")
-        .arg(root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml"))
-        .arg("--security-audit-schema")
-        .arg(root.join("docs/schema-registry/tables/004-drive-security-audit.yaml"))
-        .arg("--storage-schema")
-        .arg(root.join("docs/schema-registry/tables/003-drive-storage.yaml"))
-        .output()
-        .expect("schema quality gate command should start");
+    let output = run_node_command_in(
+        &root,
+        [
+            root.join("tools/drive_schema_quality_gate.mjs"),
+            PathBuf::from("--app-openapi"),
+            app_dst.clone(),
+            PathBuf::from("--backend-openapi"),
+            backend_dst.clone(),
+            PathBuf::from("--special-spaces-schema"),
+            root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml"),
+            PathBuf::from("--security-audit-schema"),
+            root.join("docs/schema-registry/tables/004-drive-security-audit.yaml"),
+            PathBuf::from("--storage-schema"),
+            root.join("docs/schema-registry/tables/003-drive-storage.yaml"),
+        ],
+    )
+    .expect("schema quality gate command should start");
     assert!(
         !output.status.success(),
         "schema quality gate should fail when operatorId pattern is missing, stdout:\n{}\nstderr:\n{}",
@@ -673,8 +683,8 @@ fn schema_quality_gate_fails_when_audit_events_request_id_pattern_is_missing() {
         std::env::temp_dir().join(format!("sdkwork-drive-audit-schema-gate-pattern-{nonce}"));
     std::fs::create_dir_all(&temp_dir).expect("temp directory should be created");
 
-    let app_src = root.join("generated/openapi/drive-app-api.openapi.json");
-    let backend_src = root.join("generated/openapi/drive-backend-api.openapi.json");
+    let app_src = root.join("apis/app-api/drive/drive-app-api.openapi.json");
+    let backend_src = root.join("apis/backend-api/drive/drive-backend-api.openapi.json");
     let app_dst = temp_dir.join("drive-app-api.openapi.json");
     let backend_dst = temp_dir.join("drive-backend-api.openapi.json");
     std::fs::copy(&app_src, &app_dst).expect("app openapi should be copied");
@@ -705,21 +715,23 @@ fn schema_quality_gate_fails_when_audit_events_request_id_pattern_is_missing() {
     std::fs::write(&backend_dst, format!("{patched}\n"))
         .expect("patched backend openapi should be writable");
 
-    let output = Command::new("node")
-        .current_dir(&root)
-        .arg(root.join("tools/drive_schema_quality_gate.mjs"))
-        .arg("--app-openapi")
-        .arg(&app_dst)
-        .arg("--backend-openapi")
-        .arg(&backend_dst)
-        .arg("--special-spaces-schema")
-        .arg(root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml"))
-        .arg("--security-audit-schema")
-        .arg(root.join("docs/schema-registry/tables/004-drive-security-audit.yaml"))
-        .arg("--storage-schema")
-        .arg(root.join("docs/schema-registry/tables/003-drive-storage.yaml"))
-        .output()
-        .expect("schema quality gate command should start");
+    let output = run_node_command_in(
+        &root,
+        [
+            root.join("tools/drive_schema_quality_gate.mjs"),
+            PathBuf::from("--app-openapi"),
+            app_dst.clone(),
+            PathBuf::from("--backend-openapi"),
+            backend_dst.clone(),
+            PathBuf::from("--special-spaces-schema"),
+            root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml"),
+            PathBuf::from("--security-audit-schema"),
+            root.join("docs/schema-registry/tables/004-drive-security-audit.yaml"),
+            PathBuf::from("--storage-schema"),
+            root.join("docs/schema-registry/tables/003-drive-storage.yaml"),
+        ],
+    )
+    .expect("schema quality gate command should start");
     assert!(
         !output.status.success(),
         "schema quality gate should fail when audit_events requestId pattern is missing, stdout:\n{}\nstderr:\n{}",
@@ -738,8 +750,8 @@ fn schema_quality_gate_fails_when_audit_index_is_missing_in_registry() {
     let temp_dir = std::env::temp_dir().join(format!("sdkwork-drive-audit-index-gate-{nonce}"));
     std::fs::create_dir_all(&temp_dir).expect("temp directory should be created");
 
-    let app_src = root.join("generated/openapi/drive-app-api.openapi.json");
-    let backend_src = root.join("generated/openapi/drive-backend-api.openapi.json");
+    let app_src = root.join("apis/app-api/drive/drive-app-api.openapi.json");
+    let backend_src = root.join("apis/backend-api/drive/drive-backend-api.openapi.json");
     let special_spaces_src = root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml");
     let security_audit_src = root.join("docs/schema-registry/tables/004-drive-security-audit.yaml");
     let storage_schema_src = root.join("docs/schema-registry/tables/003-drive-storage.yaml");
@@ -764,21 +776,23 @@ fn schema_quality_gate_fails_when_audit_index_is_missing_in_registry() {
     std::fs::write(&security_audit_dst, patched)
         .expect("patched security audit schema should be writable");
 
-    let output = Command::new("node")
-        .current_dir(&root)
-        .arg(root.join("tools/drive_schema_quality_gate.mjs"))
-        .arg("--app-openapi")
-        .arg(&app_dst)
-        .arg("--backend-openapi")
-        .arg(&backend_dst)
-        .arg("--special-spaces-schema")
-        .arg(&special_spaces_dst)
-        .arg("--security-audit-schema")
-        .arg(&security_audit_dst)
-        .arg("--storage-schema")
-        .arg(&storage_schema_dst)
-        .output()
-        .expect("schema quality gate command should start");
+    let output = run_node_command_in(
+        &root,
+        [
+            root.join("tools/drive_schema_quality_gate.mjs"),
+            PathBuf::from("--app-openapi"),
+            app_dst.clone(),
+            PathBuf::from("--backend-openapi"),
+            backend_dst.clone(),
+            PathBuf::from("--special-spaces-schema"),
+            special_spaces_dst.clone(),
+            PathBuf::from("--security-audit-schema"),
+            security_audit_dst.clone(),
+            PathBuf::from("--storage-schema"),
+            storage_schema_dst.clone(),
+        ],
+    )
+    .expect("schema quality gate command should start");
     assert!(
         !output.status.success(),
         "schema quality gate should fail when audit index is missing in registry, stdout:\n{}\nstderr:\n{}",
@@ -797,8 +811,8 @@ fn schema_quality_gate_fails_when_storage_provider_kind_pattern_is_missing() {
     let temp_dir = std::env::temp_dir().join(format!("sdkwork-drive-storage-kind-gate-{nonce}"));
     std::fs::create_dir_all(&temp_dir).expect("temp directory should be created");
 
-    let app_src = root.join("generated/openapi/drive-app-api.openapi.json");
-    let backend_src = root.join("generated/openapi/drive-backend-api.openapi.json");
+    let app_src = root.join("apis/app-api/drive/drive-app-api.openapi.json");
+    let backend_src = root.join("apis/backend-api/drive/drive-backend-api.openapi.json");
     let special_spaces_src = root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml");
     let security_audit_src = root.join("docs/schema-registry/tables/004-drive-security-audit.yaml");
     let storage_schema_src = root.join("docs/schema-registry/tables/003-drive-storage.yaml");
@@ -835,21 +849,23 @@ fn schema_quality_gate_fails_when_storage_provider_kind_pattern_is_missing() {
     std::fs::write(&backend_dst, format!("{patched}\n"))
         .expect("patched backend openapi should be writable");
 
-    let output = Command::new("node")
-        .current_dir(&root)
-        .arg(root.join("tools/drive_schema_quality_gate.mjs"))
-        .arg("--app-openapi")
-        .arg(&app_dst)
-        .arg("--backend-openapi")
-        .arg(&backend_dst)
-        .arg("--special-spaces-schema")
-        .arg(&special_spaces_dst)
-        .arg("--security-audit-schema")
-        .arg(&security_audit_dst)
-        .arg("--storage-schema")
-        .arg(&storage_schema_dst)
-        .output()
-        .expect("schema quality gate command should start");
+    let output = run_node_command_in(
+        &root,
+        [
+            root.join("tools/drive_schema_quality_gate.mjs"),
+            PathBuf::from("--app-openapi"),
+            app_dst.clone(),
+            PathBuf::from("--backend-openapi"),
+            backend_dst.clone(),
+            PathBuf::from("--special-spaces-schema"),
+            special_spaces_dst.clone(),
+            PathBuf::from("--security-audit-schema"),
+            security_audit_dst.clone(),
+            PathBuf::from("--storage-schema"),
+            storage_schema_dst.clone(),
+        ],
+    )
+    .expect("schema quality gate command should start");
     assert!(
         !output.status.success(),
         "schema quality gate should fail when storage provider kind pattern is missing, stdout:\n{}\nstderr:\n{}",

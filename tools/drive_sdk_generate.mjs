@@ -59,11 +59,11 @@ function parseLanguages(raw) {
 function parseArgs(argv) {
   const parsed = {
     check: false,
-    openInput: "generated/openapi/drive-open-api.openapi.json",
-    appInput: "generated/openapi/drive-app-api.openapi.json",
-    backendInput: "generated/openapi/drive-backend-api.openapi.json",
+    openInput: "apis/open-api/drive/drive-open-api.openapi.json",
+    appInput: "apis/app-api/drive/drive-app-api.openapi.json",
+    backendInput: "apis/backend-api/drive/drive-backend-api.openapi.json",
     adminStorageInput: null,
-    outputDir: "generated/openapi",
+    outputDir: "apis",
     allLanguages: false,
     languages: [],
     baseUrl: null,

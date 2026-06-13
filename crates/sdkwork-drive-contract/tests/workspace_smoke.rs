@@ -33,6 +33,85 @@ fn read_rust_source_tree(path: impl AsRef<Path>) -> String {
 }
 
 #[test]
+fn repository_root_declares_sdkwork_standard_directory_dictionary() {
+    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    root.pop();
+    root.pop();
+
+    for required_path in [
+        ".sdkwork/README.md",
+        ".sdkwork/.gitignore",
+        ".sdkwork/skills/README.md",
+        ".sdkwork/plugins/README.md",
+        "apis/README.md",
+        "apis/open-api/drive",
+        "apis/app-api/drive",
+        "apis/backend-api/drive",
+        "configs/README.md",
+        "configs/drive.database.example.toml",
+        "deployments/README.md",
+        "deployments/docker-compose.minio-test.yml",
+        "jobs/README.md",
+        "plugins/README.md",
+        "examples/README.md",
+        "tests/README.md",
+        "sdks/README.md",
+    ] {
+        assert!(
+            root.join(required_path).exists(),
+            "SDKWork standard root path must exist: {required_path}"
+        );
+    }
+
+    let read = |relative_path: &str| {
+        let path = root.join(relative_path);
+        std::fs::read_to_string(&path)
+            .unwrap_or_else(|error| panic!("{} must be readable: {error}", path.display()))
+            .replace("\r\n", "\n")
+    };
+
+    let readme = read("README.md");
+    for required in [
+        "SDKWork standard project root",
+        "`apis/` contains Drive-owned API contract sources and materialized OpenAPI inputs",
+        "`crates/` contains Rust service crates, route crates, workers, host/server crates, and reusable Rust libraries",
+        "`sdks/` contains SDK family workspaces and generated SDK output",
+        "`configs/` contains safe checked-in config templates",
+        "`deployments/` contains deployment descriptors",
+    ] {
+        assert!(
+            readme.contains(required),
+            "root README must document the standard workspace layout: {required}"
+        );
+    }
+
+    let agents = read("AGENTS.md");
+    for required in [
+        "`apis/`: Drive-owned API contract sources and materialized OpenAPI inputs.",
+        "`crates/`: reusable Rust crates.",
+        "`configs/`: safe checked-in runtime config templates.",
+        "`deployments/`: deployment descriptors and topology examples.",
+    ] {
+        assert!(
+            agents.contains(required),
+            "AGENTS.md must document standard root dictionary entry: {required}"
+        );
+    }
+
+    let sdkwork_readme = read(".sdkwork/README.md");
+    for required in [
+        "repository/application development metadata",
+        "../../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md",
+        "not runtime state",
+    ] {
+        assert!(
+            sdkwork_readme.contains(required),
+            ".sdkwork README must document workspace metadata boundary: {required}"
+        );
+    }
+}
+
+#[test]
 fn workspace_declares_expected_members() {
     let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     root.pop();
@@ -40,13 +119,111 @@ fn workspace_declares_expected_members() {
     let manifest_path = root.join("Cargo.toml");
     let manifest = std::fs::read_to_string(manifest_path).expect("Cargo.toml must exist");
     assert!(manifest.contains("crates/sdkwork-drive-contract"));
-    assert!(manifest.contains("services/sdkwork-drive-product"));
-    assert!(manifest.contains("services/sdkwork-drive-open-api"));
-    assert!(manifest.contains("services/sdkwork-drive-app-api"));
-    assert!(manifest.contains("services/sdkwork-drive-backend-api"));
+    assert!(manifest.contains("crates/sdkwork-drive-workspace-service"));
+    assert!(manifest.contains("crates/sdkwork-router-drive-open-api"));
+    assert!(manifest.contains("crates/sdkwork-router-drive-app-api"));
+    assert!(manifest.contains("crates/sdkwork-router-drive-backend-api"));
     assert!(manifest.contains("crates/sdkwork-drive-storage-opendal"));
-    assert!(manifest.contains("services/sdkwork-drive-admin-storage-api"));
+    assert!(manifest.contains("crates/sdkwork-router-storage-backend-api"));
+    assert!(!manifest.contains("services/"));
     assert!(!manifest.contains("services/sdkwork-drive-admin-api"));
+    assert!(!manifest.contains("sdkwork-drive-product"));
+    assert!(!manifest.contains("sdkwork-drive-core"));
+}
+
+#[test]
+fn root_app_manifest_and_component_spec_do_not_keep_migration_baggage() {
+    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    root.pop();
+    root.pop();
+
+    let app_manifest_path = root.join("sdkwork.app.config.json");
+    let app_manifest_raw = std::fs::read_to_string(&app_manifest_path).unwrap_or_else(|error| {
+        panic!("{} must be readable: {error}", app_manifest_path.display())
+    });
+    let app_manifest: serde_json::Value =
+        serde_json::from_str(&app_manifest_raw).expect("root sdkwork.app.config.json must be JSON");
+
+    assert_eq!(
+        app_manifest
+            .pointer("/app/key")
+            .and_then(serde_json::Value::as_str),
+        Some("sdkwork-drive"),
+        "root app manifest remains the sdkwork-drive workspace identity"
+    );
+    assert_eq!(
+        app_manifest
+            .pointer("/publish/config/workspaceRoot")
+            .and_then(serde_json::Value::as_str),
+        Some("."),
+        "root publish workspaceRoot must point at the repository/application root"
+    );
+    assert_eq!(
+        app_manifest
+            .pointer("/artifacts/installConfig/metadata/workspaceRoot")
+            .and_then(serde_json::Value::as_str),
+        Some("."),
+        "root install metadata workspaceRoot must point at the repository/application root"
+    );
+    assert_eq!(
+        app_manifest
+            .pointer("/devApp/sourceRoot")
+            .and_then(serde_json::Value::as_str),
+        Some("."),
+        "root devApp sourceRoot must point at the repository/application root"
+    );
+    for relative_path in [
+        app_manifest
+            .pointer("/publish/config/workspaceRoot")
+            .and_then(serde_json::Value::as_str)
+            .expect("workspaceRoot should exist"),
+        app_manifest
+            .pointer("/devApp/sourceRoot")
+            .and_then(serde_json::Value::as_str)
+            .expect("sourceRoot should exist"),
+    ] {
+        assert!(
+            root.join(relative_path).exists(),
+            "root manifest path must resolve: {relative_path}"
+        );
+    }
+    assert!(
+        !app_manifest_raw.contains("product screenshot")
+            && !app_manifest_raw.contains("migratedFromLegacyConfig"),
+        "root app manifest must not retain product/legacy migration wording"
+    );
+
+    let component_spec_path = root.join("specs/component.spec.json");
+    let component_spec_raw =
+        std::fs::read_to_string(&component_spec_path).unwrap_or_else(|error| {
+            panic!(
+                "{} must be readable: {error}",
+                component_spec_path.display()
+            )
+        });
+    let component_spec: serde_json::Value =
+        serde_json::from_str(&component_spec_raw).expect("root component spec must be JSON");
+    assert_eq!(
+        component_spec
+            .pointer("/component/type")
+            .and_then(serde_json::Value::as_str),
+        Some("app"),
+        "root component spec should describe the Drive app/workspace root, not one Rust crate"
+    );
+    assert!(
+        component_spec
+            .pointer("/component/languages")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|languages| {
+                languages
+                    .iter()
+                    .any(|language| language.as_str() == Some("rust"))
+                    && languages
+                        .iter()
+                        .any(|language| language.as_str() == Some("typescript"))
+            }),
+        "root component spec must declare both Rust and TypeScript ownership"
+    );
 }
 
 #[test]
@@ -56,9 +233,9 @@ fn opendal_storage_plugin_is_not_enabled_by_default_in_api_crates() {
     root.pop();
 
     for manifest in [
-        root.join("services/sdkwork-drive-app-api/Cargo.toml"),
-        root.join("services/sdkwork-drive-open-api/Cargo.toml"),
-        root.join("services/sdkwork-drive-backend-api/Cargo.toml"),
+        root.join("crates/sdkwork-router-drive-app-api/Cargo.toml"),
+        root.join("crates/sdkwork-router-drive-open-api/Cargo.toml"),
+        root.join("crates/sdkwork-router-drive-backend-api/Cargo.toml"),
     ] {
         let source = std::fs::read_to_string(&manifest)
             .unwrap_or_else(|error| panic!("{} must be readable: {error}", manifest.display()));
@@ -86,10 +263,10 @@ fn s3_architecture_document_defines_plugin_and_admin_storage_boundaries() {
         "opendal-s3-plugin",
         "SDKWORK_DRIVE_ADMIN_STORAGE_OBJECT_STORE_ADAPTER",
         "Bucket administration remains on the AWS SDK S3 adapter",
-        "services/sdkwork-drive-admin-storage-api",
+        "crates/sdkwork-router-storage-backend-api",
         "/admin/v3/api/drive/storage/providers",
         "Volcengine TOS",
-        "sdkwork-drive-admin-xxx",
+        "sdkwork-router-storage-backend-api",
     ] {
         assert!(
             doc.contains(required),
@@ -104,7 +281,7 @@ fn admin_storage_router_exposes_explicit_plugin_config_entrypoints() {
     root.pop();
     root.pop();
 
-    let source = read_rust_source_tree(root.join("services/sdkwork-drive-admin-storage-api/src"));
+    let source = read_rust_source_tree(root.join("crates/sdkwork-router-storage-backend-api/src"));
 
     for required in [
         "pub struct AdminStorageConfig",
@@ -127,12 +304,12 @@ fn admin_storage_api_has_standalone_binary_entrypoint() {
     root.pop();
     root.pop();
 
-    let main_path = root.join("services/sdkwork-drive-admin-storage-api/src/main.rs");
+    let main_path = root.join("crates/sdkwork-router-storage-backend-api/src/main.rs");
     let source = std::fs::read_to_string(&main_path)
         .unwrap_or_else(|error| panic!("{} must be readable: {error}", main_path.display()));
 
     for required in [
-        "sdkwork_drive_admin_storage_api::build_router_with_database_config",
+        "sdkwork_router_storage_backend_api::build_router_with_database_config",
         "sdkwork_drive_config::DatabaseConfig",
         r#""127.0.0.1:18083""#,
         "serve admin storage api",
@@ -150,7 +327,7 @@ fn admin_storage_opendal_dependency_is_optional_and_feature_gated() {
     root.pop();
     root.pop();
 
-    let manifest_path = root.join("services/sdkwork-drive-admin-storage-api/Cargo.toml");
+    let manifest_path = root.join("crates/sdkwork-router-storage-backend-api/Cargo.toml");
     let manifest = std::fs::read_to_string(&manifest_path)
         .unwrap_or_else(|error| panic!("{} must be readable: {error}", manifest_path.display()));
 
@@ -231,13 +408,16 @@ fn observability_event_dictionary_spec_exists() {
 }
 
 #[test]
-fn drive_services_do_not_expose_product_local_iam_login_routes() {
+fn drive_services_do_not_expose_application_local_iam_login_routes() {
     let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     root.pop();
     root.pop();
     let roots = [
-        root.join("services"),
-        root.join("crates/sdkwork-drive-core/src"),
+        root.join("crates/sdkwork-drive-workspace-service/src"),
+        root.join("crates/sdkwork-router-drive-app-api/src"),
+        root.join("crates/sdkwork-router-drive-backend-api/src"),
+        root.join("crates/sdkwork-router-drive-open-api/src"),
+        root.join("crates/sdkwork-router-storage-backend-api/src"),
         root.join("crates/sdkwork-drive-http/src"),
         root.join("crates/sdkwork-drive-security/src"),
         root.join("crates/sdkwork-drive-observability/src"),
@@ -258,7 +438,7 @@ fn drive_services_do_not_expose_product_local_iam_login_routes() {
     assert_eq!(
         offenders,
         Vec::<String>::new(),
-        "Drive must integrate IAM login instead of exposing product-local auth/session routes"
+        "Drive must integrate IAM login instead of exposing application-local auth/session routes"
     );
 }
 

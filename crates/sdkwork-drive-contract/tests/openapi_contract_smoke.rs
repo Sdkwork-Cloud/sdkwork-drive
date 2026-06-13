@@ -11,20 +11,18 @@ fn workspace_root() -> PathBuf {
 
 #[test]
 fn openapi_paths_follow_sdkwork_v3_prefixes() {
-    let open = std::fs::read_to_string(
-        workspace_root().join("generated/openapi/drive-open-api.openapi.json"),
-    )
-    .expect("open openapi missing");
-    let app = std::fs::read_to_string(
-        workspace_root().join("generated/openapi/drive-app-api.openapi.json"),
-    )
-    .expect("app openapi missing");
+    let open =
+        std::fs::read_to_string(workspace_root().join("apis/open-api/drive/drive-open-api.openapi.json"))
+            .expect("open openapi missing");
+    let app =
+        std::fs::read_to_string(workspace_root().join("apis/app-api/drive/drive-app-api.openapi.json"))
+            .expect("app openapi missing");
     let backend = std::fs::read_to_string(
-        workspace_root().join("generated/openapi/drive-backend-api.openapi.json"),
+        workspace_root().join("apis/backend-api/drive/drive-backend-api.openapi.json"),
     )
     .expect("backend openapi missing");
     let admin_storage = std::fs::read_to_string(
-        workspace_root().join("generated/openapi/drive-admin-storage-api.openapi.json"),
+        workspace_root().join("apis/backend-api/drive/drive-admin-storage-api.openapi.json"),
     )
     .expect("admin storage openapi missing");
     assert!(open.contains("\"title\": \"SDKWork Drive Open API\""));
@@ -180,9 +178,20 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     );
     assert!(app.contains("/app/v3/api/auth/sessions"));
     assert!(app.contains("/app/v3/api/auth/sessions/current"));
+    assert!(app.contains("/app/v3/api/auth/sessions/organization_selection"));
     assert!(app.contains("/app/v3/api/auth/sessions/refresh"));
     assert!(app.contains("/app/v3/api/auth/registrations"));
-    assert!(app.contains("/app/v3/api/auth/verification_codes"));
+    assert!(app.contains("/app/v3/api/oauth/authorization_urls"));
+    assert!(app.contains("/app/v3/api/oauth/device_authorizations"));
+    assert!(app.contains("/app/v3/api/oauth/sessions"));
+    assert!(
+        !app.contains("/app/v3/api/auth/oauth_authorization_urls"),
+        "app api must not expose legacy appbase oauth authorization url route"
+    );
+    assert!(
+        !app.contains("/app/v3/api/auth/oauth_sessions"),
+        "app api must not expose legacy appbase oauth session route"
+    );
     assert!(app.contains("/app/v3/api/system/iam/runtime"));
     assert!(app.contains("/app/v3/api/system/iam/verification_policy"));
     assert!(app.contains("/app/v3/api/iam/users/current"));
@@ -200,9 +209,9 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(app.contains("\"operationId\": \"sessions.create\""));
     assert!(app.contains("\"operationId\": \"sessions.current.retrieve\""));
     assert!(app.contains("\"operationId\": \"sessions.current.delete\""));
+    assert!(app.contains("\"operationId\": \"sessions.organizationSelection.create\""));
     assert!(app.contains("\"operationId\": \"sessions.refresh\""));
     assert!(app.contains("\"operationId\": \"registrations.create\""));
-    assert!(app.contains("\"operationId\": \"verificationCodes.create\""));
     assert!(app.contains("\"operationId\": \"iam.runtime.retrieve\""));
     assert!(app.contains("\"operationId\": \"iam.verificationPolicy.retrieve\""));
     assert!(app.contains("\"operationId\": \"users.current.retrieve\""));
@@ -908,7 +917,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_schema_property_exists(&backend_json, "StorageProviderBinding", "storageProvider");
     let admin_json: Value = serde_json::from_str(
         &std::fs::read_to_string(
-            workspace_root().join("generated/openapi/drive-admin-storage-api.openapi.json"),
+            workspace_root().join("apis/backend-api/drive/drive-admin-storage-api.openapi.json"),
         )
         .expect("admin storage openapi missing"),
     )
@@ -939,7 +948,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
 fn admin_storage_mutation_operations_require_operator_id_contract() {
     let admin_json: Value = serde_json::from_str(
         &std::fs::read_to_string(
-            workspace_root().join("generated/openapi/drive-admin-storage-api.openapi.json"),
+            workspace_root().join("apis/backend-api/drive/drive-admin-storage-api.openapi.json"),
         )
         .expect("admin storage openapi missing"),
     )
@@ -1131,19 +1140,18 @@ fn assert_dual_token_security_contract_for_prefix(openapi: &Value, label: &str, 
 
 fn assert_iam_appbase_security_contract(openapi: &Value, label: &str) {
     for operation_id in [
-        "oauthAuthorizationUrls.retrieve",
-        "oauthSessions.create",
+        "oauth.authorizationUrls.create",
+        "oauth.sessions.create",
         "passwordResetRequests.create",
         "passwordResets.create",
         "registrations.create",
         "sessions.create",
+        "sessions.organizationSelection.create",
         "sessions.refresh",
-        "verificationCodes.create",
-        "verificationCodes.verify",
-        "qrAuth.sessions.create",
-        "qrAuth.sessions.retrieve",
-        "qrAuth.sessions.scans.create",
-        "qrAuth.sessions.passwords.create",
+        "oauth.deviceAuthorizations.create",
+        "oauth.deviceAuthorizations.retrieve",
+        "oauth.deviceAuthorizations.scans.create",
+        "oauth.deviceAuthorizations.passwordCompletions.create",
         "iam.runtime.retrieve",
         "iam.verificationPolicy.retrieve",
     ] {
