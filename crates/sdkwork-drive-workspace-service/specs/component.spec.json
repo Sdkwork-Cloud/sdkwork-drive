@@ -2,13 +2,13 @@
     "schemaVersion":  1,
     "kind":  "sdkwork.component.spec",
     "component":  {
-                      "name":  "sdkwork-drive-test-support",
-                      "displayName":  "Sdkwork Drive Test Support",
+                      "name":  "sdkwork-drive-workspace-service",
+                      "displayName":  "Sdkwork Drive Workspace Service",
                       "version":  "0.1.0",
-                      "type":  "rust-crate",
-                      "root":  "sdkwork-drive/crates/sdkwork-drive-test-support",
+                      "type":  "rust-service",
+                      "root":  "sdkwork-drive/crates/sdkwork-drive-workspace-service",
                       "domain":  "drive",
-                      "capability":  "test-support",
+                      "capability":  "workspace",
                       "languages":  [
                                         "rust"
                                     ],
@@ -47,6 +47,26 @@
                                "file":  "RUST_CODE_SPEC.md",
                                "path":  "../../../sdkwork-specs/RUST_CODE_SPEC.md",
                                "purpose":  "Rust crate and module rules."
+                           },
+                           {
+                               "file":  "WEB_BACKEND_SPEC.md",
+                               "path":  "../../../sdkwork-specs/WEB_BACKEND_SPEC.md",
+                               "purpose":  "HTTP backend controller, service, repository, and route boundary rules."
+                           },
+                           {
+                               "file":  "API_SPEC.md",
+                               "path":  "../../../sdkwork-specs/API_SPEC.md",
+                               "purpose":  "HTTP API contract authority rules."
+                           },
+                           {
+                               "file":  "DOMAIN_SPEC.md",
+                               "path":  "../../../sdkwork-specs/DOMAIN_SPEC.md",
+                               "purpose":  "Domain and capability boundary rules."
+                           },
+                           {
+                               "file":  "SECURITY_SPEC.md",
+                               "path":  "../../../sdkwork-specs/SECURITY_SPEC.md",
+                               "purpose":  "Protected backend behavior rules."
                            }
                        ],
     "contracts":  {

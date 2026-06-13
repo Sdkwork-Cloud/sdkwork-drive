@@ -363,6 +363,14 @@
           }
         }
       }
+    },
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key",
+        "description": "API key for open-api access."
+      }
     }
   },
   "x-sdkwork-owner": "sdkwork-drive",

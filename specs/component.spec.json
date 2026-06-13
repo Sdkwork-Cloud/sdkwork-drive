@@ -5,7 +5,7 @@
     "name": "sdkwork-drive-workspace",
     "displayName": "Sdkwork Drive Workspace",
     "version": "0.1.0",
-    "type": "rust-crate",
+    "type": "app",
     "root": "sdkwork-drive",
     "domain": "drive",
     "capability": "workspace",
@@ -65,6 +65,9 @@
     ],
     "routeManifest": null,
     "sdkClients": [],
+    "sdkDependencies": [],
+    "dependencyApiExports": [],
+    "dependencyApiSurfaces": [],
     "events": [],
     "configKeys": []
   },
