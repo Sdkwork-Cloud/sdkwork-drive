@@ -1,3 +1,9 @@
-pub fn crate_id() -> &'static str {
-    "sdkwork-drive-http"
-}
+//! SDKWork Drive HTTP utilities.
+//!
+//! This crate provides HTTP-related utilities for Drive API services,
+//! including request context extraction, response mapping, and middleware.
+
+pub mod context;
+pub mod response;
+pub mod middleware;
+pub mod problem_detail;
