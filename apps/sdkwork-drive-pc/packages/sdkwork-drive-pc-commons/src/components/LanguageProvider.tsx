@@ -24,7 +24,7 @@ interface LanguageProviderState {
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-const LanguageProviderContext = createContext<LanguageProviderState | undefined>(undefined);
+export const LanguageProviderContext = createContext<LanguageProviderState | undefined>(undefined);
 
 export function LanguageProvider({
   children,

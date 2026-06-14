@@ -5,6 +5,7 @@ import fileDetail from './fileDetail';
 import downloadManager from './downloadManager';
 import previewModules from './previewModules';
 import transfer from './transfer';
+import storageProviders from './storageProviders';
 
 export default {
   commons,
@@ -14,4 +15,5 @@ export default {
   downloadManager,
   previewModules,
   transfer,
+  storageProviders,
 };

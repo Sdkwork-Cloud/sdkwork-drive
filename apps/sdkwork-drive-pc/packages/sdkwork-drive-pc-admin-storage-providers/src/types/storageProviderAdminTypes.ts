@@ -6,7 +6,10 @@ export type StorageProviderKind =
   | 'tencent_cos'
   | 'huawei_obs'
   | 'volcengine_tos'
+  | 'custom'
   | `custom:${string}`;
+
+export type StorageProviderHealthStatus = 'unknown' | 'healthy' | 'degraded' | 'unreachable';
 
 export interface StorageProviderView {
   id: string;
@@ -22,6 +25,11 @@ export interface StorageProviderView {
   defaultStorageClass?: string;
   status: string;
   version: number;
+  strictTls: boolean;
+  healthStatus?: StorageProviderHealthStatus;
+  lastHealthCheckAt?: number;
+  objectCount?: number;
+  totalSizeBytes?: number;
 }
 
 export interface StorageProviderCapabilitiesView {
@@ -67,6 +75,7 @@ export interface CreateStorageProviderInput {
   serverSideEncryptionMode?: string;
   defaultStorageClass?: string;
   status?: string;
+  strictTls?: boolean;
 }
 
 export interface UpdateStorageProviderInput {
@@ -79,6 +88,7 @@ export interface UpdateStorageProviderInput {
   serverSideEncryptionMode?: string;
   defaultStorageClass?: string;
   status?: string;
+  strictTls?: boolean;
 }
 
 export interface ListStorageProvidersInput {

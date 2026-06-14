@@ -195,10 +195,10 @@ describe('desktop architecture contract', () => {
       './src/bootstrap/sdkworkCorePcReactShim.ts',
     ]);
     expect(tsconfig.compilerOptions.paths['@sdkwork/auth-runtime-pc-react']).toEqual([
-      '../../../../../sdkwork-appbase/packages/pc-react/iam/sdkwork-auth-runtime-pc-react/src/index.ts',
+      '../../../sdkwork-appbase/packages/pc-react/iam/sdkwork-auth-runtime-pc-react/src/index.ts',
     ]);
     expect(tsconfig.compilerOptions.paths['@sdkwork/iam-runtime']).toEqual([
-      '../../../../../sdkwork-appbase/packages/common/iam/sdkwork-iam-runtime/src/index.ts',
+      '../../../sdkwork-appbase/packages/common/iam/sdkwork-iam-runtime/src/index.ts',
     ]);
     expect(tsconfig.compilerOptions.paths).not.toHaveProperty('@sdkwork/iam-sdk-adapter');
     expect(existsSync(coreShimPath)).toBe(true);
@@ -1017,14 +1017,14 @@ describe('desktop architecture contract', () => {
     );
 
     expect(rootPackageJson.scripts.dev).toBe(
-      'node scripts/run-drive-product.mjs server --dev-env-file .env.postgres',
+      'node scripts/run-drive-pc-dev.mjs --target browser --database postgres',
     );
     expect(rootPackageJson.scripts['dev:pc']).toBe('pnpm --dir apps/sdkwork-drive-pc dev');
     expect(rootPackageJson.scripts['tauri:dev']).toBe(
-      'pnpm --dir apps/sdkwork-drive-pc desktop:dev',
+      'node scripts/run-drive-pc-dev.mjs --target desktop --database sqlite',
     );
     expect(rootPackageJson.scripts['dev:server']).toBe(
-      'node scripts/run-drive-product.mjs server --dev-env-file .env.postgres',
+      'node scripts/run-drive-api-server.mjs server --dev-env-file .env.postgres',
     );
     expect(appPackageJson.scripts.dev).toBe(
       'vite --host 127.0.0.1 --port 5183 --strictPort',
@@ -1034,8 +1034,8 @@ describe('desktop architecture contract', () => {
 
   it('keeps localhost API defaults limited to local and test deployment modes', () => {
     const localConfig = createRuntimeConfig({ VITE_DRIVE_PC_DEPLOYMENT_MODE: 'local' });
-    expect(localConfig.appApiBaseUrl).toBe('http://127.0.0.1:18080');
-    expect(localConfig.adminStorageApiBaseUrl).toBe('http://127.0.0.1:18083');
+    expect(localConfig.appApiBaseUrl).toBe('http://127.0.0.1:3900');
+    expect(localConfig.adminStorageApiBaseUrl).toBe('http://127.0.0.1:3900');
     expect(localConfig).not.toHaveProperty('useLocalDemoData');
 
     for (const mode of ['desktop', 'private', 'saas', 'web'] satisfies SdkworkDeploymentMode[]) {
@@ -1110,9 +1110,9 @@ describe('desktop architecture contract', () => {
     }
 
     for (const retiredName of [
-      'sdkwork-drive-open-api',
-      'sdkwork-drive-app-api',
-      'sdkwork-drive-backend-api',
+      'sdkwork-router-drive-open-api',
+      'sdkwork-router-drive-app-api',
+      'sdkwork-router-drive-backend-api',
       'drive-open-sdk',
       'drive-app-sdk',
       'drive-backend-sdk',
