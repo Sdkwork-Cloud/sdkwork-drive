@@ -4,3 +4,5 @@ export interface EffectivePermissionListResponse {
   items: EffectivePermission[];
   nextPageToken?: string;
 }
+
+

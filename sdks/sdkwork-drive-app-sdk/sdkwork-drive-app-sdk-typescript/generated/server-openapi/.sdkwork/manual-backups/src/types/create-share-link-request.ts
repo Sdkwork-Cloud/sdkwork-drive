@@ -7,3 +7,5 @@ export interface CreateShareLinkRequest {
   downloadLimit?: string;
   operatorId: string;
 }
+
+

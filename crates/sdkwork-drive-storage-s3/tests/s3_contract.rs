@@ -463,7 +463,7 @@ async fn s3_store_rejects_zero_presign_expiry_before_sdk_request() {
 #[tokio::test]
 #[ignore = "requires MinIO or S3-compatible endpoint"]
 async fn s3_store_supports_multipart_and_presign() {
-    // Integration flow is enabled in later iteration with docker-compose.minio-test.yml.
+    // Integration flow is enabled in later iteration with deployments/docker-compose.minio-test.yml.
 }
 
 #[test]

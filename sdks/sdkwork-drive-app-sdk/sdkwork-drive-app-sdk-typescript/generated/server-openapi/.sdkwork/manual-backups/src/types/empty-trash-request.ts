@@ -3,3 +3,5 @@ export interface EmptyTrashRequest {
   spaceId?: string;
   operatorId?: string;
 }
+
+

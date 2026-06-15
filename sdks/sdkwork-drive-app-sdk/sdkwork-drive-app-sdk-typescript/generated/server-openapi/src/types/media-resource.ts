@@ -9,3 +9,5 @@ export interface MediaResource {
   checksumSha256?: string;
   metadata?: Record<string, unknown>;
 }
+
+

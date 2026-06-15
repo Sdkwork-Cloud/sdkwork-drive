@@ -11,9 +11,7 @@ pub struct CleanupResult {
 ///
 /// This function marks expired upload sessions as 'expired'
 /// and removes their associated parts.
-pub async fn cleanup_expired_sessions(
-    pool: &AnyPool,
-) -> Result<CleanupResult, sqlx::Error> {
+pub async fn cleanup_expired_sessions(pool: &AnyPool) -> Result<CleanupResult, sqlx::Error> {
     let now = chrono::Utc::now().timestamp_millis();
 
     // Find expired sessions

@@ -4,3 +4,5 @@ export interface AssetCollectionPage {
   items: AssetCollection[];
   nextCursor?: string;
 }
+
+

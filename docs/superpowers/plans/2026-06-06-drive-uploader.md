@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build Drive Uploader end to end across product Rust service, App API, App SDK `client.uploader.*`, resumable upload metadata, retention cleanup metadata, and PC integration.
+**Goal:** Build Drive Uploader end to end across the workspace Rust service, App API route crate, App SDK `client.uploader.*`, resumable upload metadata, retention cleanup metadata, and PC integration.
 
-**Architecture:** `sdkwork-drive-product` owns the uploader business core and persistence. `sdkwork-drive-app-api` exposes that core as `/app/v3/api/drive/uploader/*`. `sdkwork-drive-app-sdk` exposes high-level `client.uploader.*` methods backed by generated App API operations and composed TypeScript orchestration.
+**Architecture:** `sdkwork-drive-workspace-service` owns the uploader business core and persistence. `sdkwork-router-drive-app-api` exposes that core as `/app/v3/api/drive/uploader/*`. `sdkwork-drive-app-sdk` exposes high-level `client.uploader.*` methods backed by generated App API operations and composed TypeScript orchestration.
 
 **Tech Stack:** Rust, sqlx, SQLite/Postgres schema, Axum App API, OpenAPI, SDKWork generated SDKs, TypeScript composed SDK layer, Vite React PC app.
 
@@ -15,10 +15,10 @@
 **Files:**
 - Create: `docs/drive-uploader-standard.md`
 - Create: `docs/superpowers/plans/2026-06-06-drive-uploader.md`
-- Modify: `services/sdkwork-drive-product/tests/sqlite_schema_contract.rs`
-- Modify: `services/sdkwork-drive-product/tests/postgres_schema_contract.rs`
-- Modify: `services/sdkwork-drive-product/src/infrastructure/sql/sqlite_core.sql`
-- Modify: `services/sdkwork-drive-product/src/infrastructure/sql/postgres_core.sql`
+- Modify: `crates/sdkwork-drive-workspace-service/tests/sqlite_schema_contract.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/tests/postgres_schema_contract.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/sqlite_core.sql`
+- Modify: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/postgres_core.sql`
 
 - [ ] Add schema tests requiring `dr_drive_upload_item`, `dr_drive_upload_part`, and `dr_drive_file_sensitive_operation`.
 - [ ] Run the schema test and verify it fails before implementation.
@@ -28,13 +28,13 @@
 ### Task 2: Product Uploader Domain And Store
 
 **Files:**
-- Create: `services/sdkwork-drive-product/src/domain/uploader.rs`
-- Create: `services/sdkwork-drive-product/src/ports/uploader_store.rs`
-- Create: `services/sdkwork-drive-product/src/infrastructure/sql/uploader_store.rs`
-- Modify: `services/sdkwork-drive-product/src/domain/mod.rs`
-- Modify: `services/sdkwork-drive-product/src/ports/mod.rs`
-- Modify: `services/sdkwork-drive-product/src/infrastructure/sql/mod.rs`
-- Test: `services/sdkwork-drive-product/tests/uploader_service.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/domain/uploader.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/ports/uploader_store.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/uploader_store.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/domain/mod.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/ports/mod.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/mod.rs`
+- Test: `crates/sdkwork-drive-workspace-service/tests/uploader_service.rs`
 
 - [ ] Add failing tests for creating an upload item and recording uploaded parts idempotently.
 - [ ] Implement domain types for profile, actor, retention, task, and part.
@@ -44,24 +44,24 @@
 ### Task 3: Product Uploader Service
 
 **Files:**
-- Create: `services/sdkwork-drive-product/src/application/uploader_service.rs`
-- Modify: `services/sdkwork-drive-product/src/application/mod.rs`
-- Modify: `services/sdkwork-drive-product/src/lib.rs`
-- Test: `services/sdkwork-drive-product/tests/uploader_service.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/application/uploader_service.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/application/mod.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/lib.rs`
+- Test: `crates/sdkwork-drive-workspace-service/tests/uploader_service.rs`
 
 - [ ] Add failing tests proving anonymous upload resolves `app_upload` ownership metadata and video helper selects the `video` profile.
 - [ ] Add failing tests proving temporary retention sets expiration and cleanup action.
 - [ ] Implement `DriveUploaderService` command validation and task creation.
-- [ ] Add public `sdkwork_drive_product::uploader` re-export.
+- [ ] Add public `sdkwork_drive_workspace_service::uploader` re-export.
 - [ ] Verify uploader service tests pass.
 
 ### Task 4: Maintenance Cleanup Metadata
 
 **Files:**
-- Modify: `services/sdkwork-drive-product/src/ports/maintenance_store.rs`
-- Modify: `services/sdkwork-drive-product/src/infrastructure/sql/maintenance_store.rs`
-- Modify: `services/sdkwork-drive-product/src/application/maintenance_service.rs`
-- Modify: `services/sdkwork-drive-product/tests/maintenance_service.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/ports/maintenance_store.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/maintenance_store.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/application/maintenance_service.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/tests/maintenance_service.rs`
 
 - [ ] Add failing tests for `expired_upload_content_sweep` soft-delete metadata and sensitive file operation creation.
 - [ ] Extend maintenance job type validation.
@@ -71,9 +71,9 @@
 ### Task 5: App API Uploader Routes
 
 **Files:**
-- Modify: `services/sdkwork-drive-app-api/src/lib.rs`
-- Modify: `services/sdkwork-drive-app-api/tests/drive_routes.rs`
-- Modify: `services/sdkwork-drive-app-api/tests/command_routes.rs`
+- Modify: `crates/sdkwork-router-drive-app-api/src/lib.rs`
+- Modify: `crates/sdkwork-router-drive-app-api/tests/drive_routes.rs`
+- Modify: `crates/sdkwork-router-drive-app-api/tests/command_routes.rs`
 - Modify: `generated/openapi/drive-app-api.openapi.json`
 
 - [ ] Add route contract tests for uploader prepare, resume, part uploaded, complete, abort, get, list, and profiles.

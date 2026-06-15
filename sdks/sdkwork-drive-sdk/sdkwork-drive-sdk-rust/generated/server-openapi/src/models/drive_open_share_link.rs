@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenNode};
+use crate::models::OpenNode;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DriveOpenShareLink {

@@ -64,7 +64,10 @@ pub fn assert_array_length(value: &serde_json::Value, field: &str, expected: usi
 }
 
 /// Assert that a result is an error with the expected message.
-pub fn assert_error_contains<T: std::fmt::Debug>(result: Result<T, impl std::error::Error>, expected: &str) {
+pub fn assert_error_contains<T: std::fmt::Debug>(
+    result: Result<T, impl std::error::Error>,
+    expected: &str,
+) {
     match result {
         Ok(val) => panic!("Expected error, got Ok({:?})", val),
         Err(e) => assert!(

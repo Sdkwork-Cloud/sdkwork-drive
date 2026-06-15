@@ -40,3 +40,5 @@ function appendQueryString(path: string, rawQueryString: string): string {
   }
   return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
 }
+
+

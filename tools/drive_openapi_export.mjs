@@ -26,6 +26,7 @@ const SDK_AUTHORITIES = {
 const APPBASE_APP_PATH_PREFIXES = [
   "/app/v3/api/auth/",
   "/app/v3/api/iam/",
+  "/app/v3/api/oauth/",
   "/app/v3/api/open_platform/",
   "/app/v3/api/system/iam/",
 ];
@@ -36,11 +37,10 @@ const APPBASE_BACKEND_PATH_PREFIXES = [
   "/backend/v3/api/system/iam/",
 ];
 const APPBASE_SCHEMA_PREFIXES = ["Iam"];
-const APPBASE_TAGS = new Set(["auth", "iam", "openPlatform", "system"]);
+const APPBASE_TAGS = new Set(["auth", "iam", "oauth", "openPlatform", "system"]);
 const APPBASE_APP_OPENAPI_PATH = path.resolve(
   workspaceRoot,
-  ".sdkwork",
-  "dependencies",
+  "..",
   "sdkwork-appbase",
   "sdks",
   "sdkwork-appbase-app-sdk",
@@ -48,8 +48,8 @@ const APPBASE_APP_OPENAPI_PATH = path.resolve(
   "sdkwork-appbase-app-api.openapi.yaml",
 );
 const APPBASE_APP_OPERATION_IDS = new Set([
-  "oauthAuthorizationUrls.retrieve",
-  "oauthSessions.create",
+  "oauth.authorizationUrls.create",
+  "oauth.sessions.create",
   "passwordResetRequests.create",
   "passwordResets.create",
   "registrations.create",
@@ -57,13 +57,12 @@ const APPBASE_APP_OPERATION_IDS = new Set([
   "sessions.current.delete",
   "sessions.current.retrieve",
   "sessions.current.update",
+  "sessions.organizationSelection.create",
   "sessions.refresh",
-  "verificationCodes.create",
-  "verificationCodes.verify",
-  "qrAuth.sessions.create",
-  "qrAuth.sessions.retrieve",
-  "qrAuth.sessions.scans.create",
-  "qrAuth.sessions.passwords.create",
+  "oauth.deviceAuthorizations.create",
+  "oauth.deviceAuthorizations.retrieve",
+  "oauth.deviceAuthorizations.scans.create",
+  "oauth.deviceAuthorizations.passwordCompletions.create",
   "iam.runtime.retrieve",
   "iam.verificationPolicy.retrieve",
   "users.current.retrieve",
@@ -186,7 +185,7 @@ const STORAGE_CREDENTIAL_REF_SCHEMA = {
   description: STORAGE_CREDENTIAL_REF_DESCRIPTION,
 };
 
-const generatedOpenapiDir = path.join(workspaceRoot, "generated", "openapi");
+const generatedOpenapiDir = path.join(workspaceRoot, "apis", "openapi");
 const defaultOpenOpenapiPath = path.join(
   generatedOpenapiDir,
   "drive-open-api.openapi.json",
@@ -935,7 +934,7 @@ function composeAppbaseIamAppOperations(targetDocument, sourceDocument) {
       composedOperation["x-sdkwork-composed-from-owner"] =
         operation["x-sdkwork-owner"] || "sdkwork-appbase";
       composedOperation["x-sdkwork-composed-from-api-authority"] =
-        operation["x-sdkwork-api-authority"] || "sdkwork-appbase.app";
+        operation["x-sdkwork-api-authority"] || "sdkwork-appbase-app-api";
       targetDocument.paths[pathKey][methodName] = composedOperation;
       copiedOperationIds.add(String(operation.operationId));
       for (const tagName of composedOperation.tags || []) {
@@ -1361,6 +1360,15 @@ const openOpenapi = materializeOwnerOnlyOpenapi(ensureReadableJson(args.openInpu
 });
 const appOpenapi = materializeOwnerOnlyOpenapi(ensureReadableJson(args.appInput), {
   authority: SDK_AUTHORITIES.app,
+  dependencyExclusions: [
+    {
+      dependencyWorkspace: "sdkwork-appbase-app-sdk",
+      dependencyAuthority: "sdkwork-appbase-app-api",
+      pathPrefixes: APPBASE_APP_PATH_PREFIXES,
+      schemaPrefixes: APPBASE_SCHEMA_PREFIXES,
+      tagNames: APPBASE_TAGS,
+    },
+  ],
   composeAppbaseIam: true,
   appbaseAppOpenapi,
 });
@@ -1369,7 +1377,7 @@ const backendOpenapi = materializeOwnerOnlyOpenapi(ensureReadableJson(args.backe
   dependencyExclusions: [
     {
       dependencyWorkspace: "sdkwork-appbase-backend-sdk",
-      dependencyAuthority: "sdkwork-appbase.backend",
+      dependencyAuthority: "sdkwork-appbase-backend-api",
       pathPrefixes: APPBASE_BACKEND_PATH_PREFIXES,
       schemaPrefixes: APPBASE_SCHEMA_PREFIXES,
       tagNames: APPBASE_TAGS,

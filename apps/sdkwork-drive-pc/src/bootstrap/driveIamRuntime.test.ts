@@ -233,8 +233,6 @@ describe('drive IAM runtime bridge', () => {
       session,
       appClient: {
         auth: {
-          oauthAuthorizationUrls: { retrieve: vi.fn() },
-          oauthSessions: { create: vi.fn() },
           passwordResetRequests: { create: vi.fn() },
           passwordResets: { create: vi.fn() },
           registrations: { create: vi.fn() },
@@ -246,18 +244,33 @@ describe('drive IAM runtime bridge', () => {
               update: vi.fn(),
             },
             refresh: vi.fn(),
+            organizationSelection: { create: vi.fn() },
           },
         },
         iam: createIamDirectoryClient(),
-        openPlatform: {
-          qrAuth: {
-            sessions: {
-              create: vi.fn(),
-              retrieve: vi.fn(),
-              scans: { create: vi.fn() },
-              passwords: { create: vi.fn() },
-            },
+        oauth: {
+          deviceAuthorizations: {
+            create: vi.fn(),
+            retrieve: vi.fn(),
+            passwordCompletions: { create: vi.fn() },
+            scans: { create: vi.fn() },
           },
+          accountLinks: {
+            delete: vi.fn(),
+            list: vi.fn(),
+          },
+          authorizationUrls: { create: vi.fn() },
+          callbacks: {
+            handleGet: vi.fn(),
+            handlePost: vi.fn(),
+          },
+          grants: {
+            delete: vi.fn(),
+            list: vi.fn(),
+          },
+          miniProgramSessions: { create: vi.fn() },
+          providers: { list: vi.fn() },
+          sessions: { create: vi.fn() },
         },
         system: {
           iam: {
@@ -315,8 +328,6 @@ describe('drive IAM runtime bridge', () => {
       session,
       appClient: {
         auth: {
-          oauthAuthorizationUrls: { retrieve: vi.fn() },
-          oauthSessions: { create: vi.fn() },
           passwordResetRequests: { create: vi.fn() },
           passwordResets: { create: vi.fn() },
           registrations: { create: vi.fn() },
@@ -332,18 +343,33 @@ describe('drive IAM runtime bridge', () => {
               update: vi.fn(),
             },
             refresh: vi.fn(),
+            organizationSelection: { create: vi.fn() },
           },
         },
         iam: createIamDirectoryClient(),
-        openPlatform: {
-          qrAuth: {
-            sessions: {
-              create: vi.fn(),
-              retrieve: vi.fn(),
-              scans: { create: vi.fn() },
-              passwords: { create: vi.fn() },
-            },
+        oauth: {
+          deviceAuthorizations: {
+            create: vi.fn(),
+            retrieve: vi.fn(),
+            passwordCompletions: { create: vi.fn() },
+            scans: { create: vi.fn() },
           },
+          accountLinks: {
+            delete: vi.fn(),
+            list: vi.fn(),
+          },
+          authorizationUrls: { create: vi.fn() },
+          callbacks: {
+            handleGet: vi.fn(),
+            handlePost: vi.fn(),
+          },
+          grants: {
+            delete: vi.fn(),
+            list: vi.fn(),
+          },
+          miniProgramSessions: { create: vi.fn() },
+          providers: { list: vi.fn() },
+          sessions: { create: vi.fn() },
         },
         system: {
           iam: {

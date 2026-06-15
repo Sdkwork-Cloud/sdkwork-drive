@@ -5,8 +5,16 @@ pub const BASE_URL: &str = "http://127.0.0.1:18082";
 pub const API_PREFIX: &str = "/open/v3/api";
 
 pub fn operations() -> &'static [(&'static str, &'static str, &'static str)] {
-  &[
-    ("openShareLinks.downloadUrls.create", "POST", "/open/v3/api/drive/share_links/{token}/download_url"),
-    ("openShareLinks.resolve", "GET", "/open/v3/api/drive/share_links/{token}"),
-  ]
+    &[
+        (
+            "openShareLinks.downloadUrls.create",
+            "POST",
+            "/open/v3/api/drive/share_links/{token}/download_url",
+        ),
+        (
+            "openShareLinks.resolve",
+            "GET",
+            "/open/v3/api/drive/share_links/{token}",
+        ),
+    ]
 }

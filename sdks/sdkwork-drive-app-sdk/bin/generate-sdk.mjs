@@ -16,7 +16,7 @@ runDriveSdkGenerator(
         required: true,
         dependencyMode: "consumer-sdk",
         apiPrefix: "/app/v3/api",
-        apiAuthority: "sdkwork-appbase.app",
+        apiAuthority: "sdkwork-appbase-app-api",
         generatedTransportImportPolicy: "forbidden",
         packageByLanguage: {
           typescript: "@sdkwork/appbase-app-sdk",

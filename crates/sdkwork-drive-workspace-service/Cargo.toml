@@ -1,0 +1,16 @@
+[package]
+name = "sdkwork-drive-workspace-service"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+sdkwork-drive-config.workspace = true
+sdkwork-drive-storage-contract.workspace = true
+sdkwork_platform_id_service.workspace = true
+sqlx.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+sdkwork-drive-storage-local.workspace = true

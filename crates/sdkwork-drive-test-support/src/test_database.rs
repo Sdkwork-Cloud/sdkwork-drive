@@ -10,12 +10,24 @@ pub async fn create_test_database() -> Result<AnyPool, sqlx::Error> {
     // Apply schema migrations
     sqlx::query(CREATE_SPACE_TABLE_SQL).execute(&pool).await?;
     sqlx::query(CREATE_NODE_TABLE_SQL).execute(&pool).await?;
-    sqlx::query(CREATE_STORAGE_PROVIDER_TABLE_SQL).execute(&pool).await?;
-    sqlx::query(CREATE_UPLOAD_SESSION_TABLE_SQL).execute(&pool).await?;
-    sqlx::query(CREATE_UPLOAD_PART_TABLE_SQL).execute(&pool).await?;
-    sqlx::query(CREATE_DOWNLOAD_GRANT_TABLE_SQL).execute(&pool).await?;
-    sqlx::query(CREATE_QUOTA_USAGE_TABLE_SQL).execute(&pool).await?;
-    sqlx::query(CREATE_AUDIT_EVENT_TABLE_SQL).execute(&pool).await?;
+    sqlx::query(CREATE_STORAGE_PROVIDER_TABLE_SQL)
+        .execute(&pool)
+        .await?;
+    sqlx::query(CREATE_UPLOAD_SESSION_TABLE_SQL)
+        .execute(&pool)
+        .await?;
+    sqlx::query(CREATE_UPLOAD_PART_TABLE_SQL)
+        .execute(&pool)
+        .await?;
+    sqlx::query(CREATE_DOWNLOAD_GRANT_TABLE_SQL)
+        .execute(&pool)
+        .await?;
+    sqlx::query(CREATE_QUOTA_USAGE_TABLE_SQL)
+        .execute(&pool)
+        .await?;
+    sqlx::query(CREATE_AUDIT_EVENT_TABLE_SQL)
+        .execute(&pool)
+        .await?;
 
     Ok(pool)
 }

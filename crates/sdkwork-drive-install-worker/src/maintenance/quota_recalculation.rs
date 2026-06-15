@@ -11,9 +11,7 @@ pub struct QuotaRecalculationResult {
 ///
 /// This function recalculates the quota usage based on actual
 /// node counts and sizes in the database.
-pub async fn recalculate_quotas(
-    pool: &AnyPool,
-) -> Result<QuotaRecalculationResult, sqlx::Error> {
+pub async fn recalculate_quotas(pool: &AnyPool) -> Result<QuotaRecalculationResult, sqlx::Error> {
     let now = chrono::Utc::now().timestamp_millis();
 
     // Update quota usage for each tenant

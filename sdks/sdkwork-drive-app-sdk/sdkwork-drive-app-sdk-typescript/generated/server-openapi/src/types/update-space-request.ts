@@ -3,3 +3,5 @@ export interface UpdateSpaceRequest {
   displayName?: string;
   operatorId?: string;
 }
+
+

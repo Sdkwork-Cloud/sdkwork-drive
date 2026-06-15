@@ -36,3 +36,5 @@ export interface SdkworkAppConfig {
   authMode?: AuthMode;
   headers?: Record<string, string>;
 }
+
+

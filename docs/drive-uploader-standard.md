@@ -13,10 +13,10 @@ and usage statistics stay consistent.
 Drive Uploader must expose three entry points backed by one business core:
 
 ```text
-services/sdkwork-drive-product::uploader
-  Rust product service/component for server-side callers.
+crates/sdkwork-drive-workspace-service::uploader
+  Rust workspace service/component for server-side callers.
 
-services/sdkwork-drive-app-api /app/v3/api/drive/uploader/*
+crates/sdkwork-router-drive-app-api /app/v3/api/drive/uploader/*
   HTTP App API surface for browser, desktop, mobile, and other remote app
   clients.
 
@@ -24,14 +24,14 @@ sdks/sdkwork-drive-app-sdk client.uploader.*
   App SDK high-level API for client applications.
 ```
 
-The App API is an adapter over the product service. The App SDK is an adapter
-over the App API. Server-side Rust callers should import the product uploader
+The App API is an adapter over the workspace service. The App SDK is an adapter
+over the App API. Server-side Rust callers should import the workspace uploader
 component directly instead of calling the App API through HTTP.
 
 ## Hard Rules
 
 - Client applications must call `client.uploader.*` for Drive uploads.
-- Server-side Rust services must call `sdkwork_drive_product::uploader` for
+- Server-side Rust services must call `sdkwork_drive_workspace_service::uploader` for
   direct Drive uploads.
 - App API route handlers must not duplicate uploader business logic.
 - Generated SDK output must not be hand-edited. High-level TypeScript uploader
@@ -127,12 +127,12 @@ Required flow:
 ```text
 1. SDK computes a file fingerprint.
 2. SDK calls prepare or resume.
-3. Product service resolves/creates the Upload space and upload task.
-4. Product service returns existing uploaded parts.
+3. Workspace service resolves/creates the Upload space and upload task.
+4. Workspace service returns existing uploaded parts.
 5. SDK uploads missing parts only.
 6. SDK reports each uploaded part.
-7. Product service validates parts before completion.
-8. Product service commits Drive storage object metadata and uploader metadata.
+7. Workspace service validates parts before completion.
+8. Workspace service commits Drive storage object metadata and uploader metadata.
 ```
 
 ## Retention And Cleanup
@@ -165,11 +165,11 @@ file-sensitive-operation record with the pre-delete object snapshot.
 
 ## Server-Side Rust Contract
 
-The product crate must export uploader domain types and services for direct
+The workspace service crate must export uploader domain types and services for direct
 server use:
 
 ```rust
-use sdkwork_drive_product::uploader::{
+use sdkwork_drive_workspace_service::uploader::{
     DriveUploaderService, PrepareUploaderUploadCommand, UploadBytesCommand,
 };
 ```
@@ -186,7 +186,7 @@ outside the SDK boundary.
 
 ## Persistence Model
 
-The product service owns these uploader tables:
+The workspace service owns these uploader tables:
 
 ```text
 dr_drive_upload_item
@@ -207,8 +207,8 @@ metadata.
 Required verification for uploader implementation:
 
 ```powershell
-cargo test -p sdkwork-drive-product uploader_service sqlite_schema_contract maintenance_service
-cargo test -p sdkwork-drive-app-api uploader
+cargo test -p sdkwork-drive-workspace-service uploader_service sqlite_schema_contract maintenance_service
+cargo test -p sdkwork-router-drive-app-api uploader
 node tools/drive_sdk_generate.mjs --check --language typescript
 pnpm --dir apps/sdkwork-drive-pc test
 pnpm --dir apps/sdkwork-drive-pc typecheck

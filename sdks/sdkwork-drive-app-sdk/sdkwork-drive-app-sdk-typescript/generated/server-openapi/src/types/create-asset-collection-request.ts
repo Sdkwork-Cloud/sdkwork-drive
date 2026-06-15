@@ -6,3 +6,5 @@ export interface CreateAssetCollectionRequest {
   collectionType?: 'manual' | 'smart' | 'system';
   visibility?: 'private' | 'organization' | 'public';
 }
+
+

@@ -84,7 +84,7 @@
         "format": "PNG",
         "fileSizeBytes": 1048576,
         "alphaChannel": false,
-        "caption": "SDKWork Drive product screenshot.",
+        "caption": "SDKWork Drive app screenshot.",
         "sortOrder": 0,
         "enabled": true,
         "metadata": {
@@ -142,7 +142,7 @@
     "storeUrl": "https://sdkwork.com/apps/sdkwork-drive",
     "stores": [],
     "config": {
-      "workspaceRoot": "apps/sdkwork-drive",
+      "workspaceRoot": ".",
       "framework": "tauri",
       "managedBy": "apps/scripts/initialize-sdkwork-app-standard-v3.mjs"
     }
@@ -228,10 +228,9 @@
         }
       ],
       "metadata": {
-        "workspaceRoot": "apps/sdkwork-drive",
+        "workspaceRoot": ".",
         "framework": "tauri",
-        "packageManager": "pnpm@10.33.0",
-        "migratedFromLegacyConfig": false
+        "packageManager": "pnpm@10.33.0"
       }
     }
   },
@@ -276,7 +275,7 @@
     "build": {
       "targets": []
     },
-    "sourceRoot": "apps/sdkwork-drive"
+    "sourceRoot": "."
   },
   "metadata": {
     "standardOwner": "sdkwork-platform",

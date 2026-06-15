@@ -6,8 +6,8 @@
 
 pub use sdkwork_drive_storage_contract as storage;
 
-pub mod drive;
 pub mod api;
+pub mod drive;
 
 mod error;
 pub use error::DriveContractError;

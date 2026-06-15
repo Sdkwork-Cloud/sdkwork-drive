@@ -68,6 +68,7 @@ export interface RuntimeEnv {
   VITE_DRIVE_PC_BUILD_MODE?: string;
   VITE_DRIVE_PC_DEPLOYMENT_MODE?: string;
   VITE_DRIVE_PC_RUNTIME_TARGET?: string;
+  VITE_DRIVE_PC_API_GATEWAY_BASE_URL?: string;
   VITE_DRIVE_PC_APP_API_BASE_URL?: string;
   VITE_DRIVE_PC_BACKEND_API_BASE_URL?: string;
   VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL?: string;
@@ -81,10 +82,11 @@ export interface RuntimeEnv {
 }
 
 const APP_KEY = 'sdkwork-drive-pc';
-const LOCAL_APP_API_BASE_URL = 'http://127.0.0.1:18080';
-const LOCAL_ADMIN_STORAGE_API_BASE_URL = 'http://127.0.0.1:18083';
-const PUBLIC_APP_API_BASE_URL = 'https://drive.sdkwork.com/app/v3/api';
-const PUBLIC_ADMIN_STORAGE_API_BASE_URL = 'https://drive.sdkwork.com/admin/v3/api';
+const API_GATEWAY_BASE_URL = 'http://127.0.0.1:3900';
+const LOCAL_APP_API_BASE_URL = API_GATEWAY_BASE_URL;
+const LOCAL_ADMIN_STORAGE_API_BASE_URL = API_GATEWAY_BASE_URL;
+const PUBLIC_APP_API_BASE_URL = 'https://api.sdkwork.com';
+const PUBLIC_ADMIN_STORAGE_API_BASE_URL = 'https://api.sdkwork.com';
 
 const VALID_ENVIRONMENTS: SdkworkEnvironment[] = [
   'development',
@@ -242,17 +244,22 @@ export function createRuntimeConfig(env: RuntimeEnv = {}): DriveRuntimeConfig {
   );
   const configProfile = normalizeProfile(env.VITE_DRIVE_PC_CONFIG_PROFILE, environment);
   const buildMode = normalizeBuildMode(env.VITE_DRIVE_PC_BUILD_MODE, env, environment);
+
+  // All API calls go through the API gateway
+  const apiGatewayBaseUrl = env.VITE_DRIVE_PC_API_GATEWAY_BASE_URL
+    || defaultAppApiBaseUrl(deploymentMode);
+
   const appApiBaseUrl =
     env.VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL
     || env.VITE_DRIVE_PC_APP_API_BASE_URL
-    || defaultAppApiBaseUrl(deploymentMode);
+    || apiGatewayBaseUrl;
   const adminStorageApiBaseUrl =
     env.VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL
     || env.VITE_DRIVE_PC_BACKEND_API_BASE_URL
-    || defaultAdminStorageApiBaseUrl(deploymentMode);
+    || apiGatewayBaseUrl;
   const backendApiBaseUrl =
     env.VITE_DRIVE_PC_BACKEND_API_BASE_URL || adminStorageApiBaseUrl;
-  const appbaseAppApiBaseUrl = env.VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL || appApiBaseUrl;
+  const appbaseAppApiBaseUrl = env.VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL || apiGatewayBaseUrl;
 
   return {
     environment,

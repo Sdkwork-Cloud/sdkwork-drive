@@ -3,7 +3,8 @@ use sdkwork_drive_storage_contract::{
     DriveObjectStoreErrorKind, DriveStorageProviderKind, ListBucketsRequest,
 };
 use sdkwork_drive_storage_opendal::{
-    OpendalS3DriveObjectStore, OpendalS3ProviderProfile, OpendalS3StoreConfig,
+    OpendalS3DriveObjectStore, OpendalS3ProviderParts, OpendalS3ProviderProfile,
+    OpendalS3StoreConfig,
 };
 
 #[test]
@@ -30,18 +31,14 @@ fn opendal_config_builds_explicit_cloud_provider_profiles() {
             OpendalS3ProviderProfile::VolcengineTos,
         ),
     ] {
-        let config = OpendalS3StoreConfig::from_provider_parts(
+        let config = opendal_config_parts(
             kind,
             endpoint,
             Some("cn-north-1"),
-            "drive-bucket",
-            None,
-            Some("plain:access-key:secret-key"),
             Some("tenant-a/space-a"),
-            Some("AES256"),
-            Some("STANDARD"),
             None,
         )
+        .with_security(Some("AES256"), Some("STANDARD"))
         .expect("explicit cloud provider should build");
 
         assert_eq!(config.provider_profile, expected_profile);
@@ -114,32 +111,22 @@ async fn opendal_store_does_not_fake_drive_multipart_or_bucket_admin() {
 
 #[test]
 fn opendal_config_rejects_unsupported_provider_kinds_and_invalid_roots() {
-    let unsupported = OpendalS3StoreConfig::from_provider_parts(
+    let unsupported = opendal_config_parts(
         "local_filesystem",
         "https://s3.amazonaws.com",
         Some("us-east-1"),
-        "drive-bucket",
+        None,
         Some(true),
-        Some("plain:access-key:secret-key"),
-        None,
-        None,
-        None,
-        None,
     )
     .expect_err("local filesystem must not build as an OpenDAL S3 plugin");
     assert_eq!(unsupported.kind, DriveObjectStoreErrorKind::InvalidRequest);
 
-    let invalid_root = OpendalS3StoreConfig::from_provider_parts(
+    let invalid_root = opendal_config_parts(
         "s3_compatible",
         "https://s3.amazonaws.com",
         Some("us-east-1"),
-        "drive-bucket",
-        Some(true),
-        Some("plain:access-key:secret-key"),
         Some("../escape"),
-        None,
-        None,
-        None,
+        Some(true),
     )
     .expect_err("root must be a normalized relative object prefix");
     assert_eq!(invalid_root.kind, DriveObjectStoreErrorKind::InvalidRequest);
@@ -147,34 +134,21 @@ fn opendal_config_rejects_unsupported_provider_kinds_and_invalid_roots() {
 
 #[test]
 fn opendal_config_rejects_untrimmed_endpoint_and_default_bucket() {
-    let endpoint_err = OpendalS3StoreConfig::from_provider_parts(
+    let endpoint_err = opendal_config_parts(
         "s3_compatible",
         " https://s3.amazonaws.com ",
         Some("us-east-1"),
-        "drive-bucket",
+        None,
         Some(false),
-        Some("plain:access-key:secret-key"),
-        None,
-        None,
-        None,
-        None,
     )
     .expect_err("OpenDAL config should reject untrimmed endpoint_url");
     assert_eq!(endpoint_err.kind, DriveObjectStoreErrorKind::InvalidRequest);
     assert!(endpoint_err.message.contains("endpoint_url"));
 
-    let bucket_err = OpendalS3StoreConfig::from_provider_parts(
-        "s3_compatible",
-        "https://s3.amazonaws.com",
-        Some("us-east-1"),
-        " drive-bucket ",
-        Some(false),
-        Some("plain:access-key:secret-key"),
-        None,
-        None,
-        None,
-        None,
-    )
+    let bucket_err = OpendalS3StoreConfig::from_provider_parts(OpendalS3ProviderParts {
+        default_bucket: " drive-bucket ",
+        ..default_opendal_provider_parts("s3_compatible", "https://s3.amazonaws.com")
+    })
     .expect_err("OpenDAL config should reject untrimmed default_bucket");
     assert_eq!(bucket_err.kind, DriveObjectStoreErrorKind::InvalidRequest);
     assert!(bucket_err.message.contains("default_bucket"));
@@ -182,48 +156,34 @@ fn opendal_config_rejects_untrimmed_endpoint_and_default_bucket() {
 
 #[test]
 fn opendal_config_enforces_provider_strict_tls_policy() {
-    let https_config = OpendalS3StoreConfig::from_provider_parts(
+    let https_config = opendal_config_parts(
         "s3_compatible",
         "https://s3.amazonaws.com",
         Some("us-east-1"),
-        "drive-bucket",
+        None,
         Some(false),
-        Some("plain:access-key:secret-key"),
-        None,
-        None,
-        None,
-        None,
     )
     .expect("https OpenDAL config should default to strict TLS");
     assert!(https_config.strict_tls);
 
-    let private_http_config = OpendalS3StoreConfig::from_provider_parts(
+    let private_http_config = opendal_config_parts(
         "s3_compatible",
         "http://127.0.0.1:9000",
         Some("us-east-1"),
-        "drive-bucket",
+        None,
         Some(true),
-        Some("plain:access-key:secret-key"),
-        None,
-        None,
-        None,
-        None,
     )
     .expect("private http OpenDAL config should default to non-strict TLS");
     assert!(!private_http_config.strict_tls);
 
-    let strict_http = OpendalS3StoreConfig::from_provider_parts(
+    let strict_http = opendal_config_parts(
         "s3_compatible",
         "http://127.0.0.1:9000",
         Some("us-east-1"),
-        "drive-bucket",
-        Some(true),
-        Some("plain:access-key:secret-key"),
-        None,
-        None,
         None,
         Some(true),
     )
+    .with_strict_tls(Some(true))
     .expect_err("strict TLS must reject http OpenDAL endpoints");
     assert_eq!(strict_http.kind, DriveObjectStoreErrorKind::InvalidRequest);
     assert!(strict_http
@@ -243,18 +203,11 @@ fn opendal_config_resolves_secret_style_credential_ref_from_env_projection() {
             "opendal-secret-key",
         );
 
-        let config = OpendalS3StoreConfig::from_provider_parts(
-            "s3_compatible",
-            "https://s3.amazonaws.com",
-            Some("us-east-1"),
-            "drive-bucket",
-            Some(false),
-            Some("kms:prod/main"),
-            None,
-            None,
-            None,
-            None,
-        )
+        let config = OpendalS3StoreConfig::from_provider_parts(OpendalS3ProviderParts {
+            force_path_style: Some(false),
+            credential_ref: Some("kms:prod/main"),
+            ..default_opendal_provider_parts("s3_compatible", "https://s3.amazonaws.com")
+        })
         .expect("external credential_ref should resolve through env projection");
 
         assert_eq!(config.access_key_id, "opendal-secret-access");
@@ -269,18 +222,11 @@ fn opendal_config_rejects_unmaterialized_external_secret_refs() {
         std::env::remove_var("SDKWORK_DRIVE_STORAGE_CREDENTIAL__missing_secret__ACCESS_KEY_ID");
         std::env::remove_var("SDKWORK_DRIVE_STORAGE_CREDENTIAL__missing_secret__SECRET_ACCESS_KEY");
 
-        let err = OpendalS3StoreConfig::from_provider_parts(
-            "s3_compatible",
-            "https://s3.amazonaws.com",
-            Some("us-east-1"),
-            "drive-bucket",
-            Some(false),
-            Some("secret:missing/secret"),
-            None,
-            None,
-            None,
-            None,
-        )
+        let err = OpendalS3StoreConfig::from_provider_parts(OpendalS3ProviderParts {
+            force_path_style: Some(false),
+            credential_ref: Some("secret:missing/secret"),
+            ..default_opendal_provider_parts("s3_compatible", "https://s3.amazonaws.com")
+        })
         .expect_err("unmaterialized external credential_ref should be rejected");
 
         assert_eq!(err.kind, DriveObjectStoreErrorKind::InvalidRequest);
@@ -290,18 +236,91 @@ fn opendal_config_rejects_unmaterialized_external_secret_refs() {
     });
 }
 
+trait OpendalTestPartsExt<'a> {
+    fn expect(self, message: &str) -> OpendalS3StoreConfig;
+
+    fn expect_err(self, message: &str) -> sdkwork_drive_storage_contract::DriveObjectStoreError;
+
+    fn with_security(
+        self,
+        server_side_encryption: Option<&'a str>,
+        default_storage_class: Option<&'a str>,
+    ) -> Result<OpendalS3StoreConfig, sdkwork_drive_storage_contract::DriveObjectStoreError>;
+
+    fn with_strict_tls(
+        self,
+        strict_tls_override: Option<bool>,
+    ) -> Result<OpendalS3StoreConfig, sdkwork_drive_storage_contract::DriveObjectStoreError>;
+}
+
+impl<'a> OpendalTestPartsExt<'a> for OpendalS3ProviderParts<'a> {
+    fn expect(self, message: &str) -> OpendalS3StoreConfig {
+        OpendalS3StoreConfig::from_provider_parts(self).expect(message)
+    }
+
+    fn expect_err(self, message: &str) -> sdkwork_drive_storage_contract::DriveObjectStoreError {
+        OpendalS3StoreConfig::from_provider_parts(self).expect_err(message)
+    }
+
+    fn with_security(
+        mut self,
+        server_side_encryption: Option<&'a str>,
+        default_storage_class: Option<&'a str>,
+    ) -> Result<OpendalS3StoreConfig, sdkwork_drive_storage_contract::DriveObjectStoreError> {
+        self.server_side_encryption = server_side_encryption;
+        self.default_storage_class = default_storage_class;
+        OpendalS3StoreConfig::from_provider_parts(self)
+    }
+
+    fn with_strict_tls(
+        mut self,
+        strict_tls_override: Option<bool>,
+    ) -> Result<OpendalS3StoreConfig, sdkwork_drive_storage_contract::DriveObjectStoreError> {
+        self.strict_tls_override = strict_tls_override;
+        OpendalS3StoreConfig::from_provider_parts(self)
+    }
+}
+
+fn opendal_config_parts<'a>(
+    provider_kind: &'a str,
+    endpoint_url: &'a str,
+    region: Option<&'a str>,
+    root: Option<&'a str>,
+    force_path_style: Option<bool>,
+) -> OpendalS3ProviderParts<'a> {
+    OpendalS3ProviderParts {
+        region,
+        root,
+        force_path_style,
+        ..default_opendal_provider_parts(provider_kind, endpoint_url)
+    }
+}
+
+fn default_opendal_provider_parts<'a>(
+    provider_kind: &'a str,
+    endpoint_url: &'a str,
+) -> OpendalS3ProviderParts<'a> {
+    OpendalS3ProviderParts {
+        provider_kind,
+        endpoint_url,
+        region: Some("us-east-1"),
+        default_bucket: "drive-bucket",
+        force_path_style: Some(true),
+        credential_ref: Some("plain:access-key:secret-key"),
+        root: None,
+        server_side_encryption: None,
+        default_storage_class: None,
+        strict_tls_override: None,
+    }
+}
+
 fn test_config() -> OpendalS3StoreConfig {
-    OpendalS3StoreConfig::from_provider_parts(
+    opendal_config_parts(
         "s3_compatible",
         "https://s3.amazonaws.com",
         Some("us-east-1"),
-        "drive-bucket",
+        None,
         Some(true),
-        Some("plain:access-key:secret-key"),
-        None,
-        None,
-        None,
-        None,
     )
     .expect("test config should build")
 }

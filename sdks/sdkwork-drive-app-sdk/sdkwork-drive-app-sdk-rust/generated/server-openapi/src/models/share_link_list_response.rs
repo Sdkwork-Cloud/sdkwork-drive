@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{DriveShareLink};
+use crate::models::DriveShareLink;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct ShareLinkListResponse {

@@ -14,44 +14,44 @@
 
 **Files:**
 - Modify: `docs/schema-registry/tables/003-drive-storage.yaml`
-- Modify: `services/sdkwork-drive-product/src/infrastructure/sql/sqlite_core.sql`
-- Modify: `services/sdkwork-drive-product/src/infrastructure/sql/postgres_core.sql`
-- Modify: `services/sdkwork-drive-product/tests/sqlite_schema_contract.rs`
-- Modify: `services/sdkwork-drive-product/tests/postgres_schema_contract.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/sqlite_core.sql`
+- Modify: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/postgres_core.sql`
+- Modify: `crates/sdkwork-drive-workspace-service/tests/sqlite_schema_contract.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/tests/postgres_schema_contract.rs`
 
 - [ ] Add failing SQLite schema tests for `dr_drive_node_version`, `dr_drive_space_version_policy`, and `dr_drive_node_version_policy`.
 - [ ] Add failing PostgreSQL schema contract checks for the same tables and index names.
 - [ ] Add DDL and schema-registry entries for the three tables.
-- [ ] Run `cargo test -p sdkwork-drive-product sqlite_schema_contract`.
+- [ ] Run `cargo test -p sdkwork-drive-workspace-service sqlite_schema_contract`.
 
 ### Task 2: Product Version Store
 
 **Files:**
-- Create: `services/sdkwork-drive-product/src/domain/node_version.rs`
-- Create: `services/sdkwork-drive-product/src/ports/node_version_store.rs`
-- Create: `services/sdkwork-drive-product/src/infrastructure/sql/node_version_store.rs`
-- Modify: `services/sdkwork-drive-product/src/domain/mod.rs`
-- Modify: `services/sdkwork-drive-product/src/ports/mod.rs`
-- Modify: `services/sdkwork-drive-product/src/infrastructure/sql/mod.rs`
-- Test: `services/sdkwork-drive-product/tests/node_version_store.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/domain/node_version.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/ports/node_version_store.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/node_version_store.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/domain/mod.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/ports/mod.rs`
+- Modify: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/mod.rs`
+- Test: `crates/sdkwork-drive-workspace-service/tests/node_version_store.rs`
 
 - [ ] Write failing tests for inserting a logical node version from a storage object and listing it by node.
 - [ ] Implement the domain model, store trait, and SQL store.
-- [ ] Keep errors mapped through `DriveProductError`.
-- [ ] Run `cargo test -p sdkwork-drive-product node_version_store`.
+- [ ] Keep errors mapped through `DriveServiceError`.
+- [ ] Run `cargo test -p sdkwork-drive-workspace-service node_version_store`.
 
 ### Task 3: App API Route Compatibility
 
 **Files:**
-- Modify: `services/sdkwork-drive-app-api/src/dto.rs`
-- Modify: `services/sdkwork-drive-app-api/src/mappers.rs`
-- Modify: `services/sdkwork-drive-app-api/src/routes.rs`
-- Test: `services/sdkwork-drive-app-api/tests/drive_routes.rs` or `command_routes.rs`
+- Modify: `crates/sdkwork-router-drive-app-api/src/dto.rs`
+- Modify: `crates/sdkwork-router-drive-app-api/src/mappers.rs`
+- Modify: `crates/sdkwork-router-drive-app-api/src/routes.rs`
+- Test: `crates/sdkwork-router-drive-app-api/tests/drive_routes.rs` or `command_routes.rs`
 
 - [ ] Add failing route tests proving version ids come from `dr_drive_node_version` when present.
 - [ ] Insert logical versions during upload completion and archive extraction flows.
 - [ ] Update list/get/delete/restore version handlers to read logical versions first and keep storage-object fallback.
-- [ ] Run `cargo test -p sdkwork-drive-app-api version`.
+- [ ] Run `cargo test -p sdkwork-router-drive-app-api version`.
 
 ### Task 4: Verification And Notes Handoff
 

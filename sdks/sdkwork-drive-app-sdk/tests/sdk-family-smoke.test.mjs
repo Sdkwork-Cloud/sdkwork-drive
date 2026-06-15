@@ -113,8 +113,8 @@ const forbiddenStorageAdminSchemas = [
   "UpdateStorageProviderRequest",
 ];
 const forbiddenAppbaseAppOperations = [
-  "oauthAuthorizationUrls.retrieve",
-  "oauthSessions.create",
+  "oauth.authorizationUrls.create",
+  "oauth.sessions.create",
   "passwordResetRequests.create",
   "passwordResets.create",
   "registrations.create",
@@ -122,18 +122,17 @@ const forbiddenAppbaseAppOperations = [
   "sessions.current.delete",
   "sessions.current.retrieve",
   "sessions.current.update",
+  "sessions.organizationSelection.create",
   "sessions.refresh",
-  "verificationCodes.create",
-  "verificationCodes.verify",
-  "qrAuth.sessions.create",
-  "qrAuth.sessions.retrieve",
-  "qrAuth.sessions.scans.create",
-  "qrAuth.sessions.passwords.create",
+  "oauth.deviceAuthorizations.create",
+  "oauth.deviceAuthorizations.retrieve",
+  "oauth.deviceAuthorizations.scans.create",
+  "oauth.deviceAuthorizations.passwordCompletions.create",
   "iam.runtime.retrieve",
   "iam.verificationPolicy.retrieve",
   "users.current.retrieve",
 ];
-const forbiddenAppbaseTags = ["auth", "iam", "openPlatform", "system"];
+const forbiddenAppbaseTags = ["auth", "iam", "oauth", "openPlatform", "system"];
 const forbiddenAppbaseSchemas = ["AppbaseApiResult", "AppbaseOperationCommand"];
 
 function collectPathOperationIds(openapi) {
@@ -178,7 +177,7 @@ test("sdkwork-drive-app-sdk records family metadata outside generated output for
     [
       {
         workspace: "sdkwork-appbase-app-sdk",
-        apiAuthority: "sdkwork-appbase.app",
+        apiAuthority: "sdkwork-appbase-app-api",
         dependencyMode: "consumer-sdk",
         generatedTransportImportPolicy: "forbidden",
       },

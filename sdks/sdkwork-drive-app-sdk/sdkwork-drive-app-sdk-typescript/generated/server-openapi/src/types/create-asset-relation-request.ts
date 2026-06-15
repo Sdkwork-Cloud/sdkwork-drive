@@ -7,3 +7,5 @@ export interface CreateAssetRelationRequest {
   sourceResourceId?: string;
   metadata?: Record<string, unknown>;
 }
+
+

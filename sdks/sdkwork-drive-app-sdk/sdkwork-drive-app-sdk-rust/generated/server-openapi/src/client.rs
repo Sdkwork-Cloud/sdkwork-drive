@@ -44,22 +44,22 @@ impl SdkworkAppClient {
     }
 
     pub fn drive(&self) -> DriveApi {
-            DriveApi::new(Arc::clone(&self.http))
-        }
+        DriveApi::new(Arc::clone(&self.http))
+    }
 
     pub fn node_labels(&self) -> NodeLabelsApi {
-            NodeLabelsApi::new(Arc::clone(&self.http))
-        }
+        NodeLabelsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn node_properties(&self) -> NodePropertiesApi {
-            NodePropertiesApi::new(Arc::clone(&self.http))
-        }
+        NodePropertiesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn nodes(&self) -> NodesApi {
-            NodesApi::new(Arc::clone(&self.http))
-        }
+        NodesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn watch_channels(&self) -> WatchChannelsApi {
-            WatchChannelsApi::new(Arc::clone(&self.http))
-        }
+        WatchChannelsApi::new(Arc::clone(&self.http))
+    }
 }

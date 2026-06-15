@@ -4,8 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-hmac = "0.12"
-http = "1.4"
-serde = { workspace = true, features = ["derive"] }
+hmac.workspace = true
+http.workspace = true
+serde.workspace = true
 serde_json.workspace = true
-sha2 = "0.10"
+sha2.workspace = true

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{NodeLabel};
+use crate::models::NodeLabel;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct NodeLabelListResponse {

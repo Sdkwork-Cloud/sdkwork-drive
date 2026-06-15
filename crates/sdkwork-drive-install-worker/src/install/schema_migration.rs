@@ -41,7 +41,7 @@ pub async fn run_migrations(pool: &AnyPool) -> Result<MigrationStatus, sqlx::Err
 async fn get_current_schema_version(pool: &AnyPool) -> Result<i64, sqlx::Error> {
     // Try to read from schema_version table
     let result = sqlx::query_scalar::<_, i64>(
-        "SELECT version FROM _drive_schema_version ORDER BY version DESC LIMIT 1"
+        "SELECT version FROM _drive_schema_version ORDER BY version DESC LIMIT 1",
     )
     .fetch_optional(pool)
     .await?;
@@ -82,22 +82,34 @@ async fn apply_migration(pool: &AnyPool, migration: &str) -> Result<(), sqlx::Er
             sqlx::query(CREATE_NODE_TABLE_SQL).execute(pool).await?;
         }
         "003_create_drive_storage_provider_table" => {
-            sqlx::query(CREATE_STORAGE_PROVIDER_TABLE_SQL).execute(pool).await?;
+            sqlx::query(CREATE_STORAGE_PROVIDER_TABLE_SQL)
+                .execute(pool)
+                .await?;
         }
         "004_create_drive_upload_session_table" => {
-            sqlx::query(CREATE_UPLOAD_SESSION_TABLE_SQL).execute(pool).await?;
+            sqlx::query(CREATE_UPLOAD_SESSION_TABLE_SQL)
+                .execute(pool)
+                .await?;
         }
         "005_create_drive_upload_part_table" => {
-            sqlx::query(CREATE_UPLOAD_PART_TABLE_SQL).execute(pool).await?;
+            sqlx::query(CREATE_UPLOAD_PART_TABLE_SQL)
+                .execute(pool)
+                .await?;
         }
         "006_create_drive_download_grant_table" => {
-            sqlx::query(CREATE_DOWNLOAD_GRANT_TABLE_SQL).execute(pool).await?;
+            sqlx::query(CREATE_DOWNLOAD_GRANT_TABLE_SQL)
+                .execute(pool)
+                .await?;
         }
         "007_create_drive_quota_usage_table" => {
-            sqlx::query(CREATE_QUOTA_USAGE_TABLE_SQL).execute(pool).await?;
+            sqlx::query(CREATE_QUOTA_USAGE_TABLE_SQL)
+                .execute(pool)
+                .await?;
         }
         "008_create_drive_audit_event_table" => {
-            sqlx::query(CREATE_AUDIT_EVENT_TABLE_SQL).execute(pool).await?;
+            sqlx::query(CREATE_AUDIT_EVENT_TABLE_SQL)
+                .execute(pool)
+                .await?;
         }
         _ => {
             tracing::warn!("Unknown migration: {}", migration);

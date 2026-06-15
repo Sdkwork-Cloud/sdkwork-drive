@@ -20,6 +20,14 @@ import {
   signOutDriveAccount,
 } from './bootstrap/driveAccountViewModel';
 import type { DriveIamRuntime } from './bootstrap/driveIamRuntime';
+import { DriveAuthShell } from './components/DriveAuthShell';
+import {
+  resolveDriveAuthAppearance,
+  resolveDriveAuthLocale,
+  resolveDriveAuthRuntimeConfig,
+  type SdkworkAuthAppearanceConfig,
+  type SdkworkAuthRuntimeConfig,
+} from './bootstrap/driveAuthConfig';
 
 const DrivePage = React.lazy(() =>
   import('sdkwork-drive-pc-file').then((module) => ({ default: module.DrivePage })),
@@ -27,6 +35,11 @@ const DrivePage = React.lazy(() =>
 const StorageProvidersAdminPage = React.lazy(() =>
   import('sdkwork-drive-pc-admin-storage-providers').then((module) => ({
     default: module.StorageProvidersAdminPage,
+  })),
+);
+const StorageBindingsAdminPage = React.lazy(() =>
+  import('sdkwork-drive-pc-admin-storage-providers').then((module) => ({
+    default: module.StorageBindingsAdminPage,
   })),
 );
 const SdkworkIamAuthRoutes = React.lazy(() =>
@@ -113,14 +126,22 @@ export default function App() {
     setIsSettingsOpen(true);
   };
 
+  const getIamRuntime = useMemo(() => {
+    return () => getDriveIamRuntime(runtime);
+  }, [runtime]);
+
+  const authRoutes = useMemo(() => (
+    <DriveAuthShell>
+      <DriveAppbaseAuthRouteHost getRuntime={getIamRuntime} />
+    </DriveAuthShell>
+  ), [getIamRuntime]);
+
   return (
     <DriveRuntimeProvider runtime={runtime}>
       <LanguageProvider preferenceStorage={preferenceStorage}>
         <ThemeProvider preferenceStorage={preferenceStorage}>
           <DriveAuthGate
-            authRoutes={
-              <DriveAppbaseAuthRouteHost getRuntime={() => getDriveIamRuntime(runtime)} />
-            }
+            authRoutes={authRoutes}
             session={runtime.session}
           >
             <div className="flex w-[100vw] h-[100vh] overflow-hidden text-[#333] dark:text-[#eee] select-none font-sans bg-[#f5f5f5] dark:bg-[#111]">
@@ -135,6 +156,11 @@ export default function App() {
               <React.Suspense fallback={<DriveWorkspaceFallback />}>
                 {activeSection === 'admin-storage-providers' ? (
                   <StorageProvidersAdminPage
+                    adminStorageSdkClient={runtime.sdk.adminStorage}
+                    getSession={runtime.session.getSnapshot}
+                  />
+                ) : activeSection === 'admin-storage-bindings' ? (
+                  <StorageBindingsAdminPage
                     adminStorageSdkClient={runtime.sdk.adminStorage}
                     getSession={runtime.session.getSnapshot}
                   />
@@ -186,14 +212,19 @@ function DriveAppbaseAuthRouteHost({
 }: {
   getRuntime: () => DriveIamRuntime;
 }) {
+  const props = {
+    appearance: resolveDriveAuthAppearance(),
+    basePath: '/auth',
+    getRuntime,
+    homePath: '/',
+    locale: resolveDriveAuthLocale(),
+    runtimeConfig: resolveDriveAuthRuntimeConfig(),
+    viewportMode: 'fixed' as const,
+  };
+
   return (
     <React.Suspense fallback={<DriveAuthRoutesFallback />}>
-      <SdkworkIamAuthRoutes
-        basePath="/auth"
-        getRuntime={getRuntime}
-        homePath="/"
-        viewportMode="fixed"
-      />
+      <SdkworkIamAuthRoutes {...props as any} />
     </React.Suspense>
   );
 }
@@ -221,7 +252,7 @@ function DriveAuthRoutesFallback() {
   return (
     <div
       aria-label="Loading Drive auth routes"
-      className="flex h-[100vh] w-[100vw] items-center justify-center bg-[#f5f5f5] dark:bg-[#111]"
+      className="sdkwork-drive-auth-loading"
     >
       <div className="h-7 w-7 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
     </div>

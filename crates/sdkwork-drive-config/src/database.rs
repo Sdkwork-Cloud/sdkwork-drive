@@ -150,12 +150,14 @@ impl DatabaseConfig {
             return Self::from_runtime_toml_file(config_file.trim());
         }
 
-        let provider = env
-            .get("SDKWORK_DRIVE_DATABASE_PROVIDER")
+        reject_removed_database_env_aliases(&env)?;
+
+        let engine = env
+            .get("SDKWORK_DRIVE_DATABASE_ENGINE")
             .map(|value| value.trim().to_ascii_lowercase())
             .unwrap_or_else(|| "postgresql".to_string());
 
-        match provider.as_str() {
+        match engine.as_str() {
             "postgresql" | "postgres" => {
                 let max_connections = parse_max_connections(
                     env.get("SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS"),
@@ -171,7 +173,7 @@ impl DatabaseConfig {
                 let username = required_env_value(&env, "SDKWORK_DRIVE_DATABASE_USERNAME")?;
                 let password = required_env_value(&env, "SDKWORK_DRIVE_DATABASE_PASSWORD")?;
                 let ssl_mode = env
-                    .get("SDKWORK_DRIVE_DATABASE_SSLMODE")
+                    .get("SDKWORK_DRIVE_DATABASE_SSL_MODE")
                     .map(|value| value.trim())
                     .filter(|value| !value.is_empty());
                 let mut url = format!(
@@ -195,7 +197,7 @@ impl DatabaseConfig {
                 Self::from_url_with_max_connections(url, max_connections)
             }
             other => Err(DatabaseConfigError::new(format!(
-                "unsupported database provider {other}; expected postgresql or sqlite"
+                "unsupported database engine {other}; expected postgresql or sqlite"
             ))),
         }
     }
@@ -274,6 +276,36 @@ fn parse_database_engine_from_url(url: &str) -> Result<DatabaseEngine, DatabaseC
     Err(DatabaseConfigError::new(
         "database url must be a PostgreSQL or SQLite connection string",
     ))
+}
+
+fn reject_removed_database_env_aliases(
+    env: &HashMap<String, String>,
+) -> Result<(), DatabaseConfigError> {
+    let removed = [
+        (
+            "SDKWORK_DRIVE_DATABASE_PROVIDER",
+            "SDKWORK_DRIVE_DATABASE_ENGINE",
+        ),
+        (
+            "SDKWORK_DRIVE_DATABASE_SSLMODE",
+            "SDKWORK_DRIVE_DATABASE_SSL_MODE",
+        ),
+    ]
+    .into_iter()
+    .filter_map(|(removed, replacement)| {
+        env.get(removed)
+            .map(String::as_str)
+            .filter(|value| !value.trim().is_empty())
+            .map(|_| format!("{removed} -> {replacement}"))
+    })
+    .collect::<Vec<_>>();
+    if removed.is_empty() {
+        return Ok(());
+    }
+    Err(DatabaseConfigError::new(format!(
+        "removed database environment aliases are not supported: {}",
+        removed.join(", ")
+    )))
 }
 
 fn default_max_connections_for_engine(engine: DatabaseEngine) -> u32 {

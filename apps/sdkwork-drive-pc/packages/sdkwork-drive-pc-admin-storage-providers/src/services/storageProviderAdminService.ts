@@ -283,6 +283,7 @@ function providerCreateBody(
   assignDefined(body, 'serverSideEncryptionMode', input.serverSideEncryptionMode);
   assignDefined(body, 'defaultStorageClass', input.defaultStorageClass);
   assignDefined(body, 'status', input.status);
+  assignDefined(body, 'strictTls', input.strictTls);
   return body;
 }
 
@@ -303,6 +304,7 @@ function responseToStorageProvider(response: unknown): StorageProviderView {
     defaultStorageClass: stringField(record, 'defaultStorageClass'),
     status: stringField(record, 'status') ?? 'unknown',
     version: numberField(record, 'version') ?? 0,
+    strictTls: booleanField(record, 'strictTls') ?? true,
   };
 }
 

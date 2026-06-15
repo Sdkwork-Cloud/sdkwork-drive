@@ -11,9 +11,7 @@ pub struct OrphanCleanupResult {
 ///
 /// This function removes nodes that reference non-existent spaces
 /// or have no parent in the node hierarchy.
-pub async fn cleanup_orphan_objects(
-    pool: &AnyPool,
-) -> Result<OrphanCleanupResult, sqlx::Error> {
+pub async fn cleanup_orphan_objects(pool: &AnyPool) -> Result<OrphanCleanupResult, sqlx::Error> {
     // Find nodes with non-existent spaces
     let orphaned_nodes = sqlx::query_scalar::<_, i64>(
         "DELETE FROM drive_node WHERE space_id NOT IN (SELECT id FROM drive_space) RETURNING COUNT(*)"

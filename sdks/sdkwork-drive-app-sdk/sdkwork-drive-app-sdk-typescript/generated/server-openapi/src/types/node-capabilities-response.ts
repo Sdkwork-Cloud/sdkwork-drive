@@ -21,3 +21,5 @@ export interface NodeCapabilitiesResponse {
   canManagePermissions: boolean;
   canManageVersions: boolean;
 }
+
+

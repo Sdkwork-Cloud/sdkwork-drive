@@ -5,3 +5,5 @@ export interface DeleteSpaceResponse {
   space: DriveSpace;
   deletedNodeCount: string;
 }
+
+

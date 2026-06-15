@@ -7,3 +7,5 @@ export interface UpdateAssetRequest {
   tags?: string[];
   visibility?: 'private' | 'organization' | 'public';
 }
+
+

@@ -44,10 +44,10 @@ impl SdkworkBackendClient {
     }
 
     pub fn drive(&self) -> DriveApi {
-            DriveApi::new(Arc::clone(&self.http))
-        }
+        DriveApi::new(Arc::clone(&self.http))
+    }
 
     pub fn labels(&self) -> LabelsApi {
-            LabelsApi::new(Arc::clone(&self.http))
-        }
+        LabelsApi::new(Arc::clone(&self.http))
+    }
 }

@@ -109,8 +109,7 @@ impl ProblemDetail {
 
 impl IntoResponse for ProblemDetail {
     fn into_response(self) -> Response {
-        let status = StatusCode::from_u16(self.status)
-            .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let status = StatusCode::from_u16(self.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         let mut response = Json(self).into_response();
         *response.status_mut() = status;
         response
@@ -123,8 +122,7 @@ mod tests {
 
     #[test]
     fn test_problem_detail_creation() {
-        let problem = ProblemDetail::bad_request("Invalid input")
-            .with_instance("/api/test");
+        let problem = ProblemDetail::bad_request("Invalid input").with_instance("/api/test");
 
         assert_eq!(problem.status, 400);
         assert_eq!(problem.detail, Some("Invalid input".to_string()));

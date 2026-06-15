@@ -7,3 +7,5 @@ export interface CreateShortcutRequest {
   targetNodeId: string;
   operatorId: string;
 }
+
+

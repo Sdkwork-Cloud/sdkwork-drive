@@ -11,3 +11,5 @@ export interface EffectivePermission {
   lifecycleStatus: string;
   version: string;
 }
+
+

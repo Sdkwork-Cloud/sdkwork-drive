@@ -19,7 +19,7 @@ pub async fn setup_default_spaces(
 
     // Check if personal space exists
     let personal_exists = sqlx::query_scalar::<_, bool>(
-        "SELECT EXISTS(SELECT 1 FROM drive_space WHERE tenant_id = $1 AND space_type = 'personal')"
+        "SELECT EXISTS(SELECT 1 FROM drive_space WHERE tenant_id = $1 AND space_type = 'personal')",
     )
     .bind(tenant_id)
     .fetch_one(pool)
@@ -41,7 +41,7 @@ pub async fn setup_default_spaces(
 
     // Check if system space exists
     let system_exists = sqlx::query_scalar::<_, bool>(
-        "SELECT EXISTS(SELECT 1 FROM drive_space WHERE tenant_id = $1 AND space_type = 'system')"
+        "SELECT EXISTS(SELECT 1 FROM drive_space WHERE tenant_id = $1 AND space_type = 'system')",
     )
     .bind(tenant_id)
     .fetch_one(pool)

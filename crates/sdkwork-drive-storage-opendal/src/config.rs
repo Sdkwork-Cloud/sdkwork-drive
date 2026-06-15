@@ -148,27 +148,34 @@ pub struct OpendalS3StoreConfig {
     pub default_storage_class: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct OpendalS3ProviderParts<'a> {
+    pub provider_kind: &'a str,
+    pub endpoint_url: &'a str,
+    pub region: Option<&'a str>,
+    pub default_bucket: &'a str,
+    pub force_path_style: Option<bool>,
+    pub credential_ref: Option<&'a str>,
+    pub root: Option<&'a str>,
+    pub server_side_encryption: Option<&'a str>,
+    pub default_storage_class: Option<&'a str>,
+    pub strict_tls_override: Option<bool>,
+}
+
 impl OpendalS3StoreConfig {
     pub fn from_provider_parts(
-        provider_kind: &str,
-        endpoint_url: &str,
-        region: Option<&str>,
-        default_bucket: &str,
-        force_path_style: Option<bool>,
-        credential_ref: Option<&str>,
-        root: Option<&str>,
-        server_side_encryption: Option<&str>,
-        default_storage_class: Option<&str>,
-        strict_tls_override: Option<bool>,
+        parts: OpendalS3ProviderParts<'_>,
     ) -> Result<Self, DriveObjectStoreError> {
-        let provider_kind = parse_provider_kind(provider_kind)?;
-        let endpoint = normalize_http_endpoint(endpoint_url)?;
+        let provider_kind = parse_provider_kind(parts.provider_kind)?;
+        let endpoint = normalize_http_endpoint(parts.endpoint_url)?;
         let provider_profile =
             OpendalS3ProviderProfile::from_provider_kind(provider_kind.as_str(), Some(&endpoint));
-        let credentials = resolve_credentials(credential_ref)?;
-        let strict_tls = strict_tls_override
+        let credentials = resolve_credentials(parts.credential_ref)?;
+        let strict_tls = parts
+            .strict_tls_override
             .unwrap_or_else(|| !endpoint.to_ascii_lowercase().starts_with("http://"));
-        let region = region
+        let region = parts
+            .region
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(ToString::to_string)
@@ -184,17 +191,18 @@ impl OpendalS3StoreConfig {
             provider_profile,
             endpoint: Some(endpoint),
             region,
-            default_bucket: default_bucket.to_string(),
+            default_bucket: parts.default_bucket.to_string(),
             access_key_id: credentials.access_key_id,
             secret_access_key: credentials.secret_access_key,
             session_token: credentials.session_token,
-            root: normalize_root_prefix(root)?,
-            force_path_style: force_path_style
+            root: normalize_root_prefix(parts.root)?,
+            force_path_style: parts
+                .force_path_style
                 .unwrap_or_else(|| provider_profile.default_force_path_style()),
             strict_tls,
             disable_config_load: true,
-            server_side_encryption: normalize_optional(server_side_encryption),
-            default_storage_class: normalize_optional(default_storage_class),
+            server_side_encryption: normalize_optional(parts.server_side_encryption),
+            default_storage_class: normalize_optional(parts.default_storage_class),
         };
         config.validate()?;
         Ok(config)
@@ -257,37 +265,12 @@ impl OpendalS3StoreConfig {
 }
 
 fn parse_provider_kind(raw: &str) -> Result<DriveStorageProviderKind, DriveObjectStoreError> {
-    let normalized = raw.trim().to_ascii_lowercase();
-    match normalized.as_str() {
-        "s3_compatible" => Ok(DriveStorageProviderKind::S3Compatible),
-        "aliyun_oss" => Ok(DriveStorageProviderKind::AliyunOss),
-        "tencent_cos" => Ok(DriveStorageProviderKind::TencentCos),
-        "huawei_obs" => Ok(DriveStorageProviderKind::HuaweiObs),
-        "volcengine_tos" => Ok(DriveStorageProviderKind::VolcengineTos),
-        "google_cloud_storage" => Ok(DriveStorageProviderKind::GoogleCloudStorage),
-        _ => {
-            let Some(suffix) = normalized.strip_prefix("custom:") else {
-                return Err(DriveObjectStoreError::new(
-                    DriveObjectStoreErrorKind::InvalidRequest,
-                    "provider_kind is invalid for opendal S3 plugin",
-                ));
-            };
-            if suffix.len() < 2
-                || suffix.len() > 32
-                || !suffix.bytes().all(|byte| {
-                    byte.is_ascii_lowercase()
-                        || byte.is_ascii_digit()
-                        || matches!(byte, b'_' | b'-')
-                })
-            {
-                return Err(DriveObjectStoreError::new(
-                    DriveObjectStoreErrorKind::InvalidRequest,
-                    "custom provider_kind suffix is invalid",
-                ));
-            }
-            Ok(DriveStorageProviderKind::Custom(normalized))
-        }
-    }
+    DriveStorageProviderKind::try_from_str(raw).ok_or_else(|| {
+        DriveObjectStoreError::new(
+            DriveObjectStoreErrorKind::InvalidRequest,
+            "provider_kind is invalid for opendal S3 plugin",
+        )
+    })
 }
 
 fn normalize_http_endpoint(raw: &str) -> Result<String, DriveObjectStoreError> {

@@ -23,23 +23,19 @@ pub async fn tenant_scope_middleware(mut request: Request, next: Next) -> Respon
 
     match tenant_id {
         Some(id) => {
-            request
-                .extensions_mut()
-                .insert(TenantId(id));
+            request.extensions_mut().insert(TenantId(id));
             next.run(request).await
         }
-        None => {
-            (
-                StatusCode::BAD_REQUEST,
-                axum::Json(json!({
-                    "error": {
-                        "code": "MISSING_TENANT_ID",
-                        "message": "X-Tenant-Id header is required"
-                    }
-                })),
-            )
-                .into_response()
-        }
+        None => (
+            StatusCode::BAD_REQUEST,
+            axum::Json(json!({
+                "error": {
+                    "code": "MISSING_TENANT_ID",
+                    "message": "X-Tenant-Id header is required"
+                }
+            })),
+        )
+            .into_response(),
     }
 }
 

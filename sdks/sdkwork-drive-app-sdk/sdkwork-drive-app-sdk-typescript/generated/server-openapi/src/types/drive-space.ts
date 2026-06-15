@@ -8,3 +8,5 @@ export interface DriveSpace {
   lifecycleStatus: string;
   version: string;
 }
+
+

@@ -44,7 +44,11 @@ impl Scheduler {
         self.handles.push(tokio::spawn(async move {
             loop {
                 tokio::time::sleep(interval).await;
-                match crate::maintenance::upload_session_cleanup::cleanup_expired_sessions(&pool_clone).await {
+                match crate::maintenance::upload_session_cleanup::cleanup_expired_sessions(
+                    &pool_clone,
+                )
+                .await
+                {
                     Ok(result) => {
                         tracing::info!(
                             "Upload session cleanup: expired={}, parts={}",
@@ -64,12 +68,11 @@ impl Scheduler {
         self.handles.push(tokio::spawn(async move {
             loop {
                 tokio::time::sleep(interval).await;
-                match crate::maintenance::orphan_object_cleanup::cleanup_orphan_objects(&pool_clone).await {
+                match crate::maintenance::orphan_object_cleanup::cleanup_orphan_objects(&pool_clone)
+                    .await
+                {
                     Ok(result) => {
-                        tracing::info!(
-                            "Orphan cleanup: nodes={}",
-                            result.orphaned_nodes
-                        );
+                        tracing::info!("Orphan cleanup: nodes={}", result.orphaned_nodes);
                     }
                     Err(e) => {
                         tracing::error!("Orphan cleanup failed: {}", e);
@@ -83,7 +86,8 @@ impl Scheduler {
         self.handles.push(tokio::spawn(async move {
             loop {
                 tokio::time::sleep(interval).await;
-                match crate::maintenance::quota_recalculation::recalculate_quotas(&pool_clone).await {
+                match crate::maintenance::quota_recalculation::recalculate_quotas(&pool_clone).await
+                {
                     Ok(result) => {
                         tracing::info!(
                             "Quota recalculation: tenants={}, spaces={}",

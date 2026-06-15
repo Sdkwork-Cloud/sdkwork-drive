@@ -6,3 +6,5 @@ export interface CreatePermissionRequest {
   role: 'reader' | 'commenter' | 'writer' | 'owner';
   operatorId: string;
 }
+
+

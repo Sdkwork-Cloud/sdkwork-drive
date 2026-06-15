@@ -75,9 +75,9 @@ Use a Rust modular monolith with clean component boundaries.
 
 The backend is deployable as services and reusable as crates:
 
-- `services/sdkwork-drive-app-api` exposes user-facing `/app/v3/api`.
-- `services/sdkwork-drive-backend-api` exposes operator `/backend/v3/api`.
-- `services/sdkwork-drive-product` contains domain, application, ports, infrastructure, and API adapters.
+- `crates/sdkwork-router-drive-app-api` exposes user-facing `/app/v3/api`.
+- `crates/sdkwork-router-drive-backend-api` exposes operator `/backend/v3/api`.
+- `crates/sdkwork-drive-workspace-service` contains domain, application, ports, infrastructure, and API adapters.
 - `crates/*` expose reusable contracts, storage abstraction, HTTP helpers, security, config, observability, and test support.
 
 This keeps phase 1 transactionally simple and testable while allowing later split-out services for preview generation, full-text indexing, virus scanning, object sweep, and asynchronous ingestion.
@@ -103,7 +103,6 @@ sdkwork-drive/
     sdk/
   crates/
     sdkwork-drive-contract/
-    sdkwork-drive-core/
     sdkwork-drive-config/
     sdkwork-drive-http/
     sdkwork-drive-security/
@@ -112,23 +111,24 @@ sdkwork-drive/
     sdkwork-drive-storage-local/
     sdkwork-drive-storage-s3/
     sdkwork-drive-test-support/
-  services/
-    sdkwork-drive-product/
-    sdkwork-drive-app-api/
-    sdkwork-drive-backend-api/
+    sdkwork-drive-workspace-service/
+    sdkwork-router-drive-app-api/
+    sdkwork-router-drive-backend-api/
+    sdkwork-router-drive-open-api/
+    sdkwork-router-storage-backend-api/
     sdkwork-drive-gateway/
-    sdkwork-drive-installer/
+    sdkwork-drive-install-worker/
   sdks/
-    sdkwork-drive-app-api/
-    sdkwork-drive-backend-api/
+    sdkwork-drive-app-sdk/
+    sdkwork-drive-backend-sdk/
   tools/
   tests/
 ```
 
-### 6.1 Product Service Layout
+### 6.1 Workspace Service Layout
 
 ```text
-services/sdkwork-drive-product/src/
+crates/sdkwork-drive-workspace-service/src/
   api/
   application/
   domain/
@@ -330,7 +330,7 @@ pub trait DriveObjectStore: Send + Sync {
 }
 ```
 
-The implementation may use concrete SDKs internally. The product service only sees the trait, request DTOs, result DTOs, and stable error codes.
+The implementation may use concrete SDKs internally. The workspace service only sees the trait, request DTOs, result DTOs, and stable error codes.
 
 ### 9.3 Storage Capabilities
 

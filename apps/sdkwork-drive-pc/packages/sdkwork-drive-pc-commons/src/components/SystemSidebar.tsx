@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HardDrive, Settings, Activity, ServerCog } from 'lucide-react';
+import { HardDrive, Settings, Activity, ServerCog, Link2 } from 'lucide-react';
 import type { SettingsTab } from './SettingsModal';
 import {
   AccountAvatar,
@@ -34,9 +34,10 @@ export function SystemSidebar({
     onOpenSettings?.();
   };
 
-  const isStorageActive = activeSection !== 'transfer' && activeSection !== 'admin-storage-providers';
+  const isStorageActive = activeSection !== 'transfer' && activeSection !== 'admin-storage-providers' && activeSection !== 'admin-storage-bindings';
   const isTransferActive = activeSection === 'transfer';
   const isAdminStorageProvidersActive = activeSection === 'admin-storage-providers';
+  const isAdminStorageBindingsActive = activeSection === 'admin-storage-bindings';
 
   return (
     <>
@@ -70,6 +71,12 @@ export function SystemSidebar({
           title="Storage Providers"
           active={isAdminStorageProvidersActive}
           onClick={() => onSectionChange?.('admin-storage-providers')}
+        />
+        <SidebarIcon
+          icon={<Link2 size={22} />}
+          title="Storage Bindings"
+          active={isAdminStorageBindingsActive}
+          onClick={() => onSectionChange?.('admin-storage-bindings')}
         />
       </div>
       <div className="flex flex-col gap-5 w-full items-center mt-auto mb-4">

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{FileVersion};
+use crate::models::FileVersion;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct VersionListResponse {

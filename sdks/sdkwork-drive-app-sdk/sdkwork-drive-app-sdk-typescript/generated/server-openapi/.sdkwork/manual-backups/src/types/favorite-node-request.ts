@@ -4,3 +4,5 @@ export interface FavoriteNodeRequest {
   subjectId: string;
   operatorId?: string;
 }
+
+

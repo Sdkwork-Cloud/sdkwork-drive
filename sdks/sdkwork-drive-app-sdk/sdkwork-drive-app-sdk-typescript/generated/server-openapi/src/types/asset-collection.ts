@@ -11,3 +11,5 @@ export interface AssetCollection {
   createdAt: string;
   updatedAt: string;
 }
+
+

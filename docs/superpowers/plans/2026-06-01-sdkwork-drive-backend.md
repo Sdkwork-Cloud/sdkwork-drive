@@ -36,7 +36,7 @@
 ### Crates
 
 - Create: `crates/sdkwork-drive-contract/`
-- Create: `crates/sdkwork-drive-core/`
+- Create: `crates/sdkwork-drive-contract/`
 - Create: `crates/sdkwork-drive-config/`
 - Create: `crates/sdkwork-drive-http/`
 - Create: `crates/sdkwork-drive-security/`
@@ -48,10 +48,10 @@
 
 ### Services
 
-- Create: `services/sdkwork-drive-product/`
-- Create: `services/sdkwork-drive-app-api/`
-- Create: `services/sdkwork-drive-backend-api/`
-- Create: `services/sdkwork-drive-installer/`
+- Create: `crates/sdkwork-drive-workspace-service/`
+- Create: `crates/sdkwork-router-drive-app-api/`
+- Create: `crates/sdkwork-router-drive-backend-api/`
+- Create: `crates/sdkwork-drive-install-worker/`
 
 ### Specs And Contracts
 
@@ -79,7 +79,7 @@
 fn workspace_declares_expected_members() {
     let manifest = std::fs::read_to_string("Cargo.toml").expect("Cargo.toml must exist");
     assert!(manifest.contains("crates/sdkwork-drive-contract"));
-    assert!(manifest.contains("services/sdkwork-drive-product"));
+    assert!(manifest.contains("crates/sdkwork-drive-workspace-service"));
 }
 ```
 
@@ -94,7 +94,7 @@ Expected: FAIL because root manifest and members are not created yet.
 [workspace]
 members = [
   "crates/sdkwork-drive-contract",
-  "crates/sdkwork-drive-core",
+  "crates/sdkwork-drive-contract",
   "crates/sdkwork-drive-config",
   "crates/sdkwork-drive-http",
   "crates/sdkwork-drive-security",
@@ -103,10 +103,10 @@ members = [
   "crates/sdkwork-drive-storage-local",
   "crates/sdkwork-drive-storage-s3",
   "crates/sdkwork-drive-test-support",
-  "services/sdkwork-drive-product",
-  "services/sdkwork-drive-app-api",
-  "services/sdkwork-drive-backend-api",
-  "services/sdkwork-drive-installer",
+  "crates/sdkwork-drive-workspace-service",
+  "crates/sdkwork-router-drive-app-api",
+  "crates/sdkwork-router-drive-backend-api",
+  "crates/sdkwork-drive-install-worker",
 ]
 resolver = "2"
 ```
@@ -421,25 +421,25 @@ git commit -m "feat: add s3-compatible object store adapter"
 
 ---
 
-### Task 8: Create `sdkwork-drive-product` Domain And Port Skeleton
+### Task 8: Create `sdkwork-drive-workspace-service` Domain And Port Skeleton
 
 **Files:**
-- Create: `services/sdkwork-drive-product/Cargo.toml`
-- Create: `services/sdkwork-drive-product/src/lib.rs`
-- Create: `services/sdkwork-drive-product/src/domain/mod.rs`
-- Create: `services/sdkwork-drive-product/src/domain/space.rs`
-- Create: `services/sdkwork-drive-product/src/domain/node.rs`
-- Create: `services/sdkwork-drive-product/src/domain/upload.rs`
-- Create: `services/sdkwork-drive-product/src/ports/mod.rs`
-- Create: `services/sdkwork-drive-product/src/application/mod.rs`
-- Create: `services/sdkwork-drive-product/tests/domain_space_rules.rs`
+- Create: `crates/sdkwork-drive-workspace-service/Cargo.toml`
+- Create: `crates/sdkwork-drive-workspace-service/src/lib.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/domain/mod.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/domain/space.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/domain/node.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/domain/upload.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/ports/mod.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/application/mod.rs`
+- Create: `crates/sdkwork-drive-workspace-service/tests/domain_space_rules.rs`
 
 - [ ] **Step 1: Write failing domain tests for space types**
 
 ```rust
 #[test]
 fn space_type_supports_special_spaces() {
-    use sdkwork_drive_product::domain::space::DriveSpaceType;
+    use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
     assert_eq!(DriveSpaceType::KnowledgeBase.as_str(), "knowledge_base");
     assert_eq!(DriveSpaceType::AiGenerated.as_str(), "ai_generated");
     assert_eq!(DriveSpaceType::GitRepository.as_str(), "git_repository");
@@ -450,7 +450,7 @@ fn space_type_supports_special_spaces() {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cargo test -p sdkwork-drive-product domain_space_rules`
+Run: `cargo test -p sdkwork-drive-workspace-service domain_space_rules`
 Expected: FAIL because domain model is not implemented.
 
 - [ ] **Step 3: Implement minimal domain and ports**
@@ -464,13 +464,13 @@ Add:
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cargo test -p sdkwork-drive-product domain_space_rules`
+Run: `cargo test -p sdkwork-drive-workspace-service domain_space_rules`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add services/sdkwork-drive-product
+git add crates/sdkwork-drive-workspace-service
 git commit -m "feat: scaffold drive product domain and ports"
 ```
 
@@ -479,12 +479,12 @@ git commit -m "feat: scaffold drive product domain and ports"
 ### Task 9: Implement SQL Installer And Core Tables
 
 **Files:**
-- Create: `services/sdkwork-drive-product/src/infrastructure/sql/mod.rs`
-- Create: `services/sdkwork-drive-product/src/infrastructure/sql/installer.rs`
-- Create: `services/sdkwork-drive-product/src/infrastructure/sql/sqlite_core.sql`
-- Create: `services/sdkwork-drive-product/src/infrastructure/sql/postgres_core.sql`
-- Create: `services/sdkwork-drive-product/tests/sqlite_schema_contract.rs`
-- Create: `services/sdkwork-drive-product/tests/postgres_schema_contract.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/mod.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/sqlite_core.sql`
+- Create: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/postgres_core.sql`
+- Create: `crates/sdkwork-drive-workspace-service/tests/sqlite_schema_contract.rs`
+- Create: `crates/sdkwork-drive-workspace-service/tests/postgres_schema_contract.rs`
 
 - [ ] **Step 1: Write failing SQL contract tests**
 
@@ -498,7 +498,7 @@ fn sqlite_installer_creates_special_space_profile_tables() {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cargo test -p sdkwork-drive-product sqlite_schema_contract`
+Run: `cargo test -p sdkwork-drive-workspace-service sqlite_schema_contract`
 Expected: FAIL because installer and tables are not present.
 
 - [ ] **Step 3: Implement installer and DDL scripts**
@@ -511,16 +511,16 @@ Requirements:
 
 - [ ] **Step 4: Run tests to verify pass**
 
-Run: `cargo test -p sdkwork-drive-product sqlite_schema_contract`
+Run: `cargo test -p sdkwork-drive-workspace-service sqlite_schema_contract`
 Expected: PASS.
 
-Run: `cargo test -p sdkwork-drive-product postgres_schema_contract`
+Run: `cargo test -p sdkwork-drive-workspace-service postgres_schema_contract`
 Expected: PASS when postgres test DB is configured.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add services/sdkwork-drive-product/src/infrastructure/sql services/sdkwork-drive-product/tests
+git add crates/sdkwork-drive-workspace-service/src/infrastructure/sql crates/sdkwork-drive-workspace-service/tests
 git commit -m "feat: add drive sql installer and core schema contracts"
 ```
 
@@ -529,14 +529,14 @@ git commit -m "feat: add drive sql installer and core schema contracts"
 ### Task 10: Implement Space And Node Stores + Services
 
 **Files:**
-- Create: `services/sdkwork-drive-product/src/ports/space_store.rs`
-- Create: `services/sdkwork-drive-product/src/ports/node_store.rs`
-- Create: `services/sdkwork-drive-product/src/infrastructure/sql/space_store.rs`
-- Create: `services/sdkwork-drive-product/src/infrastructure/sql/node_store.rs`
-- Create: `services/sdkwork-drive-product/src/application/space_service.rs`
-- Create: `services/sdkwork-drive-product/src/application/node_service.rs`
-- Create: `services/sdkwork-drive-product/tests/space_service.rs`
-- Create: `services/sdkwork-drive-product/tests/node_service.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/ports/space_store.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/ports/node_store.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/space_store.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/node_store.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/application/space_service.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/application/node_service.rs`
+- Create: `crates/sdkwork-drive-workspace-service/tests/space_service.rs`
+- Create: `crates/sdkwork-drive-workspace-service/tests/node_service.rs`
 
 - [ ] **Step 1: Write failing service tests**
 
@@ -550,7 +550,7 @@ async fn create_folder_enforces_live_name_uniqueness_per_parent() {}
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cargo test -p sdkwork-drive-product space_service node_service`
+Run: `cargo test -p sdkwork-drive-workspace-service space_service node_service`
 Expected: FAIL until stores and services exist.
 
 - [ ] **Step 3: Implement SQL stores and application services**
@@ -564,13 +564,13 @@ Include:
 
 - [ ] **Step 4: Run tests to verify pass**
 
-Run: `cargo test -p sdkwork-drive-product space_service node_service`
+Run: `cargo test -p sdkwork-drive-workspace-service space_service node_service`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add services/sdkwork-drive-product/src services/sdkwork-drive-product/tests
+git add crates/sdkwork-drive-workspace-service/src crates/sdkwork-drive-workspace-service/tests
 git commit -m "feat: implement drive space and node services"
 ```
 
@@ -579,14 +579,14 @@ git commit -m "feat: implement drive space and node services"
 ### Task 11: Implement Upload Session, Version, And Download Services
 
 **Files:**
-- Create: `services/sdkwork-drive-product/src/ports/upload_session_store.rs`
-- Create: `services/sdkwork-drive-product/src/ports/storage_object_store.rs`
-- Create: `services/sdkwork-drive-product/src/application/upload_service.rs`
-- Create: `services/sdkwork-drive-product/src/application/download_service.rs`
-- Create: `services/sdkwork-drive-product/src/infrastructure/sql/upload_session_store.rs`
-- Create: `services/sdkwork-drive-product/src/infrastructure/sql/storage_object_store.rs`
-- Create: `services/sdkwork-drive-product/tests/upload_service.rs`
-- Create: `services/sdkwork-drive-product/tests/download_service.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/ports/upload_session_store.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/ports/storage_object_store.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/application/upload_service.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/application/download_service.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/upload_session_store.rs`
+- Create: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/storage_object_store.rs`
+- Create: `crates/sdkwork-drive-workspace-service/tests/upload_service.rs`
+- Create: `crates/sdkwork-drive-workspace-service/tests/download_service.rs`
 
 - [ ] **Step 1: Write failing tests for idempotency and presign**
 
@@ -600,7 +600,7 @@ async fn download_url_is_short_lived_and_hides_object_key() {}
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cargo test -p sdkwork-drive-product upload_service download_service`
+Run: `cargo test -p sdkwork-drive-workspace-service upload_service download_service`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement upload/download flows**
@@ -615,13 +615,13 @@ Include:
 
 - [ ] **Step 4: Run tests to verify pass**
 
-Run: `cargo test -p sdkwork-drive-product upload_service download_service`
+Run: `cargo test -p sdkwork-drive-workspace-service upload_service download_service`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add services/sdkwork-drive-product/src services/sdkwork-drive-product/tests
+git add crates/sdkwork-drive-workspace-service/src crates/sdkwork-drive-workspace-service/tests
 git commit -m "feat: implement upload and download services"
 ```
 
@@ -630,11 +630,11 @@ git commit -m "feat: implement upload and download services"
 ### Task 12: Implement App API Service And Contract Tests
 
 **Files:**
-- Create: `services/sdkwork-drive-app-api/Cargo.toml`
-- Create: `services/sdkwork-drive-app-api/src/main.rs`
-- Create: `services/sdkwork-drive-app-api/src/lib.rs`
-- Create: `services/sdkwork-drive-app-api/tests/drive_routes.rs`
-- Create: `services/sdkwork-drive-app-api/tests/contract_routes.rs`
+- Create: `crates/sdkwork-router-drive-app-api/Cargo.toml`
+- Create: `crates/sdkwork-router-drive-app-api/src/main.rs`
+- Create: `crates/sdkwork-router-drive-app-api/src/lib.rs`
+- Create: `crates/sdkwork-router-drive-app-api/tests/drive_routes.rs`
+- Create: `crates/sdkwork-router-drive-app-api/tests/contract_routes.rs`
 
 - [ ] **Step 1: Write failing app route tests**
 
@@ -647,10 +647,10 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cargo test -p sdkwork-drive-app-api`
+Run: `cargo test -p sdkwork-router-drive-app-api`
 Expected: FAIL because router is not implemented.
 
-- [ ] **Step 3: Implement app router with product service injection**
+- [ ] **Step 3: Implement app router with workspace service injection**
 
 Include:
 - health route
@@ -660,13 +660,13 @@ Include:
 
 - [ ] **Step 4: Run tests to verify pass**
 
-Run: `cargo test -p sdkwork-drive-app-api`
+Run: `cargo test -p sdkwork-router-drive-app-api`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add services/sdkwork-drive-app-api
+git add crates/sdkwork-router-drive-app-api
 git commit -m "feat: add drive app api router and contract tests"
 ```
 
@@ -675,11 +675,11 @@ git commit -m "feat: add drive app api router and contract tests"
 ### Task 13: Implement Backend API Service And Contract Tests
 
 **Files:**
-- Create: `services/sdkwork-drive-backend-api/Cargo.toml`
-- Create: `services/sdkwork-drive-backend-api/src/main.rs`
-- Create: `services/sdkwork-drive-backend-api/src/lib.rs`
-- Create: `services/sdkwork-drive-backend-api/tests/backend_routes.rs`
-- Create: `services/sdkwork-drive-backend-api/tests/storage_provider_routes.rs`
+- Create: `crates/sdkwork-router-drive-backend-api/Cargo.toml`
+- Create: `crates/sdkwork-router-drive-backend-api/src/main.rs`
+- Create: `crates/sdkwork-router-drive-backend-api/src/lib.rs`
+- Create: `crates/sdkwork-router-drive-backend-api/tests/backend_routes.rs`
+- Create: `crates/sdkwork-router-drive-backend-api/tests/storage_provider_routes.rs`
 
 - [ ] **Step 1: Write failing backend route tests**
 
@@ -690,7 +690,7 @@ async fn backend_router_exposes_storage_provider_and_quota_routes() {}
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cargo test -p sdkwork-drive-backend-api`
+Run: `cargo test -p sdkwork-router-drive-backend-api`
 Expected: FAIL because backend router is not implemented.
 
 - [ ] **Step 3: Implement backend router**
@@ -704,13 +704,13 @@ Include:
 
 - [ ] **Step 4: Run tests to verify pass**
 
-Run: `cargo test -p sdkwork-drive-backend-api`
+Run: `cargo test -p sdkwork-router-drive-backend-api`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add services/sdkwork-drive-backend-api
+git add crates/sdkwork-router-drive-backend-api
 git commit -m "feat: add drive backend api router and admin contracts"
 ```
 

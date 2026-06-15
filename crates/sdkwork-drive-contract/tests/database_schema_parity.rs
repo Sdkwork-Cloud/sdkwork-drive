@@ -42,10 +42,10 @@ fn create_index_names(sql: &str) -> BTreeSet<String> {
 #[test]
 fn sqlite_and_postgres_core_schema_have_same_tables_and_indexes() {
     let sqlite = read_workspace_file(
-        "services/sdkwork-drive-product/src/infrastructure/sql/sqlite_core.sql",
+        "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/sqlite_core.sql",
     );
     let postgres = read_workspace_file(
-        "services/sdkwork-drive-product/src/infrastructure/sql/postgres_core.sql",
+        "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/postgres_core.sql",
     );
 
     assert_eq!(
@@ -63,7 +63,7 @@ fn sqlite_and_postgres_core_schema_have_same_tables_and_indexes() {
 #[test]
 fn postgres_schema_avoids_nul_byte_regex_fragments() {
     let postgres = read_workspace_file(
-        "services/sdkwork-drive-product/src/infrastructure/sql/postgres_core.sql",
+        "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/postgres_core.sql",
     );
 
     assert!(
@@ -75,7 +75,7 @@ fn postgres_schema_avoids_nul_byte_regex_fragments() {
 #[test]
 fn postgres_schema_identifiers_fit_postgres_limit() {
     let postgres = read_workspace_file(
-        "services/sdkwork-drive-product/src/infrastructure/sql/postgres_core.sql",
+        "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/postgres_core.sql",
     );
     let mut identifiers = create_table_names(&postgres);
     identifiers.extend(create_index_names(&postgres));
@@ -99,7 +99,7 @@ fn postgres_schema_identifiers_fit_postgres_limit() {
 #[test]
 fn schema_registry_mentions_every_installed_table_and_index() {
     let sqlite = read_workspace_file(
-        "services/sdkwork-drive-product/src/infrastructure/sql/sqlite_core.sql",
+        "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/sqlite_core.sql",
     );
     let registry = [
         "docs/schema-registry/tables/001-drive-core.yaml",

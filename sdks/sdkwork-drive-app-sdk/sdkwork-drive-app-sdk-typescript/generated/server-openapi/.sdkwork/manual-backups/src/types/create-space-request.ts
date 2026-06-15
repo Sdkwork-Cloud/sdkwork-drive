@@ -7,3 +7,5 @@ export interface CreateSpaceRequest {
   spaceType: 'personal' | 'team' | 'knowledge_base' | 'ai_generated' | 'app' | 'app_upload';
   operatorId: string;
 }
+
+

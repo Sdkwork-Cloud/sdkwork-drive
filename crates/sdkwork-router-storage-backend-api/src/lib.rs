@@ -1,0 +1,23 @@
+#![allow(clippy::result_large_err)]
+
+mod audit;
+mod auth;
+mod binding_handlers;
+mod bucket_handlers;
+mod config;
+mod dto;
+mod error;
+mod handlers;
+mod health_handlers;
+mod object_handlers;
+mod object_store;
+mod provider_handlers;
+mod provider_lookup;
+mod provider_mappers;
+mod routes;
+mod state;
+mod validators;
+
+pub use config::{AdminStorageConfig, DriveAdminStorageObjectStoreAdapter};
+pub use routes::*;
+pub use state::AdminStorageState;

@@ -8,7 +8,7 @@ const testDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testDir, "..", "..");
 const appOpenapiPath = path.join(
   repoRoot,
-  "generated",
+  "apis",
   "openapi",
   "drive-app-api.openapi.json",
 );

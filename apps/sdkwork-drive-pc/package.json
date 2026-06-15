@@ -11,23 +11,24 @@
     "desktop:build:local": "pnpm --filter sdkwork-drive-pc-desktop desktop:build:local"
   },
   "dependencies": {
-    "react": "^19.0.1",
-    "react-dom": "^19.0.1",
-    "react-router-dom": "^7.17.0",
     "@sdkwork/appbase-app-sdk": "workspace:*",
     "@sdkwork/appbase-pc-react": "workspace:*",
     "@sdkwork/auth-pc-react": "workspace:*",
     "@sdkwork/auth-runtime-pc-react": "workspace:*",
-    "@sdkwork/drive-app-sdk": "workspace:*",
     "@sdkwork/drive-admin-storage-sdk": "workspace:*",
+    "@sdkwork/drive-app-sdk": "workspace:*",
     "@sdkwork/i18n-pc-react": "workspace:*",
     "@sdkwork/ui-pc-react": "workspace:*",
-    "sdkwork-drive-pc-types": "workspace:*",
+    "lucide-react": "catalog:",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "react-router-dom": "^7.17.0",
+    "sdkwork-drive-pc-admin-storage-providers": "workspace:*",
     "sdkwork-drive-pc-commons": "workspace:*",
+    "sdkwork-drive-pc-core": "workspace:*",
     "sdkwork-drive-pc-file": "workspace:*",
     "sdkwork-drive-pc-transfer": "workspace:*",
-    "sdkwork-drive-pc-core": "workspace:*",
-    "sdkwork-drive-pc-admin-storage-providers": "workspace:*"
+    "sdkwork-drive-pc-types": "workspace:*"
   },
   "peerDependencies": {
     "@sdkwork/appbase-app-sdk": "*",

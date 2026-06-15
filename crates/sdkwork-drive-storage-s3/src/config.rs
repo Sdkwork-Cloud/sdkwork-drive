@@ -327,35 +327,10 @@ impl Default for S3StoreConfig {
 }
 
 fn parse_provider_kind(raw: &str) -> Result<DriveStorageProviderKind, DriveObjectStoreError> {
-    let normalized = raw.trim().to_ascii_lowercase();
-    match normalized.as_str() {
-        "s3_compatible" => Ok(DriveStorageProviderKind::S3Compatible),
-        "aliyun_oss" => Ok(DriveStorageProviderKind::AliyunOss),
-        "tencent_cos" => Ok(DriveStorageProviderKind::TencentCos),
-        "huawei_obs" => Ok(DriveStorageProviderKind::HuaweiObs),
-        "volcengine_tos" => Ok(DriveStorageProviderKind::VolcengineTos),
-        "google_cloud_storage" => Ok(DriveStorageProviderKind::GoogleCloudStorage),
-        _ => {
-            let Some(suffix) = normalized.strip_prefix("custom:") else {
-                return Err(DriveObjectStoreError::new(
-                    DriveObjectStoreErrorKind::InvalidRequest,
-                    "provider_kind is invalid for s3 store",
-                ));
-            };
-            if suffix.len() < 2
-                || suffix.len() > 32
-                || !suffix.bytes().all(|byte| {
-                    byte.is_ascii_lowercase()
-                        || byte.is_ascii_digit()
-                        || matches!(byte, b'_' | b'-')
-                })
-            {
-                return Err(DriveObjectStoreError::new(
-                    DriveObjectStoreErrorKind::InvalidRequest,
-                    "custom provider_kind suffix is invalid",
-                ));
-            }
-            Ok(DriveStorageProviderKind::Custom(normalized))
-        }
-    }
+    DriveStorageProviderKind::try_from_str(raw).ok_or_else(|| {
+        DriveObjectStoreError::new(
+            DriveObjectStoreErrorKind::InvalidRequest,
+            "provider_kind is invalid for s3 store",
+        )
+    })
 }

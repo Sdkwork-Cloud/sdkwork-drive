@@ -63,7 +63,7 @@ impl DriveUri {
     /// Extract the node ID from this URI.
     pub fn node_id(&self) -> DriveNodeId {
         let remainder = &self.0[Self::PREFIX.len()..];
-        let node_str = remainder.splitn(2, "/nodes/").nth(1).unwrap_or("");
+        let node_str = remainder.split_once("/nodes/").map(|x| x.1).unwrap_or("");
         DriveNodeId::new(node_str)
     }
 
@@ -101,10 +101,7 @@ mod tests {
 
     #[test]
     fn valid_uri_roundtrip() {
-        let uri = DriveUri::new(
-            &DriveSpaceId::new("space-1"),
-            &DriveNodeId::new("node-2"),
-        );
+        let uri = DriveUri::new(&DriveSpaceId::new("space-1"), &DriveNodeId::new("node-2"));
         assert_eq!(uri.as_str(), "drive://spaces/space-1/nodes/node-2");
         assert_eq!(uri.space_id(), DriveSpaceId::new("space-1"));
         assert_eq!(uri.node_id(), DriveNodeId::new("node-2"));
@@ -138,10 +135,7 @@ mod tests {
 
     #[test]
     fn serde_roundtrip() {
-        let uri = DriveUri::new(
-            &DriveSpaceId::new("s1"),
-            &DriveNodeId::new("n1"),
-        );
+        let uri = DriveUri::new(&DriveSpaceId::new("s1"), &DriveNodeId::new("n1"));
         let json = serde_json::to_string(&uri).unwrap();
         let parsed: DriveUri = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed, uri);

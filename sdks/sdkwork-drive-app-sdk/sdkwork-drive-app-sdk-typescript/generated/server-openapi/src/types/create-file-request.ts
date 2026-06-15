@@ -12,3 +12,5 @@ export interface CreateFileRequest {
   /** Deprecated compatibility field. The service ignores this value and generates an internal sdkwork-drive/v1 object key. */
   objectKey?: string;
 }
+
+

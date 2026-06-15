@@ -17,6 +17,8 @@ pub enum DriveStorageProviderKind {
 }
 
 impl DriveStorageProviderKind {
+    pub const CUSTOM_PREFIX: &'static str = "custom:";
+
     pub fn as_str(&self) -> &str {
         match self {
             Self::LocalFilesystem => "local_filesystem",
@@ -29,6 +31,35 @@ impl DriveStorageProviderKind {
             Self::Custom(value) => value.as_str(),
         }
     }
+
+    pub fn try_from_str(raw: &str) -> Option<Self> {
+        let normalized = raw.trim().to_ascii_lowercase();
+        match normalized.as_str() {
+            "local_filesystem" => Some(Self::LocalFilesystem),
+            "s3_compatible" => Some(Self::S3Compatible),
+            "google_cloud_storage" => Some(Self::GoogleCloudStorage),
+            "aliyun_oss" => Some(Self::AliyunOss),
+            "tencent_cos" => Some(Self::TencentCos),
+            "huawei_obs" => Some(Self::HuaweiObs),
+            "volcengine_tos" => Some(Self::VolcengineTos),
+            _ => {
+                let suffix = normalized.strip_prefix(Self::CUSTOM_PREFIX)?;
+                if is_valid_custom_suffix(suffix) {
+                    Some(Self::Custom(normalized))
+                } else {
+                    None
+                }
+            }
+        }
+    }
+}
+
+fn is_valid_custom_suffix(raw: &str) -> bool {
+    if raw.len() < 2 || raw.len() > 32 {
+        return false;
+    }
+    raw.chars()
+        .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || matches!(ch, '_' | '-'))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

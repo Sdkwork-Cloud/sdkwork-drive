@@ -179,8 +179,8 @@ Free-form `error_kind` values are not allowed. Any new value requires dictionary
 
 - Event names must be validated by contract smoke test against:
   - `crates/sdkwork-drive-observability/src/lib.rs`
-  - `services/sdkwork-drive-backend-api/src/lib.rs`
-  - `services/sdkwork-drive-app-api/src/lib.rs`
+  - `crates/sdkwork-router-drive-backend-api/src/lib.rs`
+  - `crates/sdkwork-router-drive-app-api/src/lib.rs`
 - Route-level log behavior is covered by:
-  - `services/sdkwork-drive-backend-api/tests/observability_routes.rs`
-  - `services/sdkwork-drive-app-api/tests/observability_routes.rs`
+  - `crates/sdkwork-router-drive-backend-api/tests/observability_routes.rs`
+  - `crates/sdkwork-router-drive-app-api/tests/observability_routes.rs`

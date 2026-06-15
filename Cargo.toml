@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "crates/sdkwork-drive-contract",
-    "crates/sdkwork-drive-core",
     "crates/sdkwork-drive-config",
     "crates/sdkwork-drive-http",
     "crates/sdkwork-drive-security",
@@ -11,12 +10,12 @@ members = [
     "crates/sdkwork-drive-storage-opendal",
     "crates/sdkwork-drive-storage-s3",
     "crates/sdkwork-drive-test-support",
-    "services/sdkwork-drive-product",
-    "services/sdkwork-drive-open-api",
-    "services/sdkwork-drive-app-api",
-    "services/sdkwork-drive-admin-storage-api",
-    "services/sdkwork-drive-backend-api",
-    "services/sdkwork-drive-installer",
+    "crates/sdkwork-drive-workspace-service",
+    "crates/sdkwork-router-drive-open-api",
+    "crates/sdkwork-router-drive-app-api",
+    "crates/sdkwork-router-storage-backend-api",
+    "crates/sdkwork-router-drive-backend-api",
+    "crates/sdkwork-drive-install-worker",
 ]
 resolver = "2"
 
@@ -26,18 +25,38 @@ version = "0.1.0"
 
 [workspace.dependencies]
 anyhow = "1.0"
+async-trait = "0.1"
+axum = "0.7"
+hmac = "0.12"
+http = "1.4"
+opendal = { version = "0.57.0", default-features = false, features = ["services-s3", "reqwest-rustls-tls", "executors-tokio"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+sha2 = "0.10"
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "any", "sqlite", "postgres"] }
+tempfile = "3.12"
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
 toml = "0.8"
+tower = { version = "0.5", features = ["util"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt"] }
+zip = { version = "8.6.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+
+# AWS SDK dependencies
+aws-config = "1.8"
+aws-credential-types = "1.2"
+aws-sdk-s3 = "1.79"
+aws-types = "1.3"
 
 # SDKWork workspace members - declared once at workspace root
 sdkwork-drive-contract = { path = "crates/sdkwork-drive-contract" }
 sdkwork-drive-config = { path = "crates/sdkwork-drive-config" }
+sdkwork-drive-http = { path = "crates/sdkwork-drive-http" }
 sdkwork-drive-observability = { path = "crates/sdkwork-drive-observability" }
-sdkwork-drive-product = { path = "services/sdkwork-drive-product" }
 sdkwork-drive-security = { path = "crates/sdkwork-drive-security" }
 sdkwork-drive-storage-contract = { path = "crates/sdkwork-drive-storage-contract" }
+sdkwork-drive-storage-local = { path = "crates/sdkwork-drive-storage-local" }
 sdkwork-drive-storage-opendal = { path = "crates/sdkwork-drive-storage-opendal" }
 sdkwork-drive-storage-s3 = { path = "crates/sdkwork-drive-storage-s3" }
-sdkwork_id = { path = "../sdkwork-appbase/packages/native-rust/foundation/sdkwork-id-rust" }
+sdkwork-drive-workspace-service = { path = "crates/sdkwork-drive-workspace-service" }
+sdkwork_platform_id_service = { package = "sdkwork-platform-id-service", path = "../sdkwork-appbase/crates/sdkwork-platform-id-service" }

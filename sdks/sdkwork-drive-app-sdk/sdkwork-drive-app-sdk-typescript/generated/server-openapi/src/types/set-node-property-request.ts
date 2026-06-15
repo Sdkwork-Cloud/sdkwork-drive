@@ -4,3 +4,5 @@ export interface SetNodePropertyRequest {
   visibility?: 'private' | 'app_public';
   operatorId?: string;
 }
+
+

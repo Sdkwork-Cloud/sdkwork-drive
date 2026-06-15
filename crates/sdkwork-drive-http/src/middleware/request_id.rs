@@ -1,8 +1,4 @@
-use axum::{
-    extract::Request,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, middleware::Next, response::Response};
 use uuid::Uuid;
 
 /// Header name for request ID.
@@ -29,7 +25,9 @@ pub async fn request_id_middleware(mut request: Request, next: Next) -> Response
 
     // Add request ID to response headers
     if let Ok(header_value) = request_id.parse() {
-        response.headers_mut().insert(REQUEST_ID_HEADER, header_value);
+        response
+            .headers_mut()
+            .insert(REQUEST_ID_HEADER, header_value);
     }
 
     response

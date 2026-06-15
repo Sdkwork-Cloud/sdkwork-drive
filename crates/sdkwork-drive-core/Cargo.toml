@@ -1,7 +1,0 @@
-[package]
-name = "sdkwork-drive-core"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
-sdkwork-drive-contract.workspace = true

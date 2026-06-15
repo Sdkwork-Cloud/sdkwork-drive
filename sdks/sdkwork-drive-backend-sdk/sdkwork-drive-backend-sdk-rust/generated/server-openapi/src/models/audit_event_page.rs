@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{AuditEvent};
+use crate::models::AuditEvent;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct AuditEventPage {

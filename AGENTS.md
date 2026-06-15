@@ -29,11 +29,23 @@ Read the root `sdkwork.app.config.json` before changing application behavior, ru
 - `GEMINI.md`: Gemini CLI compatibility shim that points to `AGENTS.md` and must not duplicate rules.
 - `CODEX.md`: Codex compatibility shim that points to `AGENTS.md` and must not duplicate rules.
 - `sdkwork.app.config.json`: application identity and release metadata.
-- `.sdkwork/`: reserved local dictionary folder; create only for local skills, plugins, manifests, or AI workspace metadata.
+- `.sdkwork/`: repository/application development metadata, local skills, local agent plugins, manifests, and ignored local-only workspace state.
 - `specs/`: local application/component contracts and narrowing rules.
-- `sdks/`: SDK families, OpenAPI authorities, route manifests, and generated SDK artifacts.
+- `apis/`: Drive-owned API contract sources and materialized OpenAPI inputs.
+- `apps/`: runnable Drive application roots and application surfaces.
+- `crates/`: reusable Rust crates.
+- `sdks/`: SDK families, SDK generation manifests, composed facades, and generated SDK artifacts.
+- `jobs/`: background workers, scheduled jobs, queue consumers, and maintenance packages when independently authored.
+- `tools/`: developer, validation, generation, migration, and operator tools.
+- `plugins/`: application/runtime plugin source packages; agent plugins belong under `.sdkwork/plugins/`.
+- `examples/`: runnable examples, integration samples, and SDK/API usage examples.
+- `configs/`: safe checked-in runtime config templates.
+- `deployments/`: deployment descriptors and topology examples.
+- `scripts/`: thin command entrypoints for build, verification, generation, migration, and launch workflows.
+- `docs/`: repository/application documentation, architecture notes, runbooks, and design notes.
+- `tests/`: cross-package tests, contract fixtures, and static verification data.
 - `package.json`, `Cargo.toml`: language/build manifests.
-- Local directories to inspect first when relevant: `apps/`, `crates/`, `docs/`, `etc/`, `generated/`, `scripts/`, `sdks/`, `services/`, `tools/`.
+- Local directories to inspect first when relevant: `.sdkwork/`, `apis/`, `apps/`, `crates/`, `sdks/`, `jobs/`, `tools/`, `plugins/`, `examples/`, `configs/`, `deployments/`, `scripts/`, `docs/`, `tests/`.
 
 ## Spec Resolution Order
 

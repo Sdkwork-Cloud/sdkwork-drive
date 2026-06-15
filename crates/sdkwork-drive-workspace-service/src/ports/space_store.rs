@@ -1,0 +1,53 @@
+use async_trait::async_trait;
+
+use crate::domain::space::DriveSpace;
+use crate::DriveServiceError;
+
+#[derive(Debug, Clone)]
+pub struct NewDriveSpace {
+    pub id: String,
+    pub tenant_id: String,
+    pub owner_subject_type: String,
+    pub owner_subject_id: String,
+    pub display_name: String,
+    pub space_type: String,
+    pub lifecycle_status: String,
+    pub created_by: String,
+    pub updated_by: String,
+}
+
+#[async_trait]
+pub trait DriveSpaceStore: Send + Sync {
+    async fn insert_space(
+        &self,
+        new_space: &NewDriveSpace,
+    ) -> Result<DriveSpace, DriveServiceError>;
+
+    async fn list_spaces(
+        &self,
+        tenant_id: &str,
+        owner_subject_type: Option<&str>,
+        owner_subject_id: Option<&str>,
+    ) -> Result<Vec<DriveSpace>, DriveServiceError>;
+
+    async fn get_space(
+        &self,
+        tenant_id: &str,
+        space_id: &str,
+    ) -> Result<DriveSpace, DriveServiceError>;
+
+    async fn update_space(
+        &self,
+        tenant_id: &str,
+        space_id: &str,
+        display_name: &str,
+        operator_id: &str,
+    ) -> Result<DriveSpace, DriveServiceError>;
+
+    async fn delete_space(
+        &self,
+        tenant_id: &str,
+        space_id: &str,
+        operator_id: &str,
+    ) -> Result<DriveSpace, DriveServiceError>;
+}

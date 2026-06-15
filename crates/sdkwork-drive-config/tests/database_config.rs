@@ -88,13 +88,13 @@ fn rejects_empty_unsupported_urls_and_invalid_pool_sizes() {
 #[test]
 fn resolves_postgres_from_structured_environment() {
     let env = [
-        ("SDKWORK_DRIVE_DATABASE_PROVIDER", "postgresql"),
+        ("SDKWORK_DRIVE_DATABASE_ENGINE", "postgresql"),
         ("SDKWORK_DRIVE_DATABASE_HOST", "127.0.0.1"),
         ("SDKWORK_DRIVE_DATABASE_PORT", "15432"),
         ("SDKWORK_DRIVE_DATABASE_NAME", "sdkwork_drive"),
         ("SDKWORK_DRIVE_DATABASE_USERNAME", "sdkwork_drive"),
         ("SDKWORK_DRIVE_DATABASE_PASSWORD", "drive_pass"),
-        ("SDKWORK_DRIVE_DATABASE_SSLMODE", "disable"),
+        ("SDKWORK_DRIVE_DATABASE_SSL_MODE", "disable"),
         ("SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS", "10"),
     ];
 
@@ -111,7 +111,7 @@ fn resolves_postgres_from_structured_environment() {
 #[test]
 fn resolves_sqlite_from_structured_environment_with_single_connection_default() {
     let env = [
-        ("SDKWORK_DRIVE_DATABASE_PROVIDER", "sqlite"),
+        ("SDKWORK_DRIVE_DATABASE_ENGINE", "sqlite"),
         (
             "SDKWORK_DRIVE_DATABASE_SQLITE_URL",
             "sqlite://target/dev/sdkwork-drive.sqlite",
@@ -128,13 +128,13 @@ fn resolves_sqlite_from_structured_environment_with_single_connection_default() 
 #[test]
 fn structured_postgres_environment_url_encodes_connection_parts() {
     let env = [
-        ("SDKWORK_DRIVE_DATABASE_PROVIDER", "postgresql"),
+        ("SDKWORK_DRIVE_DATABASE_ENGINE", "postgresql"),
         ("SDKWORK_DRIVE_DATABASE_HOST", "db.internal"),
         ("SDKWORK_DRIVE_DATABASE_PORT", "5432"),
         ("SDKWORK_DRIVE_DATABASE_NAME", "sdkwork drive/dev"),
         ("SDKWORK_DRIVE_DATABASE_USERNAME", "sdkworkprod@2026++"),
         ("SDKWORK_DRIVE_DATABASE_PASSWORD", "pa@ss+word/with space"),
-        ("SDKWORK_DRIVE_DATABASE_SSLMODE", "require"),
+        ("SDKWORK_DRIVE_DATABASE_SSL_MODE", "require"),
     ];
 
     let config = DatabaseConfig::from_env_pairs(env).expect("postgres env should parse");
@@ -153,7 +153,7 @@ fn explicit_database_url_overrides_structured_environment() {
             "SDKWORK_DRIVE_DATABASE_URL",
             "sqlite://target/dev/override.sqlite",
         ),
-        ("SDKWORK_DRIVE_DATABASE_PROVIDER", "postgresql"),
+        ("SDKWORK_DRIVE_DATABASE_ENGINE", "postgresql"),
         ("SDKWORK_DRIVE_DATABASE_HOST", "127.0.0.1"),
         ("SDKWORK_DRIVE_DATABASE_PORT", "15432"),
         ("SDKWORK_DRIVE_DATABASE_NAME", "sdkwork_drive"),
@@ -167,6 +167,32 @@ fn explicit_database_url_overrides_structured_environment() {
     assert_eq!(DatabaseEngine::Sqlite, config.engine());
     assert_eq!("sqlite://target/dev/override.sqlite", config.url());
     assert_eq!(3, config.max_connections());
+}
+
+#[test]
+fn rejects_removed_database_environment_aliases() {
+    let env = [
+        ("SDKWORK_DRIVE_DATABASE_PROVIDER", "postgresql"),
+        ("SDKWORK_DRIVE_DATABASE_SSLMODE", "disable"),
+        ("SDKWORK_DRIVE_DATABASE_HOST", "127.0.0.1"),
+        ("SDKWORK_DRIVE_DATABASE_NAME", "sdkwork_drive"),
+        ("SDKWORK_DRIVE_DATABASE_USERNAME", "sdkwork_drive"),
+        ("SDKWORK_DRIVE_DATABASE_PASSWORD", "drive_pass"),
+    ];
+
+    let error = DatabaseConfig::from_env_pairs(env).unwrap_err();
+
+    assert!(
+        error
+            .to_string()
+            .contains("SDKWORK_DRIVE_DATABASE_PROVIDER")
+            && error.to_string().contains("SDKWORK_DRIVE_DATABASE_SSLMODE")
+            && error.to_string().contains("SDKWORK_DRIVE_DATABASE_ENGINE")
+            && error
+                .to_string()
+                .contains("SDKWORK_DRIVE_DATABASE_SSL_MODE"),
+        "removed aliases should be rejected with standard replacements, got: {error}"
+    );
 }
 
 #[test]

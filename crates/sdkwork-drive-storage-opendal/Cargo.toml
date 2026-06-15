@@ -4,9 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-async-trait = "0.1"
-http = "1.4"
-opendal = { version = "0.57.0", default-features = false, features = ["services-s3", "reqwest-rustls-tls", "executors-tokio"] }
+async-trait.workspace = true
+http.workspace = true
+opendal.workspace = true
 sdkwork-drive-storage-contract.workspace = true
 
 [dev-dependencies]

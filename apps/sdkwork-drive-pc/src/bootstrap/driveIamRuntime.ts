@@ -146,9 +146,6 @@ function bindDriveSessionProjection(
   session: SessionStore,
 ): void {
   const auth = runtime.service.auth;
-  wrapIamSessionMethod(auth.oauthSessions, 'create', session, () =>
-    hydrateDriveCurrentSession(runtime, session),
-  );
   wrapIamSessionMethod(auth.registrations, 'create', session, () =>
     hydrateDriveCurrentSession(runtime, session),
   );
@@ -162,6 +159,14 @@ function bindDriveSessionProjection(
   wrapIamSessionMethod(auth.sessions.current, 'update', session, () =>
     hydrateDriveCurrentSession(runtime, session),
   );
+
+  const oauth = runtime.service.oauth;
+  wrapIamSessionMethod(oauth.deviceAuthorizations, 'create', session);
+  wrapIamSessionMethod(oauth.deviceAuthorizations, 'retrieve', session);
+  wrapIamSessionMethod(oauth.deviceAuthorizations.passwordCompletions, 'create', session, () =>
+    hydrateDriveCurrentSession(runtime, session),
+  );
+  wrapIamSessionMethod(oauth.deviceAuthorizations.scans, 'create', session);
 
   const usersCurrent = runtime.service.iam.users.current as {
     retrieve: () => Promise<DriveIamUserLike>;

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{Change};
+use crate::models::Change;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct ChangeListResponse {

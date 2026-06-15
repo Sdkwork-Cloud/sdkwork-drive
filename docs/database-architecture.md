@@ -20,9 +20,9 @@ Both PostgreSQL and SQLite modes start the same API service set: app API on `127
 The Rust configuration boundary is `sdkwork-drive-config::DatabaseConfig`. It accepts:
 
 - Explicit override: `SDKWORK_DRIVE_DATABASE_URL`.
-- Runtime TOML file: `SDKWORK_DRIVE_CONFIG_FILE=./etc/drive.database.example.toml`, reading the `[database]` section.
-- PostgreSQL structured fields: `SDKWORK_DRIVE_DATABASE_PROVIDER=postgresql`, host, port, database name, username, password, sslmode, and max connections.
-- SQLite structured fields: `SDKWORK_DRIVE_DATABASE_PROVIDER=sqlite` and `SDKWORK_DRIVE_DATABASE_SQLITE_URL`.
+- Runtime TOML file: `SDKWORK_DRIVE_CONFIG_FILE=./configs/drive.database.example.toml`, reading the `[database]` section.
+- PostgreSQL structured fields: `SDKWORK_DRIVE_DATABASE_ENGINE=postgresql`, host, port, database name, username, password, `SDKWORK_DRIVE_DATABASE_SSL_MODE`, and max connections.
+- SQLite structured fields: `SDKWORK_DRIVE_DATABASE_ENGINE=sqlite` and `SDKWORK_DRIVE_DATABASE_SQLITE_URL`.
 
 Configuration precedence is explicit URL, runtime TOML, then structured environment fields. `SDKWORK_DRIVE_DATABASE_URL` remains an explicit operator override and wins over TOML and structured fields.
 
@@ -32,18 +32,18 @@ Default pool sizing is engine-specific: PostgreSQL defaults to 10 connections, S
 
 ## Runtime Boundary
 
-The product DDL has complete PostgreSQL and SQLite installers:
+The workspace service DDL has complete PostgreSQL and SQLite installers:
 
-- `services/sdkwork-drive-product/src/infrastructure/sql/postgres_core.sql`
-- `services/sdkwork-drive-product/src/infrastructure/sql/sqlite_core.sql`
+- `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/postgres_core.sql`
+- `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/sqlite_core.sql`
 
-The runtime pool boundary is `sqlx::AnyPool`. App, backend, open, and admin storage API startup all call `build_router_with_database_config`, which connects through `sdkwork-drive-product::infrastructure::sql::connect_any_database_and_install_schema` and installs the schema selected by `DatabaseConfig::engine()`.
+The runtime pool boundary is `sqlx::AnyPool`. App, backend, open, and admin storage API startup all call `build_router_with_database_config`, which connects through `sdkwork-drive-workspace-service::infrastructure::sql::connect_any_database_and_install_schema` and installs the schema selected by `DatabaseConfig::engine()`.
 
-Runtime SQL must use PostgreSQL-compatible `$1`, `$2`, ... bind placeholders. SQLite accepts the same `$NNN` bind names, so handlers and product stores must not introduce SQLite-only `?1` placeholders. SQLite boolean columns are decoded through explicit helpers because `sqlx::Any` returns SQLite booleans as integer values while PostgreSQL returns native booleans.
+Runtime SQL must use PostgreSQL-compatible `$1`, `$2`, ... bind placeholders. SQLite accepts the same `$NNN` bind names, so handlers and workspace-service stores must not introduce SQLite-only `?1` placeholders. SQLite boolean columns are decoded through explicit helpers because `sqlx::Any` returns SQLite booleans as integer values while PostgreSQL returns native booleans.
 
 Supported runtime database engines are PostgreSQL and SQLite only. Enabling `sqlx::AnyPool` may pull SQLx MySQL internals into Cargo dependency resolution, but Drive configuration rejects MySQL URLs and Drive does not expose MySQL as a supported database backend.
 
-Direct SQL in request handlers is still allowed for narrow API-specific read models, but shared business persistence must be implemented through product-layer store ports. New SQL must be validated against both PostgreSQL and SQLite semantics before being exposed through `pnpm dev` or `pnpm dev:sqlite`.
+Direct SQL in request handlers is still allowed for narrow API-specific read models, but shared business persistence must be implemented through workspace-service store ports. New SQL must be validated against both PostgreSQL and SQLite semantics before being exposed through `pnpm dev` or `pnpm dev:sqlite`.
 
 ## Schema Rules
 

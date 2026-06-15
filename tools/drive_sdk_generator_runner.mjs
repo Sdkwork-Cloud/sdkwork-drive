@@ -24,8 +24,7 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(scriptDir, "..");
 const STANDARD_SDK_GENERATOR_ROOT = path.resolve(
   workspaceRoot,
-  ".sdkwork",
-  "dependencies",
+  "..",
   "sdkwork-sdk-generator",
 );
 const STANDARD_SDK_GENERATOR_BIN = path.join(
@@ -561,7 +560,7 @@ export function runDriveSdkGenerator(family, argv) {
     ? path.isAbsolute(args.input)
       ? args.input
       : path.resolve(workspaceRoot, args.input)
-    : path.join(workspaceRoot, "generated", "openapi", family.defaultOpenapiFile);
+    : path.join(workspaceRoot, "apis", "openapi", family.defaultOpenapiFile);
 
   if (!existsSync(openapiPath)) {
     fail(sdkName, `openapi file not found: ${openapiPath}`);

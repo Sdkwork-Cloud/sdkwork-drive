@@ -11,12 +11,14 @@ fn workspace_root() -> PathBuf {
 
 #[test]
 fn openapi_paths_follow_sdkwork_v3_prefixes() {
-    let open =
-        std::fs::read_to_string(workspace_root().join("apis/open-api/drive/drive-open-api.openapi.json"))
-            .expect("open openapi missing");
-    let app =
-        std::fs::read_to_string(workspace_root().join("apis/app-api/drive/drive-app-api.openapi.json"))
-            .expect("app openapi missing");
+    let open = std::fs::read_to_string(
+        workspace_root().join("apis/open-api/drive/drive-open-api.openapi.json"),
+    )
+    .expect("open openapi missing");
+    let app = std::fs::read_to_string(
+        workspace_root().join("apis/app-api/drive/drive-app-api.openapi.json"),
+    )
+    .expect("app openapi missing");
     let backend = std::fs::read_to_string(
         workspace_root().join("apis/backend-api/drive/drive-backend-api.openapi.json"),
     )
