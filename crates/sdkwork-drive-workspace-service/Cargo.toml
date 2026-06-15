@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+sdkwork-pool-config = { path = "../../../sdkwork-pool/crates/sdkwork-pool-config" }
 async-trait.workspace = true
 sdkwork-drive-config.workspace = true
 sdkwork-drive-storage-contract.workspace = true
