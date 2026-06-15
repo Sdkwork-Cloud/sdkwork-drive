@@ -4,8 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-sdkwork-pool-config = { path = "../../../sdkwork-pool/crates/sdkwork-pool-config" }
-sdkwork-pool-sqlx = { path = "../../../sdkwork-pool/crates/sdkwork-pool-sqlx" }
+sdkwork-database-config = { path = "../../../sdkwork-pool/crates/sdkwork-database-config" }
+sdkwork-database-sqlx = { path = "../../../sdkwork-pool/crates/sdkwork-database-sqlx" }
 async-trait.workspace = true
 sdkwork-drive-config.workspace = true
 sdkwork-drive-storage-contract.workspace = true
