@@ -131,6 +131,10 @@ tables:
         columns: [tenant_id, space_id, purpose]
         unique: true
         predicate: "space_id IS NOT NULL AND purpose = 'primary' AND lifecycle_status = 'active'"
+      - name: ux_dr_drive_storage_provider_binding_space_type_active
+        columns: [tenant_id, purpose]
+        unique: true
+        predicate: "binding_scope = 'space_type' AND lifecycle_status = 'active'"
 
   - table: dr_drive_storage_object
     domain: drive

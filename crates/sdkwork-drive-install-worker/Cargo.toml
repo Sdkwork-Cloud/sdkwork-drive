@@ -5,6 +5,10 @@ edition.workspace = true
 
 [dependencies]
 chrono = "0.4"
+sdkwork-drive-config.workspace = true
+sdkwork-drive-observability.workspace = true
+sdkwork-drive-workspace-service.workspace = true
 sqlx.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
 tracing.workspace = true
+tracing-subscriber.workspace = true

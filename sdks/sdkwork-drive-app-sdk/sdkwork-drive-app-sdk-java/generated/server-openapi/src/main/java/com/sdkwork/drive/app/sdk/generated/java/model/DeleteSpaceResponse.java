@@ -9,7 +9,7 @@ public class DeleteSpaceResponse {
     public Boolean getDeleted() {
         return this.deleted;
     }
-    
+
     public void setDeleted(Boolean deleted) {
         this.deleted = deleted;
     }
@@ -17,7 +17,7 @@ public class DeleteSpaceResponse {
     public DriveSpace getSpace() {
         return this.space;
     }
-    
+
     public void setSpace(DriveSpace space) {
         this.space = space;
     }
@@ -25,7 +25,7 @@ public class DeleteSpaceResponse {
     public Integer getDeletedNodeCount() {
         return this.deletedNodeCount;
     }
-    
+
     public void setDeletedNodeCount(Integer deletedNodeCount) {
         this.deletedNodeCount = deletedNodeCount;
     }

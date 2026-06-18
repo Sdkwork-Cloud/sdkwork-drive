@@ -1,27 +1,16 @@
 import React, { useState } from 'react';
-import { Clock, Star, Share2, Trash2, Cloud, HardDrive, Filter, Download, Play, Pause, X, CheckCircle, RefreshCcw, Activity, ChevronRight, ChevronDown, Book, Megaphone, Palette, LineChart, Plus, Folder } from 'lucide-react';
+import { Clock, Star, Share2, Trash2, Cloud, HardDrive, ChevronRight, ChevronDown, Book, Plus, Folder, Activity } from 'lucide-react';
 import type { DriveSection } from '../pages/DrivePage';
-import type { DownloadJob } from 'sdkwork-drive-pc-types';
 import { useTranslation } from 'sdkwork-drive-pc-commons';
-import type { DriveStorageSummary, SharedSpace } from 'sdkwork-drive-pc-core';
+import type { DriveStorageSummary, KnowledgeBaseSpace, SharedSpace } from 'sdkwork-drive-pc-core';
+import { useDriveRuntime } from 'sdkwork-drive-pc-core';
 import { SPACE_ICONS } from './CreateSharedSpaceModal';
-import {
-  canCancelTransferJob,
-  canPauseTransferJob,
-  canResumeTransferJob,
-  isActiveTransferStatus,
-  isCompletedTransferStatus,
-} from 'sdkwork-drive-pc-types';
 
 interface FileSidebarProps {
   activeSection: DriveSection;
   onSectionChange: (section: DriveSection) => void;
-  downloadJobs: DownloadJob[];
-  onClearJobs: () => void;
-  onPauseJob?: (id: string) => void;
-  onResumeJob?: (id: string) => void;
-  onCancelJob: (id: string) => void;
   sharedSpaces?: SharedSpace[];
+  knowledgeBaseSpaces?: KnowledgeBaseSpace[];
   storageSummary?: DriveStorageSummary;
   onAddSpaceClick?: () => void;
   onDeleteSpace?: (id: string) => void;
@@ -31,31 +20,25 @@ interface FileSidebarProps {
 export function FileSidebar({ 
   activeSection, 
   onSectionChange,
-  downloadJobs = [],
-  onClearJobs,
-  onPauseJob,
-  onResumeJob,
-  onCancelJob,
   sharedSpaces = [],
+  knowledgeBaseSpaces = [],
   storageSummary,
   onAddSpaceClick,
   onDeleteSpace,
   onOpenStorageSettings
 }: FileSidebarProps) {
   const { t } = useTranslation();
+  const runtime = useDriveRuntime();
+  const showComputersSection =
+    runtime.config.runtimeTarget === 'desktop' || runtime.host.isNativeHost;
   const [isKbExpanded, setIsKbExpanded] = useState(false);
   
-  const activeJobs = downloadJobs.filter(j => isActiveTransferStatus(j.status));
-  const controllableJobs = downloadJobs.filter(j => canCancelTransferJob(j));
-  
-  const completedCount = downloadJobs.filter(j => isCompletedTransferStatus(j.status)).length;
-  const totalJobCount = downloadJobs.length;
   const storageUsedLabel = storageSummary ? formatStorageSize(storageSummary.usedBytes) : '--';
   const storageTotalLabel = storageSummary?.totalBytes ? formatStorageSize(storageSummary.totalBytes) : '--';
   const storageUsagePercent = Math.min(100, Math.max(0, storageSummary?.usagePercent ?? 0));
 
   return (
-    <div className="w-[260px] h-full bg-[#f2f2f2] dark:bg-[#1b1b1b] border-r border-[#d6d6d6] dark:border-[#2a2a2a] flex flex-col shrink-0 transition-colors select-none">
+    <div className="w-[220px] xl:w-[260px] h-full min-h-0 bg-[#f2f2f2] dark:bg-[#1b1b1b] border-r border-[#d6d6d6] dark:border-[#2a2a2a] flex flex-col shrink-0 transition-colors select-none">
       <div className="p-6 h-20 flex items-center">
         <span className="text-lg font-semibold tracking-tight text-[#1a1a1a] dark:text-[#eee]">Sdkwork Drive</span>
       </div>
@@ -79,9 +62,26 @@ export function FileSidebar({
           
           {isKbExpanded && (
             <div className="pl-9 pr-2 py-1 space-y-0.5 border-l-2 border-gray-200 dark:border-neutral-800 ml-4 mb-2">
-              <button onClick={() => onSectionChange('kb-engineering')} className={`block w-full text-left text-[12.5px] px-2 py-1.5 rounded transition-colors truncate ${activeSection === 'kb-engineering' ? 'bg-[#e2e2e2] dark:bg-[#2c3140] text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-neutral-400 hover:bg-gray-200/50 dark:hover:bg-neutral-800'}`}>{t('sidebar.kbEngineering')}</button>
-              <button onClick={() => onSectionChange('kb-product')} className={`block w-full text-left text-[12.5px] px-2 py-1.5 rounded transition-colors truncate ${activeSection === 'kb-product' ? 'bg-[#e2e2e2] dark:bg-[#2c3140] text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-neutral-400 hover:bg-gray-200/50 dark:hover:bg-neutral-800'}`}>{t('sidebar.kbProduct')}</button>
-              <button onClick={() => onSectionChange('kb-design')} className={`block w-full text-left text-[12.5px] px-2 py-1.5 rounded transition-colors truncate ${activeSection === 'kb-design' ? 'bg-[#e2e2e2] dark:bg-[#2c3140] text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-neutral-400 hover:bg-gray-200/50 dark:hover:bg-neutral-800'}`}>{t('sidebar.kbDesign')}</button>
+              {knowledgeBaseSpaces.length === 0 ? (
+                <div className="text-[12px] px-2 py-1.5 text-gray-400 dark:text-neutral-500">
+                  {t('sidebar.noKnowledgeBaseSpaces')}
+                </div>
+              ) : (
+                knowledgeBaseSpaces.map((space) => (
+                  <button
+                    key={space.id}
+                    onClick={() => onSectionChange(space.id)}
+                    className={`block w-full text-left text-[12.5px] px-2 py-1.5 rounded transition-colors truncate ${
+                      activeSection === space.id
+                        ? 'bg-[#e2e2e2] dark:bg-[#2c3140] text-blue-600 dark:text-blue-400 font-semibold'
+                        : 'text-gray-600 dark:text-neutral-400 hover:bg-gray-200/50 dark:hover:bg-neutral-800'
+                    }`}
+                    title={space.description || space.name}
+                  >
+                    {space.name}
+                  </button>
+                ))
+              )}
             </div>
           )}
         </div>
@@ -118,138 +118,11 @@ export function FileSidebar({
         
         <div className="border-t border-[#dbdbdb] dark:border-[#333] my-4 mx-2" />
         
-        <SidebarItem icon={<HardDrive size={18} />} label={t('sidebar.computers')} active={activeSection === 'computers'} onClick={() => onSectionChange('computers')} />
+        {showComputersSection && (
+          <SidebarItem icon={<HardDrive size={18} />} label={t('sidebar.computers')} active={activeSection === 'computers'} onClick={() => onSectionChange('computers')} />
+        )}
         <SidebarItem icon={<Activity size={18} />} label={t('sidebar.transferCenter')} active={activeSection === 'transfer'} onClick={() => onSectionChange('transfer')} />
         <SidebarItem icon={<Trash2 size={18} />} label={t('sidebar.trash')} active={activeSection === 'trash'} onClick={() => onSectionChange('trash')} />
-      </div>
-
-      {/* Dynamic Transfers Manager Section / Package */}
-      <div className="p-4 mx-3 mb-3 bg-[#e6e6e6]/50 dark:bg-[#222]/30 border border-[#d2d2d2] dark:border-neutral-800/60 rounded-xl select-none transition-all">
-        <div className="flex items-center justify-between mb-2.5">
-          <div className="flex items-center gap-2">
-            <Download size={14} className={activeJobs.length > 0 ? "text-blue-500 animate-bounce" : "text-[#555] dark:text-[#aaa]"} />
-            <span className="text-[11px] uppercase tracking-wider text-[#555] dark:text-[#aaa] font-bold">{t('sidebar.transferCenter')}</span>
-          </div>
-          {totalJobCount > 0 && (
-            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${activeJobs.length > 0 ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-450 animate-pulse' : 'bg-gray-200 dark:bg-[#333] text-gray-500'}`}>
-              {activeJobs.length > 0 ? `${activeJobs.length} ${t('sidebar.active')}` : `${completedCount}/${totalJobCount}`}
-            </span>
-          )}
-        </div>
-
-        {downloadJobs.length === 0 ? (
-          <div className="text-[11px] text-gray-400 dark:text-neutral-500 py-1 flex items-center gap-1.5 justify-center">
-            <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-neutral-600"></span>
-            {t('sidebar.noTransfers')}
-          </div>
-        ) : (
-          <div className="space-y-2 max-h-[140px] overflow-y-auto scrollbar-none">
-            {/* Show top active jobs or list latest downloads */}
-            {downloadJobs.slice(0, 2).map((job) => {
-              const isWorking = isActiveTransferStatus(job.status);
-              const canCancel = canCancelTransferJob(job);
-              const canPause = canPauseTransferJob(job);
-              const canResume = canResumeTransferJob(job);
-              
-              // Localized status representations
-              let localStatus: string = job.status;
-              if (job.status === 'connecting') localStatus = t('downloadManager.connecting');
-              else if (job.status === 'compressing') localStatus = t('downloadManager.compressing');
-              else if (job.status === 'downloading') localStatus = t('downloadManager.downloading');
-              else if (job.status === 'uploading') localStatus = t('downloadManager.uploading');
-              else if (job.status === 'checking') localStatus = t('downloadManager.scanningVirus');
-              else if (job.status === 'ready') localStatus = t('downloadManager.ready');
-              else if (job.status === 'completed') localStatus = t('downloadManager.completed');
-              else if (job.status === 'paused') localStatus = t('downloadManager.paused');
-              else if (job.status === 'cancelled') localStatus = t('downloadManager.cancelled');
-              else if (job.status === 'failed') localStatus = t('downloadManager.failed');
-
-              return (
-                <div key={job.id} className="text-xs bg-white/70 dark:bg-[#1a1a1a]/60 p-2 rounded-lg border border-gray-200/50 dark:border-neutral-800/40 animate-in fade-in duration-250">
-                  <div className="flex items-center justify-between gap-1.5 mb-1">
-                    <span className="font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[120px]" title={job.fileName}>
-                      {job.fileName}
-                    </span>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {canCancel || canPause || canResume ? (
-                        <>
-                          {canResume && (
-                            <button 
-                              onClick={() => onResumeJob?.(job.id)}
-                              className="p-1 hover:bg-blue-50 dark:hover:bg-blue-950/30 text-blue-600 rounded cursor-pointer transition-colors"
-                              title="Resume"
-                            >
-                              <Play size={10} className="fill-current" />
-                            </button>
-                          )}
-                          {canPause && (
-                            <button 
-                              onClick={() => onPauseJob?.(job.id)}
-                              className="p-1 hover:bg-amber-50 dark:hover:bg-amber-950/30 text-amber-600 rounded cursor-pointer transition-colors"
-                              title="Pause"
-                            >
-                              <Pause size={10} className="fill-current" />
-                            </button>
-                          )}
-                          {canCancel && (
-                            <button 
-                              onClick={() => onCancelJob(job.id)}
-                              className="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 rounded cursor-pointer transition-colors"
-                              title="Cancel"
-                            >
-                              <X size={10} />
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        (job.status === 'ready' || job.status === 'completed') && <CheckCircle className="text-emerald-500 shrink-0" size={11} />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Rating / Speed info */}
-                  <div className="flex items-center justify-between text-[10px] text-gray-400 dark:text-neutral-500 mb-1 font-medium font-sans">
-                    <span className="capitalize">
-                      {localStatus}
-                    </span>
-                    <span>
-                      {job.status === 'downloading' ? job.speed : job.status === 'uploading' ? job.speed : job.status === 'ready' ? t('downloadManager.ready') : '--'}
-                    </span>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="w-full bg-gray-100 dark:bg-neutral-800 h-1 rounded-full overflow-hidden relative">
-                    <div 
-                      className={`h-full absolute left-0 top-0 transition-all duration-300 ${
-                        job.status === 'completed' || job.status === 'ready' ? 'bg-emerald-500' :
-                        job.status === 'paused' ? 'bg-gray-400' :
-                        job.status === 'cancelled' || job.status === 'failed' ? 'bg-rose-500' :
-                        'bg-blue-500'
-                      }`}
-                      style={{ width: `${job.progress}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-
-            {downloadJobs.length > 2 && (
-              <div className="text-center text-[10px] text-gray-400 dark:text-neutral-500 font-medium pt-0.5">
-                {t('sidebar.moreTransfers', { count: downloadJobs.length - 2 })}
-              </div>
-            )}
-
-            {/* Clear transfers option if none are active */}
-            {controllableJobs.length === 0 && completedCount > 0 && (
-              <button 
-                onClick={onClearJobs}
-                className="w-full text-center text-[10px] font-bold text-gray-500 dark:text-neutral-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors py-1.5 bg-white/50 dark:bg-black/10 border border-gray-200 dark:border-neutral-800/40 rounded-md cursor-pointer flex items-center justify-center gap-1 mt-1"
-              >
-                <RefreshCcw size={8} /> {t('sidebar.clearFinished')}
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       <div className="p-6 bg-[#ebebeb] dark:bg-[#1a1a1a]">

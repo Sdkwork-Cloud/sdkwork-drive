@@ -1,5 +1,4 @@
 import {
-  createDriveAdminStorageSdkClient,
   createDriveAppSdkClient,
   createDriveSessionTokenManager,
   createDriveFileService,
@@ -7,8 +6,11 @@ import {
   createRuntimeConfig,
   createSessionStore,
   type SessionStorageLike,
-  type DriveRuntime,
 } from 'sdkwork-drive-pc-core';
+import {
+  createDriveAdminStorageSdkClient,
+  type DriveRuntime,
+} from 'sdkwork-drive-pc-admin-core';
 import { createDriveIamRuntime } from './driveIamRuntime';
 
 export function createDrivePcRuntime(): DriveRuntime {
@@ -25,13 +27,13 @@ export function createDrivePcRuntime(): DriveRuntime {
   });
   const iamRuntime = createDriveIamRuntime({
     config,
-    sdkClients: [
-      appSdkClient,
-      adminStorageSdkClient,
-    ],
+    sdkClients: [appSdkClient],
     session,
     tokenManager,
   });
+  adminStorageSdkClient.setTokenManager(tokenManager);
+
+  const host = createHostAdapter();
 
   return {
     config,
@@ -40,15 +42,17 @@ export function createDrivePcRuntime(): DriveRuntime {
     },
     sdk: {
       app: appSdkClient,
+    },
+    admin: {
       adminStorage: adminStorageSdkClient,
     },
     session,
-    host: createHostAdapter(),
+    host,
     services: {
       fileService: createDriveFileService({
         appSdkClient,
-        adminStorageSdkClient,
         getSession: session.getSnapshot,
+        hostAdapter: host,
       }),
     },
   };

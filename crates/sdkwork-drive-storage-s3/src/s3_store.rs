@@ -11,11 +11,11 @@ use sdkwork_drive_storage_contract::{
     CopyObjectRequest, CopyObjectResponse, CreateBucketRequest, CreateBucketResponse,
     CreateMultipartUploadRequest, CreateMultipartUploadResponse, DeleteBucketRequest,
     DeleteBucketResponse, DeleteObjectRequest, DeleteObjectResponse, DriveObjectChunkStream,
-    DriveObjectHeaders, DriveObjectStore, DriveObjectStoreError, DriveObjectStoreErrorKind,
-    DriveStorageProviderCapabilities, DriveStorageProviderKind, HeadBucketRequest,
-    HeadBucketResponse, HeadObjectRequest, HeadObjectResponse, ListBucketsRequest,
-    ListBucketsResponse, ListObjectsRequest, ListObjectsResponse, ListedBucket, ListedObject,
-    PresignDownloadRequest, PresignUploadPartRequest, PresignedDownloadResponse,
+    DriveObjectHeaders, DriveObjectLocator, DriveObjectStore, DriveObjectStoreError,
+    DriveObjectStoreErrorKind, DriveStorageProviderCapabilities, DriveStorageProviderKind,
+    HeadBucketRequest, HeadBucketResponse, HeadObjectRequest, HeadObjectResponse,
+    ListBucketsRequest, ListBucketsResponse, ListObjectsRequest, ListObjectsResponse, ListedBucket,
+    ListedObject, PresignDownloadRequest, PresignUploadPartRequest, PresignedDownloadResponse,
     PresignedUploadPartResponse, PutObjectRequest, PutObjectResponse, ReadObjectRangeRequest,
     ReadObjectRangeResponse,
 };
@@ -294,6 +294,46 @@ impl S3DriveObjectStore {
             .unwrap_or_else(|| format!("{default_message}: {error}"));
 
         DriveObjectStoreError::new(kind, message)
+    }
+
+    pub async fn put_object_from_path(
+        &self,
+        locator: DriveObjectLocator,
+        content_type: Option<String>,
+        metadata: BTreeMap<String, String>,
+        file_path: &std::path::Path,
+    ) -> Result<PutObjectResponse, DriveObjectStoreError> {
+        use aws_sdk_s3::primitives::ByteStream;
+
+        let bucket = self.resolve_bucket(&locator.bucket)?;
+        Self::validate_locator(&locator)?;
+        let body = ByteStream::from_path(file_path).await.map_err(|error| {
+            DriveObjectStoreError::new(
+                DriveObjectStoreErrorKind::Internal,
+                format!("read upload file failed: {error}"),
+            )
+        })?;
+        let mut builder = self
+            .client
+            .put_object()
+            .bucket(bucket)
+            .key(locator.object_key.clone())
+            .body(body);
+        if let Some(content_type) = content_type {
+            builder = builder.content_type(content_type);
+        }
+        for (key, value) in metadata {
+            builder = builder.metadata(key, value);
+        }
+        let output = builder
+            .send()
+            .await
+            .map_err(|error| Self::map_sdk_error(error, "put object from path failed"))?;
+        Ok(PutObjectResponse {
+            locator,
+            etag: output.e_tag().map(str::to_string),
+            version_id: output.version_id().map(str::to_string),
+        })
     }
 }
 

@@ -8,3 +8,4 @@ import com.sdkwork.drive.app.sdk.generated.java.api.NodeLabelsApi;
 import com.sdkwork.drive.app.sdk.generated.java.api.NodePropertiesApi;
 import com.sdkwork.drive.app.sdk.generated.java.api.NodesApi;
 import com.sdkwork.drive.app.sdk.generated.java.api.WatchChannelsApi;
+import com.sdkwork.drive.app.sdk.generated.java.api.AssetsApi;

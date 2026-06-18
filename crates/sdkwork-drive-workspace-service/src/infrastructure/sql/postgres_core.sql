@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS dr_drive_space (
     owner_subject_id VARCHAR(128) NOT NULL,
     space_type VARCHAR(32) NOT NULL,
     display_name VARCHAR(255) NOT NULL,
+    presentation_icon VARCHAR(128),
+    presentation_color VARCHAR(64),
+    description TEXT,
     lifecycle_status VARCHAR(32) NOT NULL DEFAULT 'active',
     version BIGINT NOT NULL DEFAULT 1,
     created_by VARCHAR(128) NOT NULL,
@@ -105,6 +108,12 @@ CREATE TABLE IF NOT EXISTS dr_drive_node (
     scene VARCHAR(128),
     source VARCHAR(128),
     content_state VARCHAR(32) NOT NULL DEFAULT 'empty',
+    file_extension VARCHAR(64),
+    head_content_type VARCHAR(255),
+    head_content_type_group VARCHAR(64),
+    head_content_length BIGINT,
+    head_version_no BIGINT,
+    head_checksum_sha256_hex VARCHAR(255),
     lifecycle_status VARCHAR(32) NOT NULL DEFAULT 'active',
     version BIGINT NOT NULL DEFAULT 1,
     created_by VARCHAR(128) NOT NULL,
@@ -136,11 +145,104 @@ CREATE TABLE IF NOT EXISTS dr_drive_node (
         )),
     CONSTRAINT ck_dr_drive_node_content_state
         CHECK (content_state IN ('empty', 'uploading', 'ready', 'failed')),
+    CONSTRAINT ck_dr_drive_node_file_extension
+        CHECK (file_extension IS NULL OR (
+            file_extension = lower(btrim(file_extension))
+            AND length(file_extension) BETWEEN 1 AND 64
+            AND file_extension ~ '^[a-z0-9]+(?:\\.[a-z0-9]+)*$'
+        )),
+    CONSTRAINT ck_dr_drive_node_head_content_type
+        CHECK (head_content_type IS NULL OR (
+            head_content_type = btrim(head_content_type)
+            AND length(head_content_type) BETWEEN 3 AND 255
+            AND head_content_type ~ '^[^[:space:]/]+/[^[:space:]/]+$'
+        )),
+    CONSTRAINT ck_dr_drive_node_head_content_type_group
+        CHECK (head_content_type_group IS NULL OR head_content_type_group IN (
+            'image', 'video', 'audio', 'text', 'document', 'archive', 'binary'
+        )),
+    CONSTRAINT ck_dr_drive_node_head_content_length
+        CHECK (head_content_length IS NULL OR head_content_length >= 0),
+    CONSTRAINT ck_dr_drive_node_head_version_no
+        CHECK (head_version_no IS NULL OR head_version_no >= 1),
+    CONSTRAINT ck_dr_drive_node_head_checksum_sha256_hex
+        CHECK (head_checksum_sha256_hex IS NULL OR head_checksum_sha256_hex ~ '^sha256:[0-9a-f]{64}$'),
+    CONSTRAINT ck_dr_drive_node_head_metadata_shape
+        CHECK (
+            (
+                node_type IN ('folder', 'shortcut', 'virtual_reference')
+                AND head_content_type IS NULL
+                AND head_content_type_group IS NULL
+                AND head_content_length IS NULL
+                AND head_version_no IS NULL
+                AND head_checksum_sha256_hex IS NULL
+            )
+            OR node_type = 'file'
+        ),
+    CONSTRAINT ck_dr_drive_node_file_ready_head
+        CHECK (
+            node_type != 'file'
+            OR content_state != 'ready'
+            OR (
+                head_content_type IS NOT NULL
+                AND head_content_type_group IS NOT NULL
+                AND head_content_length IS NOT NULL
+                AND head_version_no IS NOT NULL
+            )
+        ),
     CONSTRAINT ck_dr_drive_node_lifecycle_status
         CHECK (lifecycle_status IN ('active', 'trashed', 'deleted')),
     CONSTRAINT ck_dr_drive_node_version
         CHECK (version >= 1)
 );
+
+-- Backward compatible: older databases may have created `dr_drive_node` without head-metadata
+-- columns, but current API queries select them via NODE_API_SELECT_COLUMNS.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'content_state'
+    ) THEN
+        ALTER TABLE dr_drive_node ADD COLUMN content_state VARCHAR(32) NOT NULL DEFAULT 'empty';
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'file_extension'
+    ) THEN
+        ALTER TABLE dr_drive_node ADD COLUMN file_extension VARCHAR(64);
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'head_content_type'
+    ) THEN
+        ALTER TABLE dr_drive_node ADD COLUMN head_content_type VARCHAR(255);
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'head_content_type_group'
+    ) THEN
+        ALTER TABLE dr_drive_node ADD COLUMN head_content_type_group VARCHAR(64);
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'head_content_length'
+    ) THEN
+        ALTER TABLE dr_drive_node ADD COLUMN head_content_length BIGINT;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'head_version_no'
+    ) THEN
+        ALTER TABLE dr_drive_node ADD COLUMN head_version_no BIGINT;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'head_checksum_sha256_hex'
+    ) THEN
+        ALTER TABLE dr_drive_node ADD COLUMN head_checksum_sha256_hex VARCHAR(255);
+    END IF;
+END $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_node_root_name_live
     ON dr_drive_node (tenant_id, space_id, node_name)
@@ -158,6 +260,9 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_node_asset_list
     ON dr_drive_node (tenant_id, node_type, lifecycle_status, updated_at DESC, id);
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_asset_scene_source
     ON dr_drive_node (tenant_id, node_type, scene, source, lifecycle_status, updated_at DESC, id);
+CREATE INDEX IF NOT EXISTS ix_dr_drive_node_space_parent_type
+    ON dr_drive_node (tenant_id, space_id, parent_node_id, head_content_type_group, updated_at DESC)
+    WHERE lifecycle_status = 'active' AND node_type = 'file';
 
 CREATE OR REPLACE FUNCTION dr_drive_sync_node_space_type()
 RETURNS TRIGGER AS $$
@@ -655,9 +760,18 @@ CREATE TABLE IF NOT EXISTS dr_drive_storage_provider_binding (
         FOREIGN KEY (provider_id) REFERENCES dr_drive_storage_provider(id) ON DELETE CASCADE
         ,
     CONSTRAINT ck_dr_drive_storage_provider_binding_scope
-        CHECK (binding_scope IN ('tenant', 'space')),
+        CHECK (binding_scope IN ('tenant', 'space', 'space_type')),
     CONSTRAINT ck_dr_drive_storage_provider_binding_purpose
-        CHECK (purpose IN ('primary')),
+        CHECK (
+            (binding_scope IN ('tenant', 'space') AND purpose = 'primary')
+            OR (
+                binding_scope = 'space_type'
+                AND purpose IN (
+                    'personal', 'team', 'knowledge_base', 'ai_generated', 'git_repository',
+                    'deployment', 'app_upload', 'im', 'rtc', 'notary'
+                )
+            )
+        ),
     CONSTRAINT ck_dr_drive_storage_provider_binding_storage_root_prefix
         CHECK (
             storage_root_prefix = btrim(storage_root_prefix)
@@ -672,6 +786,7 @@ CREATE TABLE IF NOT EXISTS dr_drive_storage_provider_binding (
         CHECK (
             (binding_scope = 'tenant' AND space_id IS NULL)
             OR (binding_scope = 'space' AND space_id IS NOT NULL)
+            OR (binding_scope = 'space_type' AND space_id IS NULL)
         )
 );
 
@@ -685,6 +800,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_storage_provider_binding_tenant_pr
 CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_storage_provider_binding_space_primary_active
     ON dr_drive_storage_provider_binding (tenant_id, space_id, purpose)
     WHERE space_id IS NOT NULL AND purpose = 'primary' AND lifecycle_status = 'active';
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_storage_provider_binding_space_type_active
+    ON dr_drive_storage_provider_binding (tenant_id, purpose)
+    WHERE binding_scope = 'space_type' AND lifecycle_status = 'active';
 
 CREATE TABLE IF NOT EXISTS dr_drive_download_package (
     id VARCHAR(64) PRIMARY KEY,
@@ -1237,3 +1355,24 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_file_sensitive_operation_upload_item
     ON dr_drive_file_sensitive_operation (tenant_id, upload_item_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS ix_dr_drive_file_sensitive_operation_tenant_created
     ON dr_drive_file_sensitive_operation (tenant_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS dr_drive_domain_outbox (
+    id VARCHAR(64) PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL,
+    space_id VARCHAR(64) NOT NULL,
+    node_id VARCHAR(64),
+    event_type VARCHAR(128) NOT NULL,
+    actor_id VARCHAR(128) NOT NULL,
+    sequence_no BIGINT NOT NULL,
+    payload_json TEXT NOT NULL,
+    delivery_status VARCHAR(32) NOT NULL DEFAULT 'pending',
+    attempt_count INT NOT NULL DEFAULT 0,
+    last_error TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    delivered_at TIMESTAMPTZ,
+    CONSTRAINT ck_dr_drive_domain_outbox_delivery_status
+        CHECK (delivery_status IN ('pending', 'delivered', 'failed'))
+);
+
+CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending
+    ON dr_drive_domain_outbox (delivery_status, created_at);

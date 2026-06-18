@@ -8,7 +8,7 @@ public class ArchiveEntryListResponse {
     public List<ArchiveEntry> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<ArchiveEntry> items) {
         this.items = items;
     }

@@ -13,6 +13,12 @@ import { useTranslation } from "sdkwork-drive-pc-commons";
 import type { DriveFile } from "sdkwork-drive-pc-types";
 import type { DriveSection } from "../pages/DrivePage";
 import { FileIcon } from "./FileIcon";
+import {
+  FILE_LIST_ACTIONS_CLASS,
+  FILE_LIST_COL_ACTIONS_CLASS,
+  FILE_LIST_ROW_CLASS,
+} from "../utils/fileListLayout";
+import { formatDriveFileTypeLabel } from "../utils/fileTypeLabel";
 
 interface FileRowItemProps {
   file: DriveFile;
@@ -65,6 +71,8 @@ export function FileRowItem({
   const isItemStarred = file.isStarred;
   const isMenuOpen = activeMenuId === file.id;
   const isTrashSection = isTrashSectionProp ?? activeSection === "trash";
+  const isComputerSection = activeSection === "computers";
+  const hideCloudFileActions = isTrashSection || isComputerSection;
 
   // Handle outside clicks to close the dropdown for this item
   useEffect(() => {
@@ -103,10 +111,8 @@ export function FileRowItem({
   return (
     <div
       onDoubleClick={handleRowDoubleClick}
-      className={`grid grid-cols-[40px_1.8fr_1fr_1.2fr_0.8fr_0.1fr] items-center py-2.5 border-b border-gray-50 dark:border-[#1c1c1c] hover:bg-[#f6f9fc]/60 dark:hover:bg-[#1a1c23]/60 group rounded-lg transition-all px-2 sm:px-4 select-none cursor-pointer ${
-        isSelected
-          ? "bg-blue-50/15 dark:bg-blue-950/10 border-l border-l-blue-500"
-          : ""
+      className={`${FILE_LIST_ROW_CLASS} group select-none ${
+        isSelected ? "is-selected" : ""
       }`}
     >
       {/* Checkbox Column */}
@@ -140,8 +146,8 @@ export function FileRowItem({
       </div>
 
       {/* Name Column */}
-      <div className="flex items-center gap-3 pr-4 min-w-0 group/iconcontainer">
-        <div className="flex items-center justify-center transition-transform duration-200 group-hover/iconcontainer:scale-110">
+      <div className="sdkwork-drive-file-list-col-name group/iconcontainer">
+        <div className="flex shrink-0 items-center justify-center transition-transform duration-200 group-hover/iconcontainer:scale-110">
           <FileIcon
             type={file.type}
             mimeType={file.mimeType}
@@ -178,7 +184,7 @@ export function FileRowItem({
               >
                 {file.name}
               </span>
-              {!isTrashSection && (
+              {!hideCloudFileActions && (
                 <button
                   onClick={(e) => onToggleStar(e, file.id, file.name)}
                   className={`text-gray-300 dark:text-neutral-700 hover:text-amber-500 dark:hover:text-amber-400 transition-colors shrink-0 ${isItemStarred ? "text-amber-400 dark:text-amber-400 opacity-100" : "opacity-0 group-hover/name:opacity-100"}`}
@@ -189,7 +195,7 @@ export function FileRowItem({
                   />
                 </button>
               )}
-              {!isTrashSection && (
+              {!hideCloudFileActions && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -207,28 +213,34 @@ export function FileRowItem({
       </div>
 
       {/* Owner Column */}
-      <div className="text-[13px] text-gray-500 dark:text-gray-400 truncate pr-4">
+      <div className="sdkwork-drive-file-list-col-meta hidden lg:block">
         {file.ownerId}
       </div>
 
-      {/* Last Modified Column */}
-      <div className="text-[13px] text-gray-500 dark:text-gray-400 font-mono text-xs">
-        {formatDate(file.updatedAt)}
-      </div>
-
       {/* Size Column */}
-      <div className="text-[13px] text-gray-500 dark:text-gray-400 font-mono text-xs text-right pr-4">
+      <div className="sdkwork-drive-file-list-col-size">
         {formatSize(file.size)}
       </div>
 
+      {/* Type Column */}
+      <div className="sdkwork-drive-file-list-col-meta">
+        {formatDriveFileTypeLabel(file, t)}
+      </div>
+
+      {/* Last Modified Column */}
+      <div className="sdkwork-drive-file-list-col-meta hidden font-mono lg:block">
+        {formatDate(file.updatedAt)}
+      </div>
+
       {/* Menu / Actions Button */}
-      <div className="text-right relative pr-2" ref={menuRef}>
-        <div className="flex items-center justify-end gap-1">
+      <div className={FILE_LIST_COL_ACTIONS_CLASS} ref={menuRef}>
+        <div className={FILE_LIST_ACTIONS_CLASS}>
           {/* Quick Hover Download Shortcut */}
-          {!isTrashSection && (
+          {!hideCloudFileActions && (
             <button
+              type="button"
               onClick={(e) => onDownload(e, file)}
-              className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-neutral-200 rounded opacity-0 group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-[#333] transition-all cursor-pointer"
+              className="sdkwork-drive-file-list-actions__btn is-reveal"
               title={t("fileBrowser.download") || "Download"}
             >
               <Download size={15} />
@@ -236,8 +248,11 @@ export function FileRowItem({
           )}
 
           <button
+            type="button"
             onClick={handleMenuToggle}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer ${isMenuOpen ? "opacity-100 bg-[#ebebeb] dark:bg-[#333] text-gray-800 dark:text-white" : "text-gray-400 hover:bg-[#eaeaea] dark:hover:bg-[#2c2c2c] dark:hover:text-neutral-205 group-hover:opacity-100 opacity-20"}`}
+            className={`sdkwork-drive-file-list-actions__btn is-menu ${
+              isMenuOpen ? "is-active is-visible" : ""
+            }`}
             title={t("fileBrowser.actionsMenu")}
           >
             <MoreHorizontal size={16} />
@@ -245,7 +260,7 @@ export function FileRowItem({
         </div>
 
         {isMenuOpen && (
-          <div className="absolute right-0 top-9 w-48 bg-white dark:bg-[#1e1e1e] border border-gray-100 dark:border-neutral-800 rounded-xl shadow-2xl z-50 py-1.5 text-left origin-top-right animate-in fade-in zoom-in-95 duration-100 select-none">
+          <div className="absolute right-0 top-[calc(100%+4px)] z-50 w-48 origin-top-right animate-in fade-in zoom-in-95 rounded-xl border border-gray-100 bg-white py-1.5 text-left shadow-2xl duration-100 select-none dark:border-neutral-800 dark:bg-[#1e1e1e]">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -255,9 +270,11 @@ export function FileRowItem({
               className="w-full flex items-center gap-2.5 px-4 py-2 text-[13px] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             >
               <Info size={14} className="text-gray-400 shrink-0" />{" "}
-              {t("fileBrowser.propertiesAndInfo")}
+              {isComputerSection && file.type === "file"
+                ? t("fileBrowser.openLocalFile") || "Open"
+                : t("fileBrowser.propertiesAndInfo")}
             </button>
-            {!isTrashSection && (
+            {!hideCloudFileActions && (
               <>
                 <button
                   onClick={(e) => {
@@ -314,7 +331,7 @@ export function FileRowItem({
                   {t("fileBrowser.permanentDelete")}
                 </button>
               </>
-            ) : (
+            ) : !isComputerSection ? (
               <button
                 onClick={(e) => onTrashAction(e, file)}
                 className="w-full flex items-center gap-2.5 px-4 py-2 text-[13px] text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
@@ -322,7 +339,7 @@ export function FileRowItem({
                 <Trash size={14} className="text-red-400 shrink-0" />{" "}
                 {t("fileBrowser.delete")}
               </button>
-            )}
+            ) : null}
           </div>
         )}
       </div>

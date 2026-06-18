@@ -4,6 +4,7 @@ use sqlx::AnyPool;
 use sqlx::Row;
 
 use crate::domain::storage_provider::{DriveStorageProvider, DriveStorageProviderKind};
+use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::ports::storage_provider_store::{
     DriveStorageProviderStore, NewDriveStorageProvider, UpdateDriveStorageProvider,
 };
@@ -52,7 +53,7 @@ impl DriveStorageProviderStore for SqlStorageProviderStore {
 
         if let Err(error) = result {
             let message = error.to_string();
-            if message.contains("UNIQUE constraint failed") {
+            if is_unique_constraint_violation(&message) {
                 return Err(DriveServiceError::Conflict(
                     "storage provider already exists".to_string(),
                 ));

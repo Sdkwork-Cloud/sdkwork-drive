@@ -2,6 +2,8 @@ use std::time::Instant;
 
 pub const OBSERVABILITY_TARGET: &str = "sdkwork.drive";
 
+pub mod metrics;
+
 pub mod events {
     pub const BACKEND_AUDIT_EVENTS_LIST: &str = "drive.audit_events.list";
     pub const BACKEND_MAINTENANCE_JOBS_LIST: &str = "drive.maintenance.jobs.list";

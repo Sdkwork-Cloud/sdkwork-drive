@@ -2,6 +2,8 @@ export interface SpaceTypeMeta {
   value: string;
   label: string;
   shortLabel: string;
+  labelKey: string;
+  descriptionKey: string;
   icon: string;
   bgClass: string;
   textClass: string;
@@ -14,6 +16,8 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     value: 'personal',
     label: 'Personal',
     shortLabel: 'Personal',
+    labelKey: 'spaceTypePersonalLabel',
+    descriptionKey: 'spaceTypePersonalDesc',
     icon: '👤',
     bgClass: 'bg-blue-50 dark:bg-blue-950/30',
     textClass: 'text-blue-700 dark:text-blue-300',
@@ -24,6 +28,8 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     value: 'team',
     label: 'Team',
     shortLabel: 'Team',
+    labelKey: 'spaceTypeTeamLabel',
+    descriptionKey: 'spaceTypeTeamDesc',
     icon: '👥',
     bgClass: 'bg-purple-50 dark:bg-purple-950/30',
     textClass: 'text-purple-700 dark:text-purple-300',
@@ -34,6 +40,8 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     value: 'knowledge_base',
     label: 'Knowledge Base',
     shortLabel: 'KB',
+    labelKey: 'spaceTypeKnowledgeBaseLabel',
+    descriptionKey: 'spaceTypeKnowledgeBaseDesc',
     icon: '📚',
     bgClass: 'bg-emerald-50 dark:bg-emerald-950/30',
     textClass: 'text-emerald-700 dark:text-emerald-300',
@@ -44,6 +52,8 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     value: 'ai_generated',
     label: 'AI Generated',
     shortLabel: 'AI',
+    labelKey: 'spaceTypeAiGeneratedLabel',
+    descriptionKey: 'spaceTypeAiGeneratedDesc',
     icon: '🤖',
     bgClass: 'bg-cyan-50 dark:bg-cyan-950/30',
     textClass: 'text-cyan-700 dark:text-cyan-300',
@@ -54,6 +64,8 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     value: 'git_repository',
     label: 'Git Repository',
     shortLabel: 'Git',
+    labelKey: 'spaceTypeGitRepositoryLabel',
+    descriptionKey: 'spaceTypeGitRepositoryDesc',
     icon: '🔀',
     bgClass: 'bg-orange-50 dark:bg-orange-950/30',
     textClass: 'text-orange-700 dark:text-orange-300',
@@ -64,6 +76,8 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     value: 'deployment',
     label: 'Deployment',
     shortLabel: 'Deploy',
+    labelKey: 'spaceTypeDeploymentLabel',
+    descriptionKey: 'spaceTypeDeploymentDesc',
     icon: '🚀',
     bgClass: 'bg-indigo-50 dark:bg-indigo-950/30',
     textClass: 'text-indigo-700 dark:text-indigo-300',
@@ -74,6 +88,8 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     value: 'app_upload',
     label: 'App Upload',
     shortLabel: 'App',
+    labelKey: 'spaceTypeAppUploadLabel',
+    descriptionKey: 'spaceTypeAppUploadDesc',
     icon: '📦',
     bgClass: 'bg-pink-50 dark:bg-pink-950/30',
     textClass: 'text-pink-700 dark:text-pink-300',
@@ -84,6 +100,8 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     value: 'im',
     label: 'IM',
     shortLabel: 'IM',
+    labelKey: 'spaceTypeImLabel',
+    descriptionKey: 'spaceTypeImDesc',
     icon: '💬',
     bgClass: 'bg-teal-50 dark:bg-teal-950/30',
     textClass: 'text-teal-700 dark:text-teal-300',
@@ -94,6 +112,8 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     value: 'rtc',
     label: 'RTC',
     shortLabel: 'RTC',
+    labelKey: 'spaceTypeRtcLabel',
+    descriptionKey: 'spaceTypeRtcDesc',
     icon: '📹',
     bgClass: 'bg-red-50 dark:bg-red-950/30',
     textClass: 'text-red-700 dark:text-red-300',
@@ -104,6 +124,8 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     value: 'notary',
     label: 'Notary',
     shortLabel: 'Notary',
+    labelKey: 'spaceTypeNotaryLabel',
+    descriptionKey: 'spaceTypeNotaryDesc',
     icon: '📋',
     bgClass: 'bg-amber-50 dark:bg-amber-950/30',
     textClass: 'text-amber-700 dark:text-amber-300',
@@ -113,14 +135,30 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
 ];
 
 export function getSpaceTypeMeta(type: string): SpaceTypeMeta {
-  return SPACE_TYPES.find((t) => t.value === type) ?? {
+  return SPACE_TYPES.find((entry) => entry.value === type) ?? {
     value: type,
     label: type,
     shortLabel: type.slice(0, 6),
+    labelKey: '',
+    descriptionKey: '',
     icon: '❓',
     bgClass: 'bg-neutral-50 dark:bg-neutral-800',
     textClass: 'text-neutral-700 dark:text-neutral-300',
     description: '',
     isSystem: false,
   };
+}
+
+export function resolveSpaceTypeLabel(
+  meta: SpaceTypeMeta,
+  t: (key: string) => string,
+): string {
+  return meta.labelKey ? t(meta.labelKey) : meta.label;
+}
+
+export function resolveSpaceTypeDescription(
+  meta: SpaceTypeMeta,
+  t: (key: string) => string,
+): string {
+  return meta.descriptionKey ? t(meta.descriptionKey) : meta.description;
 }

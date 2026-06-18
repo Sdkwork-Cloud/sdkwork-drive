@@ -18,9 +18,8 @@ func NewNodePropertiesApi(client *sdkhttp.Client) *NodePropertiesApi {
 }
 
 // List node custom properties
-func (a *NodePropertiesApi) List(nodeId string, tenantId string, visibility *string, pageSize *int, pageToken *string) (sdktypes.NodePropertyListResponse, error) {
+func (a *NodePropertiesApi) List(nodeId string, visibility *string, pageSize *int, pageToken *string) (sdktypes.NodePropertyListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "visibility", Value: func() interface{} { if visibility == nil { return nil }; return *visibility }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageToken", Value: func() interface{} { if pageToken == nil { return nil }; return *pageToken }(), Style: "form", Explode: true, AllowReserved: false},
@@ -44,11 +43,9 @@ func (a *NodePropertiesApi) Set(nodeId string, propertyKey string, body sdktypes
 }
 
 // Delete a node custom property
-func (a *NodePropertiesApi) Delete(nodeId string, propertyKey string, tenantId string, visibility *string, operatorId *string) (sdktypes.DeleteNodePropertyResponse, error) {
+func (a *NodePropertiesApi) Delete(nodeId string, propertyKey string, visibility *string) (sdktypes.DeleteNodePropertyResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "visibility", Value: func() interface{} { if visibility == nil { return nil }; return *visibility }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "operatorId", Value: func() interface{} { if operatorId == nil { return nil }; return *operatorId }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Delete(AppendQueryString(AppApiPath(fmt.Sprintf("/drive/nodes/%s/properties/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}), SerializePathParameter(propertyKey, PathParameterSpec{Name: "propertyKey", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {

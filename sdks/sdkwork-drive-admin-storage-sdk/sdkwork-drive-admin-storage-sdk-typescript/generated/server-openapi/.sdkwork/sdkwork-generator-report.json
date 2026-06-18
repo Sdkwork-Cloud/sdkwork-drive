@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": false,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "67396866c0f36176bc5bed9958f854a165c8554eea09bdac7a9ce26b486429b5",
+  "changeFingerprint": "5c1e2af5ad56beffeb570e367bdf3937c93e6ae2410f402b26249ce7cac35605",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [],
@@ -47,6 +47,7 @@
     "version": "0.1.0",
     "language": "typescript",
     "sdkType": "custom",
+    "protocol": "http",
     "outputPath": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-typescript\\generated\\server-openapi",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-typescript"
   },
@@ -63,12 +64,13 @@
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
+    "controlPlaneEnabled": true,
     "writtenFiles": 0,
     "skippedScaffoldFiles": 2,
     "skippedUnchangedGeneratedFiles": 45,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "67396866c0f36176bc5bed9958f854a165c8554eea09bdac7a9ce26b486429b5",
+    "changeFingerprint": "5c1e2af5ad56beffeb570e367bdf3937c93e6ae2410f402b26249ce7cac35605",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [],

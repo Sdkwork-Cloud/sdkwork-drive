@@ -12,6 +12,7 @@ type SdkworkAppClient struct {
     NodeProperties *api.NodePropertiesApi
     Nodes *api.NodesApi
     WatchChannels *api.WatchChannelsApi
+    Assets *api.AssetsApi
 }
 
 func NewSdkworkAppClient(baseURL string) *SdkworkAppClient {
@@ -28,12 +29,8 @@ func NewSdkworkAppClientWithConfig(config sdkhttp.Config) *SdkworkAppClient {
         NodeProperties: api.NewNodePropertiesApi(client),
         Nodes: api.NewNodesApi(client),
         WatchChannels: api.NewWatchChannelsApi(client),
+        Assets: api.NewAssetsApi(client),
     }
-}
-
-func (c *SdkworkAppClient) SetApiKey(apiKey string) *SdkworkAppClient {
-    c.http.SetApiKey(apiKey)
-    return c
 }
 
 func (c *SdkworkAppClient) SetAuthToken(token string) *SdkworkAppClient {

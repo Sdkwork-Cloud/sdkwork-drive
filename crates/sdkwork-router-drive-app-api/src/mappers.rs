@@ -14,6 +14,11 @@ pub(crate) fn map_node_row(row: &sqlx::any::AnyRow) -> DriveNodeResponse {
         node_name: row.get("node_name"),
         scene: row.get("scene"),
         source: row.get("source"),
+        content_state: row.get("content_state"),
+        file_extension: row.try_get("file_extension").ok().flatten(),
+        content_type: row.try_get("head_content_type").ok().flatten(),
+        content_type_group: row.try_get("head_content_type_group").ok().flatten(),
+        content_length: row.try_get("head_content_length").ok().flatten(),
         lifecycle_status: row.get("lifecycle_status"),
         version: row.get("version"),
     }
@@ -27,8 +32,12 @@ pub(crate) fn map_space_response(space: DriveSpace) -> CreateSpaceResponse {
         owner_subject_id: space.owner_subject_id,
         display_name: space.display_name,
         space_type: space.space_type.as_str().to_string(),
+        presentation_icon: space.presentation_icon,
+        presentation_color: space.presentation_color,
+        description: space.description,
         lifecycle_status: space.lifecycle_status,
         version: space.version,
+        created_by: space.created_by,
     }
 }
 

@@ -181,6 +181,7 @@ async test(providerId: string, body: TestStorageProviderRequest): Promise<TestSt
 export interface DriveStorageProviderBindingsDefaultGetParams {
   tenantId: string;
   spaceId?: string;
+  spaceType?: 'personal' | 'team' | 'knowledge_base' | 'ai_generated' | 'git_repository' | 'deployment' | 'app_upload' | 'im' | 'rtc' | 'notary';
 }
 
 export interface DriveStorageProviderBindingsDefaultDeleteParams {
@@ -201,6 +202,7 @@ async get(params: DriveStorageProviderBindingsDefaultGetParams): Promise<Storage
     const query = buildQueryString([
       { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
       { name: 'spaceId', value: params.spaceId, style: 'form', explode: true, allowReserved: false },
+      { name: 'spaceType', value: params.spaceType, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<StorageProviderBinding>(appendQueryString(customApiPath(`/drive/storage/bindings/default`), query));
   }

@@ -60,6 +60,8 @@ pub struct SetDefaultStorageProviderBindingRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub space_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub space_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub storage_root_prefix: Option<String>,
 }
 

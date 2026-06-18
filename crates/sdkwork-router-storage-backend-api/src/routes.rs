@@ -1,3 +1,4 @@
+use crate::app_context::inject_drive_request_context;
 use crate::auth::app_context_guard;
 use crate::config::AdminStorageConfig;
 use crate::handlers::*;
@@ -179,6 +180,7 @@ fn build_router_with_state(state: AdminStorageState, require_iam: bool) -> Route
             get(list_storage_provider_bindings),
         );
 
+    let drive_routes = drive_routes.route_layer(middleware::from_fn(inject_drive_request_context));
     let drive_routes = if require_iam {
         drive_routes.route_layer(middleware::from_fn_with_state(
             state.clone(),
@@ -190,6 +192,10 @@ fn build_router_with_state(state: AdminStorageState, require_iam: bool) -> Route
 
     Router::new()
         .route("/healthz", get(health))
+        .route("/metrics", get(metrics))
         .merge(drive_routes)
+        .layer(middleware::from_fn(
+            sdkwork_drive_http::metrics::record_request_metrics,
+        ))
         .with_state(state)
 }

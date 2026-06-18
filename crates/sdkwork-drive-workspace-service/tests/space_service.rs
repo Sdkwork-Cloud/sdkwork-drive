@@ -52,6 +52,9 @@ async fn create_space_supports_knowledge_ai_git_repository_deployment_and_upload
                 owner_subject_id: "user-001".to_string(),
                 display_name: format!("space-{index}"),
                 space_type: space_type.clone(),
+                presentation_icon: None,
+                presentation_color: None,
+                description: None,
                 operator_id: "user-001".to_string(),
             })
             .await
@@ -81,6 +84,9 @@ async fn create_rtc_space_is_user_owned_and_unique_per_user() {
             owner_subject_id: "user-001".to_string(),
             display_name: "RTC Records".to_string(),
             space_type: DriveSpaceType::Rtc,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "system".to_string(),
         })
         .await
@@ -98,6 +104,9 @@ async fn create_rtc_space_is_user_owned_and_unique_per_user() {
             owner_subject_id: "user-001".to_string(),
             display_name: "RTC Records Duplicate".to_string(),
             space_type: DriveSpaceType::Rtc,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "system".to_string(),
         })
         .await;
@@ -131,6 +140,9 @@ async fn create_rtc_space_rejects_non_user_owner() {
             owner_subject_id: "group-001".to_string(),
             display_name: "RTC Records".to_string(),
             space_type: DriveSpaceType::Rtc,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "system".to_string(),
         })
         .await;
@@ -162,6 +174,9 @@ async fn create_git_repository_space_rejects_non_user_owner() {
             owner_subject_id: "group-001".to_string(),
             display_name: "Repositories".to_string(),
             space_type: DriveSpaceType::GitRepository,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "user-001".to_string(),
         })
         .await;
@@ -193,6 +208,9 @@ async fn create_deployment_space_allows_app_owner() {
             owner_subject_id: "app-001".to_string(),
             display_name: "Deployments".to_string(),
             space_type: DriveSpaceType::Deployment,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "user-001".to_string(),
         })
         .await
@@ -224,6 +242,9 @@ async fn delete_space_rejects_user_git_repository_space() {
             owner_subject_id: "user-001".to_string(),
             display_name: "Git Repositories".to_string(),
             space_type: DriveSpaceType::GitRepository,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "user-001".to_string(),
         })
         .await
@@ -273,6 +294,9 @@ async fn list_spaces_supports_tenant_and_owner_filters() {
             owner_subject_id: "user-001".to_string(),
             display_name: "main".to_string(),
             space_type: DriveSpaceType::Personal,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "user-001".to_string(),
         })
         .await
@@ -285,6 +309,9 @@ async fn list_spaces_supports_tenant_and_owner_filters() {
             owner_subject_id: "user-002".to_string(),
             display_name: "kb".to_string(),
             space_type: DriveSpaceType::KnowledgeBase,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "user-002".to_string(),
         })
         .await
@@ -297,6 +324,9 @@ async fn list_spaces_supports_tenant_and_owner_filters() {
             owner_subject_id: "user-003".to_string(),
             display_name: "other".to_string(),
             space_type: DriveSpaceType::Team,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "user-003".to_string(),
         })
         .await
@@ -347,6 +377,9 @@ async fn space_service_get_update_and_delete_manage_space_lifecycle() {
             owner_subject_id: "user-owner".to_string(),
             display_name: "Lifecycle".to_string(),
             space_type: DriveSpaceType::Team,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "user-owner".to_string(),
         })
         .await
@@ -367,6 +400,12 @@ async fn space_service_get_update_and_delete_manage_space_lifecycle() {
             tenant_id: "tenant-lifecycle".to_string(),
             space_id: "space-lifecycle".to_string(),
             display_name: Some("Lifecycle Updated".to_string()),
+            presentation_icon: None,
+
+            presentation_color: None,
+
+            description: None,
+
             operator_id: "user-admin".to_string(),
         })
         .await
@@ -432,6 +471,9 @@ async fn sql_drive_space_service_exposes_space_operations_without_callers_using_
             owner_subject_id: "sdkwork-knowledgebase:space-uuid-001".to_string(),
             display_name: "Knowledge Space".to_string(),
             space_type: DriveSpaceType::KnowledgeBase,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "user-123".to_string(),
         })
         .await
@@ -486,6 +528,9 @@ async fn space_service_rejects_invalid_owner_and_operator_before_store_write() {
             owner_subject_id: "sdkwork-knowledgebase:space-uuid-001".to_string(),
             display_name: "Knowledge Space".to_string(),
             space_type: DriveSpaceType::KnowledgeBase,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "user-123".to_string(),
         })
         .await
@@ -505,6 +550,9 @@ async fn space_service_rejects_invalid_owner_and_operator_before_store_write() {
             owner_subject_id: "sdkwork-knowledgebase:space-uuid-001".to_string(),
             display_name: "Knowledge Space".to_string(),
             space_type: DriveSpaceType::KnowledgeBase,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: " ".to_string(),
         })
         .await

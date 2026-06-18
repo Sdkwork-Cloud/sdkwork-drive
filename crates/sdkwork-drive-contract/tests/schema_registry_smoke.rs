@@ -221,6 +221,11 @@ fn schema_registry_includes_drive_acl_share_and_change_log_tables() {
         "actor_id",
         "ux_dr_drive_change_log_space_sequence",
         "ix_dr_drive_change_log_tenant_space_created",
+        "dr_drive_domain_outbox",
+        "payload_json",
+        "delivery_status",
+        "attempt_count",
+        "ix_dr_drive_domain_outbox_pending",
     ] {
         assert!(
             doc.contains(required),

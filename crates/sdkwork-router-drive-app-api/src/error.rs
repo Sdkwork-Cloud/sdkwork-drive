@@ -87,6 +87,33 @@ pub(crate) fn is_unique_constraint_error(error: &sqlx::Error) -> bool {
         || message.contains("duplicate key value violates unique constraint")
 }
 
+pub(crate) fn unique_node_insert_conflict_target(error: &sqlx::Error) -> &'static str {
+    if !is_unique_constraint_error(error) {
+        return "unknown";
+    }
+
+    let message = error.to_string();
+    if message.contains("dr_drive_node_pkey")
+        || message.contains("ux_dr_drive_node_pkey")
+        || (message.contains("UNIQUE constraint failed: dr_drive_node.id")
+            || message.contains("unique constraint \"dr_drive_node_pkey\""))
+    {
+        return "id";
+    }
+
+    if message.contains("ux_dr_drive_node_root_name_live")
+        || message.contains("ux_dr_drive_node_child_name_live")
+    {
+        return "name";
+    }
+
+    if message.contains("parent_node_id") || message.contains("node_name") {
+        return "name";
+    }
+
+    "unknown"
+}
+
 pub(crate) fn not_found_problem(detail: impl Into<String>) -> (StatusCode, Json<ProblemDetail>) {
     problem(
         StatusCode::NOT_FOUND,

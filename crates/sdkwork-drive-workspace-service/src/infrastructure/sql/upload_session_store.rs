@@ -3,6 +3,7 @@ use sqlx::AnyPool;
 use sqlx::Row;
 
 use crate::domain::upload::{DriveUploadSession, DriveUploadSessionState};
+use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::ports::upload_session_store::{DriveUploadSessionStore, NewDriveUploadSession};
 use crate::DriveServiceError;
 
@@ -103,7 +104,7 @@ impl DriveUploadSessionStore for SqlUploadSessionStore {
 
         if let Err(error) = result {
             let message = error.to_string();
-            if message.contains("UNIQUE constraint failed") {
+            if is_unique_constraint_violation(&message) {
                 return Err(DriveServiceError::Conflict(
                     "upload session idempotency key already exists".to_string(),
                 ));

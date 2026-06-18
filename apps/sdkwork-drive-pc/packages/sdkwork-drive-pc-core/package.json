@@ -19,7 +19,6 @@
     }
   },
   "dependencies": {
-    "@sdkwork/drive-admin-storage-sdk": "workspace:*",
     "@sdkwork/drive-app-sdk": "workspace:*",
     "sdkwork-drive-pc-types": "workspace:*"
   },

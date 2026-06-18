@@ -90,7 +90,7 @@ export function StorageProviderDiagnosticsPanel({
             <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
               Provider health: {HEALTH_STATUS_CONFIG[provider.healthStatus ?? 'unknown'].label}
             </div>
-            <div className="text-[11px] text-neutral-500 dark:text-neutral-400">
+            <div className="font-mono text-[11px] leading-relaxed break-all text-neutral-500 dark:text-neutral-400">
               {provider.endpointUrl} · {provider.bucket}
             </div>
           </div>

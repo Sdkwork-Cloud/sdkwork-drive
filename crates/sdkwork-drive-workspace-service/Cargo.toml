@@ -4,15 +4,23 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-sdkwork-database-config = { path = "../../../sdkwork-pool/crates/sdkwork-database-config" }
-sdkwork-database-sqlx = { path = "../../../sdkwork-pool/crates/sdkwork-database-sqlx" }
+sdkwork-database-config.workspace = true
+sdkwork-database-sqlx.workspace = true
+sdkwork-database-repository.workspace = true
+sdkwork-id-core.workspace = true
 async-trait.workspace = true
 sdkwork-drive-config.workspace = true
+sdkwork-drive-observability.workspace = true
 sdkwork-drive-storage-contract.workspace = true
-sdkwork_platform_id_service.workspace = true
 sqlx.workspace = true
 sha2.workspace = true
 tokio.workspace = true
+tracing.workspace = true
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { version = "0.4", features = ["serde"] }
+reqwest.workspace = true
+uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
 sdkwork-drive-storage-local.workspace = true

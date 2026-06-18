@@ -8,7 +8,7 @@ public class CompletedUploadPart {
     public Integer getPartNo() {
         return this.partNo;
     }
-    
+
     public void setPartNo(Integer partNo) {
         this.partNo = partNo;
     }
@@ -16,7 +16,7 @@ public class CompletedUploadPart {
     public String getEtag() {
         return this.etag;
     }
-    
+
     public void setEtag(String etag) {
         this.etag = etag;
     }

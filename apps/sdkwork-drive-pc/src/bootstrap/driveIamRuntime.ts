@@ -121,6 +121,34 @@ function createDriveGeneratedAppClient({
     tokenManager: tokenManager as never,
   });
 
+  return ensureIamTenantSelectionCompat(client);
+}
+
+function ensureIamTenantSelectionCompat(client: SdkworkAppClient): SdkworkAppClient {
+  const sessions = (client as unknown as {
+    auth?: {
+      sessions?: Record<string, unknown>;
+    };
+  }).auth?.sessions;
+  if (!sessions || sessions.tenantSelection) {
+    return client;
+  }
+
+  const organizationSelection = sessions.organizationSelection as
+    | { create?: (...args: unknown[]) => unknown }
+    | undefined;
+  if (organizationSelection?.create) {
+    sessions.tenantSelection = {
+      create: organizationSelection.create.bind(organizationSelection),
+    };
+    return client;
+  }
+
+  sessions.tenantSelection = {
+    create: async () => {
+      throw new Error('appbase app SDK is missing sessions.tenantSelection.create');
+    },
+  };
   return client;
 }
 

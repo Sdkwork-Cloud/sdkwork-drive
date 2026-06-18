@@ -2,7 +2,7 @@ package com.sdkwork.drive.app.sdk.generated.java.api;
 
 public class ApiPaths {
     public static final String API_PREFIX = "/app/v3/api";
-    
+
     public static String appPath(String path) {
         if (path == null || path.isEmpty()) {
             return API_PREFIX;

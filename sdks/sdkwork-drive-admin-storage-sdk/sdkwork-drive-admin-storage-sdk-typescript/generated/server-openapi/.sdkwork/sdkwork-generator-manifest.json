@@ -6,12 +6,13 @@
     "version": "0.1.0",
     "language": "typescript",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-typescript"
   },
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -43,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "76dae448adcb16b1938c77185a8d8993b2b1221220cec4d87d8f64ca5216ba92"
+      "sha256": "04dc96bdb1d1552729cc703e79721003b1caf63630b815922b70c9833db484e5"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -55,7 +56,7 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "e5f5e7727395984d9bc0a63216fb1f25f4a529ad0408d71eed8857873c63ee12"
+      "sha256": "c4ef702be2c698b8fb25b7e5535e2ee532db423a912550e4e259dd76a65b9eb1"
     },
     {
       "path": "src/api/index.ts",
@@ -71,7 +72,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "a5d424bb008a1bf571016c759a76142c904b87d1aeb592a1bfba2d3b28c5c7ca"
+      "sha256": "719c3d551f5ab851ef22ec9950ade36a8dd34ac62fec209b6ad1e497b354341d"
     },
     {
       "path": "src/http/index.ts",
@@ -155,7 +156,7 @@
     },
     {
       "path": "src/types/set-default-storage-provider-binding-request.ts",
-      "sha256": "f349827b25f15bed492361aeb39e6d9cea1715a6ce921800293c65d26102574b"
+      "sha256": "9362b528faf5c9e50d5a6994f3a33e6dfd9ee5eea6d8ea39bee1bbc2aea64714"
     },
     {
       "path": "src/types/storage-provider-binding-list-response.ts",
@@ -163,7 +164,7 @@
     },
     {
       "path": "src/types/storage-provider-binding.ts",
-      "sha256": "4aed0f58f57c7e3a99aa8c247007c2b7c0da4b9c88a2b57311f37f77306d33b8"
+      "sha256": "862d2c6cea62c8deffdb259a51ee8e5e1a063b3389f1c06b4a10fe321db7a30c"
     },
     {
       "path": "src/types/storage-provider-capabilities.ts",

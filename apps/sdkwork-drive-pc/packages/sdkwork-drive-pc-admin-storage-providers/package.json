@@ -15,6 +15,7 @@
     "test": "vitest run tests"
   },
   "dependencies": {
+    "sdkwork-drive-pc-admin-core": "workspace:*",
     "sdkwork-drive-pc-commons": "workspace:*",
     "sdkwork-drive-pc-core": "workspace:*",
     "react": "^19.0.0",

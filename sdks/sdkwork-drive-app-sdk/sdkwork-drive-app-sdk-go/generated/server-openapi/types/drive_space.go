@@ -8,6 +8,10 @@ type DriveSpace struct {
 	OwnerSubjectId string `json:"ownerSubjectId"`
 	DisplayName string `json:"displayName"`
 	SpaceType string `json:"spaceType"`
+	PresentationIcon string `json:"presentationIcon"`
+	PresentationColor string `json:"presentationColor"`
+	Description string `json:"description"`
 	LifecycleStatus string `json:"lifecycleStatus"`
 	Version int `json:"version"`
+	CreatedBy string `json:"createdBy"`
 }

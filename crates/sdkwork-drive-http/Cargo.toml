@@ -5,8 +5,11 @@ edition.workspace = true
 
 [dependencies]
 axum.workspace = true
+sdkwork-drive-observability.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
+tracing.workspace = true
 uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]

@@ -4,6 +4,7 @@ use crate::mappers::map_node_row;
 use crate::space_repository::validate_space_exists;
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
 use sqlx::AnyPool;
 use std::collections::{BTreeSet, VecDeque};
 
@@ -12,11 +13,11 @@ pub(crate) async fn find_node(
     tenant_id: &str,
     node_id: &str,
 ) -> Result<DriveNodeResponse, (StatusCode, Json<ProblemDetail>)> {
-    let row = sqlx::query(
-        "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, node_type, node_name, scene, source, lifecycle_status, version
+    let row = sqlx::query(&format!(
+        "SELECT {NODE_API_SELECT_COLUMNS}
          FROM dr_drive_node
          WHERE tenant_id=$1 AND id=$2 AND lifecycle_status != 'deleted'",
-    )
+    ))
     .bind(tenant_id)
     .bind(node_id)
     .fetch_optional(pool)
@@ -60,15 +61,14 @@ pub(crate) async fn collect_node_subtree(
             ));
         }
 
-        let rows = sqlx::query(
-            "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id,
-                    node_type, node_name, scene, source, lifecycle_status, version
+        let rows = sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
              WHERE tenant_id=$1
                AND parent_node_id=$2
                AND lifecycle_status != 'deleted'
              ORDER BY node_type ASC, node_name ASC, id ASC",
-        )
+        ))
         .bind(tenant_id)
         .bind(&parent_id)
         .fetch_all(pool)

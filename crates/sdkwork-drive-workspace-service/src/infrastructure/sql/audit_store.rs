@@ -5,6 +5,7 @@ use sqlx::Row;
 
 use crate::domain::audit::DriveAuditEvent;
 use crate::infrastructure::sql::runtime_id::next_drive_runtime_id;
+use crate::infrastructure::sql::sql_error::normalize_timestamp_text;
 use crate::ports::audit_store::{
     AuditEventPage, DriveAuditStore, ListAuditEventsQuery, NewDriveAuditEvent,
 };
@@ -48,7 +49,8 @@ impl DriveAuditStore for SqlAuditStore {
         })?;
 
         let row = sqlx::query(
-            "SELECT id, tenant_id, action, resource_type, resource_id, operator_id, request_id, trace_id, created_at
+            "SELECT id, tenant_id, action, resource_type, resource_id, operator_id, request_id, trace_id,
+                    CAST(created_at AS TEXT) AS created_at
              FROM dr_drive_audit_event
              WHERE id=$1",
         )
@@ -69,7 +71,8 @@ impl DriveAuditStore for SqlAuditStore {
         let limit = i64::from(query.page_size);
 
         let rows = sqlx::query(
-            "SELECT id, tenant_id, action, resource_type, resource_id, operator_id, request_id, trace_id, created_at
+            "SELECT id, tenant_id, action, resource_type, resource_id, operator_id, request_id, trace_id,
+                    CAST(created_at AS TEXT) AS created_at
              FROM dr_drive_audit_event
              WHERE ($1 IS NULL OR tenant_id = $1)
                AND ($2 IS NULL OR action = $2)
@@ -146,6 +149,6 @@ fn map_row_to_audit_event(row: &AnyRow) -> Result<DriveAuditEvent, DriveServiceE
         operator_id: row.get("operator_id"),
         request_id: row.get("request_id"),
         trace_id: row.get("trace_id"),
-        created_at: row.get("created_at"),
+        created_at: normalize_timestamp_text(row.get("created_at")),
     })
 }

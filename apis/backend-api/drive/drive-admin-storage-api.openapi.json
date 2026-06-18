@@ -27,19 +27,31 @@
         "operationId": "storageProviderBindings.default.get",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "spaceId",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "spaceType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "personal",
+                "team",
+                "knowledge_base",
+                "ai_generated",
+                "git_repository",
+                "deployment",
+                "app_upload",
+                "im",
+                "rtc",
+                "notary"
+              ]
             }
           }
         ],
@@ -228,16 +240,6 @@
         "operationId": "storageProviderBindings.default.delete",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64
-            }
-          },
-          {
             "name": "spaceId",
             "in": "query",
             "required": false,
@@ -245,19 +247,6 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": true,
-            "description": "Drive administration operator subject identifier used for audit events.",
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$",
-              "description": "Drive administration operator subject identifier used for audit events."
             }
           }
         ],
@@ -538,14 +527,6 @@
           {
             "name": "providerId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -1340,19 +1321,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": true,
-            "description": "Drive administration operator subject identifier used for audit events.",
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$",
-              "description": "Drive administration operator subject identifier used for audit events."
-            }
           }
         ],
         "responses": {
@@ -1448,19 +1416,6 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": true,
-            "description": "Drive administration operator subject identifier used for audit events.",
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$",
-              "description": "Drive administration operator subject identifier used for audit events."
             }
           }
         ],
@@ -1814,19 +1769,6 @@
               "description": "Drive object key. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments."
             },
             "description": "Drive object key path tail. The runtime accepts slash-separated tail paths such as objects/file.bin and URL-encoded keys where / is encoded as %2F. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments."
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": true,
-            "description": "Drive administration operator subject identifier used for audit events.",
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$",
-              "description": "Drive administration operator subject identifier used for audit events."
-            }
           }
         ],
         "responses": {
@@ -2109,16 +2051,6 @@
         "operationId": "storageProviderBindings.list",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64
-            }
-          },
-          {
             "name": "spaceId",
             "in": "query",
             "required": false,
@@ -2240,14 +2172,12 @@
             "type": "string",
             "enum": [
               "tenant",
-              "space"
+              "space",
+              "space_type"
             ]
           },
           "purpose": {
-            "type": "string",
-            "enum": [
-              "primary"
-            ]
+            "type": "string"
           },
           "lifecycleStatus": {
             "type": "string"
@@ -2306,21 +2236,28 @@
       "SetDefaultStorageProviderBindingRequest": {
         "type": "object",
         "required": [
-          "tenantId",
-          "providerId",
-          "operatorId"
+          "providerId"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "spaceId": {
             "type": "string"
           },
-          "providerId": {
-            "type": "string"
+          "spaceType": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "team",
+              "knowledge_base",
+              "ai_generated",
+              "git_repository",
+              "deployment",
+              "app_upload",
+              "im",
+              "rtc",
+              "notary"
+            ]
           },
-          "operatorId": {
+          "providerId": {
             "type": "string"
           },
           "storageRootPrefix": {
@@ -2353,8 +2290,7 @@
           "providerKind",
           "name",
           "endpointUrl",
-          "bucket",
-          "operatorId"
+          "bucket"
         ],
         "properties": {
           "id": {
@@ -2402,9 +2338,6 @@
             "type": "string"
           },
           "status": {
-            "type": "string"
-          },
-          "operatorId": {
             "type": "string"
           },
           "strictTls": {
@@ -2490,9 +2423,7 @@
       },
       "UpdateStorageProviderRequest": {
         "type": "object",
-        "required": [
-          "operatorId"
-        ],
+        "required": [],
         "properties": {
           "name": {
             "type": "string"
@@ -2525,9 +2456,6 @@
           "status": {
             "type": "string"
           },
-          "operatorId": {
-            "type": "string"
-          },
           "strictTls": {
             "type": "boolean",
             "description": "Provider-level TLS policy. HTTPS endpoints default to true, private HTTP endpoints default to false, and true requires an HTTPS endpoint."
@@ -2547,14 +2475,8 @@
       },
       "OperatorRequest": {
         "type": "object",
-        "required": [
-          "operatorId"
-        ],
-        "properties": {
-          "operatorId": {
-            "type": "string"
-          }
-        }
+        "required": [],
+        "properties": {}
       },
       "StorageProviderCapabilities": {
         "type": "object",
@@ -2612,8 +2534,7 @@
       "RotateStorageProviderCredentialRequest": {
         "type": "object",
         "required": [
-          "credentialRef",
-          "operatorId"
+          "credentialRef"
         ],
         "properties": {
           "credentialRef": {
@@ -2622,22 +2543,13 @@
             "maxLength": 255,
             "pattern": "^(plain|env|secret|kms|vault):.+$",
             "description": "Drive storage credential reference. Supported forms: plain:<accessKeyId>:<secretAccessKey>[:<sessionToken>], env:<accessKeyEnv>:<secretKeyEnv>[:<sessionTokenEnv>], secret:<ref>, kms:<ref>, or vault:<ref>. secret/kms/vault refs are materialized at runtime from SDKWORK_DRIVE_STORAGE_CREDENTIAL__<sanitized_ref>__ACCESS_KEY_ID, __SECRET_ACCESS_KEY, and optional __SESSION_TOKEN environment variables."
-          },
-          "operatorId": {
-            "type": "string"
           }
         }
       },
       "TestStorageProviderRequest": {
         "type": "object",
-        "required": [
-          "operatorId"
-        ],
-        "properties": {
-          "operatorId": {
-            "type": "string"
-          }
-        }
+        "required": [],
+        "properties": {}
       },
       "TestStorageProviderResponse": {
         "type": "object",
@@ -2807,8 +2719,7 @@
         "type": "object",
         "required": [
           "sourceObjectKey",
-          "destinationObjectKey",
-          "operatorId"
+          "destinationObjectKey"
         ],
         "properties": {
           "sourceObjectKey": {
@@ -2838,13 +2749,6 @@
               "COPY",
               "REPLACE"
             ]
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$",
-            "description": "Drive administration operator subject identifier used for audit events."
           }
         },
         "additionalProperties": false

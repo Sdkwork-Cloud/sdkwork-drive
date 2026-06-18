@@ -7,8 +7,9 @@ use crate::error::{map_service_error, not_found_binding_problem, ProblemDetail};
 use crate::mappers::map_storage_provider;
 use crate::state::BackendState;
 use crate::validators::{
-    default_storage_provider_binding_id, normalize_optional_text, normalize_storage_root_prefix,
-    require_tenant_id,
+    default_storage_provider_binding_id, normalize_storage_root_prefix, require_tenant_id,
+    resolve_storage_provider_binding_target, storage_provider_binding_purpose,
+    storage_provider_binding_scope, StorageProviderBindingTarget,
 };
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -25,8 +26,8 @@ pub(crate) async fn get_default_storage_provider_binding(
     Query(query): Query<DefaultStorageProviderBindingQuery>,
 ) -> Result<Json<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = require_tenant_id(query.tenant_id).map_err(map_service_error)?;
-    let space_id = normalize_optional_text(query.space_id);
-    let binding = find_default_storage_provider_binding(&state, &tenant_id, space_id.as_deref())
+    let target = resolve_storage_provider_binding_target(query.space_id, query.space_type)?;
+    let binding = find_storage_provider_binding(&state, &tenant_id, &target)
         .await?
         .ok_or_else(not_found_binding_problem)?;
     Ok(Json(binding))
@@ -53,18 +54,12 @@ pub(crate) async fn set_default_storage_provider_binding(
             "operator_id is required".to_string(),
         )));
     }
-    let space_id = normalize_optional_text(payload.space_id);
-    let storage_root_prefix = normalize_storage_root_prefix(
-        payload.storage_root_prefix,
-        &tenant_id,
-        space_id.as_deref(),
-    )?;
-    let binding_scope = if space_id.is_some() {
-        "space"
-    } else {
-        "tenant"
-    };
-    let binding_id = default_storage_provider_binding_id(&tenant_id, space_id.as_deref());
+    let target = resolve_storage_provider_binding_target(payload.space_id, payload.space_type)?;
+    let storage_root_prefix =
+        normalize_storage_root_prefix(payload.storage_root_prefix, &tenant_id, &target)?;
+    let binding_scope = storage_provider_binding_scope(&target);
+    let purpose = storage_provider_binding_purpose(&target);
+    let binding_id = default_storage_provider_binding_id(&tenant_id, &target);
 
     let service =
         DriveStorageProviderService::new(SqlStorageProviderStore::new(state.pool.clone()));
@@ -79,18 +74,23 @@ pub(crate) async fn set_default_storage_provider_binding(
             "default storage provider must be active".to_string(),
         )));
     }
-    if let Some(space_id_value) = space_id.as_deref() {
-        validate_space_exists(&state, &tenant_id, space_id_value).await?;
+    if let StorageProviderBindingTarget::Space(space_id) = &target {
+        validate_space_exists(&state, &tenant_id, space_id).await?;
     }
 
+    let space_id = match &target {
+        StorageProviderBindingTarget::Space(space_id) => Some(space_id.as_str()),
+        _ => None,
+    };
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider_binding (
             id, tenant_id, space_id, provider_id, binding_scope, purpose,
             storage_root_prefix, lifecycle_status, version, created_by, updated_by
-         ) VALUES ($1, $2, $3, $4, $5, 'primary', $6, 'active', 1, $7, $7)
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', 1, $8, $8)
          ON CONFLICT(id) DO UPDATE SET
             provider_id=excluded.provider_id,
             binding_scope=excluded.binding_scope,
+            purpose=excluded.purpose,
             storage_root_prefix=excluded.storage_root_prefix,
             lifecycle_status='active',
             version=dr_drive_storage_provider_binding.version + 1,
@@ -99,9 +99,10 @@ pub(crate) async fn set_default_storage_provider_binding(
     )
     .bind(&binding_id)
     .bind(&tenant_id)
-    .bind(space_id.as_deref())
+    .bind(space_id)
     .bind(&provider_id)
     .bind(binding_scope)
+    .bind(&purpose)
     .bind(&storage_root_prefix)
     .bind(payload.operator_id.trim())
     .execute(&state.pool)
@@ -112,10 +113,14 @@ pub(crate) async fn set_default_storage_provider_binding(
         )))
     })?;
 
-    let binding = find_default_storage_provider_binding(&state, &tenant_id, space_id.as_deref())
+    let binding = find_storage_provider_binding(&state, &tenant_id, &target)
         .await?
         .ok_or_else(not_found_binding_problem)?;
-    let audit_resource_id = space_id.as_deref().unwrap_or(tenant_id.as_str());
+    let audit_resource_id = match &target {
+        StorageProviderBindingTarget::Tenant => tenant_id.as_str(),
+        StorageProviderBindingTarget::Space(space_id) => space_id,
+        StorageProviderBindingTarget::SpaceType(space_type) => space_type,
+    };
     record_audit_event(
         &state,
         "storage_provider_binding.default_set",
@@ -156,41 +161,25 @@ pub(crate) async fn validate_space_exists(
     Ok(())
 }
 
-pub(crate) async fn find_default_storage_provider_binding(
+async fn find_storage_provider_binding(
     state: &BackendState,
     tenant_id: &str,
-    space_id: Option<&str>,
+    target: &StorageProviderBindingTarget,
 ) -> Result<Option<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let rows = if let Some(space_id_value) = space_id {
-        sqlx::query(
-            "SELECT id, tenant_id, space_id, provider_id, binding_scope, purpose,
-                    storage_root_prefix, lifecycle_status, version
-             FROM dr_drive_storage_provider_binding
-             WHERE tenant_id=$1
-               AND space_id=$2
-               AND purpose='primary'
-               AND lifecycle_status='active'
-             LIMIT 1",
-        )
-        .bind(tenant_id)
-        .bind(space_id_value)
-        .fetch_all(&state.pool)
-        .await
-    } else {
-        sqlx::query(
-            "SELECT id, tenant_id, space_id, provider_id, binding_scope, purpose,
-                    storage_root_prefix, lifecycle_status, version
-             FROM dr_drive_storage_provider_binding
-             WHERE tenant_id=$1
-               AND space_id IS NULL
-               AND purpose='primary'
-               AND lifecycle_status='active'
-             LIMIT 1",
-        )
-        .bind(tenant_id)
-        .fetch_all(&state.pool)
-        .await
-    }
+    let binding_id = default_storage_provider_binding_id(tenant_id, target);
+    let rows = sqlx::query(
+        "SELECT id, tenant_id, space_id, provider_id, binding_scope, purpose,
+                storage_root_prefix, lifecycle_status, version
+         FROM dr_drive_storage_provider_binding
+         WHERE tenant_id=$1
+           AND id=$2
+           AND lifecycle_status='active'
+         LIMIT 1",
+    )
+    .bind(tenant_id)
+    .bind(&binding_id)
+    .fetch_all(&state.pool)
+    .await
     .map_err(|error| {
         map_service_error(DriveServiceError::Internal(format!(
             "find dr_drive_storage_provider_binding failed: {error}"

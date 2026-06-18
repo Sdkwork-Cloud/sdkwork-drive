@@ -1,6 +1,6 @@
 # sdkwork-drive-app-sdk (Go)
 
-Professional Go SDK for SDKWork API.
+Generated SDKWork v3 dual-token transport SDK.
 
 ## Installation
 
@@ -23,13 +23,11 @@ import (
 func main() {
     cfg := sdkhttp.NewDefaultConfig("http://127.0.0.1:18080")
     client := sdkwork-drive-app-sdk-generated-go.NewSdkworkAppClientWithConfig(cfg)
-    client.SetApiKey("your-api-key")
+    client.SetAuthToken("your-auth-token")
+client.SetAccessToken("your-access-token")
     
     // Use the SDK
-    params := map[string]interface{}{
-        "tenantId": "tenantId",
-    }
-    result, err := client.Drive.QuotasSummary(params)
+    result, err := client.Drive.QuotasSummary()
     if err != nil {
         panic(err)
     }
@@ -37,32 +35,13 @@ func main() {
 }
 ```
 
-## Authentication Modes (Mutually Exclusive)
+## Authentication
 
-Choose exactly one mode for the same client instance.
-
-### Mode A: API Key
-
-```go
-cfg := sdkhttp.NewDefaultConfig("http://127.0.0.1:18080")
-client := sdkwork-drive-app-sdk-generated-go.NewSdkworkAppClientWithConfig(cfg)
-client.SetApiKey("your-api-key")
-// Sends: Access-Token: <apiKey>
+```text
+Authorization: Bearer <authToken>
+Access-Token: <accessToken>
 ```
 
-### Mode B: Dual Token
-
-```go
-cfg := sdkhttp.NewDefaultConfig("http://127.0.0.1:18080")
-client := sdkwork-drive-app-sdk-generated-go.NewSdkworkAppClientWithConfig(cfg)
-client.SetAuthToken("your-auth-token")
-client.SetAccessToken("your-access-token")
-// Sends:
-// Authorization: Bearer <authToken>
-// Access-Token: <accessToken>
-```
-
-> Do not call `SetApiKey(...)` together with `SetAuthToken(...)` + `SetAccessToken(...)` on the same client.
 
 ## Configuration (Non-Auth)
 
@@ -81,6 +60,7 @@ client.SetHeader("X-Custom-Header", "value")
 - `client.NodeProperties` - node_properties API
 - `client.Nodes` - nodes API
 - `client.WatchChannels` - watch_channels API
+- `client.Assets` - assets API
 
 ## Usage Examples
 
@@ -88,10 +68,7 @@ client.SetHeader("X-Custom-Header", "value")
 
 ```go
 // GET /app/v3/api/drive/quotas/summary
-params := map[string]interface{}{
-    "tenantId": "tenantId",
-}
-result, err := client.Drive.QuotasSummary(params)
+result, err := client.Drive.QuotasSummary()
 if err != nil {
     panic(err)
 }
@@ -104,9 +81,8 @@ fmt.Println(result)
 // List labels applied to a node
 nodeId := "1"
 params := map[string]interface{}{
-    "tenantId": "tenantId",
     "labelKey": "labelKey",
-    "pageSize": 3,
+    "pageSize": 2,
     "pageToken": "pageToken",
 }
 result, err := client.NodeLabels.List(nodeId, params)
@@ -122,9 +98,8 @@ fmt.Println(result)
 // List node custom properties
 nodeId := "1"
 params := map[string]interface{}{
-    "tenantId": "tenantId",
     "visibility": "private",
-    "pageSize": 3,
+    "pageSize": 2,
     "pageToken": "pageToken",
 }
 result, err := client.NodeProperties.List(nodeId, params)
@@ -140,12 +115,10 @@ fmt.Println(result)
 // Create a shortcut node
 body := sdktypes.CreateShortcutRequest{
     Id: "id",
-    TenantId: "tenantId",
     SpaceId: "spaceId",
     ParentNodeId: "parentNodeId",
     NodeName: "nodeName",
     TargetNodeId: "targetNodeId",
-    OperatorId: "operatorId",
 }
 result, err := client.Nodes.ShortcutsCreate(body)
 if err != nil {
@@ -159,10 +132,9 @@ fmt.Println(result)
 ```go
 // List Drive watch channels
 params := map[string]interface{}{
-    "tenantId": "tenantId",
     "resourceType": "changes",
     "lifecycleStatus": "active",
-    "pageSize": 4,
+    "pageSize": 3,
     "pageToken": "pageToken",
 }
 result, err := client.WatchChannels.List(params)
@@ -172,13 +144,25 @@ if err != nil {
 fmt.Println(result)
 ```
 
+### assets
+
+```go
+// List asset collections
+params := map[string]interface{}{
+    "cursor": "cursor",
+    "pageSize": 2,
+}
+result, err := client.Assets.AssetCollectionsList(params)
+if err != nil {
+    panic(err)
+}
+fmt.Println(result)
+```
+
 ## Error Handling
 
 ```go
-params := map[string]interface{}{
-    "tenantId": "tenantId",
-}
-_, err := client.Drive.QuotasSummary(params)
+_, err := client.Drive.QuotasSummary()
 if err != nil {
     // Handle error
     fmt.Println("Error:", err)
@@ -217,10 +201,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

@@ -2,6 +2,7 @@ pub mod audit_store;
 pub mod maintenance_store;
 pub mod node_store;
 pub mod node_version_store;
+pub mod permission_store;
 pub mod quota_store;
 pub mod space_store;
 pub mod storage_object_store;

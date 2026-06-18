@@ -147,6 +147,21 @@ fn structured_postgres_environment_url_encodes_connection_parts() {
 }
 
 #[test]
+fn cli_database_url_overrides_structured_environment() {
+    let args = vec![
+        "sdkwork-router-drive-app-api".to_string(),
+        "--database-url".to_string(),
+        "sqlite://target/dev/cli.sqlite".to_string(),
+    ];
+    let config =
+        DatabaseConfig::from_env_and_cli_args(&args).expect("cli database url should parse");
+
+    assert_eq!(DatabaseEngine::Sqlite, config.engine());
+    assert_eq!("sqlite://target/dev/cli.sqlite", config.url());
+    assert_eq!(1, config.max_connections());
+}
+
+#[test]
 fn explicit_database_url_overrides_structured_environment() {
     let env = [
         (

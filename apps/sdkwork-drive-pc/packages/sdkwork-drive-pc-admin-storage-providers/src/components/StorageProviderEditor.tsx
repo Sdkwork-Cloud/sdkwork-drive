@@ -1,23 +1,58 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CreateStorageProviderInput, StorageProviderKind, StorageProviderView, UpdateStorageProviderInput } from '../types/storageProviderAdminTypes';
-import { getAllProviderKindMeta, resolveProviderKindMeta, getProviderKindMeta } from '../utils/providerKindConfig';
+import {
+  buildProviderEndpointUrl,
+  getAllProviderKindMeta,
+  getProviderKindMeta,
+  resolveProviderKindMeta,
+} from '../utils/providerKindConfig';
+import { isCredentialRefMasked } from '../utils/credentialRefUtils';
+import { buildProviderIdWithUuid, createProviderUuidSuffix, resolveProviderKindSlug } from '../utils/providerIdUtils';
 import { INPUT_CLASS, SELECT_CLASS, CHECKBOX_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from '../utils/uiPrimitives';
+import { StorageProviderCredentialFields } from './StorageProviderCredentialFields';
+import { FormNoticeBanner } from './FormNoticeBanner';
+import { formatMutationError } from '../utils/mutationError';
 import { useTranslation } from '../hooks/useTranslation';
+
+type ModalNotice = { type: 'success' | 'error'; message: string };
 
 interface StorageProviderEditorProps {
   provider?: StorageProviderView;
-  pending?: boolean;
+  existingProviderIds?: string[];
   onClose: () => void;
-  onCreateProvider: (input: CreateStorageProviderInput) => void;
-  onUpdateProvider: (providerId: string, input: UpdateStorageProviderInput) => void;
-  onRotateCredential: (providerId: string, credentialRef: string) => void;
+  onCreateProvider: (input: CreateStorageProviderInput) => Promise<StorageProviderView>;
+  onUpdateProvider: (providerId: string, input: UpdateStorageProviderInput) => Promise<StorageProviderView>;
+  onRotateCredential: (providerId: string, credentialRef: string) => Promise<StorageProviderView>;
+  onProviderSaved?: (provider: StorageProviderView) => void;
 }
 
-function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+function applyKindDefaults(
+  kind: StorageProviderKind,
+  setRegion: (value: string) => void,
+  setEndpointUrl: (value: string) => void,
+  setPathStyle: (value: boolean) => void,
+  setStrictTls: (value: boolean) => void,
+  setSseMode: (value: string) => void,
+  setStorageClass: (value: string) => void,
+) {
+  const hint = getProviderKindMeta(kind);
+  setRegion(hint.regionHint);
+  setEndpointUrl(hint.features.isLocal ? hint.endpointHint : buildProviderEndpointUrl(String(kind), hint.regionHint) ?? hint.endpointHint);
+  setPathStyle(hint.features.isLocal);
+  setStrictTls(!hint.features.isLocal);
+  setSseMode('');
+  setStorageClass('');
 }
 
-export function StorageProviderEditor({ provider, pending, onClose, onCreateProvider, onUpdateProvider, onRotateCredential }: StorageProviderEditorProps) {
+export function StorageProviderEditor({
+  provider,
+  existingProviderIds = [],
+  onClose,
+  onCreateProvider,
+  onUpdateProvider,
+  onRotateCredential,
+  onProviderSaved,
+}: StorageProviderEditorProps) {
   const { t } = useTranslation();
   const isEditing = Boolean(provider);
 
@@ -27,6 +62,7 @@ export function StorageProviderEditor({ provider, pending, onClose, onCreateProv
   const [region, setRegion] = useState('');
   const [bucket, setBucket] = useState('');
   const [endpointUrl, setEndpointUrl] = useState('');
+  const [endpointLocked, setEndpointLocked] = useState(true);
   const [pathStyle, setPathStyle] = useState(false);
   const [credentialRef, setCredentialRef] = useState('');
   const [showCredential, setShowCredential] = useState(false);
@@ -35,25 +71,45 @@ export function StorageProviderEditor({ provider, pending, onClose, onCreateProv
   const [storageClass, setStorageClass] = useState('');
   const [strictTls, setStrictTls] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [providerIdUuid, setProviderIdUuid] = useState(createProviderUuidSuffix);
+  const [submitting, setSubmitting] = useState(false);
+  const [modalNotice, setModalNotice] = useState<ModalNotice | undefined>();
 
   const meta = useMemo(() => resolveProviderKindMeta(providerKind), [providerKind]);
+  const usesStructuredCredentials = meta.features.structuredCredentials && Boolean(meta.credentialFields);
+
+  const existingIdSet = useMemo(() => new Set(existingProviderIds), [existingProviderIds]);
+
+  const kindSlug = useMemo(
+    () => resolveProviderKindSlug(String(providerKind), customKind, meta.shortLabel),
+    [providerKind, customKind, meta.shortLabel],
+  );
 
   const generatedId = useMemo(() => {
-    if (isEditing) return provider?.id ?? '';
-    const kindSlug = providerKind === 'custom' ? slugify(customKind) : slugify(meta.shortLabel);
-    const nameSlug = slugify(name);
-    if (!kindSlug || !nameSlug) return '';
-    return `${kindSlug}-${nameSlug}`;
-  }, [providerKind, customKind, name, meta.shortLabel, isEditing, provider?.id]);
+    if (isEditing) {
+      return provider?.id ?? '';
+    }
+    if (!kindSlug) {
+      return '';
+    }
+    return buildProviderIdWithUuid(kindSlug, providerIdUuid, existingIdSet);
+  }, [isEditing, provider?.id, kindSlug, providerIdUuid, existingIdSet]);
 
   useEffect(() => {
     if (provider) {
       const kind = provider.providerKind as StorageProviderKind;
-      if (kind?.startsWith('custom:')) { setProviderKind('custom'); setCustomKind(kind.substring(7)); } else { setProviderKind(kind ?? 's3_compatible'); setCustomKind(''); }
+      if (kind?.startsWith('custom:')) {
+        setProviderKind('custom');
+        setCustomKind(kind.substring(7));
+      } else {
+        setProviderKind(kind ?? 's3_compatible');
+        setCustomKind('');
+      }
       setName(provider.displayName ?? '');
       setRegion(provider.region ?? '');
       setBucket(provider.bucket ?? '');
       setEndpointUrl(provider.endpointUrl ?? '');
+      setEndpointLocked(false);
       setPathStyle(provider.pathStyle ?? false);
       setCredentialRef(provider.credentialRef ?? '');
       setSseMode(provider.serverSideEncryptionMode ?? '');
@@ -62,28 +118,44 @@ export function StorageProviderEditor({ provider, pending, onClose, onCreateProv
     }
   }, [provider]);
 
+  useEffect(() => {
+    if (!provider) {
+      applyKindDefaults(
+        's3_compatible',
+        setRegion,
+        setEndpointUrl,
+        setPathStyle,
+        setStrictTls,
+        setSseMode,
+        setStorageClass,
+      );
+      setEndpointLocked(true);
+    }
+  }, [provider]);
+
   const handleKindChange = (kind: StorageProviderKind) => {
     setProviderKind(kind);
-    const hint = getProviderKindMeta(kind);
     if (!provider) {
-      setEndpointUrl(hint.endpointHint);
-      setRegion(hint.regionHint);
-      setPathStyle(hint.features.isLocal);
-      setStrictTls(!hint.features.isLocal);
-      setSseMode('');
-      setStorageClass('');
+      setProviderIdUuid(createProviderUuidSuffix());
+      applyKindDefaults(kind, setRegion, setEndpointUrl, setPathStyle, setStrictTls, setSseMode, setStorageClass);
+      setEndpointLocked(true);
+      setCredentialRef('');
     }
   };
 
   const handleRegionChange = (newRegion: string) => {
     setRegion(newRegion);
-    if (!isEditing) {
-      if (meta.value === 'aliyun_oss') setEndpointUrl(`https://oss-${newRegion}.aliyuncs.com`);
-      else if (meta.value === 'tencent_cos') setEndpointUrl(`https://cos.${newRegion}.myqcloud.com`);
-      else if (meta.value === 'huawei_obs') setEndpointUrl(`https://obs.${newRegion}.myhuaweicloud.com`);
-      else if (meta.value === 'volcengine_tos') setEndpointUrl(`https://tos-${newRegion}.volces.com`);
+    if (!isEditing && endpointLocked) {
+      const nextEndpoint = buildProviderEndpointUrl(String(providerKind), newRegion);
+      if (nextEndpoint) {
+        setEndpointUrl(nextEndpoint);
+      }
     }
   };
+
+  const handleCredentialRefChange = useCallback((value: string) => {
+    setCredentialRef(value);
+  }, []);
 
   const validate = (): boolean => {
     const e: Record<string, string> = {};
@@ -91,18 +163,118 @@ export function StorageProviderEditor({ provider, pending, onClose, onCreateProv
     if (!bucket.trim()) e.bucket = t('required');
     if (!meta.features.isLocal && !endpointUrl.trim()) e.endpointUrl = t('required');
     if (providerKind === 'custom' && !customKind.trim()) e.customKind = t('required');
+    if (!isEditing && !generatedId.trim()) {
+      return false;
+    }
+
+    const needsCredential = !isEditing || !provider?.credentialConfigured || !isCredentialRefMasked(credentialRef);
+    if (!meta.features.isLocal && needsCredential && !credentialRef.trim()) {
+      e.credentialRef = t('credentialRequired');
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
+  };
+
+  const applyProviderSnapshot = (next: StorageProviderView) => {
+    const kind = next.providerKind as StorageProviderKind;
+    if (kind?.startsWith('custom:')) {
+      setProviderKind('custom');
+      setCustomKind(kind.substring(7));
+    } else {
+      setProviderKind(kind ?? 's3_compatible');
+      setCustomKind('');
+    }
+    setName(next.displayName ?? '');
+    setRegion(next.region ?? '');
+    setBucket(next.bucket ?? '');
+    setEndpointUrl(next.endpointUrl ?? '');
+    setPathStyle(next.pathStyle ?? false);
+    setCredentialRef(next.credentialRef ?? '');
+    setSseMode(next.serverSideEncryptionMode ?? '');
+    setStorageClass(next.defaultStorageClass ?? '');
+    setStrictTls(next.strictTls ?? true);
+    onProviderSaved?.(next);
+  };
+
+  const runFormAction = async (
+    action: () => Promise<StorageProviderView>,
+    successMessage: string,
+    closeOnSuccess = false,
+  ) => {
+    setSubmitting(true);
+    setModalNotice(undefined);
+    try {
+      const saved = await action();
+      applyProviderSnapshot(saved);
+      setModalNotice({ type: 'success', message: successMessage });
+      if (closeOnSuccess) {
+        window.setTimeout(() => onClose(), 500);
+      }
+    } catch (error) {
+      setModalNotice({
+        type: 'error',
+        message: formatMutationError(error, t('noticeOperationFailed')),
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const doSubmit = () => {
     if (!validate()) return;
     const effectiveKind: StorageProviderKind = providerKind === 'custom' ? `custom:${customKind}` as StorageProviderKind : providerKind;
+    const credentialPayload = credentialRef.trim() ? credentialRef : undefined;
+
     if (provider) {
-      onUpdateProvider(provider.id, { name, endpointUrl: endpointUrl || undefined, region: region || undefined, bucket, pathStyle, credentialRef: credentialRef || undefined, status, serverSideEncryptionMode: sseMode || undefined, defaultStorageClass: storageClass || undefined, strictTls });
-    } else {
-      onCreateProvider({ id: generatedId, providerKind: effectiveKind, name, endpointUrl: endpointUrl || undefined, region: region || undefined, bucket, pathStyle, credentialRef: credentialRef || undefined, status, serverSideEncryptionMode: sseMode || undefined, defaultStorageClass: storageClass || undefined, strictTls });
+      void runFormAction(
+        () => onUpdateProvider(provider.id, {
+          name,
+          endpointUrl: endpointUrl || undefined,
+          region: region || undefined,
+          bucket,
+          pathStyle,
+          credentialRef: credentialPayload,
+          status,
+          serverSideEncryptionMode: sseMode || undefined,
+          defaultStorageClass: storageClass || undefined,
+          strictTls,
+        }),
+        t('noticeUpdated'),
+        true,
+      );
+      return;
     }
+
+    void runFormAction(
+      () => onCreateProvider({
+        id: generatedId,
+        providerKind: effectiveKind,
+        name,
+        endpointUrl: endpointUrl || undefined,
+        region: region || undefined,
+        bucket,
+        pathStyle,
+        credentialRef: credentialPayload,
+        status,
+        serverSideEncryptionMode: sseMode || undefined,
+        defaultStorageClass: storageClass || undefined,
+        strictTls,
+      }),
+      t('noticeCreated'),
+      true,
+    );
+  };
+
+  const handleRotateCredential = () => {
+    if (!provider || !credentialRef.trim() || isCredentialRefMasked(credentialRef)) {
+      setModalNotice({ type: 'error', message: t('credentialRequired') });
+      return;
+    }
+    void runFormAction(
+      () => onRotateCredential(provider.id, credentialRef.trim()),
+      t('noticeRotated'),
+    );
   };
 
   const submit = (e: React.FormEvent) => { e.preventDefault(); doSubmit(); };
@@ -116,8 +288,7 @@ export function StorageProviderEditor({ provider, pending, onClose, onCreateProv
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex h-[90vh] w-full max-w-5xl flex-col rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-neutral-900">
-        {/* Header */}
+      <div className="relative z-10 flex h-[90vh] w-full max-w-6xl flex-col rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-neutral-900">
         <div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4 dark:border-neutral-800">
           <h2 className="text-base font-semibold">{provider ? t('editorEditTitle') : t('editorNewTitle')}</h2>
           <button type="button" className="text-neutral-400 hover:text-neutral-600" onClick={onClose}>
@@ -125,9 +296,7 @@ export function StorageProviderEditor({ provider, pending, onClose, onCreateProv
           </button>
         </div>
 
-        {/* Body: left sidebar + right form */}
         <form onSubmit={submit} className="flex flex-1 overflow-hidden">
-          {/* Left: Provider type list */}
           {!isEditing && (
             <div className="w-64 flex-shrink-0 overflow-y-auto border-r border-neutral-100 bg-neutral-50 px-3 py-3 dark:border-neutral-800 dark:bg-neutral-950">
               <div className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
@@ -153,7 +322,7 @@ export function StorageProviderEditor({ provider, pending, onClose, onCreateProv
                       <div className="min-w-0">
                         <div className="truncate text-xs font-medium">{k.shortLabel}</div>
                         <div className="truncate text-[10px] text-neutral-500 dark:text-neutral-400">
-                          {k.features.isLocal ? 'Local disk' : k.endpointHint.replace('https://', '')}
+                          {k.features.isLocal ? t('localDiskHint') : k.endpointHint.replace('https://', '')}
                         </div>
                       </div>
                     </button>
@@ -163,10 +332,15 @@ export function StorageProviderEditor({ provider, pending, onClose, onCreateProv
             </div>
           )}
 
-          {/* Right: Configuration form */}
           <div className="flex flex-1 flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto px-6 py-5">
-              {/* Provider badge for editing mode */}
+              {modalNotice && (
+                <FormNoticeBanner
+                  type={modalNotice.type}
+                  message={modalNotice.message}
+                  onDismiss={() => setModalNotice(undefined)}
+                />
+              )}
               {isEditing && (
                 <div className="mb-4 flex items-center gap-2.5">
                   <div className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold ${meta.bgClass} ${meta.textClass}`}>{meta.icon}</div>
@@ -177,7 +351,6 @@ export function StorageProviderEditor({ provider, pending, onClose, onCreateProv
                 </div>
               )}
 
-              {/* Custom kind name */}
               {!isEditing && providerKind === 'custom' && (
                 <div className="mb-4">
                   <Field label={t('customKind')} error={errors.customKind}>
@@ -186,77 +359,131 @@ export function StorageProviderEditor({ provider, pending, onClose, onCreateProv
                 </div>
               )}
 
-              {/* Section: Identity */}
               <FormSection title={t('stepConnection')}>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label={t('displayName')} error={errors.name}>
-                    <input value={name} onChange={(e) => setName(e.target.value)} className={INPUT_CLASS} placeholder={t('displayNamePlaceholder')} />
-                  </Field>
-                  <Field label={t('providerId')}>
-                    <input value={isEditing ? (provider?.id ?? '') : generatedId} disabled className={`${INPUT_CLASS} bg-neutral-50 font-mono text-xs dark:bg-neutral-800`} />
-                    {!isEditing && <span className="mt-0.5 text-[10px] text-neutral-400">{t('autoGenerated')}</span>}
-                  </Field>
-                </div>
+                <Field label={t('displayName')} error={errors.name}>
+                  <input value={name} onChange={(e) => setName(e.target.value)} className={INPUT_CLASS} placeholder={t('displayNamePlaceholder')} />
+                </Field>
               </FormSection>
 
-              {/* Section: Connection */}
-              <FormSection title={isLocalFs ? 'Path' : 'Endpoint & Region'}>
+              <FormSection title={isLocalFs ? t('localPathSection') : t('endpointRegionSection')}>
                 {isLocalFs ? (
                   <Field label={t('endpointUrl')} error={errors.endpointUrl}>
-                    <input value={endpointUrl} onChange={(e) => setEndpointUrl(e.target.value)} className={INPUT_CLASS} placeholder="/var/data/drive-storage" />
+                    <input value={endpointUrl} onChange={(e) => setEndpointUrl(e.target.value)} className={`${INPUT_CLASS} font-mono text-xs`} placeholder="/var/data/drive-storage" spellCheck={false} />
                   </Field>
                 ) : (
                   <>
                     {hasRegions && (
-                      <Field label={t('region')}>
-                        <select value={region} onChange={(e) => handleRegionChange(e.target.value)} className={SELECT_CLASS}>
-                          {meta.regions.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                        </select>
-                      </Field>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <Field label={t('region')}>
+                          <select value={region} onChange={(e) => handleRegionChange(e.target.value)} className={SELECT_CLASS}>
+                            {meta.regions.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                          </select>
+                        </Field>
+                      </div>
                     )}
-                    <div className="mt-3">
+                    <div className={hasRegions ? 'mt-3' : ''}>
                       <Field label={t('endpointUrl')} error={errors.endpointUrl}>
-                        <input value={endpointUrl} onChange={(e) => setEndpointUrl(e.target.value)} className={INPUT_CLASS} placeholder={meta.endpointHint} />
-                        {hasRegions && <span className="mt-0.5 text-[10px] text-neutral-400">Auto-filled based on region</span>}
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                          <input
+                            value={endpointUrl}
+                            onChange={(e) => setEndpointUrl(e.target.value)}
+                            readOnly={endpointLocked && hasRegions}
+                            className={`${INPUT_CLASS} min-w-0 flex-1 font-mono text-xs leading-relaxed ${endpointLocked && hasRegions ? 'bg-neutral-50 dark:bg-neutral-800' : ''}`}
+                            placeholder={meta.endpointHint}
+                            spellCheck={false}
+                          />
+                          {hasRegions && (
+                            <button
+                              type="button"
+                              className={`${SECONDARY_BUTTON_CLASS} shrink-0`}
+                              onClick={() => setEndpointLocked(!endpointLocked)}
+                            >
+                              {endpointLocked ? t('endpointOverride') : t('endpointAuto')}
+                            </button>
+                          )}
+                        </div>
+                        {hasRegions && endpointLocked && (
+                          <span className="mt-0.5 text-[10px] text-neutral-400">{t('endpointAutoFilled')}</span>
+                        )}
                       </Field>
                     </div>
                   </>
                 )}
-                <div className="mt-3 grid grid-cols-2 gap-3">
+
+                <div className="mt-3">
                   <Field label={t('bucket')} error={errors.bucket}>
                     <input value={bucket} onChange={(e) => setBucket(e.target.value)} className={INPUT_CLASS} placeholder={t('bucketPlaceholder')} />
+                    {meta.credentialFields?.bucketHint && (
+                      <span className="mt-0.5 text-[10px] text-neutral-400">
+                        {t('bucketNamingHint')}: {meta.credentialFields.bucketHint}
+                      </span>
+                    )}
                   </Field>
-                  {!isLocalFs && (
-                    <Field label={meta.credentialLabel || t('credentialRef')}>
+                </div>
+
+                {!isLocalFs && usesStructuredCredentials && meta.credentialFields && (
+                  <div className="mt-4">
+                    <StorageProviderCredentialFields
+                      credentialFields={meta.credentialFields}
+                      credentialRef={credentialRef}
+                      isEditing={isEditing}
+                      credentialConfigured={provider?.credentialConfigured}
+                      error={errors.credentialRef}
+                      onCredentialRefChange={handleCredentialRefChange}
+                    />
+                  </div>
+                )}
+
+                {!isLocalFs && !usesStructuredCredentials && (
+                  <div className="mt-3">
+                    <Field label={meta.credentialLabel || t('credentialRef')} error={errors.credentialRef}>
                       <div className="relative">
-                        <input value={credentialRef} onChange={(e) => setCredentialRef(e.target.value)} type={showCredential ? 'text' : 'password'} className={`${INPUT_CLASS} pr-9`} placeholder={meta.credentialHint} />
+                        <input
+                          value={credentialRef}
+                          onChange={(e) => setCredentialRef(e.target.value)}
+                          type={showCredential ? 'text' : 'password'}
+                          className={`${INPUT_CLASS} pr-9 font-mono text-xs`}
+                          placeholder={meta.credentialHint}
+                        />
                         <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600" onClick={() => setShowCredential(!showCredential)}>
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={showCredential ? 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242' : 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'} /></svg>
                         </button>
                       </div>
+                      <span className="mt-0.5 text-[10px] text-neutral-400">{t('credentialFormats')}</span>
                     </Field>
-                  )}
-                </div>
+                  </div>
+                )}
+
                 {!isLocalFs && (
                   <div className="mt-3 flex flex-wrap gap-4">
-                    {meta.features.hasPathStyle && <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-300"><input type="checkbox" className={CHECKBOX_CLASS} checked={pathStyle} onChange={(e) => setPathStyle(e.target.checked)} />{t('pathStyle')}</label>}
-                    <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-300"><input type="checkbox" className={CHECKBOX_CLASS} checked={strictTls} onChange={(e) => setStrictTls(e.target.checked)} />{t('strictTls')}</label>
+                    {meta.features.hasPathStyle && (
+                      <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-300">
+                        <input type="checkbox" className={CHECKBOX_CLASS} checked={pathStyle} onChange={(e) => setPathStyle(e.target.checked)} />
+                        {t('pathStyle')}
+                      </label>
+                    )}
+                    <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-300">
+                      <input type="checkbox" className={CHECKBOX_CLASS} checked={strictTls} onChange={(e) => setStrictTls(e.target.checked)} />
+                      {t('strictTls')}
+                    </label>
                   </div>
                 )}
               </FormSection>
 
-              {/* Section: Advanced */}
               {(sseModes.length > 0 || storageClasses.length > 0) && (
                 <FormSection title={t('stepAdvanced')}>
                   <div className="grid grid-cols-2 gap-3">
                     {sseModes.length > 0 && <Field label={t('sseMode')}><select value={sseMode} onChange={(e) => setSseMode(e.target.value)} className={SELECT_CLASS}><option value="">{t('none')}</option>{sseModes.map((m) => <option key={m} value={m}>{m}</option>)}</select></Field>}
                     {storageClasses.length > 0 && <Field label={t('defaultStorageClass')}><select value={storageClass} onChange={(e) => setStorageClass(e.target.value)} className={SELECT_CLASS}><option value="">{t('providerDefault')}</option>{storageClasses.map((c) => <option key={c} value={c}>{c}</option>)}</select></Field>}
                   </div>
-                  {isEditing && credentialRef && (
+                  {isEditing && usesStructuredCredentials && credentialRef && !isCredentialRefMasked(credentialRef) && (
                     <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
                       <div className="flex items-center justify-between">
-                        <div><div className="text-xs font-semibold text-amber-800 dark:text-amber-200">{t('credentialRotation')}</div><div className="mt-0.5 text-[11px] text-amber-600 dark:text-amber-400">{t('credentialRotationDesc')}</div></div>
-                        <button type="button" className="rounded-md border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100" disabled={pending} onClick={() => onRotateCredential(provider!.id, credentialRef)}>{t('rotateRef')}</button>
+                        <div>
+                          <div className="text-xs font-semibold text-amber-800 dark:text-amber-200">{t('credentialRotation')}</div>
+                          <div className="mt-0.5 text-[11px] text-amber-600 dark:text-amber-400">{t('credentialRotationDesc')}</div>
+                        </div>
+                        <button type="button" className="rounded-md border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100" disabled={submitting} onClick={handleRotateCredential}>{t('rotateRef')}</button>
                       </div>
                     </div>
                   )}
@@ -264,17 +491,15 @@ export function StorageProviderEditor({ provider, pending, onClose, onCreateProv
               )}
             </div>
 
-            {/* Footer */}
             <div className="flex items-center justify-between border-t border-neutral-100 px-6 py-3 dark:border-neutral-800">
               <div className="flex items-center gap-2">
                 <div className={`flex h-6 w-6 items-center justify-center rounded text-[9px] font-bold ${meta.bgClass} ${meta.textClass}`}>{meta.icon}</div>
                 <span className="text-xs text-neutral-500">{meta.label}</span>
-                {generatedId && <span className="font-mono text-[10px] text-neutral-400">· {generatedId}</span>}
               </div>
               <div className="flex gap-2">
                 <button type="button" className={SECONDARY_BUTTON_CLASS} onClick={onClose}>{t('cancel')}</button>
-                <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={pending} onClick={doSubmit}>
-                  {pending ? t('saving') : provider ? t('save') : t('create')}
+                <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={submitting} onClick={doSubmit}>
+                  {submitting ? t('saving') : provider ? t('save') : t('create')}
                 </button>
               </div>
             </div>

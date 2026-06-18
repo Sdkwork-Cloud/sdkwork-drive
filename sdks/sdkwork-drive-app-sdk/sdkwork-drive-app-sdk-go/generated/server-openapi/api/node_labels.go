@@ -18,9 +18,8 @@ func NewNodeLabelsApi(client *sdkhttp.Client) *NodeLabelsApi {
 }
 
 // List labels applied to a node
-func (a *NodeLabelsApi) List(nodeId string, tenantId string, labelKey *string, pageSize *int, pageToken *string) (sdktypes.NodeLabelListResponse, error) {
+func (a *NodeLabelsApi) List(nodeId string, labelKey *string, pageSize *int, pageToken *string) (sdktypes.NodeLabelListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "labelKey", Value: func() interface{} { if labelKey == nil { return nil }; return *labelKey }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageToken", Value: func() interface{} { if pageToken == nil { return nil }; return *pageToken }(), Style: "form", Explode: true, AllowReserved: false},
@@ -44,12 +43,8 @@ func (a *NodeLabelsApi) Apply(nodeId string, labelId string, body sdktypes.Apply
 }
 
 // Remove a label from a node
-func (a *NodeLabelsApi) Remove(nodeId string, labelId string, tenantId string, operatorId *string) (sdktypes.RemoveNodeLabelResponse, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
-        {Name: "operatorId", Value: func() interface{} { if operatorId == nil { return nil }; return *operatorId }(), Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Delete(AppendQueryString(AppApiPath(fmt.Sprintf("/drive/nodes/%s/labels/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}), SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), query), nil, nil)
+func (a *NodeLabelsApi) Remove(nodeId string, labelId string) (sdktypes.RemoveNodeLabelResponse, error) {
+    raw, err := a.client.Delete(AppApiPath(fmt.Sprintf("/drive/nodes/%s/labels/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}), SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
         var zero sdktypes.RemoveNodeLabelResponse
         return zero, err

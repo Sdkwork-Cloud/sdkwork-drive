@@ -1,11 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Search,
-  FolderPlus,
-  ChevronRight,
-  Grid,
-  LayoutList,
-  Plus,
   X,
   AlertCircle,
   CheckCircle2,
@@ -19,21 +13,32 @@ import {
   applyDownloadGrantToJob,
   applyTransferFailure,
   applyUploadCompletionToJob,
+  applyUploadProgressToJob,
   canCreateDriveFolderInSection,
   canUploadDriveFileToSection,
   createDownloadJobForFiles,
   createUploadJobForFile,
+  createUploadJobForNativeFile,
   isCompletedTransferStatus,
+  resolveTransferOpenUrl,
+  decodeLocalFilesystemId,
   type DriveFile,
 } from "sdkwork-drive-pc-types";
 import type { DriveFileService } from "sdkwork-drive-pc-core";
+import { NativeLocalUploadFile, useDriveRuntime } from "sdkwork-drive-pc-core";
 import type { DriveSection } from "../pages/DrivePage";
-import { Breadcrumbs } from "./Breadcrumbs";
 import { DownloadManager, type DownloadJob } from "./DownloadManager";
+import { FileBrowserHeader } from "./FileBrowserHeader";
 import { FileDetailModal } from "./FileDetailModal";
 import { Info, Star, Download, Trash2, CheckSquare } from "lucide-react";
 import { useTranslation } from "sdkwork-drive-pc-commons";
 import { createLatestRequestGuard } from "./fileBrowserLoadGuard";
+import {
+  FILE_LIST_COL_ACTIONS_CLASS,
+  FILE_LIST_HEADER_CLASS,
+  FILE_LIST_ROW_CLASS,
+} from "../utils/fileListLayout";
+import { formatDriveFileTypeLabel, getDriveFileTypeSortKey } from "../utils/fileTypeLabel";
 
 // Import newly refactored sub-components
 import { FolderModal } from "./FolderModal";
@@ -52,6 +57,39 @@ function isDriveUploadAbortError(err: unknown): boolean {
 
 function isDriveDownloadAbortError(err: unknown): boolean {
   return isDriveUploadAbortError(err);
+}
+
+function getSettledBatchMessage(result: PromiseSettledResult<unknown>): string {
+  if (result.status !== "rejected") {
+    return "";
+  }
+  const reason = result.reason;
+  if (reason instanceof Error && reason.message.trim()) {
+    return reason.message;
+  }
+  return "One or more operations failed.";
+}
+
+const MAX_PARALLEL_UPLOADS = 3;
+
+async function runWithConcurrency<T>(
+  items: readonly T[],
+  limit: number,
+  worker: (item: T) => Promise<void>,
+): Promise<void> {
+  if (items.length === 0) {
+    return;
+  }
+
+  let nextIndex = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      await worker(items[currentIndex]!);
+    }
+  });
+  await Promise.all(runners);
 }
 
 interface FileBrowserProps {
@@ -87,16 +125,30 @@ export function FileBrowser({
   const [searchQuery, setSearchQuery] = useState("");
   const [errorState, setErrorState] = useState<string | null>(null);
   const { t } = useTranslation();
+  const { host } = useDriveRuntime();
   const canCreateFolderInActiveSection = canCreateDriveFolderInSection(activeSection);
   const canUploadToActiveSection = canUploadDriveFileToSection(activeSection);
   const latestLoadGuardRef = React.useRef(createLatestRequestGuard());
+  const [isTransferPanelDismissed, setIsTransferPanelDismissed] = useState(false);
+  const knownTransferJobIdsRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (downloadJobs.length === 0) {
+      knownTransferJobIdsRef.current = new Set();
+      setIsTransferPanelDismissed(false);
+      return;
+    }
+
+    const hasNewJob = downloadJobs.some((job) => !knownTransferJobIdsRef.current.has(job.id));
+    knownTransferJobIdsRef.current = new Set(downloadJobs.map((job) => job.id));
+    if (hasNewJob) {
+      setIsTransferPanelDismissed(false);
+    }
+  }, [downloadJobs]);
 
   const getSectionTitle = (sectionKey: string): string => {
     switch (sectionKey) {
       case "my-storage": return t("sidebar.myStorage") || "My Storage";
-      case "kb-engineering": return t("sidebar.kbEngineering") || "Engineering Knowledge Base";
-      case "kb-product": return t("sidebar.kbProduct") || "Product Specs";
-      case "kb-design": return t("sidebar.kbDesign") || "Design System";
       case "recent": return t("sidebar.recent") || "Recent Files";
       case "starred": return t("sidebar.starred") || "Starred Files";
       case "shared": return t("sidebar.sharedWithMe") || "Shared with me";
@@ -104,25 +156,28 @@ export function FileBrowser({
       case "transfer": return t("sidebar.transferCenter") || "Transfer Center";
       case "trash": return t("sidebar.trash") || "Trash";
       default: {
+        const knowledgeBaseSpace = fileService.getKnowledgeBaseSpaces().find((space) => space.id === sectionKey);
+        if (knowledgeBaseSpace) return knowledgeBaseSpace.name;
         const remoteSpace = fileService.getSharedSpaces().find((space) => space.id === sectionKey);
         return remoteSpace?.name || sectionKey;
       }
     }
   };
 
-  // Infinite scroll / pagination states and detectors
-  const [visibleCount, setVisibleCount] = useState(15);
-  const [isPaging, setIsPaging] = useState(false);
+  // Server-driven pagination state
+  const FILE_BROWSER_PAGE_SIZE = 50;
+  const [nextPageToken, setNextPageToken] = useState<string | undefined>(undefined);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [pageDetectorRef, setPageDetectorRef] = useState<HTMLDivElement | null>(
     null,
   );
 
   const [sortBy, setSortBy] = useState<
-    "name" | "owner" | "lastModified" | "size"
+    "name" | "owner" | "lastModified" | "size" | "type"
   >("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  const handleSort = (field: "name" | "owner" | "lastModified" | "size") => {
+  const handleSort = (field: "name" | "owner" | "lastModified" | "size" | "type") => {
     if (sortBy === field) {
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
@@ -157,6 +212,10 @@ export function FileBrowser({
           valA = a.size || 0;
           valB = b.size || 0;
           break;
+        case "type":
+          valA = getDriveFileTypeSortKey(a);
+          valB = getDriveFileTypeSortKey(b);
+          break;
         default:
           return 0;
       }
@@ -168,7 +227,7 @@ export function FileBrowser({
   }, [files, sortBy, sortOrder]);
 
   const renderSortIndicator = (
-    field: "name" | "owner" | "lastModified" | "size",
+    field: "name" | "owner" | "lastModified" | "size" | "type",
   ) => {
     if (sortBy !== field) {
       return (
@@ -193,11 +252,11 @@ export function FileBrowser({
 
   // Subdirectory and detail modal tracking states
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  const [allWorkspaceFiles, setAllWorkspaceFiles] = useState<DriveFile[]>([]);
   const [breadcrumbFiles, setBreadcrumbFiles] = useState<DriveFile[]>([]);
   const currentLoadScope = `${activeSection}\u0000${searchQuery}\u0000${currentFolderId ?? ""}`;
   const loadAbortControllerRef = React.useRef<AbortController | null>(null);
   const fileWriteAbortControllersRef = React.useRef(new Map<string, AbortController>());
+  const createFolderInFlightRef = React.useRef(false);
   const [selectedPreviewFile, setSelectedPreviewFile] = useState<
     (DriveFile & { isStarred?: boolean; color?: string }) | null
   >(null);
@@ -287,22 +346,27 @@ export function FileBrowser({
           });
     });
 
-    Promise.all(deletePromises)
-      .then(() => {
-        triggerToast(
-          isTrashSection
-            ? `Successfully deleted ${selectedCount} items permanently`
-            : `Moved ${selectedCount} items to Trash`,
-          "success",
-        );
+    Promise.allSettled(deletePromises)
+      .then((results) => {
+        const failed = results.filter((result) => result.status === "rejected");
+        const succeededCount = results.length - failed.length;
+        if (failed.length === 0) {
+          triggerToast(
+            isTrashSection
+              ? `Successfully deleted ${selectedCount} items permanently`
+              : `Moved ${selectedCount} items to Trash`,
+            "success",
+          );
+        } else if (succeededCount > 0) {
+          triggerToast(
+            `${succeededCount} succeeded, ${failed.length} failed.`,
+            "info",
+          );
+        } else {
+          triggerToast(getSettledBatchMessage(failed[0]), "err");
+        }
         setSelectedFileIds([]);
         loadFiles();
-      })
-      .catch((err) => {
-        if (isDriveUploadAbortError(err)) {
-          return;
-        }
-        triggerToast(err.message || "Failed to delete selected items", "err");
       })
       .finally(() => {
         releaseFileWriteAbortController("batch-delete", batchDeleteController);
@@ -320,20 +384,25 @@ export function FileBrowser({
       }),
     );
 
-    Promise.all(restorePromises)
-      .then(() => {
-        triggerToast(
-          `Successfully restored ${selectedCount} items`,
-          "success",
-        );
+    Promise.allSettled(restorePromises)
+      .then((results) => {
+        const failed = results.filter((result) => result.status === "rejected");
+        const succeededCount = results.length - failed.length;
+        if (failed.length === 0) {
+          triggerToast(
+            `Successfully restored ${selectedCount} items`,
+            "success",
+          );
+        } else if (succeededCount > 0) {
+          triggerToast(
+            `${succeededCount} restored, ${failed.length} failed.`,
+            "info",
+          );
+        } else {
+          triggerToast(getSettledBatchMessage(failed[0]), "err");
+        }
         setSelectedFileIds([]);
         loadFiles();
-      })
-      .catch((err) => {
-        if (isDriveUploadAbortError(err)) {
-          return;
-        }
-        triggerToast(err.message || "Failed to restore selected items", "err");
       })
       .finally(() => {
         releaseFileWriteAbortController("batch-restore", batchRestoreController);
@@ -359,22 +428,27 @@ export function FileBrowser({
       return Promise.resolve(f.isStarred);
     });
 
-    Promise.all(starPromises)
-      .then(() => {
-        triggerToast(
-          holdsUnstarred
-            ? `Successfully starred ${selectedCount} items`
-            : `Removed star from ${selectedCount} items`,
-          "info",
-        );
+    Promise.allSettled(starPromises)
+      .then((results) => {
+        const failed = results.filter((result) => result.status === "rejected");
+        const succeededCount = results.length - failed.length;
+        if (failed.length === 0) {
+          triggerToast(
+            holdsUnstarred
+              ? `Successfully starred ${selectedCount} items`
+              : `Removed star from ${selectedCount} items`,
+            "info",
+          );
+        } else if (succeededCount > 0) {
+          triggerToast(
+            `${succeededCount} updated, ${failed.length} failed.`,
+            "info",
+          );
+        } else {
+          triggerToast(getSettledBatchMessage(failed[0]), "err");
+        }
         setSelectedFileIds([]);
         loadFiles();
-      })
-      .catch((err) => {
-        if (isDriveUploadAbortError(err)) {
-          return;
-        }
-        triggerToast(err.message || "Failed to update star state", "err");
       })
       .finally(() => {
         releaseFileWriteAbortController("batch-star", batchStarController);
@@ -416,7 +490,10 @@ export function FileBrowser({
           ),
         );
         if (downloadPackage.downloadUrl) {
-          void onOpenDownload?.(downloadPackage.downloadUrl);
+          const openUrl = resolveTransferOpenUrl(downloadPackage);
+          if (openUrl) {
+            void onOpenDownload?.(openUrl);
+          }
         }
       })
       .catch((err) => {
@@ -443,6 +520,121 @@ export function FileBrowser({
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  const queueUploadJobs = (
+    uploadJobs: Array<{
+      source: File | NativeLocalUploadFile;
+      job: DownloadJob;
+    }>,
+    toastLabel: string,
+  ) => {
+    if (uploadJobs.length === 0) {
+      return;
+    }
+
+    let completedUploadCount = 0;
+    let shouldRefreshAfterSettled = false;
+
+    setDownloadJobs((prev) => [
+      ...uploadJobs.map(({ job }) => job),
+      ...prev,
+    ]);
+    triggerToast(toastLabel, "info");
+
+    const uploadTasks = uploadJobs.map(({ source, job: newUploadJob }) => ({
+      source,
+      job: newUploadJob,
+    }));
+
+    void runWithConcurrency(uploadTasks, MAX_PARALLEL_UPLOADS, async ({ source, job: newUploadJob }) => {
+      const uploadController = createUploadAbortController(newUploadJob.id);
+      try {
+        const uploadedFile = await fileService.uploadFile(source, activeSection, currentFolderId, {
+          taskId: newUploadJob.id,
+          signal: uploadController.signal,
+          onProgress: (uploadedBytes, totalBytes) => {
+            setDownloadJobs((prev) =>
+              prev.map((job) =>
+                job.id === newUploadJob.id
+                  ? applyUploadProgressToJob(job, uploadedBytes, totalBytes)
+                  : job,
+              ),
+            );
+          },
+        });
+        completedUploadCount += 1;
+        shouldRefreshAfterSettled = true;
+        setDownloadJobs((prev) =>
+          prev.map((job) =>
+            job.id === newUploadJob.id
+              ? applyUploadCompletionToJob(job, uploadedFile)
+              : job,
+          ),
+        );
+        loadFiles();
+      } catch (err) {
+        if (isDriveUploadAbortError(err)) {
+          return;
+        }
+
+        shouldRefreshAfterSettled = true;
+        setDownloadJobs((prev) =>
+          prev.map((job) =>
+            job.id === newUploadJob.id
+              ? applyTransferFailure(job, err instanceof Error ? err.message : t("fileBrowser.toastUploadFailed"))
+              : job,
+          ),
+        );
+        triggerToast(
+          err instanceof Error ? err.message : t("fileBrowser.toastUploadFailed"),
+          "err",
+        );
+        loadFiles();
+      } finally {
+        releaseUploadAbortController(newUploadJob.id);
+      }
+    }).then(() => {
+      if (shouldRefreshAfterSettled || completedUploadCount > 0) {
+        loadFiles();
+      }
+    });
+  };
+
+  const handleUploadClick = async () => {
+    if (!canUploadDriveFileToSection(activeSection)) {
+      triggerToast("This Drive view does not support uploads.", "err");
+      return;
+    }
+
+    if (host.isNativeHost) {
+      try {
+        const descriptors = await host.pickLocalUploadFiles();
+        if (descriptors.length === 0) {
+          return;
+        }
+        queueUploadJobs(
+          descriptors.map((descriptor) => ({
+            source: new NativeLocalUploadFile(descriptor, host),
+            job: createUploadJobForNativeFile(descriptor, {
+              uploadSection: activeSection,
+              uploadParentId: currentFolderId ?? null,
+            }),
+          })),
+          descriptors.length === 1
+            ? t("fileBrowser.toastFileAdded", { name: descriptors[0].name })
+            : `Added ${descriptors.length} files to active upload transfers`,
+        );
+      } catch (err) {
+        triggerToast(
+          err instanceof Error ? err.message : t("fileBrowser.toastUploadFailed"),
+          "err",
+        );
+      }
+      return;
+    }
+
+    fileInputRef.current?.click();
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
     if (selectedFiles.length === 0) return;
@@ -452,69 +644,23 @@ export function FileBrowser({
       return;
     }
 
-    const uploadJobs = selectedFiles.map((file) => ({
-      file,
-      job: createUploadJobForFile(file),
-    }));
-    let completedUploadCount = 0;
-
-    setDownloadJobs((prev) => [
-      ...uploadJobs.map(({ job }) => job),
-      ...prev,
-    ]);
-    triggerToast(
+    queueUploadJobs(
+      selectedFiles.map((file) => ({
+        source: file,
+        job: createUploadJobForFile(file, {
+          uploadSection: activeSection,
+          uploadParentId: currentFolderId ?? null,
+          uploadBlob: file,
+        }),
+      })),
       selectedFiles.length === 1
         ? t("fileBrowser.toastFileAdded", { name: selectedFiles[0].name })
         : `Added ${selectedFiles.length} files to active upload transfers`,
-      "info",
     );
 
-    const uploadTasks = uploadJobs.map(({ file, job: newUploadJob }) => {
-      const uploadController = createUploadAbortController(newUploadJob.id);
-      return fileService.uploadFile(file, activeSection, currentFolderId, {
-          signal: uploadController.signal,
-        })
-        .then((uploadedFile) => {
-          completedUploadCount += 1;
-          setDownloadJobs((prev) =>
-            prev.map((job) =>
-              job.id === newUploadJob.id
-                ? applyUploadCompletionToJob(job, uploadedFile)
-                : job,
-            ),
-          );
-        })
-        .catch((err) => {
-          if (isDriveUploadAbortError(err)) {
-            return;
-          }
-
-          setDownloadJobs((prev) =>
-            prev.map((job) =>
-              job.id === newUploadJob.id
-                ? applyTransferFailure(job, err?.message || t("fileBrowser.toastUploadFailed"))
-                : job,
-            ),
-          );
-          triggerToast(
-            err?.message || t("fileBrowser.toastUploadFailed"),
-            "err",
-          );
-        })
-        .finally(() => {
-          releaseUploadAbortController(newUploadJob.id);
-        });
-    });
-
-    Promise.allSettled(uploadTasks)
-      .then(() => {
-        if (completedUploadCount > 0) {
-          loadFiles();
-        }
-      })
-      .finally(() => {
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   // Custom Toast System state
@@ -551,15 +697,17 @@ export function FileBrowser({
     const requestId = latestLoadGuardRef.current.begin(currentLoadScope);
     setLoading(true);
     setErrorState(null);
-    fileService.listFiles(activeSection, searchQuery, currentFolderId, {
+    setNextPageToken(undefined);
+    fileService.listFilesPage(activeSection, searchQuery, currentFolderId, {
       signal: loadAbortController.signal,
+      pageSize: FILE_BROWSER_PAGE_SIZE,
     })
-      .then((data) => {
+      .then((page) => {
         if (!latestLoadGuardRef.current.isCurrent(requestId)) {
           return;
         }
-        setFiles(data);
-        setVisibleCount(15); // Reset visibleCount on fetch reload
+        setFiles(page.files);
+        setNextPageToken(page.nextPageToken);
         setLoading(false);
       })
       .catch((err: any) => {
@@ -573,22 +721,6 @@ export function FileBrowser({
           err?.message || "An unexpected Drive service error occurred.",
         );
         setLoading(false);
-      });
-
-    // Load full cached map for Breadcrumb recursive walking
-    fileService.getAllWorkspaceFiles({
-      signal: loadAbortController.signal,
-    })
-      .then((data) => {
-        if (!latestLoadGuardRef.current.isCurrent(requestId)) {
-          return;
-        }
-        setAllWorkspaceFiles(data);
-      })
-      .catch((err: any) => {
-        if (isDriveUploadAbortError(err)) {
-          return;
-        }
       });
 
     if (!currentFolderId) {
@@ -616,6 +748,52 @@ export function FileBrowser({
       });
   };
 
+  const loadMoreFiles = React.useCallback(() => {
+    if (!nextPageToken || loadingMore || loading) {
+      return;
+    }
+
+    const loadAbortController = loadAbortControllerRef.current;
+    if (!loadAbortController) {
+      return;
+    }
+
+    setLoadingMore(true);
+    fileService.listFilesPage(activeSection, searchQuery, currentFolderId, {
+      signal: loadAbortController.signal,
+      pageSize: FILE_BROWSER_PAGE_SIZE,
+      pageToken: nextPageToken,
+    })
+      .then((page) => {
+        setFiles((current) => {
+          const seen = new Set(current.map((file) => file.id));
+          const merged = [...current];
+          for (const file of page.files) {
+            if (!seen.has(file.id)) {
+              merged.push(file);
+            }
+          }
+          return merged;
+        });
+        setNextPageToken(page.nextPageToken);
+        setLoadingMore(false);
+      })
+      .catch((err: unknown) => {
+        if (isDriveUploadAbortError(err)) {
+          return;
+        }
+        setLoadingMore(false);
+      });
+  }, [
+    activeSection,
+    currentFolderId,
+    fileService,
+    loading,
+    loadingMore,
+    nextPageToken,
+    searchQuery,
+  ]);
+
   useEffect(() => {
     latestLoadGuardRef.current.setCurrentScope(currentLoadScope);
     loadFiles();
@@ -625,26 +803,24 @@ export function FileBrowser({
     };
   }, [activeSection, searchQuery, currentFolderId, currentLoadScope]);
 
-  // Intersection Observer for infinite scrolling
+  // Intersection Observer for server-driven infinite scrolling
   useEffect(() => {
-    if (!pageDetectorRef || visibleCount >= sortedFiles.length) return;
+    if (!pageDetectorRef || !nextPageToken || loadingMore) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !isPaging) {
-          setIsPaging(true);
-          setVisibleCount((prev) => Math.min(sortedFiles.length, prev + 15));
-          setIsPaging(false);
+        if (entry.isIntersecting) {
+          loadMoreFiles();
         }
       },
       {
-        rootMargin: "100px", // trigger load early for seamless 60FPS fluid scroll
+        rootMargin: "100px",
       },
     );
 
     observer.observe(pageDetectorRef);
     return () => observer.disconnect();
-  }, [pageDetectorRef, visibleCount, sortedFiles.length, isPaging]);
+  }, [pageDetectorRef, nextPageToken, loadingMore, loadMoreFiles]);
 
   // Close context menu dropdowns on outer clicks
   useEffect(() => {
@@ -689,11 +865,31 @@ export function FileBrowser({
       case "trash":
         return t("sidebar.trash") || "Trash";
       default: {
+        const knowledgeBaseSpace = fileService.getKnowledgeBaseSpaces().find((s) => s.id === sec);
+        if (knowledgeBaseSpace) return knowledgeBaseSpace.name;
         const customSpace = fileService.getSharedSpaces().find((s) => s.id === sec);
         if (customSpace) return customSpace.name;
         return getSectionTitle(sec) || sec;
       }
     }
+  };
+
+  const handlePreviewFile = (
+    file: DriveFile & { isStarred?: boolean; color?: string },
+  ) => {
+    if (activeSection === "computers" && file.type === "file") {
+      const localPath = decodeLocalFilesystemId(file.id);
+      if (localPath) {
+        void host.openLocalPath(localPath).catch((err: unknown) => {
+          triggerToast(
+            err instanceof Error ? err.message : "Failed to open local file",
+            "err",
+          );
+        });
+        return;
+      }
+    }
+    setSelectedPreviewFile(file);
   };
 
   // Star action handler
@@ -813,13 +1009,16 @@ export function FileBrowser({
       });
   };
 
-  // Trigger New Folder Creation
-  const handleCreateFolderSubmit = (folderName: string) => {
+  const runCreateFolder = (folderName: string, onSuccess?: () => void) => {
+    if (createFolderInFlightRef.current) {
+      return;
+    }
     if (!canCreateDriveFolderInSection(activeSection)) {
       triggerToast("This Drive view does not support folder creation.", "err");
       return;
     }
 
+    createFolderInFlightRef.current = true;
     const createFolderController = createFileWriteAbortController("create-folder");
     fileService.createFolder(folderName, activeSection, currentFolderId, {
         signal: createFolderController.signal,
@@ -828,7 +1027,7 @@ export function FileBrowser({
         triggerToast(
           t("fileBrowser.toastCreatedFolder", { name: folder.name }),
         );
-        setIsNewFolderOpen(false);
+        onSuccess?.();
         loadFiles();
       })
       .catch((err) => {
@@ -838,8 +1037,16 @@ export function FileBrowser({
         triggerToast(err.message, "err");
       })
       .finally(() => {
+        createFolderInFlightRef.current = false;
         releaseFileWriteAbortController("create-folder", createFolderController);
       });
+  };
+
+  // Trigger New Folder Creation
+  const handleCreateFolderSubmit = (folderName: string) => {
+    runCreateFolder(folderName, () => {
+      setIsNewFolderOpen(false);
+    });
   };
 
   const handleInlineFolderConfirm = () => {
@@ -856,26 +1063,9 @@ export function FileBrowser({
     }
 
     setIsCreatingFolderInline(false);
-    const createFolderController = createFileWriteAbortController("create-folder");
-    fileService.createFolder(trimmed, activeSection, currentFolderId, {
-        signal: createFolderController.signal,
-      })
-      .then((folder) => {
-        triggerToast(
-          t("fileBrowser.toastCreatedFolder", { name: folder.name }),
-        );
-        setInlineFolderName("");
-        loadFiles();
-      })
-      .catch((err) => {
-        if (isDriveUploadAbortError(err)) {
-          return;
-        }
-        triggerToast(err.message, "err");
-      })
-      .finally(() => {
-        releaseFileWriteAbortController("create-folder", createFolderController);
-      });
+    runCreateFolder(trimmed, () => {
+      setInlineFolderName("");
+    });
   };
 
   const handleInlineFolderCancel = () => {
@@ -898,26 +1088,9 @@ export function FileBrowser({
             setInlineFolderName("");
             return false;
           } else {
-            const createFolderController = createFileWriteAbortController("create-folder");
-            fileService.createFolder(trimmed, activeSection, currentFolderId, {
-                signal: createFolderController.signal,
-              })
-              .then((folder) => {
-                triggerToast(
-                  t("fileBrowser.toastCreatedFolder", { name: folder.name }),
-                );
-                setInlineFolderName("");
-                loadFiles();
-              })
-              .catch((err) => {
-                if (isDriveUploadAbortError(err)) {
-                  return;
-                }
-                triggerToast(err.message || "Error occurred", "err");
-              })
-              .finally(() => {
-                releaseFileWriteAbortController("create-folder", createFolderController);
-              });
+            runCreateFolder(trimmed, () => {
+              setInlineFolderName("");
+            });
             return false;
           }
         }
@@ -1039,7 +1212,10 @@ export function FileBrowser({
           ),
         );
         if (downloadPackage.downloadUrl) {
-          void onOpenDownload?.(downloadPackage.downloadUrl);
+          const openUrl = resolveTransferOpenUrl(downloadPackage);
+          if (openUrl) {
+            void onOpenDownload?.(openUrl);
+          }
         }
       })
       .catch((err) => {
@@ -1071,7 +1247,7 @@ export function FileBrowser({
   };
 
   return (
-    <div className="flex-1 bg-white dark:bg-[#151515] flex flex-col h-full overflow-hidden transition-colors relative">
+    <div className="flex min-h-0 min-w-0 flex-1 bg-white dark:bg-[#151515] flex flex-col h-full overflow-hidden transition-colors relative">
       {/* Toast Alert popup banner */}
       {toast && (
         <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3 rounded-lg shadow-xl border text-sm animate-in fade-in slide-in-from-top-4 duration-300 bg-white dark:bg-[#252525] border-gray-100 dark:border-neutral-800 text-gray-900 dark:text-gray-100">
@@ -1094,142 +1270,30 @@ export function FileBrowser({
         </div>
       )}
 
-      {/* Unified Toolbar Panel Header */}
-      <div className="h-20 border-b border-[#f0f0f0] dark:border-[#222] flex items-center justify-between px-6 shrink-0 bg-white dark:bg-[#151515] transition-colors select-none">
-        {/* Left pane: Breadcrumbs and details */}
-        <div className="flex items-center gap-3.5">
-          <Breadcrumbs
-            currentFolderId={currentFolderId}
-            allFiles={breadcrumbFiles}
-            sectionTitle={getSectionLocalizedTitle(activeSection)}
-            onNavigate={(id) => setCurrentFolderId(id)}
-          />
-          {!loading && !errorState && (
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 transition-all">
-              {files.length}{" "}
-              {files.length === 1
-                ? t("fileBrowser.itemsSingular")
-                : t("fileBrowser.itemsPlural")}
-            </span>
-          )}
-        </div>
-
-        {/* Center pane: Search bar */}
-        <div className="relative w-[340px] xl:w-[420px] mx-4">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={
-              t("fileBrowser.searchPlaceholder") +
-              " " +
-              getSectionLocalizedTitle(activeSection) +
-              "..."
-            }
-            className="w-full bg-[#f4f4f4] dark:bg-[#222] border border-transparent dark:border-[#2a2a2a] rounded-lg py-2 pl-[42px] pr-8 text-[13px] text-gray-800 dark:text-gray-200 focus:bg-white dark:focus:bg-[#1a1a1a] focus:border-blue-500 dark:focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.08)] outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-650"
-          />
-          <Search
-            className="absolute left-[14px] top-[9px] text-[#999] dark:text-[#666]"
-            size={17}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-            >
-              <X size={15} />
-            </button>
-          )}
-        </div>
-
-        {/* Right pane: Mode items & actions */}
-        <div className="flex items-center gap-2.5">
-          {canCreateFolderInActiveSection && (
-            <button
-              onClick={() => {
-                setIsCreatingFolderInline(true);
-                setInlineFolderName("");
-              }}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-[#282828] rounded-lg transition-transform hover:scale-105 cursor-pointer mr-1"
-              title={t("fileBrowser.createFolder")}
-            >
-              <FolderPlus size={19} />
-            </button>
-          )}
-
-          {/* Sort Dropdown Selector */}
-          <div className="relative flex items-center pr-1.5 border-r border-[#e8e8e8] dark:border-[#222] mr-1">
-            <span className="text-[11px] font-bold text-gray-400 mr-2 uppercase tracking-wide">
-              {t("fileBrowser.sortBy")}:
-            </span>
-            <select
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(e) => {
-                const [field, order] = e.target.value.split("-") as [any, any];
-                setSortBy(field);
-                setSortOrder(order);
-              }}
-              className="bg-[#f4f4f4] dark:bg-[#222] text-gray-700 dark:text-gray-300 border border-transparent rounded-lg py-1.5 px-3 pr-7 text-xs font-semibold focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer hover:bg-gray-200 dark:hover:bg-[#2e2e2e] transition-all appearance-none"
-              title={t("fileBrowser.sortBy")}
-            >
-              <option value="name-asc">
-                {t("fileBrowser.sortByName")} (A-Z)
-              </option>
-              <option value="name-desc">
-                {t("fileBrowser.sortByName")} (Z-A)
-              </option>
-              <option value="lastModified-desc">
-                {t("fileBrowser.sortByModified")} (Newest)
-              </option>
-              <option value="lastModified-asc">
-                {t("fileBrowser.sortByModified")} (Oldest)
-              </option>
-              <option value="size-desc">
-                {t("fileBrowser.sortBySize")} (Largest)
-              </option>
-              <option value="size-asc">
-                {t("fileBrowser.sortBySize")} (Smallest)
-              </option>
-              <option value="owner-asc">
-                {t("fileBrowser.sortByOwner")} (A-Z)
-              </option>
-              <option value="owner-desc">
-                {t("fileBrowser.sortByOwner")} (Z-A)
-              </option>
-            </select>
-            <div className="pointer-events-none absolute right-3 text-gray-400">
-              <ArrowUpDown size={10} />
-            </div>
-          </div>
-
-          {/* Grid vs List View Mode Switches */}
-          <div className="flex items-center p-1 bg-[#f4f4f4] dark:bg-[#222] rounded-lg text-gray-500 dark:text-gray-400">
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${viewMode === "list" ? "bg-white dark:bg-[#2d2d2d] shadow-sm text-blue-600 dark:text-blue-400" : "hover:text-gray-900 dark:hover:text-gray-205"}`}
-              title="List layout"
-            >
-              <LayoutList size={16} />
-            </button>
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${viewMode === "grid" ? "bg-white dark:bg-[#2d2d2d] shadow-sm text-blue-600 dark:text-blue-400" : "hover:text-gray-900 dark:hover:text-gray-205"}`}
-              title="Grid layout"
-            >
-              <Grid size={16} />
-            </button>
-          </div>
-
-          {canUploadToActiveSection && (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="ml-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-xs font-semibold tracking-wide shadow-sm cursor-pointer hover:shadow hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
-            >
-              <Plus size={14} className="stroke-[3]" /> {t("sidebar.upload")}
-            </button>
-          )}
-        </div>
-      </div>
+      <FileBrowserHeader
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        sectionTitle={getSectionLocalizedTitle(activeSection)}
+        canCreateFolder={canCreateFolderInActiveSection}
+        canUpload={canUploadToActiveSection}
+        onCreateFolder={() => {
+          setIsCreatingFolderInline(true);
+          setInlineFolderName("");
+        }}
+        onUpload={handleUploadClick}
+        currentFolderId={currentFolderId}
+        breadcrumbFiles={breadcrumbFiles}
+        onNavigateFolder={setCurrentFolderId}
+        itemCount={!loading && !errorState ? files.length : null}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSortChange={(field, order) => {
+          setSortBy(field);
+          setSortOrder(order);
+        }}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
 
       {/* Main Files Work Area */}
       <div className="flex-1 overflow-hidden flex flex-col w-full relative">
@@ -1270,10 +1334,11 @@ export function FileBrowser({
         ) : (
           /* Scrolled files display area */
           <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="sdkwork-drive-file-list-table flex min-h-0 flex-1 flex-col">
             {/* Table layout titles header */}
             {viewMode === "list" &&
               (files.length > 0 || isCreatingFolderInline) && (
-                <div className="grid grid-cols-[40px_1.8fr_1fr_1.2fr_0.8fr_0.1fr] px-2 sm:px-4 py-2 border-b border-[#f3f3f3] dark:border-[#1e1e1e] text-[11px] uppercase tracking-wider text-gray-400 dark:text-[#666] font-semibold bg-[#fafafa] dark:bg-[#121212] select-none transition-colors items-center">
+                <div className={FILE_LIST_HEADER_CLASS}>
                   <div className="flex items-center justify-center">
                     <input
                       type="checkbox"
@@ -1282,56 +1347,67 @@ export function FileBrowser({
                         selectedFileIds.length === sortedFiles.length
                       }
                       onChange={handleSelectAllToggle}
-                      className="w-4 h-4 rounded border-gray-300 dark:border-neutral-700 text-blue-600 bg-white dark:bg-neutral-900 cursor-pointer focus:ring-0"
+                      className="h-4 w-4 cursor-pointer rounded border-gray-300 bg-white text-blue-600 focus:ring-0 dark:border-neutral-700 dark:bg-neutral-900"
                     />
                   </div>
                   <div
-                    className="cursor-pointer group flex items-center gap-1 hover:text-gray-700 dark:hover:text-neutral-300"
+                    className="group flex min-w-0 cursor-pointer items-center gap-1 hover:text-gray-700 dark:hover:text-neutral-300"
                     onClick={() => handleSort("name")}
                   >
                     <span>{t("fileBrowser.name")}</span>
                     {renderSortIndicator("name")}
                   </div>
                   <div
-                    className="cursor-pointer group flex items-center gap-1 hover:text-gray-700 dark:hover:text-neutral-300"
+                    className="group hidden min-w-0 cursor-pointer items-center gap-1 hover:text-gray-700 dark:hover:text-neutral-300 lg:flex"
                     onClick={() => handleSort("owner")}
                   >
                     <span>{t("fileBrowser.owner")}</span>
                     {renderSortIndicator("owner")}
                   </div>
                   <div
-                    className="cursor-pointer group flex items-center gap-1 hover:text-gray-700 dark:hover:text-neutral-300"
-                    onClick={() => handleSort("lastModified")}
-                  >
-                    <span>{t("fileBrowser.lastModified")}</span>
-                    {renderSortIndicator("lastModified")}
-                  </div>
-                  <div
-                    className="cursor-pointer group flex items-center justify-end gap-1 hover:text-gray-700 dark:hover:text-neutral-300 text-right pr-1"
+                    className="group flex cursor-pointer items-center justify-end gap-1 text-right hover:text-gray-700 dark:hover:text-neutral-300"
                     onClick={() => handleSort("size")}
                   >
                     <span>{t("fileBrowser.fileSize")}</span>
                     {renderSortIndicator("size")}
                   </div>
-                  <div></div>
+                  <div
+                    className="group flex min-w-0 cursor-pointer items-center gap-1 hover:text-gray-700 dark:hover:text-neutral-300"
+                    onClick={() => handleSort("type")}
+                  >
+                    <span>{t("fileBrowser.fileType")}</span>
+                    {renderSortIndicator("type")}
+                  </div>
+                  <div
+                    className="group hidden min-w-0 cursor-pointer items-center gap-1 hover:text-gray-700 dark:hover:text-neutral-300 lg:flex"
+                    onClick={() => handleSort("lastModified")}
+                  >
+                    <span>{t("fileBrowser.lastModified")}</span>
+                    {renderSortIndicator("lastModified")}
+                  </div>
+                  <div className="text-right">{t("fileBrowser.actions")}</div>
                 </div>
               )}
 
             {/* Scroller Pane */}
             <div
-              className={`flex-1 overflow-y-auto ${viewMode === "grid" ? "px-4 py-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 content-start" : "px-0 py-1 flex flex-col gap-0.5"}`}
+              className={
+                viewMode === "grid"
+                  ? "sdkwork-drive-file-list-body sdkwork-drive-file-list-body--grid"
+                  : "sdkwork-drive-file-list-body"
+              }
             >
               {isCreatingFolderInline &&
                 (viewMode === "list" ? (
-                  <div className="grid grid-cols-[40px_1.8fr_1fr_1.2fr_0.8fr_0.1fr] items-center py-2 border-b border-blue-200/40 dark:border-blue-800/40 bg-blue-500/[0.04] dark:bg-blue-500/[0.04] px-2 sm:px-4 rounded-lg mb-1.5 select-none inline-folder-container">
+                  <div className={`${FILE_LIST_ROW_CLASS} sdkwork-drive-file-list-row--inline inline-folder-container`}>
                     <div className="flex items-center justify-center">
-                      <div className="w-4 h-4 rounded border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-900 opacity-40" />
+                      <div className="h-4 w-4 rounded border border-gray-200 bg-gray-50 opacity-40 dark:border-neutral-800 dark:bg-neutral-900" />
                     </div>
 
-                    <div className="flex items-center gap-3 ml-1 min-w-0 pr-4">
+                    <div className="sdkwork-drive-file-list-col-name">
                       <FolderOpen
                         size={18}
-                        className="text-blue-500 fill-blue-500/10 shrink-0"
+                        className="shrink-0 fill-blue-500/10 text-blue-500"
                       />
                       <input
                         type="text"
@@ -1348,36 +1424,41 @@ export function FileBrowser({
                         }}
                         onFocus={(e) => e.target.select()}
                         placeholder={t("fileBrowser.newFolder") || "New Folder"}
-                        className="bg-white dark:bg-[#18181b] border border-blue-500 dark:border-blue-400 rounded px-2.5 py-1 text-xs text-neutral-850 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-blue-500/20 w-48 font-medium"
+                        className="w-full min-w-0 max-w-sm rounded border border-blue-500 bg-white px-2.5 py-1 text-xs font-medium text-neutral-850 outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-blue-400 dark:bg-[#18181b] dark:text-neutral-100"
                       />
                     </div>
 
-                    <div className="text-xs text-gray-400 dark:text-neutral-500 font-medium ml-1">
+                    <div className="sdkwork-drive-file-list-col-meta hidden lg:block">
                       {t("fileBrowser.me") || "Me"}
                     </div>
-                    <div className="text-xs text-gray-400 dark:text-neutral-500 font-mono">
+                    <div className="sdkwork-drive-file-list-col-size">--</div>
+                    <div className="sdkwork-drive-file-list-col-meta">
+                      {t("fileBrowser.fileTypeFolder") || "Folder"}
+                    </div>
+                    <div className="sdkwork-drive-file-list-col-meta hidden font-mono lg:block">
                       {t("fileBrowser.justNow") || "Just now"}
                     </div>
-                    <div className="text-xs text-gray-400 dark:text-neutral-500 font-mono text-right pr-2">
-                      --
-                    </div>
-                    <div className="flex items-center justify-end gap-1.5 pr-2">
-                      <button
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={handleInlineFolderConfirm}
-                        className="p-1 hover:bg-emerald-500/15 text-emerald-500 rounded transition-colors cursor-pointer inline-folder-btn"
-                        title={t("fileBrowser.create") || "Create"}
-                      >
-                        <CheckCircle2 size={15} />
-                      </button>
-                      <button
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={handleInlineFolderCancel}
-                        className="p-1 hover:bg-rose-500/15 text-rose-500 rounded transition-colors cursor-pointer inline-folder-btn"
-                        title={t("fileBrowser.cancel") || "Cancel"}
-                      >
-                        <X size={15} />
-                      </button>
+                    <div className={FILE_LIST_COL_ACTIONS_CLASS}>
+                      <div className="sdkwork-drive-file-list-actions">
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={handleInlineFolderConfirm}
+                          className="sdkwork-drive-file-list-actions__btn is-visible text-emerald-500 hover:bg-emerald-500/15 inline-folder-btn"
+                          title={t("fileBrowser.create") || "Create"}
+                        >
+                          <CheckCircle2 size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={handleInlineFolderCancel}
+                          className="sdkwork-drive-file-list-actions__btn is-visible text-rose-500 hover:bg-rose-500/15 inline-folder-btn"
+                          title={t("fileBrowser.cancel") || "Cancel"}
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -1432,7 +1513,7 @@ export function FileBrowser({
                   </div>
                 ))}
 
-              {sortedFiles.slice(0, visibleCount).map((file) => {
+              {sortedFiles.map((file) => {
                 if (viewMode === "list") {
                   return (
                     <FileRowItem
@@ -1443,7 +1524,7 @@ export function FileBrowser({
                       setActiveMenuId={setActiveMenuId}
                       onToggleStar={handleToggleStar}
                       onDownload={handleDownloadClick}
-                      onPreview={setSelectedPreviewFile}
+                      onPreview={handlePreviewFile}
                       onRename={handleRenameClick}
                       onTrashAction={handleTrashAction}
                       onPermanentDelete={handlePermanentDelete}
@@ -1471,7 +1552,7 @@ export function FileBrowser({
                       setActiveMenuId={setActiveMenuId}
                       onToggleStar={handleToggleStar}
                       onDownload={handleDownloadClick}
-                      onPreview={setSelectedPreviewFile}
+                      onPreview={handlePreviewFile}
                       onRename={handleRenameClick}
                       onTrashAction={handleTrashAction}
                       onPermanentDelete={handlePermanentDelete}
@@ -1498,7 +1579,7 @@ export function FileBrowser({
                   className={`mt-4 mb-2 py-6 flex flex-col items-center justify-center gap-2 border-t border-gray-100 dark:border-neutral-800/60 w-full select-none ${viewMode === "grid" ? "col-span-full" : ""}`}
                   ref={setPageDetectorRef}
                 >
-                  {visibleCount < sortedFiles.length ? (
+                  {nextPageToken ? (
                     <div className="flex flex-col items-center gap-2.5 text-gray-400 dark:text-neutral-500 text-xs">
                       <div className="flex items-center gap-2.5">
                         <div className="w-4 h-4 rounded-full border-2 border-blue-500/30 border-t-blue-600 animate-spin" />
@@ -1507,11 +1588,7 @@ export function FileBrowser({
                         </span>
                       </div>
                       <button
-                        onClick={() =>
-                          setVisibleCount((prev) =>
-                            Math.min(sortedFiles.length, prev + 15),
-                          )
-                        }
+                        onClick={loadMoreFiles}
                         className="mt-1 px-3 py-1 text-[11px] font-semibold text-blue-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors cursor-pointer"
                       >
                         {t("fileBrowser.loadMoreBtn")}
@@ -1551,7 +1628,7 @@ export function FileBrowser({
                   </div>
                   {canUploadToActiveSection && (
                       <button
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={handleUploadClick}
                         className="mt-2 px-4.5 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-900/25 rounded-lg transition-all cursor-pointer"
                       >
                         {t("sidebar.upload")}
@@ -1559,6 +1636,7 @@ export function FileBrowser({
                     )}
                 </div>
               )}
+            </div>
             </div>
           </div>
         )}
@@ -1574,7 +1652,7 @@ export function FileBrowser({
 
       {/* Floating Multi-Select Toolbar Container */}
       {selectedFileIds.length > 0 && (
-        <div className="fixed bottom-26 left-1/2 -translate-x-1/2 z-40 bg-[#131315]/95 dark:bg-[#131315]/95 border border-neutral-800 text-white shadow-2xl rounded-2xl py-3.5 px-6 flex items-center gap-6 animate-in slide-in-from-bottom-8 fade-in duration-300 backdrop-blur-md">
+        <div className="fixed bottom-26 left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-3 sm:gap-6 rounded-2xl border border-neutral-800 bg-[#131315]/95 px-4 py-3.5 text-white shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-8 fade-in duration-300 dark:bg-[#131315]/95 sm:px-6">
           <div className="flex items-center gap-2 border-r border-neutral-800 pr-5 select-none">
             <CheckSquare className="text-blue-500 shrink-0" size={17} />
             <span className="text-[13px] font-semibold text-neutral-200">
@@ -1669,17 +1747,25 @@ export function FileBrowser({
       )}
 
       {/* Transfer activity logs drawer */}
-      <DownloadManager
-        jobs={downloadJobs}
-        onOpenDownload={onOpenDownload}
-        onClearJobs={() =>
-          setDownloadJobs((prev) =>
-            prev.filter((job) => !isCompletedTransferStatus(job.status)),
-          )
-        }
-        onCancelJob={onCancelJob}
-        onRetryJob={handleRetryDownloadJob}
-      />
+      {!isTransferPanelDismissed && (
+        <DownloadManager
+          jobs={downloadJobs}
+          onOpenDownload={onOpenDownload}
+          onClearJobs={() =>
+            setDownloadJobs((prev) =>
+              prev.filter(
+                (job) =>
+                  !isCompletedTransferStatus(job.status) &&
+                  job.status !== "failed" &&
+                  job.status !== "cancelled",
+              ),
+            )
+          }
+          onDismissPanel={() => setIsTransferPanelDismissed(true)}
+          onCancelJob={onCancelJob}
+          onRetryJob={handleRetryDownloadJob}
+        />
+      )}
     </div>
   );
 }

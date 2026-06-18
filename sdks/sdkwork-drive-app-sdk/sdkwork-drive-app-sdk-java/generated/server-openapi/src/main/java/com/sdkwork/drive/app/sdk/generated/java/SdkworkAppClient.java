@@ -7,6 +7,7 @@ import com.sdkwork.drive.app.sdk.generated.java.api.NodeLabelsApi;
 import com.sdkwork.drive.app.sdk.generated.java.api.NodePropertiesApi;
 import com.sdkwork.drive.app.sdk.generated.java.api.NodesApi;
 import com.sdkwork.drive.app.sdk.generated.java.api.WatchChannelsApi;
+import com.sdkwork.drive.app.sdk.generated.java.api.AssetsApi;
 
 public class SdkworkAppClient {
     private final HttpClient httpClient;
@@ -15,6 +16,7 @@ public class SdkworkAppClient {
     private NodePropertiesApi nodeProperties;
     private NodesApi nodes;
     private WatchChannelsApi watchChannels;
+    private AssetsApi assets;
 
     public SdkworkAppClient(String baseUrl) {
         this.httpClient = new HttpClient(baseUrl);
@@ -23,6 +25,7 @@ public class SdkworkAppClient {
         this.nodeProperties = new NodePropertiesApi(httpClient);
         this.nodes = new NodesApi(httpClient);
         this.watchChannels = new WatchChannelsApi(httpClient);
+        this.assets = new AssetsApi(httpClient);
     }
 
     public SdkworkAppClient(Types.SdkConfig config) {
@@ -32,6 +35,7 @@ public class SdkworkAppClient {
         this.nodeProperties = new NodePropertiesApi(httpClient);
         this.nodes = new NodesApi(httpClient);
         this.watchChannels = new WatchChannelsApi(httpClient);
+        this.assets = new AssetsApi(httpClient);
     }
 
     public DriveApi getDrive() {
@@ -54,11 +58,9 @@ public class SdkworkAppClient {
         return this.watchChannels;
     }
 
-    public SdkworkAppClient setApiKey(String apiKey) {
-        httpClient.setApiKey(apiKey);
-        return this;
+    public AssetsApi getAssets() {
+        return this.assets;
     }
-
     public SdkworkAppClient setAuthToken(String token) {
         httpClient.setAuthToken(token);
         return this;

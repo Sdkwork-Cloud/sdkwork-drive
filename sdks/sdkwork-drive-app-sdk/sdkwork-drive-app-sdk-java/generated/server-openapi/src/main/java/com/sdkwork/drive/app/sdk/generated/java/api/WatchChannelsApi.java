@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class WatchChannelsApi {
     private final HttpClient client;
-    
+
     public WatchChannelsApi(HttpClient client) {
         this.client = client;
     }
@@ -26,9 +26,8 @@ public class WatchChannelsApi {
     }
 
     /** List Drive watch channels */
-    public DriveWatchChannelListResponse list(String tenantId, String resourceType, String lifecycleStatus, Integer pageSize, String pageToken) throws Exception {
+    public DriveWatchChannelListResponse list(String resourceType, String lifecycleStatus, Integer pageSize, String pageToken) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
             new QueryParameterSpec("resourceType", resourceType, "form", true, false, null),
             new QueryParameterSpec("lifecycleStatus", lifecycleStatus, "form", true, false, null),
             new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
@@ -39,11 +38,8 @@ public class WatchChannelsApi {
     }
 
     /** Get a Drive watch channel */
-    public DriveWatchChannel get(String channelId, String tenantId) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null)
-        ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/watch_channels/" + serializePathParameter(channelId, new PathParameterSpec("channelId", "simple", false)) + ""), query));
+    public DriveWatchChannel get(String channelId) throws Exception {
+        Object raw = client.get(ApiPaths.appPath("/drive/watch_channels/" + serializePathParameter(channelId, new PathParameterSpec("channelId", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<DriveWatchChannel>() {});
     }
 

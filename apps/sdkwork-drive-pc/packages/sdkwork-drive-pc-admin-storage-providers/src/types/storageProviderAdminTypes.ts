@@ -54,6 +54,7 @@ export interface StorageProviderBindingView {
   purpose: string;
   lifecycleStatus: string;
   version: number;
+  storageRootPrefix?: string;
   storageProvider?: StorageProviderView;
 }
 
@@ -99,7 +100,37 @@ export interface ListStorageProvidersInput {
 export interface SetDefaultStorageProviderBindingInput {
   providerId: string;
   spaceId?: string;
+  spaceType?: string;
+  storageRootPrefix?: string;
   signal?: AbortSignal;
+}
+
+export interface StorageProviderBucketListItemView {
+  name: string;
+  configured: boolean;
+  creationDate?: string;
+}
+
+export interface StorageProviderObjectView {
+  key: string;
+  sizeBytes: number;
+  contentType?: string;
+  etag?: string;
+  lastModified?: string;
+  isFolder: boolean;
+}
+
+export interface ListStorageProviderObjectsInput {
+  prefix?: string;
+  pageToken?: string;
+  pageSize?: number;
+  signal?: AbortSignal;
+}
+
+export interface ListStorageProviderObjectsResult {
+  items: StorageProviderObjectView[];
+  nextPageToken?: string;
+  hasMore: boolean;
 }
 
 export interface StorageProviderMutationOptions {

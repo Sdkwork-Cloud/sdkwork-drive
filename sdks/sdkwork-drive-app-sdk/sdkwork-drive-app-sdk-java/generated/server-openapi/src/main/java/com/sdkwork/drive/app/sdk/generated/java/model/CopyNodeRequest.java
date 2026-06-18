@@ -3,32 +3,22 @@ package com.sdkwork.drive.app.sdk.generated.java.model;
 
 public class CopyNodeRequest {
     private String id;
-    private String tenantId;
     private String targetSpaceId;
     private String targetParentNodeId;
     private String nodeName;
-    private String operatorId;
 
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getTenantId() {
-        return this.tenantId;
-    }
-    
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
     }
 
     public String getTargetSpaceId() {
         return this.targetSpaceId;
     }
-    
+
     public void setTargetSpaceId(String targetSpaceId) {
         this.targetSpaceId = targetSpaceId;
     }
@@ -36,7 +26,7 @@ public class CopyNodeRequest {
     public String getTargetParentNodeId() {
         return this.targetParentNodeId;
     }
-    
+
     public void setTargetParentNodeId(String targetParentNodeId) {
         this.targetParentNodeId = targetParentNodeId;
     }
@@ -44,16 +34,8 @@ public class CopyNodeRequest {
     public String getNodeName() {
         return this.nodeName;
     }
-    
+
     public void setNodeName(String nodeName) {
         this.nodeName = nodeName;
-    }
-
-    public String getOperatorId() {
-        return this.operatorId;
-    }
-    
-    public void setOperatorId(String operatorId) {
-        this.operatorId = operatorId;
     }
 }

@@ -509,6 +509,12 @@ pub fn resolve_drive_storage_credentials(
             ));
         }
         if let Some(payload) = trimmed.strip_prefix("plain:") {
+            if !sdkwork_drive_config::allows_plain_credential_refs() {
+                return Err(DriveObjectStoreError::new(
+                    DriveObjectStoreErrorKind::InvalidRequest,
+                    "plain credential_ref is disabled for the current runtime profile",
+                ));
+            }
             return resolve_plain_credential_ref(payload);
         }
         if let Some(payload) = trimmed.strip_prefix("env:") {

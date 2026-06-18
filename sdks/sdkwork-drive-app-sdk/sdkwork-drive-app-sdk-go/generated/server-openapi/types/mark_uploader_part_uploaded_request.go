@@ -2,7 +2,6 @@ package types
 
 
 type MarkUploaderPartUploadedRequest struct {
-	TenantId string `json:"tenantId"`
 	UploadSessionId string `json:"uploadSessionId"`
 	OffsetBytes int `json:"offsetBytes"`
 	SizeBytes int `json:"sizeBytes"`

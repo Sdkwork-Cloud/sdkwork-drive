@@ -15,6 +15,7 @@ interface SystemSidebarProps {
   onSignOut?: () => void | Promise<void>;
   isSettingsOpen?: boolean;
   onOpenSettings?: (tab?: SettingsTab) => void;
+  showAdminNavigation?: boolean;
   runtimeMode?: string;
   appApiBaseUrl?: string;
 }
@@ -26,6 +27,7 @@ export function SystemSidebar({
   onSignOut,
   isSettingsOpen,
   onOpenSettings,
+  showAdminNavigation = false,
 }: SystemSidebarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { t } = useTranslation();
@@ -60,24 +62,28 @@ export function SystemSidebar({
           active={isStorageActive} 
           onClick={() => onSectionChange?.('my-storage')}
         />
-        <SidebarIcon 
-          icon={<Activity size={22} />} 
-          title={t('sidebar.transferCenter')} 
-          active={isTransferActive} 
+        <SidebarIcon
+          icon={<Activity size={22} />}
+          title={t('sidebar.transferCenter')}
+          active={isTransferActive}
           onClick={() => onSectionChange?.('transfer')}
         />
-        <SidebarIcon
-          icon={<ServerCog size={22} />}
-          title="Storage Providers"
-          active={isAdminStorageProvidersActive}
-          onClick={() => onSectionChange?.('admin-storage-providers')}
-        />
-        <SidebarIcon
-          icon={<Link2 size={22} />}
-          title="Storage Bindings"
-          active={isAdminStorageBindingsActive}
-          onClick={() => onSectionChange?.('admin-storage-bindings')}
-        />
+        {showAdminNavigation ? (
+          <>
+            <SidebarIcon
+              icon={<ServerCog size={22} />}
+              title="Storage Providers"
+              active={isAdminStorageProvidersActive}
+              onClick={() => onSectionChange?.('admin-storage-providers')}
+            />
+            <SidebarIcon
+              icon={<Link2 size={22} />}
+              title="Storage Bindings"
+              active={isAdminStorageBindingsActive}
+              onClick={() => onSectionChange?.('admin-storage-bindings')}
+            />
+          </>
+        ) : null}
       </div>
       <div className="flex flex-col gap-5 w-full items-center mt-auto mb-4">
          <SidebarIcon 

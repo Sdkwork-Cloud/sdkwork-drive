@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
     "desktop:build:local": "tauri build --debug"
   },
   "devDependencies": {

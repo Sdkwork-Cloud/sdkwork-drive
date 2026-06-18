@@ -58,6 +58,7 @@ pub(crate) struct RotateStorageProviderCredentialRequest {
 pub(crate) struct DefaultStorageProviderBindingQuery {
     pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
+    pub(crate) space_type: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -65,6 +66,7 @@ pub(crate) struct DefaultStorageProviderBindingQuery {
 pub(crate) struct SetDefaultStorageProviderBindingRequest {
     pub(crate) tenant_id: String,
     pub(crate) space_id: Option<String>,
+    pub(crate) space_type: Option<String>,
     pub(crate) provider_id: String,
     pub(crate) storage_root_prefix: Option<String>,
     pub(crate) operator_id: String,

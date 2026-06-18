@@ -5,6 +5,7 @@ use sqlx::Row;
 
 use crate::domain::node::{DriveNode, DriveNodeType};
 use crate::domain::space::DriveSpaceType;
+use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::ports::node_store::{DriveNodeStore, NewDriveNode};
 use crate::DriveServiceError;
 
@@ -133,7 +134,7 @@ impl DriveNodeStore for SqlNodeStore {
         .await
         .map_err(|error| {
             let message = error.to_string();
-            if message.contains("UNIQUE constraint failed") {
+            if is_unique_constraint_violation(&message) {
                 return DriveServiceError::Conflict(
                     "node name already exists in parent".to_string(),
                 );

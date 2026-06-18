@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   DriveAdminStorageSdkClient,
   DriveAdminStorageSdkRequest,
-} from 'sdkwork-drive-pc-core';
+} from 'sdkwork-drive-pc-admin-core';
 import {
   createStorageProviderAdminService,
   type StorageProviderAdminService,
@@ -73,7 +73,6 @@ function responseFor(request: DriveAdminStorageSdkRequest): unknown {
   if (request.operationId === 'storageProviderBindings.default.set') {
     return {
       id: 'binding-default',
-      tenantId: 'tenant-100',
       providerId: 'provider-s3',
       bindingScope: 'tenant',
       purpose: 'default',
@@ -95,6 +94,25 @@ function responseFor(request: DriveAdminStorageSdkRequest): unknown {
 
   if (request.operationId === 'storageProviders.test') {
     return { reachable: true };
+  }
+
+  if (request.operationId === 'storageProviders.objects.list') {
+    return {
+      providerId: request.pathParams?.providerId ?? 'provider-s3',
+      bucket: 'drive-prod',
+      items: [
+        {
+          providerId: request.pathParams?.providerId ?? 'provider-s3',
+          bucket: 'drive-prod',
+          objectKey: 'docs/readme.txt',
+          contentLength: 2048,
+          contentType: 'text/plain',
+          lastModifiedEpochMs: 1700000000000,
+        },
+      ],
+      prefixes: ['docs/'],
+      nextPageToken: undefined,
+    };
   }
 
   if (request.operationId === 'storageProviders.delete') {
@@ -169,10 +187,32 @@ describe('storage provider admin service', () => {
         pathStyle: false,
         credentialRef: 'secret/aws-s3',
         status: 'active',
-        operatorId: 'operator-100',
       },
     });
     expect(JSON.stringify(lastCall(calls).body)).not.toMatch(/secretAccessKey|accessKeySecret|privateKey/i);
+  });
+
+  it('sets and clears space type bindings through the admin storage SDK', async () => {
+    const { calls, service } = createFakeService();
+
+    await service.setSpaceTypeBinding({ spaceType: 'personal', providerId: 'provider-s3' });
+    await service.deleteSpaceTypeBinding('personal');
+
+    expect(calls.map((call) => call.operationId)).toEqual([
+      'storageProviderBindings.default.set',
+      'storageProviderBindings.default.delete',
+    ]);
+    expect(calls[0]).toMatchObject({
+      body: {
+        providerId: 'provider-s3',
+        spaceType: 'personal',
+      },
+    });
+    expect(calls[1]).toMatchObject({
+      query: {
+        spaceType: 'personal',
+      },
+    });
   });
 
   it('updates, activates, deactivates, tests, deletes, rotates credentials, and sets default bindings', async () => {
@@ -199,24 +239,41 @@ describe('storage provider admin service', () => {
     ]);
     expect(calls[0]).toMatchObject({
       pathParams: { providerId: 'provider-s3' },
-      body: { name: 'AWS Primary', operatorId: 'operator-100' },
+      body: { name: 'AWS Primary' },
     });
     expect(calls[4]).toMatchObject({
       pathParams: { providerId: 'provider-s3' },
-      body: { credentialRef: 'secret/aws-rotated', operatorId: 'operator-100' },
+      body: { credentialRef: 'secret/aws-rotated' },
     });
     expect(calls[5]).toMatchObject({
       body: {
-        tenantId: 'tenant-100',
         providerId: 'provider-s3',
         spaceId: 'space-100',
-        operatorId: 'operator-100',
       },
     });
     expect(calls[6]).toMatchObject({
       pathParams: { providerId: 'provider-s3' },
-      query: { operatorId: 'operator-100' },
     });
+  });
+
+  it('maps provider object list fields from the OpenAPI contract', async () => {
+    const { service } = createFakeService();
+
+    const result = await service.listObjects('provider-s3', { prefix: 'docs/' });
+
+    expect(result.items).toEqual([
+      expect.objectContaining({
+        key: 'docs/',
+        sizeBytes: 0,
+        isFolder: true,
+      }),
+      expect.objectContaining({
+        key: 'docs/readme.txt',
+        sizeBytes: 2048,
+        contentType: 'text/plain',
+        isFolder: false,
+      }),
+    ]);
   });
 
   it('requires tenant and operator context before mutating provider administration', async () => {

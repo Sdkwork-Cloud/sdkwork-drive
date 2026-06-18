@@ -3,11 +3,9 @@ package com.sdkwork.drive.app.sdk.generated.java.model;
 
 public class CreateFileRequest {
     private String id;
-    private String tenantId;
     private String spaceId;
     private String parentNodeId;
     private String nodeName;
-    private String operatorId;
     private String uploadSessionId;
     private String idempotencyKey;
     private Integer expiresAtEpochMs;
@@ -17,23 +15,15 @@ public class CreateFileRequest {
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getTenantId() {
-        return this.tenantId;
-    }
-    
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
     }
 
     public String getSpaceId() {
         return this.spaceId;
     }
-    
+
     public void setSpaceId(String spaceId) {
         this.spaceId = spaceId;
     }
@@ -41,7 +31,7 @@ public class CreateFileRequest {
     public String getParentNodeId() {
         return this.parentNodeId;
     }
-    
+
     public void setParentNodeId(String parentNodeId) {
         this.parentNodeId = parentNodeId;
     }
@@ -49,23 +39,15 @@ public class CreateFileRequest {
     public String getNodeName() {
         return this.nodeName;
     }
-    
+
     public void setNodeName(String nodeName) {
         this.nodeName = nodeName;
-    }
-
-    public String getOperatorId() {
-        return this.operatorId;
-    }
-    
-    public void setOperatorId(String operatorId) {
-        this.operatorId = operatorId;
     }
 
     public String getUploadSessionId() {
         return this.uploadSessionId;
     }
-    
+
     public void setUploadSessionId(String uploadSessionId) {
         this.uploadSessionId = uploadSessionId;
     }
@@ -73,7 +55,7 @@ public class CreateFileRequest {
     public String getIdempotencyKey() {
         return this.idempotencyKey;
     }
-    
+
     public void setIdempotencyKey(String idempotencyKey) {
         this.idempotencyKey = idempotencyKey;
     }
@@ -81,7 +63,7 @@ public class CreateFileRequest {
     public Integer getExpiresAtEpochMs() {
         return this.expiresAtEpochMs;
     }
-    
+
     public void setExpiresAtEpochMs(Integer expiresAtEpochMs) {
         this.expiresAtEpochMs = expiresAtEpochMs;
     }
@@ -89,7 +71,7 @@ public class CreateFileRequest {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -97,7 +79,7 @@ public class CreateFileRequest {
     public String getObjectKey() {
         return this.objectKey;
     }
-    
+
     public void setObjectKey(String objectKey) {
         this.objectKey = objectKey;
     }

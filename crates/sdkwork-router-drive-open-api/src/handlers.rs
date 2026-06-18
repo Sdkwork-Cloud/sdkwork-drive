@@ -25,6 +25,10 @@ pub(crate) async fn health() -> Json<serde_json::Value> {
     Json(json!({ "status": "ok", "service": "sdkwork-router-drive-open-api" }))
 }
 
+pub(crate) async fn metrics() -> impl axum::response::IntoResponse {
+    sdkwork_drive_http::metrics::metrics_handler("sdkwork-router-drive-open-api").await
+}
+
 pub(crate) async fn resolve_share_link(
     State(state): State<OpenState>,
     Path(token): Path<String>,

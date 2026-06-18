@@ -109,6 +109,7 @@ async fn postgres_installer_creates_special_space_profile_tables() {
         "dr_drive_watch_channel",
         "dr_drive_change_cursor",
         "dr_drive_change_log",
+        "dr_drive_domain_outbox",
         "dr_drive_storage_provider",
         "dr_drive_storage_provider_binding",
         "dr_drive_audit_event",
@@ -164,6 +165,7 @@ async fn postgres_installer_creates_special_space_profile_tables() {
         "ux_dr_drive_change_cursor_scope",
         "ux_dr_drive_change_log_space_sequence",
         "ix_dr_drive_change_log_tenant_space_created",
+        "ix_dr_drive_domain_outbox_pending",
         "ix_dr_drive_audit_event_tenant_created",
         "ix_dr_drive_audit_event_resource",
         "ix_dr_drive_audit_event_action_created",
@@ -173,6 +175,7 @@ async fn postgres_installer_creates_special_space_profile_tables() {
         "ix_dr_drive_storage_provider_binding_provider",
         "ux_dr_drive_storage_provider_binding_tenant_primary_active",
         "ux_dr_drive_storage_provider_binding_space_primary_active",
+        "ux_dr_drive_storage_provider_binding_space_type_active",
         "ux_dr_drive_node_version_node_version",
         "ix_dr_drive_node_version_node_latest",
         "ix_dr_drive_node_version_storage_object",
@@ -256,5 +259,33 @@ async fn postgres_installer_creates_special_space_profile_tables() {
             .expect("postgres usage context column lookup should succeed");
             assert!(column_exists, "{table_name} should expose {column_name}");
         }
+    }
+
+    for column_name in [
+        "content_state",
+        "file_extension",
+        "head_content_type",
+        "head_content_type_group",
+        "head_content_length",
+        "head_version_no",
+        "head_checksum_sha256_hex",
+    ] {
+        let column_exists: bool = sqlx::query_scalar(
+            "SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema='public'
+                  AND table_name='dr_drive_node'
+                  AND column_name=$1
+            )",
+        )
+        .bind(column_name)
+        .fetch_one(&pool)
+        .await
+        .expect("postgres dr_drive_node head column lookup should succeed");
+        assert!(
+            column_exists,
+            "dr_drive_node should expose head metadata column: {column_name}"
+        );
     }
 }

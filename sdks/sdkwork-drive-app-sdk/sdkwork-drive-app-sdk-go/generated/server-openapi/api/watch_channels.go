@@ -38,9 +38,8 @@ func (a *WatchChannelsApi) NodesWatch(nodeId string, body sdktypes.CreateWatchCh
 }
 
 // List Drive watch channels
-func (a *WatchChannelsApi) List(tenantId string, resourceType *string, lifecycleStatus *string, pageSize *int, pageToken *string) (sdktypes.DriveWatchChannelListResponse, error) {
+func (a *WatchChannelsApi) List(resourceType *string, lifecycleStatus *string, pageSize *int, pageToken *string) (sdktypes.DriveWatchChannelListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "resourceType", Value: func() interface{} { if resourceType == nil { return nil }; return *resourceType }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "lifecycleStatus", Value: func() interface{} { if lifecycleStatus == nil { return nil }; return *lifecycleStatus }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
@@ -55,11 +54,8 @@ func (a *WatchChannelsApi) List(tenantId string, resourceType *string, lifecycle
 }
 
 // Get a Drive watch channel
-func (a *WatchChannelsApi) Get(channelId string, tenantId string) (sdktypes.DriveWatchChannel, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(AppApiPath(fmt.Sprintf("/drive/watch_channels/%s", SerializePathParameter(channelId, PathParameterSpec{Name: "channelId", Style: "simple", Explode: false}))), query), nil, nil)
+func (a *WatchChannelsApi) Get(channelId string) (sdktypes.DriveWatchChannel, error) {
+    raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/drive/watch_channels/%s", SerializePathParameter(channelId, PathParameterSpec{Name: "channelId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
         var zero sdktypes.DriveWatchChannel
         return zero, err

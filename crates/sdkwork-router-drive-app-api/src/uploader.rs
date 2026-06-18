@@ -1,7 +1,7 @@
+use crate::app_context::DriveRequestContext;
 use crate::dto::{FlexibleI64, PrepareUploaderUploadRequest};
 use crate::error::{validation_problem, ProblemDetail};
 use crate::time::current_epoch_ms;
-use crate::validators::require_non_empty_text;
 use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_workspace_service::application::uploader_service::{
@@ -12,13 +12,15 @@ use sqlx::Row;
 
 pub(crate) fn prepare_uploader_command(
     payload: PrepareUploaderUploadRequest,
+    ctx: &DriveRequestContext,
+    tenant_id: String,
+    operator_id: String,
 ) -> Result<PrepareUploaderUploadCommand, (StatusCode, Json<ProblemDetail>)> {
-    let app_id = require_non_empty_text(payload.app_id, "appId")?;
-    let actor = match payload.user_id {
-        Some(user_id) if !user_id.trim().is_empty() => UploaderActor::User {
-            user_id: user_id.trim().to_string(),
-        },
-        _ => UploaderActor::Anonymous {
+    let app_id = ctx.resolve_app_id(payload.app_id)?;
+    let resolved_user_id = ctx.resolve_uploader_user_id(payload.user_id)?;
+    let actor = match resolved_user_id {
+        Some(user_id) => UploaderActor::User { user_id },
+        None => UploaderActor::Anonymous {
             anonymous_id: payload
                 .anonymous_id
                 .map(|value| value.trim().to_string())
@@ -61,7 +63,7 @@ pub(crate) fn prepare_uploader_command(
     Ok(PrepareUploaderUploadCommand {
         id: payload.id,
         task_id: payload.task_id,
-        tenant_id: payload.tenant_id,
+        tenant_id,
         organization_id: payload.organization_id,
         actor,
         app_id,
@@ -79,7 +81,7 @@ pub(crate) fn prepare_uploader_command(
         chunk_size_bytes: payload.chunk_size_bytes.into_i64(),
         target,
         retention,
-        operator_id: payload.operator_id,
+        operator_id,
         now_epoch_ms: payload
             .now_epoch_ms
             .map(FlexibleI64::into_i64)

@@ -1152,6 +1152,26 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "spaceType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "personal",
+                "team",
+                "knowledge_base",
+                "ai_generated",
+                "git_repository",
+                "deployment",
+                "app_upload",
+                "im",
+                "rtc",
+                "notary"
+              ]
+            }
           }
         ],
         "responses": {
@@ -3733,6 +3753,21 @@
           "spaceId": {
             "type": "string"
           },
+          "spaceType": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "team",
+              "knowledge_base",
+              "ai_generated",
+              "git_repository",
+              "deployment",
+              "app_upload",
+              "im",
+              "rtc",
+              "notary"
+            ]
+          },
           "providerId": {
             "type": "string"
           },
@@ -3853,14 +3888,12 @@
             "type": "string",
             "enum": [
               "tenant",
-              "space"
+              "space",
+              "space_type"
             ]
           },
           "purpose": {
-            "type": "string",
-            "enum": [
-              "primary"
-            ]
+            "type": "string"
           },
           "lifecycleStatus": {
             "type": "string"

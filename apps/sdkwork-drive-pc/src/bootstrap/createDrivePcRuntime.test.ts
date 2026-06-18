@@ -122,6 +122,14 @@ describe('createDrivePcRuntime', () => {
     });
   });
 
+  it('exposes admin storage SDK outside the app SDK runtime surface', () => {
+    const runtime = createDrivePcRuntime();
+
+    expect(runtime.sdk.app).toBeDefined();
+    expect(runtime.admin.adminStorage).toBeDefined();
+    expect('adminStorage' in runtime.sdk).toBe(false);
+  });
+
   it('does not fall back to browser localStorage when desktop config requires secure storage', () => {
     const originalWindow = globalThis.window;
     const localStorage = new MemoryStorage();

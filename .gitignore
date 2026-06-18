@@ -48,6 +48,9 @@ configs/*.local.toml
 *.pdb
 *.dll
 *.so
+
+# Generated SDK manual backup artifacts
+sdks/**/.sdkwork/manual-backups/
 *.dylib
 
 # Test artifacts

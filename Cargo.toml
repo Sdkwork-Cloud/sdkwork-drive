@@ -16,6 +16,7 @@ members = [
     "crates/sdkwork-router-storage-backend-api",
     "crates/sdkwork-router-drive-backend-api",
     "crates/sdkwork-drive-install-worker",
+    "crates/sdkwork-drive-standalone-gateway",
 ]
 resolver = "2"
 
@@ -33,13 +34,15 @@ opendal = { version = "0.57.0", default-features = false, features = ["services-
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "any", "sqlite", "postgres"] }
+jsonwebtoken = { version = "9", default-features = false, features = ["use_pem"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "any", "sqlite", "postgres", "chrono"] }
 tempfile = "3.12"
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
 toml = "0.8"
 tower = { version = "0.5", features = ["util"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 zip = { version = "8.6.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 # AWS SDK dependencies
@@ -59,4 +62,9 @@ sdkwork-drive-storage-local = { path = "crates/sdkwork-drive-storage-local" }
 sdkwork-drive-storage-opendal = { path = "crates/sdkwork-drive-storage-opendal" }
 sdkwork-drive-storage-s3 = { path = "crates/sdkwork-drive-storage-s3" }
 sdkwork-drive-workspace-service = { path = "crates/sdkwork-drive-workspace-service" }
-sdkwork_platform_id_service = { package = "sdkwork-platform-id-service", path = "../sdkwork-appbase/crates/sdkwork-platform-id-service" }
+
+# SDKWork database dependencies
+sdkwork-database-config = { path = "../sdkwork-database/crates/sdkwork-database-config" }
+sdkwork-database-sqlx = { path = "../sdkwork-database/crates/sdkwork-database-sqlx" }
+sdkwork-database-repository = { path = "../sdkwork-database/crates/sdkwork-database-repository" }
+sdkwork-id-core = { path = "../sdkwork-id/crates/sdkwork-id-core" }

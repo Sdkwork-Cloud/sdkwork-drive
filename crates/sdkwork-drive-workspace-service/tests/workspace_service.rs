@@ -35,6 +35,9 @@ async fn workspace_service_ensures_nodes_and_lists_children_from_drive_schema() 
             owner_subject_id: "sdkwork-knowledgebase".to_string(),
             display_name: "Knowledge".to_string(),
             space_type: DriveSpaceType::KnowledgeBase,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "system".to_string(),
         })
         .await
@@ -166,6 +169,9 @@ async fn workspace_service_gets_node_by_id_with_resolved_path() {
             owner_subject_id: "sdkwork-knowledgebase".to_string(),
             display_name: "Knowledge".to_string(),
             space_type: DriveSpaceType::KnowledgeBase,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "system".to_string(),
         })
         .await
@@ -245,6 +251,9 @@ async fn workspace_service_versions_file_metadata_when_same_path_content_changes
             owner_subject_id: "sdkwork-knowledgebase".to_string(),
             display_name: "Knowledge".to_string(),
             space_type: DriveSpaceType::KnowledgeBase,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "system".to_string(),
         })
         .await
@@ -360,6 +369,9 @@ async fn workspace_service_concurrently_ensures_same_nodes_idempotently() {
             owner_subject_id: "sdkwork-knowledgebase".to_string(),
             display_name: "Concurrent Knowledge".to_string(),
             space_type: DriveSpaceType::KnowledgeBase,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "system".to_string(),
         })
         .await

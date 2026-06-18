@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LanguageProvider,
   SettingsModal,
@@ -7,13 +8,20 @@ import {
   type PreferenceStorage,
   type SettingsTab,
 } from 'sdkwork-drive-pc-commons';
-import type { DriveSection } from 'sdkwork-drive-pc-file';
+import {
+  drivePathToSection,
+  driveSectionToPath,
+  type DriveSection,
+} from 'sdkwork-drive-pc-file';
 import {
   DriveAuthGate,
   DriveRuntimeProvider,
-  type DriveRuntime,
   type DriveStorageSummary,
 } from 'sdkwork-drive-pc-core';
+import {
+  canAccessDriveAdminStorage,
+  type DriveRuntime,
+} from 'sdkwork-drive-pc-admin-core';
 import { createDrivePcRuntime } from './bootstrap/createDrivePcRuntime';
 import {
   createDriveAccountViewModel,
@@ -59,13 +67,34 @@ function isDriveAppAbortError(err: unknown): boolean {
 export default function App() {
   const runtime = useMemo(() => createDrivePcRuntime(), []);
   const preferenceStorage = useMemo(() => createBrowserPreferenceStorage(), []);
-  const [activeSection, setActiveSection] = useState<DriveSection>('my-storage');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeSection = useMemo(
+    () => drivePathToSection(location.pathname),
+    [location.pathname],
+  );
+  const setActiveSection = useCallback((section: DriveSection) => {
+    navigate(driveSectionToPath(section));
+  }, [navigate]);
   const [sessionSnapshot, setSessionSnapshot] = useState(() => runtime.session.getSnapshot());
   const [storageSummary, setStorageSummary] = useState<DriveStorageSummary | undefined>();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('account');
 
   useEffect(() => runtime.session.subscribe(setSessionSnapshot), [runtime.session]);
+
+  useEffect(() => {
+    const canonicalPath = driveSectionToPath(activeSection);
+    if (location.pathname !== canonicalPath) {
+      navigate(canonicalPath, { replace: true });
+    }
+  }, [activeSection, location.pathname, navigate]);
+
+  useEffect(() => {
+    if (runtime.config.runtimeTarget !== 'desktop' && !runtime.host.isNativeHost && activeSection === 'computers') {
+      setActiveSection('my-storage');
+    }
+  }, [runtime.config.runtimeTarget, runtime.host.isNativeHost, activeSection]);
 
   useEffect(() => {
     if (!sessionSnapshot.context?.tenantId || !sessionSnapshot.context?.userId) {
@@ -107,6 +136,16 @@ export default function App() {
     () => createDriveAccountViewModel(sessionSnapshot, storageSummary),
     [sessionSnapshot, storageSummary],
   );
+  const canAccessAdminStorage = useMemo(
+    () => canAccessDriveAdminStorage(sessionSnapshot),
+    [sessionSnapshot],
+  );
+
+  useEffect(() => {
+    if (!canAccessAdminStorage && (activeSection === 'admin-storage-providers' || activeSection === 'admin-storage-bindings')) {
+      setActiveSection('my-storage');
+    }
+  }, [activeSection, canAccessAdminStorage]);
 
   const handleSignOut = () => {
     void (async () => {
@@ -144,7 +183,7 @@ export default function App() {
             authRoutes={authRoutes}
             session={runtime.session}
           >
-            <div className="flex w-[100vw] h-[100vh] overflow-hidden text-[#333] dark:text-[#eee] select-none font-sans bg-[#f5f5f5] dark:bg-[#111]">
+            <div className="flex h-dvh min-h-0 w-full min-w-0 overflow-hidden text-[#333] dark:text-[#eee] select-none font-sans bg-[#f5f5f5] dark:bg-[#111]">
               <SystemSidebar
                 activeSection={activeSection}
                 onSectionChange={setActiveSection}
@@ -152,16 +191,17 @@ export default function App() {
                 onSignOut={handleSignOut}
                 isSettingsOpen={isSettingsOpen}
                 onOpenSettings={openSettings}
+                showAdminNavigation={canAccessAdminStorage}
               />
               <React.Suspense fallback={<DriveWorkspaceFallback />}>
-                {activeSection === 'admin-storage-providers' ? (
+                {canAccessAdminStorage && activeSection === 'admin-storage-providers' ? (
                   <StorageProvidersAdminPage
-                    adminStorageSdkClient={runtime.sdk.adminStorage}
+                    adminStorageSdkClient={runtime.admin.adminStorage}
                     getSession={runtime.session.getSnapshot}
                   />
-                ) : activeSection === 'admin-storage-bindings' ? (
+                ) : canAccessAdminStorage && activeSection === 'admin-storage-bindings' ? (
                   <StorageBindingsAdminPage
-                    adminStorageSdkClient={runtime.sdk.adminStorage}
+                    adminStorageSdkClient={runtime.admin.adminStorage}
                     getSession={runtime.session.getSnapshot}
                   />
                 ) : (
@@ -241,7 +281,7 @@ function DriveWorkspaceFallback() {
   return (
     <div
       aria-label="Loading Drive workspace"
-      className="flex h-full w-full flex-1 items-center justify-center bg-white dark:bg-[#111]"
+      className="flex h-full min-h-0 w-full min-w-0 flex-1 items-center justify-center bg-white dark:bg-[#111]"
     >
       <div className="h-7 w-7 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
     </div>

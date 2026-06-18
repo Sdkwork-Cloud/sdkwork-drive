@@ -3,11 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5183 --strictPort",
+    "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "desktop:dev": "pnpm --filter sdkwork-drive-pc-desktop desktop:dev",
+    "desktop:build": "pnpm --filter sdkwork-drive-pc-desktop desktop:build",
     "desktop:build:local": "pnpm --filter sdkwork-drive-pc-desktop desktop:build:local"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "react-router-dom": "^7.17.0",
+    "sdkwork-drive-pc-admin-core": "workspace:*",
     "sdkwork-drive-pc-admin-storage-providers": "workspace:*",
     "sdkwork-drive-pc-commons": "workspace:*",
     "sdkwork-drive-pc-core": "workspace:*",

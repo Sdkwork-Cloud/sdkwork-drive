@@ -1,5 +1,6 @@
 #![allow(clippy::result_large_err)]
 
+mod app_context;
 mod audit;
 mod auth;
 mod binding_handlers;

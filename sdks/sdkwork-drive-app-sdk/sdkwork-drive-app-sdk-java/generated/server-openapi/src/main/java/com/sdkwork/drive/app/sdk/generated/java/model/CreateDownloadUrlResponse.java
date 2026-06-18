@@ -10,7 +10,7 @@ public class CreateDownloadUrlResponse {
     public String getDownloadUrl() {
         return this.downloadUrl;
     }
-    
+
     public void setDownloadUrl(String downloadUrl) {
         this.downloadUrl = downloadUrl;
     }
@@ -18,7 +18,7 @@ public class CreateDownloadUrlResponse {
     public String getSignedSourceUrl() {
         return this.signedSourceUrl;
     }
-    
+
     public void setSignedSourceUrl(String signedSourceUrl) {
         this.signedSourceUrl = signedSourceUrl;
     }
@@ -26,7 +26,7 @@ public class CreateDownloadUrlResponse {
     public Integer getExpiresAtEpochMs() {
         return this.expiresAtEpochMs;
     }
-    
+
     public void setExpiresAtEpochMs(Integer expiresAtEpochMs) {
         this.expiresAtEpochMs = expiresAtEpochMs;
     }
@@ -34,7 +34,7 @@ public class CreateDownloadUrlResponse {
     public String getMethod() {
         return this.method;
     }
-    
+
     public void setMethod(String method) {
         this.method = method;
     }

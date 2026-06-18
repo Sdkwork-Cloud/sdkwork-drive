@@ -1,3 +1,6 @@
+use crate::application::upload_content_policy::{
+    enforce_upload_content_policy, UploadContentPolicyContext,
+};
 use crate::domain::uploader::{content_type_group_for, DriveUploadItem, DriveUploadPart};
 use crate::ports::uploader_store::{
     CompleteDriveStoredUpload, DriveUploaderStore, NewDriveUploadItem, NewDriveUploadPart,
@@ -6,7 +9,7 @@ use crate::ports::uploader_store::{
 use crate::{drive_share_token_hash, DriveServiceError};
 use sdkwork_drive_storage_contract::{DriveObjectLocator, DriveObjectStore, PutObjectRequest};
 use sha2::{Digest, Sha256};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub enum UploaderActor {
@@ -234,13 +237,18 @@ where
             }
         };
         let node_id = format!("node-{id}");
+        let taken_node_names = self
+            .store
+            .list_live_node_names_in_parent(&tenant_id, &space_id, parent_node_id.as_deref())
+            .await?;
+        let node_name = allocate_unique_upload_node_name(&original_file_name, &taken_node_names);
         self.store
             .insert_upload_node(&NewDriveUploaderNode {
                 id: node_id.clone(),
                 tenant_id: tenant_id.clone(),
                 space_id: space_id.clone(),
                 parent_node_id,
-                node_name: original_file_name.clone(),
+                node_name: node_name.clone(),
                 scene: scene.clone(),
                 source: source.clone(),
                 operator_id: operator_id.clone(),
@@ -304,8 +312,8 @@ where
                 upload_session_id: Some(upload_session_id.clone()),
                 storage_provider_id: Some(storage_provider_id),
                 storage_upload_id: Some(upload_session_id),
-                original_file_name: original_file_name.clone(),
-                file_extension: file_extension(&original_file_name),
+                original_file_name: node_name.clone(),
+                file_extension: file_extension(&node_name),
                 content_type: content_type.clone(),
                 content_type_group: profile_content_group(&upload_profile_code, &content_type),
                 detected_content_type: Some(content_type),
@@ -393,6 +401,15 @@ where
             ));
         }
         let operator_id = require_identifier(command.operator_id, "operator_id")?;
+
+        enforce_upload_content_policy(&UploadContentPolicyContext {
+            tenant_id: tenant_id.clone(),
+            upload_item_id: upload_item_id.clone(),
+            content_type: content_type.clone(),
+            content_length: command.content_length,
+            checksum_sha256_hex: command.checksum_sha256_hex.clone(),
+        })
+        .await?;
 
         self.store
             .complete_stored_upload(&CompleteDriveStoredUpload {
@@ -893,6 +910,37 @@ fn file_extension(file_name: &str) -> Option<String> {
         .filter(|extension| !extension.is_empty() && extension.len() <= 64)
 }
 
+fn split_upload_file_name(file_name: &str) -> (String, Option<String>) {
+    match file_name.rsplit_once('.') {
+        Some((stem, extension))
+            if !stem.is_empty() && !extension.is_empty() && extension.len() <= 64 =>
+        {
+            (stem.to_string(), Some(extension.to_string()))
+        }
+        _ => (file_name.to_string(), None),
+    }
+}
+
+fn allocate_unique_upload_node_name(base_name: &str, taken_names: &[String]) -> String {
+    let taken: HashSet<&str> = taken_names.iter().map(String::as_str).collect();
+    if !taken.contains(base_name) {
+        return base_name.to_string();
+    }
+
+    let (stem, extension) = split_upload_file_name(base_name);
+    for index in 1..=9999 {
+        let candidate = match &extension {
+            Some(ext) => format!("{stem} ({index}).{ext}"),
+            None => format!("{stem} ({index})"),
+        };
+        if !taken.contains(candidate.as_str()) {
+            return candidate;
+        }
+    }
+
+    format!("{stem} ({})", stable_identifier_suffix(base_name))
+}
+
 fn stable_identifier_suffix(value: &str) -> String {
     value
         .chars()
@@ -989,4 +1037,40 @@ fn civil_from_days(days_since_unix_epoch: i64) -> Option<(i32, u32, u32)> {
         u32::try_from(month).ok()?,
         u32::try_from(day).ok()?,
     ))
+}
+
+#[cfg(test)]
+mod upload_node_name_tests {
+    use super::allocate_unique_upload_node_name;
+
+    #[test]
+    fn keeps_original_name_when_parent_is_empty() {
+        let name = allocate_unique_upload_node_name("report.txt", &[]);
+        assert_eq!(name, "report.txt");
+    }
+
+    #[test]
+    fn appends_numeric_suffix_when_name_is_taken() {
+        let taken = vec!["report.txt".to_string()];
+        let name = allocate_unique_upload_node_name("report.txt", &taken);
+        assert_eq!(name, "report (1).txt");
+    }
+
+    #[test]
+    fn increments_suffix_until_unique() {
+        let taken = vec![
+            "report.txt".to_string(),
+            "report (1).txt".to_string(),
+            "report (2).txt".to_string(),
+        ];
+        let name = allocate_unique_upload_node_name("report.txt", &taken);
+        assert_eq!(name, "report (3).txt");
+    }
+
+    #[test]
+    fn handles_extensionless_names() {
+        let taken = vec!["README".to_string()];
+        let name = allocate_unique_upload_node_name("README", &taken);
+        assert_eq!(name, "README (1)");
+    }
 }

@@ -126,18 +126,6 @@
                                                   "packageByLanguage":  {
                                                                             "typescript":  "@sdkwork/drive-app-sdk"
                                                                         }
-                                              },
-                                              {
-                                                  "workspace":  "sdkwork-drive-admin-storage-sdk",
-                                                  "role":  "drive-admin-storage-capability",
-                                                  "required":  true,
-                                                  "dependencyMode":  "consumer-sdk",
-                                                  "apiPrefix":  "/admin/v3/api",
-                                                  "apiAuthority":  "sdkwork-drive.admin.storage",
-                                                  "generatedTransportImportPolicy":  "forbidden",
-                                                  "packageByLanguage":  {
-                                                                            "typescript":  "@sdkwork/drive-admin-storage-sdk"
-                                                                        }
                                               }
                                           ],
                       "dependencyApiExports":  [

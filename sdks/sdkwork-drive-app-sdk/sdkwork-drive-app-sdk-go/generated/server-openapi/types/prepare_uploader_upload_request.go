@@ -4,11 +4,8 @@ package types
 type PrepareUploaderUploadRequest struct {
 	Id string `json:"id"`
 	TaskId string `json:"taskId"`
-	TenantId string `json:"tenantId"`
 	OrganizationId string `json:"organizationId"`
-	UserId string `json:"userId"`
 	AnonymousId string `json:"anonymousId"`
-	AppId string `json:"appId"`
 	AppResourceType string `json:"appResourceType"`
 	AppResourceId string `json:"appResourceId"`
 	UploadProfileCode string `json:"uploadProfileCode"`
@@ -20,7 +17,6 @@ type PrepareUploaderUploadRequest struct {
 	SpaceId string `json:"spaceId"`
 	ParentNodeId string `json:"parentNodeId"`
 	Retention UploaderRetentionRequest `json:"retention"`
-	OperatorId string `json:"operatorId"`
 	NowEpochMs int `json:"nowEpochMs"`
 	Scene string `json:"scene"`
 	Source string `json:"source"`

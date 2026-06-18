@@ -541,6 +541,41 @@ tables:
           - tenant_id
           - space_id
           - created_at
+  - table: dr_drive_domain_outbox
+    domain: drive
+    description: Durable domain change outbox for webhook and integration delivery retries.
+    columns:
+      - name: id
+        type: varchar(64)
+      - name: tenant_id
+        type: varchar(64)
+      - name: space_id
+        type: varchar(64)
+      - name: node_id
+        type: varchar(64)
+      - name: event_type
+        type: varchar(128)
+      - name: actor_id
+        type: varchar(128)
+      - name: sequence_no
+        type: bigint
+      - name: payload_json
+        type: text
+      - name: delivery_status
+        type: varchar(32)
+      - name: attempt_count
+        type: int
+      - name: last_error
+        type: text
+      - name: created_at
+        type: timestamptz
+      - name: delivered_at
+        type: timestamptz
+    indexes:
+      - name: ix_dr_drive_domain_outbox_pending
+        columns:
+          - delivery_status
+          - created_at
   - table: dr_drive_audit_event
     domain: drive
     description: Append-only drive audit events.

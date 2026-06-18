@@ -20,7 +20,7 @@ schema = "public"
 username = "sdkworkdev"
 password_file = "./secrets/database-password.local"
 ssl_mode = "disable"
-max_connections = 10
+max_connections = 32
 
 [redis]
 enabled = false

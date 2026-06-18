@@ -48,7 +48,10 @@ export interface SdkworkAuthRuntimeConfig {
   refreshEnabled: boolean;
 }
 
+export type DriveHosting = 'self-hosted' | 'cloud-hosted';
+
 export interface DriveRuntimeConfig {
+  hosting: DriveHosting;
   environment: SdkworkEnvironment;
   configProfile: SdkworkConfigProfile;
   buildMode: SdkworkBuildMode;
@@ -63,6 +66,10 @@ export interface DriveRuntimeConfig {
 }
 
 export interface RuntimeEnv {
+  VITE_DRIVE_PC_HOSTING?: string;
+  VITE_DRIVE_PC_TOPOLOGY?: string;
+  VITE_DRIVE_PC_APPLICATION_PUBLIC_HTTP_URL?: string;
+  VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL?: string;
   VITE_DRIVE_PC_ENVIRONMENT?: string;
   VITE_DRIVE_PC_CONFIG_PROFILE?: string;
   VITE_DRIVE_PC_BUILD_MODE?: string;
@@ -74,6 +81,7 @@ export interface RuntimeEnv {
   VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL?: string;
   VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL?: string;
   VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL?: string;
+  VITE_DRIVE_PC_DEV_SAME_ORIGIN_API?: string;
   VITE_DRIVE_PC_TOKEN_MANAGER_MODE?: string;
   VITE_DRIVE_PC_TOKEN_STORAGE?: string;
   DEV?: boolean;
@@ -82,11 +90,12 @@ export interface RuntimeEnv {
 }
 
 const APP_KEY = 'sdkwork-drive-pc';
-const API_GATEWAY_BASE_URL = 'http://127.0.0.1:3900';
-const LOCAL_APP_API_BASE_URL = API_GATEWAY_BASE_URL;
-const LOCAL_ADMIN_STORAGE_API_BASE_URL = API_GATEWAY_BASE_URL;
-const PUBLIC_APP_API_BASE_URL = 'https://api.sdkwork.com';
-const PUBLIC_ADMIN_STORAGE_API_BASE_URL = 'https://api.sdkwork.com';
+const LOCAL_API_GATEWAY_BASE_URL = 'http://127.0.0.1:3900';
+const LOCAL_APP_API_BASE_URL = LOCAL_API_GATEWAY_BASE_URL;
+const LOCAL_ADMIN_STORAGE_API_BASE_URL = LOCAL_API_GATEWAY_BASE_URL;
+const CLOUD_API_GATEWAY_BASE_URL = 'https://api.sdkwork.com';
+const CLOUD_APP_API_BASE_URL = 'https://drive.sdkwork.com/app/v3/api';
+const CLOUD_ADMIN_STORAGE_API_BASE_URL = 'https://drive.sdkwork.com/admin/v3/api';
 
 const VALID_ENVIRONMENTS: SdkworkEnvironment[] = [
   'development',
@@ -188,16 +197,73 @@ function normalizeBuildMode(
   return parseOneOf(nextValue, VALID_BUILD_MODES, environment);
 }
 
-function defaultAppApiBaseUrl(deploymentMode: SdkworkDeploymentMode): string {
-  return deploymentMode === 'local' || deploymentMode === 'test'
-    ? LOCAL_APP_API_BASE_URL
-    : PUBLIC_APP_API_BASE_URL;
+function normalizeHosting(
+  value: string | undefined,
+  deploymentMode: SdkworkDeploymentMode,
+  _environment: SdkworkEnvironment,
+): DriveHosting {
+  const explicit = normalized(value);
+  if (explicit === 'cloud-hosted' || explicit === 'self-hosted') {
+    return explicit;
+  }
+  if (explicit === 'cloud') {
+    return 'cloud-hosted';
+  }
+  if (explicit === 'standalone') {
+    return 'self-hosted';
+  }
+  if (deploymentMode === 'local' || deploymentMode === 'test') {
+    return 'self-hosted';
+  }
+  return 'cloud-hosted';
 }
 
-function defaultAdminStorageApiBaseUrl(deploymentMode: SdkworkDeploymentMode): string {
+function defaultPlatformApiGatewayBaseUrl(
+  hosting: DriveHosting,
+  deploymentMode: SdkworkDeploymentMode,
+): string {
+  if (hosting === 'self-hosted') {
+    return LOCAL_API_GATEWAY_BASE_URL;
+  }
+  return deploymentMode === 'local' || deploymentMode === 'test'
+    ? LOCAL_API_GATEWAY_BASE_URL
+    : CLOUD_API_GATEWAY_BASE_URL;
+}
+
+function defaultApplicationPublicHttpUrl(
+  hosting: DriveHosting,
+  deploymentMode: SdkworkDeploymentMode,
+): string {
+  if (hosting === 'self-hosted') {
+    return LOCAL_APP_API_BASE_URL;
+  }
+  return deploymentMode === 'local' || deploymentMode === 'test'
+    ? LOCAL_APP_API_BASE_URL
+    : CLOUD_APP_API_BASE_URL.replace('/app/v3/api', '');
+}
+
+function defaultAppApiBaseUrl(
+  hosting: DriveHosting,
+  deploymentMode: SdkworkDeploymentMode,
+): string {
+  if (hosting === 'self-hosted') {
+    return LOCAL_APP_API_BASE_URL;
+  }
+  return deploymentMode === 'local' || deploymentMode === 'test'
+    ? LOCAL_APP_API_BASE_URL
+    : CLOUD_APP_API_BASE_URL;
+}
+
+function defaultAdminStorageApiBaseUrl(
+  hosting: DriveHosting,
+  deploymentMode: SdkworkDeploymentMode,
+): string {
+  if (hosting === 'self-hosted') {
+    return LOCAL_ADMIN_STORAGE_API_BASE_URL;
+  }
   return deploymentMode === 'local' || deploymentMode === 'test'
     ? LOCAL_ADMIN_STORAGE_API_BASE_URL
-    : PUBLIC_ADMIN_STORAGE_API_BASE_URL;
+    : CLOUD_ADMIN_STORAGE_API_BASE_URL;
 }
 
 function normalizeTokenManagerMode(
@@ -208,6 +274,30 @@ function normalizeTokenManagerMode(
     return value;
   }
   return environment === 'test' ? 'test' : 'appbase-global';
+}
+
+function shouldUseDevSameOriginApi(
+  env: RuntimeEnv,
+  deploymentMode: SdkworkDeploymentMode,
+): boolean {
+  const explicit = normalized(env.VITE_DRIVE_PC_DEV_SAME_ORIGIN_API);
+  if (explicit === 'true' || explicit === '1') {
+    return true;
+  }
+  if (explicit === 'false' || explicit === '0') {
+    return false;
+  }
+  return Boolean(env.DEV)
+    && normalized(env.MODE) === 'development'
+    && (deploymentMode === 'local' || deploymentMode === 'test');
+}
+
+function applyDevSameOriginApiBaseUrl(
+  env: RuntimeEnv,
+  deploymentMode: SdkworkDeploymentMode,
+  baseUrl: string,
+): string {
+  return shouldUseDevSameOriginApi(env, deploymentMode) ? '' : baseUrl;
 }
 
 function normalizeTokenStorage(
@@ -227,7 +317,7 @@ function normalizeTokenStorage(
   if (environment === 'test') {
     return 'memory';
   }
-  return runtimeTarget === 'desktop' ? 'os-secure-storage' : 'browser-local';
+  return runtimeTarget === 'desktop' ? 'os-secure-storage' : 'browser-session';
 }
 
 export function createRuntimeConfig(env: RuntimeEnv = {}): DriveRuntimeConfig {
@@ -237,6 +327,11 @@ export function createRuntimeConfig(env: RuntimeEnv = {}): DriveRuntimeConfig {
     VALID_DEPLOYMENT_MODES,
     environment === 'test' ? 'test' : 'local',
   );
+  const hosting = normalizeHosting(
+    env.VITE_DRIVE_PC_HOSTING ?? env.VITE_DRIVE_PC_TOPOLOGY,
+    deploymentMode,
+    environment,
+  );
   const runtimeTarget = parseOneOf(
     env.VITE_DRIVE_PC_RUNTIME_TARGET,
     VALID_RUNTIME_TARGETS,
@@ -245,45 +340,63 @@ export function createRuntimeConfig(env: RuntimeEnv = {}): DriveRuntimeConfig {
   const configProfile = normalizeProfile(env.VITE_DRIVE_PC_CONFIG_PROFILE, environment);
   const buildMode = normalizeBuildMode(env.VITE_DRIVE_PC_BUILD_MODE, env, environment);
 
-  // All API calls go through the API gateway
-  const apiGatewayBaseUrl = env.VITE_DRIVE_PC_API_GATEWAY_BASE_URL
-    || defaultAppApiBaseUrl(deploymentMode);
+  const platformApiGatewayBaseUrl = env.VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL
+    || env.VITE_DRIVE_PC_API_GATEWAY_BASE_URL
+    || defaultPlatformApiGatewayBaseUrl(hosting, deploymentMode);
 
   const appApiBaseUrl =
     env.VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL
     || env.VITE_DRIVE_PC_APP_API_BASE_URL
-    || apiGatewayBaseUrl;
+    || env.VITE_DRIVE_PC_APPLICATION_PUBLIC_HTTP_URL
+    || platformApiGatewayBaseUrl;
   const adminStorageApiBaseUrl =
     env.VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL
     || env.VITE_DRIVE_PC_BACKEND_API_BASE_URL
-    || apiGatewayBaseUrl;
+    || platformApiGatewayBaseUrl;
   const backendApiBaseUrl =
     env.VITE_DRIVE_PC_BACKEND_API_BASE_URL || adminStorageApiBaseUrl;
-  const appbaseAppApiBaseUrl = env.VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL || apiGatewayBaseUrl;
+  const appbaseAppApiBaseUrl = applyDevSameOriginApiBaseUrl(
+    env,
+    deploymentMode,
+    env.VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL || platformApiGatewayBaseUrl,
+  );
+
+  const resolvedAppApiBaseUrl = applyDevSameOriginApiBaseUrl(env, deploymentMode, appApiBaseUrl);
+  const resolvedBackendApiBaseUrl = applyDevSameOriginApiBaseUrl(
+    env,
+    deploymentMode,
+    backendApiBaseUrl,
+  );
+  const resolvedAdminStorageApiBaseUrl = applyDevSameOriginApiBaseUrl(
+    env,
+    deploymentMode,
+    adminStorageApiBaseUrl,
+  );
 
   return {
+    hosting,
     environment,
     configProfile,
     buildMode,
     deploymentMode,
     runtimeTarget,
     appKey: APP_KEY,
-    appApiBaseUrl,
-    backendApiBaseUrl,
-    adminStorageApiBaseUrl,
+    appApiBaseUrl: resolvedAppApiBaseUrl,
+    backendApiBaseUrl: resolvedBackendApiBaseUrl,
+    adminStorageApiBaseUrl: resolvedAdminStorageApiBaseUrl,
     sdkBaseUrls: {
-      defaultApiBaseUrl: appApiBaseUrl,
-      appApiBaseUrl,
-      backendApiBaseUrl,
+      defaultApiBaseUrl: resolvedAppApiBaseUrl,
+      appApiBaseUrl: resolvedAppApiBaseUrl,
+      backendApiBaseUrl: resolvedBackendApiBaseUrl,
       dependencySdkBaseUrls: {
         'sdkwork-appbase-app-sdk': {
           appApiBaseUrl: appbaseAppApiBaseUrl,
         },
         'sdkwork-drive-app-sdk': {
-          appApiBaseUrl,
+          appApiBaseUrl: resolvedAppApiBaseUrl,
         },
         'sdkwork-drive-admin-storage-sdk': {
-          backendApiBaseUrl: adminStorageApiBaseUrl,
+          backendApiBaseUrl: resolvedAdminStorageApiBaseUrl,
         },
       },
     },

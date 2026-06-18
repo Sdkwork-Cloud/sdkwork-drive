@@ -15,6 +15,26 @@ export interface CreateUploadJobOptions {
   id?: string;
   fileId?: string;
   fallbackSizeBytes?: number;
+  uploadSection?: string;
+  uploadParentId?: string | null;
+  uploadBlob?: File;
+  uploadLocalPath?: string;
+}
+
+export interface NativeUploadJobDescriptor {
+  path: string;
+  name: string;
+  size: number;
+  modifiedAt: string;
+  mimeType: string;
+}
+
+function buildUploadFileFingerprint(file: File): string {
+  return `${file.name}:${file.size}:${file.lastModified}`;
+}
+
+export function buildNativeUploadJobFingerprint(descriptor: Pick<NativeUploadJobDescriptor, 'path' | 'size' | 'modifiedAt'>): string {
+  return `${descriptor.path}:${descriptor.size}:${descriptor.modifiedAt}`;
 }
 
 export interface DownloadGrantLike {
@@ -148,11 +168,40 @@ export function createUploadJobForFile(file: File, options: CreateUploadJobOptio
   return {
     id: options.id || makeJobId(),
     type: 'upload',
+    uploadSection: options.uploadSection,
+    uploadParentId: options.uploadParentId,
+    uploadBlob: options.uploadBlob,
+    uploadFileFingerprint: buildUploadFileFingerprint(file),
     fileId: options.fileId || makeJobId(),
     fileName: file.name,
     fileType: 'file',
     mimeType: file.type || 'application/octet-stream',
     totalSize: file.size || fallbackSizeBytes,
+    downloadedSize: 0,
+    progress: 0,
+    status: 'uploading',
+    speed: 'Uploading...',
+    timeRemaining: 'Waiting for backend confirmation',
+  };
+}
+
+export function createUploadJobForNativeFile(
+  descriptor: NativeUploadJobDescriptor,
+  options: CreateUploadJobOptions = {},
+): DownloadJob {
+  const fallbackSizeBytes = options.fallbackSizeBytes || DEFAULT_DOWNLOAD_SIZE_BYTES;
+  return {
+    id: options.id || makeJobId(),
+    type: 'upload',
+    uploadSection: options.uploadSection,
+    uploadParentId: options.uploadParentId,
+    uploadLocalPath: descriptor.path,
+    uploadFileFingerprint: buildNativeUploadJobFingerprint(descriptor),
+    fileId: options.fileId || makeJobId(),
+    fileName: descriptor.name,
+    fileType: 'file',
+    mimeType: descriptor.mimeType || 'application/octet-stream',
+    totalSize: descriptor.size || fallbackSizeBytes,
     downloadedSize: 0,
     progress: 0,
     status: 'uploading',
@@ -184,6 +233,12 @@ export function createRetryFilesForDownloadJob(job: DownloadJob): DriveFile[] {
   });
 }
 
+export function resolveTransferOpenUrl(
+  grant: Pick<DownloadGrantLike, 'downloadUrl' | 'signedSourceUrl'>,
+): string | undefined {
+  return grant.signedSourceUrl || grant.downloadUrl;
+}
+
 export function applyDownloadGrantToJob(job: DownloadJob, grant: DownloadGrantLike): DownloadJob {
   if (job.status === 'cancelled') {
     return job;
@@ -204,6 +259,29 @@ export function applyDownloadGrantToJob(job: DownloadJob, grant: DownloadGrantLi
     speed: 'Ready',
     timeRemaining: 'Available',
     errorMessage: undefined,
+  };
+}
+
+export function applyUploadProgressToJob(
+  job: DownloadJob,
+  uploadedBytes: number,
+  totalBytes: number,
+): DownloadJob {
+  if (job.status === 'cancelled') {
+    return job;
+  }
+
+  const safeTotal = totalBytes > 0 ? totalBytes : job.totalSize;
+  const safeUploaded = Math.max(0, Math.min(uploadedBytes, safeTotal));
+  const progress = safeTotal > 0 ? Math.round((safeUploaded / safeTotal) * 100) : 0;
+  return {
+    ...job,
+    totalSize: safeTotal,
+    downloadedSize: safeUploaded,
+    progress,
+    status: 'uploading',
+    speed: 'Uploading...',
+    timeRemaining: progress >= 100 ? 'Finalizing...' : 'Calculating...',
   };
 }
 

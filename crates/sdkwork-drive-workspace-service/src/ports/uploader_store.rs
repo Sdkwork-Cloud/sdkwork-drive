@@ -165,6 +165,13 @@ pub trait DriveUploaderStore: Send + Sync {
         space: &NewDriveUploaderSpace,
     ) -> Result<String, DriveServiceError>;
 
+    async fn list_live_node_names_in_parent(
+        &self,
+        tenant_id: &str,
+        space_id: &str,
+        parent_node_id: Option<&str>,
+    ) -> Result<Vec<String>, DriveServiceError>;
+
     async fn insert_upload_node(
         &self,
         node: &NewDriveUploaderNode,

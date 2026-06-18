@@ -6,8 +6,20 @@ use serde_json::Value;
 use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 
+fn auth_token(tenant: &str, user: &str) -> String {
+    format!(
+        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;auth_level=password"
+    )
+}
+
+fn access_token(tenant: &str, user: &str) -> String {
+    format!(
+        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;environment=prod;deployment_mode=saas"
+    )
+}
+
 #[tokio::test]
-async fn backend_production_routes_require_signed_context_projection() {
+async fn backend_production_routes_require_valid_dual_tokens() {
     let app = build_router();
 
     let health = app
@@ -47,7 +59,10 @@ async fn backend_production_routes_require_signed_context_projection() {
             Request::builder()
                 .method(Method::GET)
                 .uri("/backend/v3/api/drive/quotas?tenantId=tenant-a")
-                .header("authorization", "Bearer auth-token")
+                .header(
+                    "authorization",
+                    format!("Bearer {}", auth_token("tenant-a", "admin-001")),
+                )
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -60,30 +75,28 @@ async fn backend_production_routes_require_signed_context_projection() {
     )
     .await;
 
-    let missing_signature = app
+    let invalid_credentials = app
         .oneshot(
             Request::builder()
                 .method(Method::GET)
                 .uri("/backend/v3/api/drive/quotas?tenantId=tenant-a")
-                .header("authorization", "Bearer auth-token")
-                .header("access-token", "access-token")
-                .header("x-sdkwork-tenant-id", "tenant-a")
-                .header("x-sdkwork-user-id", "admin-001")
+                .header("authorization", "Bearer opaque-auth-token")
+                .header("access-token", "opaque-access-token")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
         .await
         .expect("protected request should be handled");
     assert_problem(
-        missing_signature,
+        invalid_credentials,
         StatusCode::UNAUTHORIZED,
-        "sdkwork.auth.missing_context_signature",
+        "sdkwork.auth.invalid_credentials",
     )
     .await;
 }
 
 #[tokio::test]
-async fn backend_development_routes_validate_unsigned_app_context_projection() {
+async fn backend_routes_validate_token_derived_app_context() {
     let app = backend_router_allowing_unsigned_context();
 
     let tenant_conflict = app
@@ -92,10 +105,11 @@ async fn backend_development_routes_validate_unsigned_app_context_projection() {
             Request::builder()
                 .method(Method::GET)
                 .uri("/backend/v3/api/drive/quotas?tenantId=tenant-b")
-                .header("authorization", "Bearer auth-token")
-                .header("access-token", "access-token")
-                .header("x-sdkwork-tenant-id", "tenant-a")
-                .header("x-sdkwork-user-id", "user-001")
+                .header(
+                    "authorization",
+                    format!("Bearer {}", auth_token("tenant-a", "user-001")),
+                )
+                .header("access-token", access_token("tenant-a", "user-001"))
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -114,11 +128,11 @@ async fn backend_development_routes_validate_unsigned_app_context_projection() {
             Request::builder()
                 .method(Method::POST)
                 .uri("/backend/v3/api/drive/maintenance/object_sweep")
-                .header("authorization", "Bearer auth-token")
-                .header("access-token", "access-token")
-                .header("x-sdkwork-tenant-id", "tenant-a")
-                .header("x-sdkwork-user-id", "admin-001")
-                .header("x-sdkwork-actor-id", "admin-001")
+                .header(
+                    "authorization",
+                    format!("Bearer {}", auth_token("tenant-a", "admin-001")),
+                )
+                .header("access-token", access_token("tenant-a", "admin-001"))
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"dryRun":true,"limit":1,"operatorId":"admin-002"}"#,
@@ -139,10 +153,11 @@ async fn backend_development_routes_validate_unsigned_app_context_projection() {
             Request::builder()
                 .method(Method::GET)
                 .uri("/backend/v3/api/drive/quotas?tenantId=tenant-a")
-                .header("authorization", "Bearer auth-token")
-                .header("access-token", "access-token")
-                .header("x-sdkwork-tenant-id", "tenant-a")
-                .header("x-sdkwork-user-id", "admin-001")
+                .header(
+                    "authorization",
+                    format!("Bearer {}", auth_token("tenant-a", "admin-001")),
+                )
+                .header("access-token", access_token("tenant-a", "admin-001"))
                 .body(Body::empty())
                 .expect("request should be built"),
         )

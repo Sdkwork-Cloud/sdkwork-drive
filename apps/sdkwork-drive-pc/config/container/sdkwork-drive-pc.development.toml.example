@@ -19,7 +19,7 @@ database = "sdkwork_drive_dev"
 username = "sdkworkdev"
 password_file = "/run/secrets/sdkwork-drive-pc/database-password"
 ssl_mode = "disable"
-max_connections = 10
+max_connections = 32
 
 [redis]
 enabled = false

@@ -23,31 +23,67 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
         .and_then(serde_json::Value::as_object)
         .expect("package.json scripts should exist");
 
-    let dev = scripts
-        .get("dev")
+    let drive_dev = scripts
+        .get("drive:dev")
         .and_then(serde_json::Value::as_str)
-        .expect("pnpm dev script should exist");
-    let dev_sqlite = scripts
-        .get("dev:sqlite")
+        .expect("pnpm drive:dev script should exist");
+    let drive_dev_sqlite = scripts
+        .get("drive:dev:sqlite")
         .and_then(serde_json::Value::as_str)
-        .expect("pnpm dev:sqlite script should exist");
-    let dev_postgres = scripts
-        .get("dev:postgres")
-        .and_then(serde_json::Value::as_str)
-        .expect("pnpm dev:postgres script should exist");
+        .expect("pnpm drive:dev:sqlite script should exist");
 
     assert!(
-        dev.contains("run-drive-pc-dev.mjs") && dev.contains("--database postgres"),
-        "pnpm dev must use PostgreSQL profile, got: {dev}"
+        drive_dev.contains("drive-dev.mjs") && drive_dev.contains("--database postgres"),
+        "pnpm drive:dev must use PostgreSQL profile, got: {drive_dev}"
     );
     assert!(
-        dev_sqlite.contains("run-drive-pc-dev.mjs")
-            && dev_sqlite.contains("--database sqlite"),
-        "pnpm dev:sqlite must use SQLite database, got: {dev_sqlite}"
+        drive_dev.contains("--hosting self-hosted"),
+        "pnpm drive:dev must target self-hosted runtime, got: {drive_dev}"
     );
     assert!(
-        dev_postgres.contains("--database postgres"),
-        "pnpm dev:postgres must use PostgreSQL database, got: {dev_postgres}"
+        drive_dev_sqlite.contains("drive-dev.mjs")
+            && drive_dev_sqlite.contains("--database sqlite"),
+        "pnpm drive:dev:sqlite must use SQLite database, got: {drive_dev_sqlite}"
+    );
+    assert!(
+        drive_dev_sqlite.contains("--hosting self-hosted"),
+        "pnpm drive:dev:sqlite must target self-hosted runtime, got: {drive_dev_sqlite}"
+    );
+
+    let package_script = scripts
+        .get("gateway:standalone:pack")
+        .and_then(serde_json::Value::as_str)
+        .expect("pnpm gateway:standalone:pack script should exist");
+    assert!(
+        package_script.contains("gateway-standalone-pack.mjs"),
+        "pnpm gateway:standalone:pack must invoke gateway-standalone-pack.mjs, got: {package_script}"
+    );
+
+    let cloud_bundle_script = scripts
+        .get("gateway:cloud:bundle")
+        .and_then(serde_json::Value::as_str)
+        .expect("pnpm gateway:cloud:bundle script should exist");
+    assert!(
+        cloud_bundle_script.contains("gateway-cloud-bundle.mjs"),
+        "pnpm gateway:cloud:bundle must invoke gateway-cloud-bundle.mjs, got: {cloud_bundle_script}"
+    );
+
+    let drive_build = scripts
+        .get("drive:build")
+        .and_then(serde_json::Value::as_str)
+        .expect("pnpm drive:build script should exist");
+    assert!(
+        drive_build.contains("drive-build.mjs") && drive_build.contains("--hosting cloud-hosted"),
+        "pnpm drive:build must default to cloud-hosted runtime, got: {drive_build}"
+    );
+
+    let drive_dev_desktop = scripts
+        .get("drive:dev:desktop")
+        .and_then(serde_json::Value::as_str)
+        .expect("pnpm drive:dev:desktop script should exist");
+    assert!(
+        drive_dev_desktop.contains("--hosting self-hosted"),
+        "pnpm drive:dev:desktop must target self-hosted runtime, got: {drive_dev_desktop}"
     );
 }
 
@@ -61,12 +97,12 @@ fn postgres_and_toml_examples_use_standard_drive_config_keys() {
         "SDKWORK_DRIVE_DATABASE_ENGINE=postgresql",
         "SDKWORK_DRIVE_DATABASE_HOST=127.0.0.1",
         "SDKWORK_DRIVE_DATABASE_PORT=5432",
-        "SDKWORK_DRIVE_DATABASE_NAME=sdkwork_drive_dev",
-        "SDKWORK_DRIVE_DATABASE_SCHEMA=sdkwork_drive_dev",
-        "SDKWORK_DRIVE_DATABASE_USERNAME=sdkwork_drive_dev",
-        "SDKWORK_DRIVE_DATABASE_PASSWORD=local_dev_password",
+        "SDKWORK_DRIVE_DATABASE_NAME=sdkwork_ai_dev",
+        "SDKWORK_DRIVE_DATABASE_SCHEMA=sdkwork_ai_dev",
+        "SDKWORK_DRIVE_DATABASE_USERNAME=sdkwork_ai_dev",
+        "SDKWORK_DRIVE_DATABASE_PASSWORD=sdkworkdev123",
         "SDKWORK_DRIVE_DATABASE_SSL_MODE=disable",
-        "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS=10",
+        "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS=32",
         "SDKWORK_DRIVE_DATABASE_ADMIN_HOST=127.0.0.1",
         "SDKWORK_DRIVE_DATABASE_ADMIN_SSL_MODE=disable",
     ] {
@@ -158,11 +194,11 @@ fn drive_launch_plan_url_encodes_structured_postgres_fields() {
             "SDKWORK_DRIVE_DATABASE_HOST=db.internal",
             "SDKWORK_DRIVE_DATABASE_PORT=5432",
             "SDKWORK_DRIVE_DATABASE_NAME=sdkwork drive/dev",
-            "SDKWORK_DRIVE_DATABASE_SCHEMA=sdkwork_drive_dev",
+            "SDKWORK_DRIVE_DATABASE_SCHEMA=sdkwork_ai_dev",
             "SDKWORK_DRIVE_DATABASE_USERNAME=sdkworkprod@2026++",
             "SDKWORK_DRIVE_DATABASE_PASSWORD=pa@ss+word/with space",
             "SDKWORK_DRIVE_DATABASE_SSL_MODE=require",
-            "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS=10",
+            "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS=32",
         ]
         .join("\n"),
     )
@@ -210,9 +246,9 @@ fn drive_launch_plan_rejects_legacy_database_aliases() {
             "SDKWORK_DRIVE_DATABASE_PROVIDER=postgresql",
             "SDKWORK_DRIVE_DATABASE_HOST=127.0.0.1",
             "SDKWORK_DRIVE_DATABASE_PORT=5432",
-            "SDKWORK_DRIVE_DATABASE_NAME=sdkwork_drive_dev",
-            "SDKWORK_DRIVE_DATABASE_USERNAME=sdkwork_drive_dev",
-            "SDKWORK_DRIVE_DATABASE_PASSWORD=local_dev_password",
+            "SDKWORK_DRIVE_DATABASE_NAME=sdkwork_ai_dev",
+            "SDKWORK_DRIVE_DATABASE_USERNAME=sdkwork_ai_dev",
+            "SDKWORK_DRIVE_DATABASE_PASSWORD=sdkworkdev123",
             "SDKWORK_DRIVE_DATABASE_SSLMODE=disable",
         ]
         .join("\n"),

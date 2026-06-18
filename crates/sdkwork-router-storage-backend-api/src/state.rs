@@ -1,13 +1,13 @@
 use crate::auth::drive_auth_policy_from_env;
 use crate::config::AdminStorageConfig;
-use sdkwork_drive_security::DriveAuthValidationPolicy;
+use sdkwork_drive_security::{DriveAuthPolicyHandle, DriveAuthValidationPolicy};
 use sqlx::AnyPool;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AdminStorageState {
     pub(crate) pool: AnyPool,
     pub(crate) config: AdminStorageConfig,
-    pub(crate) auth_policy: DriveAuthValidationPolicy,
+    pub(crate) auth_policy: DriveAuthPolicyHandle,
 }
 
 impl AdminStorageState {
@@ -27,7 +27,7 @@ impl AdminStorageState {
         Self {
             pool,
             config,
-            auth_policy,
+            auth_policy: DriveAuthPolicyHandle::from_policy(auth_policy),
         }
     }
 }

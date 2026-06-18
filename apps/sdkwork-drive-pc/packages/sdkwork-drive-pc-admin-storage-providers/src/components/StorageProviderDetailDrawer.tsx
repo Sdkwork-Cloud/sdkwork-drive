@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-core';
+import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
 import type { StorageProviderAdminService } from '../services/storageProviderAdminService';
 import type { StorageProviderBindingView, StorageProviderBucketView, StorageProviderCapabilitiesView, StorageProviderView } from '../types/storageProviderAdminTypes';
 import { getProviderKindMeta, HEALTH_STATUS_CONFIG, formatBytes } from '../utils/providerKindConfig';
@@ -14,7 +14,7 @@ interface Props {
   onSetDefaultBinding: (providerId: string, spaceId?: string) => void; onDeleteDefaultBinding: (spaceId?: string) => void; onRotateCredential: (providerId: string, credentialRef: string) => void;
 }
 
-export function StorageProviderDetailDrawer({ provider, providers, adminStorageSdkClient, service, pending, onClose, onTestProvider, onActivateProvider, onDeactivateProvider, onSetDefaultBinding, onDeleteDefaultBinding, onRotateCredential }: Props) {
+export function StorageProviderDetailDrawer({ provider, providers, service, pending, onClose, onTestProvider, onActivateProvider, onDeactivateProvider, onSetDefaultBinding, onDeleteDefaultBinding }: Props) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<DrawerTab>('overview');
   const meta = getProviderKindMeta(provider.providerKind);
@@ -25,6 +25,7 @@ export function StorageProviderDetailDrawer({ provider, providers, adminStorageS
   const [bindingProviderId, setBindingProviderId] = useState('');
   const [bindingSpaceId, setBindingSpaceId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [diagnosticsLoaded, setDiagnosticsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bucketExists, setBucketExists] = useState<boolean | null>(null);
   const [buckets, setBuckets] = useState<Array<{ name: string; configured: boolean; creationDate?: string }>>([]);
@@ -35,15 +36,85 @@ export function StorageProviderDetailDrawer({ provider, providers, adminStorageS
 
   useEffect(() => { service.getDefaultBinding(undefined).then(setBinding).catch(() => {}); }, [service]);
 
-  const loadCapabilities = useCallback(async () => { setLoading(true); try { setCapabilities(await service.getCapabilities(provider.id)); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, service]);
-  const headBucket = useCallback(async () => { setLoading(true); try { const r = await service.headBucket(provider.id); setBucket(r); setBucketExists(r.exists); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, service]);
-  const loadBuckets = useCallback(async () => { setLoading(true); try { const r = await adminStorageSdkClient.request<{ items: Array<{ name: string; configured: boolean; creationDateEpochMs?: number }> }>({ operationId: 'storageProviders.buckets.list', pathParams: { providerId: provider.id } }); setBuckets(r.items.map((i) => ({ name: i.name, configured: i.configured, creationDate: i.creationDateEpochMs ? new Date(i.creationDateEpochMs).toLocaleDateString() : undefined }))); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, adminStorageSdkClient]);
-  const createBucket = useCallback(async () => { setLoading(true); try { await adminStorageSdkClient.request({ operationId: 'storageProviders.bucket.create', pathParams: { providerId: provider.id } }); setBucketExists(true); await loadBuckets(); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, adminStorageSdkClient, loadBuckets]);
-  const deleteBucket = useCallback(async () => { if (!window.confirm(`Delete bucket "${provider.bucket}"?`)) return; setLoading(true); try { await adminStorageSdkClient.request({ operationId: 'storageProviders.bucket.delete', pathParams: { providerId: provider.id } }); setBucketExists(false); setBuckets([]); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, provider.bucket, adminStorageSdkClient]);
-  const loadObjects = useCallback(async (prefix: string, token?: string) => { setLoading(true); try { const r = await adminStorageSdkClient.request<{ items: Array<{ key: string; sizeBytes: number; lastModifiedEpochMs?: number }>; prefixes: string[]; nextPageToken?: string }>({ operationId: 'storageProviders.objects.list', pathParams: { providerId: provider.id }, query: { prefix: prefix || undefined, delimiter: '/', pageSize: 100, pageToken: token || undefined } }); const folders = (r.prefixes || []).map((p) => ({ key: p, sizeBytes: 0, isFolder: true })); const files = r.items.map((i) => ({ key: i.key, sizeBytes: i.sizeBytes, lastModified: i.lastModifiedEpochMs ? new Date(i.lastModifiedEpochMs).toLocaleString() : undefined, isFolder: false })); if (token) setObjects((prev) => [...prev, ...folders, ...files]); else setObjects([...folders, ...files]); setPageToken(r.nextPageToken || null); setHasMore(!!r.nextPageToken); setCurrentPrefix(prefix); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, adminStorageSdkClient]);
-  const deleteObject = useCallback(async (key: string) => { if (!window.confirm(t('deleteObjectConfirm', { key }))) return; setLoading(true); try { await adminStorageSdkClient.request({ operationId: 'storageProviders.objects.delete', pathParams: { providerId: provider.id, objectKey: encodeURIComponent(key) } }); await loadObjects(currentPrefix); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, currentPrefix, adminStorageSdkClient, loadObjects, t]);
+  const loadCapabilities = useCallback(async () => {
+    setLoading(true);
+    try {
+      setCapabilities(await service.getCapabilities(provider.id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setLoading(false);
+    }
+  }, [provider.id, service]);
+
+  const headBucket = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await service.headBucket(provider.id);
+      setBucket(r);
+      setBucketExists(r.exists);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setLoading(false);
+    }
+  }, [provider.id, service]);
+
+  const runDiagnostics = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [caps, bucketResult] = await Promise.all([
+        service.getCapabilities(provider.id),
+        service.headBucket(provider.id),
+      ]);
+      setCapabilities(caps);
+      setBucket(bucketResult);
+      setBucketExists(bucketResult.exists);
+      setDiagnosticsLoaded(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setLoading(false);
+    }
+  }, [provider.id, service]);
+
+  useEffect(() => {
+    setDiagnosticsLoaded(false);
+    setCapabilities(undefined);
+    setBucket(undefined);
+    setBucketExists(null);
+    setError(null);
+    if (tab === 'overview') {
+      void runDiagnostics();
+    }
+  }, [provider.id, tab, runDiagnostics]);
+
+  const loadBuckets = useCallback(async () => { setLoading(true); try { setBuckets(await service.listBuckets(provider.id)); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, service]);
+  const createBucket = useCallback(async () => { setLoading(true); try { await service.createBucket(provider.id); setBucketExists(true); await loadBuckets(); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, service, loadBuckets]);
+  const deleteBucket = useCallback(async () => { if (!window.confirm(t('deleteBucketConfirm', { bucket: provider.bucket }))) return; setLoading(true); try { await service.deleteBucket(provider.id); setBucketExists(false); setBuckets([]); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, provider.bucket, service, t]);
+  const loadObjects = useCallback(async (prefix: string, token?: string) => { setLoading(true); try { const result = await service.listObjects(provider.id, { prefix, pageToken: token }); if (token) setObjects((prev) => [...prev, ...result.items]); else setObjects(result.items); setPageToken(result.nextPageToken || null); setHasMore(result.hasMore); setCurrentPrefix(prefix); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, service]);
+  const deleteObject = useCallback(async (key: string) => { if (!window.confirm(t('deleteObjectConfirm', { key }))) return; setLoading(true); try { await service.deleteObject(provider.id, key); await loadObjects(currentPrefix); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, currentPrefix, service, loadObjects, t]);
 
   const tabClass = (d: DrawerTab) => `px-3 py-2 text-xs font-medium border-b-2 transition-colors ${tab === d ? 'border-blue-600 text-blue-600' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`;
+
+  const readinessChecks = [
+    {
+      label: t('checkCredential'),
+      ok: provider.credentialConfigured,
+      detail: provider.credentialConfigured ? t('configured') : t('credentialMissing'),
+    },
+    {
+      label: t('checkBucket'),
+      ok: bucketExists === true,
+      detail: bucketExists === null ? t('checkPending') : bucketExists ? t('exists') : t('doesNotExist'),
+    },
+    {
+      label: t('checkConnectivity'),
+      ok: bucket?.exists === true && provider.status === 'active',
+      detail: provider.status === 'active' ? t('active') : t('inactive'),
+    },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -79,8 +150,44 @@ export function StorageProviderDetailDrawer({ provider, providers, adminStorageS
         <div className="flex-1 overflow-y-auto p-5">
           {tab === 'overview' && (
             <div className="space-y-4">
+              <div className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-xs font-semibold">{t('readinessTitle')}</h3>
+                  <div className="flex items-center gap-2">
+                    {meta.credentialFields?.consoleUrl && (
+                      <a
+                        href={meta.credentialFields.consoleUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-medium text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        {t('openCloudConsole')} ↗
+                      </a>
+                    )}
+                    <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={runDiagnostics}>
+                      {loading ? t('diagnosticsRunning') : t('runDiagnostics')}
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {readinessChecks.map((check) => (
+                    <div key={check.label} className="flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2 text-xs dark:bg-neutral-800/60">
+                      <span className="font-medium text-neutral-700 dark:text-neutral-200">{check.label}</span>
+                      <span className={`flex items-center gap-1.5 ${check.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                        {check.ok ? '✓' : '!'} {check.detail}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {diagnosticsLoaded && bucket && (
+                  <div className={`mt-3 flex items-center gap-2 rounded p-2 text-xs ${bucket.exists ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300' : 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300'}`}>
+                    {bucket.exists ? `✓ ${t('bucketReachable')}` : `✕ ${t('bucketUnreachable')}`}
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
-                <InfoCard label={t('endpoint')} value={provider.endpointUrl} mono />
+                <InfoCard label={t('endpoint')} value={provider.endpointUrl} mono wide />
                 <InfoCard label={t('bucket')} value={provider.bucket} />
                 {provider.region && <InfoCard label={t('region')} value={provider.region} />}
                 <InfoCard label={t('kind')} value={meta.label} />
@@ -108,7 +215,6 @@ export function StorageProviderDetailDrawer({ provider, providers, adminStorageS
                   <h3 className="text-xs font-semibold">{t('diagnostics')}</h3>
                   <div className="flex gap-2"><button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={loadCapabilities}>{t('capabilities')}</button><button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={headBucket}>{t('bucketCheck')}</button></div>
                 </div>
-                {bucket && <div className={`mt-2 flex items-center gap-2 rounded p-2 text-xs ${bucket.exists ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{bucket.exists ? `✓ ${t('bucketReachable')}` : `✕ ${t('bucketUnreachable')}`}</div>}
                 {capabilities && (
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     <CapCard label={t('capMultipart')} ok={capabilities.supportsMultipartUpload} desc={t('capLargeFile')} />
@@ -163,8 +269,13 @@ export function StorageProviderDetailDrawer({ provider, providers, adminStorageS
   );
 }
 
-function InfoCard({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return <div className="rounded-md border border-neutral-100 p-2.5 dark:border-neutral-800"><div className="text-[10px] text-neutral-500">{label}</div><div className={`mt-0.5 truncate text-xs font-medium ${mono ? 'font-mono' : ''}`}>{value}</div></div>;
+function InfoCard({ label, value, mono, wide }: { label: string; value: string; mono?: boolean; wide?: boolean }) {
+  return (
+    <div className={`rounded-md border border-neutral-100 p-2.5 dark:border-neutral-800 ${wide ? 'col-span-2' : ''}`}>
+      <div className="text-[10px] text-neutral-500">{label}</div>
+      <div className={`mt-0.5 text-xs font-medium leading-relaxed break-all ${mono ? 'font-mono' : ''}`}>{value}</div>
+    </div>
+  );
 }
 
 function CapCard({ label, ok, desc }: { label: string; ok: boolean; desc?: string }) {

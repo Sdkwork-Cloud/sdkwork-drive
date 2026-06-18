@@ -160,30 +160,99 @@ pub(crate) fn require_tenant_id(tenant_id: Option<String>) -> Result<String, Dri
     Ok(tenant_id)
 }
 
-pub(crate) fn default_storage_provider_binding_id(
-    tenant_id: &str,
-    space_id: Option<&str>,
-) -> String {
-    match space_id {
-        Some(space_id) => format!("default:space:{tenant_id}:{space_id}"),
-        None => format!("default:tenant:{tenant_id}"),
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum StorageProviderBindingTarget {
+    Tenant,
+    Space(String),
+    SpaceType(String),
+}
+
+pub(crate) fn resolve_storage_provider_binding_target(
+    space_id: Option<String>,
+    space_type: Option<String>,
+) -> Result<StorageProviderBindingTarget, (StatusCode, Json<ProblemDetail>)> {
+    let space_id = normalize_optional_text(space_id);
+    let space_type = normalize_optional_text(space_type);
+    if space_id.is_some() && space_type.is_some() {
+        return Err(validation_problem(
+            "spaceId and spaceType are mutually exclusive",
+        ));
+    }
+    if let Some(space_id) = space_id {
+        return Ok(StorageProviderBindingTarget::Space(space_id));
+    }
+    if let Some(space_type) = space_type {
+        validate_storage_binding_space_type(&space_type)?;
+        return Ok(StorageProviderBindingTarget::SpaceType(space_type));
+    }
+    Ok(StorageProviderBindingTarget::Tenant)
+}
+
+pub(crate) fn validate_storage_binding_space_type(
+    space_type: &str,
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    match space_type {
+        "personal" | "team" | "knowledge_base" | "ai_generated" | "git_repository"
+        | "deployment" | "app_upload" | "im" | "rtc" | "notary" => Ok(()),
+        _ => Err(validation_problem("spaceType is invalid")),
     }
 }
 
-fn default_storage_root_prefix(tenant_id: &str, space_id: Option<&str>) -> String {
-    match space_id {
-        Some(space_id) => format!("sdkwork-drive/v1/tenants/{tenant_id}/spaces/{space_id}"),
-        None => format!("sdkwork-drive/v1/tenants/{tenant_id}"),
+pub(crate) fn default_storage_provider_binding_id(
+    tenant_id: &str,
+    target: &StorageProviderBindingTarget,
+) -> String {
+    match target {
+        StorageProviderBindingTarget::Tenant => format!("default:tenant:{tenant_id}"),
+        StorageProviderBindingTarget::Space(space_id) => {
+            format!("default:space:{tenant_id}:{space_id}")
+        }
+        StorageProviderBindingTarget::SpaceType(space_type) => {
+            format!("default:space_type:{tenant_id}:{space_type}")
+        }
+    }
+}
+
+pub(crate) fn storage_provider_binding_scope(
+    target: &StorageProviderBindingTarget,
+) -> &'static str {
+    match target {
+        StorageProviderBindingTarget::Tenant => "tenant",
+        StorageProviderBindingTarget::Space(_) => "space",
+        StorageProviderBindingTarget::SpaceType(_) => "space_type",
+    }
+}
+
+pub(crate) fn storage_provider_binding_purpose(target: &StorageProviderBindingTarget) -> String {
+    match target {
+        StorageProviderBindingTarget::Tenant | StorageProviderBindingTarget::Space(_) => {
+            "primary".to_string()
+        }
+        StorageProviderBindingTarget::SpaceType(space_type) => space_type.clone(),
+    }
+}
+
+fn default_storage_root_prefix(tenant_id: &str, target: &StorageProviderBindingTarget) -> String {
+    match target {
+        StorageProviderBindingTarget::Tenant => {
+            format!("sdkwork-drive/v1/tenants/{tenant_id}")
+        }
+        StorageProviderBindingTarget::Space(space_id) => {
+            format!("sdkwork-drive/v1/tenants/{tenant_id}/spaces/{space_id}")
+        }
+        StorageProviderBindingTarget::SpaceType(space_type) => {
+            format!("sdkwork-drive/v1/tenants/{tenant_id}/space-types/{space_type}")
+        }
     }
 }
 
 pub(crate) fn normalize_storage_root_prefix(
     value: Option<String>,
     tenant_id: &str,
-    space_id: Option<&str>,
+    target: &StorageProviderBindingTarget,
 ) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
     let prefix = normalize_optional_text(value)
-        .unwrap_or_else(|| default_storage_root_prefix(tenant_id, space_id));
+        .unwrap_or_else(|| default_storage_root_prefix(tenant_id, target));
     let prefix = validate_object_prefix(Some(prefix), "storageRootPrefix")?
         .ok_or_else(|| validation_problem("storageRootPrefix is required"))?;
     if prefix.len() > 512 {

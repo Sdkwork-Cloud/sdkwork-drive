@@ -1,13 +1,13 @@
 use crate::auth::drive_auth_policy_from_env;
 use crate::constants::DEFAULT_DOWNLOAD_PUBLIC_BASE_URL;
-use sdkwork_drive_security::DriveAuthValidationPolicy;
+use sdkwork_drive_security::{DriveAuthPolicyHandle, DriveAuthValidationPolicy};
 use sqlx::AnyPool;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AppState {
     pub(crate) pool: AnyPool,
     pub(crate) download_public_base_url: String,
-    pub(crate) auth_policy: DriveAuthValidationPolicy,
+    pub(crate) auth_policy: DriveAuthPolicyHandle,
 }
 
 impl AppState {
@@ -35,7 +35,7 @@ impl AppState {
         Self {
             pool,
             download_public_base_url: download_public_base_url.into(),
-            auth_policy,
+            auth_policy: DriveAuthPolicyHandle::from_policy(auth_policy),
         }
     }
 }

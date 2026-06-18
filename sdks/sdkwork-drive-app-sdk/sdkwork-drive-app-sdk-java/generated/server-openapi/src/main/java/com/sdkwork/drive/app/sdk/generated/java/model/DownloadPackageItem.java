@@ -14,7 +14,7 @@ public class DownloadPackageItem {
     public String getNodeId() {
         return this.nodeId;
     }
-    
+
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -22,7 +22,7 @@ public class DownloadPackageItem {
     public String getNodeName() {
         return this.nodeName;
     }
-    
+
     public void setNodeName(String nodeName) {
         this.nodeName = nodeName;
     }
@@ -30,7 +30,7 @@ public class DownloadPackageItem {
     public String getArchivePath() {
         return this.archivePath;
     }
-    
+
     public void setArchivePath(String archivePath) {
         this.archivePath = archivePath;
     }
@@ -38,7 +38,7 @@ public class DownloadPackageItem {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -46,7 +46,7 @@ public class DownloadPackageItem {
     public String getObjectKey() {
         return this.objectKey;
     }
-    
+
     public void setObjectKey(String objectKey) {
         this.objectKey = objectKey;
     }
@@ -54,7 +54,7 @@ public class DownloadPackageItem {
     public String getContentType() {
         return this.contentType;
     }
-    
+
     public void setContentType(String contentType) {
         this.contentType = contentType;
     }
@@ -62,7 +62,7 @@ public class DownloadPackageItem {
     public Integer getContentLength() {
         return this.contentLength;
     }
-    
+
     public void setContentLength(Integer contentLength) {
         this.contentLength = contentLength;
     }
@@ -70,7 +70,7 @@ public class DownloadPackageItem {
     public String getChecksumSha256Hex() {
         return this.checksumSha256Hex;
     }
-    
+
     public void setChecksumSha256Hex(String checksumSha256Hex) {
         this.checksumSha256Hex = checksumSha256Hex;
     }

@@ -1,3 +1,15 @@
+mod local_filesystem;
+mod local_upload;
+
+use local_filesystem::{
+    list_local_filesystem, open_local_filesystem_path, LocalFilesystemListRequest,
+    LocalFilesystemOpenRequest,
+};
+use local_upload::{
+    checksum_local_upload_file, describe_local_upload_file, pick_upload_files,
+    read_local_upload_range, LocalUploadChecksumResponse, LocalUploadFileDescriptor,
+    LocalUploadPathRequest, LocalUploadReadRangeRequest, LocalUploadReadRangeResponse,
+};
 use serde::Deserialize;
 use tauri::{AppHandle, Manager};
 
@@ -33,9 +45,55 @@ fn window_control(app: AppHandle, request: WindowControlRequest) -> Result<(), S
     .map_err(|_| "window control failed".to_string())
 }
 
+#[tauri::command]
+fn local_filesystem_list(
+    request: LocalFilesystemListRequest,
+) -> Result<Vec<local_filesystem::LocalFilesystemEntry>, String> {
+    list_local_filesystem(request)
+}
+
+#[tauri::command]
+fn local_filesystem_open(request: LocalFilesystemOpenRequest) -> Result<(), String> {
+    open_local_filesystem_path(request)
+}
+
+#[tauri::command]
+fn local_upload_pick_files() -> Result<Vec<LocalUploadFileDescriptor>, String> {
+    pick_upload_files()
+}
+
+#[tauri::command]
+fn local_upload_describe_file(
+    request: LocalUploadPathRequest,
+) -> Result<LocalUploadFileDescriptor, String> {
+    describe_local_upload_file(request)
+}
+
+#[tauri::command]
+fn local_upload_read_range(
+    request: LocalUploadReadRangeRequest,
+) -> Result<LocalUploadReadRangeResponse, String> {
+    read_local_upload_range(request)
+}
+
+#[tauri::command]
+fn local_upload_checksum_file(
+    request: LocalUploadPathRequest,
+) -> Result<LocalUploadChecksumResponse, String> {
+    checksum_local_upload_file(request)
+}
+
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![window_control])
+        .invoke_handler(tauri::generate_handler![
+            window_control,
+            local_filesystem_list,
+            local_filesystem_open,
+            local_upload_pick_files,
+            local_upload_describe_file,
+            local_upload_read_range,
+            local_upload_checksum_file
+        ])
         .run(tauri::generate_context!())
         .expect("failed to run SDKWork Drive desktop host");
 }

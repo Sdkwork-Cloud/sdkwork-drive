@@ -2,6 +2,8 @@ export default {
   transfersQueue: '传输队列',
   minimize: '最小化',
   clearAll: '清除全部',
+  dismissPanel: '关闭传输面板',
+  expandPanel: '展开传输面板',
   connecting: '正在连接',
   compressing: '正在压缩 Zip',
   downloading: '正在下载',

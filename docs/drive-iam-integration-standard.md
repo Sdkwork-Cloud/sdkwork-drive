@@ -54,7 +54,10 @@ Rules:
 
 ## Runtime API Auth Boundary
 
-App, backend, and admin-storage Drive routes must validate the same dual-token and AppContext projection contract. This includes `Authorization`, `Access-Token`, `x-sdkwork-tenant-id`, `x-sdkwork-user-id`, and the signed context projection required outside explicit local development mode.
+App, backend, and admin-storage Drive routes must validate the same dual-token contract:
+`Authorization: Bearer <auth_token>` and `Access-Token: <access_token>`. Services derive
+tenant, user, actor, and scope context from verified token claims. Clients must not send AppContext projection headers such as `x-sdkwork-tenant-id`, `x-sdkwork-user-id`,
+`x-sdkwork-actor-id`, or `x-sdkwork-actor-kind`.
 
 Admin-storage `/healthz` is public; `/admin/v3/api/drive/storage/*` is protected. Dedicated admin SDKs must declare the same security contract in OpenAPI and must not bypass the shared Drive security crate with handwritten token parsing.
 
@@ -70,8 +73,9 @@ Required behavior:
 - `/auth/*` renders the SDKWork appbase IAM route host.
 - The Drive shell does not implement `/app/v3/api/auth/*`,
   `/backend/v3/api/auth/*`, login, refresh, or current-session endpoints.
-- The Drive App SDK wrapper injects `Authorization`, `Access-Token`, and
-  SDKWork AppContext projection headers from the centralized session store.
+- The Drive App SDK wrapper injects `Authorization` and `Access-Token` from the centralized
+  session store through the global TokenManager. It must not attach AppContext projection
+  headers; the server resolves tenant/user context from dual-token claims.
 - `createDriveIamRuntime` consumes
   `@sdkwork/auth-runtime-pc-react` `createSdkworkAppbasePcAuthRuntime(...)`,
   passes the generated appbase app SDK client, the Drive downstream SDK clients,
@@ -135,6 +139,8 @@ IAM app operations needed by the PC auth route host:
 - `auth.sessions.current.update`
 - `auth.sessions.refresh`
 - `auth.sessions.organizationSelection.create`
+- `auth.sessions.tenantSelection.create` (required by IAM SDK ports; Drive PC maps
+  this from `organizationSelection` until appbase app SDK emits the renamed surface)
 - `auth.registrations.create`
 - `auth.passwordResetRequests.create`
 - `auth.passwordResets.create`

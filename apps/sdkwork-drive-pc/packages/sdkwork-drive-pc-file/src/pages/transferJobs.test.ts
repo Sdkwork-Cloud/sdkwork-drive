@@ -9,9 +9,11 @@ import {
   createDownloadJobForFiles,
   createRetryFilesForDownloadJob,
   createUploadJobForFile,
+  createUploadJobForNativeFile,
   type DriveFile,
   isActiveTransferStatus,
   resolveDriveSectionForDerivedFile,
+  resolveTransferOpenUrl,
 } from 'sdkwork-drive-pc-types';
 import { describe, expect, it } from 'vitest';
 
@@ -212,6 +214,54 @@ describe('drive transfer job helpers', () => {
     expect(job).not.toHaveProperty('downloadUrl');
   });
 
+  it('keeps upload retry context on upload transfer jobs', async () => {
+    const sourceBlob = new File(['hello world'], 'notes.txt', { type: 'text/plain' });
+    const job = createUploadJobForFile(sourceBlob, {
+      id: 'job-upload-retry',
+      fileId: 'upload-temp-file',
+      uploadSection: 'my-storage',
+      uploadParentId: 'folder-001',
+      uploadBlob: sourceBlob,
+    });
+
+    expect(job).toMatchObject({
+      id: 'job-upload-retry',
+      type: 'upload',
+      uploadSection: 'my-storage',
+      uploadParentId: 'folder-001',
+      fileName: 'notes.txt',
+      status: 'uploading',
+    });
+    expect(job.uploadBlob).toBe(sourceBlob);
+  });
+
+  it('keeps native upload retry context on desktop transfer jobs', () => {
+    const job = createUploadJobForNativeFile(
+      {
+        path: 'C:\\\\Users\\\\demo\\\\Roadmap.pdf',
+        name: 'Roadmap.pdf',
+        size: 4096,
+        modifiedAt: '1718611200000',
+        mimeType: 'application/pdf',
+      },
+      {
+        id: 'job-native-upload',
+        uploadSection: 'my-storage',
+        uploadParentId: 'folder-001',
+      },
+    );
+
+    expect(job).toMatchObject({
+      type: 'upload',
+      uploadSection: 'my-storage',
+      uploadParentId: 'folder-001',
+      uploadLocalPath: 'C:\\\\Users\\\\demo\\\\Roadmap.pdf',
+      uploadFileFingerprint: 'C:\\\\Users\\\\demo\\\\Roadmap.pdf:4096:1718611200000',
+      fileName: 'Roadmap.pdf',
+    });
+    expect(job.uploadBlob).toBeUndefined();
+  });
+
   it('resolves derived files into the source file space before falling back to the active section', () => {
     expect(
       resolveDriveSectionForDerivedFile({
@@ -289,5 +339,19 @@ describe('drive transfer job helpers', () => {
       downloadedSize: 5,
       totalSize: 5,
     });
+  });
+
+  it('prefers signed source URLs when opening completed transfer grants', () => {
+    expect(
+      resolveTransferOpenUrl({
+        downloadUrl: 'https://drive.example.test/download/package-001',
+        signedSourceUrl: 'https://storage.example.test/package-001',
+      }),
+    ).toBe('https://storage.example.test/package-001');
+    expect(
+      resolveTransferOpenUrl({
+        downloadUrl: 'https://drive.example.test/download/file-001',
+      }),
+    ).toBe('https://drive.example.test/download/file-001');
   });
 });

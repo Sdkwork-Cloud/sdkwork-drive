@@ -103,7 +103,10 @@ Object-key routes accept slash-separated key tails and `%2F`-encoded keys; route
 
 It is a standalone runtime service in the local Drive launch plan and binds `127.0.0.1:18083` by default. The same crate also exposes router builders so a host application can embed the admin-storage module without duplicating Drive storage logic.
 
-Admin-storage runtime routes under `/admin/v3/api/drive/storage/*` require the same dual-token and AppContext projection as app and backend APIs. `/healthz` is the only public admin-storage runtime route. Embedded hosts may use explicit no-IAM router builders only for isolated business tests or when a higher-level host gateway has already enforced the same contract before routing into Drive.
+Admin-storage runtime routes under `/admin/v3/api/drive/storage/*` require the same dual-token contract as app and backend APIs. Context is token-derived; projection headers are forbidden.
+`/healthz` is the only public admin-storage runtime route. Embedded hosts may use explicit
+no-IAM router builders only for isolated business tests when tokens are supplied through test
+fixtures rather than forged context headers.
 
 `GET /storage/providers/{providerId}/buckets` lists the buckets visible to the configured S3 account and marks the currently configured provider bucket, which lets administrators discover and choose the correct bucket before mounting a provider to tenant or space storage. `GET /storage/bindings` requires `tenantId` and can filter by `spaceId`, `providerId`, and `lifecycleStatus` so administrators can inspect which provider account is mounted to each tenant or space. `PUT /storage/bindings/default` accepts optional `storageRootPrefix`; when omitted, Drive derives the tenant or space default root. `DELETE /storage/bindings/default` soft-deletes the tenant or space primary binding and records `storage_provider_binding.default_deleted`.
 

@@ -20,3 +20,4 @@ Current layout:
 - `sdkwork-router-drive-backend-api/`: Backend API route crate.
 - `sdkwork-router-storage-backend-api/`: Storage backend API route crate.
 - `sdkwork-drive-install-worker/`: Install worker.
+- `sdkwork-drive-standalone-gateway/`: Standalone gateway (embedded IAM + Drive API proxy loop).

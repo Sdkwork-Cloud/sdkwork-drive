@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, Home, Folder, HardDrive } from 'lucide-react';
+import { ChevronRight, Folder, HardDrive } from 'lucide-react';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
 
 interface BreadcrumbsProps {
@@ -7,48 +7,68 @@ interface BreadcrumbsProps {
   allFiles: DriveFile[];
   sectionTitle: string;
   onNavigate: (folderId: string | null) => void;
+  variant?: 'pill' | 'inline';
 }
 
 export function Breadcrumbs({ 
   currentFolderId, 
   allFiles, 
   sectionTitle, 
-  onNavigate 
+  onNavigate,
+  variant = 'pill',
 }: BreadcrumbsProps) {
   
-  // Backwards resolve the path trail recursively
   const getPathTrail = () => {
-    const trail: { id: string; name: string }[] = [];
-    if (!currentFolderId) return trail;
+    if (!currentFolderId) {
+      return [];
+    }
 
+    const folderNodes = allFiles.filter((file) => file.type === 'folder');
+    const lastFolder = folderNodes.at(-1);
+    if (lastFolder?.id === currentFolderId) {
+      return folderNodes.map((folder) => ({ id: folder.id, name: folder.name }));
+    }
+
+    const trail: { id: string; name: string }[] = [];
     let searchId: string | undefined = currentFolderId;
-    let safeguard = 0; // Prevent infinite loops
-    
+    let safeguard = 0;
+
     while (searchId && safeguard < 20) {
-      const folder = allFiles.find(f => f.id === searchId && f.type === 'folder');
+      const folder = allFiles.find((file) => file.id === searchId && file.type === 'folder');
       if (folder) {
         trail.unshift({ id: folder.id, name: folder.name });
         searchId = folder.parentId;
       } else {
         break;
       }
-      safeguard++;
+      safeguard += 1;
     }
-    
+
     return trail;
   };
 
   const trail = getPathTrail();
+  const isInline = variant === 'inline';
 
   return (
-    <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 font-medium py-1 px-3 bg-gray-50/50 dark:bg-[#1a1a1a]/30 border border-gray-100 dark:border-neutral-800/40 rounded-xl select-none w-fit transition-all max-w-full overflow-x-auto whitespace-nowrap scrollbar-none">
+    <div
+      className={
+        isInline
+          ? 'flex min-w-0 max-w-full items-center gap-1 overflow-x-auto whitespace-nowrap text-[13px] font-medium text-gray-500 scrollbar-none dark:text-gray-400 select-none'
+          : 'flex min-w-0 max-w-full items-center gap-1.5 overflow-x-auto whitespace-nowrap rounded-xl border border-gray-100 bg-gray-50/50 px-3 py-1 text-xs font-medium text-gray-500 scrollbar-none transition-all dark:border-neutral-800/40 dark:bg-[#1a1a1a]/30 dark:text-gray-400 select-none'
+      }
+    >
       
       {/* Root Section node link */}
       <button
         onClick={() => onNavigate(null)}
-        className="flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase tracking-wider font-bold text-[10.5px] cursor-pointer"
+        className={`flex shrink-0 items-center gap-1.5 cursor-pointer transition-colors hover:text-blue-600 dark:hover:text-blue-400 ${
+          isInline
+            ? 'sdkwork-drive-breadcrumb-link font-medium text-gray-700 dark:text-gray-200'
+            : 'uppercase tracking-wider font-bold text-[10.5px]'
+        }`}
       >
-        <HardDrive size={13} className="text-gray-400 shrink-0" />
+        <HardDrive size={isInline ? 14 : 13} className="shrink-0 text-gray-400" />
         <span>{sectionTitle}</span>
       </button>
 
@@ -58,18 +78,26 @@ export function Breadcrumbs({
         
         return (
           <React.Fragment key={folder.id}>
-            <ChevronRight size={12} className="text-gray-300 dark:text-neutral-700 shrink-0" />
+            <ChevronRight size={isInline ? 14 : 12} className="shrink-0 text-gray-300 dark:text-neutral-600" />
             <button
               onClick={() => onNavigate(folder.id)}
               disabled={isLastItem}
-              className={`flex items-center gap-1 transition-colors cursor-pointer ${
-                isLastItem 
-                  ? 'text-gray-900 dark:text-white font-bold text-[12.5px]' 
-                  : 'hover:text-blue-600 dark:hover:text-blue-400 font-medium'
+      className={`flex shrink-0 items-center gap-1 transition-colors ${
+                isLastItem
+                  ? isInline
+                    ? 'sdkwork-drive-breadcrumb-current cursor-default font-semibold text-gray-900 dark:text-white'
+                    : 'cursor-default font-semibold text-gray-900 dark:text-white'
+                  : isInline
+                    ? 'sdkwork-drive-breadcrumb-link cursor-pointer font-medium text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400'
+                    : 'cursor-pointer font-medium hover:text-blue-600 dark:hover:text-blue-400'
               }`}
             >
-              {index < trail.length - 1 && <Folder size={12} className="text-amber-500 fill-amber-500 shrink-0" />}
-              <span>{folder.name}</span>
+              {!isLastItem && (
+                <Folder size={isInline ? 13 : 12} className="shrink-0 fill-amber-500 text-amber-500" />
+              )}
+              <span className={isLastItem && trail.length > 0 ? 'max-w-[12rem] truncate sm:max-w-xs' : ''}>
+                {folder.name}
+              </span>
             </button>
           </React.Fragment>
         );

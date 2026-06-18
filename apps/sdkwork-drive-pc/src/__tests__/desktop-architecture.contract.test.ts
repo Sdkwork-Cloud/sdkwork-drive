@@ -78,7 +78,9 @@ describe('desktop architecture contract', () => {
     expect(app).toContain('DriveRuntimeProvider');
     expect(app).not.toMatch(/\bfetch\s*\(/);
     expect(app).not.toMatch(/__TAURI__|@tauri-apps\/api|invoke\s*\(/);
-    expect(main).toContain('<App />');
+    expect(main).toContain('BrowserRouter');
+    expect(app).toContain('drivePathToSection');
+    expect(app).toContain('driveSectionToPath');
   });
 
   it('provides a core package for config, sdk, session, host, services, and runtime providers', () => {
@@ -87,25 +89,31 @@ describe('desktop architecture contract', () => {
       'packages/sdkwork-drive-pc-core/src/index.ts',
       'packages/sdkwork-drive-pc-core/src/config/runtimeConfig.ts',
       'packages/sdkwork-drive-pc-core/src/sdk/driveAppSdkClient.ts',
-      'packages/sdkwork-drive-pc-core/src/sdk/driveAdminStorageSdkClient.ts',
       'packages/sdkwork-drive-pc-core/src/session/sessionStore.ts',
       'packages/sdkwork-drive-pc-core/src/auth/authGate.ts',
       'packages/sdkwork-drive-pc-core/src/host/hostAdapter.ts',
       'packages/sdkwork-drive-pc-core/src/services/driveFileService.ts',
       'packages/sdkwork-drive-pc-core/src/runtime/DriveRuntimeProvider.tsx',
+      'packages/sdkwork-drive-pc-admin-core/package.json',
+      'packages/sdkwork-drive-pc-admin-core/src/index.ts',
+      'packages/sdkwork-drive-pc-admin-core/src/sdk/driveAdminStorageSdkClient.ts',
+      'packages/sdkwork-drive-pc-admin-core/src/auth/adminAccess.ts',
     ]) {
       expect(existsSync(path.join(appRoot, relativePath)), `${relativePath} should exist`).toBe(true);
     }
 
     const coreSource = readAll(coreRoot);
+    const adminCoreRoot = path.join(appRoot, 'packages', 'sdkwork-drive-pc-admin-core');
+    const adminCoreSource = readAll(adminCoreRoot);
     expect(coreSource).toContain("from '@sdkwork/drive-app-sdk'");
-    expect(coreSource).toContain("from '@sdkwork/drive-admin-storage-sdk'");
+    expect(coreSource).not.toContain("from '@sdkwork/drive-admin-storage-sdk'");
+    expect(adminCoreSource).toContain("from '@sdkwork/drive-admin-storage-sdk'");
     expect(coreSource).not.toContain('sdkwork-drive-app-sdk-typescript/generated/server-openapi');
     expect(coreSource).not.toContain('sdkwork-drive-app-sdk-typescript/composed/');
-    expect(coreSource).not.toContain('sdkwork-drive-admin-storage-sdk-typescript/generated/server-openapi');
-    expect(coreSource).not.toContain('sdkwork-drive-admin-storage-sdk-typescript/composed/');
+    expect(adminCoreSource).not.toContain('sdkwork-drive-admin-storage-sdk-typescript/generated/server-openapi');
+    expect(adminCoreSource).not.toContain('sdkwork-drive-admin-storage-sdk-typescript/composed/');
     expect(coreSource).toContain('createDriveAppSdkClient');
-    expect(coreSource).toContain('createDriveAdminStorageSdkClient');
+    expect(adminCoreSource).toContain('createDriveAdminStorageSdkClient');
     expect(coreSource).toContain('createSessionStore');
     expect(coreSource).toContain('resolveDriveAuthGateDecision');
     expect(coreSource).toContain('createHostAdapter');
@@ -132,10 +140,11 @@ describe('desktop architecture contract', () => {
 
     for (const spec of [appSpec, coreSpec]) {
       expect(packageNameFor(spec, 'sdkwork-drive-app-sdk')).toBe('@sdkwork/drive-app-sdk');
-      expect(packageNameFor(spec, 'sdkwork-drive-admin-storage-sdk')).toBe(
-        '@sdkwork/drive-admin-storage-sdk',
-      );
     }
+    expect(packageNameFor(coreSpec, 'sdkwork-drive-admin-storage-sdk')).toBeUndefined();
+    expect(packageNameFor(appSpec, 'sdkwork-drive-admin-storage-sdk')).toBe(
+      '@sdkwork/drive-admin-storage-sdk',
+    );
     expect(packageNameFor(appSpec, 'sdkwork-appbase-app-sdk')).toBe(
       '@sdkwork/appbase-app-sdk',
     );
@@ -154,9 +163,10 @@ describe('desktop architecture contract', () => {
     expect(app).not.toMatch(/login\s*\(|refreshToken\s*\(|\/app\/v3\/api\/auth/);
     expect(bootstrap).not.toContain('authRoutes');
     const runtimeInterface = runtimeProvider.match(
-      /export interface DriveRuntime \{[\s\S]*?\n\}/,
+      /export interface DriveCoreRuntime \{[\s\S]*?\n\}/,
     )?.[0] ?? '';
     expect(runtimeInterface).not.toContain('authRoutes');
+    expect(runtimeInterface).not.toContain('admin');
     expect(runtimeInterface).not.toContain('React.ReactNode');
     expect(bootstrap).not.toMatch(/login\s*\(|refreshToken\s*\(|\/app\/v3\/api\/auth/);
 
@@ -294,12 +304,18 @@ describe('desktop architecture contract', () => {
     expect(fileBrowser).not.toContain('files?.[0]');
     expect(fileBrowser).toContain('e.target.files ? Array.from(e.target.files) : []');
     expect(fileBrowser).toContain('multiple');
-    expect(fileBrowser).toContain('fileService.uploadFile(file, activeSection, currentFolderId, {');
+    expect(fileBrowser).toContain('fileService.uploadFile(source, activeSection, currentFolderId, {');
+    expect(fileBrowser).toContain('taskId: newUploadJob.id');
+    expect(fileBrowser).toContain('host.isNativeHost');
+    expect(fileBrowser).toContain('pickLocalUploadFiles');
     expect(fileBrowser).toContain('signal: uploadController.signal');
     expect(fileBrowser).toContain('loadAbortControllerRef.current?.abort()');
-    expect(fileBrowser).toContain('fileService.listFiles(activeSection, searchQuery, currentFolderId, {');
-    expect(fileBrowser).toContain('fileService.getAllWorkspaceFiles({');
+    expect(fileBrowser).toContain('fileService.listFilesPage(activeSection, searchQuery, currentFolderId, {');
+    expect(fileBrowser).toContain('pageSize: FILE_BROWSER_PAGE_SIZE');
+    expect(fileBrowser).toContain('pageToken: nextPageToken');
+    expect(driveFileService).toContain('listFilesPage(');
     expect(fileBrowser).toContain('fileService.getFolderPath(currentFolderId, {');
+    expect(fileBrowser).not.toContain('fileService.getAllWorkspaceFiles({');
     expect(fileBrowser).toContain('signal: loadAbortController.signal');
     expect(fileBrowser).toContain('isDriveUploadAbortError(err)');
     expect(driveFileService).toContain('export interface DriveFileReadOptions');
@@ -467,6 +483,7 @@ describe('desktop architecture contract', () => {
 
   it('limits Trash view item actions to restore, permanent delete, and read-only details', () => {
     const fileBrowser = read('packages/sdkwork-drive-pc-file/src/components/FileBrowser.tsx');
+    const fileSidebar = read('packages/sdkwork-drive-pc-file/src/components/FileSidebar.tsx');
     const rowItem = read('packages/sdkwork-drive-pc-file/src/components/FileRowItem.tsx');
     const gridItem = read('packages/sdkwork-drive-pc-file/src/components/FileGridItem.tsx');
     const fileDetailModal = read('packages/sdkwork-drive-pc-file/src/components/FileDetailModal.tsx');
@@ -485,8 +502,12 @@ describe('desktop architecture contract', () => {
     expect(gridItem).toContain('isTrashSection: isTrashSectionProp');
     expect(rowItem).toMatch(/const isTrashSection = isTrashSectionProp \?\? activeSection === ["']trash["'];/);
     expect(gridItem).toMatch(/const isTrashSection = isTrashSectionProp \?\? activeSection === ["']trash["'];/);
-    expect(rowItem).toContain('!isTrashSection &&');
-    expect(gridItem).toContain('!isTrashSection &&');
+    expect(rowItem).toContain('hideCloudFileActions');
+    expect(gridItem).toContain('hideCloudFileActions');
+    expect(rowItem).toContain('isComputerSection');
+    expect(gridItem).toContain('isComputerSection');
+    expect(fileSidebar).toContain('showComputersSection');
+    expect(fileSidebar).toContain('host.isNativeHost');
     expect(fileDetailModal).toContain('isTrashSection = false');
     expect(fileDetailModal).toContain('{!isTrashSection && (');
     expect(fileDetailModal).toContain('isReadOnly={isTrashSection}');
@@ -635,7 +656,7 @@ describe('desktop architecture contract', () => {
       'packages/sdkwork-drive-pc-core/src/sdk/driveAppSdkClient.ts',
     );
     const adminStorageSdkClient = read(
-      'packages/sdkwork-drive-pc-core/src/sdk/driveAdminStorageSdkClient.ts',
+      'packages/sdkwork-drive-pc-admin-core/src/sdk/driveAdminStorageSdkClient.ts',
     );
     const generatedAdminStorageSdk = readFileSync(
       path.join(
@@ -686,7 +707,7 @@ describe('desktop architecture contract', () => {
     ]) {
       expect(generatedAdminStorageSdk).toContain(`"${operationId}"`);
       expect(generatedAppSdk).not.toContain(`"${operationId}"`);
-      expect(driveFileService).toContain(`operationId: '${operationId}'`);
+      expect(driveFileService).not.toContain(`operationId: '${operationId}'`);
       expect(appSdkClient).not.toContain(`operationId: '${operationId}'`);
     }
 
@@ -708,16 +729,20 @@ describe('desktop architecture contract', () => {
       'deleteDefaultStorageProviderBinding(',
       'listStorageProviderBuckets(',
     ]) {
-      expect(driveFileService).toContain(method);
+      expect(driveFileService).not.toContain(method);
     }
 
-    expect(driveFileService).toContain('adminStorageSdkClient.request');
+    expect(driveFileService).not.toContain('adminStorageSdkClient.request');
     expect(appSdkClient).toContain("from '@sdkwork/drive-app-sdk'");
     expect(adminStorageSdkClient).toContain("from '@sdkwork/drive-admin-storage-sdk'");
-    expect(driveFileService).toContain('operatorId: identity.actorId');
-    expect(driveFileService).toContain('tenantId: identity.tenantId');
-    expect(driveFileService).not.toContain('fetch(');
-    expect(driveFileService).not.toContain('axios');
+    expect(driveFileService).toContain('omitAuthProjectionQuery');
+    expect(driveFileService).toContain('omitAuthProjectionBody');
+    expect(driveFileService).not.toContain('tenantId: identity.tenantId');
+    expect(driveFileService).not.toContain('userId: identity.userId');
+    expect(driveFileService).not.toContain("appId: 'drive-pc'");
+    expect(driveFileService).not.toMatch(/\baxios\b/);
+    expect(driveFileService).toContain('uploadFetch');
+    expect(driveFileService).toContain('downloadFetch');
   });
 
   it('places storage provider configuration in a PC internal admin package', () => {
@@ -776,7 +801,7 @@ describe('desktop architecture contract', () => {
     ]);
     expect(app).toContain("import('sdkwork-drive-pc-admin-storage-providers')");
     expect(app).toContain('admin-storage-providers');
-    expect(app).toContain('runtime.sdk.adminStorage');
+    expect(app).toContain('runtime.admin.adminStorage');
     expect(app).toContain('runtime.session.getSnapshot');
     expect(adminSource).toContain('adminStorageSdkClient.request');
     expect(adminSource).toContain("operationId: 'storageProviders.list'");
@@ -814,6 +839,19 @@ describe('desktop architecture contract', () => {
     expect(drivePage).toContain('signal: deleteSpaceAbortController.signal');
     expect(drivePage).toContain('isDrivePageAbortError');
     expect(drivePage).toContain('isMountedRef.current');
+  });
+
+  it('keeps knowledge base space navigation backed by abortable Drive App SDK spaces calls', () => {
+    const drivePage = read('packages/sdkwork-drive-pc-file/src/pages/DrivePage.tsx');
+    const driveFileService = read(
+      'packages/sdkwork-drive-pc-core/src/services/driveFileService.ts',
+    );
+
+    expect(driveFileService).toContain('listKnowledgeBaseSpaces(options?: DriveFileReadOptions)');
+    expect(driveFileService).toContain('getKnowledgeBaseSpaces(): KnowledgeBaseSpace[]');
+    expect(drivePage).toContain('knowledgeBaseSpaceListAbortControllerRef.current?.abort()');
+    expect(drivePage).toContain('fileService.listKnowledgeBaseSpaces({');
+    expect(drivePage).toContain('signal: knowledgeBaseSpaceListAbortController.signal');
   });
 
   it('keeps user-facing locale copy free of demo, mock, and simulation wording', () => {
@@ -955,8 +993,6 @@ describe('desktop architecture contract', () => {
     expect(downloadManager).toContain('activeUploadCount');
     expect(downloadManager).toContain('isWorking && (');
     expect(downloadManager).not.toContain("job.status === 'downloading' &&");
-    expect(fileSidebar).toContain("else if (job.status === 'uploading')");
-    expect(fileSidebar).toContain("job.status === 'uploading' ? job.speed");
     expect(transferPage).toContain("case 'uploading'");
     expect(transferPage).toContain("j.status === 'downloading' || j.status === 'uploading'");
     expect(transferPage).toContain("job.status === 'uploading' ? `${job.speed} - ${job.timeRemaining}`");
@@ -967,9 +1003,6 @@ describe('desktop architecture contract', () => {
     expect(fileBrowser).not.toContain('onPauseJob={(id)');
     expect(fileBrowser).not.toContain('onResumeJob={(id)');
     expect(fileBrowser).not.toContain('status: "downloading", speed: "Resuming..."');
-    expect(fileSidebar).toContain('canCancelTransferJob');
-    expect(fileSidebar).toContain('canPauseTransferJob');
-    expect(fileSidebar).toContain('canResumeTransferJob');
   });
 
   it('owns Tauri native code and permissions in a desktop package', () => {
@@ -1016,19 +1049,20 @@ describe('desktop architecture contract', () => {
       ),
     );
 
-    expect(rootPackageJson.scripts.dev).toBe(
-      'node scripts/run-drive-pc-dev.mjs --target browser --database postgres',
+    expect(rootPackageJson.scripts['drive:dev']).toBe(
+      'node scripts/drive-dev.mjs --target browser --database postgres --hosting self-hosted',
     );
-    expect(rootPackageJson.scripts['dev:pc']).toBe('pnpm --dir apps/sdkwork-drive-pc dev');
-    expect(rootPackageJson.scripts['tauri:dev']).toBe(
-      'node scripts/run-drive-pc-dev.mjs --target desktop --database sqlite',
+    expect(rootPackageJson.scripts['dev:pc']).toBeUndefined();
+    expect(rootPackageJson.scripts['drive:dev:desktop']).toBe(
+      'node scripts/drive-dev.mjs --target desktop --database sqlite --hosting self-hosted',
+    );
+    expect(rootPackageJson.scripts['drive:build']).toBe(
+      'node scripts/drive-build.mjs --hosting cloud-hosted',
     );
     expect(rootPackageJson.scripts['dev:server']).toBe(
       'node scripts/run-drive-api-server.mjs server --dev-env-file .env.postgres',
     );
-    expect(appPackageJson.scripts.dev).toBe(
-      'vite --host 127.0.0.1 --port 5183 --strictPort',
-    );
+    expect(appPackageJson.scripts.dev).toBe('vite');
     expect(tauriConfig.build.devUrl).toBe('http://localhost:5183');
   });
 

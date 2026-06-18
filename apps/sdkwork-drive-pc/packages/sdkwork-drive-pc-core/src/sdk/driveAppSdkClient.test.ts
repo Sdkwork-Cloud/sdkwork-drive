@@ -53,7 +53,7 @@ describe('drive app sdk client', () => {
     await client.request({
       operationId: 'nodes.list',
       pathParams: { spaceId: 'space-001' },
-      query: { tenantId: 'tenant-001' },
+      query: { tenantId: 'tenant-001', pageSize: 50 },
     });
 
     expect(sdkClient.setTokenManager).toHaveBeenCalledWith(tokenManager);
@@ -63,7 +63,7 @@ describe('drive app sdk client', () => {
       '/app/v3/api/drive/spaces/space-001/nodes',
       {
         method: 'GET',
-        params: { tenantId: 'tenant-001' },
+        params: { pageSize: 50 },
         body: undefined,
         contentType: undefined,
         signal: undefined,

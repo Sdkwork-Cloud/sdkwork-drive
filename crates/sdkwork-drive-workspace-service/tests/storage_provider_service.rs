@@ -79,6 +79,51 @@ async fn create_and_list_storage_providers_with_status_filter() {
 }
 
 #[tokio::test]
+async fn create_storage_provider_rejects_duplicate_id() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
+    let command = CreateStorageProviderCommand {
+        id: "provider-duplicate".to_string(),
+        provider_kind: DriveStorageProviderKind::S3Compatible,
+        name: "Provider Duplicate".to_string(),
+        endpoint_url: "https://s3.example.com".to_string(),
+        region: Some("us-east-1".to_string()),
+        bucket: "drive-bucket".to_string(),
+        path_style: Some(true),
+        strict_tls: None,
+        credential_ref: None,
+        server_side_encryption_mode: None,
+        default_storage_class: None,
+        status: Some("active".to_string()),
+        operator_id: "admin-001".to_string(),
+    };
+
+    service
+        .create_storage_provider(command.clone())
+        .await
+        .expect("first provider should be created");
+
+    let error = service
+        .create_storage_provider(command)
+        .await
+        .expect_err("duplicate provider id should be rejected");
+
+    assert_eq!(
+        error,
+        DriveServiceError::Conflict("storage provider already exists".to_string())
+    );
+}
+
+#[tokio::test]
 async fn update_test_and_delete_storage_provider_flow() {
     sqlx::any::install_default_drivers();
     let pool = AnyPoolOptions::new()

@@ -24,6 +24,7 @@ import {
   canCancelTransferJob,
   canPauseTransferJob,
   canResumeTransferJob,
+  resolveTransferOpenUrl,
   type DownloadJob,
   isActiveTransferStatus,
 } from 'sdkwork-drive-pc-types';
@@ -74,8 +75,10 @@ export function TransferPage({
   };
 
   const handleOpenDownload = (job: DownloadJob) => {
-    if (!job.downloadUrl || !onOpenDownload) return;
-    void onOpenDownload(job.downloadUrl);
+    if (!onOpenDownload) return;
+    const openUrl = resolveTransferOpenUrl(job);
+    if (!openUrl) return;
+    void onOpenDownload(openUrl);
   };
 
   // Bulk actions handlers
@@ -181,42 +184,44 @@ export function TransferPage({
   };
 
   return (
-    <div className="flex-1 bg-white dark:bg-[#151515] flex flex-col h-full overflow-hidden transition-colors relative">
+    <div className="flex min-h-0 min-w-0 flex-1 bg-white dark:bg-[#151515] flex flex-col h-full overflow-hidden transition-colors relative">
       
       {/* Search & Bulk Options Header */}
-      <div className="h-20 border-b border-[#f0f0f0] dark:border-[#222] flex items-center justify-between px-8 shrink-0 bg-white dark:bg-[#151515] transition-colors select-none">
-        <div className="flex items-center gap-3">
-          <Clock className="text-blue-500" size={19} />
-          <h2 className="text-md font-bold text-gray-900 dark:text-white leading-none">
-            {t('sidebar.transferCenter')}
-          </h2>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-neutral-800 text-gray-500 dark:text-gray-400">
-            {filteredJobs.length} {t('fileBrowser.items')}
-          </span>
+      <div className="shrink-0 border-b border-[#f0f0f0] bg-white transition-colors select-none dark:border-[#222] dark:bg-[#151515]">
+        <div className="border-b border-[#f5f5f5] px-4 py-2.5 dark:border-[#1e1e1e] sm:px-8">
+          <div className="relative w-full">
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('transfer.searchTransfers')}
+              className="w-full rounded-lg border border-transparent bg-[#f5f5f5] py-2 pl-10 pr-8 text-[13px] text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:shadow-[0_0_0_4px_rgba(59,130,246,0.08)] dark:bg-[#222] dark:text-gray-200 dark:placeholder:text-gray-600 dark:focus:border-blue-500 dark:focus:bg-[#1a1a1a]"
+            />
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#999] dark:text-[#666]" size={17} />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Search */}
-        <div className="relative w-[300px] xl:w-[380px] mx-4">
-          <input 
-            type="text" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('transfer.searchTransfers')} 
-            className="w-full bg-[#f4f4f4] dark:bg-[#222] border border-transparent dark:border-[#2a2a2a] rounded-lg py-2 pl-[42px] pr-8 text-[13px] text-gray-800 dark:text-gray-200 focus:bg-white dark:focus:bg-[#1a1a1a] focus:border-blue-500 dark:focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.08)] outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600"
-          />
-          <Search className="absolute left-[14px] top-[9px] text-[#999] dark:text-[#666]" size={17} />
-          {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-202 cursor-pointer"
-            >
-              <X size={15} />
-            </button>
-          )}
-        </div>
+        <div className="flex flex-nowrap items-center gap-3 overflow-hidden px-4 py-2.5 sm:px-8 sm:py-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
+            <Clock className="shrink-0 text-blue-500" size={19} />
+            <h2 className="truncate text-md font-bold leading-none text-gray-900 dark:text-white">
+              {t('sidebar.transferCenter')}
+            </h2>
+            <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500 dark:bg-neutral-800 dark:text-gray-400">
+              {filteredJobs.length} {t('fileBrowser.items')}
+            </span>
+          </div>
 
-        {/* Global actions */}
-        <div className="flex items-center gap-2">
+          <div className="flex shrink-0 flex-nowrap items-center gap-2">
           {metrics.active > 0 && (
             <button 
               onClick={handleCancelAllActive}
@@ -242,6 +247,7 @@ export function TransferPage({
               <Trash2 size={16} />
             </button>
           )}
+          </div>
         </div>
       </div>
 
@@ -249,7 +255,7 @@ export function TransferPage({
       <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
         
         {/* Statistics Widgets Row */}
-        <div className="grid grid-cols-4 gap-4 select-none">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 select-none">
           
           <div className="bg-[#fcfcfc] dark:bg-[#1a1a1a]/40 border border-gray-100 dark:border-neutral-800 rounded-2xl p-4 flex items-center gap-4 transition-all hover:bg-white dark:hover:bg-[#1e1e1e]/60">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 dark:bg-blue-950/20 text-blue-500 flex items-center justify-center shrink-0">
@@ -475,7 +481,7 @@ export function TransferPage({
                           </>
                         )}
 
-                        {job.downloadUrl && (
+                        {resolveTransferOpenUrl(job) && (
                           <button
                             onClick={() => handleOpenDownload(job)}
                             className="p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-emerald-600 rounded transition-colors cursor-pointer"
@@ -485,11 +491,11 @@ export function TransferPage({
                           </button>
                         )}
 
-                        {job.type === 'download' && (job.status === 'cancelled' || job.status === 'failed') && (
+                        {(job.status === 'cancelled' || job.status === 'failed') && (
                           <button 
                             onClick={() => handleRetry(job)}
                             className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/20 text-blue-600 rounded transition-colors cursor-pointer"
-                            title={t('transfer.retryTransfer')}
+                            title={job.type === 'upload' ? t('transfer.retryTransfer') : t('transfer.retryTransfer')}
                           >
                             <RotateCcw size={14} />
                           </button>

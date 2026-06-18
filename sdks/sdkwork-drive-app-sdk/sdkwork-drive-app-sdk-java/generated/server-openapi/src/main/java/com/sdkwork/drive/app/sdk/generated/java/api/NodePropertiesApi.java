@@ -8,15 +8,14 @@ import java.util.Map;
 
 public class NodePropertiesApi {
     private final HttpClient client;
-    
+
     public NodePropertiesApi(HttpClient client) {
         this.client = client;
     }
 
     /** List node custom properties */
-    public NodePropertyListResponse list(String nodeId, String tenantId, String visibility, Integer pageSize, String pageToken) throws Exception {
+    public NodePropertyListResponse list(String nodeId, String visibility, Integer pageSize, String pageToken) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
             new QueryParameterSpec("visibility", visibility, "form", true, false, null),
             new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
             new QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
@@ -32,11 +31,9 @@ public class NodePropertiesApi {
     }
 
     /** Delete a node custom property */
-    public DeleteNodePropertyResponse delete(String nodeId, String propertyKey, String tenantId, String visibility, String operatorId) throws Exception {
+    public DeleteNodePropertyResponse delete(String nodeId, String propertyKey, String visibility) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
-            new QueryParameterSpec("visibility", visibility, "form", true, false, null),
-            new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
+            new QueryParameterSpec("visibility", visibility, "form", true, false, null)
         ));
         Object raw = client.delete(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/properties/" + serializePathParameter(propertyKey, new PathParameterSpec("propertyKey", "simple", false)) + ""), query));
         return client.convertValue(raw, new TypeReference<DeleteNodePropertyResponse>() {});

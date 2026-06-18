@@ -79,8 +79,9 @@ Run commands from this directory unless a command explicitly targets another roo
 - `pnpm typecheck`
 - `pnpm test`
 - `pnpm build`
-- `pnpm desktop:dev`
-- `pnpm desktop:build:local`
+- `pnpm drive:dev`
+- `pnpm drive:dev:desktop`
+- `pnpm drive:build:debug`
 
 From the repository root, `pnpm run check:drive-pc-standard` verifies this application root against the SDKWork PC standard.
 

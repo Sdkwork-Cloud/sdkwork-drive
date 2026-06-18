@@ -11,6 +11,11 @@ interface ImportMetaEnv {
   readonly VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL?: string;
   readonly VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL?: string;
   readonly VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL?: string;
+  readonly VITE_DRIVE_PC_API_GATEWAY_BASE_URL?: string;
+  readonly VITE_DRIVE_PC_HOSTING?: 'self-hosted' | 'cloud-hosted';
+  /** @deprecated use VITE_DRIVE_PC_HOSTING */
+  readonly VITE_DRIVE_PC_TOPOLOGY?: 'standalone' | 'cloud';
+  readonly VITE_DRIVE_PC_DEV_SAME_ORIGIN_API?: string;
   readonly VITE_DRIVE_PC_TOKEN_MANAGER_MODE?: string;
   readonly VITE_DRIVE_PC_TOKEN_STORAGE?: string;
 }

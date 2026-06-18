@@ -79,7 +79,11 @@ pub struct DriveSpace {
     pub owner_subject_type: String,
     pub owner_subject_id: String,
     pub display_name: String,
+    pub presentation_icon: Option<String>,
+    pub presentation_color: Option<String>,
+    pub description: Option<String>,
     pub space_type: DriveSpaceType,
     pub lifecycle_status: String,
     pub version: i64,
+    pub created_by: String,
 }

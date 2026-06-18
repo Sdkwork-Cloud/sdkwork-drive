@@ -12,6 +12,9 @@ pub struct NewDriveSpace {
     pub display_name: String,
     pub space_type: String,
     pub lifecycle_status: String,
+    pub presentation_icon: Option<String>,
+    pub presentation_color: Option<String>,
+    pub description: Option<String>,
     pub created_by: String,
     pub updated_by: String,
 }
@@ -36,11 +39,15 @@ pub trait DriveSpaceStore: Send + Sync {
         space_id: &str,
     ) -> Result<DriveSpace, DriveServiceError>;
 
+    #[allow(clippy::too_many_arguments)]
     async fn update_space(
         &self,
         tenant_id: &str,
         space_id: &str,
-        display_name: &str,
+        display_name: Option<&str>,
+        presentation_icon: Option<&str>,
+        presentation_color: Option<&str>,
+        description: Option<&str>,
         operator_id: &str,
     ) -> Result<DriveSpace, DriveServiceError>;
 

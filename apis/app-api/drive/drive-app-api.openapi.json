@@ -20,14 +20,6 @@
         "operationId": "changes.list",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "spaceId",
             "in": "query",
             "required": false,
@@ -155,14 +147,6 @@
         "operationId": "changes.startPageToken.get",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "spaceId",
             "in": "query",
             "required": false,
@@ -263,14 +247,6 @@
           {
             "name": "token",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -443,30 +419,6 @@
         "operationId": "favorites.list",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "subjectType",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "subjectId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "spaceId",
             "in": "query",
             "required": false,
@@ -582,16 +534,7 @@
           "drive"
         ],
         "operationId": "quotas.summary",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "OK",
@@ -764,14 +707,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -850,22 +785,6 @@
             "name": "nodeId",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": false,
             "schema": {
               "type": "string"
             }
@@ -952,34 +871,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "subjectType",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "user",
-                "group"
-              ]
-            }
-          },
-          {
-            "name": "subjectId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -1059,14 +950,6 @@
           {
             "name": "nodeId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -1302,14 +1185,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -1528,22 +1403,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -1646,14 +1505,6 @@
           {
             "name": "commentId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -1905,14 +1756,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -2147,22 +1990,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -2371,14 +2198,6 @@
             }
           },
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "requestedTtlSeconds",
             "in": "query",
             "required": false,
@@ -2576,38 +2395,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "subjectType",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "subjectId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -2703,17 +2490,6 @@
           {
             "name": "nodeId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string",
@@ -2987,28 +2763,6 @@
               "maxLength": 64,
               "pattern": "^[A-Za-z0-9._:@-]+$"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
-            }
           }
         ],
         "responses": {
@@ -3215,14 +2969,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -3317,14 +3063,6 @@
           {
             "name": "nodeId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -3560,14 +3298,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -3786,14 +3516,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -3888,14 +3610,6 @@
           {
             "name": "nodeId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -4020,18 +3734,6 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "description": "Tenant identifier.",
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64,
               "pattern": "^[A-Za-z0-9._:@-]+$"
             }
           },
@@ -4279,18 +3981,6 @@
             }
           },
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "description": "Tenant identifier.",
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
-            }
-          },
-          {
             "name": "visibility",
             "in": "query",
             "required": false,
@@ -4302,18 +3992,6 @@
                 "app_public"
               ],
               "default": "private"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": false,
-            "description": "Actor performing the mutation.",
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
             }
           }
         ],
@@ -4500,14 +4178,6 @@
           {
             "name": "nodeId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -4739,14 +4409,6 @@
             }
           },
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "pageSize",
             "in": "query",
             "required": false,
@@ -4870,22 +4532,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -4986,14 +4632,6 @@
           {
             "name": "versionId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -5501,14 +5139,6 @@
         "operationId": "recent.list",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "spaceId",
             "in": "query",
             "required": false,
@@ -5625,14 +5255,6 @@
         ],
         "operationId": "search.query",
         "parameters": [
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "q",
             "in": "query",
@@ -5761,14 +5383,6 @@
           {
             "name": "shareLinkId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -5975,14 +5589,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -6074,30 +5680,6 @@
         ],
         "operationId": "sharedWithMe.list",
         "parameters": [
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "subjectType",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "subjectId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "spaceId",
             "in": "query",
@@ -6215,14 +5797,6 @@
         ],
         "operationId": "spaces.list",
         "parameters": [
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "ownerSubjectType",
             "in": "query",
@@ -6383,14 +5957,6 @@
           {
             "name": "spaceId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -6582,22 +6148,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -6692,14 +6242,6 @@
           {
             "name": "spaceId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -6823,14 +6365,6 @@
         "operationId": "trash.list",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "spaceId",
             "in": "query",
             "required": false,
@@ -6851,6 +6385,14 @@
           },
           {
             "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "parentNodeId",
             "in": "query",
             "required": false,
             "schema": {
@@ -7239,14 +6781,6 @@
           {
             "name": "uploadSessionId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -7889,17 +7423,6 @@
         "summary": "List Drive watch channels",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
-            }
-          },
-          {
             "name": "resourceType",
             "in": "query",
             "required": false,
@@ -8040,17 +7563,6 @@
           {
             "name": "channelId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string",
@@ -8383,16 +7895,6 @@
               "minLength": 1,
               "maxLength": 64
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64
-            }
           }
         ],
         "responses": {
@@ -8502,14 +8004,6 @@
           {
             "name": "nodeId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -8932,14 +8426,6 @@
         "summary": "List global assets",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -9205,14 +8691,6 @@
           {
             "name": "assetId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -9695,14 +9173,6 @@
         "summary": "List asset collections",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -10079,14 +9549,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -10329,14 +9791,6 @@
           {
             "name": "relationId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -12282,30 +11736,14 @@
     "schemas": {
       "ApplyNodeLabelRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
-        "properties": {
-          "tenantId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          }
-        },
+        "required": [],
+        "properties": {},
         "additionalProperties": false
       },
       "Change": {
         "type": "object",
         "required": [
           "sequenceNo",
-          "tenantId",
           "spaceId",
           "eventType",
           "actorId",
@@ -12412,16 +11850,12 @@
       "CompleteUploadSessionRequest": {
         "type": "object",
         "required": [
-          "tenantId",
           "contentType",
           "contentLength",
           "checksumSha256Hex",
           "parts"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "uploadId": {
             "type": "string"
           },
@@ -12434,9 +11868,6 @@
             "minimum": 0
           },
           "checksumSha256Hex": {
-            "type": "string"
-          },
-          "operatorId": {
             "type": "string"
           },
           "parts": {
@@ -12453,14 +11884,10 @@
       "CopyNodeRequest": {
         "type": "object",
         "required": [
-          "id",
-          "tenantId"
+          "id"
         ],
         "properties": {
           "id": {
-            "type": "string"
-          },
-          "tenantId": {
             "type": "string"
           },
           "targetSpaceId": {
@@ -12471,9 +11898,6 @@
           },
           "nodeName": {
             "type": "string"
-          },
-          "operatorId": {
-            "type": "string"
           }
         }
       },
@@ -12481,21 +11905,13 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
-          "content",
-          "operatorId"
+          "content"
         ],
         "properties": {
           "id": {
             "type": "string"
           },
-          "tenantId": {
-            "type": "string"
-          },
           "content": {
-            "type": "string"
-          },
-          "operatorId": {
             "type": "string"
           }
         }
@@ -12504,15 +11920,10 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
-          "content",
-          "operatorId"
+          "content"
         ],
         "properties": {
           "id": {
-            "type": "string"
-          },
-          "tenantId": {
             "type": "string"
           },
           "content": {
@@ -12520,22 +11931,15 @@
           },
           "anchor": {
             "type": "string"
-          },
-          "operatorId": {
-            "type": "string"
           }
         }
       },
       "CreateDownloadUrlRequest": {
         "type": "object",
         "required": [
-          "tenantId",
           "nodeId"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "nodeId": {
             "type": "string"
           },
@@ -12575,19 +11979,14 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "spaceId",
           "nodeName",
-          "operatorId",
           "uploadSessionId",
           "idempotencyKey",
           "expiresAtEpochMs"
         ],
         "properties": {
           "id": {
-            "type": "string"
-          },
-          "tenantId": {
             "type": "string"
           },
           "spaceId": {
@@ -12597,9 +11996,6 @@
             "type": "string"
           },
           "nodeName": {
-            "type": "string"
-          },
-          "operatorId": {
             "type": "string"
           },
           "uploadSessionId": {
@@ -12641,18 +12037,13 @@
       "CreateFolderRequest": {
         "type": "object",
         "required": [
-          "id",
-          "tenantId",
           "spaceId",
-          "nodeName",
-          "operatorId"
+          "nodeName"
         ],
         "properties": {
           "id": {
-            "type": "string"
-          },
-          "tenantId": {
-            "type": "string"
+            "type": "string",
+            "description": "Optional client-supplied node id for offline or idempotent retries. When omitted, the service assigns a server-generated id."
           },
           "spaceId": {
             "type": "string"
@@ -12662,9 +12053,6 @@
           },
           "nodeName": {
             "type": "string"
-          },
-          "operatorId": {
-            "type": "string"
           }
         }
       },
@@ -12672,23 +12060,10 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
-          "subjectType",
-          "subjectId",
-          "role",
-          "operatorId"
+          "role"
         ],
         "properties": {
           "id": {
-            "type": "string"
-          },
-          "tenantId": {
-            "type": "string"
-          },
-          "subjectType": {
-            "type": "string"
-          },
-          "subjectId": {
             "type": "string"
           },
           "role": {
@@ -12699,9 +12074,6 @@
               "writer",
               "owner"
             ]
-          },
-          "operatorId": {
-            "type": "string"
           }
         }
       },
@@ -12709,15 +12081,10 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
-          "token",
-          "operatorId"
+          "token"
         ],
         "properties": {
           "id": {
-            "type": "string"
-          },
-          "tenantId": {
             "type": "string"
           },
           "token": {
@@ -12740,9 +12107,6 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
-          },
-          "operatorId": {
-            "type": "string"
           }
         }
       },
@@ -12750,20 +12114,12 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "spaceId",
           "nodeName",
-          "targetNodeId",
-          "operatorId"
+          "targetNodeId"
         ],
         "properties": {
           "id": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
-          "tenantId": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
@@ -12791,12 +12147,6 @@
             "minLength": 1,
             "maxLength": 64,
             "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
         },
         "additionalProperties": false
@@ -12805,18 +12155,13 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "ownerSubjectType",
           "ownerSubjectId",
           "displayName",
-          "spaceType",
-          "operatorId"
+          "spaceType"
         ],
         "properties": {
           "id": {
-            "type": "string"
-          },
-          "tenantId": {
             "type": "string"
           },
           "ownerSubjectType": {
@@ -12843,7 +12188,13 @@
               "notary"
             ]
           },
-          "operatorId": {
+          "presentationIcon": {
+            "type": "string"
+          },
+          "presentationColor": {
+            "type": "string"
+          },
+          "description": {
             "type": "string"
           }
         }
@@ -12852,18 +12203,13 @@
         "type": "object",
         "required": [
           "sessionId",
-          "tenantId",
           "spaceId",
           "nodeId",
           "idempotencyKey",
-          "operatorId",
           "expiresAtEpochMs"
         ],
         "properties": {
           "sessionId": {
-            "type": "string"
-          },
-          "tenantId": {
             "type": "string"
           },
           "spaceId": {
@@ -12881,9 +12227,6 @@
             "description": "Deprecated compatibility field. The service ignores this value and generates an internal sdkwork-drive/v1 object key."
           },
           "idempotencyKey": {
-            "type": "string"
-          },
-          "operatorId": {
             "type": "string"
           },
           "expiresAtEpochMs": {
@@ -12951,7 +12294,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "nodeId",
           "content",
           "resolved",
@@ -13008,7 +12350,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "nodeId",
           "commentId",
           "content",
@@ -13062,7 +12403,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "labelKey",
           "displayName",
           "lifecycleStatus",
@@ -13116,7 +12456,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "spaceId",
           "nodeType",
           "nodeName",
@@ -13194,6 +12533,42 @@
               "rtc",
               "notary"
             ]
+          },
+          "contentState": {
+            "type": "string",
+            "enum": [
+              "empty",
+              "uploading",
+              "ready",
+              "failed"
+            ],
+            "description": "File content lifecycle on the node. Folders and shortcuts remain empty."
+          },
+          "fileExtension": {
+            "type": "string",
+            "description": "Normalized file extension without a leading dot."
+          },
+          "contentType": {
+            "type": "string",
+            "description": "MIME type of the latest active file version."
+          },
+          "contentTypeGroup": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video",
+              "audio",
+              "text",
+              "document",
+              "archive",
+              "binary"
+            ],
+            "description": "Coarse file category derived from contentType for list filtering and icons."
+          },
+          "contentLength": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Byte size of the latest active file version."
           }
         }
       },
@@ -13201,7 +12576,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "nodeId",
           "propertyKey",
           "propertyValue",
@@ -13260,10 +12634,7 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "nodeId",
-          "subjectType",
-          "subjectId",
           "role",
           "inherited",
           "lifecycleStatus",
@@ -13304,7 +12675,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "nodeId",
           "role",
           "downloadCount",
@@ -13352,7 +12722,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "ownerSubjectType",
           "ownerSubjectId",
           "displayName",
@@ -13391,12 +12760,24 @@
               "notary"
             ]
           },
+          "presentationIcon": {
+            "type": "string"
+          },
+          "presentationColor": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
           "lifecycleStatus": {
             "type": "string"
           },
           "version": {
             "type": "integer",
             "format": "int64"
+          },
+          "createdBy": {
+            "type": "string"
           }
         }
       },
@@ -13404,7 +12785,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "spaceId",
           "nodeId",
           "bucket",
@@ -13471,11 +12851,8 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "targetNodeId",
           "nodeId",
-          "subjectType",
-          "subjectId",
           "role",
           "inherited",
           "inheritedFromNodeId",
@@ -13551,17 +12928,9 @@
       },
       "EmptyTrashRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "spaceId": {
-            "type": "string"
-          },
-          "operatorId": {
             "type": "string"
           }
         }
@@ -13580,31 +12949,8 @@
       },
       "FavoriteNodeRequest": {
         "type": "object",
-        "required": [
-          "tenantId",
-          "subjectType",
-          "subjectId"
-        ],
-        "properties": {
-          "tenantId": {
-            "type": "string"
-          },
-          "subjectType": {
-            "type": "string",
-            "enum": [
-              "user",
-              "group",
-              "domain",
-              "app"
-            ]
-          },
-          "subjectId": {
-            "type": "string"
-          },
-          "operatorId": {
-            "type": "string"
-          }
-        }
+        "required": [],
+        "properties": {}
       },
       "FavoriteNodeResponse": {
         "type": "object",
@@ -13621,7 +12967,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "nodeId",
           "versionNo",
           "contentType",
@@ -13682,17 +13027,9 @@
       },
       "MoveNodeRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "targetParentNodeId": {
-            "type": "string"
-          },
-          "operatorId": {
             "type": "string"
           }
         }
@@ -13700,10 +13037,7 @@
       "NodeCapabilitiesResponse": {
         "type": "object",
         "required": [
-          "tenantId",
           "nodeId",
-          "subjectType",
-          "subjectId",
           "role",
           "source",
           "permissionId",
@@ -13820,23 +13154,13 @@
       },
       "NodeCommandRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
-        "properties": {
-          "tenantId": {
-            "type": "string"
-          },
-          "operatorId": {
-            "type": "string"
-          }
-        }
+        "required": [],
+        "properties": {}
       },
       "NodeLabel": {
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "nodeId",
           "labelId",
           "lifecycleStatus",
@@ -14015,13 +13339,8 @@
       },
       "PresignUploadPartRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "uploadId": {
             "type": "string"
           },
@@ -14081,7 +13400,6 @@
       "QuotaSummary": {
         "type": "object",
         "required": [
-          "tenantId",
           "usedBytes",
           "objectCount"
         ],
@@ -14116,16 +13434,9 @@
       "SetNodePropertyRequest": {
         "type": "object",
         "required": [
-          "tenantId",
           "value"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
           "value": {
             "type": "string",
             "minLength": 1,
@@ -14138,12 +13449,6 @@
               "app_public"
             ],
             "default": "private"
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
         },
         "additionalProperties": false
@@ -14178,30 +13483,17 @@
       },
       "UpdateCommentReplyRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "content": {
-            "type": "string"
-          },
-          "operatorId": {
             "type": "string"
           }
         }
       },
       "UpdateCommentRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "content": {
             "type": "string"
           },
@@ -14210,38 +13502,24 @@
           },
           "resolved": {
             "type": "boolean"
-          },
-          "operatorId": {
-            "type": "string"
           }
         }
       },
       "UpdateNodeRequest": {
         "type": "object",
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "nodeName": {
             "type": "string"
           },
           "parentNodeId": {
-            "type": "string"
-          },
-          "operatorId": {
             "type": "string"
           }
         }
       },
       "UpdatePermissionRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "role": {
             "type": "string",
             "enum": [
@@ -14250,21 +13528,13 @@
               "writer",
               "owner"
             ]
-          },
-          "operatorId": {
-            "type": "string"
           }
         }
       },
       "UpdateShareLinkRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "role": {
             "type": "string",
             "enum": [
@@ -14288,25 +13558,23 @@
             ],
             "format": "int64",
             "minimum": 0
-          },
-          "operatorId": {
-            "type": "string"
           }
         }
       },
       "UpdateSpaceRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "displayName": {
             "type": "string"
           },
-          "operatorId": {
+          "presentationIcon": {
+            "type": "string"
+          },
+          "presentationColor": {
+            "type": "string"
+          },
+          "description": {
             "type": "string"
           }
         }
@@ -14315,7 +13583,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "spaceId",
           "nodeId",
           "bucket",
@@ -14395,18 +13662,11 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "address",
           "expirationEpochMs"
         ],
         "properties": {
           "id": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
-          "tenantId": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
@@ -14440,42 +13700,20 @@
             "type": "integer",
             "format": "int64",
             "minimum": 1
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
         },
         "additionalProperties": false
       },
       "StopWatchChannelRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
-        "properties": {
-          "tenantId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          }
-        },
+        "required": [],
+        "properties": {},
         "additionalProperties": false
       },
       "DriveWatchChannel": {
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "resourceType",
           "channelType",
           "address",
@@ -14593,15 +13831,9 @@
       "CreateDownloadPackageRequest": {
         "type": "object",
         "required": [
-          "tenantId",
           "nodeIds"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64
-          },
           "nodeIds": {
             "type": "array",
             "minItems": 1,
@@ -14621,10 +13853,6 @@
             "minimum": 30,
             "maximum": 3600,
             "default": 300
-          },
-          "operatorId": {
-            "type": "string",
-            "maxLength": 128
           }
         }
       },
@@ -14673,7 +13901,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "packageName",
           "state",
           "storageProviderId",
@@ -14816,15 +14043,8 @@
       },
       "ExtractArchiveEntriesRequest": {
         "type": "object",
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64
-          },
           "entryPaths": {
             "type": "array",
             "maxItems": 500,
@@ -14837,10 +14057,6 @@
           "targetParentNodeId": {
             "type": "string",
             "maxLength": 64
-          },
-          "operatorId": {
-            "type": "string",
-            "maxLength": 128
           }
         }
       },
@@ -14920,16 +14136,13 @@
         "required": [
           "id",
           "taskId",
-          "tenantId",
-          "appId",
           "appResourceType",
           "appResourceId",
           "fileFingerprint",
           "originalFileName",
           "contentType",
           "contentLength",
-          "chunkSizeBytes",
-          "operatorId"
+          "chunkSizeBytes"
         ],
         "properties": {
           "id": {
@@ -14942,26 +14155,12 @@
             "minLength": 1,
             "maxLength": 128
           },
-          "tenantId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64
-          },
           "organizationId": {
-            "type": "string",
-            "maxLength": 128
-          },
-          "userId": {
             "type": "string",
             "maxLength": 128
           },
           "anonymousId": {
             "type": "string",
-            "maxLength": 128
-          },
-          "appId": {
-            "type": "string",
-            "minLength": 1,
             "maxLength": 128
           },
           "appResourceType": {
@@ -15027,11 +14226,6 @@
           "retention": {
             "$ref": "#/components/schemas/UploaderRetentionRequest"
           },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128
-          },
           "nowEpochMs": {
             "type": "integer",
             "format": "int64",
@@ -15064,7 +14258,6 @@
         "required": [
           "id",
           "taskId",
-          "tenantId",
           "actorType",
           "actorId",
           "appId",
@@ -15234,17 +14427,12 @@
       "MarkUploaderPartUploadedRequest": {
         "type": "object",
         "required": [
-          "tenantId",
           "uploadSessionId",
           "offsetBytes",
           "sizeBytes",
           "etag"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "minLength": 1
-          },
           "uploadSessionId": {
             "type": "string",
             "minLength": 1
@@ -15277,7 +14465,6 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "uploadItemId",
           "uploadSessionId",
           "partNo",
@@ -15376,7 +14563,6 @@
           "assetId",
           "driveNodeId",
           "driveSpaceId",
-          "tenantId",
           "assetKind",
           "title",
           "nodeType",
@@ -15525,13 +14711,8 @@
       "CreateAssetRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "organizationId": {
             "type": "string"
           },
@@ -15586,13 +14767,8 @@
       "UpdateAssetRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "title": {
             "type": "string"
           },
@@ -15624,13 +14800,8 @@
       "AssetActionRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "tenantId"
-        ],
+        "required": [],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "reason": {
             "type": "string",
             "maxLength": 256
@@ -15642,7 +14813,6 @@
         "additionalProperties": false,
         "required": [
           "id",
-          "tenantId",
           "userId",
           "title",
           "lifecycleStatus",
@@ -15724,13 +14894,9 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "tenantId",
           "title"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "organizationId": {
             "type": "string"
           },
@@ -15762,13 +14928,9 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "tenantId",
           "assetId"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "assetId": {
             "type": "string"
           },
@@ -15783,7 +14945,6 @@
         "additionalProperties": false,
         "required": [
           "id",
-          "tenantId",
           "collectionId",
           "assetId"
         ],
@@ -15823,7 +14984,6 @@
         "additionalProperties": false,
         "required": [
           "id",
-          "tenantId",
           "assetId",
           "relationType",
           "lifecycleStatus"
@@ -15878,13 +15038,9 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "tenantId",
           "relationType"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "relatedAssetId": {
             "type": "string"
           },

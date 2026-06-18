@@ -34,6 +34,9 @@
       "sdkwork-drive-pc-core": [
         "./packages/sdkwork-drive-pc-core/src"
       ],
+      "sdkwork-drive-pc-admin-core": [
+        "./packages/sdkwork-drive-pc-admin-core/src"
+      ],
       "sdkwork-drive-pc-admin-storage-providers": [
         "./packages/sdkwork-drive-pc-admin-storage-providers/src"
       ],

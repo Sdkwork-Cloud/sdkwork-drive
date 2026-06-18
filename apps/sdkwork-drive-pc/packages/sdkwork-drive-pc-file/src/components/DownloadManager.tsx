@@ -19,6 +19,7 @@ import {
   canPauseTransferJob,
   canResumeTransferJob,
   isActiveTransferStatus,
+  resolveTransferOpenUrl,
 } from 'sdkwork-drive-pc-types';
 
 export type { DownloadJob };
@@ -29,6 +30,7 @@ interface DownloadManagerProps {
   onResumeJob?: (id: string) => void;
   onCancelJob: (id: string) => void;
   onClearJobs: () => void;
+  onDismissPanel: () => void;
   onRetryJob: (job: DownloadJob) => void;
   onOpenDownload?: (url: string) => Promise<void> | void;
 }
@@ -39,6 +41,7 @@ export function DownloadManager({
   onResumeJob,
   onCancelJob,
   onClearJobs,
+  onDismissPanel,
   onRetryJob,
   onOpenDownload
 }: DownloadManagerProps) {
@@ -125,25 +128,30 @@ export function DownloadManager({
         </div>
         <div className="flex items-center gap-1.5">
           {finishedCount > 0 && activeCount === 0 && !isMinimized && (
-            <button 
+            <button
+              type="button"
               onClick={onClearJobs}
               className="text-[10.5px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline px-2 py-1 rounded transition-all cursor-pointer"
-              title="Clear finished downloads list"
+              title={t('downloadManager.clearAll')}
             >
               {t('downloadManager.clearAll')}
             </button>
           )}
-          <button 
+          <button
+            type="button"
             onClick={() => setIsMinimized(!isMinimized)}
             className="p-1 px-1.5 hover:bg-gray-100 dark:hover:bg-[#282828] text-gray-400 hover:text-gray-600 rounded transition-all cursor-pointer"
-            title={isMinimized ? "Expand Activity Panel" : "Collapse Monitor"}
+            title={isMinimized ? t('downloadManager.expandPanel') : t('downloadManager.minimize')}
+            aria-label={isMinimized ? t('downloadManager.expandPanel') : t('downloadManager.minimize')}
           >
             {isMinimized ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
           </button>
-          <button 
-            onClick={onClearJobs}
+          <button
+            type="button"
+            onClick={onDismissPanel}
             className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#282828] text-gray-400 hover:text-gray-600 rounded transition-all cursor-pointer"
-            title="Dismiss Panel"
+            title={t('downloadManager.dismissPanel')}
+            aria-label={t('downloadManager.dismissPanel')}
           >
             <X size={14} />
           </button>
@@ -187,9 +195,14 @@ export function DownloadManager({
 
                   {/* Actions column */}
                   <div className="flex items-center gap-1 self-center shrink-0">
-                    {job.downloadUrl && onOpenDownload && (
+                    {resolveTransferOpenUrl(job) && onOpenDownload && (
                       <button
-                        onClick={() => void onOpenDownload(job.downloadUrl as string)}
+                        onClick={() => {
+                          const openUrl = resolveTransferOpenUrl(job);
+                          if (openUrl) {
+                            void onOpenDownload(openUrl);
+                          }
+                        }}
                         className="p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 cursor-pointer"
                         title="Open Download"
                       >
@@ -216,11 +229,11 @@ export function DownloadManager({
                       </button>
                     )}
                     {/* Retry button */}
-                    {job.type === 'download' && (job.status === 'failed' || job.status === 'cancelled') && (
+                    {(job.status === 'failed' || job.status === 'cancelled') && (
                       <button 
                         onClick={() => onRetryJob(job)}
                         className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#282828] rounded text-blue-500 hover:text-blue-600 cursor-pointer"
-                        title="Retry Download"
+                        title={job.type === 'upload' ? 'Retry Upload' : 'Retry Download'}
                       >
                         <RotateCcw size={12} />
                       </button>

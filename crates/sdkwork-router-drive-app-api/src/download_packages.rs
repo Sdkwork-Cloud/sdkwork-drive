@@ -1,3 +1,4 @@
+use crate::app_context::DriveRequestContext;
 use crate::archive::{
     sanitize_archive_path_segment, sanitize_relative_archive_path, unique_archive_path,
 };
@@ -20,35 +21,55 @@ use crate::object_store::{
 };
 use crate::state::AppState;
 use crate::time::{current_epoch_ms, signing_ttl_seconds};
-use crate::validators::{
-    normalize_optional_text, require_non_empty_text, require_query_value,
-    validate_requested_ttl_seconds,
-};
+use crate::validators::{normalize_optional_text, validate_requested_ttl_seconds};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
+use axum::Extension;
 use axum::Json;
 use sdkwork_drive_storage_contract::{
     DriveByteRange, DriveObjectLocator, DriveObjectStore, PresignDownloadRequest, PutObjectRequest,
     ReadObjectRangeRequest,
 };
 use sdkwork_drive_storage_s3::S3DriveObjectStore;
+use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
 use sdkwork_drive_workspace_service::ports::storage_object_store::SignedDownloadPayload;
 use sha2::{Digest, Sha256};
 use sqlx::AnyPool;
 use sqlx::Row;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::io::{Cursor, Write};
+use tempfile::NamedTempFile;
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
 
+const PACKAGE_STREAM_CHUNK_BYTES: usize = 256 * 1024;
+const IN_MEMORY_PACKAGE_ARCHIVE_THRESHOLD_BYTES: i64 = 32 * 1024 * 1024;
+
+enum BuiltPackageArchive {
+    Memory(Vec<u8>),
+    File(NamedTempFile),
+}
+
+impl BuiltPackageArchive {
+    fn size_bytes(&self) -> i64 {
+        match self {
+            Self::Memory(bytes) => bytes.len() as i64,
+            Self::File(file) => file
+                .path()
+                .metadata()
+                .map(|metadata| metadata.len() as i64)
+                .unwrap_or(0),
+        }
+    }
+}
+
 pub(crate) async fn create_download_package(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateDownloadPackageRequest>,
 ) -> Result<(StatusCode, Json<DownloadPackageResponse>), (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_non_empty_text(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id)?;
     let requested_node_ids = normalize_download_package_node_ids(payload.node_ids)?;
     let package_name = normalize_package_name(payload.package_name);
     let requested_ttl_seconds = validate_requested_ttl_seconds(
@@ -83,30 +104,29 @@ pub(crate) async fn create_download_package(
         .map_err(map_service_error)?
         .ok_or_else(|| map_service_error(unsupported_signing_provider_error(&bucket)))?;
     let archive_object_key = build_download_package_object_key(&tenant_id, &package_id);
-    let archive_bytes = build_download_package_zip(&state.pool, &package_files).await?;
-    let archive_size_bytes = archive_bytes.len() as i64;
     let total_bytes = package_files.iter().map(|item| item.content_length).sum();
+    let built_archive =
+        build_download_package_zip(&state.pool, &package_files, total_bytes).await?;
+    let archive_size_bytes = built_archive.size_bytes();
     let requested_node_ids_json = serde_json::to_string(&requested_node_ids).map_err(|error| {
         internal_problem(format!("serialize requested node ids failed: {error}"))
     })?;
     let item_manifest_json = serde_json::to_string(&package_files)
         .map_err(|error| internal_problem(format!("serialize package manifest failed: {error}")))?;
-    object_store
-        .put_object(PutObjectRequest {
-            locator: DriveObjectLocator {
-                bucket: bucket.clone(),
-                object_key: archive_object_key.clone(),
-            },
-            content_type: Some("application/zip".to_string()),
-            metadata: BTreeMap::from([
-                ("sdkwork-drive-package-id".to_string(), package_id.clone()),
-                ("sdkwork-drive-tenant-id".to_string(), tenant_id.clone()),
-            ]),
-            body: archive_bytes,
-            checksum_sha256_hex: None,
-        })
-        .await
-        .map_err(map_object_store_route_error)?;
+    upload_built_package_archive(
+        &object_store,
+        DriveObjectLocator {
+            bucket: bucket.clone(),
+            object_key: archive_object_key.clone(),
+        },
+        BTreeMap::from([
+            ("sdkwork-drive-package-id".to_string(), package_id.clone()),
+            ("sdkwork-drive-tenant-id".to_string(), tenant_id.clone()),
+        ]),
+        built_archive,
+    )
+    .await
+    .map_err(map_object_store_route_error)?;
 
     insert_download_package_record(
         &state.pool,
@@ -162,10 +182,11 @@ pub(crate) async fn create_download_package(
 
 pub(crate) async fn resolve_download_package_url(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(package_id): Path<String>,
     Query(query): Query<ResolveDownloadPackageQuery>,
 ) -> Result<Json<DownloadPackageResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let package = find_download_package_record(&state.pool, &tenant_id, &package_id).await?;
     if package.state != "ready" {
         return Err(problem(
@@ -389,15 +410,14 @@ async fn list_folder_descendant_files(
                 "drive.conflict",
             ));
         }
-        let rows = sqlx::query(
-            "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id,
-                    node_type, node_name, scene, source, lifecycle_status, version
+        let rows = sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
              WHERE tenant_id=$1
                AND parent_node_id=$2
                AND lifecycle_status='active'
              ORDER BY node_type DESC, node_name ASC, id ASC",
-        )
+        ))
         .bind(tenant_id)
         .bind(&parent_id)
         .fetch_all(pool)
@@ -470,49 +490,69 @@ async fn read_download_package_file(
 async fn build_download_package_zip(
     pool: &AnyPool,
     files: &[DownloadPackageFileItem],
-) -> Result<Vec<u8>, (StatusCode, Json<ProblemDetail>)> {
-    let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+    total_source_bytes: i64,
+) -> Result<BuiltPackageArchive, (StatusCode, Json<ProblemDetail>)> {
     let options = SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Stored)
         .unix_permissions(0o644);
     let mut stores = BTreeMap::<String, S3DriveObjectStore>::new();
-    for file in files {
-        if !stores.contains_key(&file.storage_provider_id) {
-            let provider = find_storage_provider_by_id(pool, &file.storage_provider_id)
-                .await
-                .map_err(map_service_error)?
-                .ok_or_else(|| map_service_error(missing_signing_provider_error(&file.bucket)))?;
-            let provider = require_active_storage_provider(provider, &file.bucket)
-                .map_err(map_service_error)?;
-            let object_store = build_s3_object_store_for_provider(&provider)
-                .await
-                .map_err(map_service_error)?
-                .ok_or_else(|| {
-                    map_service_error(unsupported_signing_provider_error(&file.bucket))
-                })?;
-            stores.insert(file.storage_provider_id.clone(), object_store);
+    if total_source_bytes > IN_MEMORY_PACKAGE_ARCHIVE_THRESHOLD_BYTES {
+        let mut temp_file = NamedTempFile::new().map_err(|error| {
+            internal_problem(format!("create download package temp file failed: {error}"))
+        })?;
+        {
+            let mut writer = ZipWriter::new(std::io::BufWriter::new(temp_file.as_file_mut()));
+            for file in files {
+                let object_store = resolve_package_object_store(pool, file, &mut stores).await?;
+                stream_file_into_zip(&mut writer, object_store, file, options).await?;
+            }
+            writer
+                .finish()
+                .map_err(|error| internal_problem(format!("finish zip archive failed: {error}")))?;
         }
-        let object_store = stores
-            .get(&file.storage_provider_id)
-            .expect("object store should be cached after insertion");
-        let bytes = read_full_object(object_store, file).await?;
-        writer
-            .start_file(&file.archive_path, options)
-            .map_err(|error| internal_problem(format!("start zip file failed: {error}")))?;
-        writer
-            .write_all(&bytes)
-            .map_err(|error| internal_problem(format!("write zip file failed: {error}")))?;
+        return Ok(BuiltPackageArchive::File(temp_file));
+    }
+
+    let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+    for file in files {
+        let object_store = resolve_package_object_store(pool, file, &mut stores).await?;
+        stream_file_into_zip(&mut writer, object_store, file, options).await?;
     }
     let cursor = writer
         .finish()
         .map_err(|error| internal_problem(format!("finish zip archive failed: {error}")))?;
-    Ok(cursor.into_inner())
+    Ok(BuiltPackageArchive::Memory(cursor.into_inner()))
 }
 
-async fn read_full_object(
+async fn resolve_package_object_store<'a>(
+    pool: &AnyPool,
+    file: &DownloadPackageFileItem,
+    stores: &'a mut BTreeMap<String, S3DriveObjectStore>,
+) -> Result<&'a S3DriveObjectStore, (StatusCode, Json<ProblemDetail>)> {
+    if !stores.contains_key(&file.storage_provider_id) {
+        let provider = find_storage_provider_by_id(pool, &file.storage_provider_id)
+            .await
+            .map_err(map_service_error)?
+            .ok_or_else(|| map_service_error(missing_signing_provider_error(&file.bucket)))?;
+        let provider =
+            require_active_storage_provider(provider, &file.bucket).map_err(map_service_error)?;
+        let object_store = build_s3_object_store_for_provider(&provider)
+            .await
+            .map_err(map_service_error)?
+            .ok_or_else(|| map_service_error(unsupported_signing_provider_error(&file.bucket)))?;
+        stores.insert(file.storage_provider_id.clone(), object_store);
+    }
+    stores
+        .get(&file.storage_provider_id)
+        .ok_or_else(|| internal_problem("object store cache missing provider after insertion"))
+}
+
+async fn stream_file_into_zip<W: Write + std::io::Seek>(
+    writer: &mut ZipWriter<W>,
     object_store: &S3DriveObjectStore,
     file: &DownloadPackageFileItem,
-) -> Result<Vec<u8>, (StatusCode, Json<ProblemDetail>)> {
+    options: SimpleFileOptions,
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     if file.content_length < 0 {
         return Err(problem(
             StatusCode::BAD_REQUEST,
@@ -521,31 +561,73 @@ async fn read_full_object(
             "drive.validation.failed",
         ));
     }
+    writer
+        .start_file(&file.archive_path, options)
+        .map_err(|error| internal_problem(format!("start zip file failed: {error}")))?;
     if file.content_length == 0 {
-        return Ok(Vec::new());
+        return Ok(());
     }
-    let (_response, mut stream) = object_store
-        .read_object_range(ReadObjectRangeRequest {
-            locator: DriveObjectLocator {
-                bucket: file.bucket.clone(),
-                object_key: file.object_key.clone(),
-            },
-            range: DriveByteRange {
-                start_inclusive: 0,
-                end_inclusive: file.content_length as u64 - 1,
-            },
-        })
-        .await
-        .map_err(map_object_store_route_error)?;
-    let mut bytes = Vec::with_capacity(file.content_length as usize);
-    while let Some(chunk) = stream
-        .next_chunk()
-        .await
-        .map_err(map_object_store_route_error)?
-    {
-        bytes.extend_from_slice(&chunk);
+    let mut offset = 0_i64;
+    while offset < file.content_length {
+        let chunk_end =
+            (offset + PACKAGE_STREAM_CHUNK_BYTES as i64 - 1).min(file.content_length - 1);
+        let (_response, mut stream) = object_store
+            .read_object_range(ReadObjectRangeRequest {
+                locator: DriveObjectLocator {
+                    bucket: file.bucket.clone(),
+                    object_key: file.object_key.clone(),
+                },
+                range: DriveByteRange {
+                    start_inclusive: offset as u64,
+                    end_inclusive: chunk_end as u64,
+                },
+            })
+            .await
+            .map_err(map_object_store_route_error)?;
+        while let Some(chunk) = stream
+            .next_chunk()
+            .await
+            .map_err(map_object_store_route_error)?
+        {
+            writer
+                .write_all(&chunk)
+                .map_err(|error| internal_problem(format!("write zip file failed: {error}")))?;
+        }
+        offset = chunk_end + 1;
     }
-    Ok(bytes)
+    Ok(())
+}
+
+async fn upload_built_package_archive(
+    object_store: &S3DriveObjectStore,
+    locator: DriveObjectLocator,
+    metadata: BTreeMap<String, String>,
+    archive: BuiltPackageArchive,
+) -> Result<(), sdkwork_drive_storage_contract::DriveObjectStoreError> {
+    match archive {
+        BuiltPackageArchive::Memory(bytes) => {
+            object_store
+                .put_object(PutObjectRequest {
+                    locator,
+                    content_type: Some("application/zip".to_string()),
+                    metadata,
+                    body: bytes,
+                    checksum_sha256_hex: None,
+                })
+                .await?;
+        }
+        BuiltPackageArchive::File(temp_file) => {
+            object_store
+                .put_object_from_path(
+                    locator,
+                    Some("application/zip".to_string()),
+                    metadata,
+                    temp_file.path(),
+                )
+                .await?;
+        }
+    }
+    Ok(())
 }
 
 async fn insert_download_package_record(

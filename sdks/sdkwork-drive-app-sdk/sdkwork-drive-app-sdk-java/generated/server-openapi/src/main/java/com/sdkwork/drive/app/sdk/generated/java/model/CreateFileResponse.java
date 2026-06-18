@@ -8,7 +8,7 @@ public class CreateFileResponse {
     public DriveNode getNode() {
         return this.node;
     }
-    
+
     public void setNode(DriveNode node) {
         this.node = node;
     }
@@ -16,7 +16,7 @@ public class CreateFileResponse {
     public DriveUploadSession getUploadSession() {
         return this.uploadSession;
     }
-    
+
     public void setUploadSession(DriveUploadSession uploadSession) {
         this.uploadSession = uploadSession;
     }

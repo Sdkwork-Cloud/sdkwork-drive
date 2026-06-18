@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use sdkwork_platform_id_service::SnowflakeIdGenerator;
+use sdkwork_id_core::SnowflakeIdGenerator;
 
 use crate::DriveServiceError;
 

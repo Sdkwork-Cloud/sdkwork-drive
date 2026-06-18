@@ -4,6 +4,10 @@ use sqlx::{AnyConnection, AnyPool, Row};
 
 use crate::domain::uploader::{DriveUploadItem, DriveUploadPart};
 use crate::infrastructure::sql::runtime_id::next_drive_runtime_id;
+use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
+use crate::infrastructure::sql::upload_query_columns::{
+    DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS, DRIVE_UPLOAD_PART_SELECT_COLUMNS,
+};
 use crate::ports::uploader_store::{
     CompleteDriveStoredUpload, DriveUploaderNodeRecord, DriveUploaderSpaceRecord,
     DriveUploaderStore, NewDriveUploadItem, NewDriveUploadPart, NewDriveUploaderNode,
@@ -188,7 +192,7 @@ impl DriveUploaderStore for SqlUploaderStore {
 
         if let Err(error) = result {
             let message = error.to_string();
-            if !message.contains("UNIQUE constraint failed") && !message.contains("duplicate key") {
+            if !is_unique_constraint_violation(&message) {
                 return Err(DriveServiceError::Internal(format!(
                     "insert uploader upload space failed: {message}"
                 )));
@@ -204,6 +208,30 @@ impl DriveUploaderStore for SqlUploaderStore {
         .await?
         .ok_or_else(|| {
             DriveServiceError::Internal("uploader upload space was not created".to_string())
+        })
+    }
+
+    async fn list_live_node_names_in_parent(
+        &self,
+        tenant_id: &str,
+        space_id: &str,
+        parent_node_id: Option<&str>,
+    ) -> Result<Vec<String>, DriveServiceError> {
+        sqlx::query_scalar(
+            "SELECT node_name
+             FROM dr_drive_node
+             WHERE tenant_id=$1
+               AND space_id=$2
+               AND lifecycle_status != 'deleted'
+               AND ((parent_node_id IS NULL AND $3 IS NULL) OR parent_node_id = $3)",
+        )
+        .bind(tenant_id)
+        .bind(space_id)
+        .bind(parent_node_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("list live uploader node names failed: {error}"))
         })
     }
 
@@ -229,7 +257,14 @@ impl DriveUploaderStore for SqlUploaderStore {
         .execute(&self.pool)
         .await
         .map_err(|error| {
-            DriveServiceError::Internal(format!("insert uploader node failed: {error}"))
+            let message = error.to_string();
+            if is_unique_constraint_violation(&message) {
+                return DriveServiceError::Conflict(format!(
+                    "node name already exists in parent: {}",
+                    node.node_name
+                ));
+            }
+            DriveServiceError::Internal(format!("insert uploader node failed: {message}"))
         })?;
 
         Ok(node.id.clone())
@@ -366,8 +401,8 @@ impl DriveUploaderStore for SqlUploaderStore {
         tenant_id: &str,
         task_id: &str,
     ) -> Result<Option<DriveUploadItem>, DriveServiceError> {
-        let row = sqlx::query(
-            "SELECT ui.*,
+        let row = sqlx::query(&format!(
+            "SELECT {DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS},
                     us.bucket AS object_bucket,
                     us.object_key AS object_key
              FROM dr_drive_upload_item ui
@@ -375,7 +410,7 @@ impl DriveUploaderStore for SqlUploaderStore {
                ON us.tenant_id=ui.tenant_id
               AND us.id=ui.upload_session_id
              WHERE ui.tenant_id=$1 AND ui.task_id=$2",
-        )
+        ))
         .bind(tenant_id)
         .bind(task_id)
         .fetch_optional(&self.pool)
@@ -391,11 +426,11 @@ impl DriveUploaderStore for SqlUploaderStore {
         &self,
         part: &NewDriveUploadPart,
     ) -> Result<DriveUploadPart, DriveServiceError> {
-        let existing = sqlx::query(
-            "SELECT *
+        let existing = sqlx::query(&format!(
+            "SELECT {DRIVE_UPLOAD_PART_SELECT_COLUMNS}
              FROM dr_drive_upload_part
              WHERE tenant_id=$1 AND upload_item_id=$2 AND part_no=$3",
-        )
+        ))
         .bind(&part.tenant_id)
         .bind(&part.upload_item_id)
         .bind(part.part_no)
@@ -455,11 +490,11 @@ impl DriveUploaderStore for SqlUploaderStore {
             ))
         })?;
 
-        let row = sqlx::query(
-            "SELECT *
+        let row = sqlx::query(&format!(
+            "SELECT {DRIVE_UPLOAD_PART_SELECT_COLUMNS}
              FROM dr_drive_upload_part
              WHERE tenant_id=$1 AND upload_item_id=$2 AND part_no=$3",
-        )
+        ))
         .bind(&part.tenant_id)
         .bind(&part.upload_item_id)
         .bind(part.part_no)
@@ -518,6 +553,7 @@ struct StoredUploadCompletionTarget {
 
 struct StoredUploadObject {
     id: String,
+    version_no: i64,
     content_type: String,
     content_length: i64,
     checksum_sha256_hex: String,
@@ -659,22 +695,21 @@ async fn complete_stored_upload_in_transaction(
         DriveServiceError::Internal(format!("complete dr_drive_upload_session failed: {error}"))
     })?;
 
-    sqlx::query(
-        "UPDATE dr_drive_node
-         SET content_state='ready',
-             updated_by=$1,
-             updated_at=CURRENT_TIMESTAMP,
-             version=version + 1
-         WHERE tenant_id=$2 AND id=$3 AND lifecycle_status != 'deleted'",
+    super::node_head_metadata::apply_file_node_head_snapshot_in_transaction(
+        connection,
+        &completion.tenant_id,
+        &target.item.node_id,
+        &completion.operator_id,
+        &super::node_head_metadata::FileNodeHeadSnapshot {
+            file_extension: target.item.file_extension.clone(),
+            content_type: storage_object.content_type.clone(),
+            content_type_group: target.item.content_type_group.clone(),
+            content_length: storage_object.content_length,
+            version_no: storage_object.version_no,
+            checksum_sha256_hex: storage_object.checksum_sha256_hex.clone(),
+        },
     )
-    .bind(&completion.operator_id)
-    .bind(&completion.tenant_id)
-    .bind(&target.item.node_id)
-    .execute(&mut *connection)
-    .await
-    .map_err(|error| {
-        DriveServiceError::Internal(format!("mark uploader node content ready failed: {error}"))
-    })?;
+    .await?;
 
     insert_upload_completed_sensitive_operation(
         connection,
@@ -701,8 +736,8 @@ async fn find_stored_upload_completion_target(
     connection: &mut AnyConnection,
     completion: &CompleteDriveStoredUpload,
 ) -> Result<StoredUploadCompletionTarget, DriveServiceError> {
-    let row = sqlx::query(
-        "SELECT ui.*,
+    let row = sqlx::query(&format!(
+        "SELECT {DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS},
                 us.bucket AS object_bucket,
                 us.object_key AS object_key,
                 us.state AS upload_session_state,
@@ -718,7 +753,7 @@ async fn find_stored_upload_completion_target(
          WHERE ui.tenant_id=$1
            AND ui.id=$2
            AND ui.upload_session_id=$3",
-    )
+    ))
     .bind(&completion.tenant_id)
     .bind(&completion.upload_item_id)
     .bind(&completion.upload_session_id)
@@ -746,8 +781,8 @@ async fn read_upload_item_by_id(
     tenant_id: &str,
     upload_item_id: &str,
 ) -> Result<DriveUploadItem, DriveServiceError> {
-    let row = sqlx::query(
-        "SELECT ui.*,
+    let row = sqlx::query(&format!(
+        "SELECT {DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS},
                 us.bucket AS object_bucket,
                 us.object_key AS object_key
          FROM dr_drive_upload_item ui
@@ -755,7 +790,7 @@ async fn read_upload_item_by_id(
             ON us.tenant_id=ui.tenant_id
            AND us.id=ui.upload_session_id
          WHERE ui.tenant_id=$1 AND ui.id=$2",
-    )
+    ))
     .bind(tenant_id)
     .bind(upload_item_id)
     .fetch_optional(&mut *connection)
@@ -796,6 +831,7 @@ async fn find_active_stored_upload_object(
     })?;
     Ok(row.map(|row| StoredUploadObject {
         id: row.get("id"),
+        version_no: row.get("version_no"),
         content_type: row.get("content_type"),
         content_length: row.get("content_length"),
         checksum_sha256_hex: row.get("checksum_sha256_hex"),
@@ -852,6 +888,7 @@ async fn insert_stored_upload_object(
     })?;
     Ok(StoredUploadObject {
         id: storage_object_id,
+        version_no: next_version_no,
         content_type: completion.content_type.clone(),
         content_length: completion.content_length,
         checksum_sha256_hex: completion.checksum_sha256_hex.clone(),

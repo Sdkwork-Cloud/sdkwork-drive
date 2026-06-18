@@ -540,6 +540,19 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
     .execute(&pool)
     .await
     .expect("trashed child node should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'file-list-uploading-child', 'tenant-list-guard', 'space-list-guard',
+            'folder-list-parent', 'file', 'uploading-child.txt',
+            'uploading', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("uploading child node should be seeded");
 
     let app = build_router_with_pool(pool);
 
@@ -638,6 +651,111 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
         .map(|item| item["id"].as_str().unwrap_or_default().to_string())
         .collect::<Vec<_>>();
     assert_eq!(ids, vec!["file-list-child".to_string()]);
+    assert!(
+        !ids.iter().any(|id| id == "file-list-uploading-child"),
+        "nodes.list should not expose uploading nodes before completion",
+    );
+}
+
+#[tokio::test]
+async fn recent_search_and_favorite_routes_hide_uploading_nodes_until_ready() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES ('space-visibility', 'tenant-visibility', 'user', 'user-owner', 'personal', 'Visibility', 'active', 1, 'user-owner', 'user-owner')",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+
+    for (id, name, state) in [
+        ("node-ready-visible", "ready-report.txt", "ready"),
+        ("node-uploading-hidden", "uploading-report.txt", "uploading"),
+    ] {
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
+                id, tenant_id, space_id, parent_node_id, node_type, node_name,
+                content_state, lifecycle_status, version, created_by, updated_by
+            ) VALUES (?1, 'tenant-visibility', 'space-visibility', NULL, 'file', ?2, ?3, 'active', 1, 'user-owner', 'user-owner')",
+        )
+        .bind(id)
+        .bind(name)
+        .bind(state)
+        .execute(&pool)
+        .await
+        .expect("node should be seeded");
+    }
+
+    sqlx::query(
+        "INSERT INTO dr_drive_node_favorite (
+            tenant_id, node_id, subject_type, subject_id, lifecycle_status, updated_at, created_by, updated_by
+        ) VALUES
+            ('tenant-visibility', 'node-ready-visible', 'user', 'user-owner', 'active', CURRENT_TIMESTAMP, 'user-owner', 'user-owner'),
+            ('tenant-visibility', 'node-uploading-hidden', 'user', 'user-owner', 'active', CURRENT_TIMESTAMP, 'user-owner', 'user-owner')",
+    )
+    .execute(&pool)
+    .await
+    .expect("favorites should be seeded");
+
+    let app = build_router_with_pool(pool);
+    for (uri, label) in [
+        (
+            "/app/v3/api/drive/recent?tenantId=tenant-visibility&spaceId=space-visibility",
+            "recent",
+        ),
+        (
+            "/app/v3/api/drive/search?q=report&tenantId=tenant-visibility&spaceId=space-visibility",
+            "search",
+        ),
+        (
+            "/app/v3/api/drive/favorites?tenantId=tenant-visibility&subjectType=user&subjectId=user-owner&spaceId=space-visibility",
+            "favorites",
+        ),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(uri)
+                    .body(Body::empty())
+                    .expect("visibility request should be built"),
+            )
+            .await
+            .expect("visibility request should be handled");
+        assert_eq!(response.status(), StatusCode::OK, "{label}");
+        let payload: serde_json::Value = serde_json::from_slice(
+            &to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("visibility response should be read"),
+        )
+        .expect("visibility response should be valid json");
+        let ids = payload["items"]
+            .as_array()
+            .expect("items should be an array")
+            .iter()
+            .map(|item| item["id"].as_str().unwrap_or_default().to_string())
+            .collect::<Vec<_>>();
+        assert!(
+            ids.iter().any(|id| id == "node-ready-visible"),
+            "{label} should include ready nodes"
+        );
+        assert!(
+            !ids.iter().any(|id| id == "node-uploading-hidden"),
+            "{label} should hide uploading nodes"
+        );
+    }
 }
 
 #[tokio::test]
@@ -8968,6 +9086,64 @@ async fn empty_trash_rejects_missing_or_deleted_explicit_space_before_deleting_n
     .await
     .expect("remaining trash count should be queryable");
     assert_eq!(remaining_trashed_count, 1);
+}
+
+#[tokio::test]
+async fn create_folder_assigns_server_id_when_client_id_is_omitted() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES ('space-server-id', 'tenant-server-id', 'user', 'user-server-id', 'personal', 'Core', 'active', 1, 'user-server-id', 'user-server-id')",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+
+    let app = build_router_with_pool(pool);
+    let create_folder_response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/app/v3/api/drive/nodes/folders")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "tenantId":"tenant-server-id",
+                        "spaceId":"space-server-id",
+                        "nodeName":"Server Assigned",
+                        "operatorId":"user-server-id"
+                    }"#,
+                ))
+                .expect("create folder request should be built"),
+        )
+        .await
+        .expect("create folder request should be handled");
+    assert_eq!(create_folder_response.status(), StatusCode::CREATED);
+    let folder_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(create_folder_response.into_body(), usize::MAX)
+            .await
+            .expect("create folder response body should be read"),
+    )
+    .expect("create folder response json should be valid");
+    let assigned_id = folder_payload["id"]
+        .as_str()
+        .expect("created folder id should be returned");
+    assert!(
+        assigned_id.starts_with("folder_"),
+        "expected server-generated folder id, got {assigned_id}"
+    );
+    assert_eq!(folder_payload["nodeName"], "Server Assigned");
 }
 
 #[tokio::test]

@@ -1,3 +1,4 @@
+use crate::app_context::DriveRequestContext;
 use crate::audit::record_audit_event;
 use crate::dto::{
     DefaultStorageProviderBindingQuery, DeleteDefaultStorageProviderBindingQuery,
@@ -11,11 +12,13 @@ use crate::provider_mappers::map_storage_provider;
 use crate::state::AdminStorageState;
 use crate::validators::{
     default_storage_provider_binding_id, normalize_optional_text, normalize_storage_root_prefix,
-    require_non_empty_text, require_query_operator_id, require_tenant_id,
-    validate_storage_binding_lifecycle_status,
+    require_non_empty_text, resolve_storage_provider_binding_target,
+    storage_provider_binding_purpose, storage_provider_binding_scope,
+    validate_storage_binding_lifecycle_status, StorageProviderBindingTarget,
 };
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
+use axum::Extension;
 use axum::Json;
 use sdkwork_drive_workspace_service::domain::storage_provider::DriveStorageProvider;
 use sdkwork_drive_workspace_service::DriveServiceError;
@@ -23,11 +26,12 @@ use sqlx::Row;
 
 pub(crate) async fn get_default_storage_provider_binding(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<DefaultStorageProviderBindingQuery>,
 ) -> Result<Json<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_tenant_id(query.tenant_id).map_err(map_service_error)?;
-    let space_id = normalize_optional_text(query.space_id);
-    let binding = find_default_storage_provider_binding(&state, &tenant_id, space_id.as_deref())
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let target = resolve_storage_provider_binding_target(query.space_id, query.space_type)?;
+    let binding = find_storage_provider_binding(&state, &tenant_id, &target)
         .await?
         .ok_or_else(not_found_binding_problem)?;
     Ok(Json(binding))
@@ -35,9 +39,10 @@ pub(crate) async fn get_default_storage_provider_binding(
 
 pub(crate) async fn list_storage_provider_bindings(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<ListStorageProviderBindingsQuery>,
 ) -> Result<Json<StorageProviderBindingListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_tenant_id(query.tenant_id).map_err(map_service_error)?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let space_id = normalize_optional_text(query.space_id);
     let provider_id = normalize_optional_text(query.provider_id);
     let lifecycle_status =
@@ -50,12 +55,15 @@ pub(crate) async fn list_storage_provider_bindings(
          FROM dr_drive_storage_provider_binding
          WHERE tenant_id=$1
            AND lifecycle_status=$2
-           AND purpose='primary'
            AND ($3 IS NULL OR space_id=$3)
            AND ($4 IS NULL OR provider_id=$4)
          ORDER BY
-           CASE WHEN binding_scope='space' THEN 0 ELSE 1 END ASC,
-           COALESCE(space_id, '') ASC,
+           CASE binding_scope
+             WHEN 'space' THEN 0
+             WHEN 'space_type' THEN 1
+             ELSE 2
+           END ASC,
+           COALESCE(space_id, purpose, '') ASC,
            id ASC",
     )
     .bind(&tenant_id)
@@ -79,40 +87,40 @@ pub(crate) async fn list_storage_provider_bindings(
 
 pub(crate) async fn set_default_storage_provider_binding(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<SetDefaultStorageProviderBindingRequest>,
 ) -> Result<Json<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_non_empty_text(payload.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id)?;
     let provider_id = require_non_empty_text(payload.provider_id, "providerId")?;
-    let operator_id = require_non_empty_text(payload.operator_id, "operatorId")?;
-    let space_id = normalize_optional_text(payload.space_id);
-    let storage_root_prefix = normalize_storage_root_prefix(
-        payload.storage_root_prefix,
-        &tenant_id,
-        space_id.as_deref(),
-    )?;
-    let binding_scope = if space_id.is_some() {
-        "space"
-    } else {
-        "tenant"
-    };
+    let operator_id = ctx.resolve_operator_id(payload.operator_id)?;
+    let target = resolve_storage_provider_binding_target(payload.space_id, payload.space_type)?;
+    let storage_root_prefix =
+        normalize_storage_root_prefix(payload.storage_root_prefix, &tenant_id, &target)?;
+    let binding_scope = storage_provider_binding_scope(&target);
+    let purpose = storage_provider_binding_purpose(&target);
     let provider = get_provider(&state, &provider_id).await?;
     if provider.status != "active" {
         return Err(map_service_error(DriveServiceError::Conflict(
             "default storage provider must be active".to_string(),
         )));
     }
-    if let Some(space_id_value) = space_id.as_deref() {
-        validate_space_exists(&state, &tenant_id, space_id_value).await?;
+    if let StorageProviderBindingTarget::Space(space_id) = &target {
+        validate_space_exists(&state, &tenant_id, space_id).await?;
     }
-    let binding_id = default_storage_provider_binding_id(&tenant_id, space_id.as_deref());
+    let binding_id = default_storage_provider_binding_id(&tenant_id, &target);
+    let space_id = match &target {
+        StorageProviderBindingTarget::Space(space_id) => Some(space_id.as_str()),
+        _ => None,
+    };
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider_binding (
             id, tenant_id, space_id, provider_id, binding_scope, purpose,
             storage_root_prefix, lifecycle_status, version, created_by, updated_by
-         ) VALUES ($1, $2, $3, $4, $5, 'primary', $6, 'active', 1, $7, $7)
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', 1, $8, $8)
          ON CONFLICT(id) DO UPDATE SET
             provider_id=excluded.provider_id,
             binding_scope=excluded.binding_scope,
+            purpose=excluded.purpose,
             storage_root_prefix=excluded.storage_root_prefix,
             lifecycle_status='active',
             version=dr_drive_storage_provider_binding.version + 1,
@@ -121,9 +129,10 @@ pub(crate) async fn set_default_storage_provider_binding(
     )
     .bind(&binding_id)
     .bind(&tenant_id)
-    .bind(space_id.as_deref())
+    .bind(space_id)
     .bind(&provider_id)
     .bind(binding_scope)
+    .bind(&purpose)
     .bind(&storage_root_prefix)
     .bind(&operator_id)
     .execute(&state.pool)
@@ -133,15 +142,15 @@ pub(crate) async fn set_default_storage_provider_binding(
             "upsert dr_drive_storage_provider_binding failed: {error}"
         )))
     })?;
-    let binding = find_default_storage_provider_binding(&state, &tenant_id, space_id.as_deref())
+    let binding = find_storage_provider_binding(&state, &tenant_id, &target)
         .await?
         .ok_or_else(not_found_binding_problem)?;
-    let audit_resource_id = space_id.as_deref().unwrap_or(tenant_id.as_str());
+    let audit_resource_id = binding_audit_resource_id(&tenant_id, &target);
     record_audit_event(
         &state,
         "storage_provider_binding.default_set",
         "storage_provider_binding",
-        audit_resource_id,
+        audit_resource_id.as_str(),
         &operator_id,
     )
     .await?;
@@ -150,12 +159,14 @@ pub(crate) async fn set_default_storage_provider_binding(
 
 pub(crate) async fn delete_default_storage_provider_binding(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<DeleteDefaultStorageProviderBindingQuery>,
 ) -> Result<Json<DeleteStorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_tenant_id(query.tenant_id).map_err(map_service_error)?;
-    let operator_id = require_query_operator_id(query.operator_id)?;
-    let space_id = normalize_optional_text(query.space_id);
-    let binding_id = default_storage_provider_binding_id(&tenant_id, space_id.as_deref());
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let target = resolve_storage_provider_binding_target(query.space_id, query.space_type)?;
+    let binding_id = default_storage_provider_binding_id(&tenant_id, &target);
+    let purpose = storage_provider_binding_purpose(&target);
     let result = sqlx::query(
         "UPDATE dr_drive_storage_provider_binding
          SET lifecycle_status='deleted',
@@ -164,12 +175,13 @@ pub(crate) async fn delete_default_storage_provider_binding(
              updated_at=CURRENT_TIMESTAMP
          WHERE tenant_id=$2
            AND id=$3
-           AND purpose='primary'
+           AND purpose=$4
            AND lifecycle_status != 'deleted'",
     )
     .bind(&operator_id)
     .bind(&tenant_id)
     .bind(&binding_id)
+    .bind(&purpose)
     .execute(&state.pool)
     .await
     .map_err(|error| {
@@ -179,17 +191,25 @@ pub(crate) async fn delete_default_storage_provider_binding(
     })?;
     let deleted = result.rows_affected() > 0;
     if deleted {
-        let audit_resource_id = space_id.as_deref().unwrap_or(tenant_id.as_str());
+        let audit_resource_id = binding_audit_resource_id(&tenant_id, &target);
         record_audit_event(
             &state,
             "storage_provider_binding.default_deleted",
             "storage_provider_binding",
-            audit_resource_id,
+            audit_resource_id.as_str(),
             &operator_id,
         )
         .await?;
     }
     Ok(Json(DeleteStorageProviderBindingResponse { deleted }))
+}
+
+fn binding_audit_resource_id(tenant_id: &str, target: &StorageProviderBindingTarget) -> String {
+    match target {
+        StorageProviderBindingTarget::Tenant => tenant_id.to_string(),
+        StorageProviderBindingTarget::Space(space_id) => space_id.clone(),
+        StorageProviderBindingTarget::SpaceType(space_type) => space_type.clone(),
+    }
 }
 
 pub(crate) async fn validate_space_exists(
@@ -219,41 +239,25 @@ pub(crate) async fn validate_space_exists(
     Ok(())
 }
 
-pub(crate) async fn find_default_storage_provider_binding(
+async fn find_storage_provider_binding(
     state: &AdminStorageState,
     tenant_id: &str,
-    space_id: Option<&str>,
+    target: &StorageProviderBindingTarget,
 ) -> Result<Option<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let rows = if let Some(space_id_value) = space_id {
-        sqlx::query(
-            "SELECT id, tenant_id, space_id, provider_id, binding_scope, purpose,
-                    storage_root_prefix, lifecycle_status, version
-             FROM dr_drive_storage_provider_binding
-             WHERE tenant_id=$1
-               AND space_id=$2
-               AND purpose='primary'
-               AND lifecycle_status='active'
-             LIMIT 1",
-        )
-        .bind(tenant_id)
-        .bind(space_id_value)
-        .fetch_all(&state.pool)
-        .await
-    } else {
-        sqlx::query(
-            "SELECT id, tenant_id, space_id, provider_id, binding_scope, purpose,
-                    storage_root_prefix, lifecycle_status, version
-             FROM dr_drive_storage_provider_binding
-             WHERE tenant_id=$1
-               AND space_id IS NULL
-               AND purpose='primary'
-               AND lifecycle_status='active'
-             LIMIT 1",
-        )
-        .bind(tenant_id)
-        .fetch_all(&state.pool)
-        .await
-    }
+    let binding_id = default_storage_provider_binding_id(tenant_id, target);
+    let rows = sqlx::query(
+        "SELECT id, tenant_id, space_id, provider_id, binding_scope, purpose,
+                storage_root_prefix, lifecycle_status, version
+         FROM dr_drive_storage_provider_binding
+         WHERE tenant_id=$1
+           AND id=$2
+           AND lifecycle_status='active'
+         LIMIT 1",
+    )
+    .bind(tenant_id)
+    .bind(&binding_id)
+    .fetch_all(&state.pool)
+    .await
     .map_err(|error| {
         map_service_error(DriveServiceError::Internal(format!(
             "find dr_drive_storage_provider_binding failed: {error}"

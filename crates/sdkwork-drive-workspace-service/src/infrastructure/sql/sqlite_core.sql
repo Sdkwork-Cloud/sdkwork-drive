@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS dr_drive_space (
     owner_subject_id TEXT NOT NULL,
     space_type TEXT NOT NULL,
     display_name TEXT NOT NULL,
+    presentation_icon TEXT,
+    presentation_color TEXT,
+    description TEXT,
     lifecycle_status TEXT NOT NULL DEFAULT 'active',
     version INTEGER NOT NULL DEFAULT 1,
     created_by TEXT NOT NULL,
@@ -95,6 +98,12 @@ CREATE TABLE IF NOT EXISTS dr_drive_node (
     scene TEXT,
     source TEXT,
     content_state TEXT NOT NULL DEFAULT 'empty',
+    file_extension TEXT,
+    head_content_type TEXT,
+    head_content_type_group TEXT,
+    head_content_length INTEGER,
+    head_version_no INTEGER,
+    head_checksum_sha256_hex TEXT,
     lifecycle_status TEXT NOT NULL DEFAULT 'active',
     version INTEGER NOT NULL DEFAULT 1,
     created_by TEXT NOT NULL,
@@ -137,6 +146,8 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_node_asset_list
     ON dr_drive_node (tenant_id, node_type, lifecycle_status, updated_at, id);
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_asset_scene_source
     ON dr_drive_node (tenant_id, node_type, scene, source, lifecycle_status, updated_at, id);
+CREATE INDEX IF NOT EXISTS ix_dr_drive_node_space_parent_type
+    ON dr_drive_node (tenant_id, space_id, parent_node_id, node_type, updated_at);
 
 CREATE TRIGGER IF NOT EXISTS tr_dr_drive_node_space_type_sync_insert
 AFTER INSERT ON dr_drive_node
@@ -597,8 +608,17 @@ CREATE TABLE IF NOT EXISTS dr_drive_storage_provider_binding (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (space_id) REFERENCES dr_drive_space(id) ON DELETE CASCADE,
     FOREIGN KEY (provider_id) REFERENCES dr_drive_storage_provider(id) ON DELETE CASCADE,
-    CHECK (binding_scope IN ('tenant', 'space')),
-    CHECK (purpose IN ('primary')),
+    CHECK (binding_scope IN ('tenant', 'space', 'space_type')),
+    CHECK (
+        (binding_scope IN ('tenant', 'space') AND purpose = 'primary')
+        OR (
+            binding_scope = 'space_type'
+            AND purpose IN (
+                'personal', 'team', 'knowledge_base', 'ai_generated', 'git_repository',
+                'deployment', 'app_upload', 'im', 'rtc', 'notary'
+            )
+        )
+    ),
     CHECK (
         storage_root_prefix = trim(storage_root_prefix)
         AND length(CAST(storage_root_prefix AS BLOB)) BETWEEN 1 AND 512
@@ -619,6 +639,7 @@ CREATE TABLE IF NOT EXISTS dr_drive_storage_provider_binding (
     CHECK (
         (binding_scope = 'tenant' AND space_id IS NULL)
         OR (binding_scope = 'space' AND space_id IS NOT NULL)
+        OR (binding_scope = 'space_type' AND space_id IS NULL)
     )
 );
 
@@ -632,6 +653,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_storage_provider_binding_tenant_pr
 CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_storage_provider_binding_space_primary_active
     ON dr_drive_storage_provider_binding (tenant_id, space_id, purpose)
     WHERE space_id IS NOT NULL AND purpose = 'primary' AND lifecycle_status = 'active';
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_storage_provider_binding_space_type_active
+    ON dr_drive_storage_provider_binding (tenant_id, purpose)
+    WHERE binding_scope = 'space_type' AND lifecycle_status = 'active';
 
 CREATE TABLE IF NOT EXISTS dr_drive_download_package (
     id TEXT PRIMARY KEY,
@@ -1158,3 +1182,23 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_file_sensitive_operation_upload_item
     ON dr_drive_file_sensitive_operation (tenant_id, upload_item_id, created_at);
 CREATE INDEX IF NOT EXISTS ix_dr_drive_file_sensitive_operation_tenant_created
     ON dr_drive_file_sensitive_operation (tenant_id, created_at);
+
+CREATE TABLE IF NOT EXISTS dr_drive_domain_outbox (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    space_id TEXT NOT NULL,
+    node_id TEXT,
+    event_type TEXT NOT NULL,
+    actor_id TEXT NOT NULL,
+    sequence_no INTEGER NOT NULL,
+    payload_json TEXT NOT NULL,
+    delivery_status TEXT NOT NULL DEFAULT 'pending',
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    last_error TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    delivered_at TEXT,
+    CHECK (delivery_status IN ('pending', 'delivered', 'failed'))
+);
+
+CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending
+    ON dr_drive_domain_outbox (delivery_status, created_at);

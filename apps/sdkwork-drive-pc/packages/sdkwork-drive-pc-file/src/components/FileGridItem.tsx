@@ -65,6 +65,8 @@ export function FileGridItem({
   const isItemStarred = file.isStarred;
   const isMenuOpen = activeMenuId === file.id;
   const isTrashSection = isTrashSectionProp ?? activeSection === 'trash';
+  const isComputerSection = activeSection === 'computers';
+  const hideCloudFileActions = isTrashSection || isComputerSection;
 
   // Handle outside clicks to close the dropdown for this item
   useEffect(() => {
@@ -140,7 +142,7 @@ export function FileGridItem({
         
         <div className="flex items-center gap-1.5" ref={menuRef}>
           {/* Hover Star Action shortcut */}
-          {!isTrashSection && (
+          {!hideCloudFileActions && (
             <button
               onClick={(e) => onToggleStar(e, file.id, file.name)}
               className={`text-gray-300 hover:text-amber-500 dark:text-neutral-700 transition-colors cursor-pointer ${isItemStarred ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
@@ -167,9 +169,9 @@ export function FileGridItem({
                 }}
                 className="w-full flex items-center gap-2.5 px-4 py-2 text-[13px] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
               >
-                 <Info size={14} className="text-gray-400 shrink-0"/> {t('fileBrowser.propertiesAndInfo')}
+                 <Info size={14} className="text-gray-400 shrink-0"/> {isComputerSection && file.type === 'file' ? (t('fileBrowser.openLocalFile') || 'Open') : t('fileBrowser.propertiesAndInfo')}
               </button>
-              {!isTrashSection && (
+              {!hideCloudFileActions && (
                 <>
                   <button
                     onClick={(e) => {
@@ -215,14 +217,14 @@ export function FileGridItem({
                      <Trash2 size={14} className="shrink-0"/> {t('fileBrowser.permanentDelete')}
                   </button>
                 </>
-              ) : (
+              ) : !isComputerSection ? (
                 <button 
                   onClick={(e) => onTrashAction(e, file)}
                   className="w-full flex items-center gap-2.5 px-4 py-2 text-[13px] text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
                 >
                    <Trash size={14} className="text-red-400 shrink-0"/> {t('fileBrowser.delete')}
                 </button>
-              )}
+              ) : null}
             </div>
           )}
         </div>
@@ -255,7 +257,7 @@ export function FileGridItem({
              <h4 className="text-[13px] font-medium text-neutral-800 dark:text-neutral-200 truncate group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors mb-0.5" title={file.name}>
                {file.name}
              </h4>
-             {!isTrashSection && (
+             {!hideCloudFileActions && (
                <button
                  onClick={(e) => {
                    e.stopPropagation();

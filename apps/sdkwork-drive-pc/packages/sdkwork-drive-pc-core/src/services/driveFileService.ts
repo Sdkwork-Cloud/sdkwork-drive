@@ -1,9 +1,18 @@
+import type { DriveUploaderBlobLike } from '@sdkwork/drive-app-sdk';
 import {
   canCreateDriveFolderInSection,
   canUploadDriveFileToSection,
+  decodeLocalFilesystemId,
   type DriveFile,
 } from 'sdkwork-drive-pc-types';
-import type { DriveAdminStorageSdkClient } from '../sdk/driveAdminStorageSdkClient';
+import type { HostAdapter } from '../host/hostAdapter';
+import { createHostAdapter } from '../host/hostAdapter';
+import { isNativeLocalUploadFile } from '../host/nativeLocalUploadFile';
+import {
+  buildLocalFilesystemFolderPath,
+  mapLocalFilesystemEntryToDriveFile,
+} from '../host/localFilesystemService';
+import { omitAuthProjectionBody, omitAuthProjectionQuery } from '../sdk/authProjection';
 import type { DriveAppSdkClient, DriveAppSdkRequest } from '../sdk/driveAppSdkClient';
 import type { SessionSnapshot } from '../session/sessionStore';
 
@@ -14,6 +23,14 @@ export interface SharedSpace {
   color: string;
   description?: string;
   isCustom?: boolean;
+}
+
+export interface KnowledgeBaseSpace {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  description?: string;
 }
 
 export interface DriveDownloadUrl {
@@ -39,163 +56,6 @@ export interface DriveStorageSummary {
   objectCount: number;
 }
 
-export type DriveStorageProviderKind =
-  | 'local_filesystem'
-  | 's3_compatible'
-  | 'google_cloud_storage'
-  | 'aliyun_oss'
-  | 'tencent_cos'
-  | 'huawei_obs'
-  | 'volcengine_tos'
-  | `custom:${string}`;
-
-export interface DriveStorageProvider {
-  id: string;
-  providerKind: string;
-  name: string;
-  endpointUrl: string;
-  region?: string;
-  bucket: string;
-  pathStyle: boolean;
-  credentialRef?: string;
-  serverSideEncryptionMode?: string;
-  defaultStorageClass?: string;
-  status: string;
-  version: number;
-  credentialConfigured: boolean;
-}
-
-export interface CreateDriveStorageProviderRequest {
-  id: string;
-  providerKind: DriveStorageProviderKind;
-  name: string;
-  endpointUrl: string;
-  region?: string;
-  bucket: string;
-  pathStyle?: boolean;
-  credentialRef?: string;
-  serverSideEncryptionMode?: string;
-  defaultStorageClass?: string;
-  status?: string;
-}
-
-export interface UpdateDriveStorageProviderRequest {
-  name?: string;
-  endpointUrl?: string;
-  region?: string;
-  bucket?: string;
-  pathStyle?: boolean;
-  credentialRef?: string;
-  serverSideEncryptionMode?: string;
-  defaultStorageClass?: string;
-  status?: string;
-}
-
-export interface DriveStorageProviderCapabilities {
-  providerId: string;
-  providerKind: string;
-  supportsMultipartUpload: boolean;
-  supportsPresignedUploadPart: boolean;
-  supportsPresignedDownload: boolean;
-  supportsServerSideEncryption: boolean;
-  supportsStorageClass: boolean;
-  supportsCredentialRotation: boolean;
-  supportedServerSideEncryptionModes: string[];
-  supportedStorageClasses: string[];
-}
-
-export interface DriveProviderBucket {
-  providerId: string;
-  bucket: string;
-  exists: boolean;
-}
-
-export interface DriveProviderBucketMutation {
-  providerId: string;
-  bucket: string;
-  changed: boolean;
-}
-
-export interface DriveProviderBucketListItem {
-  bucket: string;
-  configured: boolean;
-  creationDateEpochMs?: number;
-}
-
-export interface DriveProviderBucketList {
-  providerId: string;
-  configuredBucket: string;
-  items: DriveProviderBucketListItem[];
-}
-
-export interface DriveProviderObject {
-  providerId: string;
-  bucket: string;
-  objectKey: string;
-  contentLength: number;
-  contentType?: string;
-  etag?: string;
-  versionId?: string;
-  storageClass?: string;
-  lastModifiedEpochMs?: number;
-}
-
-export interface DriveProviderObjectList {
-  providerId: string;
-  bucket: string;
-  prefix?: string;
-  items: DriveProviderObject[];
-  nextPageToken?: string;
-}
-
-export interface ListDriveProviderObjectsRequest {
-  prefix?: string;
-  delimiter?: string;
-  pageToken?: string;
-  pageSize?: number;
-}
-
-export interface DriveProviderObjectMutation {
-  providerId: string;
-  bucket: string;
-  objectKey: string;
-  changed: boolean;
-}
-
-export interface CopyDriveProviderObjectRequest {
-  sourceObjectKey: string;
-  destinationObjectKey: string;
-  destinationBucket?: string;
-  metadataDirective?: 'COPY' | 'REPLACE';
-}
-
-export interface DriveStorageProviderBinding {
-  id: string;
-  tenantId: string;
-  spaceId?: string;
-  providerId: string;
-  bindingScope: string;
-  purpose: string;
-  lifecycleStatus: string;
-  version: number;
-  storageProvider: DriveStorageProvider;
-}
-
-export interface DriveStorageProviderBindingScope {
-  spaceId?: string;
-}
-
-export interface ListDriveStorageProviderBindingsRequest {
-  spaceId?: string;
-  providerId?: string;
-  lifecycleStatus?: string;
-}
-
-export interface SetDriveStorageProviderBindingRequest {
-  providerId: string;
-  spaceId?: string;
-}
-
 export interface DriveArchiveEntry {
   path: string;
   name: string;
@@ -215,6 +75,9 @@ export interface DriveFileTextContent {
 
 export interface DriveUploadFileOptions {
   signal?: AbortSignal;
+  onProgress?: (uploadedBytes: number, totalBytes: number) => void;
+  taskId?: string;
+  checksumSha256Hex?: string;
 }
 
 export interface DriveDownloadGrantOptions {
@@ -228,10 +91,28 @@ export interface DriveArchiveOperationOptions {
 
 export interface DriveFileReadOptions {
   signal?: AbortSignal;
+  pageToken?: string;
+  pageSize?: number;
+}
+
+export interface DriveFileListPage {
+  files: DriveFile[];
+  nextPageToken?: string;
 }
 
 export interface DriveFileWriteOptions {
   signal?: AbortSignal;
+}
+
+export interface DriveCopyFileOptions extends DriveFileWriteOptions {
+  id?: string;
+  targetSpaceId?: string;
+  targetParentNodeId?: string | null;
+  nodeName?: string;
+}
+
+export interface DriveEmptyTrashOptions extends DriveFileWriteOptions {
+  spaceId?: string;
 }
 
 export interface DriveFileService {
@@ -243,6 +124,12 @@ export interface DriveFileService {
     parentId?: string | null,
     options?: DriveFileReadOptions,
   ): Promise<DriveFile[]>;
+  listFilesPage(
+    section: string,
+    searchQuery?: string,
+    parentId?: string | null,
+    options?: DriveFileReadOptions,
+  ): Promise<DriveFileListPage>;
   getFolderDetails(folderId: string, options?: DriveFileReadOptions): Promise<DriveFile | undefined>;
   setFolderColor(folderId: string, color?: string, options?: DriveFileWriteOptions): Promise<void>;
   createFolder(
@@ -252,12 +139,19 @@ export interface DriveFileService {
     options?: DriveFileWriteOptions,
   ): Promise<DriveFile>;
   renameFile(id: string, newName: string, options?: DriveFileWriteOptions): Promise<void>;
+  moveFile(
+    id: string,
+    targetParentNodeId?: string | null,
+    options?: DriveFileWriteOptions,
+  ): Promise<DriveFile>;
+  copyFile(id: string, options?: DriveCopyFileOptions): Promise<DriveFile>;
   deleteFile(id: string, options?: DriveFileWriteOptions): Promise<void>;
   permanentlyDeleteFile(id: string, options?: DriveFileWriteOptions): Promise<void>;
   restoreFile(id: string, options?: DriveFileWriteOptions): Promise<void>;
+  emptyTrash(options?: DriveEmptyTrashOptions): Promise<number>;
   toggleStar(id: string, options?: DriveFileWriteOptions): Promise<boolean>;
   uploadFile(
-    file: File,
+    file: DriveUploaderBlobLike,
     section: string,
     parentId?: string | null,
     options?: DriveUploadFileOptions,
@@ -283,81 +177,10 @@ export interface DriveFileService {
     options?: DriveDownloadGrantOptions,
   ): Promise<DriveDownloadPackage>;
   getStorageSummary(options?: DriveFileReadOptions): Promise<DriveStorageSummary>;
-  listStorageProviders(status?: string, options?: DriveFileReadOptions): Promise<DriveStorageProvider[]>;
-  getStorageProvider(providerId: string, options?: DriveFileReadOptions): Promise<DriveStorageProvider>;
-  createStorageProvider(
-    request: CreateDriveStorageProviderRequest,
-    options?: DriveFileWriteOptions,
-  ): Promise<DriveStorageProvider>;
-  updateStorageProvider(
-    providerId: string,
-    request: UpdateDriveStorageProviderRequest,
-    options?: DriveFileWriteOptions,
-  ): Promise<DriveStorageProvider>;
-  deleteStorageProvider(providerId: string, options?: DriveFileWriteOptions): Promise<boolean>;
-  testStorageProvider(providerId: string, options?: DriveFileWriteOptions): Promise<boolean>;
-  getStorageProviderCapabilities(
-    providerId: string,
-    options?: DriveFileReadOptions,
-  ): Promise<DriveStorageProviderCapabilities>;
-  activateStorageProvider(providerId: string, options?: DriveFileWriteOptions): Promise<DriveStorageProvider>;
-  deactivateStorageProvider(providerId: string, options?: DriveFileWriteOptions): Promise<DriveStorageProvider>;
-  rotateStorageProviderCredential(
-    providerId: string,
-    credentialRef: string,
-    options?: DriveFileWriteOptions,
-  ): Promise<DriveStorageProvider>;
-  headStorageProviderBucket(providerId: string, options?: DriveFileReadOptions): Promise<DriveProviderBucket>;
-  createStorageProviderBucket(
-    providerId: string,
-    options?: DriveFileWriteOptions,
-  ): Promise<DriveProviderBucketMutation>;
-  deleteStorageProviderBucket(
-    providerId: string,
-    options?: DriveFileWriteOptions,
-  ): Promise<DriveProviderBucketMutation>;
-  listStorageProviderBuckets(
-    providerId: string,
-    options?: DriveFileReadOptions,
-  ): Promise<DriveProviderBucketList>;
-  listStorageProviderObjects(
-    providerId: string,
-    request?: ListDriveProviderObjectsRequest,
-    options?: DriveFileReadOptions,
-  ): Promise<DriveProviderObjectList>;
-  headStorageProviderObject(
-    providerId: string,
-    objectKey: string,
-    options?: DriveFileReadOptions,
-  ): Promise<DriveProviderObject>;
-  deleteStorageProviderObject(
-    providerId: string,
-    objectKey: string,
-    options?: DriveFileWriteOptions,
-  ): Promise<DriveProviderObjectMutation>;
-  copyStorageProviderObject(
-    providerId: string,
-    request: CopyDriveProviderObjectRequest,
-    options?: DriveFileWriteOptions,
-  ): Promise<DriveProviderObjectMutation>;
-  getDefaultStorageProviderBinding(
-    scope?: DriveStorageProviderBindingScope,
-    options?: DriveFileReadOptions,
-  ): Promise<DriveStorageProviderBinding>;
-  setDefaultStorageProviderBinding(
-    request: SetDriveStorageProviderBindingRequest,
-    options?: DriveFileWriteOptions,
-  ): Promise<DriveStorageProviderBinding>;
-  listStorageProviderBindings(
-    request?: ListDriveStorageProviderBindingsRequest,
-    options?: DriveFileReadOptions,
-  ): Promise<DriveStorageProviderBinding[]>;
-  deleteDefaultStorageProviderBinding(
-    scope?: DriveStorageProviderBindingScope,
-    options?: DriveFileWriteOptions,
-  ): Promise<boolean>;
   listSharedSpaces(options?: DriveFileReadOptions): Promise<SharedSpace[]>;
   getSharedSpaces(): SharedSpace[];
+  listKnowledgeBaseSpaces(options?: DriveFileReadOptions): Promise<KnowledgeBaseSpace[]>;
+  getKnowledgeBaseSpaces(): KnowledgeBaseSpace[];
   createSharedSpace(
     name: string,
     icon: string,
@@ -370,8 +193,8 @@ export interface DriveFileService {
 
 export interface CreateDriveFileServiceOptions {
   appSdkClient: DriveAppSdkClient;
-  adminStorageSdkClient: DriveAdminStorageSdkClient;
   getSession: () => SessionSnapshot;
+  hostAdapter?: HostAdapter;
   uploadFetch?: typeof fetch;
   downloadFetch?: typeof fetch;
 }
@@ -386,11 +209,6 @@ const PERSONAL_SECTION_ID = 'my-storage';
 const PERSONAL_SPACE_DISPLAY_NAME = 'My Storage';
 const APP_SECTION_ID = 'apps';
 const GIT_REPOSITORY_SPACE_DISPLAY_NAME = 'Git Repositories';
-const KNOWLEDGE_BASE_SECTION_KEYWORDS: Record<string, string[]> = {
-  'kb-engineering': ['engineering'],
-  'kb-product': ['product'],
-  'kb-design': ['design'],
-};
 const VIEW_SECTIONS = new Set([
   'recent',
   'starred',
@@ -398,7 +216,6 @@ const VIEW_SECTIONS = new Set([
   'trash',
   APP_SECTION_ID,
   'computers',
-  ...Object.keys(KNOWLEDGE_BASE_SECTION_KEYWORDS),
 ]);
 let fallbackIdCounter = 0;
 
@@ -538,10 +355,6 @@ function timestampFromNode(node: JsonRecord): string {
 
 function normalizeSpaceId(section: string): string {
   return VIEW_SECTIONS.has(section) ? 'my-storage' : section;
-}
-
-function isKnowledgeBaseSection(section: string): boolean {
-  return Object.prototype.hasOwnProperty.call(KNOWLEDGE_BASE_SECTION_KEYWORDS, section);
 }
 
 function assertCanCreateFolderInSection(section: string): void {
@@ -747,222 +560,30 @@ function responseToStorageSummary(response: unknown, identity: RemoteIdentity): 
   return summary;
 }
 
-function responseToStorageProvider(response: unknown): DriveStorageProvider {
-  const record = isRecord(response) ? response : {};
-  const provider: DriveStorageProvider = {
-    id: requiredStringField(record, 'storage provider id', 'id', 'providerId', 'provider_id'),
-    providerKind: requiredStringField(record, 'storage provider kind', 'providerKind', 'provider_kind'),
-    name: requiredStringField(record, 'storage provider name', 'name'),
-    endpointUrl: requiredStringField(record, 'storage provider endpointUrl', 'endpointUrl', 'endpoint_url'),
-    bucket: requiredStringField(record, 'storage provider bucket', 'bucket'),
-    pathStyle: requiredBooleanField(record, 'storage provider pathStyle', 'pathStyle', 'path_style'),
-    status: requiredStringField(record, 'storage provider status', 'status'),
-    version: requiredNumberField(record, 'storage provider version', 'version'),
-    credentialConfigured: requiredBooleanField(
-      record,
-      'storage provider credentialConfigured',
-      'credentialConfigured',
-      'credential_configured',
-    ),
-  };
-  assignDefined(provider, 'region', stringField(record, 'region'));
-  assignDefined(provider, 'credentialRef', stringField(record, 'credentialRef', 'credential_ref'));
-  assignDefined(
-    provider,
-    'serverSideEncryptionMode',
-    stringField(record, 'serverSideEncryptionMode', 'server_side_encryption_mode'),
-  );
-  assignDefined(
-    provider,
-    'defaultStorageClass',
-    stringField(record, 'defaultStorageClass', 'default_storage_class'),
-  );
-  return provider;
-}
-
-function responseToStorageProviderCapabilities(response: unknown): DriveStorageProviderCapabilities {
-  const record = isRecord(response) ? response : {};
-  return {
-    providerId: requiredStringField(record, 'storage provider capabilities providerId', 'providerId', 'provider_id'),
-    providerKind: requiredStringField(record, 'storage provider capabilities providerKind', 'providerKind', 'provider_kind'),
-    supportsMultipartUpload: requiredBooleanField(
-      record,
-      'storage provider capabilities supportsMultipartUpload',
-      'supportsMultipartUpload',
-      'supports_multipart_upload',
-    ),
-    supportsPresignedUploadPart: requiredBooleanField(
-      record,
-      'storage provider capabilities supportsPresignedUploadPart',
-      'supportsPresignedUploadPart',
-      'supports_presigned_upload_part',
-    ),
-    supportsPresignedDownload: requiredBooleanField(
-      record,
-      'storage provider capabilities supportsPresignedDownload',
-      'supportsPresignedDownload',
-      'supports_presigned_download',
-    ),
-    supportsServerSideEncryption: requiredBooleanField(
-      record,
-      'storage provider capabilities supportsServerSideEncryption',
-      'supportsServerSideEncryption',
-      'supports_server_side_encryption',
-    ),
-    supportsStorageClass: requiredBooleanField(
-      record,
-      'storage provider capabilities supportsStorageClass',
-      'supportsStorageClass',
-      'supports_storage_class',
-    ),
-    supportsCredentialRotation: requiredBooleanField(
-      record,
-      'storage provider capabilities supportsCredentialRotation',
-      'supportsCredentialRotation',
-      'supports_credential_rotation',
-    ),
-    supportedServerSideEncryptionModes: stringArrayField(
-      record,
-      'supportedServerSideEncryptionModes',
-      'supported_server_side_encryption_modes',
-    ),
-    supportedStorageClasses: stringArrayField(record, 'supportedStorageClasses', 'supported_storage_classes'),
-  };
-}
-
-function responseToProviderBucket(response: unknown): DriveProviderBucket {
-  const record = isRecord(response) ? response : {};
-  return {
-    providerId: requiredStringField(record, 'provider bucket providerId', 'providerId', 'provider_id'),
-    bucket: requiredStringField(record, 'provider bucket bucket', 'bucket'),
-    exists: requiredBooleanField(record, 'provider bucket exists', 'exists'),
-  };
-}
-
-function responseToProviderBucketMutation(response: unknown): DriveProviderBucketMutation {
-  const record = isRecord(response) ? response : {};
-  return {
-    providerId: requiredStringField(record, 'provider bucket mutation providerId', 'providerId', 'provider_id'),
-    bucket: requiredStringField(record, 'provider bucket mutation bucket', 'bucket'),
-    changed: requiredBooleanField(record, 'provider bucket mutation changed', 'changed'),
-  };
-}
-
-function responseToProviderBucketListItem(response: unknown): DriveProviderBucketListItem {
-  const record = isRecord(response) ? response : {};
-  const item: DriveProviderBucketListItem = {
-    bucket: requiredStringField(record, 'provider bucket list item bucket', 'bucket'),
-    configured: requiredBooleanField(
-      record,
-      'provider bucket list item configured',
-      'configured',
-    ),
-  };
-  assignDefined(
-    item,
-    'creationDateEpochMs',
-    numberField(record, 'creationDateEpochMs', 'creation_date_epoch_ms'),
-  );
-  return item;
-}
-
-function responseToProviderBucketList(response: unknown): DriveProviderBucketList {
-  const record = isRecord(response) ? response : {};
-  return {
-    providerId: requiredStringField(record, 'provider bucket list providerId', 'providerId', 'provider_id'),
-    configuredBucket: requiredStringField(
-      record,
-      'provider bucket list configuredBucket',
-      'configuredBucket',
-      'configured_bucket',
-    ),
-    items: extractItems(record).map(responseToProviderBucketListItem),
-  };
-}
-
-function responseToProviderObject(response: unknown): DriveProviderObject {
-  const record = isRecord(response) ? response : {};
-  const object: DriveProviderObject = {
-    providerId: requiredStringField(record, 'provider object providerId', 'providerId', 'provider_id'),
-    bucket: requiredStringField(record, 'provider object bucket', 'bucket'),
-    objectKey: requiredStringField(record, 'provider object objectKey', 'objectKey', 'object_key'),
-    contentLength: requiredNumberField(record, 'provider object contentLength', 'contentLength', 'content_length'),
-  };
-  assignDefined(object, 'contentType', stringField(record, 'contentType', 'content_type'));
-  assignDefined(object, 'etag', stringField(record, 'etag'));
-  assignDefined(object, 'versionId', stringField(record, 'versionId', 'version_id'));
-  assignDefined(object, 'storageClass', stringField(record, 'storageClass', 'storage_class'));
-  assignDefined(
-    object,
-    'lastModifiedEpochMs',
-    numberField(record, 'lastModifiedEpochMs', 'last_modified_epoch_ms'),
-  );
-  return object;
-}
-
-function responseToProviderObjectList(response: unknown): DriveProviderObjectList {
-  const record = isRecord(response) ? response : {};
-  const list: DriveProviderObjectList = {
-    providerId: requiredStringField(record, 'provider object list providerId', 'providerId', 'provider_id'),
-    bucket: requiredStringField(record, 'provider object list bucket', 'bucket'),
-    items: extractItems(record).map(responseToProviderObject),
-  };
-  assignDefined(list, 'prefix', stringField(record, 'prefix'));
-  assignDefined(list, 'nextPageToken', stringField(record, 'nextPageToken', 'next_page_token'));
-  return list;
-}
-
-function responseToProviderObjectMutation(response: unknown): DriveProviderObjectMutation {
-  const record = isRecord(response) ? response : {};
-  return {
-    providerId: requiredStringField(record, 'provider object mutation providerId', 'providerId', 'provider_id'),
-    bucket: requiredStringField(record, 'provider object mutation bucket', 'bucket'),
-    objectKey: requiredStringField(record, 'provider object mutation objectKey', 'objectKey', 'object_key'),
-    changed: requiredBooleanField(record, 'provider object mutation changed', 'changed'),
-  };
-}
-
-function responseToStorageProviderBinding(response: unknown): DriveStorageProviderBinding {
-  const record = isRecord(response) ? response : {};
-  const binding: DriveStorageProviderBinding = {
-    id: requiredStringField(record, 'storage provider binding id', 'id'),
-    tenantId: requiredStringField(record, 'storage provider binding tenantId', 'tenantId', 'tenant_id'),
-    providerId: requiredStringField(record, 'storage provider binding providerId', 'providerId', 'provider_id'),
-    bindingScope: requiredStringField(
-      record,
-      'storage provider binding bindingScope',
-      'bindingScope',
-      'binding_scope',
-    ),
-    purpose: requiredStringField(record, 'storage provider binding purpose', 'purpose'),
-    lifecycleStatus: requiredStringField(
-      record,
-      'storage provider binding lifecycleStatus',
-      'lifecycleStatus',
-      'lifecycle_status',
-    ),
-    version: requiredNumberField(record, 'storage provider binding version', 'version'),
-    storageProvider: responseToStorageProvider(record.storageProvider ?? record.storage_provider),
-  };
-  assignDefined(binding, 'spaceId', stringField(record, 'spaceId', 'space_id'));
-  return binding;
-}
-
-function responseToStorageProviderBindingList(response: unknown): DriveStorageProviderBinding[] {
-  return extractItems(response).map(responseToStorageProviderBinding);
-}
-
 function responseToSharedSpace(response: unknown, overrides: Partial<SharedSpace> = {}): SharedSpace {
   const record = isRecord(response) ? response : {};
   const id = stringField(record, 'id', 'spaceId', 'space_id') || overrides.id || makeId('shared-space');
   const space: SharedSpace = {
     id,
     name: stringField(record, 'displayName', 'display_name', 'name') || overrides.name || id,
-    icon: overrides.icon || 'Folder',
-    color: overrides.color || 'blue',
+    icon: stringField(record, 'presentationIcon', 'presentation_icon') || overrides.icon || 'Folder',
+    color: stringField(record, 'presentationColor', 'presentation_color') || overrides.color || 'blue',
     isCustom: true,
   };
   assignDefined(space, 'description', overrides.description || stringField(record, 'description'));
+  return space;
+}
+
+function responseToKnowledgeBaseSpace(response: unknown): KnowledgeBaseSpace {
+  const record = isRecord(response) ? response : {};
+  const id = requiredStringField(record, 'knowledge base space id', 'id', 'spaceId', 'space_id');
+  const space: KnowledgeBaseSpace = {
+    id,
+    name: stringField(record, 'displayName', 'display_name', 'name') || 'Knowledge Base',
+    icon: stringField(record, 'presentationIcon', 'presentation_icon') || 'Book',
+    color: stringField(record, 'presentationColor', 'presentation_color') || 'blue',
+  };
+  assignDefined(space, 'description', stringField(record, 'description'));
   return space;
 }
 
@@ -1002,27 +623,6 @@ function spaceIdFromNode(response: unknown): string | undefined {
   return stringField(node, 'spaceId', 'space_id');
 }
 
-function matchesKnowledgeBaseSection(response: unknown, section: string): boolean {
-  if (!isKnowledgeBaseSpace(response)) {
-    return false;
-  }
-
-  const keywords = KNOWLEDGE_BASE_SECTION_KEYWORDS[section] ?? [];
-  if (keywords.length === 0) {
-    return true;
-  }
-
-  const record = isRecord(response) ? response : {};
-  const searchableName = [
-    stringField(record, 'id', 'spaceId', 'space_id'),
-    stringField(record, 'displayName', 'display_name', 'name'),
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-  return keywords.some((keyword) => searchableName.includes(keyword));
-}
-
 function uploadSessionFromCreateFile(response: unknown): JsonRecord {
   if (isRecord(response) && isRecord(response.uploadSession)) {
     return response.uploadSession;
@@ -1042,25 +642,59 @@ function nodeFromCreateFile(response: unknown): unknown {
 
 function createSdkBackedDriveFileService(
   appSdkClient: DriveAppSdkClient,
-  adminStorageSdkClient: DriveAdminStorageSdkClient,
   getSession: () => SessionSnapshot,
+  hostAdapter: HostAdapter,
   uploadFetch: typeof fetch = fetch,
   downloadFetch: typeof fetch = fetch,
 ): DriveFileService {
   const favoriteNodeIds = new Set<string>();
   const knownFiles = new Map<string, DriveFile>();
+  const KNOWN_FILES_CACHE_LIMIT = 2_000;
   const personalSpaceIds = new Map<string, string>();
   const gitRepositorySpaceIds = new Map<string, string>();
   let sharedSpacesCache: SharedSpace[] = [];
+  let knowledgeBaseSpacesCache: KnowledgeBaseSpace[] = [];
 
   const rememberFiles = (files: DriveFile[]): void => {
     for (const file of files) {
       knownFiles.set(file.id, file);
     }
+    while (knownFiles.size > KNOWN_FILES_CACHE_LIMIT) {
+      const oldestId = knownFiles.keys().next().value;
+      if (oldestId === undefined) {
+        break;
+      }
+      knownFiles.delete(oldestId);
+    }
   };
 
   const forgetFile = (id: string): void => {
     knownFiles.delete(id);
+  };
+
+  const sdkRequest = async <T>(request: DriveAppSdkRequest): Promise<T> =>
+    appSdkClient.request<T>({
+      ...request,
+      query: omitAuthProjectionQuery(request.query),
+      body: omitAuthProjectionBody(request.body),
+    });
+  const requestPageItems = async (
+    request: DriveAppSdkRequest,
+    options: Pick<DriveFileReadOptions, 'pageToken' | 'pageSize'> = {},
+  ): Promise<{ items: unknown[]; nextPageToken?: string }> => {
+    const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
+    const response = await sdkRequest<unknown>({
+      ...request,
+      query: {
+        ...request.query,
+        pageSize,
+        pageToken: options.pageToken,
+      },
+    });
+    return {
+      items: extractItems(response),
+      nextPageToken: nextPageTokenFrom(response),
+    };
   };
 
   const requestPaginatedItems = async (request: DriveAppSdkRequest): Promise<unknown[]> => {
@@ -1073,7 +707,7 @@ function createSdkBackedDriveFileService(
     }
 
     for (;;) {
-      const response = await appSdkClient.request<unknown>({
+      const response = await sdkRequest<unknown>({
         ...request,
         query: {
           ...request.query,
@@ -1111,7 +745,6 @@ function createSdkBackedDriveFileService(
         signal: options.signal,
         pathParams: { nodeId: file.id },
         query: {
-          tenantId: identity.tenantId,
           visibility: 'private',
           pageSize: DEFAULT_PAGE_SIZE,
         },
@@ -1147,9 +780,6 @@ function createSdkBackedDriveFileService(
       operationId: 'favorites.list',
       signal: options.signal,
       query: {
-        tenantId: identity.tenantId,
-        subjectType: identity.subjectType,
-        subjectId: identity.userId,
         spaceId,
         pageSize: DEFAULT_PAGE_SIZE,
       },
@@ -1175,29 +805,25 @@ function createSdkBackedDriveFileService(
       signal?: AbortSignal;
     } = {},
   ): Promise<DriveFile[]> => {
-    const files = await Promise.all(
-      extractItems(response).map(async (item) => {
-        const file = await mapDecoratedNode(item, identity, {
-          isStarred: options.starred,
-        }, {
-          signal: options.signal,
-        });
-        if (!options.favoriteIds) {
-          return file;
-        }
+    const files = extractItems(response).map((item) => {
+      const file = mapNodeToDriveFile(item, identity, {
+        isStarred: options.starred,
+      });
+      if (!options.favoriteIds) {
+        return file;
+      }
 
-        const isStarred = options.favoriteIds.has(file.id);
-        if (isStarred) {
-          favoriteNodeIds.add(file.id);
-        } else {
-          favoriteNodeIds.delete(file.id);
-        }
-        return {
-          ...file,
-          isStarred: isStarred ? true : undefined,
-        };
-      }),
-    );
+      const isStarred = options.favoriteIds.has(file.id);
+      if (isStarred) {
+        favoriteNodeIds.add(file.id);
+      } else {
+        favoriteNodeIds.delete(file.id);
+      }
+      return {
+        ...file,
+        isStarred: isStarred ? true : undefined,
+      };
+    });
 
     if (options.starred) {
       for (const file of files) {
@@ -1215,15 +841,80 @@ function createSdkBackedDriveFileService(
     return files;
   };
 
+  const resolveTrashListQuery = async (
+    parentId: string | null | undefined,
+    identity: RemoteIdentity,
+    options: DriveFileReadOptions = {},
+  ): Promise<Record<string, string | number | boolean | undefined>> => {
+    const query: Record<string, string | number | boolean | undefined> = {
+      pageSize: DEFAULT_PAGE_SIZE,
+    };
+    if (!parentId) {
+      return query;
+    }
+
+    const spaceId = await resolveNodeSpaceId(parentId, identity, options);
+    return {
+      ...query,
+      spaceId,
+      parentNodeId: parentId,
+    };
+  };
+
+  const resolveNodeSpaceId = async (
+    nodeId: string,
+    identity: RemoteIdentity,
+    options: DriveFileReadOptions = {},
+  ): Promise<string> => {
+    const cached = knownFiles.get(nodeId);
+    if (cached?.spaceId) {
+      return cached.spaceId;
+    }
+
+    const response = await sdkRequest<unknown>({
+      operationId: 'nodes.get',
+      signal: options?.signal,
+      pathParams: { nodeId },
+      query: {},
+    });
+    const spaceId = spaceIdFromNode(response);
+    if (!spaceId) {
+      throw new Error('Drive node storage space could not be resolved.');
+    }
+    return spaceId;
+  };
+
+  const listFolderChildren = async (
+    parentId: string,
+    identity: RemoteIdentity,
+    options: DriveFileReadOptions & { starred?: boolean } = {},
+  ): Promise<DriveFile[]> => {
+    const spaceId = await resolveNodeSpaceId(parentId, identity, options);
+    const items = await requestPaginatedItems({
+      operationId: 'nodes.list',
+      signal: options?.signal,
+      pathParams: { spaceId },
+      query: {
+        parentNodeId: parentId,
+        pageSize: DEFAULT_PAGE_SIZE,
+      },
+    });
+    const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
+    return mapNodeList(items, identity, {
+      starred: options.starred,
+      favoriteIds,
+      signal: options?.signal,
+    });
+  };
+
   const listOwnedSpaces = async (
     identity: RemoteIdentity,
     options: DriveFileReadOptions = {},
   ): Promise<unknown[]> => {
-    const response = await appSdkClient.request<unknown>({
+    const response = await sdkRequest<unknown>({
       operationId: 'spaces.list',
       signal: options.signal,
       query: {
-        tenantId: identity.tenantId,
         ownerSubjectType: identity.subjectType,
         ownerSubjectId: identity.userId,
       },
@@ -1262,17 +953,15 @@ function createSdkBackedDriveFileService(
 
     let response: unknown;
     try {
-      response = await appSdkClient.request<unknown>({
+      response = await sdkRequest<unknown>({
         operationId: 'spaces.create',
         signal: options.signal,
         body: {
           id: makeId('space'),
-          tenantId: identity.tenantId,
           ownerSubjectType: identity.subjectType,
           ownerSubjectId: identity.userId,
           displayName: PERSONAL_SPACE_DISPLAY_NAME,
           spaceType: 'personal',
-          operatorId: identity.actorId,
         },
       });
     } catch (error) {
@@ -1315,17 +1004,15 @@ function createSdkBackedDriveFileService(
 
     let response: unknown;
     try {
-      response = await appSdkClient.request<unknown>({
+      response = await sdkRequest<unknown>({
         operationId: 'spaces.create',
         signal: options.signal,
         body: {
           id: makeId('space'),
-          tenantId: identity.tenantId,
           ownerSubjectType: identity.subjectType,
           ownerSubjectId: identity.userId,
           displayName: GIT_REPOSITORY_SPACE_DISPLAY_NAME,
           spaceType: 'git_repository',
-          operatorId: identity.actorId,
         },
       });
     } catch (error) {
@@ -1359,20 +1046,6 @@ function createSdkBackedDriveFileService(
       return [await resolveGitRepositorySpaceId(identity, options)];
     }
 
-    if (section === 'computers') {
-      return (await listOwnedSpaces(identity, options))
-        .filter(isAppUploadSpace)
-        .map(spaceIdFromSpace)
-        .filter((spaceId): spaceId is string => Boolean(spaceId));
-    }
-
-    if (isKnowledgeBaseSection(section)) {
-      return (await listOwnedSpaces(identity, options))
-        .filter((space) => matchesKnowledgeBaseSection(space, section))
-        .map(spaceIdFromSpace)
-        .filter((spaceId): spaceId is string => Boolean(spaceId));
-    }
-
     return [normalizeSpaceId(section)];
   };
 
@@ -1387,14 +1060,36 @@ function createSdkBackedDriveFileService(
       return primarySpaceId;
     }
 
-    if (section === 'computers') {
-      throw new Error('No Drive app upload space is configured for the computers view.');
-    }
-    if (isKnowledgeBaseSection(section)) {
-      throw new Error(`No Drive knowledge base space is configured for ${section}.`);
+    return normalizeSpaceId(section);
+  };
+
+  const listLocalComputerFiles = async (
+    searchQuery: string | undefined,
+    parentId: string | null | undefined,
+    identity: RemoteIdentity,
+    options: DriveFileReadOptions = {},
+  ): Promise<DriveFile[]> => {
+    if (!hostAdapter.isNativeHost) {
+      throw new Error('The computers view is only available in the desktop app.');
     }
 
-    return normalizeSpaceId(section);
+    const parentPath = parentId ? decodeLocalFilesystemId(parentId) : null;
+    if (parentId && !parentPath) {
+      throw new Error('Invalid local folder reference.');
+    }
+
+    const entries = await hostAdapter.listLocalFilesystem(parentPath);
+    const files = entries.map((entry) =>
+      mapLocalFilesystemEntryToDriveFile(entry, identity.userId, parentId ?? undefined),
+    );
+
+    if (searchQuery?.trim()) {
+      const term = searchQuery.trim().toLowerCase();
+      return files.filter((file) => file.name.toLowerCase().includes(term));
+    }
+
+    rememberFiles(files);
+    return files;
   };
 
   const listFilesFromSpaces = async (
@@ -1410,7 +1105,6 @@ function createSdkBackedDriveFileService(
           signal: options.signal,
           pathParams: { spaceId },
           query: {
-            tenantId: identity.tenantId,
             parentNodeId: parentId || undefined,
             pageSize: DEFAULT_PAGE_SIZE,
           },
@@ -1423,6 +1117,31 @@ function createSdkBackedDriveFileService(
     return files.flat();
   };
 
+  const discardIncompleteUploadNode = async (
+    nodeId: string | undefined,
+    identity: RemoteIdentity,
+    options: DriveUploadFileOptions = {},
+  ): Promise<void> => {
+    if (!nodeId) {
+      return;
+    }
+
+    try {
+      await sdkRequest<unknown>({
+        operationId: 'nodes.delete',
+        signal: options.signal,
+        pathParams: { nodeId },
+        query: {
+        },
+      });
+      forgetFile(nodeId);
+    } catch (cleanupError) {
+      if (isAbortError(cleanupError)) {
+        throw cleanupError;
+      }
+    }
+  };
+
   const uploadTextThroughUploader = async (
     blob: File,
     node: DriveFile,
@@ -1430,12 +1149,11 @@ function createSdkBackedDriveFileService(
     contentType: string,
     options: DriveFileWriteOptions = {},
   ): Promise<void> => {
-    const spaceId = node.spaceId || spaceIdFromNode(await appSdkClient.request<unknown>({
+    const spaceId = node.spaceId || spaceIdFromNode(await sdkRequest<unknown>({
       operationId: 'nodes.get',
       signal: options.signal,
       pathParams: { nodeId: node.id },
       query: {
-        tenantId: identity.tenantId,
       },
     }));
     if (!spaceId) {
@@ -1444,11 +1162,8 @@ function createSdkBackedDriveFileService(
 
     await appSdkClient.uploader.replaceNodeContent({
       file: blob,
-      tenantId: identity.tenantId,
-      userId: identity.userId,
       spaceId,
       nodeId: node.id,
-      appId: 'drive-pc',
       appResourceType: 'desktop-file-editor',
       appResourceId: node.id,
       scene: 'drive_pc_text_save',
@@ -1457,7 +1172,6 @@ function createSdkBackedDriveFileService(
       fileFingerprint: driveUploaderFingerprint(node.name, contentType, blob.size),
       originalFileName: node.name,
       contentType,
-      operatorId: identity.actorId,
       requestedPartTtlSeconds: DEFAULT_DOWNLOAD_TTL_SECONDS,
       uploadFetch,
       signal: options.signal,
@@ -1475,66 +1189,93 @@ function createSdkBackedDriveFileService(
   };
 
   const uploadFileThroughSession = async (
-    file: File,
+    file: DriveUploaderBlobLike,
     section: string,
     parentId?: string | null,
     options?: DriveUploadFileOptions,
   ): Promise<DriveFile> => {
     assertCanUploadFileToSection(section);
     const identity = resolveIdentity(getSession);
-    const contentType = file.type || getMimeTypeFromName(file.name);
+    const originalFileName = file.name?.trim() || 'upload.bin';
+    const contentType = file.type || getMimeTypeFromName(originalFileName);
     const spaceId = await resolvePrimarySpaceId(section, identity, options);
-    const uploadResult = await appSdkClient.uploader.upload({
-      file,
-      tenantId: identity.tenantId,
-      userId: identity.userId,
-      appId: 'drive-pc',
-      appResourceType: 'desktop-file-browser',
-      appResourceId: section,
-      scene: 'drive_pc_file_upload',
-      source: 'pc_local_file',
-      fileFingerprint: driveUploaderFingerprint(file.name, contentType, file.size),
-      originalFileName: file.name,
-      contentType,
-      spaceId,
-      parentNodeId: parentId || undefined,
-      operatorId: identity.actorId,
-      requestedPartTtlSeconds: DEFAULT_DOWNLOAD_TTL_SECONDS,
-      uploadFetch,
-      signal: options?.signal,
-    });
+    let preparedNodeId: string | undefined;
+    const checksumSha256Hex = options?.checksumSha256Hex
+      ?? (isNativeLocalUploadFile(file)
+        ? await hostAdapter.checksumLocalUploadFile(file.path)
+        : undefined);
 
-    const uploadItem = uploadResult.uploadItem;
-    const uploadedFile = mapNodeToDriveFile(
-      {
-        id: uploadItem.nodeId,
-        tenantId: uploadItem.tenantId,
-        spaceId: uploadItem.spaceId,
+    try {
+      const uploadResult = await appSdkClient.uploader.upload({
+        file,
+        taskId: options?.taskId,
+        appResourceType: 'desktop-file-browser',
+        appResourceId: section,
+        scene: 'drive_pc_file_upload',
+        source: isNativeLocalUploadFile(file) ? 'pc_native_file' : 'pc_local_file',
+        fileFingerprint: driveUploaderFingerprint(originalFileName, contentType, file.size),
+        originalFileName,
+        contentType,
+        checksumSha256Hex,
+        spaceId,
         parentNodeId: parentId || undefined,
-        nodeType: 'file',
-        nodeName: uploadItem.originalFileName,
-        contentType: uploadItem.contentType,
-        contentLength: Number(uploadItem.contentLength) || file.size,
-        lifecycleStatus: 'active',
-      },
-      identity,
-      {
-        id: uploadItem.nodeId,
-        name: uploadItem.originalFileName,
-        spaceId: uploadItem.spaceId,
-        parentId: parentId || undefined,
-        mimeType: uploadItem.contentType,
-        size: Number(uploadItem.contentLength) || file.size,
-      },
-    );
-    const normalizedFile: DriveFile = {
-      ...uploadedFile,
-      type: 'file',
-      mimeType: contentType,
-      size: file.size,
-    };
-    rememberFiles([normalizedFile]);
-    return normalizedFile;
+        requestedPartTtlSeconds: DEFAULT_DOWNLOAD_TTL_SECONDS,
+        uploadFetch,
+        signal: options?.signal,
+        onProgress: options?.onProgress
+          ? (progress) => {
+              if (progress.nodeId) {
+                preparedNodeId = progress.nodeId;
+              }
+              options.onProgress?.(
+                Number(progress.uploadedBytes) || 0,
+                Number(progress.totalBytes) || file.size,
+              );
+            }
+          : (progress) => {
+              if (progress.nodeId) {
+                preparedNodeId = progress.nodeId;
+              }
+            },
+      });
+
+      const uploadItem = uploadResult.uploadItem;
+      const uploadedFile = mapNodeToDriveFile(
+        {
+          id: uploadItem.nodeId,
+          spaceId: uploadItem.spaceId,
+          parentNodeId: parentId || undefined,
+          nodeType: 'file',
+          nodeName: uploadItem.originalFileName,
+          contentType: uploadItem.contentType,
+          contentLength: Number(uploadItem.contentLength) || file.size,
+          lifecycleStatus: 'active',
+        },
+        identity,
+        {
+          id: uploadItem.nodeId,
+          name: uploadItem.originalFileName,
+          spaceId: uploadItem.spaceId,
+          parentId: parentId || undefined,
+          mimeType: uploadItem.contentType,
+          size: Number(uploadItem.contentLength) || file.size,
+        },
+      );
+      const normalizedFile: DriveFile = {
+        ...uploadedFile,
+        type: 'file',
+        mimeType: contentType,
+        size: file.size,
+      };
+      rememberFiles([normalizedFile]);
+      return normalizedFile;
+    } catch (error) {
+      // Keep prepared upload nodes for resumable retries unless the caller explicitly aborted.
+      if (isAbortError(error)) {
+        await discardIncompleteUploadNode(preparedNodeId, identity, options);
+      }
+      throw error;
+    }
   };
 
   const service: DriveFileService = {
@@ -1543,13 +1284,20 @@ function createSdkBackedDriveFileService(
       return Array.from(knownFiles.values());
     },
     async getFolderPath(folderId, options) {
+      const localPath = decodeLocalFilesystemId(folderId);
+      if (localPath) {
+        const identity = resolveIdentity(getSession);
+        const files = buildLocalFilesystemFolderPath(localPath, identity.userId);
+        rememberFiles(files);
+        return files;
+      }
+
       const identity = resolveIdentity(getSession);
-      const response = await appSdkClient.request<unknown>({
+      const response = await sdkRequest<unknown>({
         operationId: 'nodes.path.get',
         signal: options?.signal,
         pathParams: { nodeId: folderId },
         query: {
-          tenantId: identity.tenantId,
         },
       });
       const files = extractItems(response).map((item) => mapNodeToDriveFile(item, identity));
@@ -1559,34 +1307,42 @@ function createSdkBackedDriveFileService(
     async listFiles(section, searchQuery, parentId, options) {
       const identity = resolveIdentity(getSession);
 
-      if (searchQuery && VIEW_SECTIONS.has(section)) {
-        const files = await service.listFiles(section, undefined, parentId, options);
-        const term = searchQuery.trim().toLowerCase();
-        return files.filter((file) => file.name.toLowerCase().includes(term));
-      }
-
       if (searchQuery) {
-        const spaceId = await resolvePrimarySpaceId(section, identity, options);
+        if (section === 'computers') {
+          return listLocalComputerFiles(searchQuery, parentId, identity, options);
+        }
+
+        let spaceId: string | undefined;
+        if (section === APP_SECTION_ID) {
+          const spaceIds = await resolveSectionSpaceIds(section, identity, options);
+          spaceId = spaceIds[0];
+        } else if (!VIEW_SECTIONS.has(section)) {
+          spaceId = await resolvePrimarySpaceId(section, identity, options);
+        }
+
         const items = await requestPaginatedItems({
           operationId: 'search.query',
           signal: options?.signal,
           query: {
-            tenantId: identity.tenantId,
             q: searchQuery,
-            spaceId,
+            ...(spaceId ? { spaceId } : {}),
             pageSize: DEFAULT_PAGE_SIZE,
           },
         });
-        const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
+        const favoriteIds = spaceId
+          ? await listFavoriteNodeIds(identity, spaceId, options)
+          : await listFavoriteNodeIds(identity, undefined, options);
         return mapNodeList(items, identity, { parentId, favoriteIds, signal: options?.signal });
       }
 
       if (section === 'recent') {
+        if (parentId) {
+          return listFolderChildren(parentId, identity, options);
+        }
         const items = await requestPaginatedItems({
           operationId: 'recent.list',
           signal: options?.signal,
           query: {
-            tenantId: identity.tenantId,
             pageSize: DEFAULT_PAGE_SIZE,
           },
         });
@@ -1594,26 +1350,26 @@ function createSdkBackedDriveFileService(
         return mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
       }
       if (section === 'starred') {
+        if (parentId) {
+          return listFolderChildren(parentId, identity, { ...options, starred: true });
+        }
         const items = await requestPaginatedItems({
           operationId: 'favorites.list',
           signal: options?.signal,
           query: {
-            tenantId: identity.tenantId,
-            subjectType: identity.subjectType,
-            subjectId: identity.userId,
             pageSize: DEFAULT_PAGE_SIZE,
           },
         });
         return mapNodeList(items, identity, { starred: true, signal: options?.signal });
       }
       if (section === 'shared') {
+        if (parentId) {
+          return listFolderChildren(parentId, identity, options);
+        }
         const items = await requestPaginatedItems({
           operationId: 'sharedWithMe.list',
           signal: options?.signal,
           query: {
-            tenantId: identity.tenantId,
-            subjectType: identity.subjectType,
-            subjectId: identity.userId,
             pageSize: DEFAULT_PAGE_SIZE,
           },
         });
@@ -1621,14 +1377,9 @@ function createSdkBackedDriveFileService(
         return mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
       }
       if (section === 'computers') {
-        const spaceIds = await resolveSectionSpaceIds(section, identity, options);
-        return listFilesFromSpaces(spaceIds, identity, parentId, options);
+        return listLocalComputerFiles(searchQuery, parentId, identity, options);
       }
       if (section === APP_SECTION_ID) {
-        const spaceIds = await resolveSectionSpaceIds(section, identity, options);
-        return listFilesFromSpaces(spaceIds, identity, parentId, options);
-      }
-      if (isKnowledgeBaseSection(section)) {
         const spaceIds = await resolveSectionSpaceIds(section, identity, options);
         return listFilesFromSpaces(spaceIds, identity, parentId, options);
       }
@@ -1636,10 +1387,7 @@ function createSdkBackedDriveFileService(
         const items = await requestPaginatedItems({
           operationId: 'trash.list',
           signal: options?.signal,
-          query: {
-            tenantId: identity.tenantId,
-            pageSize: DEFAULT_PAGE_SIZE,
-          },
+          query: await resolveTrashListQuery(parentId, identity, options),
         });
         return mapNodeList(items, identity, { signal: options?.signal });
       }
@@ -1650,7 +1398,6 @@ function createSdkBackedDriveFileService(
         signal: options?.signal,
         pathParams: { spaceId },
         query: {
-          tenantId: identity.tenantId,
           parentNodeId: parentId || undefined,
           pageSize: DEFAULT_PAGE_SIZE,
         },
@@ -1658,14 +1405,132 @@ function createSdkBackedDriveFileService(
       const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
       return mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
     },
+    async listFilesPage(section, searchQuery, parentId, options) {
+      const identity = resolveIdentity(getSession);
+      const pageOptions = {
+        pageToken: options?.pageToken,
+        pageSize: options?.pageSize ?? DEFAULT_PAGE_SIZE,
+      };
+
+      if (searchQuery) {
+        if (section === 'computers') {
+          const files = await listLocalComputerFiles(searchQuery, parentId, identity, options);
+          return { files };
+        }
+
+        let spaceId: string | undefined;
+        if (section === APP_SECTION_ID) {
+          const spaceIds = await resolveSectionSpaceIds(section, identity, options);
+          spaceId = spaceIds[0];
+        } else if (!VIEW_SECTIONS.has(section)) {
+          spaceId = await resolvePrimarySpaceId(section, identity, options);
+        }
+
+        const { items, nextPageToken } = await requestPageItems({
+          operationId: 'search.query',
+          signal: options?.signal,
+          query: {
+            q: searchQuery,
+            ...(spaceId ? { spaceId } : {}),
+          },
+        }, pageOptions);
+        const favoriteIds = spaceId
+          ? await listFavoriteNodeIds(identity, spaceId, options)
+          : await listFavoriteNodeIds(identity, undefined, options);
+        const files = await mapNodeList(items, identity, { parentId, favoriteIds, signal: options?.signal });
+        return { files, nextPageToken };
+      }
+
+      if (section === 'recent' && parentId) {
+        const spaceId = await resolveNodeSpaceId(parentId, identity, options);
+        const { items, nextPageToken } = await requestPageItems({
+          operationId: 'nodes.list',
+          signal: options?.signal,
+          pathParams: { spaceId },
+          query: { parentNodeId: parentId },
+        }, pageOptions);
+        const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
+        const files = await mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
+        return { files, nextPageToken };
+      }
+      if (section === 'starred' && parentId) {
+        const spaceId = await resolveNodeSpaceId(parentId, identity, options);
+        const { items, nextPageToken } = await requestPageItems({
+          operationId: 'nodes.list',
+          signal: options?.signal,
+          pathParams: { spaceId },
+          query: { parentNodeId: parentId },
+        }, pageOptions);
+        const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
+        const files = await mapNodeList(items, identity, { starred: true, favoriteIds, signal: options?.signal });
+        return { files, nextPageToken };
+      }
+      if (section === 'shared' && parentId) {
+        const spaceId = await resolveNodeSpaceId(parentId, identity, options);
+        const { items, nextPageToken } = await requestPageItems({
+          operationId: 'nodes.list',
+          signal: options?.signal,
+          pathParams: { spaceId },
+          query: { parentNodeId: parentId },
+        }, pageOptions);
+        const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
+        const files = await mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
+        return { files, nextPageToken };
+      }
+      if (section === 'computers' || section === APP_SECTION_ID) {
+        const files = await service.listFiles(section, searchQuery, parentId, options);
+        return { files };
+      }
+
+      let request: DriveAppSdkRequest;
+      let mapOptions: Parameters<typeof mapNodeList>[2] = { signal: options?.signal };
+      let favoriteSpaceId: string | undefined;
+
+      if (section === 'recent') {
+        request = { operationId: 'recent.list', signal: options?.signal, query: {} };
+        favoriteSpaceId = undefined;
+      } else if (section === 'starred') {
+        request = { operationId: 'favorites.list', signal: options?.signal, query: {} };
+        mapOptions = { ...mapOptions, starred: true };
+      } else if (section === 'shared') {
+        request = { operationId: 'sharedWithMe.list', signal: options?.signal, query: {} };
+        favoriteSpaceId = undefined;
+      } else if (section === 'trash') {
+        request = {
+          operationId: 'trash.list',
+          signal: options?.signal,
+          query: await resolveTrashListQuery(parentId, identity, options),
+        };
+      } else {
+        const spaceId = await resolvePrimarySpaceId(section, identity, options);
+        favoriteSpaceId = spaceId;
+        request = {
+          operationId: 'nodes.list',
+          signal: options?.signal,
+          pathParams: { spaceId },
+          query: { parentNodeId: parentId || undefined },
+        };
+      }
+
+      const { items, nextPageToken } = await requestPageItems(request, pageOptions);
+      if (favoriteSpaceId !== undefined || section === 'recent' || section === 'shared') {
+        const favoriteIds = await listFavoriteNodeIds(
+          identity,
+          favoriteSpaceId,
+          options,
+        );
+        mapOptions = { ...mapOptions, favoriteIds };
+      }
+      const files = await mapNodeList(items, identity, mapOptions);
+      return { files, nextPageToken };
+    },
     async getFolderDetails(folderId, options) {
       const identity = resolveIdentity(getSession);
-      const response = await appSdkClient.request<unknown>({
+      const response = await sdkRequest<unknown>({
         operationId: 'nodes.get',
         signal: options?.signal,
         pathParams: { nodeId: folderId },
         query: {
-        tenantId: identity.tenantId,
         },
       });
       const file = await mapDecoratedNode(response, identity, {}, options);
@@ -1675,7 +1540,7 @@ function createSdkBackedDriveFileService(
     async setFolderColor(folderId, color, options) {
       const identity = resolveIdentity(getSession);
       if (color) {
-        await appSdkClient.request<unknown>({
+        await sdkRequest<unknown>({
           operationId: 'nodeProperties.set',
           signal: options?.signal,
           pathParams: {
@@ -1683,16 +1548,14 @@ function createSdkBackedDriveFileService(
             propertyKey: FOLDER_COLOR_PROPERTY_KEY,
           },
           body: {
-            tenantId: identity.tenantId,
             value: color,
             visibility: 'private',
-            operatorId: identity.actorId,
           },
         });
         return;
       }
 
-      await appSdkClient.request<unknown>({
+      await sdkRequest<unknown>({
         operationId: 'nodeProperties.delete',
         signal: options?.signal,
         pathParams: {
@@ -1700,9 +1563,7 @@ function createSdkBackedDriveFileService(
           propertyKey: FOLDER_COLOR_PROPERTY_KEY,
         },
         query: {
-          tenantId: identity.tenantId,
           visibility: 'private',
-          operatorId: identity.actorId,
         },
       });
     },
@@ -1710,16 +1571,13 @@ function createSdkBackedDriveFileService(
       assertCanCreateFolderInSection(section);
       const identity = resolveIdentity(getSession);
       const spaceId = await resolvePrimarySpaceId(section, identity, options);
-      const response = await appSdkClient.request<unknown>({
+      const response = await sdkRequest<unknown>({
         operationId: 'nodes.folders.create',
         signal: options?.signal,
         body: {
-          id: makeId('folder'),
-          tenantId: identity.tenantId,
           spaceId,
           parentNodeId: parentId || undefined,
           nodeName: name,
-          operatorId: identity.actorId,
         },
       });
       const folder = await mapDecoratedNode(response, identity, {}, options);
@@ -1728,14 +1586,12 @@ function createSdkBackedDriveFileService(
     },
     async renameFile(id, newName, options) {
       const identity = resolveIdentity(getSession);
-      await appSdkClient.request<unknown>({
+      await sdkRequest<unknown>({
         operationId: 'nodes.update',
         signal: options?.signal,
         pathParams: { nodeId: id },
         body: {
-          tenantId: identity.tenantId,
           nodeName: newName,
-          operatorId: identity.actorId,
         },
       });
       const existing = knownFiles.get(id);
@@ -1747,15 +1603,44 @@ function createSdkBackedDriveFileService(
         });
       }
     },
+    async moveFile(id, targetParentNodeId, options) {
+      const identity = resolveIdentity(getSession);
+      const response = await sdkRequest<unknown>({
+        operationId: 'nodes.move',
+        signal: options?.signal,
+        pathParams: { nodeId: id },
+        body: {
+          targetParentNodeId: targetParentNodeId || undefined,
+        },
+      });
+      const moved = await mapDecoratedNode(response, identity, {}, options);
+      rememberFiles([moved]);
+      return moved;
+    },
+    async copyFile(id, options = {}) {
+      const identity = resolveIdentity(getSession);
+      const response = await sdkRequest<unknown>({
+        operationId: 'nodes.copy',
+        signal: options?.signal,
+        pathParams: { nodeId: id },
+        body: {
+          id: options.id || makeId('node'),
+          targetSpaceId: options.targetSpaceId,
+          targetParentNodeId: options.targetParentNodeId || undefined,
+          nodeName: options.nodeName,
+        },
+      });
+      const copied = await mapDecoratedNode(response, identity, {}, options);
+      rememberFiles([copied]);
+      return copied;
+    },
     async deleteFile(id, options) {
       const identity = resolveIdentity(getSession);
-      await appSdkClient.request<unknown>({
+      await sdkRequest<unknown>({
         operationId: 'trash.move',
         signal: options?.signal,
         pathParams: { nodeId: id },
         body: {
-          tenantId: identity.tenantId,
-          operatorId: identity.actorId,
         },
       });
       favoriteNodeIds.delete(id);
@@ -1763,13 +1648,11 @@ function createSdkBackedDriveFileService(
     },
     async permanentlyDeleteFile(id, options) {
       const identity = resolveIdentity(getSession);
-      await appSdkClient.request<unknown>({
+      await sdkRequest<unknown>({
         operationId: 'nodes.delete',
         signal: options?.signal,
         pathParams: { nodeId: id },
         query: {
-          tenantId: identity.tenantId,
-          operatorId: identity.actorId,
         },
       });
       favoriteNodeIds.delete(id);
@@ -1777,29 +1660,40 @@ function createSdkBackedDriveFileService(
     },
     async restoreFile(id, options) {
       const identity = resolveIdentity(getSession);
-      await appSdkClient.request<unknown>({
+      await sdkRequest<unknown>({
         operationId: 'trash.restore',
         signal: options?.signal,
         pathParams: { nodeId: id },
         body: {
-          tenantId: identity.tenantId,
-          operatorId: identity.actorId,
         },
       });
       forgetFile(id);
     },
+    async emptyTrash(options) {
+      const identity = resolveIdentity(getSession);
+      const body: JsonRecord = {
+      };
+      assignDefined(body, 'spaceId', options?.spaceId);
+      const response = await sdkRequest<unknown>({
+        operationId: 'trash.empty',
+        signal: options?.signal,
+        body,
+      });
+      return requiredNumberField(
+        isRecord(response) ? response : {},
+        'trash empty deletedCount',
+        'deletedCount',
+        'deleted_count',
+      );
+    },
     async toggleStar(id, options) {
       const identity = resolveIdentity(getSession);
       if (favoriteNodeIds.has(id)) {
-        const response = await appSdkClient.request<unknown>({
+        const response = await sdkRequest<unknown>({
           operationId: 'favorites.delete',
           signal: options?.signal,
           pathParams: { nodeId: id },
           query: {
-            tenantId: identity.tenantId,
-            subjectType: identity.subjectType,
-            subjectId: identity.userId,
-            operatorId: identity.actorId,
           },
         });
         const favorited = booleanField(isRecord(response) ? response : {}, 'favorited') ?? false;
@@ -1811,15 +1705,11 @@ function createSdkBackedDriveFileService(
         return favorited;
       }
 
-      const response = await appSdkClient.request<unknown>({
+      const response = await sdkRequest<unknown>({
         operationId: 'favorites.set',
         signal: options?.signal,
         pathParams: { nodeId: id },
         body: {
-          tenantId: identity.tenantId,
-          subjectType: identity.subjectType,
-          subjectId: identity.userId,
-          operatorId: identity.actorId,
         },
       });
       const favorited = booleanField(isRecord(response) ? response : {}, 'favorited') ?? true;
@@ -1838,12 +1728,11 @@ function createSdkBackedDriveFileService(
     async createDownloadUrl(file, options) {
       const identity = resolveIdentity(getSession);
       const requestedTtlSeconds = options?.requestedTtlSeconds ?? DEFAULT_DOWNLOAD_TTL_SECONDS;
-      const response = await appSdkClient.request<unknown>({
+      const response = await sdkRequest<unknown>({
         operationId: 'nodes.downloadUrls.create',
         signal: options?.signal,
         pathParams: { nodeId: file.id },
         query: {
-          tenantId: identity.tenantId,
           requestedTtlSeconds,
         },
       });
@@ -1855,7 +1744,7 @@ function createSdkBackedDriveFileService(
         throw new Error('Drive preview download grant did not return a download URL.');
       }
 
-      const response = await downloadFetch(grant.downloadUrl, {
+      const response = await downloadFetch(grant.signedSourceUrl || grant.downloadUrl, {
         method: grant.method || 'GET',
         signal: options?.signal,
       });
@@ -1883,26 +1772,23 @@ function createSdkBackedDriveFileService(
     },
     async listArchiveEntries(file, options) {
       const identity = resolveIdentity(getSession);
-      const response = await appSdkClient.request<unknown>({
+      const response = await sdkRequest<unknown>({
         operationId: 'archiveEntries.list',
         signal: options?.signal,
         pathParams: { nodeId: file.id },
         query: {
-          tenantId: identity.tenantId,
         },
       });
       return extractItems(response).map(responseToArchiveEntry);
     },
     async extractArchiveEntries(file, entryPaths, options) {
       const identity = resolveIdentity(getSession);
-      const response = await appSdkClient.request<unknown>({
+      const response = await sdkRequest<unknown>({
         operationId: 'archiveEntries.extract',
         signal: options?.signal,
         pathParams: { nodeId: file.id },
         body: {
-          tenantId: identity.tenantId,
           entryPaths: entryPaths?.length ? entryPaths : undefined,
-          operatorId: identity.actorId,
         },
       });
       const files = extractItems(response).map((item) => mapNodeToDriveFile(item, identity));
@@ -1911,7 +1797,7 @@ function createSdkBackedDriveFileService(
     },
     async signPdfFile(file, options) {
       const identity = resolveIdentity(getSession);
-      await appSdkClient.request<unknown>({
+      await sdkRequest<unknown>({
         operationId: 'nodeProperties.set',
         signal: options?.signal,
         pathParams: {
@@ -1919,7 +1805,6 @@ function createSdkBackedDriveFileService(
           propertyKey: PDF_SIGNATURE_PROPERTY_KEY,
         },
         body: {
-          tenantId: identity.tenantId,
           value: JSON.stringify({
             signatureType: 'metadata_acknowledgement',
             signedBy: identity.userId,
@@ -1928,312 +1813,39 @@ function createSdkBackedDriveFileService(
             fileName: file.name,
           }),
           visibility: 'private',
-          operatorId: identity.actorId,
         },
       });
     },
     async createDownloadPackage(files, packageName, options) {
       const identity = resolveIdentity(getSession);
       const requestedTtlSeconds = options?.requestedTtlSeconds ?? DEFAULT_DOWNLOAD_TTL_SECONDS;
-      const response = await appSdkClient.request<unknown>({
+      const response = await sdkRequest<unknown>({
         operationId: 'downloadPackages.create',
         signal: options?.signal,
         body: {
-          tenantId: identity.tenantId,
           nodeIds: files.map((file) => file.id),
           packageName,
           requestedTtlSeconds,
-          operatorId: identity.actorId,
         },
       });
       return responseToDownloadPackage(response);
     },
     async getStorageSummary(options) {
       const identity = resolveIdentity(getSession);
-      const response = await appSdkClient.request<unknown>({
+      const response = await sdkRequest<unknown>({
         operationId: 'quotas.summary',
         signal: options?.signal,
         query: {
-          tenantId: identity.tenantId,
         },
       });
       return responseToStorageSummary(response, identity);
     },
-    async listStorageProviders(status, options) {
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.list',
-        signal: options?.signal,
-        query: {
-          status,
-        },
-      });
-      return extractItems(response).map(responseToStorageProvider);
-    },
-    async getStorageProvider(providerId, options) {
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.get',
-        signal: options?.signal,
-        pathParams: { providerId },
-      });
-      return responseToStorageProvider(response);
-    },
-    async createStorageProvider(request, options) {
-      const identity = resolveIdentity(getSession);
-      const body: JsonRecord = {
-        id: request.id,
-        providerKind: request.providerKind,
-        name: request.name,
-        endpointUrl: request.endpointUrl,
-        bucket: request.bucket,
-        operatorId: identity.actorId,
-      };
-      assignDefined(body, 'region', request.region);
-      assignDefined(body, 'pathStyle', request.pathStyle);
-      assignDefined(body, 'credentialRef', request.credentialRef);
-      assignDefined(body, 'serverSideEncryptionMode', request.serverSideEncryptionMode);
-      assignDefined(body, 'defaultStorageClass', request.defaultStorageClass);
-      assignDefined(body, 'status', request.status);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.create',
-        signal: options?.signal,
-        body,
-      });
-      return responseToStorageProvider(response);
-    },
-    async updateStorageProvider(providerId, request, options) {
-      const identity = resolveIdentity(getSession);
-      const body: JsonRecord = {
-        operatorId: identity.actorId,
-      };
-      assignDefined(body, 'name', request.name);
-      assignDefined(body, 'endpointUrl', request.endpointUrl);
-      assignDefined(body, 'region', request.region);
-      assignDefined(body, 'bucket', request.bucket);
-      assignDefined(body, 'pathStyle', request.pathStyle);
-      assignDefined(body, 'credentialRef', request.credentialRef);
-      assignDefined(body, 'serverSideEncryptionMode', request.serverSideEncryptionMode);
-      assignDefined(body, 'defaultStorageClass', request.defaultStorageClass);
-      assignDefined(body, 'status', request.status);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.update',
-        signal: options?.signal,
-        pathParams: { providerId },
-        body,
-      });
-      return responseToStorageProvider(response);
-    },
-    async deleteStorageProvider(providerId, options) {
-      const identity = resolveIdentity(getSession);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.delete',
-        signal: options?.signal,
-        pathParams: { providerId },
-        query: {
-          operatorId: identity.actorId,
-        },
-      });
-      return requiredBooleanField(isRecord(response) ? response : {}, 'storage provider deleted', 'deleted');
-    },
-    async testStorageProvider(providerId, options) {
-      const identity = resolveIdentity(getSession);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.test',
-        signal: options?.signal,
-        pathParams: { providerId },
-        body: {
-          operatorId: identity.actorId,
-        },
-      });
-      return requiredBooleanField(isRecord(response) ? response : {}, 'storage provider reachable', 'reachable');
-    },
-    async getStorageProviderCapabilities(providerId, options) {
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.capabilities.get',
-        signal: options?.signal,
-        pathParams: { providerId },
-      });
-      return responseToStorageProviderCapabilities(response);
-    },
-    async activateStorageProvider(providerId, options) {
-      const identity = resolveIdentity(getSession);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.activate',
-        signal: options?.signal,
-        pathParams: { providerId },
-        body: {
-          operatorId: identity.actorId,
-        },
-      });
-      return responseToStorageProvider(response);
-    },
-    async deactivateStorageProvider(providerId, options) {
-      const identity = resolveIdentity(getSession);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.deactivate',
-        signal: options?.signal,
-        pathParams: { providerId },
-        body: {
-          operatorId: identity.actorId,
-        },
-      });
-      return responseToStorageProvider(response);
-    },
-    async rotateStorageProviderCredential(providerId, credentialRef, options) {
-      const identity = resolveIdentity(getSession);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.credentials.rotate',
-        signal: options?.signal,
-        pathParams: { providerId },
-        body: {
-          credentialRef,
-          operatorId: identity.actorId,
-        },
-      });
-      return responseToStorageProvider(response);
-    },
-    async headStorageProviderBucket(providerId, options) {
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.bucket.head',
-        signal: options?.signal,
-        pathParams: { providerId },
-      });
-      return responseToProviderBucket(response);
-    },
-    async createStorageProviderBucket(providerId, options) {
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.bucket.create',
-        signal: options?.signal,
-        pathParams: { providerId },
-      });
-      return responseToProviderBucketMutation(response);
-    },
-    async deleteStorageProviderBucket(providerId, options) {
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.bucket.delete',
-        signal: options?.signal,
-        pathParams: { providerId },
-      });
-      return responseToProviderBucketMutation(response);
-    },
-    async listStorageProviderBuckets(providerId, options) {
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.buckets.list',
-        signal: options?.signal,
-        pathParams: { providerId },
-      });
-      return responseToProviderBucketList(response);
-    },
-    async listStorageProviderObjects(providerId, request = {}, options) {
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.objects.list',
-        signal: options?.signal,
-        pathParams: { providerId },
-        query: {
-          prefix: request.prefix,
-          delimiter: request.delimiter,
-          pageToken: request.pageToken,
-          pageSize: request.pageSize,
-        },
-      });
-      return responseToProviderObjectList(response);
-    },
-    async headStorageProviderObject(providerId, objectKey, options) {
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.objects.head',
-        signal: options?.signal,
-        pathParams: { providerId, objectKey },
-      });
-      return responseToProviderObject(response);
-    },
-    async deleteStorageProviderObject(providerId, objectKey, options) {
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.objects.delete',
-        signal: options?.signal,
-        pathParams: { providerId, objectKey },
-      });
-      return responseToProviderObjectMutation(response);
-    },
-    async copyStorageProviderObject(providerId, request, options) {
-      const body: JsonRecord = {
-        sourceObjectKey: request.sourceObjectKey,
-        destinationObjectKey: request.destinationObjectKey,
-      };
-      assignDefined(body, 'destinationBucket', request.destinationBucket);
-      assignDefined(body, 'metadataDirective', request.metadataDirective);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.objects.copy',
-        signal: options?.signal,
-        pathParams: { providerId },
-        body,
-      });
-      return responseToProviderObjectMutation(response);
-    },
-    async getDefaultStorageProviderBinding(scope = {}, options) {
-      const identity = resolveIdentity(getSession);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviderBindings.default.get',
-        signal: options?.signal,
-        query: {
-          tenantId: identity.tenantId,
-          spaceId: scope.spaceId,
-        },
-      });
-      return responseToStorageProviderBinding(response);
-    },
-    async setDefaultStorageProviderBinding(request, options) {
-      const identity = resolveIdentity(getSession);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviderBindings.default.set',
-        signal: options?.signal,
-        body: {
-          tenantId: identity.tenantId,
-          spaceId: request.spaceId,
-          providerId: request.providerId,
-          operatorId: identity.actorId,
-        },
-      });
-      return responseToStorageProviderBinding(response);
-    },
-    async listStorageProviderBindings(request = {}, options) {
-      const identity = resolveIdentity(getSession);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviderBindings.list',
-        signal: options?.signal,
-        query: {
-          tenantId: identity.tenantId,
-          spaceId: request.spaceId,
-          providerId: request.providerId,
-          lifecycleStatus: request.lifecycleStatus,
-        },
-      });
-      return responseToStorageProviderBindingList(response);
-    },
-    async deleteDefaultStorageProviderBinding(scope = {}, options) {
-      const identity = resolveIdentity(getSession);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviderBindings.default.delete',
-        signal: options?.signal,
-        query: {
-          tenantId: identity.tenantId,
-          spaceId: scope.spaceId,
-          operatorId: identity.actorId,
-        },
-      });
-      return requiredBooleanField(
-        isRecord(response) ? response : {},
-        'default storage provider binding deleted',
-        'deleted',
-      );
-    },
     async listSharedSpaces(options) {
       const identity = resolveIdentity(getSession);
-      const response = await appSdkClient.request<unknown>({
+      const response = await sdkRequest<unknown>({
         operationId: 'spaces.list',
         signal: options?.signal,
         query: {
-          tenantId: identity.tenantId,
-          ownerSubjectType: identity.subjectType,
-          ownerSubjectId: identity.userId,
         },
       });
       sharedSpacesCache = extractItems(response)
@@ -2242,36 +1854,53 @@ function createSdkBackedDriveFileService(
       return sharedSpacesCache;
     },
     getSharedSpaces: () => sharedSpacesCache,
+    async listKnowledgeBaseSpaces(options) {
+      const identity = resolveIdentity(getSession);
+      const response = await sdkRequest<unknown>({
+        operationId: 'spaces.list',
+        signal: options?.signal,
+        query: {
+        },
+      });
+      knowledgeBaseSpacesCache = extractItems(response)
+        .filter(isKnowledgeBaseSpace)
+        .map((item) => responseToKnowledgeBaseSpace(item));
+      return knowledgeBaseSpacesCache;
+    },
+    getKnowledgeBaseSpaces: () => knowledgeBaseSpacesCache,
     async createSharedSpace(name, icon, color, description, options) {
       const identity = resolveIdentity(getSession);
-      const response = await appSdkClient.request<unknown>({
+      const spaceId = makeId('space');
+      const response = await sdkRequest<unknown>({
         operationId: 'spaces.create',
         signal: options?.signal,
         body: {
-          id: makeId('space'),
-          tenantId: identity.tenantId,
-          ownerSubjectType: identity.subjectType,
-          ownerSubjectId: identity.userId,
+          id: spaceId,
+          ownerSubjectType: 'group',
+          ownerSubjectId: spaceId,
           displayName: name,
           spaceType: 'team',
-          operatorId: identity.actorId,
+          presentationIcon: icon,
+          presentationColor: color,
+          description,
         },
       });
       const created = responseToSharedSpace(response, {
         name,
+        icon,
+        color,
+        description,
       });
       sharedSpacesCache = [...sharedSpacesCache.filter((space) => space.id !== created.id), created];
       return created;
     },
     async deleteSharedSpace(id, options) {
       const identity = resolveIdentity(getSession);
-      await appSdkClient.request<unknown>({
+      await sdkRequest<unknown>({
         operationId: 'spaces.delete',
         signal: options?.signal,
         pathParams: { spaceId: id },
         query: {
-          tenantId: identity.tenantId,
-          operatorId: identity.actorId,
         },
       });
       sharedSpacesCache = sharedSpacesCache.filter((space) => space.id !== id);
@@ -2283,15 +1912,15 @@ function createSdkBackedDriveFileService(
 
 export function createDriveFileService({
   appSdkClient,
-  adminStorageSdkClient,
   getSession,
+  hostAdapter = createHostAdapter(),
   uploadFetch,
   downloadFetch,
 }: CreateDriveFileServiceOptions): DriveFileService {
   return createSdkBackedDriveFileService(
     appSdkClient,
-    adminStorageSdkClient,
     getSession,
+    hostAdapter,
     uploadFetch,
     downloadFetch,
   );

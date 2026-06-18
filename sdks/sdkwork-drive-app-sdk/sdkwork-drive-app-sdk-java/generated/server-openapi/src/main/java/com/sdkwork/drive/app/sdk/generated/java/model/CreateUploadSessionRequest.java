@@ -3,35 +3,25 @@ package com.sdkwork.drive.app.sdk.generated.java.model;
 
 public class CreateUploadSessionRequest {
     private String sessionId;
-    private String tenantId;
     private String spaceId;
     private String nodeId;
     private String bucket;
     private String objectKey;
     private String idempotencyKey;
-    private String operatorId;
     private Integer expiresAtEpochMs;
 
     public String getSessionId() {
         return this.sessionId;
     }
-    
+
     public void setSessionId(String sessionId) {
         this.sessionId = sessionId;
-    }
-
-    public String getTenantId() {
-        return this.tenantId;
-    }
-    
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
     }
 
     public String getSpaceId() {
         return this.spaceId;
     }
-    
+
     public void setSpaceId(String spaceId) {
         this.spaceId = spaceId;
     }
@@ -39,7 +29,7 @@ public class CreateUploadSessionRequest {
     public String getNodeId() {
         return this.nodeId;
     }
-    
+
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -47,7 +37,7 @@ public class CreateUploadSessionRequest {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -55,7 +45,7 @@ public class CreateUploadSessionRequest {
     public String getObjectKey() {
         return this.objectKey;
     }
-    
+
     public void setObjectKey(String objectKey) {
         this.objectKey = objectKey;
     }
@@ -63,23 +53,15 @@ public class CreateUploadSessionRequest {
     public String getIdempotencyKey() {
         return this.idempotencyKey;
     }
-    
+
     public void setIdempotencyKey(String idempotencyKey) {
         this.idempotencyKey = idempotencyKey;
-    }
-
-    public String getOperatorId() {
-        return this.operatorId;
-    }
-    
-    public void setOperatorId(String operatorId) {
-        this.operatorId = operatorId;
     }
 
     public Integer getExpiresAtEpochMs() {
         return this.expiresAtEpochMs;
     }
-    
+
     public void setExpiresAtEpochMs(Integer expiresAtEpochMs) {
         this.expiresAtEpochMs = expiresAtEpochMs;
     }

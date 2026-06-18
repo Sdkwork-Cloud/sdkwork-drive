@@ -6,9 +6,14 @@
     "version": "0.1.0",
     "language": "go",
     "sdkType": "app",
+    "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-go"
   },
   "generatedFiles": [
+    {
+      "path": "api/assets.go",
+      "sha256": "552e443d2b32a72d5b9d223f91a0c43bb884c4648753e382d572ec5dea8de164"
+    },
     {
       "path": "api/base.go",
       "sha256": "bd9cb1441ac5cc40f8de4a0a9d4dc674b845ffda3fd063630edf85ada5ccce7a"
@@ -19,15 +24,15 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "ccd82bb96c32302fe9f06a1d27038149879b17fd0bdea50713171a5e7fd0bf93"
+      "sha256": "206ad0745547a10d2682b14275924d226b5bbdc652c985ab60eefe6a62e6f33e"
     },
     {
       "path": "api/node_labels.go",
-      "sha256": "31909a24b48efd4fe22dbcf2ca8dbf1f585bd3b7da4f5b58932069f6634d1269"
+      "sha256": "5214f9cef68368cd678a621b62d7390a8092155642d431f00b8a1331ec329893"
     },
     {
       "path": "api/node_properties.go",
-      "sha256": "2fd86fed76c680a4f50c361fe1388a5c23f15281f1b6a89d809f862886a84c4f"
+      "sha256": "18f95c37845f2fc67c762aa12bcbc0e0cc3a56e75b2013402ef9ee835dbb5a1e"
     },
     {
       "path": "api/nodes.go",
@@ -39,11 +44,11 @@
     },
     {
       "path": "api/watch_channels.go",
-      "sha256": "b3de563ab1afc2ac731e8622573521c139a7c05dce76c96abe24824b5906384d"
+      "sha256": "d14cad8b6dffc115f05c06c3bb29d6283e1c747e72188e8ffe1ba296d6712685"
     },
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -67,7 +72,7 @@
     },
     {
       "path": "http/client.go",
-      "sha256": "8eb80a7718afbcbe5f83dcee1c4e5be529a8bba1707204e79d583dfe79a959c6"
+      "sha256": "5574d28592e72078ae744ce20c0930fa7825b32ab3e2b18ed3de16652df50b0e"
     },
     {
       "path": "http/doc.go",
@@ -79,11 +84,11 @@
     },
     {
       "path": "README.md",
-      "sha256": "d24908ff139f06edfd5663784d96b6ee7a92b49ba65f3078a94d79a95f8650b5"
+      "sha256": "d7fd5448771048609cc3d89021e7c6d2642086c0730f7e16d2503c0d6e4bc58e"
     },
     {
       "path": "sdk.go",
-      "sha256": "b44a5d147016316b16a23d372a88ba5dec1c7908d17a152bcdafe1fbf428f063"
+      "sha256": "45de6f96a8ebf092fc66f3fe4ed38363952c57dc07e02a4155d8682d2b51d3a5"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -91,7 +96,7 @@
     },
     {
       "path": "types/apply_node_label_request.go",
-      "sha256": "a69b1a052f4ed534b3d2b6634d74f9cea8d7509f66c8d428e01542de4c9a697d"
+      "sha256": "6b99b815de2cb4ce22b9bab9100d12fd5c7b1658b867ed6434296d0e4622be42"
     },
     {
       "path": "types/archive_entry_list_response.go",
@@ -100,6 +105,34 @@
     {
       "path": "types/archive_entry.go",
       "sha256": "817d64f4796497698421afde6b66a9f458b112931ca6adb2c6542646d25b8201"
+    },
+    {
+      "path": "types/asset_action_request.go",
+      "sha256": "1226fddb588b6cbc42f569f0983deb7bcb680a39284ecb199af0c7aea3c18c2b"
+    },
+    {
+      "path": "types/asset_collection_item.go",
+      "sha256": "1581e6d7d700ddb88cbf2d6d91cd96e797a3862da76103e7996f26dee4d84dbc"
+    },
+    {
+      "path": "types/asset_collection_page.go",
+      "sha256": "fdeaed9bb99636de4cf4d10f3320357a9c209661ae8f16776e0e3b3d77c5c5fa"
+    },
+    {
+      "path": "types/asset_collection.go",
+      "sha256": "78aeeb0019ce112620b54563066ab69311678f6e724e6d4b7aaa3eb180f61ce6"
+    },
+    {
+      "path": "types/asset_item.go",
+      "sha256": "f24c7c389a8ecee7ecd84b4af33f0f329c57240fe954486ed9192d91742d7ea5"
+    },
+    {
+      "path": "types/asset_page.go",
+      "sha256": "c505d0d7e75ff1bf6d34950a087928cbda61889c9eee2c18cdcfc140c7a6f45e"
+    },
+    {
+      "path": "types/asset_relation.go",
+      "sha256": "27743c12917eefa2119b498709d524c56cda8bc57f25fdf11ecd715d770ea29b"
     },
     {
       "path": "types/change_list_response.go",
@@ -131,7 +164,7 @@
     },
     {
       "path": "types/complete_upload_session_request.go",
-      "sha256": "47529a7761bcefa368be0c857dc05f4932354c731f08a32093d37bef527b6696"
+      "sha256": "6e79333f193ff4f14ec2bc3a248648d29458165b14da3997b2af3b956d2fafad"
     },
     {
       "path": "types/completed_upload_part.go",
@@ -139,23 +172,39 @@
     },
     {
       "path": "types/copy_node_request.go",
-      "sha256": "9407bb9c82e012cb6a2b844388b3a4011f4ed1ed82c8a661a6b0b10d6339a2aa"
+      "sha256": "6f46dc575bff8e462eb2296ed82065533539b89b3c3d81ce014ebd3b070c20b7"
+    },
+    {
+      "path": "types/create_asset_collection_item_request.go",
+      "sha256": "678616915618027d94c4bbc7585eccc61eee07bd7ad44072be4a8580b379bba5"
+    },
+    {
+      "path": "types/create_asset_collection_request.go",
+      "sha256": "c06365efbc547b472496eb53c4e5772f5b76c0233a4916642317ef5998265156"
+    },
+    {
+      "path": "types/create_asset_relation_request.go",
+      "sha256": "2d861252cccc3652e2d2d1f73c71013301b3bc308cdc64746f9c25246b593e99"
+    },
+    {
+      "path": "types/create_asset_request.go",
+      "sha256": "ab5614bcf14927bf443bab55f50c67135f63e118f6fa36a6d18a5a50bbf8e573"
     },
     {
       "path": "types/create_comment_reply_request.go",
-      "sha256": "d321032472e4bccf41d56a74d8db10b2aec092d209ed4e90ea9f3820f807a7a8"
+      "sha256": "573fd749ae3fee7ef2c433c264dd0ece7f45740f957e8611fd101c043ee12369"
     },
     {
       "path": "types/create_comment_request.go",
-      "sha256": "22780fa83dddeef7e108d0a7ca9d709320280d7a49707be041aa05c32efc8ae8"
+      "sha256": "ccfb6c73b18202b726708d57a895b6f5d7cfd215f6acc12db8fff4bee79ae770"
     },
     {
       "path": "types/create_download_package_request.go",
-      "sha256": "e046632b24d00d1c5f6b3a145e463390b8b6f475a85b0114c9113e5ebc57cb3e"
+      "sha256": "c674d414331be18697b53824295f5d62c3048c92b2e3e06ec249a70b7093e8b1"
     },
     {
       "path": "types/create_download_url_request.go",
-      "sha256": "972d4ee97f28f02e4bec32f364292a1a05245a5ddb278868e60c8e559719931e"
+      "sha256": "3cf799d277992f795b94cef8b19eae20a684ab3625a02d66f76128cbcc26b3f5"
     },
     {
       "path": "types/create_download_url_response.go",
@@ -163,7 +212,7 @@
     },
     {
       "path": "types/create_file_request.go",
-      "sha256": "7f0b4c932c86cb138d08bc3ed8d87576813e171b96849bf048609d09add43650"
+      "sha256": "d75295f0b2ddab56b7eceeff59ac1c3f043d0b8add34a5106cbacefc7e27411b"
     },
     {
       "path": "types/create_file_response.go",
@@ -171,31 +220,39 @@
     },
     {
       "path": "types/create_folder_request.go",
-      "sha256": "0972846afde5e899edbf37ea9bdc8563f2df1fa2be63e224253b51fb3fdafa7a"
+      "sha256": "f6abda3fde3b00f78a2fb01f10c82d370997443dad075d41612ea2324eaa97be"
     },
     {
       "path": "types/create_permission_request.go",
-      "sha256": "f9b32c8dc98a1f8ec13a15e49acd53155d045bce7774e91c8e4685134e5ecce6"
+      "sha256": "ef808d040a8a1db7c03f7fc5bc72cc4b231d74d02d696b6a848c3d9a18a0d405"
     },
     {
       "path": "types/create_share_link_request.go",
-      "sha256": "468afe2180f36845c008719f99b93fe482187ff74666d1ce5865a9195aaee458"
+      "sha256": "19016599eee00c2fbfce7d3e00f317127da97805ce5c238b60ed28079648b7cd"
     },
     {
       "path": "types/create_shortcut_request.go",
-      "sha256": "2b3a0ccf8bd9bf52d69e2b590c25f7b3e39d13df6b579a7454c2a76f6386278e"
+      "sha256": "0fb7a61354de7bd2229a22d7791cc601b92671556f66ee5578a10bed7b455c8a"
     },
     {
       "path": "types/create_space_request.go",
-      "sha256": "cce8b151c99c5af98d606e2f1c37bdc50e587f4fff40a5237ad54ae0f7293421"
+      "sha256": "aebe1ace2312fdc3498d4bea37e537da143f2645bc8a63890e917c5114fb8a82"
     },
     {
       "path": "types/create_upload_session_request.go",
-      "sha256": "d56e18b9e002b4cd090401d58299a1a4978f34d5950f6524816ad851b37a30b4"
+      "sha256": "e6e51b05d47aea0a4e9d3cec99a18cf8ad0682d26c11041c62f5a19e38a66a5b"
     },
     {
       "path": "types/create_watch_channel_request.go",
-      "sha256": "3cb5d8f533f054b87fe877bf7dcfc99919641ab56553e06ce6c95343a9b41685"
+      "sha256": "18b5bc21b40f6a4cb9bf4c42d92ce152092397720f51881e04f390d6213c21ae"
+    },
+    {
+      "path": "types/delete_asset_collection_item_response.go",
+      "sha256": "4ff3fd97843b3b69bf4224d854e77d85503cb614c3ea89cac63aa0720f1142dd"
+    },
+    {
+      "path": "types/delete_asset_relation_response.go",
+      "sha256": "fdc81c2110115405b39aa8e07ec587587e9746a7d824bb69ec19aa7f9f08c49d"
     },
     {
       "path": "types/delete_node_property_response.go",
@@ -243,7 +300,7 @@
     },
     {
       "path": "types/drive_node.go",
-      "sha256": "ba3a8039cca6942a583c96c297b78229a7cc4f2273d48b0a6c80acd6a620f45f"
+      "sha256": "f6358c81fb4e7a8e1d6445558565bed2fd0c2a162bf75142bd9b88fe2c194955"
     },
     {
       "path": "types/drive_permission.go",
@@ -255,7 +312,7 @@
     },
     {
       "path": "types/drive_space.go",
-      "sha256": "92fe376160513fb7ee43abf428b19dacd383dcc8bf44906ca81b537761be4a19"
+      "sha256": "d0a2fa0da9ecc3b8432b55dd1d076a7709bcee3a06eeb9526a23618b324da82d"
     },
     {
       "path": "types/drive_upload_session.go",
@@ -279,7 +336,7 @@
     },
     {
       "path": "types/empty_trash_request.go",
-      "sha256": "8a0f1e9611caab8431c9e48d5880b5dfe7371637c8150de091c22fedf426fc3d"
+      "sha256": "0ac1017398b914e42ae3bbe4ab53fb655aba8f9ed583224252d6a97f650259d8"
     },
     {
       "path": "types/empty_trash_response.go",
@@ -287,7 +344,7 @@
     },
     {
       "path": "types/extract_archive_entries_request.go",
-      "sha256": "202923198dd77cf818f84feec298bf79c0c504fee7221a9c7e374c753e4d6716"
+      "sha256": "d023366ad7f127650288d0a8f678568ea12272f926c6e7aeaae782cd8955b071"
     },
     {
       "path": "types/extract_archive_entries_response.go",
@@ -295,7 +352,7 @@
     },
     {
       "path": "types/favorite_node_request.go",
-      "sha256": "076fc64ef774ed98d5f3d5af773293067067123efd13430a1469d6daf130420e"
+      "sha256": "aa7e4fc9ed5d1d009ce995fc7edf6a3cabeb64697b1455ec171b6af72fcf3ba5"
     },
     {
       "path": "types/favorite_node_response.go",
@@ -307,7 +364,7 @@
     },
     {
       "path": "types/file_version.go",
-      "sha256": "b09b8f15c6930224edcd45b767e69cf71943f44786ed4f953406ae4942e384dc"
+      "sha256": "8aee316758d6c8481b36f375da4bbe2be01dac7e14851fc177386cf2503cd802"
     },
     {
       "path": "types/list_spaces_response.go",
@@ -315,11 +372,15 @@
     },
     {
       "path": "types/mark_uploader_part_uploaded_request.go",
-      "sha256": "142a79b9e551ac7375ae3e5aa9f8fcd70ca1d5a1bdfe41407560b518ef49fdc4"
+      "sha256": "3edd73135e9105f3eb8d2c67e01b5f3e2227c9e1f83f3cf1bbd77d64a64a94c2"
+    },
+    {
+      "path": "types/media_resource.go",
+      "sha256": "71ad599d1a10f016b3dbea04ff973e4a787d11d9f5d5e0ba6c857f485195c117"
     },
     {
       "path": "types/move_node_request.go",
-      "sha256": "1d6bdac814254ddb2d401c4e30e1554eb2f166eafff7ef0e265582ae88a36cab"
+      "sha256": "cde4d451a5d41930f619f359586540ff40c539abe471472e20d5d724f96efcfa"
     },
     {
       "path": "types/node_capabilities_response.go",
@@ -327,7 +388,7 @@
     },
     {
       "path": "types/node_command_request.go",
-      "sha256": "9d7139c85ddbfd9f641872e7001a52373d20a0745a3f13741b9ce79b7bc9ccc9"
+      "sha256": "f3cd01757c3bc139a0170d1d41eac141ed6726cc381bb029123e17848e87ff1a"
     },
     {
       "path": "types/node_label_list_response.go",
@@ -359,7 +420,7 @@
     },
     {
       "path": "types/prepare_uploader_upload_request.go",
-      "sha256": "a31e55b17a014e0054b46857204c833cb00867e54e2cff929bca74b9e864dbb0"
+      "sha256": "db7ae84f150ffd35bcbba16ad4ab2b0e8e8708776aea426dfd453d74c5fd75fa"
     },
     {
       "path": "types/prepare_uploader_upload_response.go",
@@ -367,7 +428,7 @@
     },
     {
       "path": "types/presign_upload_part_request.go",
-      "sha256": "95c46265e9780cf6038e7dc61829972728bb7ab655bf54fd918b89e5e71abc9d"
+      "sha256": "bbb9e03270578293c5628e55aa84becf1728c59880a008787e6c467b0c710fc3"
     },
     {
       "path": "types/presigned_upload_part.go",
@@ -387,7 +448,7 @@
     },
     {
       "path": "types/set_node_property_request.go",
-      "sha256": "dd49b1a797744073edca9bf1e9eceeed68fff5ca514040687ff75bf5d7f164b1"
+      "sha256": "ea8646fc8e5ec2cf21594127c0a8645b5a5481eb83055c3f5be27da605f4ae8c"
     },
     {
       "path": "types/share_link_list_response.go",
@@ -403,35 +464,39 @@
     },
     {
       "path": "types/stop_watch_channel_request.go",
-      "sha256": "a536a66cabc803f7240a8e78392b7267c4b8f2bf480a682adeb97ceec1c068ae"
+      "sha256": "1f90e6cfe16855232e7eb53a46731e13e4ac3af3ca582b80d637cdb151cab638"
     },
     {
       "path": "types/stop_watch_channel_response.go",
       "sha256": "86efd834e303d6ab133c0b07cacb79d3d23f84321630fbc8d2f5f8a1220a7ec5"
     },
     {
+      "path": "types/update_asset_request.go",
+      "sha256": "c54ae166f8098ae05e2b762fe1686fefab97c243e7e5835a5b809f8b117eb3dc"
+    },
+    {
       "path": "types/update_comment_reply_request.go",
-      "sha256": "889c8f4dbe55ffd2439b4a790b6d37cb337c013a4b02c654f6a96f0d057a1267"
+      "sha256": "78e5e239359fef64db48fd44f83acfd2efd7618a7ba4515fbbb8b8ff05862b42"
     },
     {
       "path": "types/update_comment_request.go",
-      "sha256": "49f752dc796af3fd76b13b1d692b6b0c0c913f76fcf5c6f53710860847369139"
+      "sha256": "30b107133d2aea5a769c32497bba7a528c330b3801fd50855ed1b628da860332"
     },
     {
       "path": "types/update_node_request.go",
-      "sha256": "0e3b818649220857f627c44fb7e39981c11156d02f11f3fd855ca000506cc7cf"
+      "sha256": "53a00c8559561fe26f2290c3d1a471b383b45c7804bc5347d78d730602d02218"
     },
     {
       "path": "types/update_permission_request.go",
-      "sha256": "f17582cc96a90139d78c66558635fd44daa95c8779e63a6c3c19526fb90c44fc"
+      "sha256": "a1434f3f848c7b098ecabd477e6d628afe76284fd8058432527bea53031079ee"
     },
     {
       "path": "types/update_share_link_request.go",
-      "sha256": "9ef3da746f5a69f015e9226bd36d23e7ba168562cb1746cee7180385028b711a"
+      "sha256": "5dfbc139e1338e7d6f09b32db16e51bcc77f8d6e4dc86c4c25cc642c306ac3d8"
     },
     {
       "path": "types/update_space_request.go",
-      "sha256": "39b760295cd6b218631c955720778d64bb01f04ab816598d4f0978e1308ae382"
+      "sha256": "33bbfc89571dd5b060d72d26d1433f8dc9478b5773d5c99544cdd36797a25096"
     },
     {
       "path": "types/upload_session_mutation_response.go",

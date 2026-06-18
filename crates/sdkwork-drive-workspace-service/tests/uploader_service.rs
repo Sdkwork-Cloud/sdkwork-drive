@@ -115,6 +115,131 @@ async fn prepare_upload_creates_logged_in_user_upload_space_and_task() {
 }
 
 #[tokio::test]
+async fn prepare_upload_allocates_unique_name_when_file_already_exists() {
+    let pool = create_pool().await;
+    let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
+    let base_command = |id: &str, task_id: &str| PrepareUploaderUploadCommand {
+        id: id.to_string(),
+        task_id: task_id.to_string(),
+        tenant_id: "tenant-user".to_string(),
+        organization_id: Some("org-user".to_string()),
+        actor: UploaderActor::User {
+            user_id: "user-001".to_string(),
+        },
+        app_id: "drive-pc".to_string(),
+        app_resource_type: "desktop-file-browser".to_string(),
+        app_resource_id: "root".to_string(),
+        scene: Some("drive_pc_file_upload".to_string()),
+        source: Some("pc_local_file".to_string()),
+        upload_profile_code: "generic".to_string(),
+        file_fingerprint: format!("fp-{task_id}"),
+        original_file_name: "report.txt".to_string(),
+        content_type: "text/plain".to_string(),
+        content_length: 42,
+        chunk_size_bytes: 8,
+        target: UploaderTarget::AutoUploadSpace {
+            parent_node_id: None,
+        },
+        retention: UploaderRetention::LongTerm,
+        operator_id: "user-001".to_string(),
+        now_epoch_ms: 1_800_000_000_000,
+    };
+
+    let first = service
+        .prepare_upload(base_command("upload-item-dup-1", "task-dup-1"))
+        .await
+        .expect("first upload should be prepared");
+    assert_eq!(first.original_file_name, "report.txt");
+
+    sqlx::query("UPDATE dr_drive_node SET content_state='ready', head_content_type='text/plain', head_content_type_group='text', head_content_length=42, head_version_no=1, file_extension='txt', head_checksum_sha256_hex='sha256:0000000000000000000000000000000000000000000000000000000000000000' WHERE id=?1")
+        .bind(&first.node_id)
+        .execute(&pool)
+        .await
+        .expect("first upload node should be marked ready");
+
+    let second = service
+        .prepare_upload(base_command("upload-item-dup-2", "task-dup-2"))
+        .await
+        .expect("duplicate upload should be prepared with a unique name");
+    assert_eq!(second.original_file_name, "report (1).txt");
+
+    let node_name: String = sqlx::query_scalar("SELECT node_name FROM dr_drive_node WHERE id=?1")
+        .bind(&second.node_id)
+        .fetch_one(&pool)
+        .await
+        .expect("second upload node name should be queryable");
+    assert_eq!(node_name, "report (1).txt");
+}
+
+#[tokio::test]
+async fn prepare_upload_allocates_unique_name_for_stale_uploading_node() {
+    let pool = create_pool().await;
+    let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
+
+    let first = service
+        .prepare_upload(PrepareUploaderUploadCommand {
+            id: "upload-item-stale-1".to_string(),
+            task_id: "task-stale-1".to_string(),
+            tenant_id: "tenant-stale".to_string(),
+            organization_id: None,
+            actor: UploaderActor::User {
+                user_id: "user-stale".to_string(),
+            },
+            app_id: "drive-pc".to_string(),
+            app_resource_type: "desktop-file-browser".to_string(),
+            app_resource_id: "root".to_string(),
+            scene: Some("drive_pc_file_upload".to_string()),
+            source: Some("pc_local_file".to_string()),
+            upload_profile_code: "generic".to_string(),
+            file_fingerprint: "fp-stale-1".to_string(),
+            original_file_name: "draft.txt".to_string(),
+            content_type: "text/plain".to_string(),
+            content_length: 12,
+            chunk_size_bytes: 8,
+            target: UploaderTarget::AutoUploadSpace {
+                parent_node_id: None,
+            },
+            retention: UploaderRetention::LongTerm,
+            operator_id: "user-stale".to_string(),
+            now_epoch_ms: 1_800_000_000_000,
+        })
+        .await
+        .expect("stale upload should be prepared");
+
+    let second = service
+        .prepare_upload(PrepareUploaderUploadCommand {
+            id: "upload-item-stale-2".to_string(),
+            task_id: "task-stale-2".to_string(),
+            tenant_id: "tenant-stale".to_string(),
+            organization_id: None,
+            actor: UploaderActor::User {
+                user_id: "user-stale".to_string(),
+            },
+            app_id: "drive-pc".to_string(),
+            app_resource_type: "desktop-file-browser".to_string(),
+            app_resource_id: "root".to_string(),
+            scene: Some("drive_pc_file_upload".to_string()),
+            source: Some("pc_local_file".to_string()),
+            upload_profile_code: "generic".to_string(),
+            file_fingerprint: "fp-stale-2".to_string(),
+            original_file_name: "draft.txt".to_string(),
+            content_type: "text/plain".to_string(),
+            content_length: 12,
+            chunk_size_bytes: 8,
+            target: UploaderTarget::AutoUploadSpace {
+                parent_node_id: None,
+            },
+            retention: UploaderRetention::LongTerm,
+            operator_id: "user-stale".to_string(),
+            now_epoch_ms: 1_800_000_000_001,
+        })
+        .await
+        .expect("retry upload should not fail on stale uploading node name");
+    assert_eq!(second.original_file_name, "draft (1).txt");
+    assert_ne!(second.node_id, first.node_id);
+}
+
+#[tokio::test]
 async fn prepare_anonymous_upload_uses_app_owned_upload_space() {
     let pool = create_pool().await;
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));

@@ -1,9 +1,13 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
-export default defineConfig(() => {
+const DEFAULT_APP_API_PROXY_TARGET = 'http://127.0.0.1:3900';
+const DEFAULT_ADMIN_API_PROXY_TARGET = 'http://127.0.0.1:18083';
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, __dirname, '');
   const repoRoot = path.resolve(__dirname, '../..');
   const workspaceDependencyRoot = (dependencyId: string) =>
     path.resolve(repoRoot, '..', dependencyId);
@@ -11,6 +15,16 @@ export default defineConfig(() => {
   const sdkCommonsRoot = process.env.SDKWORK_SDK_COMMONS_ROOT ?? workspaceDependencyRoot('sdkwork-sdk-commons');
   const uiRoot = process.env.SDKWORK_UI_PC_REACT_ROOT
     ?? path.resolve(workspaceDependencyRoot('sdkwork-ui'), 'sdkwork-ui-pc-react');
+  const appApiProxyTarget =
+    process.env.SDKWORK_DRIVE_DEV_APP_API_PROXY_TARGET
+    || env.VITE_DRIVE_PC_API_GATEWAY_BASE_URL
+    || env.VITE_DRIVE_PC_APP_API_BASE_URL
+    || DEFAULT_APP_API_PROXY_TARGET;
+  const adminApiProxyTarget =
+    process.env.SDKWORK_DRIVE_DEV_ADMIN_API_PROXY_TARGET
+    || env.VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL
+    || env.VITE_DRIVE_PC_BACKEND_API_BASE_URL
+    || DEFAULT_ADMIN_API_PROXY_TARGET;
 
   return {
     plugins: [react(), tailwindcss()],
@@ -22,6 +36,7 @@ export default defineConfig(() => {
         'sdkwork-drive-pc-file': path.resolve(__dirname, 'packages/sdkwork-drive-pc-file/src'),
         'sdkwork-drive-pc-transfer': path.resolve(__dirname, 'packages/sdkwork-drive-pc-transfer/src'),
         'sdkwork-drive-pc-core': path.resolve(__dirname, 'packages/sdkwork-drive-pc-core/src'),
+        'sdkwork-drive-pc-admin-core': path.resolve(__dirname, 'packages/sdkwork-drive-pc-admin-core/src'),
         'sdkwork-drive-pc-admin-storage-providers': path.resolve(
           __dirname,
           'packages/sdkwork-drive-pc-admin-storage-providers/src',
@@ -102,8 +117,21 @@ export default defineConfig(() => {
       dedupe: ['react', 'react-dom'],
     },
     server: {
+      host: 'localhost',
+      port: 5183,
+      strictPort: true,
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      proxy: {
+        '/app/v3/api': {
+          target: appApiProxyTarget,
+          changeOrigin: true,
+        },
+        '/admin/v3/api': {
+          target: adminApiProxyTarget,
+          changeOrigin: true,
+        },
+      },
     },
   };
 });

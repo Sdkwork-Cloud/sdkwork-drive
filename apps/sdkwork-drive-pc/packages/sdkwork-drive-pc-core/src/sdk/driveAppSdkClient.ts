@@ -1,13 +1,17 @@
 import {
+  createInMemoryUploaderStateStore,
   createDriveUploaderClient,
   createGeneratedDriveAppClient,
   operations,
   sdkMetadata,
   type DriveUploaderClient,
+  type DriveUploaderStateSnapshot,
+  type DriveUploaderStateStore,
   type DriveUploaderTransport,
 } from '@sdkwork/drive-app-sdk';
 import type { DriveRuntimeConfig } from '../config/runtimeConfig';
 import type { DriveSessionTokenManager } from '../session/sessionTokenManager';
+import { omitAuthProjectionBody, omitAuthProjectionQuery } from './authProjection';
 import {
   buildGeneratedSdkPath,
   compactQuery,
@@ -38,6 +42,76 @@ export interface DriveAppSdkClientOptions {
   config: DriveRuntimeConfig;
   sdkClient?: TokenManagerAwareGeneratedSdkClient;
   tokenManager: DriveSessionTokenManager;
+}
+
+const DRIVE_UPLOADER_STATE_STORAGE_KEY = 'sdkwork.drive.pc.uploader.state.v1';
+
+function isUploaderStateSnapshot(value: unknown): value is DriveUploaderStateSnapshot {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.taskId === 'string'
+    && typeof record.uploadItemId === 'string'
+    && typeof record.uploadSessionId === 'string'
+    && typeof record.updatedAtEpochMs === 'number'
+    && Array.isArray(record.uploadedParts)
+  );
+}
+
+function createPersistentDriveUploaderStateStore(): DriveUploaderStateStore {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return createInMemoryUploaderStateStore();
+  }
+
+  const readAll = (): Record<string, DriveUploaderStateSnapshot> => {
+    try {
+      const raw = window.localStorage.getItem(DRIVE_UPLOADER_STATE_STORAGE_KEY);
+      if (!raw) {
+        return {};
+      }
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const snapshots: Record<string, DriveUploaderStateSnapshot> = {};
+      for (const [taskId, snapshot] of Object.entries(parsed)) {
+        if (isUploaderStateSnapshot(snapshot) && snapshot.taskId === taskId) {
+          snapshots[taskId] = snapshot;
+        }
+      }
+      return snapshots;
+    } catch {
+      return {};
+    }
+  };
+
+  const writeAll = (snapshots: Record<string, DriveUploaderStateSnapshot>): void => {
+    try {
+      window.localStorage.setItem(DRIVE_UPLOADER_STATE_STORAGE_KEY, JSON.stringify(snapshots));
+    } catch {
+      // Ignore storage persistence failures and keep uploads running in-memory.
+    }
+  };
+
+  return {
+    async get(taskId) {
+      return readAll()[taskId];
+    },
+    async put(snapshot) {
+      const snapshots = readAll();
+      snapshots[snapshot.taskId] = {
+        ...snapshot,
+        uploadedParts: snapshot.uploadedParts.map((part) => ({ ...part })),
+      };
+      writeAll(snapshots);
+    },
+    async clear(taskId) {
+      const snapshots = readAll();
+      if (taskId in snapshots) {
+        delete snapshots[taskId];
+        writeAll(snapshots);
+      }
+    },
+  };
 }
 
 export class DriveAppSdkError extends Error {
@@ -126,8 +200,8 @@ export function createDriveAppSdkClient({
           buildGeneratedSdkPath(operation.path, pathParams),
           {
             method: operation.method,
-            params: compactQuery(query),
-            body,
+            params: compactQuery(omitAuthProjectionQuery(query)),
+            body: omitAuthProjectionBody(body),
             contentType: body === undefined ? undefined : 'application/json',
             signal,
           },
@@ -142,6 +216,7 @@ export function createDriveAppSdkClient({
   };
   client.uploader = createDriveUploaderClient({
     transport: createDriveUploaderTransport(client),
+    stateStore: createPersistentDriveUploaderStateStore(),
   });
   return client;
 }

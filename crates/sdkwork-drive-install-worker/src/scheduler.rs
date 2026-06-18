@@ -10,6 +10,8 @@ pub struct SchedulerConfig {
     pub orphan_cleanup_interval: Duration,
     /// Interval for quota recalculation.
     pub quota_recalculation_interval: Duration,
+    /// Interval for domain outbox dispatch.
+    pub domain_outbox_dispatch_interval: Duration,
 }
 
 impl Default for SchedulerConfig {
@@ -18,6 +20,7 @@ impl Default for SchedulerConfig {
             upload_cleanup_interval: Duration::from_secs(3600), // 1 hour
             orphan_cleanup_interval: Duration::from_secs(86400), // 24 hours
             quota_recalculation_interval: Duration::from_secs(3600), // 1 hour
+            domain_outbox_dispatch_interval: Duration::from_secs(30),
         }
     }
 }
@@ -81,7 +84,7 @@ impl Scheduler {
             }
         }));
 
-        let pool_clone = pool;
+        let pool_clone = pool.clone();
         let interval = self.config.quota_recalculation_interval;
         self.handles.push(tokio::spawn(async move {
             loop {
@@ -97,6 +100,33 @@ impl Scheduler {
                     }
                     Err(e) => {
                         tracing::error!("Quota recalculation failed: {}", e);
+                    }
+                }
+            }
+        }));
+
+        let pool_clone = pool;
+        let interval = self.config.domain_outbox_dispatch_interval;
+        self.handles.push(tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(interval).await;
+                match crate::maintenance::domain_outbox_dispatch::dispatch_pending_outbox_events(
+                    &pool_clone,
+                )
+                .await
+                {
+                    Ok(result) => {
+                        if result.processed > 0 {
+                            tracing::info!(
+                                "Domain outbox dispatch: processed={}, delivered={}, failed={}",
+                                result.processed,
+                                result.delivered,
+                                result.failed
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        tracing::error!("Domain outbox dispatch failed: {}", e);
                     }
                 }
             }

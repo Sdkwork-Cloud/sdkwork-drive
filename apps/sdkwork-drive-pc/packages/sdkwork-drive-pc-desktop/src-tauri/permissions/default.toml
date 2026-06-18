@@ -1,5 +1,11 @@
 identifier = "default"
 description = "Allow narrow SDKWork Drive desktop host capabilities."
 commands.allow = [
-  "window_control"
+  "window_control",
+  "local_filesystem_list",
+  "local_filesystem_open",
+  "local_upload_pick_files",
+  "local_upload_describe_file",
+  "local_upload_read_range",
+  "local_upload_checksum_file"
 ]

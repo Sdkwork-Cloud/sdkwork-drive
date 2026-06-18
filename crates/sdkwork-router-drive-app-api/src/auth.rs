@@ -9,7 +9,7 @@ use axum::response::Response;
 use axum::Json;
 use sdkwork_drive_security::{
     validate_drive_app_context, validate_json_context_projection, DriveAppContext,
-    DriveAuthValidationPolicy,
+    DriveAuthPolicyHandle,
 };
 
 pub(crate) async fn app_context_guard(
@@ -17,8 +17,9 @@ pub(crate) async fn app_context_guard(
     mut request: Request<Body>,
     next: Next,
 ) -> Result<Response, (StatusCode, Json<ProblemDetail>)> {
-    let context = validate_drive_app_context(request.headers(), request.uri(), &state.auth_policy)
-        .map_err(map_auth_error)?;
+    let context = state.auth_policy.read(|policy| {
+        validate_drive_app_context(request.headers(), request.uri(), policy)
+    }).map_err(map_auth_error)?;
 
     if request
         .headers()
@@ -55,17 +56,6 @@ pub(crate) async fn app_context_guard(
     Ok(next.run(request).await)
 }
 
-pub(crate) fn drive_auth_policy_from_env() -> DriveAuthValidationPolicy {
-    if std::env::var("SDKWORK_DRIVE_IAM_ALLOW_UNSIGNED_CONTEXT")
-        .map(|value| value.eq_ignore_ascii_case("true") || value == "1")
-        .unwrap_or(false)
-    {
-        return DriveAuthValidationPolicy::allow_unsigned_for_development();
-    }
-    match std::env::var("SDKWORK_DRIVE_IAM_CONTEXT_SIGNATURE_SECRET") {
-        Ok(secret) if !secret.trim().is_empty() => {
-            DriveAuthValidationPolicy::require_signed_projection(secret)
-        }
-        _ => DriveAuthValidationPolicy::require_signed_projection(""),
-    }
+pub(crate) fn drive_auth_policy_from_env() -> DriveAuthPolicyHandle {
+    DriveAuthPolicyHandle::shared_from_env()
 }

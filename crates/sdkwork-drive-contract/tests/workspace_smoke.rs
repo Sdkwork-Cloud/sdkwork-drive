@@ -362,7 +362,7 @@ fn admin_storage_iam_runtime_boundary_is_documented() {
         "Protected app, backend, and admin storage routes require:",
         "Open API share-link",
         "admin storage `/healthz` remain explicitly public",
-        "app, backend, and admin storage\nservices only accept trusted gateway AppContext projections",
+        "must not send `x-sdkwork-tenant-id`",
     ] {
         assert!(
             readme.contains(required),
@@ -372,7 +372,8 @@ fn admin_storage_iam_runtime_boundary_is_documented() {
 
     let iam_standard = read("docs/drive-iam-integration-standard.md");
     for required in [
-        "App, backend, and admin-storage Drive routes must validate the same dual-token and AppContext projection contract.",
+        "App, backend, and admin-storage Drive routes must validate the same dual-token contract:",
+        "Clients must not send AppContext projection headers",
         "Admin-storage `/healthz` is public; `/admin/v3/api/drive/storage/*` is protected.",
     ] {
         assert!(
@@ -383,7 +384,8 @@ fn admin_storage_iam_runtime_boundary_is_documented() {
 
     let s3_architecture = read("docs/storage-s3-architecture.md");
     for required in [
-        "Admin-storage runtime routes under `/admin/v3/api/drive/storage/*` require the same dual-token and AppContext projection as app and backend APIs.",
+        "Admin-storage runtime routes under `/admin/v3/api/drive/storage/*` require the same dual-token contract as app and backend APIs.",
+        "projection headers are forbidden",
         "`/healthz` is the only public admin-storage runtime route.",
     ] {
         assert!(
@@ -468,5 +470,34 @@ fn collect_forbidden_auth_route_refs(
                 offenders.push(format!("{} contains {forbidden_ref}", path.display()));
             }
         }
+    }
+}
+
+#[test]
+fn production_gateway_template_declares_all_drive_split_services() {
+    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    root.pop();
+    root.pop();
+
+    let config =
+        std::fs::read_to_string(root.join("configs/sdkwork-api-gateway.drive.production.toml"))
+            .expect("production gateway template should exist");
+
+    for required in [
+        "serviceId = \"sdkwork-drive-app-api\"",
+        "serviceId = \"sdkwork-drive-backend-api\"",
+        "serviceId = \"sdkwork-drive-open-api\"",
+        "serviceId = \"sdkwork-drive-admin-storage-api\"",
+        "baseUrl = \"http://sdkwork-drive-app-api:18080\"",
+        "baseUrl = \"http://sdkwork-drive-backend-api:18081\"",
+        "baseUrl = \"http://sdkwork-drive-open-api:18082\"",
+        "baseUrl = \"http://sdkwork-drive-admin-storage-api:18083\"",
+        "csrfGuardEnabled = true",
+        "rateLimitEnabled = true",
+    ] {
+        assert!(
+            config.contains(required),
+            "production gateway template must include {required}"
+        );
     }
 }

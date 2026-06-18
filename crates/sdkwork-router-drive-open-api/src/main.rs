@@ -1,15 +1,18 @@
 use sdkwork_drive_config::DatabaseConfig;
+use sdkwork_drive_http::server::{bind_addr_from_env, serve_router};
 use sdkwork_router_drive_open_api::build_router_with_database_config;
 
 #[tokio::main]
 async fn main() {
-    let database_config = DatabaseConfig::from_env().expect("resolve drive database config");
+    tracing_subscriber::fmt::init();
+    let args: Vec<String> = std::env::args().collect();
+    let database_config =
+        DatabaseConfig::from_env_and_cli_args(&args).expect("resolve drive database config");
     let router = build_router_with_database_config(&database_config)
         .await
         .expect("initialize open api router and database");
-
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:18082")
+    let bind_addr = bind_addr_from_env("SDKWORK_DRIVE_OPEN_API_BIND", "127.0.0.1:18082");
+    serve_router(router, bind_addr, "sdkwork-router-drive-open-api")
         .await
-        .expect("bind open api listener");
-    axum::serve(listener, router).await.expect("serve open api");
+        .expect("serve open api");
 }

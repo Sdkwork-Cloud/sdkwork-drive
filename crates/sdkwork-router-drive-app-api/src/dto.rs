@@ -6,12 +6,17 @@ use std::collections::BTreeMap;
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateSpaceRequest {
     pub(crate) id: String,
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) owner_subject_type: String,
     pub(crate) owner_subject_id: String,
     pub(crate) display_name: String,
     pub(crate) space_type: String,
-    pub(crate) operator_id: String,
+    pub(crate) presentation_icon: Option<String>,
+    pub(crate) presentation_color: Option<String>,
+    pub(crate) description: Option<String>,
+    #[serde(default)]
+    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -23,8 +28,12 @@ pub(crate) struct CreateSpaceResponse {
     pub(crate) owner_subject_id: String,
     pub(crate) display_name: String,
     pub(crate) space_type: String,
+    pub(crate) presentation_icon: Option<String>,
+    pub(crate) presentation_color: Option<String>,
+    pub(crate) description: Option<String>,
     pub(crate) lifecycle_status: String,
     pub(crate) version: i64,
+    pub(crate) created_by: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -32,6 +41,9 @@ pub(crate) struct CreateSpaceResponse {
 pub(crate) struct UpdateSpaceRequest {
     pub(crate) tenant_id: Option<String>,
     pub(crate) display_name: Option<String>,
+    pub(crate) presentation_icon: Option<String>,
+    pub(crate) presentation_color: Option<String>,
+    pub(crate) description: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
 
@@ -47,14 +59,16 @@ pub(crate) struct DeleteSpaceResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateUploadSessionRequest {
     pub(crate) session_id: String,
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: String,
     pub(crate) node_id: String,
     pub(crate) bucket: Option<String>,
     #[serde(rename = "objectKey")]
     pub(crate) object_key: Option<String>,
     pub(crate) idempotency_key: String,
-    pub(crate) operator_id: String,
+    #[serde(default)]
+    pub(crate) operator_id: Option<String>,
     pub(crate) expires_at_epoch_ms: i64,
 }
 
@@ -78,7 +92,8 @@ pub(crate) struct CreateUploadSessionResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateDownloadUrlRequest {
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) node_id: String,
     pub(crate) requested_ttl_seconds: Option<u32>,
 }
@@ -95,7 +110,8 @@ pub(crate) struct CreateDownloadUrlResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateDownloadPackageRequest {
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) node_ids: Vec<String>,
     pub(crate) package_name: Option<String>,
     pub(crate) requested_ttl_seconds: Option<u32>,
@@ -161,11 +177,14 @@ pub(crate) struct UploaderRetentionRequest {
 pub(crate) struct PrepareUploaderUploadRequest {
     pub(crate) id: String,
     pub(crate) task_id: String,
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) organization_id: Option<String>,
+    #[serde(default)]
     pub(crate) user_id: Option<String>,
     pub(crate) anonymous_id: Option<String>,
-    pub(crate) app_id: String,
+    #[serde(default)]
+    pub(crate) app_id: Option<String>,
     pub(crate) app_resource_type: String,
     pub(crate) app_resource_id: String,
     pub(crate) scene: Option<String>,
@@ -180,7 +199,8 @@ pub(crate) struct PrepareUploaderUploadRequest {
     pub(crate) parent_node_id: Option<String>,
     pub(crate) share_token: Option<String>,
     pub(crate) retention: Option<UploaderRetentionRequest>,
-    pub(crate) operator_id: String,
+    #[serde(default)]
+    pub(crate) operator_id: Option<String>,
     pub(crate) now_epoch_ms: Option<FlexibleI64>,
 }
 
@@ -236,7 +256,8 @@ pub(crate) struct PrepareUploaderUploadResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct MarkUploaderPartUploadedRequest {
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) upload_session_id: String,
     pub(crate) offset_bytes: FlexibleI64,
     pub(crate) size_bytes: FlexibleI64,
@@ -355,23 +376,28 @@ pub(crate) struct ListNodesQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateFolderRequest {
-    pub(crate) id: String,
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) id: Option<String>,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: String,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) node_name: String,
-    pub(crate) operator_id: String,
+    #[serde(default)]
+    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateFileRequest {
     pub(crate) id: String,
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: String,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) node_name: String,
-    pub(crate) operator_id: String,
+    #[serde(default)]
+    pub(crate) operator_id: Option<String>,
     pub(crate) upload_session_id: String,
     pub(crate) idempotency_key: String,
     pub(crate) expires_at_epoch_ms: i64,
@@ -384,12 +410,14 @@ pub(crate) struct CreateFileRequest {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateShortcutRequest {
     pub(crate) id: String,
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: String,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) node_name: String,
     pub(crate) target_node_id: String,
-    pub(crate) operator_id: String,
+    #[serde(default)]
+    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -453,6 +481,7 @@ pub(crate) struct EmptyTrashResponse {
 pub(crate) struct NodeViewQuery {
     pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
+    pub(crate) parent_node_id: Option<String>,
     pub(crate) page_size: Option<i64>,
     pub(crate) page_token: Option<String>,
 }
@@ -513,6 +542,15 @@ pub(crate) struct DriveNodeResponse {
     pub(crate) node_name: String,
     pub(crate) scene: Option<String>,
     pub(crate) source: Option<String>,
+    pub(crate) content_state: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) file_extension: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) content_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) content_type_group: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) content_length: Option<i64>,
     pub(crate) lifecycle_status: String,
     pub(crate) version: i64,
 }
@@ -809,11 +847,13 @@ pub(crate) struct DeleteVersionResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreatePermissionRequest {
     pub(crate) id: String,
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) subject_type: String,
     pub(crate) subject_id: String,
     pub(crate) role: String,
-    pub(crate) operator_id: String,
+    #[serde(default)]
+    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -872,12 +912,14 @@ pub(crate) struct EffectivePermissionListResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateShareLinkRequest {
     pub(crate) id: String,
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) token: String,
     pub(crate) role: Option<String>,
     pub(crate) expires_at_epoch_ms: Option<i64>,
     pub(crate) download_limit: Option<i64>,
-    pub(crate) operator_id: String,
+    #[serde(default)]
+    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -917,10 +959,12 @@ pub(crate) struct UpdateShareLinkRequest {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateCommentRequest {
     pub(crate) id: String,
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) content: String,
     pub(crate) anchor: Option<String>,
-    pub(crate) operator_id: String,
+    #[serde(default)]
+    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -961,9 +1005,11 @@ pub(crate) struct CommentListResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateCommentReplyRequest {
     pub(crate) id: String,
-    pub(crate) tenant_id: String,
+    #[serde(default)]
+    pub(crate) tenant_id: Option<String>,
     pub(crate) content: String,
-    pub(crate) operator_id: String,
+    #[serde(default)]
+    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1467,4 +1513,51 @@ where
         Some(value) => OptionalI64Patch::Value(value),
         None => OptionalI64Patch::Null,
     })
+}
+
+#[cfg(test)]
+mod auth_projection_request_tests {
+    use super::PrepareUploaderUploadRequest;
+
+    #[test]
+    fn prepare_uploader_upload_request_accepts_missing_auth_projection_fields() {
+        let payload: PrepareUploaderUploadRequest = serde_json::from_str(
+            r#"{
+                "id":"upload-item-001",
+                "taskId":"task-001",
+                "appResourceType":"desktop-file-browser",
+                "appResourceId":"root",
+                "fileFingerprint":"fp-001",
+                "originalFileName":"a.pdf",
+                "contentType":"application/pdf",
+                "contentLength":5,
+                "chunkSizeBytes":5242880
+            }"#,
+        )
+        .expect("prepare request should deserialize without auth projection fields");
+
+        assert_eq!(payload.app_id, None);
+        assert_eq!(payload.tenant_id, None);
+        assert_eq!(payload.user_id, None);
+        assert_eq!(payload.operator_id, None);
+    }
+}
+
+#[cfg(test)]
+mod node_view_query_tests {
+    use super::NodeViewQuery;
+
+    #[test]
+    fn node_view_query_accepts_parent_node_id_for_trash_drilldown() {
+        let query: NodeViewQuery = serde_json::from_value(serde_json::json!({
+            "spaceId": "space-001",
+            "parentNodeId": "folder-trashed-001",
+            "pageSize": 50,
+        }))
+        .expect("trash list query should deserialize parentNodeId");
+
+        assert_eq!(query.space_id.as_deref(), Some("space-001"));
+        assert_eq!(query.parent_node_id.as_deref(), Some("folder-trashed-001"));
+        assert_eq!(query.page_size, Some(50));
+    }
 }

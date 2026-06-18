@@ -1,15 +1,17 @@
-import type {
-  DriveAdminStorageSdkClient,
-  SessionSnapshot,
-} from 'sdkwork-drive-pc-core';
+import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
+import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
 import type {
   CreateStorageProviderInput,
   ListStorageProvidersInput,
+  ListStorageProviderObjectsInput,
+  ListStorageProviderObjectsResult,
   SetDefaultStorageProviderBindingInput,
   StorageProviderBindingView,
+  StorageProviderBucketListItemView,
   StorageProviderBucketView,
   StorageProviderCapabilitiesView,
   StorageProviderMutationOptions,
+  StorageProviderObjectView,
   StorageProviderView,
   UpdateStorageProviderInput,
 } from '../types/storageProviderAdminTypes';
@@ -50,12 +52,26 @@ export interface StorageProviderAdminService {
   ): Promise<StorageProviderBindingView>;
   setDefaultBinding(input: SetDefaultStorageProviderBindingInput): Promise<StorageProviderBindingView>;
   deleteDefaultBinding(
-    spaceId?: string,
-    options?: StorageProviderMutationOptions,
+    spaceIdOrSpaceType?: string,
+    options?: StorageProviderMutationOptions & { spaceType?: boolean },
   ): Promise<boolean>;
+  setSpaceTypeBinding(input: SetDefaultStorageProviderBindingInput & { spaceType: string }): Promise<StorageProviderBindingView>;
+  deleteSpaceTypeBinding(spaceType: string, options?: StorageProviderMutationOptions): Promise<boolean>;
   listBindings(
     input?: { providerId?: string; spaceId?: string; lifecycleStatus?: string; signal?: AbortSignal },
   ): Promise<StorageProviderBindingView[]>;
+  listBuckets(providerId: string, options?: StorageProviderMutationOptions): Promise<StorageProviderBucketListItemView[]>;
+  createBucket(providerId: string, options?: StorageProviderMutationOptions): Promise<StorageProviderBucketView>;
+  deleteBucket(providerId: string, options?: StorageProviderMutationOptions): Promise<boolean>;
+  listObjects(
+    providerId: string,
+    input?: ListStorageProviderObjectsInput,
+  ): Promise<ListStorageProviderObjectsResult>;
+  deleteObject(
+    providerId: string,
+    objectKey: string,
+    options?: StorageProviderMutationOptions,
+  ): Promise<boolean>;
 }
 
 export interface CreateStorageProviderAdminServiceOptions {
@@ -96,7 +112,6 @@ export function createStorageProviderAdminService({
     async updateProvider(providerId, input, options) {
       const identity = resolveAdminIdentity(getSession);
       const body: JsonRecord = {
-        operatorId: identity.operatorId,
       };
       assignDefined(body, 'name', input.name);
       assignDefined(body, 'endpointUrl', input.endpointUrl);
@@ -122,7 +137,6 @@ export function createStorageProviderAdminService({
         signal: options?.signal,
         pathParams: { providerId },
         query: {
-          operatorId: identity.operatorId,
         },
       });
       return booleanField(recordOf(response), 'deleted') ?? false;
@@ -134,7 +148,6 @@ export function createStorageProviderAdminService({
         signal: options?.signal,
         pathParams: { providerId },
         body: {
-          operatorId: identity.operatorId,
         },
       });
       return booleanField(recordOf(response), 'reachable') ?? false;
@@ -146,7 +159,6 @@ export function createStorageProviderAdminService({
         signal: options?.signal,
         pathParams: { providerId },
         body: {
-          operatorId: identity.operatorId,
         },
       });
       return responseToStorageProvider(response);
@@ -158,7 +170,6 @@ export function createStorageProviderAdminService({
         signal: options?.signal,
         pathParams: { providerId },
         body: {
-          operatorId: identity.operatorId,
         },
       });
       return responseToStorageProvider(response);
@@ -171,7 +182,6 @@ export function createStorageProviderAdminService({
         pathParams: { providerId },
         body: {
           credentialRef,
-          operatorId: identity.operatorId,
         },
       });
       return responseToStorageProvider(response);
@@ -203,7 +213,6 @@ export function createStorageProviderAdminService({
         operationId: 'storageProviderBindings.default.get',
         signal: options?.signal,
         query: {
-          tenantId: identity.tenantId,
           spaceId,
         },
       });
@@ -215,26 +224,39 @@ export function createStorageProviderAdminService({
         operationId: 'storageProviderBindings.default.set',
         signal: input.signal,
         body: {
-          tenantId: identity.tenantId,
           providerId: input.providerId,
           spaceId: input.spaceId,
-          operatorId: identity.operatorId,
+          spaceType: input.spaceType,
+          storageRootPrefix: input.storageRootPrefix,
         },
       });
       return responseToBinding(response);
     },
-    async deleteDefaultBinding(spaceId, options) {
+    async deleteDefaultBinding(spaceIdOrSpaceType, options) {
       const identity = resolveAdminIdentity(getSession);
       const response = await adminStorageSdkClient.request<unknown>({
         operationId: 'storageProviderBindings.default.delete',
         signal: options?.signal,
-        query: {
-          tenantId: identity.tenantId,
-          spaceId,
-          operatorId: identity.operatorId,
-        },
+        query: options?.spaceType
+          ? {
+              spaceType: spaceIdOrSpaceType,
+            }
+          : {
+              spaceId: spaceIdOrSpaceType,
+            },
       });
       return booleanField(recordOf(response), 'deleted') ?? false;
+    },
+    async setSpaceTypeBinding(input) {
+      return service.setDefaultBinding({
+        providerId: input.providerId,
+        spaceType: input.spaceType,
+        storageRootPrefix: input.storageRootPrefix,
+        signal: input.signal,
+      });
+    },
+    async deleteSpaceTypeBinding(spaceType, options) {
+      return service.deleteDefaultBinding(spaceType, { ...options, spaceType: true });
     },
     async listBindings(input = {}) {
       const identity = resolveAdminIdentity(getSession);
@@ -242,13 +264,105 @@ export function createStorageProviderAdminService({
         operationId: 'storageProviderBindings.list',
         signal: input.signal,
         query: {
-          tenantId: identity.tenantId,
           providerId: input.providerId,
           spaceId: input.spaceId,
           lifecycleStatus: input.lifecycleStatus,
         },
       });
       return extractItems(response).map(responseToBinding);
+    },
+    async listBuckets(providerId, options) {
+      const response = await adminStorageSdkClient.request<unknown>({
+        operationId: 'storageProviders.buckets.list',
+        signal: options?.signal,
+        pathParams: { providerId },
+      });
+      return extractItems(response).map((item) => {
+        const record = recordOf(item);
+        const creationDateEpochMs = numberField(record, 'creationDateEpochMs');
+        return {
+          name: stringField(record, 'name') ?? '',
+          configured: booleanField(record, 'configured') ?? false,
+          creationDate: creationDateEpochMs
+            ? new Date(creationDateEpochMs).toLocaleDateString()
+            : undefined,
+        } satisfies StorageProviderBucketListItemView;
+      });
+    },
+    async createBucket(providerId, options) {
+      const response = await adminStorageSdkClient.request<unknown>({
+        operationId: 'storageProviders.bucket.create',
+        signal: options?.signal,
+        pathParams: { providerId },
+      });
+      const record = recordOf(response);
+      return {
+        providerId: stringField(record, 'providerId') ?? providerId,
+        bucket: stringField(record, 'bucket') ?? '',
+        exists: booleanField(record, 'exists') ?? true,
+      };
+    },
+    async deleteBucket(providerId, options) {
+      const response = await adminStorageSdkClient.request<unknown>({
+        operationId: 'storageProviders.bucket.delete',
+        signal: options?.signal,
+        pathParams: { providerId },
+      });
+      return booleanField(recordOf(response), 'changed') ?? false;
+    },
+    async listObjects(providerId, input = {}) {
+      const response = await adminStorageSdkClient.request<unknown>({
+        operationId: 'storageProviders.objects.list',
+        signal: input.signal,
+        pathParams: { providerId },
+        query: {
+          prefix: input.prefix || undefined,
+          delimiter: '/',
+          pageSize: input.pageSize ?? 100,
+          pageToken: input.pageToken || undefined,
+        },
+      });
+      const record = recordOf(response);
+      const prefixes = Array.isArray(record.prefixes)
+        ? record.prefixes.filter((item): item is string => typeof item === 'string')
+        : [];
+      const folders: StorageProviderObjectView[] = prefixes.map((prefix) => ({
+        key: prefix,
+        sizeBytes: 0,
+        isFolder: true,
+      }));
+      const files = extractItems(record).map((item) => {
+        const objectRecord = recordOf(item);
+        const objectKey =
+          stringField(objectRecord, 'objectKey', 'object_key', 'key') ?? '';
+        const contentLength =
+          numberField(objectRecord, 'contentLength', 'content_length', 'sizeBytes') ?? 0;
+        const lastModifiedEpochMs = numberField(objectRecord, 'lastModifiedEpochMs');
+        return {
+          key: objectKey,
+          sizeBytes: contentLength,
+          contentType: stringField(objectRecord, 'contentType', 'content_type'),
+          etag: stringField(objectRecord, 'etag'),
+          lastModified: lastModifiedEpochMs
+            ? new Date(lastModifiedEpochMs).toLocaleString()
+            : undefined,
+          isFolder: false,
+        } satisfies StorageProviderObjectView;
+      });
+      const nextPageToken = stringField(record, 'nextPageToken');
+      return {
+        items: [...folders, ...files],
+        nextPageToken,
+        hasMore: Boolean(nextPageToken),
+      };
+    },
+    async deleteObject(providerId, objectKey, options) {
+      const response = await adminStorageSdkClient.request<unknown>({
+        operationId: 'storageProviders.objects.delete',
+        signal: options?.signal,
+        pathParams: { providerId, objectKey: encodeURIComponent(objectKey) },
+      });
+      return booleanField(recordOf(response), 'deleted') ?? false;
     },
   };
 
@@ -275,7 +389,6 @@ function providerCreateBody(
     name: input.name,
     endpointUrl: input.endpointUrl,
     bucket: input.bucket,
-    operatorId: identity.operatorId,
   };
   assignDefined(body, 'region', input.region);
   assignDefined(body, 'pathStyle', input.pathStyle);
@@ -336,6 +449,7 @@ function responseToBinding(response: unknown): StorageProviderBindingView {
     purpose: stringField(record, 'purpose') ?? '',
     lifecycleStatus: stringField(record, 'lifecycleStatus') ?? '',
     version: numberField(record, 'version') ?? 0,
+    storageRootPrefix: stringField(record, 'storageRootPrefix'),
     storageProvider: isRecord(storageProvider) ? responseToStorageProvider(storageProvider) : undefined,
   };
 }

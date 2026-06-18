@@ -18,7 +18,7 @@ public class DriveComment {
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -26,7 +26,7 @@ public class DriveComment {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -34,7 +34,7 @@ public class DriveComment {
     public String getNodeId() {
         return this.nodeId;
     }
-    
+
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -42,7 +42,7 @@ public class DriveComment {
     public String getContent() {
         return this.content;
     }
-    
+
     public void setContent(String content) {
         this.content = content;
     }
@@ -50,7 +50,7 @@ public class DriveComment {
     public String getAnchor() {
         return this.anchor;
     }
-    
+
     public void setAnchor(String anchor) {
         this.anchor = anchor;
     }
@@ -58,7 +58,7 @@ public class DriveComment {
     public Boolean getResolved() {
         return this.resolved;
     }
-    
+
     public void setResolved(Boolean resolved) {
         this.resolved = resolved;
     }
@@ -66,7 +66,7 @@ public class DriveComment {
     public String getLifecycleStatus() {
         return this.lifecycleStatus;
     }
-    
+
     public void setLifecycleStatus(String lifecycleStatus) {
         this.lifecycleStatus = lifecycleStatus;
     }
@@ -74,7 +74,7 @@ public class DriveComment {
     public Integer getVersion() {
         return this.version;
     }
-    
+
     public void setVersion(Integer version) {
         this.version = version;
     }
@@ -82,7 +82,7 @@ public class DriveComment {
     public String getCreatedBy() {
         return this.createdBy;
     }
-    
+
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
     }
@@ -90,7 +90,7 @@ public class DriveComment {
     public String getUpdatedBy() {
         return this.updatedBy;
     }
-    
+
     public void setUpdatedBy(String updatedBy) {
         this.updatedBy = updatedBy;
     }
@@ -98,7 +98,7 @@ public class DriveComment {
     public String getCreatedAt() {
         return this.createdAt;
     }
-    
+
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
@@ -106,7 +106,7 @@ public class DriveComment {
     public String getUpdatedAt() {
         return this.updatedAt;
     }
-    
+
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
     }

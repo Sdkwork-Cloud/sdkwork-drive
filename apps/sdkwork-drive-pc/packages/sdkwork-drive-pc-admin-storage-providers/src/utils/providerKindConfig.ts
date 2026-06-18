@@ -5,6 +5,17 @@ export interface ProviderRegion {
   label: string;
 }
 
+export interface ProviderCredentialFieldMeta {
+  accessKeyLabel: string;
+  secretKeyLabel: string;
+  accessKeyPlaceholder: string;
+  secretKeyPlaceholder: string;
+  defaultEnvAccessKey: string;
+  defaultEnvSecretKey: string;
+  consoleUrl?: string;
+  bucketHint?: string;
+}
+
 export interface ProviderKindMeta {
   value: StorageProviderKind;
   label: string;
@@ -18,6 +29,7 @@ export interface ProviderKindMeta {
   regions: ProviderRegion[];
   credentialHint: string;
   credentialLabel: string;
+  credentialFields?: ProviderCredentialFieldMeta;
   sseModes: string[];
   storageClasses: string[];
   features: {
@@ -26,6 +38,7 @@ export interface ProviderKindMeta {
     hasSse: boolean;
     hasStorageClass: boolean;
     isLocal: boolean;
+    structuredCredentials: boolean;
   };
 }
 
@@ -68,11 +81,28 @@ const PROVIDER_KIND_META: ProviderKindMeta[] = [
       { value: 'me-central-1', label: 'Middle East (UAE) me-central-1' },
       { value: 'sa-east-1', label: 'South America (São Paulo) sa-east-1' },
     ],
-    credentialHint: 'env:AWS_ACCESS_KEY_ID or plain:access_key:secret_key',
+    credentialHint: 'env:AWS_ACCESS_KEY_ID:AWS_SECRET_ACCESS_KEY or plain:access_key:secret_key',
     credentialLabel: 'AWS Access Key',
+    credentialFields: {
+      accessKeyLabel: 'Access Key ID',
+      secretKeyLabel: 'Secret Access Key',
+      accessKeyPlaceholder: 'AKIAxxxxxxxxxxxxxxxx',
+      secretKeyPlaceholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      defaultEnvAccessKey: 'AWS_ACCESS_KEY_ID',
+      defaultEnvSecretKey: 'AWS_SECRET_ACCESS_KEY',
+      consoleUrl: 'https://console.aws.amazon.com/iam/home#/security_credentials',
+      bucketHint: '3-63 chars, lowercase letters, numbers, hyphens',
+    },
     sseModes: ['AES256', 'aws:kms', 'aws:kms:dsse'],
     storageClasses: ['STANDARD', 'STANDARD_IA', 'ONEZONE_IA', 'INTELLIGENT_TIERING', 'GLACIER', 'DEEP_ARCHIVE'],
-    features: { hasRegion: true, hasPathStyle: true, hasSse: true, hasStorageClass: true, isLocal: false },
+    features: {
+      hasRegion: true,
+      hasPathStyle: true,
+      hasSse: true,
+      hasStorageClass: true,
+      isLocal: false,
+      structuredCredentials: true,
+    },
   },
   {
     value: 'aliyun_oss',
@@ -113,11 +143,28 @@ const PROVIDER_KIND_META: ProviderKindMeta[] = [
       { value: 'us-east-1', label: '弗吉尼亚 us-east-1' },
       { value: 'us-west-1', label: '硅谷 us-west-1' },
     ],
-    credentialHint: 'env:OSS_ACCESS_KEY_ID or plain:access_key:secret_key',
+    credentialHint: 'env:OSS_ACCESS_KEY_ID:OSS_ACCESS_KEY_SECRET or plain:access_key:secret_key',
     credentialLabel: 'AccessKey',
+    credentialFields: {
+      accessKeyLabel: 'AccessKey ID',
+      secretKeyLabel: 'AccessKey Secret',
+      accessKeyPlaceholder: 'LTAIxxxxxxxxxxxxxx',
+      secretKeyPlaceholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      defaultEnvAccessKey: 'OSS_ACCESS_KEY_ID',
+      defaultEnvSecretKey: 'OSS_ACCESS_KEY_SECRET',
+      consoleUrl: 'https://ram.console.aliyun.com/manage/ak',
+      bucketHint: '3-63 chars, lowercase letters, numbers, hyphens',
+    },
     sseModes: ['KMS', 'AES256'],
     storageClasses: ['Standard', 'IA', 'Archive', 'ColdArchive', 'DeepColdArchive'],
-    features: { hasRegion: true, hasPathStyle: false, hasSse: true, hasStorageClass: true, isLocal: false },
+    features: {
+      hasRegion: true,
+      hasPathStyle: false,
+      hasSse: true,
+      hasStorageClass: true,
+      isLocal: false,
+      structuredCredentials: true,
+    },
   },
   {
     value: 'tencent_cos',
@@ -149,11 +196,28 @@ const PROVIDER_KIND_META: ProviderKindMeta[] = [
       { value: 'eu-frankfurt', label: '法兰克福 eu-frankfurt' },
       { value: 'eu-moscow', label: '莫斯科 eu-moscow' },
     ],
-    credentialHint: 'env:COS_SECRET_ID or plain:secret_id:secret_key',
-    credentialLabel: 'SecretKey',
+    credentialHint: 'env:COS_SECRET_ID:COS_SECRET_KEY or plain:secret_id:secret_key',
+    credentialLabel: 'API 密钥',
+    credentialFields: {
+      accessKeyLabel: 'SecretId',
+      secretKeyLabel: 'SecretKey',
+      accessKeyPlaceholder: 'AKIDxxxxxxxxxxxxxxxx',
+      secretKeyPlaceholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      defaultEnvAccessKey: 'COS_SECRET_ID',
+      defaultEnvSecretKey: 'COS_SECRET_KEY',
+      consoleUrl: 'https://console.cloud.tencent.com/cam/capi',
+      bucketHint: 'bucketName-appId',
+    },
     sseModes: ['AES256', 'KMS'],
     storageClasses: ['STANDARD', 'STANDARD_IA', 'ARCHIVE', 'DEEP_ARCHIVE'],
-    features: { hasRegion: true, hasPathStyle: false, hasSse: true, hasStorageClass: true, isLocal: false },
+    features: {
+      hasRegion: true,
+      hasPathStyle: false,
+      hasSse: true,
+      hasStorageClass: true,
+      isLocal: false,
+      structuredCredentials: true,
+    },
   },
   {
     value: 'huawei_obs',
@@ -186,11 +250,28 @@ const PROVIDER_KIND_META: ProviderKindMeta[] = [
       { value: 'ap-southeast-4', label: '雅加达 ap-southeast-4' },
       { value: 'me-east-1', label: '利雅得 me-east-1' },
     ],
-    credentialHint: 'env:OBS_ACCESS_KEY_ID or plain:access_key:secret_key',
+    credentialHint: 'env:OBS_ACCESS_KEY_ID:OBS_SECRET_ACCESS_KEY or plain:access_key:secret_key',
     credentialLabel: 'AK/SK',
+    credentialFields: {
+      accessKeyLabel: 'Access Key ID',
+      secretKeyLabel: 'Secret Access Key',
+      accessKeyPlaceholder: 'xxxxxxxxxxxxxxxxxxxx',
+      secretKeyPlaceholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      defaultEnvAccessKey: 'OBS_ACCESS_KEY_ID',
+      defaultEnvSecretKey: 'OBS_SECRET_ACCESS_KEY',
+      consoleUrl: 'https://console.huaweicloud.com/iam/#/mine/accessKey',
+      bucketHint: '3-63 chars, lowercase letters, numbers, hyphens',
+    },
     sseModes: ['kms', 'AES256'],
     storageClasses: ['STANDARD', 'WARM', 'COLD'],
-    features: { hasRegion: true, hasPathStyle: true, hasSse: true, hasStorageClass: true, isLocal: false },
+    features: {
+      hasRegion: true,
+      hasPathStyle: true,
+      hasSse: true,
+      hasStorageClass: true,
+      isLocal: false,
+      structuredCredentials: true,
+    },
   },
   {
     value: 'volcengine_tos',
@@ -218,11 +299,28 @@ const PROVIDER_KIND_META: ProviderKindMeta[] = [
       { value: 'us-east-1', label: '美东（弗吉尼亚）us-east-1' },
       { value: 'us-west-1', label: '美西（硅谷）us-west-1' },
     ],
-    credentialHint: 'env:TOS_ACCESS_KEY_ID or plain:access_key:secret_key',
-    credentialLabel: 'AK/SK',
+    credentialHint: 'env:TOS_ACCESS_KEY_ID:TOS_SECRET_ACCESS_KEY or plain:access_key:secret_key',
+    credentialLabel: 'Access Key',
+    credentialFields: {
+      accessKeyLabel: 'Access Key ID',
+      secretKeyLabel: 'Secret Access Key',
+      accessKeyPlaceholder: 'AKxxxxxxxxxxxxxxxx',
+      secretKeyPlaceholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      defaultEnvAccessKey: 'TOS_ACCESS_KEY_ID',
+      defaultEnvSecretKey: 'TOS_SECRET_ACCESS_KEY',
+      consoleUrl: 'https://console.volcengine.com/iam/keymanage/',
+      bucketHint: '3-63 chars, lowercase letters, numbers, hyphens',
+    },
     sseModes: ['AES256', 'KMS'],
     storageClasses: ['STANDARD', 'IA', 'ARCHIVE', 'DEEP_ARCHIVE'],
-    features: { hasRegion: true, hasPathStyle: false, hasSse: true, hasStorageClass: true, isLocal: false },
+    features: {
+      hasRegion: true,
+      hasPathStyle: false,
+      hasSse: true,
+      hasStorageClass: true,
+      isLocal: false,
+      structuredCredentials: true,
+    },
   },
   {
     value: 'google_cloud_storage',
@@ -274,11 +372,28 @@ const PROVIDER_KIND_META: ProviderKindMeta[] = [
       { value: 'me-central2', label: 'Dammam me-central2' },
       { value: 'africa-south1', label: 'Johannesburg africa-south1' },
     ],
-    credentialHint: 'env:GOOGLE_APPLICATION_CREDENTIALS or secret:gcs-service-account',
-    credentialLabel: 'Service Account',
+    credentialHint: 'env:GOOGLE_ACCESS_KEY_ID:GOOGLE_SECRET_ACCESS_KEY or secret:gcs-hmac',
+    credentialLabel: 'HMAC Key',
+    credentialFields: {
+      accessKeyLabel: 'HMAC Access ID',
+      secretKeyLabel: 'HMAC Secret',
+      accessKeyPlaceholder: 'GOOGxxxxxxxxxxxxxxxx',
+      secretKeyPlaceholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      defaultEnvAccessKey: 'GOOGLE_ACCESS_KEY_ID',
+      defaultEnvSecretKey: 'GOOGLE_SECRET_ACCESS_KEY',
+      consoleUrl: 'https://console.cloud.google.com/storage/settings;tab=interoperability',
+      bucketHint: '3-63 chars, lowercase letters, numbers, hyphens, underscores',
+    },
     sseModes: ['AES256', 'GOOGLE_DEFAULT_ENCRYPTION'],
     storageClasses: ['STANDARD', 'NEARLINE', 'COLDLINE', 'ARCHIVE'],
-    features: { hasRegion: true, hasPathStyle: false, hasSse: true, hasStorageClass: true, isLocal: false },
+    features: {
+      hasRegion: true,
+      hasPathStyle: false,
+      hasSse: true,
+      hasStorageClass: true,
+      isLocal: false,
+      structuredCredentials: true,
+    },
   },
   {
     value: 'local_filesystem',
@@ -295,7 +410,14 @@ const PROVIDER_KIND_META: ProviderKindMeta[] = [
     credentialLabel: '',
     sseModes: [],
     storageClasses: [],
-    features: { hasRegion: false, hasPathStyle: false, hasSse: false, hasStorageClass: false, isLocal: true },
+    features: {
+      hasRegion: false,
+      hasPathStyle: false,
+      hasSse: false,
+      hasStorageClass: false,
+      isLocal: true,
+      structuredCredentials: false,
+    },
   },
 ];
 
@@ -310,12 +432,45 @@ const CUSTOM_PROVIDER_META: ProviderKindMeta = {
   endpointHint: 'https://custom-endpoint.example.com',
   regionHint: 'us-east-1',
   regions: [],
-  credentialHint: 'env:CUSTOM_ACCESS_KEY or plain:key:secret',
+  credentialHint: 'env:CUSTOM_ACCESS_KEY_ID:CUSTOM_SECRET_ACCESS_KEY or plain:key:secret',
   credentialLabel: 'Credential',
+  credentialFields: {
+    accessKeyLabel: 'Access Key ID',
+    secretKeyLabel: 'Secret Access Key',
+    accessKeyPlaceholder: 'access-key-id',
+    secretKeyPlaceholder: 'secret-access-key',
+    defaultEnvAccessKey: 'CUSTOM_ACCESS_KEY_ID',
+    defaultEnvSecretKey: 'CUSTOM_SECRET_ACCESS_KEY',
+  },
   sseModes: ['AES256'],
   storageClasses: ['STANDARD'],
-  features: { hasRegion: true, hasPathStyle: true, hasSse: true, hasStorageClass: true, isLocal: false },
+  features: {
+    hasRegion: true,
+    hasPathStyle: true,
+    hasSse: true,
+    hasStorageClass: true,
+    isLocal: false,
+    structuredCredentials: true,
+  },
 };
+
+const REGION_ENDPOINT_BUILDERS: Record<string, (region: string) => string> = {
+  s3_compatible: (region) =>
+    region === 'us-east-1' ? 'https://s3.amazonaws.com' : `https://s3.${region}.amazonaws.com`,
+  aliyun_oss: (region) => `https://oss-${region}.aliyuncs.com`,
+  tencent_cos: (region) => `https://cos.${region}.myqcloud.com`,
+  huawei_obs: (region) => `https://obs.${region}.myhuaweicloud.com`,
+  volcengine_tos: (region) => `https://tos-${region}.volces.com`,
+};
+
+export function buildProviderEndpointUrl(kind: string, region: string): string | undefined {
+  const normalizedKind = kind.startsWith('custom:') ? 'custom' : kind;
+  const builder = REGION_ENDPOINT_BUILDERS[normalizedKind];
+  if (!builder || !region.trim()) {
+    return undefined;
+  }
+  return builder(region.trim());
+}
 
 export function getProviderKindMeta(kind: string): ProviderKindMeta {
   if (kind?.startsWith('custom:')) {

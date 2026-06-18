@@ -325,7 +325,7 @@ function resolveDatabaseEnv(baseEnv, extraArgs) {
 
   if (explicitUrl) {
     env.SDKWORK_DRIVE_DATABASE_ENGINE = databaseEngineFromUrl(explicitUrl);
-    const defaultConnections = env.SDKWORK_DRIVE_DATABASE_ENGINE === 'sqlite' ? '1' : '10';
+    const defaultConnections = env.SDKWORK_DRIVE_DATABASE_ENGINE === 'sqlite' ? '1' : '32';
     env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS = normalizeMaxConnections(
       env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS,
       defaultConnections,
@@ -350,7 +350,7 @@ function resolveDatabaseEnv(baseEnv, extraArgs) {
   }
   env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS = normalizeMaxConnections(
     env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS,
-    '10',
+    '32',
   );
   for (const key of [
     'SDKWORK_DRIVE_DATABASE_HOST',
@@ -421,6 +421,11 @@ function createPlan({ mode, env }) {
       ...common,
       label: 'drive storage backend router',
       args: ['run', '-p', 'sdkwork-router-storage-backend-api'],
+    },
+    {
+      ...common,
+      label: 'drive install worker',
+      args: ['run', '-p', 'sdkwork-drive-install-worker'],
     },
   ];
 }

@@ -7,6 +7,12 @@
   ],
   "permissions": [
     "core:default",
-    "allow-window-control"
+    "allow-window-control",
+    "allow-local-filesystem-list",
+    "allow-local-filesystem-open",
+    "allow-local-upload-pick-files",
+    "allow-local-upload-describe-file",
+    "allow-local-upload-read-range",
+    "allow-local-upload-checksum-file"
   ]
 }

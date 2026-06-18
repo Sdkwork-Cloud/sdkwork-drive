@@ -24,9 +24,10 @@ impl DriveQuotaStore for SqlQuotaStore {
         tenant_id: &str,
     ) -> Result<DriveQuotaSummary, DriveServiceError> {
         let row = sqlx::query(
+            // CAST keeps aggregate columns as BIGINT for sqlx Any on file-backed SQLite.
             "SELECT
-                COALESCE(SUM(content_length), 0) AS total_bytes,
-                COUNT(1) AS object_count
+                CAST(COALESCE(SUM(content_length), 0) AS BIGINT) AS total_bytes,
+                CAST(COUNT(1) AS BIGINT) AS object_count
              FROM dr_drive_storage_object
              WHERE tenant_id=$1
                AND lifecycle_status='active'",

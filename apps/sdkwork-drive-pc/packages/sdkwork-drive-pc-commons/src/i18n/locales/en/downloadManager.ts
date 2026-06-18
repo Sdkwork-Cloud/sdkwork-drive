@@ -2,6 +2,8 @@ export default {
   transfersQueue: 'Transfers Queue',
   minimize: 'Minimize',
   clearAll: 'Clear All',
+  dismissPanel: 'Close transfer panel',
+  expandPanel: 'Expand transfer panel',
   connecting: 'Connecting',
   compressing: 'Compressing Zip',
   downloading: 'Downloading',

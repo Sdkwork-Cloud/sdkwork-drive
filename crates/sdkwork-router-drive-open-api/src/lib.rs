@@ -3,6 +3,7 @@
 mod dto;
 mod error;
 mod handlers;
+mod rate_limit;
 mod repository;
 mod routes;
 mod state;

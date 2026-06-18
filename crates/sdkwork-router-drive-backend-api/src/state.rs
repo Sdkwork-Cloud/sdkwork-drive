@@ -1,11 +1,11 @@
 use crate::auth::drive_auth_policy_from_env;
-use sdkwork_drive_security::DriveAuthValidationPolicy;
+use sdkwork_drive_security::{DriveAuthPolicyHandle, DriveAuthValidationPolicy};
 use sqlx::AnyPool;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct BackendState {
     pub(crate) pool: AnyPool,
-    pub(crate) auth_policy: DriveAuthValidationPolicy,
+    pub(crate) auth_policy: DriveAuthPolicyHandle,
 }
 
 impl BackendState {
@@ -17,6 +17,9 @@ impl BackendState {
     }
 
     pub(crate) fn with_auth_policy(pool: AnyPool, auth_policy: DriveAuthValidationPolicy) -> Self {
-        Self { pool, auth_policy }
+        Self {
+            pool,
+            auth_policy: DriveAuthPolicyHandle::from_policy(auth_policy),
+        }
     }
 }

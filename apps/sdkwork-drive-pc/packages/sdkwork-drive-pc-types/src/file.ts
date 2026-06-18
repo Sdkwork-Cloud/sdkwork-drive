@@ -29,6 +29,11 @@ export interface DownloadJob {
   id: string;
   type?: 'upload' | 'download';
   downloadKind?: 'single' | 'bundle';
+  uploadSection?: string;
+  uploadParentId?: string | null;
+  uploadBlob?: File;
+  uploadLocalPath?: string;
+  uploadFileFingerprint?: string;
   sourceNodeIds?: string[];
   fileId: string;
   fileName: string;
@@ -47,7 +52,14 @@ export interface DownloadJob {
   timeRemaining: string;
 }
 
-const DRIVE_READ_ONLY_VIEW_SECTIONS = new Set(['recent', 'starred', 'shared', 'trash', 'transfer']);
+const DRIVE_READ_ONLY_VIEW_SECTIONS = new Set([
+  'recent',
+  'starred',
+  'shared',
+  'trash',
+  'transfer',
+  'computers',
+]);
 
 export function isReadOnlyDriveViewSection(section: string): boolean {
   return DRIVE_READ_ONLY_VIEW_SECTIONS.has(section);

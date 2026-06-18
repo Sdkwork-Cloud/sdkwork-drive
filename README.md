@@ -64,7 +64,8 @@ with a `[database]` section, for example `configs/drive.database.example.toml`.
 
 Drive does not implement application-local login, refresh, logout, or current-session
 routes. Login/session UX and transport are owned by SDKWork appbase; Drive
-consumes the resulting SDKWork dual-token and AppContext projection.
+consumes the resulting SDKWork dual-token session. AppContext is derived server-side from
+verified token claims, not from client projection headers.
 Drive-specific standalone and embeddable IAM boundaries are documented in
 `docs/drive-iam-integration-standard.md`.
 
@@ -72,17 +73,13 @@ Protected app, backend, and admin storage routes require:
 
 - `Authorization: Bearer <authToken>`
 - `Access-Token: <accessToken>`
-- `x-sdkwork-tenant-id`
-- `x-sdkwork-user-id`
-- a signed `x-sdkwork-context-signature` in production
 
-Local development through `pnpm dev` and `pnpm dev:sqlite` sets
-`SDKWORK_DRIVE_IAM_ALLOW_UNSIGNED_CONTEXT=true` when no signature secret is
-configured. Production deployments should omit that flag and set
-`SDKWORK_DRIVE_IAM_CONTEXT_SIGNATURE_SECRET` so app, backend, and admin storage
-services only accept trusted gateway AppContext projections. Open API share-link
-routes and admin storage `/healthz` remain explicitly public and do not require
-IAM headers.
+Tenant, user, actor, and permission context are derived from verified dual-token claims at the
+service boundary. Clients must not send `x-sdkwork-tenant-id`, `x-sdkwork-user-id`,
+`x-sdkwork-actor-id`, `x-sdkwork-actor-kind`, or other AppContext projection headers.
+
+Open API share-link routes and admin storage `/healthz` remain explicitly public and do not require
+IAM credentials.
 
 When Drive is embedded into another application that already owns IAM, the host
 must consume Drive packages in host-managed mode and must not mount the

@@ -295,6 +295,9 @@ async fn create_node_denormalizes_notary_space_type_from_parent_space() {
             owner_subject_id: "organization-001".to_string(),
             display_name: "Notary".to_string(),
             space_type: DriveSpaceType::Notary,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: "member-001".to_string(),
         })
         .await
@@ -368,6 +371,9 @@ async fn create_space_with_type(
             owner_subject_id: owner_subject_id.to_string(),
             display_name: "Main".to_string(),
             space_type,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
             operator_id: owner_subject_id.to_string(),
         })
         .await

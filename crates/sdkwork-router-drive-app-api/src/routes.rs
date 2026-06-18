@@ -1,3 +1,4 @@
+use crate::app_context::{inject_drive_request_context, DriveRequestContext};
 use crate::archive::*;
 use crate::archive_storage::read_archive_node_bytes;
 use crate::auth::app_context_guard;
@@ -7,7 +8,7 @@ use crate::dto::*;
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, map_download_token_error,
     map_object_store_route_error, map_service_error, not_found_problem, problem,
-    service_error_kind, ProblemDetail,
+    service_error_kind, unique_node_insert_conflict_target, ProblemDetail,
 };
 use crate::handlers::*;
 use crate::hashing::sha256_hex;
@@ -37,6 +38,7 @@ use axum::response::IntoResponse;
 use axum::response::Redirect;
 use axum::response::Response;
 use axum::routing::{get, post, put};
+use axum::Extension;
 use axum::{Json, Router};
 use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_observability::{elapsed_ms, error_kinds, events, has_value, start_timer};
@@ -48,6 +50,7 @@ use sdkwork_drive_storage_contract::{
 use sdkwork_drive_workspace_service::application::download_service::{
     CreateDownloadUrlCommand, ResolveDownloadTokenCommand,
 };
+use sdkwork_drive_workspace_service::application::quota_enforcement::ensure_tenant_can_allocate_bytes;
 use sdkwork_drive_workspace_service::application::quota_service::{
     DriveQuotaService, GetTenantQuotaSummaryCommand,
 };
@@ -65,14 +68,22 @@ use sdkwork_drive_workspace_service::application::uploader_service::{
 };
 use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
 use sdkwork_drive_workspace_service::domain::upload::DriveUploadSessionState;
-use sdkwork_drive_workspace_service::domain::uploader::DriveUploadItem;
+use sdkwork_drive_workspace_service::domain::uploader::{content_type_group_for, DriveUploadItem};
 use sdkwork_drive_workspace_service::drive_share_token_hash;
+use sdkwork_drive_workspace_service::infrastructure::outbox_dispatch::spawn_pending_outbox_dispatch;
 use sdkwork_drive_workspace_service::infrastructure::sql::connect_any_database_and_install_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::next_drive_runtime_id;
+use sdkwork_drive_workspace_service::infrastructure::sql::node_head_metadata::{
+    apply_file_node_head_snapshot, file_extension_from_name, FileNodeHeadSnapshot,
+};
 use sdkwork_drive_workspace_service::infrastructure::sql::quota_store::SqlQuotaStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
+use sdkwork_drive_workspace_service::infrastructure::sql::upload_query_columns::DRIVE_UPLOAD_ITEM_SELECT_COLUMNS;
 use sdkwork_drive_workspace_service::infrastructure::sql::upload_session_store::SqlUploadSessionStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::uploader_store::SqlUploaderStore;
+use sdkwork_drive_workspace_service::infrastructure::sql::{
+    NODE_API_SELECT_COLUMNS, NODE_API_SELECT_JOIN_COLUMNS,
+};
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use sqlx::any::AnyPoolOptions;
@@ -138,7 +149,7 @@ pub async fn build_router_with_database_config(
 }
 
 fn build_router_with_state(state: AppState, require_iam: bool) -> Router {
-    let drive_routes = Router::new()
+    let mut drive_routes = Router::new()
         .route(
             "/app/v3/api/drive/spaces",
             get(list_spaces).post(create_space),
@@ -347,14 +358,13 @@ fn build_router_with_state(state: AppState, require_iam: bool) -> Router {
             post(asset_method_not_allowed).delete(delete_asset_relation),
         );
 
-    let drive_routes = if require_iam {
-        drive_routes.route_layer(middleware::from_fn_with_state(
+    drive_routes = drive_routes.route_layer(middleware::from_fn(inject_drive_request_context));
+    if require_iam {
+        drive_routes = drive_routes.route_layer(middleware::from_fn_with_state(
             state.clone(),
             app_context_guard,
-        ))
-    } else {
-        drive_routes
-    };
+        ));
+    }
 
     let forbidden_asset_routes = Router::new()
         .route("/app/v3/api/assets/upload", post(asset_not_found))
@@ -363,21 +373,26 @@ fn build_router_with_state(state: AppState, require_iam: bool) -> Router {
 
     Router::new()
         .route("/healthz", get(health))
+        .route("/metrics", get(metrics))
         .merge(drive_routes)
         .merge(forbidden_asset_routes)
+        .layer(middleware::from_fn(
+            sdkwork_drive_http::metrics::record_request_metrics,
+        ))
         .with_state(state)
 }
 
 async fn list_spaces(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<ListSpacesQuery>,
 ) -> Result<Json<ListSpacesResponse>, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
     let filter_has_owner_subject_type = has_value(&query.owner_subject_type);
     let filter_has_owner_subject_id = has_value(&query.owner_subject_id);
-    let tenant_id = match query.tenant_id {
-        Some(tenant_id) => tenant_id.trim().to_string(),
-        None => {
+    let tenant_id = match ctx.resolve_tenant_id(query.tenant_id) {
+        Ok(tenant_id) => tenant_id,
+        Err(error) => {
             sdkwork_drive_observability::observe_route!(
                 event = events::APP_SPACES_LIST,
                 result = "err",
@@ -386,12 +401,7 @@ async fn list_spaces(
                 filter_has_owner_subject_type = filter_has_owner_subject_type,
                 filter_has_owner_subject_id = filter_has_owner_subject_id
             );
-            return Err(problem(
-                StatusCode::BAD_REQUEST,
-                "validation failed",
-                "tenantId is required",
-                "drive.validation.tenant_id_required",
-            ));
+            return Err(error);
         }
     };
 
@@ -423,6 +433,7 @@ async fn list_spaces(
 
 async fn create_space(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateSpaceRequest>,
 ) -> Result<(StatusCode, Json<CreateSpaceResponse>), (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
@@ -446,15 +457,20 @@ async fn create_space(
     };
 
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let created_result = service
         .create_space(CreateSpaceCommand {
             id: payload.id,
-            tenant_id: payload.tenant_id,
+            tenant_id,
             owner_subject_type: payload.owner_subject_type,
             owner_subject_id: payload.owner_subject_id,
             display_name: payload.display_name,
             space_type,
-            operator_id: payload.operator_id,
+            presentation_icon: payload.presentation_icon,
+            presentation_color: payload.presentation_color,
+            description: payload.description,
+            operator_id,
         })
         .await;
     let created = match created_result {
@@ -484,11 +500,12 @@ async fn create_space(
 
 async fn get_space(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(space_id): Path<String>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<CreateSpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
-    let tenant_id = match require_query_value(query.tenant_id, "tenantId") {
+    let tenant_id = match ctx.resolve_tenant_id(query.tenant_id) {
         Ok(tenant_id) => tenant_id,
         Err(error) => {
             sdkwork_drive_observability::observe_route!(
@@ -537,11 +554,12 @@ async fn get_space(
 
 async fn update_space(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(space_id): Path<String>,
     Json(payload): Json<UpdateSpaceRequest>,
 ) -> Result<Json<CreateSpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
-    let tenant_id = match require_body_value(payload.tenant_id, "tenantId") {
+    let tenant_id = match ctx.resolve_tenant_id(payload.tenant_id) {
         Ok(tenant_id) => tenant_id,
         Err(error) => {
             sdkwork_drive_observability::observe_route!(
@@ -554,15 +572,16 @@ async fn update_space(
             return Err(error);
         }
     };
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
     let updated = match service
         .update_space(UpdateSpaceCommand {
             tenant_id: tenant_id.clone(),
             space_id: space_id.clone(),
             display_name: payload.display_name,
+            presentation_icon: payload.presentation_icon,
+            presentation_color: payload.presentation_color,
+            description: payload.description,
             operator_id: operator_id.clone(),
         })
         .await
@@ -603,11 +622,12 @@ async fn update_space(
 
 async fn delete_space(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(space_id): Path<String>,
     Query(query): Query<NodeMutationQuery>,
 ) -> Result<Json<DeleteSpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
-    let tenant_id = match require_query_value(query.tenant_id, "tenantId") {
+    let tenant_id = match ctx.resolve_tenant_id(query.tenant_id) {
         Ok(tenant_id) => tenant_id,
         Err(error) => {
             sdkwork_drive_observability::observe_route!(
@@ -620,9 +640,7 @@ async fn delete_space(
             return Err(error);
         }
     };
-    let operator_id = query
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
     let deleted = match service
         .delete_space(DeleteSpaceCommand {
@@ -675,16 +693,17 @@ async fn delete_space(
 
 async fn create_upload_session(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateUploadSessionRequest>,
 ) -> Result<(StatusCode, Json<CreateUploadSessionResponse>), (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
     let _client_requested_object_key = payload.object_key.as_deref();
     let session_id = payload.session_id.trim();
-    let tenant_id = payload.tenant_id.trim();
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
     let space_id = payload.space_id.trim();
     let node_id = payload.node_id.trim();
     let idempotency_key = payload.idempotency_key.trim();
-    let operator_id = payload.operator_id.trim();
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     if idempotency_key.is_empty() {
         return Err(problem(
             StatusCode::BAD_REQUEST,
@@ -694,7 +713,7 @@ async fn create_upload_session(
         ));
     }
     validate_optional_future_epoch_ms(Some(payload.expires_at_epoch_ms), "expiresAtEpochMs")?;
-    let node = find_active_node(&state.pool, tenant_id, node_id).await?;
+    let node = find_active_node(&state.pool, &tenant_id, node_id).await?;
     if node.space_id != space_id {
         return Err(not_found_problem("node not found"));
     }
@@ -708,7 +727,7 @@ async fn create_upload_session(
     }
     if let Some(existing) = find_upload_session_by_idempotency(
         &state.pool,
-        tenant_id,
+        &tenant_id,
         space_id,
         node_id,
         idempotency_key,
@@ -721,10 +740,11 @@ async fn create_upload_session(
         ));
     }
     ensure_upload_session_id_available(&state.pool, session_id).await?;
-    let target_version_no = next_storage_object_version_no(&state.pool, tenant_id, node_id).await?;
+    let target_version_no =
+        next_storage_object_version_no(&state.pool, &tenant_id, node_id).await?;
     let storage_target = resolve_storage_target(
         &state.pool,
-        tenant_id,
+        &tenant_id,
         space_id,
         payload.bucket.as_deref(),
         node_id,
@@ -737,7 +757,7 @@ async fn create_upload_session(
     let created_result = service
         .create_upload_session(CreateUploadSessionCommand {
             session_id: session_id.to_string(),
-            tenant_id: tenant_id.to_string(),
+            tenant_id,
             space_id: space_id.to_string(),
             node_id: node_id.to_string(),
             bucket: storage_target.bucket,
@@ -745,7 +765,7 @@ async fn create_upload_session(
             storage_provider_id: storage_target.provider_id,
             storage_upload_id: Some(created_storage_upload.upload_id),
             idempotency_key: idempotency_key.to_string(),
-            operator_id: operator_id.to_string(),
+            operator_id,
             expires_at_epoch_ms: payload.expires_at_epoch_ms,
         })
         .await;
@@ -793,20 +813,32 @@ async fn create_upload_session(
 
 async fn get_upload_session(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(upload_session_id): Path<String>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<UploadSessionMutationResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let upload_session = find_upload_session(&state.pool, &tenant_id, &upload_session_id).await?;
     Ok(Json(UploadSessionMutationResponse::from(upload_session)))
 }
 
 async fn prepare_uploader_upload(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<PrepareUploaderUploadRequest>,
 ) -> Result<(StatusCode, Json<PrepareUploaderUploadResponse>), (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+
+    let command = prepare_uploader_command(payload, &ctx, tenant_id, operator_id)?;
+    ensure_tenant_can_allocate_bytes(
+        &SqlQuotaStore::new(state.pool.clone()),
+        &command.tenant_id,
+        command.content_length,
+    )
+    .await
+    .map_err(map_service_error)?;
     let service = DriveUploaderService::new(SqlUploaderStore::new(state.pool.clone()));
-    let command = prepare_uploader_command(payload)?;
     let upload_item = service
         .prepare_upload(command)
         .await
@@ -872,12 +904,13 @@ async fn prepare_uploader_upload(
 
 async fn mark_uploader_part_uploaded(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((upload_item_id, part_no)): Path<(String, i64)>,
     Json(payload): Json<MarkUploaderPartUploadedRequest>,
 ) -> Result<Json<UploaderUploadPartResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let service = DriveUploaderService::new(SqlUploaderStore::new(state.pool.clone()));
-    let tenant_id = require_non_empty_text(payload.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
     let upload_session_id = require_non_empty_text(payload.upload_session_id, "uploadSessionId")?;
+    let service = DriveUploaderService::new(SqlUploaderStore::new(state.pool.clone()));
     let part = service
         .mark_part_uploaded(MarkUploaderPartUploadedCommand {
             id: format!("upload-part-{upload_item_id}-{part_no}"),
@@ -901,10 +934,11 @@ async fn mark_uploader_part_uploaded(
 
 async fn list_nodes(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(space_id): Path<String>,
     Query(query): Query<ListNodesQuery>,
 ) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let parent_node_id = normalize_optional_text(query.parent_node_id);
     validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
@@ -915,16 +949,17 @@ async fn list_nodes(
         parent_node_id.as_deref(),
     )
     .await?;
-    let rows = sqlx::query(
-        "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, node_type, node_name, scene, source, lifecycle_status, version
+    let rows = sqlx::query(&format!(
+        "SELECT {NODE_API_SELECT_COLUMNS}
          FROM dr_drive_node
          WHERE tenant_id=$1
            AND space_id=$2
            AND lifecycle_status='active'
+           AND content_state='ready'
            AND ((parent_node_id IS NULL AND $3 IS NULL) OR parent_node_id = $3)
          ORDER BY node_type ASC, node_name ASC
          LIMIT $4 OFFSET $5",
-    )
+    ))
     .bind(&tenant_id)
     .bind(&space_id)
     .bind(parent_node_id.as_deref())
@@ -944,38 +979,67 @@ async fn list_nodes(
 
 async fn create_folder(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateFolderRequest>,
 ) -> Result<(StatusCode, Json<DriveNodeResponse>), (StatusCode, Json<ProblemDetail>)> {
-    if payload.id.trim().is_empty() || payload.node_name.trim().is_empty() {
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let node_name = payload.node_name.trim();
+    if node_name.is_empty() {
         return Err(problem(
             StatusCode::BAD_REQUEST,
             "validation failed",
-            "id and nodeName are required",
+            "nodeName is required",
             "drive.validation.failed",
         ));
     }
-    validate_space_exists(&state.pool, &payload.tenant_id, &payload.space_id).await?;
+    validate_space_exists(&state.pool, &tenant_id, &payload.space_id).await?;
     validate_target_parent(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         payload.parent_node_id.as_deref(),
     )
     .await?;
     ensure_git_repository_space_root_accepts_node_type(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         payload.parent_node_id.as_deref(),
         "folder",
     )
     .await?;
+
+    let node_id = match payload
+        .id
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        Some(client_id) => {
+            if let Ok(existing) = find_node(&state.pool, &tenant_id, client_id).await {
+                if folder_create_request_matches(&existing, &payload, node_name) {
+                    return Ok((StatusCode::CREATED, Json(existing)));
+                }
+                return Err(problem(
+                    StatusCode::CONFLICT,
+                    "conflict",
+                    "node id already exists",
+                    "drive.conflict",
+                ));
+            }
+            ensure_node_id_available(&state.pool, client_id).await?;
+            client_id.to_string()
+        }
+        None => next_drive_id("folder"),
+    };
+
     ensure_no_live_name_conflict(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         payload.parent_node_id.as_deref(),
-        payload.node_name.trim(),
+        node_name,
         None,
     )
     .await?;
@@ -984,47 +1048,62 @@ async fn create_folder(
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-         ) VALUES ($1, $2, $3, $4, 'folder', $5, 'empty', 'active', 1, $6, $6)",
+         ) VALUES ($1, $2, $3, $4, 'folder', $5, 'ready', 'active', 1, $6, $6)",
     )
-    .bind(&payload.id)
-    .bind(&payload.tenant_id)
+    .bind(&node_id)
+    .bind(&tenant_id)
     .bind(&payload.space_id)
     .bind(&payload.parent_node_id)
-    .bind(payload.node_name.trim())
-    .bind(&payload.operator_id)
+    .bind(node_name)
+    .bind(&operator_id)
     .execute(&state.pool)
     .await
     .map_err(|error| {
-        let message = error.to_string();
-        if message.contains("UNIQUE constraint failed") {
-            return problem(
-                StatusCode::CONFLICT,
-                "conflict",
-                "node name already exists in parent",
-                "drive.conflict",
-            );
+        if is_unique_constraint_error(&error) {
+            let detail = if unique_node_insert_conflict_target(&error) == "id" {
+                "node id already exists"
+            } else {
+                "node name already exists in parent"
+            };
+            return problem(StatusCode::CONFLICT, "conflict", detail, "drive.conflict");
         }
-        internal_problem(format!("insert dr_drive_node failed: {message}"))
+        internal_problem(format!("insert dr_drive_node failed: {error}"))
     })?;
 
     record_change(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
-        Some(&payload.id),
+        Some(&node_id),
         "node.folder_created",
-        &payload.operator_id,
+        &operator_id,
     )
     .await?;
 
-    let node = find_node(&state.pool, &payload.tenant_id, &payload.id).await?;
+    let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     Ok((StatusCode::CREATED, Json(node)))
+}
+
+fn folder_create_request_matches(
+    existing: &DriveNodeResponse,
+    payload: &CreateFolderRequest,
+    node_name: &str,
+) -> bool {
+    existing.node_type == "folder"
+        && existing.space_id == payload.space_id
+        && existing.parent_node_id.as_deref() == payload.parent_node_id.as_deref()
+        && existing.node_name == node_name
+        && existing.lifecycle_status != "deleted"
 }
 
 async fn create_file(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateFileRequest>,
 ) -> Result<(StatusCode, Json<CreateFileResponse>), (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+
     let _client_requested_object_key = payload.object_key.as_deref();
     if payload.id.trim().is_empty()
         || payload.node_name.trim().is_empty()
@@ -1041,15 +1120,20 @@ async fn create_file(
     validate_optional_future_epoch_ms(Some(payload.expires_at_epoch_ms), "expiresAtEpochMs")?;
     if let Some(existing_upload_session) = find_upload_session_by_idempotency(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         payload.id.trim(),
         payload.idempotency_key.trim(),
     )
     .await?
     {
-        let node = find_active_node(&state.pool, &payload.tenant_id, payload.id.trim()).await?;
-        validate_create_file_idempotent_replay(&payload, &node, &existing_upload_session)?;
+        let node = find_active_node(&state.pool, &tenant_id, payload.id.trim()).await?;
+        validate_create_file_idempotent_replay(
+            &payload,
+            &tenant_id,
+            &node,
+            &existing_upload_session,
+        )?;
         return Ok((
             StatusCode::CREATED,
             Json(CreateFileResponse {
@@ -1058,17 +1142,17 @@ async fn create_file(
             }),
         ));
     }
-    validate_space_exists(&state.pool, &payload.tenant_id, &payload.space_id).await?;
+    validate_space_exists(&state.pool, &tenant_id, &payload.space_id).await?;
     validate_target_parent(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         payload.parent_node_id.as_deref(),
     )
     .await?;
     ensure_git_repository_space_root_accepts_node_type(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         payload.parent_node_id.as_deref(),
         "file",
@@ -1078,7 +1162,7 @@ async fn create_file(
     ensure_upload_session_id_available(&state.pool, payload.upload_session_id.trim()).await?;
     ensure_no_live_name_conflict(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         payload.parent_node_id.as_deref(),
         &payload.node_name,
@@ -1088,7 +1172,7 @@ async fn create_file(
 
     let storage_target = resolve_storage_target(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         payload.bucket.as_deref(),
         &payload.id,
@@ -1105,16 +1189,15 @@ async fn create_file(
          ) VALUES ($1, $2, $3, $4, 'file', $5, 'uploading', 'active', 1, $6, $6)",
     )
     .bind(payload.id.trim())
-    .bind(&payload.tenant_id)
+    .bind(&tenant_id)
     .bind(&payload.space_id)
     .bind(&payload.parent_node_id)
     .bind(payload.node_name.trim())
-    .bind(payload.operator_id.trim())
+    .bind(operator_id.as_str())
     .execute(&state.pool)
     .await
     .map_err(|error| {
-        let message = error.to_string();
-        if message.contains("UNIQUE constraint failed") {
+        if is_unique_constraint_error(&error) {
             return problem(
                 StatusCode::CONFLICT,
                 "conflict",
@@ -1122,14 +1205,14 @@ async fn create_file(
                 "drive.conflict",
             );
         }
-        internal_problem(format!("insert file dr_drive_node failed: {message}"))
+        internal_problem(format!("insert file dr_drive_node failed: {error}"))
     })?;
 
     let service = DriveUploadService::new(SqlUploadSessionStore::new(state.pool.clone()));
     let created = service
         .create_upload_session(CreateUploadSessionCommand {
             session_id: payload.upload_session_id.trim().to_string(),
-            tenant_id: payload.tenant_id.clone(),
+            tenant_id: tenant_id.clone(),
             space_id: payload.space_id.clone(),
             node_id: payload.id.trim().to_string(),
             bucket: storage_target.bucket,
@@ -1137,23 +1220,23 @@ async fn create_file(
             storage_provider_id: storage_target.provider_id,
             storage_upload_id: Some(created_storage_upload.upload_id),
             idempotency_key: payload.idempotency_key.trim().to_string(),
-            operator_id: payload.operator_id.trim().to_string(),
+            operator_id: operator_id.as_str().to_string(),
             expires_at_epoch_ms: payload.expires_at_epoch_ms,
         })
         .await
         .map_err(map_service_error)?;
     record_change(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         Some(payload.id.trim()),
         "node.file_created",
-        payload.operator_id.trim(),
+        operator_id.as_str(),
     )
     .await?;
 
     let upload_session_state = upload_session_state_as_str(&created.state).to_string();
-    let node = find_node(&state.pool, &payload.tenant_id, payload.id.trim()).await?;
+    let node = find_node(&state.pool, &tenant_id, payload.id.trim()).await?;
     Ok((
         StatusCode::CREATED,
         Json(CreateFileResponse {
@@ -1178,8 +1261,12 @@ async fn create_file(
 
 async fn create_shortcut(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateShortcutRequest>,
 ) -> Result<(StatusCode, Json<DriveNodeResponse>), (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+
     if payload.id.trim().is_empty()
         || payload.node_name.trim().is_empty()
         || payload.target_node_id.trim().is_empty()
@@ -1191,28 +1278,23 @@ async fn create_shortcut(
             "drive.validation.failed",
         ));
     }
-    validate_space_exists(&state.pool, &payload.tenant_id, &payload.space_id).await?;
+    validate_space_exists(&state.pool, &tenant_id, &payload.space_id).await?;
     validate_target_parent(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         payload.parent_node_id.as_deref(),
     )
     .await?;
     ensure_git_repository_space_root_accepts_node_type(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         payload.parent_node_id.as_deref(),
         "shortcut",
     )
     .await?;
-    let target = find_active_node(
-        &state.pool,
-        &payload.tenant_id,
-        payload.target_node_id.trim(),
-    )
-    .await?;
+    let target = find_active_node(&state.pool, &tenant_id, payload.target_node_id.trim()).await?;
     if target.id == payload.id.trim() {
         return Err(problem(
             StatusCode::BAD_REQUEST,
@@ -1231,7 +1313,7 @@ async fn create_shortcut(
     }
     ensure_no_live_name_conflict(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         payload.parent_node_id.as_deref(),
         payload.node_name.trim(),
@@ -1247,17 +1329,16 @@ async fn create_shortcut(
          ) VALUES ($1, $2, $3, $4, $5, 'shortcut', $6, 'ready', 'active', 1, $7, $7)",
     )
     .bind(payload.id.trim())
-    .bind(&payload.tenant_id)
+    .bind(&tenant_id)
     .bind(&payload.space_id)
     .bind(&payload.parent_node_id)
     .bind(target.id.as_str())
     .bind(payload.node_name.trim())
-    .bind(payload.operator_id.trim())
+    .bind(operator_id.as_str())
     .execute(&state.pool)
     .await
     .map_err(|error| {
-        let message = error.to_string();
-        if message.contains("UNIQUE constraint failed") {
+        if is_unique_constraint_error(&error) {
             return problem(
                 StatusCode::CONFLICT,
                 "conflict",
@@ -1265,40 +1346,42 @@ async fn create_shortcut(
                 "drive.conflict",
             );
         }
-        internal_problem(format!("insert shortcut dr_drive_node failed: {message}"))
+        internal_problem(format!("insert shortcut dr_drive_node failed: {error}"))
     })?;
 
     record_change(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &payload.space_id,
         Some(payload.id.trim()),
         "node.shortcut.created",
-        payload.operator_id.trim(),
+        operator_id.as_str(),
     )
     .await?;
 
     Ok((
         StatusCode::CREATED,
-        Json(find_node(&state.pool, &payload.tenant_id, payload.id.trim()).await?),
+        Json(find_node(&state.pool, &tenant_id, payload.id.trim()).await?),
     ))
 }
 
 async fn get_node(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     Ok(Json(find_node(&state.pool, &tenant_id, &node_id).await?))
 }
 
 async fn get_node_path(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<NodePathResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let items = resolve_node_path(&state.pool, &tenant_id, &node_id).await?;
     let path_segments = items
         .iter()
@@ -1312,12 +1395,12 @@ async fn get_node_path(
 
 async fn get_node_capabilities(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<NodeCapabilitiesQuery>,
 ) -> Result<Json<NodeCapabilitiesResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
-    let subject_type = require_query_value(query.subject_type, "subjectType")?;
-    let subject_id = require_query_value(query.subject_id, "subjectId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
     validate_subject_type(&subject_type)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     validate_space_exists(&state.pool, &tenant_id, &node.space_id).await?;
@@ -1415,10 +1498,11 @@ async fn get_node_capabilities(
 
 async fn list_archive_entries(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<ArchiveEntryListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let archive_bytes = read_archive_node_bytes(&state, &tenant_id, &node_id).await?;
     let items = read_archive_entry_list(&archive_bytes)?;
     Ok(Json(ArchiveEntryListResponse { items }))
@@ -1426,13 +1510,12 @@ async fn list_archive_entries(
 
 async fn extract_archive_entries(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<ExtractArchiveEntriesRequest>,
 ) -> Result<(StatusCode, Json<ExtractArchiveEntriesResponse>), (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let source_node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     validate_archive_source_node(&source_node)?;
     let target_parent_node_id =
@@ -1498,10 +1581,11 @@ async fn extract_archive_entries(
 
 async fn list_node_properties(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<NodePropertyListQuery>,
 ) -> Result<Json<NodePropertyListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
     let visibility = match normalize_optional_text(query.visibility) {
@@ -1558,10 +1642,11 @@ async fn list_node_properties(
 
 async fn set_node_property(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, property_key)): Path<(String, String)>,
     Json(payload): Json<SetNodePropertyRequest>,
 ) -> Result<Json<NodePropertyResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
     let property_key = validate_node_property_key(&property_key)?.to_string();
     let visibility = validate_node_property_visibility(
         normalize_optional_text(payload.visibility)
@@ -1570,9 +1655,7 @@ async fn set_node_property(
     )?
     .to_string();
     let property_value = require_non_empty_text(payload.value, "value")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let property_id = build_node_property_id(&tenant_id, &node_id, &property_key, &visibility);
 
@@ -1623,10 +1706,11 @@ async fn set_node_property(
 
 async fn delete_node_property(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, property_key)): Path<(String, String)>,
     Query(query): Query<DeleteNodePropertyQuery>,
 ) -> Result<Json<DeleteNodePropertyResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let property_key = validate_node_property_key(&property_key)?.to_string();
     let visibility = validate_node_property_visibility(
         normalize_optional_text(query.visibility)
@@ -1634,9 +1718,7 @@ async fn delete_node_property(
             .unwrap_or("private"),
     )?
     .to_string();
-    let operator_id = query
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let affected = sqlx::query(
         "UPDATE dr_drive_node_property
@@ -1679,10 +1761,11 @@ async fn delete_node_property(
 
 async fn list_node_labels(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<NodeLabelListQuery>,
 ) -> Result<Json<NodeLabelListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
     let label_key = match normalize_optional_text(query.label_key) {
@@ -1752,13 +1835,12 @@ async fn list_node_labels(
 
 async fn apply_node_label(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, label_id)): Path<(String, String)>,
     Json(payload): Json<ApplyNodeLabelRequest>,
 ) -> Result<Json<NodeLabelResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     find_label(&state.pool, &tenant_id, &label_id).await?;
     let node_label_id = build_node_label_id(&tenant_id, &node_id, &label_id);
@@ -1798,13 +1880,12 @@ async fn apply_node_label(
 
 async fn remove_node_label(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, label_id)): Path<(String, String)>,
     Query(query): Query<RemoveNodeLabelQuery>,
 ) -> Result<Json<RemoveNodeLabelResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
-    let operator_id = query
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let affected = sqlx::query(
         "UPDATE dr_drive_node_label
@@ -1843,13 +1924,12 @@ async fn remove_node_label(
 
 async fn update_node(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<UpdateNodeRequest>,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let current = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let next_name = payload
         .node_name
@@ -1935,13 +2015,12 @@ async fn update_node(
 
 async fn move_node(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<MoveNodeRequest>,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let current = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let target_parent = normalize_optional_text(payload.target_parent_node_id);
 
@@ -2017,6 +2096,7 @@ async fn move_node(
 
 async fn copy_node(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CopyNodeRequest>,
 ) -> Result<(StatusCode, Json<DriveNodeResponse>), (StatusCode, Json<ProblemDetail>)> {
@@ -2029,10 +2109,8 @@ async fn copy_node(
         ));
     }
 
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let source = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let target_space_id = payload
         .target_space_id
@@ -2093,8 +2171,7 @@ async fn copy_node(
     .execute(&state.pool)
     .await
     .map_err(|error| {
-        let message = error.to_string();
-        if message.contains("UNIQUE constraint failed") {
+        if is_unique_constraint_error(&error) {
             return problem(
                 StatusCode::CONFLICT,
                 "conflict",
@@ -2102,7 +2179,7 @@ async fn copy_node(
                 "drive.conflict",
             );
         }
-        internal_problem(format!("copy dr_drive_node failed: {message}"))
+        internal_problem(format!("copy dr_drive_node failed: {error}"))
     })?;
 
     copy_active_storage_object_metadata(
@@ -2132,13 +2209,12 @@ async fn copy_node(
 
 async fn delete_node(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<NodeMutationQuery>,
 ) -> Result<Json<DeleteNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
-    let operator_id = query
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     let nodes_to_delete = collect_node_subtree(&state.pool, &tenant_id, &node).await?;
     let mut deleted_count = 0_u64;
@@ -2191,10 +2267,11 @@ async fn delete_node(
 
 async fn create_node_download_url(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<NodeDownloadUrlQuery>,
 ) -> Result<Json<CreateDownloadUrlResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let requested_ttl_seconds = validate_requested_ttl_seconds(
         query.requested_ttl_seconds,
         120,
@@ -2222,49 +2299,91 @@ async fn create_node_download_url(
 
 async fn trash_node(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<NodeCommandRequest>,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    set_node_lifecycle(state, node_id, payload, "trashed", "node.trashed").await
+    set_node_lifecycle(state, &ctx, node_id, payload, "trashed", "node.trashed").await
 }
 
 async fn restore_trashed_node(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<NodeCommandRequest>,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    set_node_lifecycle(state, node_id, payload, "active", "node.restored").await
+    set_node_lifecycle(state, &ctx, node_id, payload, "active", "node.restored").await
 }
 
 async fn list_trashed_nodes(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<NodeViewQuery>,
 ) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
+    let parent_node_id = normalize_optional_text(query.parent_node_id);
     let rows = if let Some(space_id) = normalize_optional_text(query.space_id) {
         validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
-        sqlx::query(
-            "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, node_type, node_name, scene, source, lifecycle_status, version
+        if let Some(parent_node_id) = parent_node_id.as_deref() {
+            validate_target_parent(&state.pool, &tenant_id, &space_id, Some(parent_node_id))
+                .await?;
+            sqlx::query(&format!(
+                "SELECT {NODE_API_SELECT_COLUMNS}
+                 FROM dr_drive_node
+                 WHERE tenant_id=$1
+                   AND space_id=$2
+                   AND lifecycle_status='trashed'
+                   AND parent_node_id=$3
+                 ORDER BY updated_at DESC, id ASC
+                 LIMIT $4 OFFSET $5",
+            ))
+            .bind(&tenant_id)
+            .bind(&space_id)
+            .bind(parent_node_id)
+            .bind(page.limit + 1)
+            .bind(page.offset)
+            .fetch_all(&state.pool)
+            .await
+        } else {
+            sqlx::query(&format!(
+                "SELECT {NODE_API_SELECT_COLUMNS}
+                 FROM dr_drive_node
+                 WHERE tenant_id=$1 AND space_id=$2 AND lifecycle_status='trashed'
+                 ORDER BY updated_at DESC, id ASC
+                 LIMIT $3 OFFSET $4",
+            ))
+            .bind(&tenant_id)
+            .bind(&space_id)
+            .bind(page.limit + 1)
+            .bind(page.offset)
+            .fetch_all(&state.pool)
+            .await
+        }
+    } else if let Some(parent_node_id) = parent_node_id.as_deref() {
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
-             WHERE tenant_id=$1 AND space_id=$2 AND lifecycle_status='trashed'
+             WHERE tenant_id=$1
+               AND lifecycle_status='trashed'
+               AND parent_node_id=$2
              ORDER BY updated_at DESC, id ASC
              LIMIT $3 OFFSET $4",
-        )
+        ))
         .bind(&tenant_id)
-        .bind(&space_id)
+        .bind(parent_node_id)
         .bind(page.limit + 1)
         .bind(page.offset)
         .fetch_all(&state.pool)
         .await
     } else {
-        sqlx::query(
-            "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, node_type, node_name, scene, source, lifecycle_status, version
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
              WHERE tenant_id=$1 AND lifecycle_status='trashed'
              ORDER BY updated_at DESC, id ASC
              LIMIT $2 OFFSET $3",
-        )
+        ))
         .bind(&tenant_id)
         .bind(page.limit + 1)
         .bind(page.offset)
@@ -2283,19 +2402,23 @@ async fn list_trashed_nodes(
 
 async fn list_recent_nodes(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<NodeViewQuery>,
 ) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let rows = if let Some(space_id) = normalize_optional_text(query.space_id) {
         validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
-        sqlx::query(
-            "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, node_type, node_name, scene, source, lifecycle_status, version
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
-             WHERE tenant_id=$1 AND space_id=$2 AND lifecycle_status='active'
+             WHERE tenant_id=$1
+               AND space_id=$2
+               AND lifecycle_status='active'
+               AND content_state='ready'
              ORDER BY updated_at DESC, id ASC
              LIMIT $3 OFFSET $4",
-        )
+        ))
         .bind(&tenant_id)
         .bind(&space_id)
         .bind(page.limit + 1)
@@ -2303,13 +2426,15 @@ async fn list_recent_nodes(
         .fetch_all(&state.pool)
         .await
     } else {
-        sqlx::query(
-            "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, node_type, node_name, scene, source, lifecycle_status, version
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
-             WHERE tenant_id=$1 AND lifecycle_status='active'
+             WHERE tenant_id=$1
+               AND lifecycle_status='active'
+               AND content_state='ready'
              ORDER BY updated_at DESC, id ASC
              LIMIT $2 OFFSET $3",
-        )
+        ))
         .bind(&tenant_id)
         .bind(page.limit + 1)
         .bind(page.offset)
@@ -2328,31 +2453,33 @@ async fn list_recent_nodes(
 
 async fn list_shared_with_me(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<SubjectNodeViewQuery>,
 ) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
-    let subject_type = require_query_value(query.subject_type, "subjectType")?;
-    let subject_id = require_query_value(query.subject_id, "subjectId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let rows = if let Some(space_id) = normalize_optional_text(query.space_id) {
         validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
-        sqlx::query(
-            "SELECT DISTINCT n.id, n.tenant_id, n.space_id, n.space_type, n.parent_node_id,
-                    n.shortcut_target_node_id, n.node_type, n.node_name,
-                    n.scene, n.source, n.lifecycle_status, n.version
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
              FROM dr_drive_node n
-             INNER JOIN dr_drive_node_permission p
-                ON p.tenant_id=n.tenant_id
-               AND p.node_id=n.id
-               AND p.lifecycle_status='active'
              WHERE n.tenant_id=$1
                AND n.space_id=$2
                AND n.lifecycle_status='active'
-               AND p.subject_type=$3
-               AND p.subject_id=$4
+               AND n.content_state='ready'
+               AND EXISTS (
+                   SELECT 1
+                   FROM dr_drive_node_permission p
+                   WHERE p.tenant_id=n.tenant_id
+                     AND p.node_id=n.id
+                     AND p.lifecycle_status='active'
+                     AND p.subject_type=$3
+                     AND p.subject_id=$4
+               )
              ORDER BY n.updated_at DESC, n.id ASC
              LIMIT $5 OFFSET $6",
-        )
+        ))
         .bind(&tenant_id)
         .bind(&space_id)
         .bind(&subject_type)
@@ -2362,22 +2489,24 @@ async fn list_shared_with_me(
         .fetch_all(&state.pool)
         .await
     } else {
-        sqlx::query(
-            "SELECT DISTINCT n.id, n.tenant_id, n.space_id, n.space_type, n.parent_node_id,
-                    n.shortcut_target_node_id, n.node_type, n.node_name,
-                    n.scene, n.source, n.lifecycle_status, n.version
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
              FROM dr_drive_node n
-             INNER JOIN dr_drive_node_permission p
-                ON p.tenant_id=n.tenant_id
-               AND p.node_id=n.id
-               AND p.lifecycle_status='active'
              WHERE n.tenant_id=$1
                AND n.lifecycle_status='active'
-               AND p.subject_type=$2
-               AND p.subject_id=$3
+               AND n.content_state='ready'
+               AND EXISTS (
+                   SELECT 1
+                   FROM dr_drive_node_permission p
+                   WHERE p.tenant_id=n.tenant_id
+                     AND p.node_id=n.id
+                     AND p.lifecycle_status='active'
+                     AND p.subject_type=$2
+                     AND p.subject_id=$3
+               )
              ORDER BY n.updated_at DESC, n.id ASC
              LIMIT $4 OFFSET $5",
-        )
+        ))
         .bind(&tenant_id)
         .bind(&subject_type)
         .bind(&subject_id)
@@ -2398,22 +2527,22 @@ async fn list_shared_with_me(
 
 async fn list_favorite_nodes(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<SubjectNodeViewQuery>,
 ) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
-    let subject_type = require_query_value(query.subject_type, "subjectType")?;
-    let subject_id = require_query_value(query.subject_id, "subjectId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let rows = if let Some(space_id) = normalize_optional_text(query.space_id) {
         validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
-        sqlx::query(
-            "SELECT n.id, n.tenant_id, n.space_id, n.space_type, n.parent_node_id, n.shortcut_target_node_id, n.node_type,
-                    n.node_name, n.scene, n.source, n.lifecycle_status, n.version
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
              FROM dr_drive_node_favorite f
              INNER JOIN dr_drive_node n
                 ON n.tenant_id=f.tenant_id
                AND n.id=f.node_id
                AND n.lifecycle_status='active'
+               AND n.content_state='ready'
              WHERE f.tenant_id=$1
                AND n.space_id=$2
                AND f.subject_type=$3
@@ -2421,7 +2550,7 @@ async fn list_favorite_nodes(
                AND f.lifecycle_status='active'
              ORDER BY f.updated_at DESC, n.id ASC
              LIMIT $5 OFFSET $6",
-        )
+        ))
         .bind(&tenant_id)
         .bind(&space_id)
         .bind(&subject_type)
@@ -2431,21 +2560,21 @@ async fn list_favorite_nodes(
         .fetch_all(&state.pool)
         .await
     } else {
-        sqlx::query(
-            "SELECT n.id, n.tenant_id, n.space_id, n.space_type, n.parent_node_id, n.shortcut_target_node_id, n.node_type,
-                    n.node_name, n.scene, n.source, n.lifecycle_status, n.version
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
              FROM dr_drive_node_favorite f
              INNER JOIN dr_drive_node n
                 ON n.tenant_id=f.tenant_id
                AND n.id=f.node_id
                AND n.lifecycle_status='active'
+               AND n.content_state='ready'
              WHERE f.tenant_id=$1
                AND f.subject_type=$2
                AND f.subject_id=$3
                AND f.lifecycle_status='active'
              ORDER BY f.updated_at DESC, n.id ASC
              LIMIT $4 OFFSET $5",
-        )
+        ))
         .bind(&tenant_id)
         .bind(&subject_type)
         .bind(&subject_id)
@@ -2466,9 +2595,10 @@ async fn list_favorite_nodes(
 
 async fn get_quota_summary(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<QuotaSummaryQuery>,
 ) -> Result<Json<QuotaSummaryResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let service = DriveQuotaService::new(SqlQuotaStore::new(state.pool.clone()));
     let summary = service
         .get_tenant_quota_summary(GetTenantQuotaSummaryCommand { tenant_id })
@@ -2484,13 +2614,14 @@ async fn get_quota_summary(
 
 async fn set_favorite(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<FavoriteNodeRequest>,
 ) -> Result<Json<FavoriteNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let subject_type = require_body_value(payload.subject_type, "subjectType")?;
-    let subject_id = require_body_value(payload.subject_id, "subjectId")?;
-    let operator_id = payload.operator_id.unwrap_or_else(|| subject_id.clone());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let (subject_type, subject_id) =
+        ctx.resolve_subject(payload.subject_type, payload.subject_id)?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     validate_subject_type(&subject_type)?;
     let favorite_id = build_favorite_id(&tenant_id, &subject_type, &subject_id, &node_id);
@@ -2528,13 +2659,13 @@ async fn set_favorite(
 
 async fn unset_favorite(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<FavoriteNodeQuery>,
 ) -> Result<Json<FavoriteNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
-    let subject_type = require_query_value(query.subject_type, "subjectType")?;
-    let subject_id = require_query_value(query.subject_id, "subjectId")?;
-    let operator_id = query.operator_id.unwrap_or_else(|| subject_id.clone());
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     validate_subject_type(&subject_type)?;
     let affected = sqlx::query(
@@ -2571,12 +2702,11 @@ async fn unset_favorite(
 
 async fn empty_trash(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<EmptyTrashRequest>,
 ) -> Result<Json<EmptyTrashResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let space_id = normalize_optional_text(payload.space_id);
     let trashed_rows = if let Some(space_id_value) = space_id.as_deref() {
         validate_space_exists(&state.pool, &tenant_id, space_id_value).await?;
@@ -2663,10 +2793,11 @@ async fn empty_trash(
 
 async fn list_versions(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<VersionListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
     let logical_version_count: i64 = sqlx::query_scalar(
@@ -2729,10 +2860,11 @@ async fn list_versions(
 
 async fn get_version(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, version_id)): Path<(String, String)>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<FileVersionResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
     let logical_row = sqlx::query(
         "SELECT id, tenant_id, node_id, version_no, storage_object_id, content_type, content_length,
@@ -2771,13 +2903,12 @@ async fn get_version(
 
 async fn restore_version(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, version_id)): Path<(String, String)>,
     Json(payload): Json<NodeCommandRequest>,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let logical_row = sqlx::query(
         "SELECT storage_object_id
@@ -2869,13 +3000,12 @@ async fn restore_version(
 
 async fn delete_version(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, version_id)): Path<(String, String)>,
     Query(query): Query<NodeMutationQuery>,
 ) -> Result<Json<DeleteVersionResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
-    let operator_id = query
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let logical_row = sqlx::query(
         "SELECT lifecycle_status, storage_object_id
@@ -3032,10 +3162,11 @@ async fn delete_version(
 
 async fn list_permissions(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<PermissionListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
     let rows = sqlx::query(
@@ -3063,10 +3194,11 @@ async fn list_permissions(
 
 async fn get_permission(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, permission_id)): Path<(String, String)>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<PermissionResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
     let row = sqlx::query(
         "SELECT id, tenant_id, node_id, subject_type, subject_id, role, inherited, lifecycle_status, version
@@ -3087,10 +3219,11 @@ async fn get_permission(
 
 async fn list_effective_permissions(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<EffectivePermissionListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node_path = resolve_node_path(&state.pool, &tenant_id, &node_id).await?;
     let mut items = Vec::<EffectivePermissionResponse>::new();
@@ -3150,12 +3283,16 @@ async fn list_effective_permissions(
 
 async fn create_permission(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CreatePermissionRequest>,
 ) -> Result<(StatusCode, Json<PermissionResponse>), (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+
     validate_subject_type(&payload.subject_type)?;
     validate_permission_role(&payload.role)?;
-    let node = find_active_node(&state.pool, &payload.tenant_id, &node_id).await?;
+    let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     sqlx::query(
         "INSERT INTO dr_drive_node_permission (
             id, tenant_id, node_id, subject_type, subject_id, role,
@@ -3163,12 +3300,12 @@ async fn create_permission(
          ) VALUES ($1, $2, $3, $4, $5, $6, 0, 'active', 1, $7, $7)",
     )
     .bind(&payload.id)
-    .bind(&payload.tenant_id)
+    .bind(&tenant_id)
     .bind(&node_id)
     .bind(&payload.subject_type)
     .bind(&payload.subject_id)
     .bind(&payload.role)
-    .bind(&payload.operator_id)
+    .bind(&operator_id)
     .execute(&state.pool)
     .await
     .map_err(|error| {
@@ -3185,11 +3322,11 @@ async fn create_permission(
 
     record_change(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &node.space_id,
         Some(&node_id),
         "permission.created",
-        &payload.operator_id,
+        &operator_id,
     )
     .await?;
 
@@ -3198,7 +3335,7 @@ async fn create_permission(
          FROM dr_drive_node_permission
          WHERE tenant_id=$1 AND id=$2",
     )
-    .bind(&payload.tenant_id)
+    .bind(&tenant_id)
     .bind(&payload.id)
     .fetch_one(&state.pool)
     .await
@@ -3209,13 +3346,12 @@ async fn create_permission(
 
 async fn update_permission(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, permission_id)): Path<(String, String)>,
     Json(payload): Json<UpdatePermissionRequest>,
 ) -> Result<Json<PermissionResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let current_row = sqlx::query(
         "SELECT id, tenant_id, node_id, subject_type, subject_id, role, inherited, lifecycle_status, version
@@ -3283,13 +3419,12 @@ async fn update_permission(
 
 async fn delete_permission(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, permission_id)): Path<(String, String)>,
     Query(query): Query<NodeMutationQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
-    let operator_id = query
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let affected = sqlx::query(
         "UPDATE dr_drive_node_permission
@@ -3320,10 +3455,11 @@ async fn delete_permission(
 
 async fn list_share_links(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<ShareLinkListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
     let rows = sqlx::query(
@@ -3352,10 +3488,11 @@ async fn list_share_links(
 
 async fn get_share_link(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(share_link_id): Path<String>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<ShareLinkResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let current = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
     find_node(&state.pool, &tenant_id, &current.node_id).await?;
     Ok(Json(ShareLinkResponse::from(current)))
@@ -3363,10 +3500,14 @@ async fn get_share_link(
 
 async fn create_share_link(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CreateShareLinkRequest>,
 ) -> Result<(StatusCode, Json<ShareLinkResponse>), (StatusCode, Json<ProblemDetail>)> {
-    let node = find_active_node(&state.pool, &payload.tenant_id, &node_id).await?;
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+
+    let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let token_hash = drive_share_token_hash(&payload.token);
     let role = payload
         .role
@@ -3383,18 +3524,17 @@ async fn create_share_link(
          ) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 'active', 1, $8, $8)",
     )
     .bind(&payload.id)
-    .bind(&payload.tenant_id)
+    .bind(&tenant_id)
     .bind(&node_id)
     .bind(token_hash)
     .bind(role)
     .bind(payload.expires_at_epoch_ms)
     .bind(payload.download_limit)
-    .bind(&payload.operator_id)
+    .bind(&operator_id)
     .execute(&state.pool)
     .await
     .map_err(|error| {
-        let message = error.to_string();
-        if message.contains("UNIQUE constraint failed") {
+        if is_unique_constraint_error(&error) {
             return problem(
                 StatusCode::CONFLICT,
                 "conflict",
@@ -3402,16 +3542,16 @@ async fn create_share_link(
                 "drive.conflict",
             );
         }
-        internal_problem(format!("insert dr_drive_node_share_link failed: {message}"))
+        internal_problem(format!("insert dr_drive_node_share_link failed: {error}"))
     })?;
 
     record_change(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &node.space_id,
         Some(&node_id),
         "share_link.created",
-        &payload.operator_id,
+        &operator_id,
     )
     .await?;
 
@@ -3421,7 +3561,7 @@ async fn create_share_link(
          FROM dr_drive_node_share_link
          WHERE tenant_id=$1 AND id=$2",
     )
-    .bind(&payload.tenant_id)
+    .bind(&tenant_id)
     .bind(&payload.id)
     .fetch_one(&state.pool)
     .await
@@ -3431,13 +3571,12 @@ async fn create_share_link(
 
 async fn update_share_link(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(share_link_id): Path<String>,
     Json(payload): Json<UpdateShareLinkRequest>,
 ) -> Result<Json<ShareLinkResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let current = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
     let node = find_active_node(&state.pool, &tenant_id, &current.node_id).await?;
     let role = payload
@@ -3487,13 +3626,12 @@ async fn update_share_link(
 
 async fn revoke_share_link(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(share_link_id): Path<String>,
     Query(query): Query<NodeMutationQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
-    let operator_id = query
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let current = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
     let node = find_active_node(&state.pool, &tenant_id, &current.node_id).await?;
     let affected = sqlx::query(
@@ -3524,10 +3662,11 @@ async fn revoke_share_link(
 
 async fn list_comments(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<CommentListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
     let rows = sqlx::query(
@@ -3559,10 +3698,11 @@ async fn list_comments(
 
 async fn get_comment(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<CommentResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
     let comment = find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
     Ok(Json(CommentResponse::from(comment)))
@@ -3570,13 +3710,16 @@ async fn get_comment(
 
 async fn create_comment(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CreateCommentRequest>,
 ) -> Result<(StatusCode, Json<CommentResponse>), (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+
     let comment_id = require_non_empty_text(payload.id, "id")?;
     let content = require_non_empty_text(payload.content, "content")?;
-    let operator_id = require_non_empty_text(payload.operator_id, "operatorId")?;
-    let node = find_active_node(&state.pool, &payload.tenant_id, &node_id).await?;
+    let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     let anchor = normalize_optional_text(payload.anchor);
 
     sqlx::query(
@@ -3586,7 +3729,7 @@ async fn create_comment(
          ) VALUES ($1, $2, $3, $4, $5, 0, 'active', 1, $6, $6)",
     )
     .bind(&comment_id)
-    .bind(&payload.tenant_id)
+    .bind(&tenant_id)
     .bind(&node_id)
     .bind(&content)
     .bind(anchor.as_deref())
@@ -3597,7 +3740,7 @@ async fn create_comment(
 
     record_change(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &node.space_id,
         Some(&node_id),
         "comment.created",
@@ -3605,16 +3748,17 @@ async fn create_comment(
     )
     .await?;
 
-    let comment = find_comment(&state.pool, &payload.tenant_id, &node_id, &comment_id).await?;
+    let comment = find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
     Ok((StatusCode::CREATED, Json(CommentResponse::from(comment))))
 }
 
 async fn update_comment(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
     Json(payload): Json<UpdateCommentRequest>,
 ) -> Result<Json<CommentResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
     let operator_id = payload
         .operator_id
         .map(|value| value.trim().to_string())
@@ -3669,10 +3813,11 @@ async fn update_comment(
 
 async fn delete_comment(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
     Query(query): Query<NodeMutationQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let operator_id = query
         .operator_id
         .map(|value| value.trim().to_string())
@@ -3724,10 +3869,11 @@ async fn delete_comment(
 
 async fn list_comment_replies(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<CommentReplyListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
     find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
@@ -3763,10 +3909,11 @@ async fn list_comment_replies(
 
 async fn get_comment_reply(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id, reply_id)): Path<(String, String, String)>,
     Query(query): Query<TenantQuery>,
 ) -> Result<Json<CommentReplyResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
     find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
     let reply =
@@ -3776,14 +3923,17 @@ async fn get_comment_reply(
 
 async fn create_comment_reply(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
     Json(payload): Json<CreateCommentReplyRequest>,
 ) -> Result<(StatusCode, Json<CommentReplyResponse>), (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+
     let reply_id = require_non_empty_text(payload.id, "id")?;
     let content = require_non_empty_text(payload.content, "content")?;
-    let operator_id = require_non_empty_text(payload.operator_id, "operatorId")?;
-    let node = find_active_node(&state.pool, &payload.tenant_id, &node_id).await?;
-    find_comment(&state.pool, &payload.tenant_id, &node_id, &comment_id).await?;
+    let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
+    find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
 
     sqlx::query(
         "INSERT INTO dr_drive_node_comment_reply (
@@ -3792,7 +3942,7 @@ async fn create_comment_reply(
          ) VALUES ($1, $2, $3, $4, $5, 'active', 1, $6, $6)",
     )
     .bind(&reply_id)
-    .bind(&payload.tenant_id)
+    .bind(&tenant_id)
     .bind(&node_id)
     .bind(&comment_id)
     .bind(&content)
@@ -3804,30 +3954,25 @@ async fn create_comment_reply(
     ))?;
     record_change(
         &state.pool,
-        &payload.tenant_id,
+        &tenant_id,
         &node.space_id,
         Some(&node_id),
         "comment_reply.created",
         &operator_id,
     )
     .await?;
-    let reply = find_comment_reply(
-        &state.pool,
-        &payload.tenant_id,
-        &node_id,
-        &comment_id,
-        &reply_id,
-    )
-    .await?;
+    let reply =
+        find_comment_reply(&state.pool, &tenant_id, &node_id, &comment_id, &reply_id).await?;
     Ok((StatusCode::CREATED, Json(CommentReplyResponse::from(reply))))
 }
 
 async fn update_comment_reply(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id, reply_id)): Path<(String, String, String)>,
     Json(payload): Json<UpdateCommentReplyRequest>,
 ) -> Result<Json<CommentReplyResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
     let operator_id = payload
         .operator_id
         .map(|value| value.trim().to_string())
@@ -3876,10 +4021,11 @@ async fn update_comment_reply(
 
 async fn delete_comment_reply(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id, reply_id)): Path<(String, String, String)>,
     Query(query): Query<NodeMutationQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let operator_id = query
         .operator_id
         .map(|value| value.trim().to_string())
@@ -3918,20 +4064,25 @@ async fn delete_comment_reply(
 
 async fn search_nodes(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<SearchQuery>,
 ) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let needle = format!("%{}%", query.q.unwrap_or_default().trim());
     let rows = if let Some(space_id) = normalize_optional_text(query.space_id) {
         validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
-        sqlx::query(
-            "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, node_type, node_name, scene, source, lifecycle_status, version
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
-             WHERE tenant_id=$1 AND space_id=$2 AND node_name LIKE $3 AND lifecycle_status='active'
+             WHERE tenant_id=$1
+               AND space_id=$2
+               AND node_name LIKE $3
+               AND lifecycle_status='active'
+               AND content_state='ready'
              ORDER BY updated_at DESC, id ASC
              LIMIT $4 OFFSET $5",
-        )
+        ))
         .bind(&tenant_id)
         .bind(&space_id)
         .bind(needle)
@@ -3940,13 +4091,16 @@ async fn search_nodes(
         .fetch_all(&state.pool)
         .await
     } else {
-        sqlx::query(
-            "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, node_type, node_name, scene, source, lifecycle_status, version
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
-             WHERE tenant_id=$1 AND node_name LIKE $2 AND lifecycle_status='active'
+             WHERE tenant_id=$1
+               AND node_name LIKE $2
+               AND lifecycle_status='active'
+               AND content_state='ready'
              ORDER BY updated_at DESC, id ASC
              LIMIT $3 OFFSET $4",
-        )
+        ))
         .bind(&tenant_id)
         .bind(needle)
         .bind(page.limit + 1)
@@ -3966,9 +4120,10 @@ async fn search_nodes(
 
 async fn list_changes(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<ChangesQuery>,
 ) -> Result<Json<ChangeListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_change_page_request(query.page_size, query.page_token, query.cursor)?;
     let rows = if let Some(space_id) = normalize_optional_text(query.space_id) {
         validate_space_exists_for_change_history(&state.pool, &tenant_id, &space_id).await?;
@@ -4024,9 +4179,10 @@ async fn list_changes(
 
 async fn get_changes_start_page_token(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<StartPageTokenQuery>,
 ) -> Result<Json<StartPageTokenResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let space_id = normalize_optional_text(query.space_id);
     let start_page_token = if let Some(space_id) = space_id.as_deref() {
         validate_space_exists(&state.pool, &tenant_id, space_id).await?;
@@ -4041,14 +4197,13 @@ async fn get_changes_start_page_token(
 
 async fn watch_changes(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateWatchChannelRequest>,
 ) -> Result<(StatusCode, Json<DriveWatchChannelResponse>), (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
     let space_id = require_body_value(payload.space_id, "spaceId")?;
     validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let channel_id = validate_watch_channel_id(&payload.id)?.to_string();
     let address = validate_watch_channel_address(&payload.address)?.to_string();
     let channel_type = validate_watch_channel_type(
@@ -4092,14 +4247,13 @@ async fn watch_changes(
 
 async fn watch_node(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CreateWatchChannelRequest>,
 ) -> Result<(StatusCode, Json<DriveWatchChannelResponse>), (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let channel_id = validate_watch_channel_id(&payload.id)?.to_string();
     let address = validate_watch_channel_address(&payload.address)?.to_string();
     let channel_type = validate_watch_channel_type(
@@ -4143,9 +4297,10 @@ async fn watch_node(
 
 async fn list_watch_channels(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<WatchChannelListQuery>,
 ) -> Result<Json<WatchChannelListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let lifecycle_status = validate_watch_lifecycle_status(
         normalize_optional_text(query.lifecycle_status)
@@ -4204,10 +4359,11 @@ async fn list_watch_channels(
 
 async fn get_watch_channel(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(channel_id): Path<String>,
     Query(query): Query<WatchChannelGetQuery>,
 ) -> Result<Json<DriveWatchChannelResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_query_value(query.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     Ok(Json(
         find_watch_channel(&state.pool, &tenant_id, &channel_id).await?,
     ))
@@ -4215,13 +4371,12 @@ async fn get_watch_channel(
 
 async fn stop_watch_channel(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(channel_id): Path<String>,
     Json(payload): Json<StopWatchChannelRequest>,
 ) -> Result<Json<StopWatchChannelResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let current = find_watch_channel(&state.pool, &tenant_id, &channel_id).await?;
     let affected = sqlx::query(
         "UPDATE dr_drive_watch_channel
@@ -4260,10 +4415,11 @@ async fn stop_watch_channel(
 
 async fn presign_upload_part(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((upload_session_id, part_no)): Path<(String, u16)>,
     Json(payload): Json<PresignUploadPartRequest>,
 ) -> Result<Json<PresignedUploadPartResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
     if part_no == 0 || part_no > 10_000 {
         return Err(problem(
             StatusCode::BAD_REQUEST,
@@ -4336,10 +4492,11 @@ async fn presign_upload_part(
 
 async fn complete_upload_session(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(upload_session_id): Path<String>,
     Json(payload): Json<CompleteUploadSessionRequest>,
 ) -> Result<Json<UploadSessionMutationResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
     validate_completed_multipart_parts(&payload.parts)?;
     let content_type = validate_content_type(&payload.content_type, "contentType")?;
     let checksum_sha256_hex =
@@ -4354,9 +4511,7 @@ async fn complete_upload_session(
         ));
     }
 
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let upload_session = find_upload_session(&state.pool, &tenant_id, &upload_session_id).await?;
     validate_mutable_upload_session(&upload_session)?;
     if let Some(upload_id) = payload.upload_id.as_deref() {
@@ -4476,19 +4631,34 @@ async fn complete_upload_session(
         &operator_id,
     )
     .await?;
-    sqlx::query(
-        "UPDATE dr_drive_node
-         SET content_state='ready', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
-         WHERE tenant_id=$2 AND id=$3 AND lifecycle_status != 'deleted'",
+    let head_snapshot = if let Some(upload_item) = uploader_upload_item.as_ref() {
+        FileNodeHeadSnapshot {
+            file_extension: upload_item.file_extension.clone(),
+            content_type: content_type.to_string(),
+            content_type_group: upload_item.content_type_group.clone(),
+            content_length,
+            version_no: completed_object_plan.version_no,
+            checksum_sha256_hex: checksum_sha256_hex.to_string(),
+        }
+    } else {
+        FileNodeHeadSnapshot {
+            file_extension: None,
+            content_type: content_type.to_string(),
+            content_type_group: content_type_group_for(content_type).to_string(),
+            content_length,
+            version_no: completed_object_plan.version_no,
+            checksum_sha256_hex: checksum_sha256_hex.to_string(),
+        }
+    };
+    apply_file_node_head_snapshot(
+        &state.pool,
+        &tenant_id,
+        &upload_session.node_id,
+        &operator_id,
+        &head_snapshot,
     )
-    .bind(&operator_id)
-    .bind(&tenant_id)
-    .bind(&upload_session.node_id)
-    .execute(&state.pool)
     .await
-    .map_err(internal_sql_error(
-        "mark dr_drive_node content ready failed",
-    ))?;
+    .map_err(map_service_error)?;
     record_change(
         &state.pool,
         &tenant_id,
@@ -4505,13 +4675,12 @@ async fn complete_upload_session(
 
 async fn abort_upload_session(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(upload_session_id): Path<String>,
     Json(payload): Json<NodeCommandRequest>,
 ) -> Result<Json<UploadSessionMutationResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let upload_session = find_upload_session(&state.pool, &tenant_id, &upload_session_id).await?;
     validate_mutable_upload_session(&upload_session)?;
     let node = find_active_node(&state.pool, &tenant_id, &upload_session.node_id).await?;
@@ -4539,6 +4708,7 @@ async fn abort_upload_session(
 
 async fn create_download_url(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateDownloadUrlRequest>,
 ) -> Result<(StatusCode, Json<CreateDownloadUrlResponse>), (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
@@ -4550,9 +4720,10 @@ async fn create_download_url(
         300,
         "requestedTtlSeconds",
     )?;
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
     let result_value = service
         .create_download_url(CreateDownloadUrlCommand {
-            tenant_id: payload.tenant_id,
+            tenant_id,
             node_id: payload.node_id,
             requested_ttl_seconds,
             request_base_url: state.download_public_base_url.clone(),
@@ -4594,44 +4765,12 @@ async fn create_download_url(
 
 async fn resolve_download_token(
     State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(token): Path<String>,
     Query(query): Query<ResolveDownloadTokenQuery>,
 ) -> Result<Response, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
-    let tenant_id = match query.tenant_id {
-        Some(tenant_id) => tenant_id.trim().to_string(),
-        None => {
-            sdkwork_drive_observability::observe_route!(
-                event = events::APP_DOWNLOAD_TOKENS_RESOLVE,
-                result = "err",
-                latency_ms = elapsed_ms(started),
-                error_kind = error_kinds::VALIDATION,
-                method = "GET"
-            );
-            return Err(problem(
-                StatusCode::BAD_REQUEST,
-                "validation failed",
-                "tenantId is required",
-                "drive.validation.tenant_id_required",
-            ));
-        }
-    };
-    if tenant_id.is_empty() {
-        sdkwork_drive_observability::observe_route!(
-            event = events::APP_DOWNLOAD_TOKENS_RESOLVE,
-            result = "err",
-            latency_ms = elapsed_ms(started),
-            error_kind = error_kinds::VALIDATION,
-            method = "GET"
-        );
-        return Err(problem(
-            StatusCode::BAD_REQUEST,
-            "validation failed",
-            "tenantId is required",
-            "drive.validation.tenant_id_required",
-        ));
-    }
-
+    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
     let service = build_download_service(&state);
     let result_value = service
         .resolve_download_token(ResolveDownloadTokenCommand { tenant_id, token })
@@ -4841,9 +4980,8 @@ async fn find_live_child_by_name(
     parent_node_id: Option<&str>,
     node_name: &str,
 ) -> Result<Option<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let row = sqlx::query(
-        "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id,
-                node_type, node_name, scene, source, lifecycle_status, version
+    let row = sqlx::query(&format!(
+        "SELECT {NODE_API_SELECT_COLUMNS}
          FROM dr_drive_node
          WHERE tenant_id=$1
            AND space_id=$2
@@ -4852,7 +4990,7 @@ async fn find_live_child_by_name(
            AND ((parent_node_id IS NULL AND $4 IS NULL) OR parent_node_id=$4)
          ORDER BY id ASC
          LIMIT 1",
-    )
+    ))
     .bind(tenant_id)
     .bind(space_id)
     .bind(node_name)
@@ -4942,15 +5080,22 @@ async fn create_extracted_archive_file(
     sqlx::query(
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, shortcut_target_node_id,
-            node_type, node_name, content_state, lifecycle_status, version,
-            created_by, updated_by
-         ) VALUES ($1, $2, $3, $4, NULL, 'file', $5, 'ready', 'active', 1, $6, $6)",
+            node_type, node_name, content_state, file_extension,
+            head_content_type, head_content_type_group, head_content_length,
+            head_version_no, head_checksum_sha256_hex,
+            lifecycle_status, version, created_by, updated_by
+         ) VALUES ($1, $2, $3, $4, NULL, 'file', $5, 'ready', $6, $7, $8, $9, 1, $10, 'active', 1, $11, $11)",
     )
     .bind(&node_id)
     .bind(tenant_id)
     .bind(space_id)
     .bind(parent_node_id)
     .bind(&node_name)
+    .bind(file_extension_from_name(&node_name))
+    .bind(&file.content_type)
+    .bind(content_type_group_for(&file.content_type).to_string())
+    .bind(file.content.len() as i64)
+    .bind(&file.checksum_sha256_hex)
     .bind(operator_id)
     .execute(&state.pool)
     .await
@@ -5473,6 +5618,35 @@ async fn resolve_default_provider_target(
         "SELECT provider.id AS provider_id, provider.bucket, binding.storage_root_prefix
          FROM dr_drive_storage_provider_binding binding
          INNER JOIN dr_drive_storage_provider provider ON provider.id = binding.provider_id
+         INNER JOIN dr_drive_space space ON space.tenant_id = binding.tenant_id
+           AND space.id = $2
+           AND space.lifecycle_status = 'active'
+         WHERE binding.tenant_id=$1
+           AND binding.binding_scope='space_type'
+           AND binding.purpose = space.space_type
+           AND binding.lifecycle_status='active'
+           AND provider.status='active'
+         LIMIT 1",
+    )
+    .bind(tenant_id)
+    .bind(space_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(internal_sql_error(
+        "resolve space_type dr_drive_storage_provider_binding failed",
+    ))?;
+    if let Some(row) = row {
+        return Ok(DefaultStorageProviderTarget {
+            provider_id: row.get("provider_id"),
+            bucket: row.get("bucket"),
+            storage_root_prefix: row.get("storage_root_prefix"),
+        });
+    }
+
+    let row = sqlx::query(
+        "SELECT provider.id AS provider_id, provider.bucket, binding.storage_root_prefix
+         FROM dr_drive_storage_provider_binding binding
+         INNER JOIN dr_drive_storage_provider provider ON provider.id = binding.provider_id
          WHERE binding.tenant_id=$1
            AND binding.space_id IS NULL
            AND binding.purpose='primary'
@@ -5503,6 +5677,7 @@ async fn resolve_default_provider_target(
 
 fn validate_create_file_idempotent_replay(
     payload: &CreateFileRequest,
+    tenant_id: &str,
     node: &DriveNodeResponse,
     upload_session: &UploadSessionRecord,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
@@ -5513,13 +5688,13 @@ fn validate_create_file_idempotent_replay(
     let payload_bucket = normalize_optional_id(payload.bucket.as_deref());
 
     let matches_node = node.id == payload_node_id
-        && node.tenant_id == payload.tenant_id
+        && node.tenant_id == tenant_id
         && node.space_id == payload.space_id
         && node.node_type == "file"
         && node.node_name == payload_node_name
         && node_parent_node_id == payload_parent_node_id;
     let matches_upload_session = upload_session.id == payload.upload_session_id.trim()
-        && upload_session.tenant_id == payload.tenant_id
+        && upload_session.tenant_id == tenant_id
         && upload_session.space_id == payload.space_id
         && upload_session.node_id == payload_node_id
         && upload_session.idempotency_key == payload.idempotency_key.trim()
@@ -5683,11 +5858,11 @@ async fn find_uploader_upload_item(
     tenant_id: &str,
     upload_item_id: &str,
 ) -> Result<Option<DriveUploadItem>, (StatusCode, Json<ProblemDetail>)> {
-    let row = sqlx::query(
-        "SELECT *
+    let row = sqlx::query(&format!(
+        "SELECT {DRIVE_UPLOAD_ITEM_SELECT_COLUMNS}
          FROM dr_drive_upload_item
          WHERE tenant_id=$1 AND id=$2",
-    )
+    ))
     .bind(tenant_id)
     .bind(upload_item_id)
     .fetch_optional(pool)
@@ -5702,11 +5877,11 @@ async fn find_uploader_upload_item_by_session(
     tenant_id: &str,
     upload_session_id: &str,
 ) -> Result<Option<DriveUploadItem>, (StatusCode, Json<ProblemDetail>)> {
-    let row = sqlx::query(
-        "SELECT *
+    let row = sqlx::query(&format!(
+        "SELECT {DRIVE_UPLOAD_ITEM_SELECT_COLUMNS}
          FROM dr_drive_upload_item
          WHERE tenant_id=$1 AND upload_session_id=$2",
-    )
+    ))
     .bind(tenant_id)
     .bind(upload_session_id)
     .fetch_optional(pool)
@@ -6508,15 +6683,14 @@ async fn claim_upload_session_completion(
 
 async fn set_node_lifecycle(
     state: AppState,
+    ctx: &DriveRequestContext,
     node_id: String,
     payload: NodeCommandRequest,
     lifecycle_status: &str,
     event_type: &str,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_body_value(payload.tenant_id, "tenantId")?;
-    let operator_id = payload
-        .operator_id
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id.clone())?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     let nodes_to_update = collect_node_subtree(&state.pool, &tenant_id, &node).await?;
     if lifecycle_status == "active" {
@@ -6583,16 +6757,12 @@ async fn insert_watch_channel(
 
     match result {
         Ok(_) => Ok(()),
-        Err(sqlx::Error::Database(error))
-            if error.message().contains("UNIQUE constraint failed") =>
-        {
-            Err(problem(
-                StatusCode::CONFLICT,
-                "conflict",
-                "watch channel id already exists",
-                "drive.conflict",
-            ))
-        }
+        Err(error) if is_unique_constraint_error(&error) => Err(problem(
+            StatusCode::CONFLICT,
+            "conflict",
+            "watch channel id already exists",
+            "drive.conflict",
+        )),
         Err(error) => Err(internal_problem(format!(
             "insert dr_drive_watch_channel failed: {error}"
         ))),
@@ -6642,6 +6812,37 @@ async fn record_change(
     .execute(pool)
     .await
     .map_err(internal_sql_error("insert dr_drive_change_log failed"))?;
+
+    let outbox_id = next_drive_runtime_id("domain outbox").map_err(map_service_error)?;
+    let payload_json = json!({
+        "tenantId": tenant_id,
+        "spaceId": space_id,
+        "nodeId": node_id,
+        "eventType": event_type,
+        "sequenceNo": next_sequence,
+        "actorId": actor_id,
+        "resourceType": "changes",
+    })
+    .to_string();
+    sqlx::query(
+        "INSERT INTO dr_drive_domain_outbox (
+            id, tenant_id, space_id, node_id, event_type, actor_id,
+            sequence_no, payload_json, delivery_status
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')",
+    )
+    .bind(outbox_id)
+    .bind(tenant_id)
+    .bind(space_id)
+    .bind(node_id)
+    .bind(event_type)
+    .bind(actor_id)
+    .bind(next_sequence)
+    .bind(payload_json)
+    .execute(pool)
+    .await
+    .map_err(internal_sql_error("insert dr_drive_domain_outbox failed"))?;
+    sdkwork_drive_observability::metrics::record_outbox_pending();
+    spawn_pending_outbox_dispatch(pool.clone());
     Ok(())
 }
 

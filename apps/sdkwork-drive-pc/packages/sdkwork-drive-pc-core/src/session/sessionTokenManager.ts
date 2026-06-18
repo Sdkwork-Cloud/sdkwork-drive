@@ -29,6 +29,14 @@ export interface DriveSessionTokenManager {
 export function createDriveSessionTokenManager(
   session: SessionStore,
 ): DriveSessionTokenManager {
+  const getAccessTokenExpiryEpochSeconds = (): number | undefined => {
+    const accessToken = session.getSnapshot().accessToken;
+    if (!accessToken) {
+      return undefined;
+    }
+    return decodeJwtExpiryEpochSeconds(accessToken);
+  };
+
   return {
     clearAccessToken() {
       deleteDriveSessionFields(session, ['accessToken']);
@@ -67,7 +75,11 @@ export function createDriveSessionTokenManager(
       return Boolean(snapshot.authToken || snapshot.accessToken);
     },
     isExpired() {
-      return false;
+      const expiryEpochSeconds = getAccessTokenExpiryEpochSeconds();
+      if (expiryEpochSeconds === undefined) {
+        return false;
+      }
+      return Date.now() >= expiryEpochSeconds * 1000;
     },
     isValid() {
       const snapshot = session.getSnapshot();
@@ -91,9 +103,51 @@ export function createDriveSessionTokenManager(
       });
     },
     willExpireIn(_seconds) {
-      return false;
+      const expiryEpochSeconds = getAccessTokenExpiryEpochSeconds();
+      if (expiryEpochSeconds === undefined) {
+        return false;
+      }
+      return Date.now() + _seconds * 1000 >= expiryEpochSeconds * 1000;
     },
   };
+}
+
+function decodeJwtExpiryEpochSeconds(token: string): number | undefined {
+  const segments = token.split('.');
+  if (segments.length < 2) {
+    return undefined;
+  }
+  const payload = decodeBase64Url(segments[1]);
+  if (!payload) {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(payload) as Record<string, unknown>;
+    const exp = parsed.exp;
+    if (typeof exp === 'number' && Number.isFinite(exp)) {
+      return exp;
+    }
+    if (typeof exp === 'string' && exp.trim() !== '' && Number.isFinite(Number(exp))) {
+      return Number(exp);
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+function decodeBase64Url(value: string): string | undefined {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const remainder = normalized.length % 4;
+  const padded = normalized + (remainder === 0 ? '' : '='.repeat(4 - remainder));
+  if (typeof atob === 'function') {
+    try {
+      return atob(padded);
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
 }
 
 function mergeDriveSession(

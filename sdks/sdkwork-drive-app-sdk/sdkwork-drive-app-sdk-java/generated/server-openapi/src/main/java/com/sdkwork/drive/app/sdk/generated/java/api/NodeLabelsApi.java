@@ -8,15 +8,14 @@ import java.util.Map;
 
 public class NodeLabelsApi {
     private final HttpClient client;
-    
+
     public NodeLabelsApi(HttpClient client) {
         this.client = client;
     }
 
     /** List labels applied to a node */
-    public NodeLabelListResponse list(String nodeId, String tenantId, String labelKey, Integer pageSize, String pageToken) throws Exception {
+    public NodeLabelListResponse list(String nodeId, String labelKey, Integer pageSize, String pageToken) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
             new QueryParameterSpec("labelKey", labelKey, "form", true, false, null),
             new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
             new QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
@@ -32,12 +31,8 @@ public class NodeLabelsApi {
     }
 
     /** Remove a label from a node */
-    public RemoveNodeLabelResponse remove(String nodeId, String labelId, String tenantId, String operatorId) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
-            new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
-        ));
-        Object raw = client.delete(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""), query));
+    public RemoveNodeLabelResponse remove(String nodeId, String labelId) throws Exception {
+        Object raw = client.delete(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<RemoveNodeLabelResponse>() {});
     }
 

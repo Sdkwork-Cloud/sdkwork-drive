@@ -6,9 +6,30 @@ settings:
 
 catalogs:
   default:
+    '@types/react':
+      specifier: ^19.2.14
+      version: 19.2.14
+    '@types/react-dom':
+      specifier: ^19.2.3
+      version: 19.2.3
     lucide-react:
       specifier: ^0.546.0
       version: 0.546.0
+    qrcode:
+      specifier: ^1.5.4
+      version: 1.5.4
+    react:
+      specifier: ^19.2.4
+      version: 19.2.4
+    react-dom:
+      specifier: ^19.2.4
+      version: 19.2.4
+    typescript:
+      specifier: ~6.0.2
+      version: 6.0.3
+    vite-plugin-dts:
+      specifier: ^4.5.4
+      version: 4.5.4
 
 importers:
 
@@ -50,6 +71,9 @@ importers:
       react-router-dom:
         specifier: ^7.17.0
         version: 7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      sdkwork-drive-pc-admin-core:
+        specifier: workspace:*
+        version: link:packages/sdkwork-drive-pc-admin-core
       sdkwork-drive-pc-admin-storage-providers:
         specifier: workspace:*
         version: link:packages/sdkwork-drive-pc-admin-storage-providers
@@ -98,7 +122,7 @@ importers:
         version: 6.4.3(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)
       vitest:
         specifier: ^3.2.6
-        version: 3.2.6(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)
+        version: 3.2.6(@types/node@22.19.19)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)
 
   ../../../sdkwork-appbase/packages/common/foundation/sdkwork-runtime-bootstrap:
     devDependencies:
@@ -491,6 +515,15 @@ importers:
         specifier: ^5.8.2
         version: 5.8.3
 
+  packages/sdkwork-drive-pc-admin-core:
+    dependencies:
+      '@sdkwork/drive-admin-storage-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-drive-admin-storage-sdk/sdkwork-drive-admin-storage-sdk-typescript
+      sdkwork-drive-pc-core:
+        specifier: workspace:*
+        version: link:../sdkwork-drive-pc-core
+
   packages/sdkwork-drive-pc-admin-storage-providers:
     dependencies:
       lucide-react:
@@ -502,6 +535,12 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.7(react@19.2.7)
+      sdkwork-drive-pc-admin-core:
+        specifier: workspace:*
+        version: link:../sdkwork-drive-pc-admin-core
+      sdkwork-drive-pc-commons:
+        specifier: workspace:*
+        version: link:../sdkwork-drive-pc-commons
       sdkwork-drive-pc-core:
         specifier: workspace:*
         version: link:../sdkwork-drive-pc-core
@@ -520,9 +559,6 @@ importers:
 
   packages/sdkwork-drive-pc-core:
     dependencies:
-      '@sdkwork/drive-admin-storage-sdk':
-        specifier: workspace:*
-        version: link:../../../../sdks/sdkwork-drive-admin-storage-sdk/sdkwork-drive-admin-storage-sdk-typescript
       '@sdkwork/drive-app-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript
@@ -7929,7 +7965,7 @@ snapshots:
       - typescript
       - universal-cookie
 
-  vitest@3.2.6(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0):
+  vitest@3.2.6(@types/node@22.19.19)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.6
@@ -7956,6 +7992,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.19.19
+      jsdom: 29.1.1
     transitivePeerDependencies:
       - jiti
       - less

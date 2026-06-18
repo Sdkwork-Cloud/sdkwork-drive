@@ -143,6 +143,10 @@ fn build_router_with_state(state: BackendState, require_iam: bool) -> Router {
 
     Router::new()
         .route("/healthz", get(health))
+        .route("/metrics", get(metrics))
         .merge(drive_routes)
+        .layer(middleware::from_fn(
+            sdkwork_drive_http::metrics::record_request_metrics,
+        ))
         .with_state(state)
 }

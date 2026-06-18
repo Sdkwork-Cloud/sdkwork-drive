@@ -71,6 +71,34 @@ export function signOutDriveAccount(
   session: SessionStore,
 ): void {
   session.clearSession();
+  clearPersistedDriveRuntimeState();
+}
+
+function clearPersistedDriveRuntimeState(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const keys = [
+    'sdkwork-drive-pc-session',
+    'sdkwork.drive.pc.transfer.jobs.v1',
+    'sdkwork.drive.pc.uploader.state.v1',
+  ];
+  const storages: Array<Storage | undefined> = [
+    window.localStorage,
+    window.sessionStorage,
+  ];
+  for (const storage of storages) {
+    if (!storage) {
+      continue;
+    }
+    for (const key of keys) {
+      try {
+        storage.removeItem(key);
+      } catch {
+        // Ignore storage cleanup errors to keep logout resilient.
+      }
+    }
+  }
 }
 
 function buildInitials(displayName: string, fallbackId: string): string {

@@ -7,6 +7,7 @@ use crate::domain::node_version::{
     CreateDriveNodeVersionCommand, DriveNodeVersion, DriveNodeVersionChangeSource,
     DriveNodeVersionKind,
 };
+use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::ports::node_version_store::DriveNodeVersionStore;
 use crate::DriveServiceError;
 
@@ -64,7 +65,7 @@ impl DriveNodeVersionStore for SqlDriveNodeVersionStore {
 
         if let Err(error) = result {
             let message = error.to_string();
-            if message.contains("UNIQUE constraint failed") || message.contains("duplicate key") {
+            if is_unique_constraint_violation(&message) {
                 return Err(DriveServiceError::Conflict(
                     "node version already exists for tenant/node/version".to_string(),
                 ));

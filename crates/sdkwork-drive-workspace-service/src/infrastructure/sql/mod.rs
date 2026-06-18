@@ -1,13 +1,18 @@
 pub mod audit_store;
+pub mod entities;
 mod installer;
 pub mod maintenance_store;
+pub mod node_head_metadata;
 pub mod node_store;
 pub mod node_version_store;
+pub mod permission_store;
 pub mod quota_store;
 mod runtime_id;
 pub mod space_store;
+pub mod sql_error;
 pub mod storage_object_store;
 pub mod storage_provider_store;
+pub mod upload_query_columns;
 pub mod upload_session_store;
 pub mod uploader_store;
 pub mod workspace_store;
@@ -16,4 +21,19 @@ pub use installer::{
     connect_any_database, connect_any_database_and_install_schema, install_any_schema,
     install_postgres_schema, install_sqlite_schema,
 };
+pub use node_head_metadata::{
+    apply_file_node_head_snapshot, apply_file_node_head_snapshot_in_transaction,
+    file_extension_from_name, sync_file_node_head_from_active_storage, FileNodeHeadSnapshot,
+    NODE_API_SELECT_COLUMNS, NODE_API_SELECT_JOIN_COLUMNS,
+};
 pub use runtime_id::next_drive_runtime_id;
+pub use upload_query_columns::{
+    DRIVE_UPLOAD_ITEM_SELECT_COLUMNS, DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS,
+    DRIVE_UPLOAD_PART_SELECT_COLUMNS,
+};
+
+// Re-export entities
+pub use entities::{
+    DriveAuditEventEntity, DriveNodeEntity, DriveNodeVersionEntity, DriveSpaceEntity,
+    DriveStorageProviderEntity, DriveUploadSessionEntity,
+};

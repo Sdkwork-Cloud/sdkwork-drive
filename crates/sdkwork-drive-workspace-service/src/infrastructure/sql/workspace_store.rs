@@ -165,26 +165,38 @@ impl DriveWorkspaceStore for SqlDriveWorkspaceStore {
         node_id: &str,
         operator_id: &str,
     ) -> Result<(), DriveServiceError> {
-        sqlx::query(
-            "UPDATE dr_drive_node
-             SET content_state='ready',
-                 updated_by=$3,
-                 updated_at=CURRENT_TIMESTAMP,
-                 version=version + 1
-             WHERE tenant_id=$1
-               AND id=$2
-               AND lifecycle_status='active'
-               AND content_state != 'ready'",
+        let row = sqlx::query(
+            "SELECT content_state, head_content_type
+             FROM dr_drive_node
+             WHERE tenant_id=$1 AND id=$2 AND lifecycle_status='active'",
         )
         .bind(tenant_id)
         .bind(node_id)
-        .bind(operator_id)
-        .execute(&self.pool)
+        .fetch_optional(&self.pool)
         .await
         .map_err(|error| {
-            DriveServiceError::Internal(format!("mark workspace node ready failed: {error}"))
+            DriveServiceError::Internal(format!(
+                "read workspace node content state failed: {error}"
+            ))
         })?;
-        Ok(())
+        let Some(row) = row else {
+            return Err(DriveServiceError::NotFound(
+                "workspace node not found".to_string(),
+            ));
+        };
+        let content_state: String = row.get("content_state");
+        let head_content_type: Option<String> = row.try_get("head_content_type").ok().flatten();
+        if content_state == "ready" && head_content_type.is_some() {
+            return Ok(());
+        }
+
+        super::node_head_metadata::sync_file_node_head_from_active_storage(
+            &self.pool,
+            tenant_id,
+            node_id,
+            operator_id,
+        )
+        .await
     }
 
     async fn list_children(

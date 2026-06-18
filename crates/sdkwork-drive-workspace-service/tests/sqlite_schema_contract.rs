@@ -78,6 +78,7 @@ async fn sqlite_installer_uses_dr_drive_prefix_for_all_drive_tables() {
         "dr_drive_watch_channel",
         "dr_drive_change_cursor",
         "dr_drive_change_log",
+        "dr_drive_domain_outbox",
         "dr_drive_upload_session",
         "dr_drive_storage_provider",
         "dr_drive_storage_provider_binding",
@@ -158,6 +159,7 @@ async fn sqlite_installer_creates_special_space_profile_tables() {
         "dr_drive_watch_channel",
         "dr_drive_change_cursor",
         "dr_drive_change_log",
+        "dr_drive_domain_outbox",
         "dr_drive_storage_provider",
         "dr_drive_storage_provider_binding",
         "dr_drive_audit_event",
@@ -209,6 +211,7 @@ async fn sqlite_installer_creates_special_space_profile_tables() {
         "ux_dr_drive_change_cursor_scope",
         "ux_dr_drive_change_log_space_sequence",
         "ix_dr_drive_change_log_tenant_space_created",
+        "ix_dr_drive_domain_outbox_pending",
         "ix_dr_drive_audit_event_tenant_created",
         "ix_dr_drive_audit_event_resource",
         "ix_dr_drive_audit_event_action_created",
@@ -218,6 +221,7 @@ async fn sqlite_installer_creates_special_space_profile_tables() {
         "ix_dr_drive_storage_provider_binding_provider",
         "ux_dr_drive_storage_provider_binding_tenant_primary_active",
         "ux_dr_drive_storage_provider_binding_space_primary_active",
+        "ux_dr_drive_storage_provider_binding_space_type_active",
         "ux_dr_drive_node_version_node_version",
         "ix_dr_drive_node_version_node_latest",
         "ix_dr_drive_node_version_storage_object",
@@ -2011,7 +2015,7 @@ async fn sqlite_schema_rejects_invalid_fixed_dictionary_values() {
         )
         .await
         .is_err(),
-        "dr_drive_storage_provider_binding.binding_scope must be tenant or space"
+        "dr_drive_storage_provider_binding.binding_scope must be tenant, space, or space_type"
     );
 
     assert!(
@@ -2452,4 +2456,84 @@ async fn insert_download_package_with_key(
     .bind(archive_object_key)
     .execute(pool)
     .await
+}
+
+#[tokio::test]
+async fn sqlite_installer_upgrades_legacy_dr_drive_node_head_columns() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+
+    sqlx::query(
+        "CREATE TABLE dr_drive_space (
+            id TEXT PRIMARY KEY,
+            tenant_id TEXT NOT NULL,
+            owner_subject_type TEXT NOT NULL,
+            owner_subject_id TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            space_type TEXT NOT NULL,
+            lifecycle_status TEXT NOT NULL DEFAULT 'active',
+            version INTEGER NOT NULL DEFAULT 1,
+            created_by TEXT NOT NULL,
+            updated_by TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("legacy dr_drive_space table should be created");
+
+    sqlx::query(
+        "CREATE TABLE dr_drive_node (
+            id TEXT PRIMARY KEY,
+            tenant_id TEXT NOT NULL,
+            space_id TEXT NOT NULL,
+            space_type TEXT NOT NULL DEFAULT 'personal',
+            parent_node_id TEXT,
+            shortcut_target_node_id TEXT,
+            node_type TEXT NOT NULL,
+            node_name TEXT NOT NULL,
+            scene TEXT,
+            source TEXT,
+            lifecycle_status TEXT NOT NULL DEFAULT 'active',
+            version INTEGER NOT NULL DEFAULT 1,
+            created_by TEXT NOT NULL,
+            updated_by TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("legacy dr_drive_node table should be created");
+
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema upgrade should succeed");
+
+    for column_name in [
+        "content_state",
+        "file_extension",
+        "head_content_type",
+        "head_content_type_group",
+        "head_content_length",
+        "head_version_no",
+        "head_checksum_sha256_hex",
+    ] {
+        let count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(1) FROM pragma_table_info('dr_drive_node') WHERE name = ?1",
+        )
+        .bind(column_name)
+        .fetch_one(&pool)
+        .await
+        .expect("sqlite dr_drive_node column lookup should succeed");
+        assert_eq!(
+            count, 1,
+            "legacy dr_drive_node should be upgraded with column: {column_name}"
+        );
+    }
 }

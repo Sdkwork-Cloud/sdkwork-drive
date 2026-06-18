@@ -10,7 +10,7 @@ public class ChangeListResponse {
     public List<Change> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<Change> items) {
         this.items = items;
     }
@@ -18,7 +18,7 @@ public class ChangeListResponse {
     public Integer getNextCursor() {
         return this.nextCursor;
     }
-    
+
     public void setNextCursor(Integer nextCursor) {
         this.nextCursor = nextCursor;
     }
@@ -26,7 +26,7 @@ public class ChangeListResponse {
     public String getNextPageToken() {
         return this.nextPageToken;
     }
-    
+
     public void setNextPageToken(String nextPageToken) {
         this.nextPageToken = nextPageToken;
     }

@@ -81,22 +81,20 @@ describe('drive IAM runtime bridge', () => {
     });
   });
 
-  it('binds the same global TokenManager to downstream Drive SDK clients', () => {
+  it('binds the same global TokenManager to app SDK clients registered with IAM runtime', () => {
     const session = createSessionStore();
     const tokenManager = createDriveSessionTokenManager(session);
     const appSdkClient = { setTokenManager: vi.fn() };
-    const adminStorageSdkClient = { setTokenManager: vi.fn() };
 
     const runtime = createDriveIamRuntime({
       config,
-      sdkClients: [appSdkClient, adminStorageSdkClient],
+      sdkClients: [appSdkClient],
       session,
       tokenManager,
     });
 
     expect(runtime.tokenManager).toBe(tokenManager);
     expect(appSdkClient.setTokenManager).toHaveBeenCalledWith(tokenManager);
-    expect(adminStorageSdkClient.setTokenManager).toHaveBeenCalledWith(tokenManager);
   });
 
   it('creates appbase IAM SDK clients with the configured appbase app-api base URL', async () => {
@@ -245,6 +243,7 @@ describe('drive IAM runtime bridge', () => {
             },
             refresh: vi.fn(),
             organizationSelection: { create: vi.fn() },
+            tenantSelection: { create: vi.fn() },
           },
         },
         iam: createIamDirectoryClient(),
@@ -306,6 +305,17 @@ describe('drive IAM runtime bridge', () => {
     });
   });
 
+  it('maps organizationSelection to tenantSelection for IAM SDK port compatibility', () => {
+    const source = readFileSync(
+      path.join(process.cwd(), 'src/bootstrap/driveIamRuntime.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain('ensureIamTenantSelectionCompat');
+    expect(source).toContain('organizationSelection.create.bind');
+    expect(source).toContain('sessions.tenantSelection');
+  });
+
   it('hydrates Drive AppContext from current session when login only returns tokens', async () => {
     const session = createSessionStore();
     const sessionsCurrentRetrieve = vi.fn(async () => ({
@@ -344,6 +354,7 @@ describe('drive IAM runtime bridge', () => {
             },
             refresh: vi.fn(),
             organizationSelection: { create: vi.fn() },
+            tenantSelection: { create: vi.fn() },
           },
         },
         iam: createIamDirectoryClient(),

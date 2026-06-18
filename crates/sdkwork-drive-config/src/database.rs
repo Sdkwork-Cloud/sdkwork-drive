@@ -81,7 +81,7 @@ impl fmt::Display for DatabaseConfigError {
 impl Error for DatabaseConfigError {}
 
 impl DatabaseConfig {
-    pub const DEFAULT_POSTGRES_MAX_CONNECTIONS: u32 = 10;
+    pub const DEFAULT_POSTGRES_MAX_CONNECTIONS: u32 = 32;
     pub const DEFAULT_SQLITE_MAX_CONNECTIONS: u32 = 1;
     pub const DEFAULT_MAX_CONNECTIONS: u32 = Self::DEFAULT_POSTGRES_MAX_CONNECTIONS;
 
@@ -117,6 +117,20 @@ impl DatabaseConfig {
 
     pub fn from_env() -> Result<Self, DatabaseConfigError> {
         Self::from_env_pairs(std::env::vars())
+    }
+
+    pub fn from_env_and_cli_args(args: &[String]) -> Result<Self, DatabaseConfigError> {
+        if let Some(database_url) = parse_database_url_from_cli_args(args) {
+            let engine = parse_database_engine_from_url(&database_url)?;
+            let max_connections = parse_max_connections(
+                std::env::var("SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS")
+                    .ok()
+                    .as_ref(),
+                default_max_connections_for_engine(engine),
+            )?;
+            return Self::from_url_with_max_connections(&database_url, max_connections);
+        }
+        Self::from_env()
     }
 
     pub fn from_env_pairs<I, K, V>(pairs: I) -> Result<Self, DatabaseConfigError>
@@ -264,6 +278,25 @@ impl DatabaseConfig {
             runtime_config_max_connections(content, default_max_connections_for_engine(engine))?;
         Self::from_url_with_max_connections(&database_url, max_connections)
     }
+}
+
+fn parse_database_url_from_cli_args(args: &[String]) -> Option<String> {
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        if arg == "--database-url" {
+            return iter
+                .next()
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty());
+        }
+        if let Some(value) = arg.strip_prefix("--database-url=") {
+            let trimmed = value.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        }
+    }
+    None
 }
 
 fn parse_database_engine_from_url(url: &str) -> Result<DatabaseEngine, DatabaseConfigError> {

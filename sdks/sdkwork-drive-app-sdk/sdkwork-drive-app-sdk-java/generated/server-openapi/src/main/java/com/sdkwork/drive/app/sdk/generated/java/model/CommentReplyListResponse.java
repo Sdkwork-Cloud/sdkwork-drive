@@ -9,7 +9,7 @@ public class CommentReplyListResponse {
     public List<DriveCommentReply> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<DriveCommentReply> items) {
         this.items = items;
     }
@@ -17,7 +17,7 @@ public class CommentReplyListResponse {
     public String getNextPageToken() {
         return this.nextPageToken;
     }
-    
+
     public void setNextPageToken(String nextPageToken) {
         this.nextPageToken = nextPageToken;
     }

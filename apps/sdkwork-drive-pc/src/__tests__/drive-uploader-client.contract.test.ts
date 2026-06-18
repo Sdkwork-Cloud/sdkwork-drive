@@ -91,6 +91,156 @@ function createReplacementTransport(): {
 }
 
 describe('Drive uploader composed client contract', () => {
+  it('reuses uploaded parts from prior attempts when the upload session is stable', async () => {
+    const calls: string[] = [];
+    const transport: DriveUploaderTransport = {
+      drive: {
+        uploader: {
+          uploads: {
+            prepare: vi.fn(async (body) => {
+              calls.push('uploader.uploads.prepare');
+              return {
+                uploadItem: {
+                  id: body.nowEpochMs === '1700000000000' ? 'upload-item-a' : 'upload-item-b',
+                  taskId: body.taskId,
+                  tenantId: body.tenantId,
+                  userId: body.userId,
+                  actorType: 'user',
+                  actorId: body.operatorId,
+                  appId: body.appId,
+                  appResourceType: body.appResourceType,
+                  appResourceId: body.appResourceId,
+                  scene: body.scene,
+                  source: body.source,
+                  uploadProfileCode: body.uploadProfileCode,
+                  contentTypeGroup: 'document',
+                  fileFingerprint: body.fileFingerprint,
+                  spaceId: body.spaceId,
+                  nodeId: 'file-001',
+                  uploadSessionId: 'upload-stable',
+                  storageUploadId: 'storage-upload-stable',
+                  originalFileName: body.originalFileName,
+                  contentType: body.contentType,
+                  contentLength: body.contentLength,
+                  chunkSizeBytes: body.chunkSizeBytes,
+                  totalParts: '2',
+                  uploadedPartsCount: '0',
+                  uploadedBytes: '0',
+                  status: 'prepared',
+                  retentionMode: 'long_term',
+                  cleanupStatus: 'active',
+                  postProcessStatus: 'not_required',
+                },
+                uploadSession: {
+                  id: 'upload-stable',
+                  tenantId: body.tenantId,
+                  spaceId: body.spaceId,
+                  nodeId: 'file-001',
+                  bucket: 'bucket-001',
+                  objectKey: 'objects/upload-stable',
+                  state: 'created' as const,
+                  storageProviderId: 'provider-001',
+                  storageUploadId: 'storage-upload-stable',
+                  expiresAtEpochMs: '1800000000000',
+                  version: '1',
+                },
+              };
+            }),
+            parts: {
+              markUploaded: vi.fn(async (_uploadItemId, partNo) => {
+                calls.push(`markUploaded:${partNo}`);
+                return { id: `part-${partNo}`, status: 'uploaded' } as any;
+              }),
+            },
+          },
+        },
+        uploadSessions: {
+          create: vi.fn() as any,
+          parts: {
+            presign: vi.fn(async (_uploadSessionId, partNo) => {
+              calls.push(`presign:${partNo}`);
+              return {
+                uploadUrl: `https://storage.example.test/upload/${partNo}`,
+                method: 'PUT' as const,
+                headers: {},
+                partNo,
+                uploadId: 'storage-upload-stable',
+                expiresAtEpochMs: '1800000000000',
+              };
+            }),
+          },
+          complete: vi.fn(async () => {
+            calls.push('complete');
+            return { id: 'upload-stable', state: 'completed' } as any;
+          }),
+          abort: vi.fn(async () => {
+            calls.push('abort');
+            return { id: 'upload-stable', state: 'aborted' } as any;
+          }),
+        },
+      },
+    };
+
+    const uploadedPartsByAttempt: Array<number[]> = [];
+    const uploadFetch = vi.fn<typeof fetch>(async (_url, init) => {
+      const body = init?.body as Blob;
+      uploadedPartsByAttempt.at(-1)?.push(body.size);
+      return new Response('', { status: 200, headers: { ETag: `"etag-${body.size}"` } });
+    });
+
+    const stateStore = {
+      snapshot: undefined as any,
+      async get() {
+        return this.snapshot;
+      },
+      async put(snapshot: any) {
+        this.snapshot = snapshot;
+      },
+      async clear() {
+        this.snapshot = undefined;
+      },
+    };
+    const client = createDriveUploaderClient({ transport, uploadFetch, stateStore: stateStore as any, defaultChunkSizeBytes: 5 });
+
+    // Attempt 1: fail after part 1 uploaded.
+    uploadedPartsByAttempt.push([]);
+    let attempt1Call = 0;
+    uploadFetch.mockImplementation(async (_url, init) => {
+      const body = init?.body as Blob;
+      uploadedPartsByAttempt.at(-1)?.push(body.size);
+      attempt1Call += 1;
+      return attempt1Call === 1
+        ? new Response('', { status: 200, headers: { ETag: '"etag-1"' } })
+        : new Response('', { status: 503 });
+    });
+    await expect(client.upload({
+      file: new File([new Uint8Array(10)], 'split.txt', { type: 'text/plain' }),
+      appResourceType: 'desktop-file-browser',
+      appResourceId: 'my-storage',
+      spaceId: 'my-storage',
+      nowEpochMs: '1700000000000',
+    })).rejects.toThrow(/503/);
+
+    // Attempt 2: should skip part 1 and only upload part 2.
+    uploadedPartsByAttempt.push([]);
+    uploadFetch.mockImplementation(async (_url, init) => {
+      const body = init?.body as Blob;
+      uploadedPartsByAttempt.at(-1)?.push(body.size);
+      return new Response('', { status: 200, headers: { ETag: `"etag-${body.size}"` } });
+    });
+    await client.upload({
+      file: new File([new Uint8Array(10)], 'split.txt', { type: 'text/plain' }),
+      appResourceType: 'desktop-file-browser',
+      appResourceId: 'my-storage',
+      spaceId: 'my-storage',
+      nowEpochMs: '1700000000001',
+    });
+
+    expect(uploadedPartsByAttempt[0]).toEqual([5, 5]);
+    expect(uploadedPartsByAttempt[1]).toEqual([5]);
+    expect(calls).toContain('complete');
+  });
+
   it('replaces existing node content inside the composed SDK boundary', async () => {
     const { transport, calls } = createReplacementTransport();
     const uploadFetch = vi.fn<typeof fetch>(async () =>
@@ -127,10 +277,8 @@ describe('Drive uploader composed client contract', () => {
       'uploadSessions.complete',
     ]);
     expect(transport.drive.uploadSessions.create).toHaveBeenCalledWith(expect.objectContaining({
-      tenantId: 'tenant-001',
       spaceId: 'my-storage',
       nodeId: 'file-001',
-      operatorId: 'actor-001',
     }), expect.any(Object));
     expect(uploadFetch).toHaveBeenCalledWith(
       'https://storage.example.test/replacement/1',
@@ -145,12 +293,10 @@ describe('Drive uploader composed client contract', () => {
     expect(transport.drive.uploadSessions.complete).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
-        tenantId: 'tenant-001',
         uploadId: 'storage-upload-replacement',
         contentType: 'text/markdown',
         contentLength: '10',
         checksumSha256Hex: 'sha256:ff5ae8bf981b37541f866f85b80010440b7349a1bc57cd83c79c0b2be12cc04b',
-        operatorId: 'actor-001',
         parts: [
           {
             partNo: 1,
@@ -199,12 +345,95 @@ describe('Drive uploader composed client contract', () => {
     ]);
     expect(transport.drive.uploadSessions.abort).toHaveBeenCalledWith(
       expect.any(String),
-      {
-        tenantId: 'tenant-001',
-        operatorId: 'actor-001',
-      },
+      {},
       expect.any(Object),
     );
+  });
+
+  it('aborts prepared upload sessions inside the composed SDK when provider upload fails', async () => {
+    const { transport, calls } = createReplacementTransport();
+    transport.drive.uploader.uploads.prepare = vi.fn(async (body) => {
+      calls.push('uploader.uploads.prepare');
+      return {
+        uploadItem: {
+          id: body.id || 'upload-item-failed',
+          taskId: body.taskId || 'task-failed',
+          tenantId: body.tenantId,
+          userId: body.userId,
+          actorType: 'user',
+          actorId: body.operatorId,
+          appId: body.appId,
+          appResourceType: body.appResourceType,
+          appResourceId: body.appResourceId,
+          scene: body.scene,
+          source: body.source,
+          uploadProfileCode: body.uploadProfileCode,
+          contentTypeGroup: 'document',
+          fileFingerprint: body.fileFingerprint,
+          spaceId: body.spaceId,
+          nodeId: 'file-failed',
+          uploadSessionId: 'upload-failed',
+          storageUploadId: 'storage-upload-failed',
+          originalFileName: body.originalFileName,
+          contentType: body.contentType,
+          contentLength: body.contentLength,
+          chunkSizeBytes: body.chunkSizeBytes,
+          totalParts: '1',
+          uploadedPartsCount: '0',
+          uploadedBytes: '0',
+          status: 'prepared',
+          retentionMode: 'long_term',
+          cleanupStatus: 'active',
+          postProcessStatus: 'not_required',
+        },
+        uploadSession: {
+          id: 'upload-failed',
+          tenantId: body.tenantId,
+          spaceId: body.spaceId,
+          nodeId: 'file-failed',
+          bucket: 'bucket-001',
+          objectKey: 'objects/upload-failed',
+          state: 'created' as const,
+          storageProviderId: 'provider-001',
+          storageUploadId: 'storage-upload-failed',
+          expiresAtEpochMs: '1800000000000',
+          version: '1',
+        },
+      };
+    });
+    transport.drive.uploadSessions.parts.presign = vi.fn(async (_uploadSessionId, partNo) => {
+      calls.push('uploadSessions.parts.presign');
+      return {
+        uploadUrl: `https://storage.example.test/upload-failed/${partNo}`,
+        method: 'PUT' as const,
+        headers: {},
+        partNo,
+        uploadId: 'storage-upload-failed',
+        expiresAtEpochMs: '1800000000000',
+      };
+    });
+    const client = createDriveUploaderClient({
+      transport,
+      uploadFetch: vi.fn<typeof fetch>(async () => new Response('', { status: 503 })),
+    });
+
+    await expect(client.upload({
+      file: new File(['hello'], 'Roadmap.pdf', { type: 'application/pdf' }),
+      appResourceType: 'desktop-file-browser',
+      appResourceId: 'my-storage',
+      scene: 'drive_pc_file_upload',
+      source: 'pc_local_file',
+      originalFileName: 'Roadmap.pdf',
+      contentType: 'application/pdf',
+      spaceId: 'my-storage',
+      nowEpochMs: '1800000000000',
+    })).rejects.toThrow('Drive uploader signed upload failed with HTTP 503.');
+
+    expect(calls).toEqual([
+      'uploader.uploads.prepare',
+      'uploadSessions.parts.presign',
+    ]);
+    expect(transport.drive.uploadSessions.abort).not.toHaveBeenCalled();
   });
 
   it('plans multipart replacement uploads inside the composed SDK boundary', async () => {

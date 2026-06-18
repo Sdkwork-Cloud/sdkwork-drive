@@ -12,6 +12,9 @@ pub struct CreateSpaceCommand {
     pub owner_subject_id: String,
     pub display_name: String,
     pub space_type: DriveSpaceType,
+    pub presentation_icon: Option<String>,
+    pub presentation_color: Option<String>,
+    pub description: Option<String>,
     pub operator_id: String,
 }
 
@@ -74,6 +77,9 @@ pub struct UpdateSpaceCommand {
     pub tenant_id: String,
     pub space_id: String,
     pub display_name: Option<String>,
+    pub presentation_icon: Option<String>,
+    pub presentation_color: Option<String>,
+    pub description: Option<String>,
     pub operator_id: String,
 }
 
@@ -125,6 +131,9 @@ where
             display_name,
             space_type: command.space_type.as_str().to_string(),
             lifecycle_status: "active".to_string(),
+            presentation_icon: normalize_optional_text(command.presentation_icon),
+            presentation_color: normalize_optional_text(command.presentation_color),
+            description: normalize_optional_text(command.description),
             created_by: operator_id.clone(),
             updated_by: operator_id,
         };
@@ -171,14 +180,27 @@ where
         let tenant_id = require_non_empty(command.tenant_id, "tenant_id")?;
         let space_id = require_non_empty(command.space_id, "space_id")?;
         let operator_id = require_non_empty(command.operator_id, "operator_id")?;
+        if command.display_name.is_none()
+            && command.presentation_icon.is_none()
+            && command.presentation_color.is_none()
+            && command.description.is_none()
+        {
+            return self.store.get_space(&tenant_id, &space_id).await;
+        }
         let display_name = match command.display_name {
-            Some(value) => require_non_empty(value, "display_name")?,
-            None => {
-                return self.store.get_space(&tenant_id, &space_id).await;
-            }
+            Some(value) => Some(require_non_empty(value, "display_name")?),
+            None => None,
         };
         self.store
-            .update_space(&tenant_id, &space_id, &display_name, &operator_id)
+            .update_space(
+                &tenant_id,
+                &space_id,
+                display_name.as_deref(),
+                normalize_optional_text_ref(command.presentation_icon.as_deref()),
+                normalize_optional_text_ref(command.presentation_color.as_deref()),
+                normalize_optional_text_ref(command.description.as_deref()),
+                &operator_id,
+            )
             .await
     }
 
@@ -227,4 +249,14 @@ fn require_owner_subject_type(value: String) -> Result<String, DriveServiceError
             "owner_subject_type must be app, user, group, or organization".to_string(),
         )),
     }
+}
+
+fn normalize_optional_text(value: Option<String>) -> Option<String> {
+    value
+        .map(|raw| raw.trim().to_string())
+        .filter(|trimmed| !trimmed.is_empty())
+}
+
+fn normalize_optional_text_ref(value: Option<&str>) -> Option<&str> {
+    value.map(str::trim).filter(|trimmed| !trimmed.is_empty())
 }

@@ -5,6 +5,7 @@ type FileVersion struct {
 	Id string `json:"id"`
 	TenantId string `json:"tenantId"`
 	NodeId string `json:"nodeId"`
+	StorageObjectId string `json:"storageObjectId"`
 	VersionNo int `json:"versionNo"`
 	ContentType string `json:"contentType"`
 	ContentLength int `json:"contentLength"`

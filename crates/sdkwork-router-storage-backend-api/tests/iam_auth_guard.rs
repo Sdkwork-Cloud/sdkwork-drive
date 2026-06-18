@@ -6,8 +6,32 @@ use serde_json::Value;
 use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 
+fn auth_token(tenant: &str, user: &str) -> String {
+    format!(
+        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;auth_level=password"
+    )
+}
+
+fn admin_auth_token(tenant: &str, user: &str) -> String {
+    format!(
+        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;auth_level=password;permission_scope=drive.storage.admin"
+    )
+}
+
+fn admin_access_token(tenant: &str, user: &str) -> String {
+    format!(
+        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;environment=prod;deployment_mode=saas;permission_scope=drive.storage.admin"
+    )
+}
+
+fn access_token(tenant: &str, user: &str) -> String {
+    format!(
+        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;environment=prod;deployment_mode=saas"
+    )
+}
+
 #[tokio::test]
-async fn admin_storage_production_routes_require_signed_context_projection() {
+async fn admin_storage_production_routes_require_valid_dual_tokens() {
     let app = build_router();
 
     let health = app
@@ -47,7 +71,10 @@ async fn admin_storage_production_routes_require_signed_context_projection() {
             Request::builder()
                 .method(Method::GET)
                 .uri("/admin/v3/api/drive/storage/bindings?tenantId=tenant-a")
-                .header("authorization", "Bearer auth-token")
+                .header(
+                    "authorization",
+                    format!("Bearer {}", auth_token("tenant-a", "admin-001")),
+                )
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -60,30 +87,28 @@ async fn admin_storage_production_routes_require_signed_context_projection() {
     )
     .await;
 
-    let missing_signature = app
+    let invalid_credentials = app
         .oneshot(
             Request::builder()
                 .method(Method::GET)
                 .uri("/admin/v3/api/drive/storage/bindings?tenantId=tenant-a")
-                .header("authorization", "Bearer auth-token")
-                .header("access-token", "access-token")
-                .header("x-sdkwork-tenant-id", "tenant-a")
-                .header("x-sdkwork-user-id", "admin-001")
+                .header("authorization", "Bearer opaque-auth-token")
+                .header("access-token", "opaque-access-token")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
         .await
         .expect("protected request should be handled");
     assert_problem(
-        missing_signature,
+        invalid_credentials,
         StatusCode::UNAUTHORIZED,
-        "sdkwork.auth.missing_context_signature",
+        "sdkwork.auth.invalid_credentials",
     )
     .await;
 }
 
 #[tokio::test]
-async fn admin_storage_development_routes_validate_unsigned_app_context_projection() {
+async fn admin_storage_routes_validate_token_derived_app_context() {
     let app = admin_storage_router_allowing_unsigned_context();
 
     let tenant_conflict = app
@@ -92,10 +117,11 @@ async fn admin_storage_development_routes_validate_unsigned_app_context_projecti
             Request::builder()
                 .method(Method::GET)
                 .uri("/admin/v3/api/drive/storage/bindings?tenantId=tenant-b")
-                .header("authorization", "Bearer auth-token")
-                .header("access-token", "access-token")
-                .header("x-sdkwork-tenant-id", "tenant-a")
-                .header("x-sdkwork-user-id", "admin-001")
+                .header(
+                    "authorization",
+                    format!("Bearer {}", admin_auth_token("tenant-a", "admin-001")),
+                )
+                .header("access-token", admin_access_token("tenant-a", "admin-001"))
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -114,11 +140,11 @@ async fn admin_storage_development_routes_validate_unsigned_app_context_projecti
             Request::builder()
                 .method(Method::POST)
                 .uri("/admin/v3/api/drive/storage/providers/provider-s3/test")
-                .header("authorization", "Bearer auth-token")
-                .header("access-token", "access-token")
-                .header("x-sdkwork-tenant-id", "tenant-a")
-                .header("x-sdkwork-user-id", "admin-001")
-                .header("x-sdkwork-actor-id", "admin-001")
+                .header(
+                    "authorization",
+                    format!("Bearer {}", admin_auth_token("tenant-a", "admin-001")),
+                )
+                .header("access-token", admin_access_token("tenant-a", "admin-001"))
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"operatorId":"admin-002"}"#))
                 .expect("request should be built"),
@@ -132,15 +158,39 @@ async fn admin_storage_development_routes_validate_unsigned_app_context_projecti
     )
     .await;
 
+    let missing_permission = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/admin/v3/api/drive/storage/bindings?tenantId=tenant-a")
+                .header(
+                    "authorization",
+                    format!("Bearer {}", auth_token("tenant-a", "user-001")),
+                )
+                .header("access-token", access_token("tenant-a", "user-001"))
+                .body(Body::empty())
+                .expect("request should be built"),
+        )
+        .await
+        .expect("protected request should be handled");
+    assert_problem(
+        missing_permission,
+        StatusCode::FORBIDDEN,
+        "sdkwork.auth.missing_permission",
+    )
+    .await;
+
     let allowed = app
         .oneshot(
             Request::builder()
                 .method(Method::GET)
                 .uri("/admin/v3/api/drive/storage/bindings?tenantId=tenant-a")
-                .header("authorization", "Bearer auth-token")
-                .header("access-token", "access-token")
-                .header("x-sdkwork-tenant-id", "tenant-a")
-                .header("x-sdkwork-user-id", "admin-001")
+                .header(
+                    "authorization",
+                    format!("Bearer {}", admin_auth_token("tenant-a", "admin-001")),
+                )
+                .header("access-token", admin_access_token("tenant-a", "admin-001"))
                 .body(Body::empty())
                 .expect("request should be built"),
         )

@@ -4,15 +4,13 @@ import {
   type DriveAppSdkClient,
   type DriveAppSdkRequest,
 } from '../sdk/driveAppSdkClient';
-import type {
-  DriveAdminStorageSdkClient,
-  DriveAdminStorageSdkRequest,
-} from '../sdk/driveAdminStorageSdkClient';
 import {
   createDriveUploaderClient,
   type DriveUploaderReplaceNodeContentRequest,
 } from '@sdkwork/drive-app-sdk';
 import type { SessionSnapshot } from '../session/sessionStore';
+import type { HostAdapter } from '../host/hostAdapter';
+import { encodeLocalFilesystemId } from 'sdkwork-drive-pc-types';
 import {
   createDriveFileService,
   type DriveFileService,
@@ -33,7 +31,6 @@ const session: SessionSnapshot = {
 
 const folderNode = {
   id: 'folder-001',
-  tenantId: 'tenant-001',
   spaceId: 'my-storage',
   parentNodeId: 'root-folder',
   nodeType: 'folder',
@@ -44,18 +41,20 @@ const folderNode = {
 
 const sharedSpaceNode = {
   id: 'space-marketing',
-  tenantId: 'tenant-001',
-  ownerSubjectType: 'user',
-  ownerSubjectId: 'user-001',
+  ownerSubjectType: 'group',
+  ownerSubjectId: 'space-marketing',
   displayName: 'Marketing Assets',
   spaceType: 'team',
+  presentationIcon: 'Palette',
+  presentationColor: 'violet',
+  description: 'Marketing collateral',
   lifecycleStatus: 'active',
   version: 1,
+  createdBy: 'actor-001',
 };
 
 const personalSpaceNode = {
   id: 'my-storage',
-  tenantId: 'tenant-001',
   ownerSubjectType: 'user',
   ownerSubjectId: 'user-001',
   displayName: 'My Storage',
@@ -66,7 +65,6 @@ const personalSpaceNode = {
 
 const computerSpaceNode = {
   id: 'space-computer-001',
-  tenantId: 'tenant-001',
   ownerSubjectType: 'user',
   ownerSubjectId: 'user-001',
   displayName: 'Workstation Sync',
@@ -77,7 +75,6 @@ const computerSpaceNode = {
 
 const gitRepositorySpaceNode = {
   id: 'space-git-repository-001',
-  tenantId: 'tenant-001',
   ownerSubjectType: 'user',
   ownerSubjectId: 'user-001',
   displayName: 'Git Repositories',
@@ -88,7 +85,6 @@ const gitRepositorySpaceNode = {
 
 const knowledgeSpaceNode = {
   id: 'space-kb-engineering',
-  tenantId: 'tenant-001',
   ownerSubjectType: 'user',
   ownerSubjectId: 'user-001',
   displayName: 'Engineering Knowledge Base',
@@ -99,7 +95,6 @@ const knowledgeSpaceNode = {
 
 const fileNode = {
   id: 'file-001',
-  tenantId: 'tenant-001',
   spaceId: 'my-storage',
   parentNodeId: 'folder-001',
   nodeType: 'file',
@@ -135,25 +130,6 @@ function createFakeClient(
   return client;
 }
 
-function createFakeAdminStorageClient(
-  responses: Record<string, unknown>,
-  requests: DriveAdminStorageSdkRequest[],
-): DriveAdminStorageSdkClient {
-  return {
-    metadata: {} as DriveAdminStorageSdkClient['metadata'],
-    operations: {} as DriveAdminStorageSdkClient['operations'],
-    request: vi.fn(async (request: DriveAdminStorageSdkRequest): Promise<unknown> => {
-      requests.push(request);
-      return responses[request.operationId] ?? {};
-    }) as DriveAdminStorageSdkClient['request'],
-    setTokenManager: vi.fn(),
-  };
-}
-
-function createEmptyAdminStorageClient(): DriveAdminStorageSdkClient {
-  return createFakeAdminStorageClient({}, []);
-}
-
 function attachUploader(
   client: Omit<DriveAppSdkClient, 'uploader' | 'setTokenManager'>
     & Partial<Pick<DriveAppSdkClient, 'setTokenManager'>>,
@@ -169,29 +145,50 @@ function attachUploader(
   return sdkClient;
 }
 
+function createDesktopHost(
+  listLocalFilesystem: HostAdapter['listLocalFilesystem'],
+): HostAdapter {
+  return {
+    isNativeHost: true,
+    windowControl: async () => undefined,
+    openExternal: async () => undefined,
+    writeTextToClipboard: async () => undefined,
+    listLocalFilesystem,
+    openLocalPath: async () => undefined,
+    pickLocalUploadFiles: async () => [],
+    describeLocalUploadFile: async (path) => ({
+      path,
+      name: path.split(/[/\\]/).pop() ?? path,
+      size: 0,
+      modifiedAt: new Date(0).toISOString(),
+      mimeType: 'application/octet-stream',
+    }),
+    readLocalUploadRange: async () => new ArrayBuffer(0),
+    checksumLocalUploadFile: async () => 'sha256:0',
+  };
+}
+
 function createRemoteService(
   responses: Record<string, unknown>,
   uploadFetch?: typeof fetch,
   downloadFetch?: typeof fetch,
+  hostAdapter?: HostAdapter,
 ): {
   service: DriveFileService;
   appSdkClient: DriveAppSdkClient;
   requests: DriveAppSdkRequest[];
-  adminStorageRequests: DriveAdminStorageSdkRequest[];
 } {
   const requests: DriveAppSdkRequest[] = [];
-  const adminStorageRequests: DriveAdminStorageSdkRequest[] = [];
   const appSdkClient = createFakeClient(responses, requests);
-  const adminStorageSdkClient = createFakeAdminStorageClient(responses, adminStorageRequests);
   const service = createDriveFileService({
     appSdkClient,
-    adminStorageSdkClient,
     getSession: () => session,
+    hostAdapter,
     uploadFetch,
     downloadFetch,
   });
 
-  return { service, appSdkClient, requests, adminStorageRequests };
+  return { service, appSdkClient, requests };
 }
 
 describe('drive file service', () => {
@@ -199,7 +196,6 @@ describe('drive file service', () => {
     const appSdkClient = createFakeClient({}, []);
     const service = createDriveFileService({
       appSdkClient,
-      adminStorageSdkClient: createEmptyAdminStorageClient(),
       getSession: () => session,
     });
 
@@ -220,13 +216,8 @@ describe('drive file service', () => {
       'nodes.list': {
         items: [folderNode],
       },
-      'nodeProperties.list': {
-        items: [
-          {
-            propertyKey: 'ui.folderColor',
-            propertyValue: 'blue',
-          },
-        ],
+      'favorites.list': {
+        items: [],
       },
     });
 
@@ -235,7 +226,6 @@ describe('drive file service', () => {
     expect(requests[0]).toMatchObject({
       operationId: 'spaces.list',
       query: expect.objectContaining({
-        tenantId: 'tenant-001',
         ownerSubjectType: 'user',
         ownerSubjectId: 'user-001',
       }),
@@ -244,7 +234,6 @@ describe('drive file service', () => {
       operationId: 'nodes.list',
       pathParams: { spaceId: 'my-storage' },
       query: {
-        tenantId: 'tenant-001',
         parentNodeId: 'root-folder',
         pageSize: 200,
       },
@@ -258,7 +247,7 @@ describe('drive file service', () => {
         updatedAt: expect.any(String),
         ownerId: 'Ada',
         parentId: 'root-folder',
-        color: 'blue',
+        isStarred: undefined,
       },
     ]);
   });
@@ -270,14 +259,6 @@ describe('drive file service', () => {
       },
       'favorites.list': {
         items: [],
-      },
-      'nodeProperties.list': {
-        items: [
-          {
-            propertyKey: 'ui.folderColor',
-            propertyValue: 'blue',
-          },
-        ],
       },
     });
     const listAbortController = new AbortController();
@@ -297,10 +278,6 @@ describe('drive file service', () => {
       }),
       expect.objectContaining({
         operationId: 'favorites.list',
-        signal: listAbortController.signal,
-      }),
-      expect.objectContaining({
-        operationId: 'nodeProperties.list',
         signal: listAbortController.signal,
       }),
     ]);
@@ -343,7 +320,6 @@ describe('drive file service', () => {
     });
     const service = createDriveFileService({
       appSdkClient,
-      adminStorageSdkClient: createEmptyAdminStorageClient(),
       getSession: () => session,
     });
 
@@ -359,7 +335,6 @@ describe('drive file service', () => {
       expect.objectContaining({
         operationId: 'spaces.list',
         query: expect.objectContaining({
-          tenantId: 'tenant-001',
           ownerSubjectType: 'user',
           ownerSubjectId: 'user-001',
         }),
@@ -413,7 +388,6 @@ describe('drive file service', () => {
     });
     const service = createDriveFileService({
       appSdkClient,
-      adminStorageSdkClient: createEmptyAdminStorageClient(),
       getSession: () => session,
     });
 
@@ -431,19 +405,17 @@ describe('drive file service', () => {
     ]);
     expect(requests.find((request) => request.operationId === 'spaces.create')).toMatchObject({
       body: expect.objectContaining({
-        tenantId: 'tenant-001',
         ownerSubjectType: 'user',
         ownerSubjectId: 'user-001',
         displayName: 'My Storage',
         spaceType: 'personal',
-        operatorId: 'actor-001',
       }),
     });
-    expect(requests.find((request) => request.operationId === 'nodes.folders.create')).toMatchObject({
-      body: expect.objectContaining({
-        spaceId: 'space-created-personal',
-      }),
-    });
+    const createFolderRequest = requests.find((request) => request.operationId === 'nodes.folders.create');
+    expect(createFolderRequest?.body).toEqual(expect.objectContaining({
+      spaceId: 'space-created-personal',
+    }));
+    expect(createFolderRequest?.body).not.toHaveProperty('id');
   });
 
   it('loads remote folder breadcrumb ancestors through the node path SDK surface', async () => {
@@ -452,7 +424,6 @@ describe('drive file service', () => {
         items: [
           {
             id: 'folder-root',
-            tenantId: 'tenant-001',
             spaceId: 'my-storage',
             nodeType: 'folder',
             nodeName: 'Root',
@@ -461,7 +432,6 @@ describe('drive file service', () => {
           },
           {
             id: 'folder-child',
-            tenantId: 'tenant-001',
             spaceId: 'my-storage',
             parentNodeId: 'folder-root',
             nodeType: 'folder',
@@ -487,7 +457,6 @@ describe('drive file service', () => {
       signal: pathAbortController.signal,
       pathParams: { nodeId: 'folder-child' },
       query: {
-        tenantId: 'tenant-001',
       },
     });
     expect(path).toEqual([
@@ -542,44 +511,34 @@ describe('drive file service', () => {
     expect(requests.find((request) => request.operationId === 'nodes.folders.create')).toMatchObject({
       signal: writeAbortController.signal,
       body: {
-        tenantId: 'tenant-001',
         spaceId: 'my-storage',
         parentNodeId: 'root-folder',
         nodeName: 'Reports',
-        operatorId: 'actor-001',
       },
     });
     expect(requests.find((request) => request.operationId === 'nodes.update')).toMatchObject({
       signal: writeAbortController.signal,
       pathParams: { nodeId: 'file-001' },
       body: {
-        tenantId: 'tenant-001',
         nodeName: 'Renamed.pdf',
-        operatorId: 'actor-001',
       },
     });
     expect(requests.find((request) => request.operationId === 'trash.move')).toMatchObject({
       signal: writeAbortController.signal,
       pathParams: { nodeId: 'file-001' },
       body: {
-        tenantId: 'tenant-001',
-        operatorId: 'actor-001',
       },
     });
     expect(requests.find((request) => request.operationId === 'trash.restore')).toMatchObject({
       signal: writeAbortController.signal,
       pathParams: { nodeId: 'file-001' },
       body: {
-        tenantId: 'tenant-001',
-        operatorId: 'actor-001',
       },
     });
     expect(requests.find((request) => request.operationId === 'nodes.delete')).toMatchObject({
       signal: writeAbortController.signal,
       pathParams: { nodeId: 'file-001' },
       query: {
-        tenantId: 'tenant-001',
-        operatorId: 'actor-001',
       },
     });
     expect(requests.find((request) => request.operationId === 'nodeProperties.set')).toMatchObject({
@@ -589,10 +548,69 @@ describe('drive file service', () => {
         propertyKey: 'ui.folderColor',
       },
       body: {
-        tenantId: 'tenant-001',
         value: 'emerald',
         visibility: 'private',
-        operatorId: 'actor-001',
+      },
+    });
+  });
+
+  it('moves, copies, and empties trash through the Drive node SDK surface', async () => {
+    const { service, requests } = createRemoteService({
+      'nodes.move': {
+        ...fileNode,
+        parentNodeId: 'folder-001',
+      },
+      'nodes.copy': {
+        ...fileNode,
+        id: 'file-copy-001',
+        nodeName: 'Contract Copy.pdf',
+        parentNodeId: 'folder-001',
+      },
+      'trash.empty': {
+        deletedCount: 3,
+      },
+    });
+
+    const writeAbortController = new AbortController();
+    const writeOptions = { signal: writeAbortController.signal };
+    const moved = await service.moveFile('file-001', 'folder-001', writeOptions);
+    const copied = await service.copyFile('file-001', {
+      ...writeOptions,
+      id: 'file-copy-001',
+      targetParentNodeId: 'folder-001',
+      nodeName: 'Contract Copy.pdf',
+    });
+    const deletedCount = await service.emptyTrash(writeOptions);
+
+    expect(moved).toMatchObject({
+      id: 'file-001',
+      parentId: 'folder-001',
+    });
+    expect(copied).toMatchObject({
+      id: 'file-copy-001',
+      name: 'Contract Copy.pdf',
+      parentId: 'folder-001',
+    });
+    expect(deletedCount).toBe(3);
+    expect(requests.find((request) => request.operationId === 'nodes.move')).toMatchObject({
+      signal: writeAbortController.signal,
+      pathParams: { nodeId: 'file-001' },
+      body: {
+        targetParentNodeId: 'folder-001',
+      },
+    });
+    expect(requests.find((request) => request.operationId === 'nodes.copy')).toMatchObject({
+      signal: writeAbortController.signal,
+      pathParams: { nodeId: 'file-001' },
+      body: {
+        id: 'file-copy-001',
+        targetParentNodeId: 'folder-001',
+        nodeName: 'Contract Copy.pdf',
+      },
+    });
+    expect(requests.find((request) => request.operationId === 'trash.empty')).toMatchObject({
+      signal: writeAbortController.signal,
+      body: {
       },
     });
   });
@@ -614,6 +632,108 @@ describe('drive file service', () => {
       /does not support folder creation/,
     );
     expect(requests).toEqual([]);
+  });
+
+  it('lists folder children when drilling down from the recent view', async () => {
+    const { service, requests } = createRemoteService({
+      'recent.list': {
+        items: [folderNode],
+      },
+      'nodes.list': {
+        items: [
+          {
+            ...fileNode,
+            id: 'file-recent-child',
+            nodeName: 'Quarterly Plan.pdf',
+            parentNodeId: 'folder-001',
+            spaceId: 'my-storage',
+          },
+        ],
+      },
+      'favorites.list': {
+        items: [],
+      },
+    });
+
+    const recentItems = await service.listFiles('recent');
+    requests.splice(0, requests.length);
+
+    const folderChildren = await service.listFiles('recent', undefined, 'folder-001');
+
+    expect(recentItems).toEqual([
+      expect.objectContaining({
+        id: 'folder-001',
+        name: 'Reports',
+        type: 'folder',
+      }),
+    ]);
+    expect(folderChildren).toEqual([
+      expect.objectContaining({
+        id: 'file-recent-child',
+        name: 'Quarterly Plan.pdf',
+        parentId: 'folder-001',
+      }),
+    ]);
+    expect(requests).toEqual([
+      expect.objectContaining({
+        operationId: 'nodes.list',
+        pathParams: { spaceId: 'my-storage' },
+        query: expect.objectContaining({
+          parentNodeId: 'folder-001',
+        }),
+      }),
+      expect.objectContaining({
+        operationId: 'favorites.list',
+        query: expect.objectContaining({
+          spaceId: 'my-storage',
+        }),
+      }),
+    ]);
+    expect(requests.some((request) => request.operationId === 'recent.list')).toBe(false);
+  });
+
+  it('resolves folder space through nodes.get when drilling down from an aggregate view', async () => {
+    const { service, requests } = createRemoteService({
+      'nodes.get': {
+        ...folderNode,
+        id: 'folder-remote',
+        spaceId: 'space-personal-real',
+      },
+      'nodes.list': {
+        items: [
+          {
+            ...fileNode,
+            id: 'file-remote-child',
+            parentNodeId: 'folder-remote',
+            spaceId: 'space-personal-real',
+          },
+        ],
+      },
+      'favorites.list': {
+        items: [],
+      },
+    });
+
+    const folderChildren = await service.listFiles('recent', undefined, 'folder-remote');
+
+    expect(folderChildren).toEqual([
+      expect.objectContaining({
+        id: 'file-remote-child',
+        parentId: 'folder-remote',
+        spaceId: 'space-personal-real',
+      }),
+    ]);
+    expect(requests[0]).toMatchObject({
+      operationId: 'nodes.get',
+      pathParams: { nodeId: 'folder-remote' },
+    });
+    expect(requests[1]).toMatchObject({
+      operationId: 'nodes.list',
+      pathParams: { spaceId: 'space-personal-real' },
+      query: expect.objectContaining({
+        parentNodeId: 'folder-remote',
+      }),
+    });
   });
 
   it('tracks favorite state through the favorites SDK surface', async () => {
@@ -648,10 +768,6 @@ describe('drive file service', () => {
       signal: favoriteAbortController.signal,
       pathParams: { nodeId: 'file-001' },
       query: {
-        tenantId: 'tenant-001',
-        subjectType: 'user',
-        subjectId: 'user-001',
-        operatorId: 'actor-001',
       },
     });
     expect(requests[1]).toMatchObject({
@@ -659,10 +775,6 @@ describe('drive file service', () => {
       signal: favoriteAbortController.signal,
       pathParams: { nodeId: 'file-002' },
       body: {
-        tenantId: 'tenant-001',
-        subjectType: 'user',
-        subjectId: 'user-001',
-        operatorId: 'actor-001',
       },
     });
   });
@@ -698,9 +810,6 @@ describe('drive file service', () => {
     expect(files[1].isStarred).toBeUndefined();
     expect(requests.find((request) => request.operationId === 'favorites.list')).toMatchObject({
       query: {
-        tenantId: 'tenant-001',
-        subjectType: 'user',
-        subjectId: 'user-001',
         spaceId: 'my-storage',
         pageSize: 200,
       },
@@ -748,7 +857,6 @@ describe('drive file service', () => {
     });
     const service = createDriveFileService({
       appSdkClient,
-      adminStorageSdkClient: createEmptyAdminStorageClient(),
       getSession: () => session,
     });
 
@@ -794,7 +902,6 @@ describe('drive file service', () => {
     });
     const service = createDriveFileService({
       appSdkClient,
-      adminStorageSdkClient: createEmptyAdminStorageClient(),
       getSession: () => session,
     });
 
@@ -826,64 +933,108 @@ describe('drive file service', () => {
     ).toBe(true);
   });
 
-  it('lists the computers view from app upload spaces instead of a synthetic computers space id', async () => {
-    const { service, requests } = createRemoteService({
-      'spaces.list': {
-        items: [personalSpaceNode, computerSpaceNode, sharedSpaceNode],
-      },
-      'nodes.list': {
-        items: [
+  it('lists the computers view from the desktop host local filesystem adapter', async () => {
+    const documentsPath = 'C:\\Users\\Ada\\Documents';
+    const localFilePath = `${documentsPath}\\Desktop Sync.pdf`;
+    const hostAdapter = createDesktopHost(async (path) => {
+      if (!path) {
+        return [
           {
-            ...fileNode,
-            id: 'file-computer-001',
-            spaceId: 'space-computer-001',
-            parentNodeId: undefined,
-            nodeName: 'Desktop Sync.pdf',
+            name: 'Documents',
+            path: documentsPath,
+            isDirectory: true,
+            entryKind: 'documents',
           },
-        ],
-      },
-      'favorites.list': {
-        items: [],
-      },
+        ];
+      }
+      if (path === documentsPath) {
+        return [
+          {
+            name: 'Desktop Sync.pdf',
+            path: localFilePath,
+            isDirectory: false,
+            size: 1024,
+            modifiedAt: '1710000000000',
+            mimeType: 'application/pdf',
+            entryKind: 'file',
+          },
+        ];
+      }
+      return [];
     });
+    const { service, requests } = createRemoteService({}, undefined, undefined, hostAdapter);
 
-    const files = await service.listFiles('computers');
+    const roots = await service.listFiles('computers');
+    const files = await service.listFiles(
+      'computers',
+      undefined,
+      encodeLocalFilesystemId(documentsPath),
+    );
 
+    expect(roots).toEqual([
+      expect.objectContaining({
+        id: encodeLocalFilesystemId(documentsPath),
+        name: 'Documents',
+        type: 'folder',
+      }),
+    ]);
     expect(files).toEqual([
       expect.objectContaining({
-        id: 'file-computer-001',
+        id: encodeLocalFilesystemId(localFilePath),
         name: 'Desktop Sync.pdf',
-        spaceId: 'space-computer-001',
+        type: 'file',
+        mimeType: 'application/pdf',
+        size: 1024,
       }),
     ]);
-    expect(requests).toEqual([
+    expect(requests).toEqual([]);
+  });
+
+  it('loads local computer folder breadcrumbs with native Windows paths', async () => {
+    const documentsPath = 'C:\\Users\\Ada\\Documents';
+    const hostAdapter = createDesktopHost(async () => []);
+    const { service } = createRemoteService({}, undefined, undefined, hostAdapter);
+
+    const path = await service.getFolderPath(encodeLocalFilesystemId(documentsPath));
+
+    expect(path).toEqual([
       expect.objectContaining({
-        operationId: 'spaces.list',
-        query: expect.objectContaining({
-          tenantId: 'tenant-001',
-          ownerSubjectType: 'user',
-          ownerSubjectId: 'user-001',
-        }),
+        id: encodeLocalFilesystemId('C:\\'),
+        name: 'C:',
+        type: 'folder',
       }),
       expect.objectContaining({
-        operationId: 'nodes.list',
-        pathParams: { spaceId: 'space-computer-001' },
-        query: expect.objectContaining({
-          tenantId: 'tenant-001',
-          pageSize: 200,
-        }),
+        id: encodeLocalFilesystemId('C:\\Users'),
+        name: 'Users',
+        type: 'folder',
+        parentId: encodeLocalFilesystemId('C:\\'),
       }),
       expect.objectContaining({
-        operationId: 'favorites.list',
-        query: expect.objectContaining({
-          tenantId: 'tenant-001',
-          spaceId: 'space-computer-001',
-        }),
+        id: encodeLocalFilesystemId('C:\\Users\\Ada'),
+        name: 'Ada',
+        type: 'folder',
+        parentId: encodeLocalFilesystemId('C:\\Users'),
+      }),
+      expect.objectContaining({
+        id: encodeLocalFilesystemId(documentsPath),
+        name: 'Documents',
+        type: 'folder',
+        parentId: encodeLocalFilesystemId('C:\\Users\\Ada'),
       }),
     ]);
-    expect(
-      requests.some((request) => request.operationId === 'nodes.list' && request.pathParams?.spaceId === 'computers'),
-    ).toBe(false);
+  });
+
+  it('rejects computers uploads because the local browse view is read-only', async () => {
+    const hostAdapter = createDesktopHost(async () => []);
+    const { service, requests } = createRemoteService({}, undefined, undefined, hostAdapter);
+
+    await expect(
+      service.uploadFile(
+        new File(['desktop'], 'Desktop Upload.txt', { type: 'text/plain' }),
+        'computers',
+      ),
+    ).rejects.toThrow(/does not support uploads/);
+    expect(requests).toEqual([]);
   });
 
   it('lists the apps view from the current user git repository space', async () => {
@@ -921,7 +1072,6 @@ describe('drive file service', () => {
       expect.objectContaining({
         operationId: 'spaces.list',
         query: expect.objectContaining({
-          tenantId: 'tenant-001',
           ownerSubjectType: 'user',
           ownerSubjectId: 'user-001',
         }),
@@ -930,24 +1080,13 @@ describe('drive file service', () => {
         operationId: 'nodes.list',
         pathParams: { spaceId: 'space-git-repository-001' },
         query: expect.objectContaining({
-          tenantId: 'tenant-001',
           pageSize: 200,
         }),
       }),
       expect.objectContaining({
         operationId: 'favorites.list',
         query: expect.objectContaining({
-          tenantId: 'tenant-001',
           spaceId: 'space-git-repository-001',
-        }),
-      }),
-      expect.objectContaining({
-        operationId: 'nodeProperties.list',
-        pathParams: { nodeId: 'folder-git-repository-sdkwork-drive' },
-        query: expect.objectContaining({
-          tenantId: 'tenant-001',
-          visibility: 'private',
-          pageSize: 200,
         }),
       }),
     ]);
@@ -992,12 +1131,10 @@ describe('drive file service', () => {
     ]);
     expect(requests.find((request) => request.operationId === 'spaces.create')).toMatchObject({
       body: expect.objectContaining({
-        tenantId: 'tenant-001',
         ownerSubjectType: 'user',
         ownerSubjectId: 'user-001',
         displayName: 'Git Repositories',
         spaceType: 'git_repository',
-        operatorId: 'actor-001',
       }),
     });
     expect(requests.find((request) => request.operationId === 'nodes.folders.create')).toMatchObject({
@@ -1047,7 +1184,6 @@ describe('drive file service', () => {
     });
     const service = createDriveFileService({
       appSdkClient,
-      adminStorageSdkClient: createEmptyAdminStorageClient(),
       getSession: () => session,
     });
 
@@ -1093,7 +1229,7 @@ describe('drive file service', () => {
       },
     });
 
-    const files = await service.listFiles('kb-engineering');
+    const files = await service.listFiles('space-kb-engineering');
 
     expect(files).toEqual([
       expect.objectContaining({
@@ -1104,31 +1240,21 @@ describe('drive file service', () => {
     ]);
     expect(requests).toEqual([
       expect.objectContaining({
-        operationId: 'spaces.list',
-        query: expect.objectContaining({
-          tenantId: 'tenant-001',
-          ownerSubjectType: 'user',
-          ownerSubjectId: 'user-001',
-        }),
-      }),
-      expect.objectContaining({
         operationId: 'nodes.list',
         pathParams: { spaceId: 'space-kb-engineering' },
         query: expect.objectContaining({
-          tenantId: 'tenant-001',
           pageSize: 200,
         }),
       }),
       expect.objectContaining({
         operationId: 'favorites.list',
         query: expect.objectContaining({
-          tenantId: 'tenant-001',
           spaceId: 'space-kb-engineering',
         }),
       }),
     ]);
     expect(
-      requests.some((request) => request.operationId === 'nodes.list' && request.pathParams?.spaceId === 'kb-engineering'),
+      requests.some((request) => request.operationId === 'spaces.list'),
     ).toBe(false);
   });
 
@@ -1146,7 +1272,7 @@ describe('drive file service', () => {
       },
     });
 
-    const folder = await service.createFolder('Runbooks', 'kb-engineering');
+    const folder = await service.createFolder('Runbooks', 'space-kb-engineering');
 
     expect(folder).toMatchObject({
       id: 'folder-kb-001',
@@ -1155,20 +1281,10 @@ describe('drive file service', () => {
     });
     expect(requests).toEqual([
       expect.objectContaining({
-        operationId: 'spaces.list',
-        query: expect.objectContaining({
-          tenantId: 'tenant-001',
-          ownerSubjectType: 'user',
-          ownerSubjectId: 'user-001',
-        }),
-      }),
-      expect.objectContaining({
         operationId: 'nodes.folders.create',
         body: expect.objectContaining({
-          tenantId: 'tenant-001',
           spaceId: 'space-kb-engineering',
           nodeName: 'Runbooks',
-          operatorId: 'actor-001',
         }),
       }),
       expect.objectContaining({
@@ -1176,122 +1292,9 @@ describe('drive file service', () => {
         pathParams: { nodeId: 'folder-kb-001' },
       }),
     ]);
-  });
-
-  it('uploads files in the computers view into the resolved app upload space', async () => {
-    const uploadFetch = vi.fn<typeof fetch>(async () =>
-      new Response('', {
-        status: 200,
-        headers: {
-          ETag: '"etag-computer"',
-        },
-      }),
-    );
-    const { service, requests } = createRemoteService(
-      {
-        'spaces.list': {
-          items: [personalSpaceNode, computerSpaceNode],
-        },
-        'uploader.uploads.prepare': {
-          uploadItem: {
-            id: 'upload-item-computer',
-            taskId: 'task-computer',
-            tenantId: 'tenant-001',
-            userId: 'user-001',
-            actorType: 'user',
-            actorId: 'actor-001',
-            appId: 'drive-pc',
-            appResourceType: 'desktop-file-browser',
-            appResourceId: 'computers',
-            scene: 'drive_pc_file_upload',
-            source: 'pc_local_file',
-            uploadProfileCode: 'generic',
-            fileFingerprint: 'pc:Desktop-Upload.txt:size:7:type:text.plain',
-            spaceId: 'space-computer-001',
-            nodeId: 'file-computer-upload',
-            uploadSessionId: 'upload-computer',
-            storageUploadId: 'storage-upload-computer',
-            originalFileName: 'Desktop Upload.txt',
-            contentType: 'text/plain',
-            contentTypeGroup: 'text',
-            contentLength: '7',
-            chunkSizeBytes: '8388608',
-            totalParts: '1',
-            uploadedPartsCount: '0',
-            uploadedBytes: '0',
-            status: 'prepared',
-            retentionMode: 'long_term',
-            cleanupStatus: 'active',
-            postProcessStatus: 'not_required',
-          },
-          uploadSession: {
-            id: 'upload-computer',
-            tenantId: 'tenant-001',
-            spaceId: 'space-computer-001',
-            nodeId: 'file-computer-upload',
-            bucket: 'bucket-s3',
-            objectKey: 'objects/computer-upload',
-            state: 'created',
-            storageProviderId: 'provider-s3',
-            storageUploadId: 'storage-upload-computer',
-            expiresAtEpochMs: 1_800_000_000_000,
-            version: 1,
-          },
-        },
-        'uploadSessions.parts.presign': {
-          uploadUrl: 'https://storage.example.test/computer-upload',
-          method: 'PUT',
-          partNo: 1,
-          uploadId: 'storage-upload-computer',
-          expiresAtEpochMs: 1_800_000_000_000,
-        },
-        'uploadSessions.complete': {
-          id: 'upload-computer',
-          state: 'completed',
-        },
-        'uploader.uploads.parts.markUploaded': {
-          id: 'part-computer-1',
-          status: 'uploaded',
-        },
-      },
-      uploadFetch,
-    );
-
-    const uploaded = await service.uploadFile(
-      new File(['desktop'], 'Desktop Upload.txt', { type: 'text/plain' }),
-      'computers',
-    );
-
-    expect(uploaded).toMatchObject({
-      id: 'file-computer-upload',
-      name: 'Desktop Upload.txt',
-      spaceId: 'space-computer-001',
-      mimeType: 'text/plain',
-    });
-    expect(requests[0]).toMatchObject({
-      operationId: 'spaces.list',
-    });
-    expect(requests[1]).toMatchObject({
-      operationId: 'uploader.uploads.prepare',
-      body: expect.objectContaining({
-        tenantId: 'tenant-001',
-        spaceId: 'space-computer-001',
-        appId: 'drive-pc',
-        appResourceType: 'desktop-file-browser',
-        appResourceId: 'computers',
-        scene: 'drive_pc_file_upload',
-        source: 'pc_local_file',
-        originalFileName: 'Desktop Upload.txt',
-        operatorId: 'actor-001',
-      }),
-    });
-    expect(requests.map((request) => request.operationId)).toEqual([
-      'spaces.list',
-      'uploader.uploads.prepare',
-      'uploadSessions.parts.presign',
-      'uploader.uploads.parts.markUploaded',
-      'uploadSessions.complete',
-    ]);
+    expect(
+      requests.some((request) => request.operationId === 'spaces.list'),
+    ).toBe(false);
   });
 
   it('uploads a selected browser File through Drive upload session grants and completion APIs', async () => {
@@ -1309,7 +1312,6 @@ describe('drive file service', () => {
           uploadItem: {
             id: 'upload-item-001',
             taskId: 'task-001',
-            tenantId: 'tenant-001',
             userId: 'user-001',
             actorType: 'user',
             actorId: 'actor-001',
@@ -1339,7 +1341,6 @@ describe('drive file service', () => {
           },
           uploadSession: {
             id: 'upload-001',
-            tenantId: 'tenant-001',
             spaceId: 'my-storage',
             nodeId: 'file-001',
             bucket: 'bucket-s3',
@@ -1395,16 +1396,13 @@ describe('drive file service', () => {
       'uploadSessions.complete',
     ]);
     expect(requests[1].body).toMatchObject({
-      tenantId: 'tenant-001',
       spaceId: 'my-storage',
       parentNodeId: 'folder-001',
-      appId: 'drive-pc',
       appResourceType: 'desktop-file-browser',
       appResourceId: 'my-storage',
       scene: 'drive_pc_file_upload',
       source: 'pc_local_file',
       originalFileName: 'Roadmap.pdf',
-      operatorId: 'actor-001',
     });
     expect(requests[2]).toMatchObject({
       pathParams: {
@@ -1412,7 +1410,6 @@ describe('drive file service', () => {
         partNo: 1,
       },
       body: {
-        tenantId: 'tenant-001',
         uploadId: 'storage-upload-001',
         requestedTtlSeconds: 300,
       },
@@ -1424,7 +1421,6 @@ describe('drive file service', () => {
         partNo: 1,
       },
       body: expect.objectContaining({
-        tenantId: 'tenant-001',
         uploadSessionId: 'upload-001',
         offsetBytes: '0',
         sizeBytes: '5',
@@ -1442,12 +1438,10 @@ describe('drive file service', () => {
       }),
     );
     expect(requests[4].body).toMatchObject({
-      tenantId: 'tenant-001',
       uploadId: 'storage-upload-001',
       contentType: 'application/pdf',
       contentLength: '5',
       checksumSha256Hex: 'sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
-      operatorId: 'actor-001',
       parts: [
         {
           partNo: 1,
@@ -1477,7 +1471,6 @@ describe('drive file service', () => {
           uploadItem: {
             id: 'upload-item-cancellable',
             taskId: 'task-cancellable',
-            tenantId: 'tenant-001',
             userId: 'user-001',
             actorType: 'user',
             actorId: 'actor-001',
@@ -1507,7 +1500,6 @@ describe('drive file service', () => {
           },
           uploadSession: {
             id: 'upload-cancellable',
-            tenantId: 'tenant-001',
             spaceId: 'my-storage',
             nodeId: 'file-001',
             bucket: 'bucket-s3',
@@ -1525,6 +1517,13 @@ describe('drive file service', () => {
           partNo: 1,
           uploadId: 'storage-upload-cancellable',
           expiresAtEpochMs: 1_800_000_000_000,
+        },
+        'uploadSessions.abort': {
+          id: 'upload-cancellable',
+          state: 'aborted',
+        },
+        'nodes.delete': {
+          deleted: true,
         },
       },
       uploadFetch,
@@ -1544,9 +1543,94 @@ describe('drive file service', () => {
       'spaces.list',
       'uploader.uploads.prepare',
       'uploadSessions.parts.presign',
+      'uploadSessions.abort',
+      'nodes.delete',
     ]);
+    expect(requests.every((request) => request.operationId !== 'nodes.delete' || request.pathParams?.nodeId === 'file-001')).toBe(true);
     expect(requests.every((request) => request.signal === abortController.signal)).toBe(true);
+  });
+
+  it('discards prepared upload nodes when provider upload fails before completion', async () => {
+    const uploadFetch = vi.fn<typeof fetch>(async () => new Response('', { status: 503 }));
+    const { service, requests } = createRemoteService(
+      {
+        'uploader.uploads.prepare': {
+          uploadItem: {
+            id: 'upload-item-failed',
+            taskId: 'task-failed',
+            userId: 'user-001',
+            actorType: 'user',
+            actorId: 'actor-001',
+            appId: 'drive-pc',
+            appResourceType: 'desktop-file-browser',
+            appResourceId: 'my-storage',
+            scene: 'drive_pc_file_upload',
+            source: 'pc_local_file',
+            uploadProfileCode: 'generic',
+            fileFingerprint: 'pc:Roadmap.pdf:size:5:type:application.pdf',
+            spaceId: 'my-storage',
+            nodeId: 'file-failed',
+            uploadSessionId: 'upload-failed',
+            storageUploadId: 'storage-upload-failed',
+            originalFileName: 'Roadmap.pdf',
+            contentType: 'application/pdf',
+            contentTypeGroup: 'document',
+            contentLength: '5',
+            chunkSizeBytes: '8388608',
+            totalParts: '1',
+            uploadedPartsCount: '0',
+            uploadedBytes: '0',
+            status: 'prepared',
+            retentionMode: 'long_term',
+            cleanupStatus: 'active',
+            postProcessStatus: 'not_required',
+          },
+          uploadSession: {
+            id: 'upload-failed',
+            spaceId: 'my-storage',
+            nodeId: 'file-failed',
+            bucket: 'bucket-s3',
+            objectKey: 'objects/upload-failed',
+            state: 'created',
+            storageProviderId: 'provider-s3',
+            storageUploadId: 'storage-upload-failed',
+            expiresAtEpochMs: 1_800_000_000_000,
+            version: 1,
+          },
+        },
+        'uploadSessions.parts.presign': {
+          uploadUrl: 'https://storage.example.test/upload-failed',
+          method: 'PUT',
+          partNo: 1,
+          uploadId: 'storage-upload-failed',
+          expiresAtEpochMs: 1_800_000_000_000,
+        },
+        'uploadSessions.abort': {
+          id: 'upload-failed',
+          state: 'aborted',
+        },
+        'nodes.delete': {
+          deleted: true,
+        },
+      },
+      uploadFetch,
+    );
+
+    await expect(
+      service.uploadFile(
+        new File(['hello'], 'Roadmap.pdf', { type: 'application/pdf' }),
+        'my-storage',
+        'folder-001',
+      ),
+    ).rejects.toThrow(/HTTP 503/);
+
+    expect(requests.map((request) => request.operationId)).toEqual([
+      'spaces.list',
+      'uploader.uploads.prepare',
+      'uploadSessions.parts.presign',
+    ]);
     expect(requests.some((request) => request.operationId === 'uploadSessions.abort')).toBe(false);
+    expect(requests.some((request) => request.operationId === 'nodes.delete')).toBe(false);
   });
 
   it('uploads generated Drive files through the same real upload completion flow', async () => {
@@ -1564,7 +1648,6 @@ describe('drive file service', () => {
           uploadItem: {
             id: 'upload-item-generated',
             taskId: 'task-generated',
-            tenantId: 'tenant-001',
             userId: 'user-001',
             actorType: 'user',
             actorId: 'actor-001',
@@ -1594,7 +1677,6 @@ describe('drive file service', () => {
           },
           uploadSession: {
             id: 'upload-generated',
-            tenantId: 'tenant-001',
             spaceId: 'my-storage',
             nodeId: 'file-generated',
             bucket: 'bucket-s3',
@@ -1657,12 +1739,10 @@ describe('drive file service', () => {
       }),
     );
     expect(requests[4].body).toMatchObject({
-      tenantId: 'tenant-001',
       uploadId: 'storage-upload-generated',
       contentType: 'text/plain',
       contentLength: '11',
       checksumSha256Hex: 'sha256:71b6c1d53832f789a7f2435a7c629245fa3761ad8487775ebf4957330213a706',
-      operatorId: 'actor-001',
       parts: [
         {
           partNo: 1,
@@ -1738,7 +1818,6 @@ describe('drive file service', () => {
       operationId: 'nodes.downloadUrls.create',
       pathParams: { nodeId: 'file-001' },
       query: {
-        tenantId: 'tenant-001',
         requestedTtlSeconds: 300,
       },
       signal: downloadAbortController.signal,
@@ -1746,11 +1825,9 @@ describe('drive file service', () => {
     expect(requests[1]).toMatchObject({
       operationId: 'downloadPackages.create',
       body: {
-        tenantId: 'tenant-001',
         nodeIds: ['file-001', 'folder-001'],
         packageName: 'drive_export_2_items.zip',
         requestedTtlSeconds: 300,
-        operatorId: 'actor-001',
       },
       signal: packageAbortController.signal,
     });
@@ -1788,7 +1865,6 @@ describe('drive file service', () => {
   it('loads storage usage summary through the Drive quota SDK surface', async () => {
     const { service, requests } = createRemoteService({
       'quotas.summary': {
-        tenantId: 'tenant-001',
         usedBytes: 4_294_967_296,
         objectCount: 42,
       },
@@ -1807,504 +1883,8 @@ describe('drive file service', () => {
     expect(requests).toEqual([
       {
         operationId: 'quotas.summary',
-        query: {
-          tenantId: 'tenant-001',
-        },
         signal: summaryAbortController.signal,
       },
-    ]);
-  });
-
-  it('manages storage providers through generated Drive Admin Storage SDK operations', async () => {
-    const provider = {
-      id: 'provider-s3-primary',
-      providerKind: 's3_compatible',
-      name: 'Primary S3',
-      endpointUrl: 'https://s3.example.test',
-      region: 'ap-southeast-1',
-      bucket: 'drive-primary',
-      pathStyle: true,
-      credentialRef: 'secret:***',
-      serverSideEncryptionMode: 'AES256',
-      defaultStorageClass: 'STANDARD',
-      status: 'active',
-      version: 3,
-      credentialConfigured: true,
-    };
-    const { service, requests, adminStorageRequests } = createRemoteService({
-      'storageProviders.list': {
-        items: [provider],
-      },
-      'storageProviders.create': provider,
-      'storageProviders.update': {
-        ...provider,
-        name: 'Primary S3 Updated',
-        version: 4,
-      },
-      'storageProviders.credentials.rotate': {
-        ...provider,
-        credentialRef: 'vault:***',
-        version: 5,
-      },
-      'storageProviders.test': {
-        providerId: 'provider-s3-primary',
-        reachable: true,
-      },
-      'storageProviders.capabilities.get': {
-        providerId: 'provider-s3-primary',
-        providerKind: 's3_compatible',
-        supportsMultipartUpload: true,
-        supportsPresignedUploadPart: true,
-        supportsPresignedDownload: true,
-        supportsServerSideEncryption: true,
-        supportsStorageClass: true,
-        supportsCredentialRotation: true,
-        supportedServerSideEncryptionModes: ['AES256'],
-        supportedStorageClasses: ['STANDARD'],
-      },
-      'storageProviders.activate': provider,
-      'storageProviders.deactivate': {
-        ...provider,
-        status: 'disabled',
-      },
-      'storageProviders.delete': {
-        deleted: true,
-      },
-    });
-
-    const listAbortController = new AbortController();
-    const createAbortController = new AbortController();
-    const updateAbortController = new AbortController();
-    const rotateAbortController = new AbortController();
-    const listed = await service.listStorageProviders('active', {
-      signal: listAbortController.signal,
-    });
-    const created = await service.createStorageProvider({
-      id: 'provider-s3-primary',
-      providerKind: 's3_compatible',
-      name: 'Primary S3',
-      endpointUrl: 'https://s3.example.test',
-      region: 'ap-southeast-1',
-      bucket: 'drive-primary',
-      pathStyle: true,
-      credentialRef: 'secret:primary',
-      serverSideEncryptionMode: 'AES256',
-      defaultStorageClass: 'STANDARD',
-      status: 'active',
-    }, {
-      signal: createAbortController.signal,
-    });
-    const updated = await service.updateStorageProvider('provider-s3-primary', {
-      name: 'Primary S3 Updated',
-      pathStyle: false,
-    }, {
-      signal: updateAbortController.signal,
-    });
-    const rotated = await service.rotateStorageProviderCredential(
-      'provider-s3-primary',
-      'vault:drive-primary',
-      {
-        signal: rotateAbortController.signal,
-      },
-    );
-    const reachable = await service.testStorageProvider('provider-s3-primary');
-    const capabilities = await service.getStorageProviderCapabilities('provider-s3-primary');
-    const activated = await service.activateStorageProvider('provider-s3-primary');
-    const deactivated = await service.deactivateStorageProvider('provider-s3-primary');
-    const deleted = await service.deleteStorageProvider('provider-s3-primary');
-
-    expect(listed).toEqual([provider]);
-    expect(created).toEqual(provider);
-    expect(updated).toMatchObject({ name: 'Primary S3 Updated', version: 4 });
-    expect(rotated).toMatchObject({ credentialRef: 'vault:***', version: 5 });
-    expect(reachable).toBe(true);
-    expect(capabilities).toMatchObject({
-      providerId: 'provider-s3-primary',
-      supportsMultipartUpload: true,
-      supportedStorageClasses: ['STANDARD'],
-    });
-    expect(activated).toMatchObject({ status: 'active' });
-    expect(deactivated).toMatchObject({ status: 'disabled' });
-    expect(deleted).toBe(true);
-    expect(requests).toEqual([]);
-    expect(adminStorageRequests).toEqual([
-      expect.objectContaining({
-        operationId: 'storageProviders.list',
-        signal: listAbortController.signal,
-        query: {
-          status: 'active',
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.create',
-        signal: createAbortController.signal,
-        body: expect.objectContaining({
-          id: 'provider-s3-primary',
-          providerKind: 's3_compatible',
-          operatorId: 'actor-001',
-        }),
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.update',
-        signal: updateAbortController.signal,
-        pathParams: { providerId: 'provider-s3-primary' },
-        body: {
-          name: 'Primary S3 Updated',
-          pathStyle: false,
-          operatorId: 'actor-001',
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.credentials.rotate',
-        signal: rotateAbortController.signal,
-        pathParams: { providerId: 'provider-s3-primary' },
-        body: {
-          credentialRef: 'vault:drive-primary',
-          operatorId: 'actor-001',
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.test',
-        pathParams: { providerId: 'provider-s3-primary' },
-        body: {
-          operatorId: 'actor-001',
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.capabilities.get',
-        pathParams: { providerId: 'provider-s3-primary' },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.activate',
-        pathParams: { providerId: 'provider-s3-primary' },
-        body: {
-          operatorId: 'actor-001',
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.deactivate',
-        pathParams: { providerId: 'provider-s3-primary' },
-        body: {
-          operatorId: 'actor-001',
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.delete',
-        pathParams: { providerId: 'provider-s3-primary' },
-        query: {
-          operatorId: 'actor-001',
-        },
-      }),
-    ]);
-  });
-
-  it('manages provider buckets, objects, and default bindings through generated Drive Admin Storage SDK operations', async () => {
-    const provider = {
-      id: 'provider-s3-primary',
-      providerKind: 's3_compatible',
-      name: 'Primary S3',
-      endpointUrl: 'https://s3.example.test',
-      bucket: 'drive-primary',
-      pathStyle: true,
-      status: 'active',
-      version: 3,
-      credentialConfigured: true,
-    };
-    const objectRecord = {
-      providerId: 'provider-s3-primary',
-      bucket: 'drive-primary',
-      objectKey: 'tenants/tenant-001/spaces/my-storage/nodes/file-001/content',
-      contentLength: 4096,
-      contentType: 'application/pdf',
-      etag: '"etag-001"',
-      versionId: 'v1',
-      storageClass: 'STANDARD',
-      lastModifiedEpochMs: 1_800_000_000_000,
-    };
-    const binding = {
-      id: 'default:tenant:tenant-001',
-      tenantId: 'tenant-001',
-      providerId: 'provider-s3-primary',
-      bindingScope: 'tenant',
-      purpose: 'primary',
-      lifecycleStatus: 'active',
-      version: 1,
-      storageProvider: provider,
-    };
-    const { service, requests, adminStorageRequests } = createRemoteService({
-      'storageProviders.bucket.head': {
-        providerId: 'provider-s3-primary',
-        bucket: 'drive-primary',
-        exists: true,
-      },
-      'storageProviders.bucket.create': {
-        providerId: 'provider-s3-primary',
-        bucket: 'drive-primary',
-        changed: true,
-      },
-      'storageProviders.bucket.delete': {
-        providerId: 'provider-s3-primary',
-        bucket: 'drive-primary',
-        changed: false,
-      },
-      'storageProviders.buckets.list': {
-        providerId: 'provider-s3-primary',
-        configuredBucket: 'drive-primary',
-        items: [
-          {
-            bucket: 'drive-primary',
-            configured: true,
-            creationDateEpochMs: 1_700_000_000_000,
-          },
-          {
-            bucket: 'drive-archive',
-            configured: false,
-          },
-        ],
-      },
-      'storageProviders.objects.list': {
-        providerId: 'provider-s3-primary',
-        bucket: 'drive-primary',
-        prefix: 'tenants/tenant-001/',
-        items: [objectRecord],
-        nextPageToken: 'next-page',
-      },
-      'storageProviders.objects.head': objectRecord,
-      'storageProviders.objects.delete': {
-        providerId: 'provider-s3-primary',
-        bucket: 'drive-primary',
-        objectKey: objectRecord.objectKey,
-        changed: true,
-      },
-      'storageProviders.objects.copy': {
-        providerId: 'provider-s3-primary',
-        bucket: 'drive-primary',
-        objectKey: 'tenants/tenant-001/copied/file-001/content',
-        changed: true,
-      },
-      'storageProviderBindings.default.get': binding,
-      'storageProviderBindings.default.set': {
-        ...binding,
-        id: 'default:space:tenant-001:my-storage',
-        spaceId: 'my-storage',
-        bindingScope: 'space',
-        version: 2,
-      },
-      'storageProviderBindings.list': {
-        items: [
-          binding,
-          {
-            ...binding,
-            id: 'default:space:tenant-001:my-storage',
-            spaceId: 'my-storage',
-            bindingScope: 'space',
-            version: 2,
-          },
-        ],
-      },
-      'storageProviderBindings.default.delete': {
-        deleted: true,
-      },
-    });
-
-    const objectAbortController = new AbortController();
-    const bucketListAbortController = new AbortController();
-    const bindingListAbortController = new AbortController();
-    const deleteBindingAbortController = new AbortController();
-    const bucket = await service.headStorageProviderBucket('provider-s3-primary');
-    const createdBucket = await service.createStorageProviderBucket('provider-s3-primary');
-    const deletedBucket = await service.deleteStorageProviderBucket('provider-s3-primary');
-    const bucketList = await service.listStorageProviderBuckets('provider-s3-primary', {
-      signal: bucketListAbortController.signal,
-    });
-    const objects = await service.listStorageProviderObjects(
-      'provider-s3-primary',
-      {
-        prefix: 'tenants/tenant-001/',
-        delimiter: '/',
-        pageToken: 'page-1',
-        pageSize: 50,
-      },
-      {
-        signal: objectAbortController.signal,
-      },
-    );
-    const object = await service.headStorageProviderObject('provider-s3-primary', objectRecord.objectKey);
-    const deletedObject = await service.deleteStorageProviderObject('provider-s3-primary', objectRecord.objectKey);
-    const copiedObject = await service.copyStorageProviderObject('provider-s3-primary', {
-      sourceObjectKey: objectRecord.objectKey,
-      destinationObjectKey: 'tenants/tenant-001/copied/file-001/content',
-      metadataDirective: 'COPY',
-    });
-    const tenantBinding = await service.getDefaultStorageProviderBinding();
-    const spaceBinding = await service.setDefaultStorageProviderBinding({
-      providerId: 'provider-s3-primary',
-      spaceId: 'my-storage',
-    });
-    const bindings = await service.listStorageProviderBindings(
-      {
-        spaceId: 'my-storage',
-        providerId: 'provider-s3-primary',
-        lifecycleStatus: 'active',
-      },
-      {
-        signal: bindingListAbortController.signal,
-      },
-    );
-    const deletedDefaultBinding = await service.deleteDefaultStorageProviderBinding(
-      {
-        spaceId: 'my-storage',
-      },
-      {
-        signal: deleteBindingAbortController.signal,
-      },
-    );
-
-    expect(bucket).toEqual({
-      providerId: 'provider-s3-primary',
-      bucket: 'drive-primary',
-      exists: true,
-    });
-    expect(createdBucket.changed).toBe(true);
-    expect(deletedBucket.changed).toBe(false);
-    expect(bucketList).toEqual({
-      providerId: 'provider-s3-primary',
-      configuredBucket: 'drive-primary',
-      items: [
-        {
-          bucket: 'drive-primary',
-          configured: true,
-          creationDateEpochMs: 1_700_000_000_000,
-        },
-        {
-          bucket: 'drive-archive',
-          configured: false,
-        },
-      ],
-    });
-    expect(objects).toEqual({
-      providerId: 'provider-s3-primary',
-      bucket: 'drive-primary',
-      prefix: 'tenants/tenant-001/',
-      items: [objectRecord],
-      nextPageToken: 'next-page',
-    });
-    expect(object).toEqual(objectRecord);
-    expect(deletedObject).toEqual({
-      providerId: 'provider-s3-primary',
-      bucket: 'drive-primary',
-      objectKey: objectRecord.objectKey,
-      changed: true,
-    });
-    expect(copiedObject).toEqual({
-      providerId: 'provider-s3-primary',
-      bucket: 'drive-primary',
-      objectKey: 'tenants/tenant-001/copied/file-001/content',
-      changed: true,
-    });
-    expect(tenantBinding).toEqual(binding);
-    expect(spaceBinding).toMatchObject({
-      id: 'default:space:tenant-001:my-storage',
-      tenantId: 'tenant-001',
-      spaceId: 'my-storage',
-      providerId: 'provider-s3-primary',
-      bindingScope: 'space',
-    });
-    expect(bindings).toHaveLength(2);
-    expect(bindings[1]).toMatchObject({
-      id: 'default:space:tenant-001:my-storage',
-      spaceId: 'my-storage',
-      providerId: 'provider-s3-primary',
-    });
-    expect(deletedDefaultBinding).toBe(true);
-    expect(requests).toEqual([]);
-    expect(adminStorageRequests).toEqual([
-      expect.objectContaining({
-        operationId: 'storageProviders.bucket.head',
-        pathParams: { providerId: 'provider-s3-primary' },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.bucket.create',
-        pathParams: { providerId: 'provider-s3-primary' },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.bucket.delete',
-        pathParams: { providerId: 'provider-s3-primary' },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.buckets.list',
-        signal: bucketListAbortController.signal,
-        pathParams: { providerId: 'provider-s3-primary' },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.objects.list',
-        signal: objectAbortController.signal,
-        pathParams: { providerId: 'provider-s3-primary' },
-        query: {
-          prefix: 'tenants/tenant-001/',
-          delimiter: '/',
-          pageToken: 'page-1',
-          pageSize: 50,
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.objects.head',
-        pathParams: {
-          providerId: 'provider-s3-primary',
-          objectKey: objectRecord.objectKey,
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.objects.delete',
-        pathParams: {
-          providerId: 'provider-s3-primary',
-          objectKey: objectRecord.objectKey,
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviders.objects.copy',
-        pathParams: { providerId: 'provider-s3-primary' },
-        body: {
-          sourceObjectKey: objectRecord.objectKey,
-          destinationObjectKey: 'tenants/tenant-001/copied/file-001/content',
-          metadataDirective: 'COPY',
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviderBindings.default.get',
-        query: {
-          tenantId: 'tenant-001',
-          spaceId: undefined,
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviderBindings.default.set',
-        body: {
-          tenantId: 'tenant-001',
-          spaceId: 'my-storage',
-          providerId: 'provider-s3-primary',
-          operatorId: 'actor-001',
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviderBindings.list',
-        signal: bindingListAbortController.signal,
-        query: {
-          tenantId: 'tenant-001',
-          spaceId: 'my-storage',
-          providerId: 'provider-s3-primary',
-          lifecycleStatus: 'active',
-        },
-      }),
-      expect.objectContaining({
-        operationId: 'storageProviderBindings.default.delete',
-        signal: deleteBindingAbortController.signal,
-        query: {
-          tenantId: 'tenant-001',
-          spaceId: 'my-storage',
-          operatorId: 'actor-001',
-        },
-      }),
     ]);
   });
 
@@ -2351,7 +1931,7 @@ describe('drive file service', () => {
       pathParams: { nodeId: 'file-001' },
     });
     expect(downloadFetch).toHaveBeenCalledWith(
-      'https://drive.example.test/download/file-001',
+      'https://storage.example.test/file-001',
       expect.objectContaining({
         method: 'GET',
       }),
@@ -2404,11 +1984,8 @@ describe('drive file service', () => {
 
     expect(replaceNodeContent).toHaveBeenCalledTimes(1);
     expect(replaceNodeContent).toHaveBeenCalledWith(expect.objectContaining({
-      tenantId: 'tenant-001',
-      userId: 'user-001',
       spaceId: 'my-storage',
       nodeId: 'file-001',
-      appId: 'drive-pc',
       appResourceType: 'desktop-file-editor',
       appResourceId: 'file-001',
       scene: 'drive_pc_text_save',
@@ -2416,7 +1993,6 @@ describe('drive file service', () => {
       uploadProfileCode: 'text',
       originalFileName: 'Roadmap.md',
       contentType: 'text/markdown',
-      operatorId: 'actor-001',
       requestedPartTtlSeconds: 300,
       uploadFetch,
       signal: saveAbortController.signal,
@@ -2472,7 +2048,6 @@ describe('drive file service', () => {
       signal: saveAbortController.signal,
     });
     expect(replaceNodeContent).toHaveBeenCalledWith(expect.objectContaining({
-      tenantId: 'tenant-001',
       spaceId: 'space-resolved-from-node',
       nodeId: 'file-001',
       signal: saveAbortController.signal,
@@ -2533,7 +2108,6 @@ describe('drive file service', () => {
         items: [
           {
             id: 'node-extracted-readme',
-            tenantId: 'tenant-001',
             spaceId: 'my-storage',
             parentNodeId: 'folder-docs',
             nodeType: 'file',
@@ -2594,18 +2168,13 @@ describe('drive file service', () => {
         operationId: 'archiveEntries.list',
         signal: archiveListAbortController.signal,
         pathParams: { nodeId: 'file-archive' },
-        query: {
-          tenantId: 'tenant-001',
-        },
       }),
       expect.objectContaining({
         operationId: 'archiveEntries.extract',
         signal: archiveExtractAbortController.signal,
         pathParams: { nodeId: 'file-archive' },
         body: {
-          tenantId: 'tenant-001',
           entryPaths: ['docs/readme.txt'],
-          operatorId: 'actor-001',
         },
       }),
     ]);
@@ -2642,9 +2211,7 @@ describe('drive file service', () => {
           propertyKey: 'workflow.pdfSignature',
         },
         body: expect.objectContaining({
-          tenantId: 'tenant-001',
           visibility: 'private',
-          operatorId: 'actor-001',
         }),
       }),
     ]);
@@ -2658,6 +2225,46 @@ describe('drive file service', () => {
     });
   });
 
+  it('lists knowledge base spaces from tenant-wide spaces.list results', async () => {
+    const productKnowledgeSpaceNode = {
+      ...knowledgeSpaceNode,
+      id: 'space-kb-product',
+      displayName: 'Product Handbooks',
+    };
+    const { service, requests } = createRemoteService({
+      'spaces.list': {
+        items: [personalSpaceNode, knowledgeSpaceNode, productKnowledgeSpaceNode, sharedSpaceNode],
+      },
+    });
+
+    const listAbortController = new AbortController();
+    const spaces = await service.listKnowledgeBaseSpaces({
+      signal: listAbortController.signal,
+    });
+
+    expect(spaces).toEqual([
+      {
+        id: 'space-kb-engineering',
+        name: 'Engineering Knowledge Base',
+        icon: 'Book',
+        color: 'blue',
+      },
+      {
+        id: 'space-kb-product',
+        name: 'Product Handbooks',
+        icon: 'Book',
+        color: 'blue',
+      },
+    ]);
+    expect(service.getKnowledgeBaseSpaces()).toEqual(spaces);
+    expect(requests).toEqual([
+      expect.objectContaining({
+        operationId: 'spaces.list',
+        signal: listAbortController.signal,
+      }),
+    ]);
+  });
+
   it('lists, creates, and deletes shared spaces through the Drive spaces SDK surface', async () => {
     const { service, requests } = createRemoteService({
       'spaces.list': {
@@ -2667,6 +2274,9 @@ describe('drive file service', () => {
         ...sharedSpaceNode,
         id: 'space-design',
         displayName: 'Design Team',
+        presentationIcon: 'Palette',
+        presentationColor: 'blue',
+        description: 'Design files',
       },
       'spaces.delete': {
         deleted: true,
@@ -2696,53 +2306,54 @@ describe('drive file service', () => {
       {
         id: 'space-marketing',
         name: 'Marketing Assets',
-        icon: 'Folder',
-        color: 'blue',
+        icon: 'Palette',
+        color: 'violet',
+        description: 'Marketing collateral',
         isCustom: true,
       },
     ]);
     expect(created).toMatchObject({
       id: 'space-design',
       name: 'Design Team',
+      icon: 'Palette',
       color: 'blue',
-      icon: 'Folder',
+      description: 'Design files',
       isCustom: true,
     });
     expect(requests.find((request) => request.operationId === 'spaces.list')).toMatchObject({
       signal: listAbortController.signal,
       query: {
-        tenantId: 'tenant-001',
-        ownerSubjectType: 'user',
-        ownerSubjectId: 'user-001',
       },
     });
     expect(requests.find((request) => request.operationId === 'spaces.create')).toMatchObject({
       signal: createAbortController.signal,
       body: {
-        tenantId: 'tenant-001',
-        ownerSubjectType: 'user',
-        ownerSubjectId: 'user-001',
+        ownerSubjectType: 'group',
+        ownerSubjectId: expect.any(String),
         displayName: 'Design Team',
         spaceType: 'team',
-        operatorId: 'actor-001',
+        presentationIcon: 'Palette',
+        presentationColor: 'blue',
+        description: 'Design files',
       },
     });
     expect(requests.find((request) => request.operationId === 'spaces.delete')).toMatchObject({
       signal: deleteAbortController.signal,
       pathParams: { spaceId: 'space-design' },
       query: {
-        tenantId: 'tenant-001',
-        operatorId: 'actor-001',
       },
     });
   });
 
-  it('does not synthesize unpersisted shared space presentation metadata after create', async () => {
+  it('merges shared space presentation metadata from the create request into the session cache', async () => {
     const { service } = createRemoteService({
       'spaces.create': {
         ...sharedSpaceNode,
         id: 'space-product',
         displayName: 'Product Team',
+        presentationIcon: 'Palette',
+        presentationColor: 'violet',
+        description: 'Product specs',
       },
     });
 
@@ -2756,8 +2367,9 @@ describe('drive file service', () => {
     expect(created).toEqual({
       id: 'space-product',
       name: 'Product Team',
-      icon: 'Folder',
-      color: 'blue',
+      icon: 'Palette',
+      color: 'violet',
+      description: 'Product specs',
       isCustom: true,
     });
     expect(service.getSharedSpaces()).toEqual([created]);
@@ -2768,7 +2380,6 @@ describe('drive file service', () => {
 
     const service = createDriveFileService({
       appSdkClient,
-      adminStorageSdkClient: createEmptyAdminStorageClient(),
       getSession: () => session,
     });
 
