@@ -9,8 +9,6 @@ use axum::{
     routing::{any, get},
     Router,
 };
-use axum07::body::Body as Body07;
-use axum07::Router as Router07;
 use config::{
     load_gateway_config, resolve_config_path, resolve_gateway_config, ResolvedGatewayConfig,
 };
@@ -25,7 +23,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Clone)]
 struct EmbeddedServiceState {
-    service: Router07,
+    service: Router,
     service_label: String,
 }
 
@@ -167,37 +165,8 @@ async fn dispatch_embedded(
     State(state): State<Arc<EmbeddedServiceState>>,
     request: Request,
 ) -> Response {
-    let (request_parts, request_body) = request.into_parts();
-    let request_bytes = match axum::body::to_bytes(request_body, usize::MAX).await {
-        Ok(body) => body,
-        Err(error) => {
-            return proxy_error(
-                StatusCode::BAD_GATEWAY,
-                format!(
-                    "embedded `{}` request body failed: {error}",
-                    state.service_label
-                ),
-            );
-        }
-    };
-    let request07 = http::Request::from_parts(request_parts, Body07::from(request_bytes));
-    match state.service.clone().oneshot(request07).await {
-        Ok(response07) => {
-            let (response_parts, response_body07) = response07.into_parts();
-            let response_bytes = match axum07::body::to_bytes(response_body07, usize::MAX).await {
-                Ok(body) => body,
-                Err(error) => {
-                    return proxy_error(
-                        StatusCode::BAD_GATEWAY,
-                        format!(
-                            "embedded `{}` response body failed: {error}",
-                            state.service_label
-                        ),
-                    );
-                }
-            };
-            Response::from_parts(response_parts, axum::body::Body::from(response_bytes))
-        }
+    match state.service.clone().oneshot(request).await {
+        Ok(response) => response,
         Err(error) => proxy_error(
             StatusCode::BAD_GATEWAY,
             format!("embedded `{}` request failed: {error}", state.service_label),

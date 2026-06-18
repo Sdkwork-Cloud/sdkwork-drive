@@ -1,7 +1,6 @@
 use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_observability::error_kinds;
-use sdkwork_drive_security::DriveAuthError;
 use sdkwork_drive_storage_contract::{DriveObjectStoreError, DriveObjectStoreErrorKind};
 use sdkwork_drive_workspace_service::DriveServiceError;
 use serde::Serialize;
@@ -158,22 +157,6 @@ pub(crate) fn problem(
             code: code.to_string(),
             trace_id: "trace-unset".to_string(),
             request_id: "request-unset".to_string(),
-        }),
-    )
-}
-
-pub(crate) fn map_auth_error(error: DriveAuthError) -> (StatusCode, Json<ProblemDetail>) {
-    let status = StatusCode::from_u16(error.status).unwrap_or(StatusCode::UNAUTHORIZED);
-    (
-        status,
-        Json(ProblemDetail {
-            r#type: "about:blank".to_string(),
-            title: error.title.to_string(),
-            status: error.status,
-            detail: error.detail,
-            code: error.code.to_string(),
-            trace_id: error.trace_id,
-            request_id: error.request_id,
         }),
     )
 }

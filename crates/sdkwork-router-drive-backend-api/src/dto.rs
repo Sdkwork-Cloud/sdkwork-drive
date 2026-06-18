@@ -56,7 +56,6 @@ pub(crate) struct RotateStorageProviderCredentialRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct DefaultStorageProviderBindingQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
     pub(crate) space_type: Option<String>,
 }
@@ -64,7 +63,6 @@ pub(crate) struct DefaultStorageProviderBindingQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SetDefaultStorageProviderBindingRequest {
-    pub(crate) tenant_id: String,
     pub(crate) space_id: Option<String>,
     pub(crate) space_type: Option<String>,
     pub(crate) provider_id: String,
@@ -217,7 +215,6 @@ pub(crate) struct StorageProviderBindingResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateLabelRequest {
     pub(crate) id: String,
-    pub(crate) tenant_id: String,
     pub(crate) label_key: String,
     pub(crate) display_name: String,
     pub(crate) color: Option<String>,
@@ -228,7 +225,6 @@ pub(crate) struct CreateLabelRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdateLabelRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) display_name: Option<String>,
     pub(crate) color: Option<String>,
     pub(crate) description: Option<String>,
@@ -238,7 +234,6 @@ pub(crate) struct UpdateLabelRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct LabelListQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) lifecycle_status: Option<String>,
     pub(crate) page_size: Option<i64>,
     pub(crate) page_token: Option<String>,
@@ -247,7 +242,6 @@ pub(crate) struct LabelListQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct LabelMutationQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
 
@@ -280,7 +274,6 @@ pub(crate) struct DeleteLabelResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListAuditEventsQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) action: Option<String>,
     pub(crate) resource_type: Option<String>,
     pub(crate) resource_id: Option<String>,
@@ -382,7 +375,6 @@ pub(crate) struct MaintenanceJobPageResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListDownloadPackagesQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) state: Option<String>,
     pub(crate) page: Option<u32>,
     pub(crate) page_size: Option<u32>,
@@ -422,7 +414,6 @@ pub(crate) struct DownloadPackagePageResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListSpacesQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) owner_subject_type: Option<String>,
     pub(crate) owner_subject_id: Option<String>,
 }
@@ -448,9 +439,7 @@ pub(crate) struct SpaceListResponse {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct QuotaQuery {
-    pub(crate) tenant_id: Option<String>,
-}
+pub(crate) struct QuotaQuery {}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

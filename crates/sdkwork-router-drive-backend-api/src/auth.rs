@@ -1,27 +1,24 @@
 use crate::error::{map_auth_error, problem, ProblemDetail};
-use crate::state::BackendState;
 use axum::body::{to_bytes, Body};
-use axum::extract::State;
 use axum::http::{header, Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
 use axum::Json;
 use sdkwork_drive_security::{
-    validate_drive_app_context, validate_json_context_projection, DriveAppContext,
-    DriveAuthPolicyHandle,
+    validate_json_context_projection, validate_uri_context, DriveAppContext,
 };
 
 const AUTH_CONTEXT_BODY_LIMIT_BYTES: usize = 1_048_576;
 
-pub(crate) async fn app_context_guard(
-    State(state): State<BackendState>,
+pub(crate) async fn drive_context_projection_guard(
     mut request: Request<Body>,
     next: Next,
 ) -> Result<Response, (StatusCode, Json<ProblemDetail>)> {
-    let context = state
-        .auth_policy
-        .read(|policy| validate_drive_app_context(request.headers(), request.uri(), policy))
-        .map_err(map_auth_error)?;
+    let Some(context) = request.extensions().get::<DriveAppContext>().cloned() else {
+        return Ok(next.run(request).await);
+    };
+
+    validate_uri_context(request.uri(), &context).map_err(map_auth_error)?;
 
     if request
         .headers()
@@ -56,8 +53,4 @@ pub(crate) async fn app_context_guard(
 
     request.extensions_mut().insert::<DriveAppContext>(context);
     Ok(next.run(request).await)
-}
-
-pub(crate) fn drive_auth_policy_from_env() -> DriveAuthPolicyHandle {
-    DriveAuthPolicyHandle::shared_from_env()
 }

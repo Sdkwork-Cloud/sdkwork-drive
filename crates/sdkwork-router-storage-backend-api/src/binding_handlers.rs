@@ -29,7 +29,7 @@ pub(crate) async fn get_default_storage_provider_binding(
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<DefaultStorageProviderBindingQuery>,
 ) -> Result<Json<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let tenant_id = ctx.resolve_tenant_id()?;
     let target = resolve_storage_provider_binding_target(query.space_id, query.space_type)?;
     let binding = find_storage_provider_binding(&state, &tenant_id, &target)
         .await?
@@ -42,7 +42,7 @@ pub(crate) async fn list_storage_provider_bindings(
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<ListStorageProviderBindingsQuery>,
 ) -> Result<Json<StorageProviderBindingListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let tenant_id = ctx.resolve_tenant_id()?;
     let space_id = normalize_optional_text(query.space_id);
     let provider_id = normalize_optional_text(query.provider_id);
     let lifecycle_status =
@@ -90,7 +90,7 @@ pub(crate) async fn set_default_storage_provider_binding(
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<SetDefaultStorageProviderBindingRequest>,
 ) -> Result<Json<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = ctx.resolve_tenant_id(payload.tenant_id)?;
+    let tenant_id = ctx.resolve_tenant_id()?;
     let provider_id = require_non_empty_text(payload.provider_id, "providerId")?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id)?;
     let target = resolve_storage_provider_binding_target(payload.space_id, payload.space_type)?;
@@ -162,7 +162,7 @@ pub(crate) async fn delete_default_storage_provider_binding(
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<DeleteDefaultStorageProviderBindingQuery>,
 ) -> Result<Json<DeleteStorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = ctx.resolve_tenant_id(query.tenant_id)?;
+    let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let target = resolve_storage_provider_binding_target(query.space_id, query.space_type)?;
     let binding_id = default_storage_provider_binding_id(&tenant_id, &target);

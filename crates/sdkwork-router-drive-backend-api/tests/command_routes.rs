@@ -621,7 +621,6 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
                 .body(Body::from(
                     r##"{
                         "id":"label-confidential",
-                        "tenantId":"tenant-label",
                         "labelKey":"classification.confidential",
                         "displayName":"Confidential",
                         "color":"#D92D20",
@@ -658,7 +657,6 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r##"{
-                        "tenantId":"tenant-label",
                         "displayName":"Highly Confidential",
                         "color":"#B42318",
                         "operatorId":"admin-label"
@@ -691,7 +689,6 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
                 .body(Body::from(
                     r##"{
                         "id":"label-public",
-                        "tenantId":"tenant-label",
                         "labelKey":"classification.public",
                         "displayName":"Public",
                         "color":"#027A48",
@@ -704,11 +701,8 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
         .expect("create second label request should be handled");
     assert_eq!(create_second.status(), StatusCode::CREATED);
 
-    let (first_items, next_token) = fetch_backend_paged_items(
-        app.clone(),
-        "/backend/v3/api/drive/labels?tenantId=tenant-label&pageSize=1",
-    )
-    .await;
+    let (first_items, next_token) =
+        fetch_backend_paged_items(app.clone(), "/backend/v3/api/drive/labels&pageSize=1").await;
     assert_eq!(first_items.len(), 1);
     assert_eq!(
         first_items[0]["labelKey"].as_str(),
@@ -717,9 +711,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
     let next_token = next_token.expect("label list should expose next page token");
     let (second_items, final_token) = fetch_backend_paged_items(
         app.clone(),
-        &format!(
-            "/backend/v3/api/drive/labels?tenantId=tenant-label&pageSize=1&pageToken={next_token}"
-        ),
+        &format!("/backend/v3/api/drive/labels&pageSize=1&pageToken={next_token}"),
     )
     .await;
     assert_eq!(second_items.len(), 1);
@@ -734,7 +726,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/backend/v3/api/drive/labels/label-public?tenantId=tenant-label&operatorId=admin-label")
+                .uri("/backend/v3/api/drive/labels/label-public&operatorId=admin-label")
                 .body(Body::empty())
                 .expect("delete label request should be built"),
         )
@@ -749,10 +741,9 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
     .expect("delete label response should be valid json");
     assert_eq!(delete_payload["deleted"].as_bool(), Some(true));
 
-    let remaining =
-        fetch_backend_paged_items(app, "/backend/v3/api/drive/labels?tenantId=tenant-label")
-            .await
-            .0;
+    let remaining = fetch_backend_paged_items(app, "/backend/v3/api/drive/labels")
+        .await
+        .0;
     assert_eq!(remaining.len(), 1);
     assert_eq!(remaining[0]["id"].as_str(), Some("label-confidential"));
 
@@ -785,7 +776,7 @@ async fn backend_label_list_rejects_page_size_outside_contract() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/labels?tenantId=tenant-label-page-size&pageSize=0")
+                .uri("/backend/v3/api/drive/labels&pageSize=0")
                 .body(Body::empty())
                 .expect("label list request should be built"),
         )
@@ -1153,7 +1144,6 @@ async fn storage_provider_admin_routes_manage_detail_capabilities_status_credent
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
-                        "tenantId":"tenant-storage",
                         "spaceId":"space-storage",
                         "providerId":"provider-s3-admin",
                         "operatorId":"admin-005"
@@ -1181,7 +1171,9 @@ async fn storage_provider_admin_routes_manage_detail_capabilities_status_credent
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/storage_provider_bindings/default?tenantId=tenant-storage&spaceId=space-storage")
+                .uri(
+                    "/backend/v3/api/drive/storage_provider_bindings/default&spaceId=space-storage",
+                )
                 .body(Body::empty())
                 .expect("get binding request should be built"),
         )
@@ -1263,7 +1255,7 @@ async fn list_spaces_backend_route_returns_tenant_filtered_result() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/spaces?tenantId=tenant-001")
+                .uri("/backend/v3/api/drive/spaces")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -1398,7 +1390,7 @@ async fn list_quotas_route_returns_usage_aggregated_from_storage_objects() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/quotas?tenantId=tenant-001")
+                .uri("/backend/v3/api/drive/quotas")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -1479,7 +1471,7 @@ async fn list_audit_events_route_supports_filters_and_pagination() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/audit_events?tenantId=tenant-001&resourceType=storage_provider&page=1&pageSize=1")
+                .uri("/backend/v3/api/drive/audit_events&resourceType=storage_provider&page=1&pageSize=1")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -1568,7 +1560,7 @@ async fn list_audit_events_route_supports_request_and_trace_filters() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/audit_events?tenantId=tenant-001&resourceType=storage_provider&requestId=request-002&traceId=trace-002&page=1&pageSize=10")
+                .uri("/backend/v3/api/drive/audit_events&resourceType=storage_provider&requestId=request-002&traceId=trace-002&page=1&pageSize=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -2023,7 +2015,7 @@ async fn list_download_packages_route_supports_filters_and_pagination() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/download_packages?tenantId=tenant-001&state=ready&page=1&pageSize=1")
+                .uri("/backend/v3/api/drive/download_packages&state=ready&page=1&pageSize=1")
                 .body(Body::empty())
                 .expect("request should be built"),
         )

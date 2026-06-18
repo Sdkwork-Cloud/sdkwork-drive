@@ -40,8 +40,9 @@
     "check:drive-app-sdk-consumers": "node tools/check_drive_app_sdk_consumer_integration.mjs",
     "check:drive-pc-standard": "node tools/check_sdkwork_drive_pc_standard.mjs",
     "check:drive-package-standard": "node tools/check_sdkwork_drive_package_standard.mjs",
+    "check:architecture-alignment": "node tools/check_sdkwork_drive_architecture_alignment.mjs",
     "test:app-openapi-context": "node scripts/dev/sdkwork-drive-app-openapi-context.test.mjs",
     "sbom:generate": "node tools/generate_release_sbom.mjs",
-    "verify": "cargo fmt --all -- --check && cargo test --workspace && cargo clippy --workspace --tests -- -D warnings && pnpm typecheck:pc && pnpm test:pc && node tools/check_sdkwork_drive_dependency_management.mjs && node tools/check_drive_app_sdk_consumer_integration.mjs && node tools/check_sdkwork_drive_pc_standard.mjs && node tools/check_sdkwork_drive_package_standard.mjs && node tools/generate_release_sbom.mjs"
+    "verify": "cargo fmt --all -- --check && cargo test --workspace && cargo clippy --workspace --tests -- -D warnings && pnpm typecheck:pc && pnpm test:pc && node tools/check_sdkwork_drive_dependency_management.mjs && node tools/check_drive_app_sdk_consumer_integration.mjs && node tools/check_sdkwork_drive_pc_standard.mjs && node tools/check_sdkwork_drive_package_standard.mjs && node tools/check_sdkwork_drive_architecture_alignment.mjs && node scripts/dev/sdkwork-drive-app-openapi-context.test.mjs && node tools/generate_release_sbom.mjs"
   }
 }

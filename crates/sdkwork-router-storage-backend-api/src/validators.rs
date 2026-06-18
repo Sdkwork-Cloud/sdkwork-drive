@@ -147,6 +147,7 @@ pub(crate) fn require_non_empty_text(
     Ok(trimmed)
 }
 
+#[allow(dead_code)]
 pub(crate) fn require_tenant_id(tenant_id: Option<String>) -> Result<String, DriveServiceError> {
     let tenant_id = tenant_id
         .ok_or_else(|| DriveServiceError::Validation("tenant_id is required".to_string()))?

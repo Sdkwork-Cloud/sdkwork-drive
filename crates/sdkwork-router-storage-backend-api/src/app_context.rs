@@ -11,6 +11,7 @@ use sdkwork_drive_workspace_service::DriveServiceError;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub(crate) struct DriveRequestContext {
     pub(crate) tenant_id: String,
     pub(crate) actor_id: String,
@@ -20,16 +21,23 @@ pub(crate) struct DriveRequestContext {
 }
 
 impl DriveRequestContext {
-    pub(crate) fn resolve_tenant_id(
-        &self,
-        requested: Option<String>,
-    ) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
-        match normalize_optional_text(requested) {
-            Some(value) => self.ensure_tenant_match(&value).map(|_| value),
-            None if self.from_token => Ok(self.tenant_id.clone()),
-            None => Err(map_service_error(DriveServiceError::Validation(
+    pub(crate) fn from_app_context(app_context: &DriveAppContext) -> Self {
+        Self {
+            tenant_id: app_context.tenant_id.clone(),
+            actor_id: app_context.actor_id.clone(),
+            subject_type: app_context.actor_kind.clone(),
+            subject_id: app_context.user_id.clone(),
+            from_token: true,
+        }
+    }
+
+    pub(crate) fn resolve_tenant_id(&self) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
+        if self.from_token || !self.tenant_id.is_empty() {
+            Ok(self.tenant_id.clone())
+        } else {
+            Err(map_service_error(DriveServiceError::Validation(
                 "tenantId is required".to_string(),
-            ))),
+            )))
         }
     }
 
@@ -65,32 +73,29 @@ impl DriveRequestContext {
     }
 }
 
+pub(crate) fn drive_request_context_from_query(query: Option<&str>) -> DriveRequestContext {
+    let query = parse_uri_query(query);
+    DriveRequestContext {
+        tenant_id: normalize_optional_text(query.get("tenantId").cloned()).unwrap_or_default(),
+        actor_id: normalize_optional_text(query.get("operatorId").cloned())
+            .unwrap_or_else(|| "operator-unset".to_string()),
+        subject_type: normalize_optional_text(query.get("subjectType").cloned())
+            .unwrap_or_else(|| "user".to_string()),
+        subject_id: normalize_optional_text(query.get("subjectId").cloned()).unwrap_or_default(),
+        from_token: false,
+    }
+}
+
 pub(crate) async fn inject_drive_request_context(
     mut request: Request<Body>,
     next: Next,
 ) -> Result<Response, (StatusCode, Json<ProblemDetail>)> {
-    let query = parse_uri_query(request.uri().query());
     let context = request
         .extensions()
         .get::<DriveAppContext>()
         .cloned()
-        .map(|app_context| DriveRequestContext {
-            tenant_id: app_context.tenant_id,
-            actor_id: app_context.actor_id,
-            subject_type: app_context.actor_kind,
-            subject_id: app_context.user_id,
-            from_token: true,
-        })
-        .unwrap_or_else(|| DriveRequestContext {
-            tenant_id: normalize_optional_text(query.get("tenantId").cloned()).unwrap_or_default(),
-            actor_id: normalize_optional_text(query.get("operatorId").cloned())
-                .unwrap_or_else(|| "operator-unset".to_string()),
-            subject_type: normalize_optional_text(query.get("subjectType").cloned())
-                .unwrap_or_else(|| "user".to_string()),
-            subject_id: normalize_optional_text(query.get("subjectId").cloned())
-                .unwrap_or_default(),
-            from_token: false,
-        });
+        .map(|app_context| DriveRequestContext::from_app_context(&app_context))
+        .unwrap_or_else(|| drive_request_context_from_query(request.uri().query()));
 
     request.extensions_mut().insert(context);
     Ok(next.run(request).await)

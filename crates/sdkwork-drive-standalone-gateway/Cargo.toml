@@ -8,9 +8,8 @@ name = "sdkwork-drive-standalone-gateway"
 path = "src/main.rs"
 
 [dependencies]
-axum = "0.8"
-axum07 = { package = "axum", version = "0.7" }
-http = "1.4"
+axum.workspace = true
+http.workspace = true
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "net", "signal"] }

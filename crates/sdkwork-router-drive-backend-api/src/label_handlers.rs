@@ -3,25 +3,26 @@ use crate::dto::{
     CreateLabelRequest, DeleteLabelResponse, LabelListQuery, LabelListResponse, LabelMutationQuery,
     LabelResponse, UpdateLabelRequest,
 };
-use crate::error::{
-    internal_problem, internal_sql_error, map_service_error, not_found_problem, problem,
-    ProblemDetail,
-};
+use crate::error::{internal_sql_error, not_found_problem, ProblemDetail};
 use crate::mappers::map_label_row;
 use crate::state::BackendState;
+use crate::tenant_context::authenticated_tenant_id;
 use crate::validators::{
     next_page_token, normalize_optional_text, parse_offset_page, require_non_empty_text,
-    require_tenant_id, validate_label_color, validate_label_key, validate_lifecycle_status,
+    validate_label_color, validate_label_key, validate_lifecycle_status,
 };
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
+use axum::Extension;
 use axum::Json;
+use sdkwork_drive_security::DriveAppContext;
 
 pub(crate) async fn list_labels(
     State(state): State<BackendState>,
+    Extension(app_context): Extension<DriveAppContext>,
     Query(query): Query<LabelListQuery>,
 ) -> Result<Json<LabelListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_tenant_id(query.tenant_id).map_err(map_service_error)?;
+    let tenant_id = authenticated_tenant_id(&app_context);
     let page = parse_offset_page(query.page_size, query.page_token)?;
     let lifecycle_status =
         normalize_optional_text(query.lifecycle_status).unwrap_or_else(|| "active".to_string());
@@ -52,19 +53,21 @@ pub(crate) async fn list_labels(
 
 pub(crate) async fn get_label(
     State(state): State<BackendState>,
+    Extension(app_context): Extension<DriveAppContext>,
     Path(label_id): Path<String>,
-    Query(query): Query<LabelMutationQuery>,
+    Query(_query): Query<LabelMutationQuery>,
 ) -> Result<Json<LabelResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_tenant_id(query.tenant_id).map_err(map_service_error)?;
+    let tenant_id = authenticated_tenant_id(&app_context);
     Ok(Json(find_label(&state, &tenant_id, &label_id).await?))
 }
 
 pub(crate) async fn create_label(
     State(state): State<BackendState>,
+    Extension(app_context): Extension<DriveAppContext>,
     Json(payload): Json<CreateLabelRequest>,
 ) -> Result<(StatusCode, Json<LabelResponse>), (StatusCode, Json<ProblemDetail>)> {
     let id = require_non_empty_text(payload.id, "id")?;
-    let tenant_id = require_non_empty_text(payload.tenant_id, "tenantId")?;
+    let tenant_id = authenticated_tenant_id(&app_context);
     let label_key = validate_label_key(&payload.label_key)?.to_string();
     let display_name = require_non_empty_text(payload.display_name, "displayName")?;
     let color = match normalize_optional_text(payload.color) {
@@ -84,147 +87,116 @@ pub(crate) async fn create_label(
     .bind(&tenant_id)
     .bind(&label_key)
     .bind(&display_name)
-    .bind(color.as_deref())
-    .bind(description.as_deref())
+    .bind(&color)
+    .bind(&description)
     .bind(&operator_id)
     .execute(&state.pool)
     .await
-    .map_err(|error| {
-        let message = error.to_string();
-        if message.contains("UNIQUE constraint failed")
-            || message.contains("duplicate key value violates unique constraint")
-        {
-            return problem(
-                StatusCode::CONFLICT,
-                "conflict",
-                "label key already exists",
-                "drive.conflict",
-            );
-        }
-        internal_problem(format!("insert dr_drive_label failed: {message}"))
-    })?;
-    record_label_audit(&state, "label.created", &id, &operator_id).await?;
-    Ok((
-        StatusCode::CREATED,
-        Json(find_label(&state, &tenant_id, &id).await?),
-    ))
+    .map_err(internal_sql_error("insert dr_drive_label failed"))?;
+
+    let created = find_label(&state, &tenant_id, &id).await?;
+    record_label_audit(&state, "label.created", &created.id, &operator_id).await?;
+    Ok((StatusCode::CREATED, Json(created)))
 }
 
 pub(crate) async fn update_label(
     State(state): State<BackendState>,
+    Extension(app_context): Extension<DriveAppContext>,
     Path(label_id): Path<String>,
     Json(payload): Json<UpdateLabelRequest>,
 ) -> Result<Json<LabelResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_tenant_id(payload.tenant_id).map_err(map_service_error)?;
+    let tenant_id = authenticated_tenant_id(&app_context);
+    let operator_id = require_non_empty_text(payload.operator_id, "operatorId")?;
     let current = find_label(&state, &tenant_id, &label_id).await?;
     let display_name = payload
         .display_name
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
+        .map(|value| require_non_empty_text(value, "displayName"))
+        .transpose()?
         .unwrap_or(current.display_name);
-    let color = match normalize_optional_text(payload.color) {
-        Some(color) => Some(validate_label_color(&color)?.to_string()),
+    let color = match payload.color {
+        Some(value) => Some(validate_label_color(&value)?.to_string()),
         None => current.color,
     };
     let description = payload.description.or(current.description);
-    let operator_id = require_non_empty_text(payload.operator_id, "operatorId")?;
 
-    let affected = sqlx::query(
+    sqlx::query(
         "UPDATE dr_drive_label
          SET display_name=$1,
              color=$2,
              description=$3,
+             version=version + 1,
              updated_by=$4,
-             updated_at=CURRENT_TIMESTAMP,
-             version=version + 1
+             updated_at=CURRENT_TIMESTAMP
          WHERE tenant_id=$5 AND id=$6 AND lifecycle_status='active'",
     )
     .bind(&display_name)
-    .bind(color.as_deref())
-    .bind(description.as_deref())
+    .bind(&color)
+    .bind(&description)
     .bind(&operator_id)
     .bind(&tenant_id)
     .bind(&label_id)
     .execute(&state.pool)
     .await
-    .map_err(internal_sql_error("update dr_drive_label failed"))?
-    .rows_affected();
-    if affected == 0 {
-        return Err(not_found_problem("label not found"));
-    }
-    record_label_audit(&state, "label.updated", &label_id, &operator_id).await?;
-    Ok(Json(find_label(&state, &tenant_id, &label_id).await?))
+    .map_err(internal_sql_error("update dr_drive_label failed"))?;
+
+    let updated = find_label(&state, &tenant_id, &label_id).await?;
+    record_label_audit(&state, "label.updated", &updated.id, &operator_id).await?;
+    Ok(Json(updated))
 }
 
 pub(crate) async fn delete_label(
     State(state): State<BackendState>,
+    Extension(app_context): Extension<DriveAppContext>,
     Path(label_id): Path<String>,
     Query(query): Query<LabelMutationQuery>,
 ) -> Result<Json<DeleteLabelResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_tenant_id(query.tenant_id).map_err(map_service_error)?;
+    let tenant_id = authenticated_tenant_id(&app_context);
     let operator_id = require_non_empty_text(
         query
             .operator_id
-            .unwrap_or_else(|| "operator-unset".to_string()),
+            .unwrap_or_else(|| app_context.actor_id.clone()),
         "operatorId",
     )?;
-    let affected = sqlx::query(
+    find_label(&state, &tenant_id, &label_id).await?;
+
+    sqlx::query(
         "UPDATE dr_drive_label
          SET lifecycle_status='deleted',
+             version=version + 1,
              updated_by=$1,
-             updated_at=CURRENT_TIMESTAMP,
-             version=version + 1
-         WHERE tenant_id=$2 AND id=$3 AND lifecycle_status != 'deleted'",
+             updated_at=CURRENT_TIMESTAMP
+         WHERE tenant_id=$2 AND id=$3 AND lifecycle_status='active'",
     )
     .bind(&operator_id)
     .bind(&tenant_id)
     .bind(&label_id)
     .execute(&state.pool)
     .await
-    .map_err(internal_sql_error("delete dr_drive_label failed"))?
-    .rows_affected();
-    if affected > 0 {
-        sqlx::query(
-            "UPDATE dr_drive_node_label
-             SET lifecycle_status='deleted',
-                 updated_by=$1,
-                 updated_at=CURRENT_TIMESTAMP,
-                 version=version + 1
-             WHERE tenant_id=$2 AND label_id=$3 AND lifecycle_status != 'deleted'",
-        )
-        .bind(&operator_id)
-        .bind(&tenant_id)
-        .bind(&label_id)
-        .execute(&state.pool)
-        .await
-        .map_err(internal_sql_error(
-            "delete dr_drive_node_label for label failed",
-        ))?;
-        record_label_audit(&state, "label.deleted", &label_id, &operator_id).await?;
-    }
-    Ok(Json(DeleteLabelResponse {
-        deleted: affected > 0,
-    }))
+    .map_err(internal_sql_error("delete dr_drive_label failed"))?;
+
+    record_label_audit(&state, "label.deleted", &label_id, &operator_id).await?;
+    Ok(Json(DeleteLabelResponse { deleted: true }))
 }
 
-pub(crate) async fn find_label(
+async fn find_label(
     state: &BackendState,
     tenant_id: &str,
     label_id: &str,
 ) -> Result<LabelResponse, (StatusCode, Json<ProblemDetail>)> {
-    let row = sqlx::query(
+    let rows = sqlx::query(
         "SELECT id, tenant_id, label_key, display_name, color, description,
                 lifecycle_status, version
          FROM dr_drive_label
-         WHERE tenant_id=$1 AND id=$2 AND lifecycle_status='active'",
+         WHERE tenant_id=$1 AND id=$2 AND lifecycle_status='active'
+         LIMIT 1",
     )
     .bind(tenant_id)
     .bind(label_id)
-    .fetch_optional(&state.pool)
+    .fetch_all(&state.pool)
     .await
     .map_err(internal_sql_error("find dr_drive_label failed"))?;
-    let Some(row) = row else {
+    let Some(row) = rows.first() else {
         return Err(not_found_problem("label not found"));
     };
-    Ok(map_label_row(&row))
+    Ok(map_label_row(row))
 }

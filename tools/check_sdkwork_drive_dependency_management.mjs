@@ -11,6 +11,7 @@ const expectedDependencyIds = [
   'sdkwork-ui',
   'sdkwork-sdk-commons',
   'sdkwork-sdk-generator',
+  'sdkwork-web-framework',
 ];
 const sourceDependencyFiles = [
   'package.json',

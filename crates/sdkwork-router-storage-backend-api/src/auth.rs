@@ -1,38 +1,24 @@
 use crate::error::{map_auth_error, problem, ProblemDetail};
-use crate::state::AdminStorageState;
 use axum::body::{to_bytes, Body};
-use axum::extract::State;
 use axum::http::{header, Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
 use axum::Json;
 use sdkwork_drive_security::{
-    can_access_drive_admin_storage, validate_drive_app_context, validate_json_context_projection,
-    DriveAppContext, DriveAuthPolicyHandle,
+    validate_json_context_projection, validate_uri_context, DriveAppContext,
 };
 
 const AUTH_CONTEXT_BODY_LIMIT_BYTES: usize = 1_048_576;
 
-pub(crate) async fn app_context_guard(
-    State(state): State<AdminStorageState>,
+pub(crate) async fn drive_context_projection_guard(
     mut request: Request<Body>,
     next: Next,
 ) -> Result<Response, (StatusCode, Json<ProblemDetail>)> {
-    let context = state
-        .auth_policy
-        .read(|policy| validate_drive_app_context(request.headers(), request.uri(), policy))
-        .map_err(map_auth_error)?;
+    let Some(context) = request.extensions().get::<DriveAppContext>().cloned() else {
+        return Ok(next.run(request).await);
+    };
 
-    if !can_access_drive_admin_storage(&context) {
-        return Err(map_auth_error(sdkwork_drive_security::DriveAuthError {
-            status: 403,
-            title: "forbidden",
-            detail: "Drive storage admin permission is required".to_string(),
-            code: "sdkwork.auth.missing_permission",
-            request_id: context.request_id.clone(),
-            trace_id: context.trace_id.clone(),
-        }));
-    }
+    validate_uri_context(request.uri(), &context).map_err(map_auth_error)?;
 
     if request
         .headers()
@@ -67,8 +53,4 @@ pub(crate) async fn app_context_guard(
 
     request.extensions_mut().insert::<DriveAppContext>(context);
     Ok(next.run(request).await)
-}
-
-pub(crate) fn drive_auth_policy_from_env() -> DriveAuthPolicyHandle {
-    DriveAuthPolicyHandle::shared_from_env()
 }

@@ -1,8 +1,9 @@
 use crate::app_context::inject_drive_request_context;
-use crate::auth::app_context_guard;
+use crate::auth::drive_context_projection_guard;
 use crate::config::AdminStorageConfig;
 use crate::handlers::*;
 use crate::state::AdminStorageState;
+use crate::web_bootstrap::wrap_router_with_web_framework;
 use axum::middleware;
 use axum::routing::{get, post};
 use axum::Router;
@@ -116,57 +117,57 @@ fn admin_storage_config_error(error: String) -> Box<dyn std::error::Error + Send
 }
 
 fn build_router_with_state(state: AdminStorageState, require_iam: bool) -> Router {
-    let drive_routes = Router::new()
+    let mut drive_routes = Router::new()
         .route(
             "/admin/v3/api/drive/storage/providers",
             get(list_storage_providers).post(create_storage_provider),
         )
         .route(
-            "/admin/v3/api/drive/storage/providers/:provider_id",
+            "/admin/v3/api/drive/storage/providers/{provider_id}",
             get(get_storage_provider)
                 .patch(update_storage_provider)
                 .delete(delete_storage_provider),
         )
         .route(
-            "/admin/v3/api/drive/storage/providers/:provider_id/capabilities",
+            "/admin/v3/api/drive/storage/providers/{provider_id}/capabilities",
             get(get_storage_provider_capabilities),
         )
         .route(
-            "/admin/v3/api/drive/storage/providers/:provider_id/test",
+            "/admin/v3/api/drive/storage/providers/{provider_id}/test",
             post(test_storage_provider),
         )
         .route(
-            "/admin/v3/api/drive/storage/providers/:provider_id/activate",
+            "/admin/v3/api/drive/storage/providers/{provider_id}/activate",
             post(activate_storage_provider),
         )
         .route(
-            "/admin/v3/api/drive/storage/providers/:provider_id/deactivate",
+            "/admin/v3/api/drive/storage/providers/{provider_id}/deactivate",
             post(deactivate_storage_provider),
         )
         .route(
-            "/admin/v3/api/drive/storage/providers/:provider_id/credentials/rotate",
+            "/admin/v3/api/drive/storage/providers/{provider_id}/credentials/rotate",
             post(rotate_storage_provider_credentials),
         )
         .route(
-            "/admin/v3/api/drive/storage/providers/:provider_id/bucket",
+            "/admin/v3/api/drive/storage/providers/{provider_id}/bucket",
             get(head_storage_provider_bucket)
                 .put(create_storage_provider_bucket)
                 .delete(delete_storage_provider_bucket),
         )
         .route(
-            "/admin/v3/api/drive/storage/providers/:provider_id/buckets",
+            "/admin/v3/api/drive/storage/providers/{provider_id}/buckets",
             get(list_storage_provider_buckets),
         )
         .route(
-            "/admin/v3/api/drive/storage/providers/:provider_id/objects",
+            "/admin/v3/api/drive/storage/providers/{provider_id}/objects",
             get(list_storage_provider_objects),
         )
         .route(
-            "/admin/v3/api/drive/storage/providers/:provider_id/objects/copy",
+            "/admin/v3/api/drive/storage/providers/{provider_id}/objects/copy",
             post(copy_storage_provider_object),
         )
         .route(
-            "/admin/v3/api/drive/storage/providers/:provider_id/objects/*object_key",
+            "/admin/v3/api/drive/storage/providers/{provider_id}/objects/{*object_key}",
             get(head_storage_provider_object).delete(delete_storage_provider_object),
         )
         .route(
@@ -180,22 +181,27 @@ fn build_router_with_state(state: AdminStorageState, require_iam: bool) -> Route
             get(list_storage_provider_bindings),
         );
 
-    let drive_routes = drive_routes.route_layer(middleware::from_fn(inject_drive_request_context));
-    let drive_routes = if require_iam {
-        drive_routes.route_layer(middleware::from_fn_with_state(
-            state.clone(),
-            app_context_guard,
-        ))
-    } else {
-        drive_routes
-    };
+    drive_routes = drive_routes.route_layer(middleware::from_fn(inject_drive_request_context));
+    if require_iam {
+        drive_routes =
+            drive_routes.route_layer(middleware::from_fn(drive_context_projection_guard));
+    }
 
-    Router::new()
+    let mut router = Router::new()
         .route("/healthz", get(health))
         .route("/metrics", get(metrics))
         .merge(drive_routes)
         .layer(middleware::from_fn(
             sdkwork_drive_http::metrics::record_request_metrics,
         ))
-        .with_state(state)
+        .with_state(state);
+
+    if require_iam {
+        router = wrap_router_with_web_framework(
+            sdkwork_web_core::DefaultWebRequestContextResolver::default(),
+            router,
+        );
+    }
+
+    router
 }

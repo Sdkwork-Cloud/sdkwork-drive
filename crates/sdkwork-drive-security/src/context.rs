@@ -174,7 +174,7 @@ fn map_token_claims_error(
     }
 }
 
-fn validate_uri_context(uri: &Uri, context: &DriveAppContext) -> Result<(), DriveAuthError> {
+pub fn validate_uri_context(uri: &Uri, context: &DriveAppContext) -> Result<(), DriveAuthError> {
     let Some(query) = uri.query() else {
         return Ok(());
     };

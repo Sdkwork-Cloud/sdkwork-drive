@@ -17,6 +17,14 @@ mod space_quota_handlers;
 mod state;
 mod storage_provider_binding_handlers;
 mod storage_provider_handlers;
+mod tenant_context;
 mod validators;
+mod web_bootstrap;
+pub mod http_route_manifest;
 
+pub use http_route_manifest::backend_route_manifest;
 pub use routes::*;
+pub use web_bootstrap::{
+    wrap_router_with_iam_database_web_framework, wrap_router_with_web_framework,
+    wrap_router_with_web_framework_from_env,
+};

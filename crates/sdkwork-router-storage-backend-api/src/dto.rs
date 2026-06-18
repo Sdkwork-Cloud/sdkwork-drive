@@ -74,7 +74,6 @@ pub(crate) struct TestStorageProviderRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct DefaultStorageProviderBindingQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
     pub(crate) space_type: Option<String>,
 }
@@ -82,7 +81,6 @@ pub(crate) struct DefaultStorageProviderBindingQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListStorageProviderBindingsQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
     pub(crate) provider_id: Option<String>,
     pub(crate) lifecycle_status: Option<String>,
@@ -91,7 +89,6 @@ pub(crate) struct ListStorageProviderBindingsQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct DeleteDefaultStorageProviderBindingQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
     pub(crate) space_type: Option<String>,
     pub(crate) operator_id: Option<String>,
@@ -100,7 +97,6 @@ pub(crate) struct DeleteDefaultStorageProviderBindingQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SetDefaultStorageProviderBindingRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
     pub(crate) space_type: Option<String>,
     pub(crate) provider_id: String,

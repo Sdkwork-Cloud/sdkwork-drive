@@ -4,7 +4,6 @@ mod app_context;
 mod archive;
 mod archive_storage;
 mod asset_handlers;
-mod auth;
 mod collaboration_repository;
 mod constants;
 mod download_packages;
@@ -26,6 +25,13 @@ mod time;
 mod uploader;
 mod validators;
 mod watch_repository;
+mod web_bootstrap;
+pub mod http_route_manifest;
 
+pub use http_route_manifest::app_route_manifest;
 pub use routes::*;
 pub use state::AppState;
+pub use web_bootstrap::{
+    wrap_router_with_iam_database_web_framework, wrap_router_with_web_framework,
+    wrap_router_with_web_framework_from_env,
+};

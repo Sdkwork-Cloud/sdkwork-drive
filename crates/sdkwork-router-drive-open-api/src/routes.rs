@@ -1,6 +1,7 @@
 use crate::handlers::{create_share_link_download_url, health, metrics, resolve_share_link};
 use crate::rate_limit::share_link_rate_limit;
 use crate::state::OpenState;
+use crate::web_bootstrap::wrap_router_with_web_framework;
 use axum::middleware;
 use axum::routing::{get, post};
 use axum::Router;
@@ -41,21 +42,26 @@ pub async fn build_router_with_database_config(
 fn build_router_with_state(state: OpenState) -> Router {
     let share_routes = Router::new()
         .route(
-            "/open/v3/api/drive/share_links/:token",
+            "/open/v3/api/drive/share_links/{token}",
             get(resolve_share_link),
         )
         .route(
-            "/open/v3/api/drive/share_links/:token/download_url",
+            "/open/v3/api/drive/share_links/{token}/download_url",
             post(create_share_link_download_url),
         )
         .route_layer(middleware::from_fn(share_link_rate_limit));
 
-    Router::new()
+    let router = Router::new()
         .route("/healthz", get(health))
         .route("/metrics", get(metrics))
         .merge(share_routes)
         .layer(middleware::from_fn(
             sdkwork_drive_http::metrics::record_request_metrics,
         ))
-        .with_state(state)
+        .with_state(state);
+
+    wrap_router_with_web_framework(
+        sdkwork_web_core::DefaultOpenApiWebRequestContextResolver::default(),
+        router,
+    )
 }

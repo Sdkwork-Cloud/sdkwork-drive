@@ -3,10 +3,34 @@ use http::{Method, Request, StatusCode};
 use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::drive_share_token_hash;
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-use sdkwork_router_drive_open_api::build_router_with_pool;
+use sdkwork_router_drive_open_api::{build_router_with_pool, open_route_manifest};
+use sdkwork_web_core::RouteAuth;
 use sqlx::any::AnyPoolOptions;
 use sqlx::AnyPool;
 use tower::util::ServiceExt;
+
+#[test]
+fn open_route_manifest_declares_public_share_link_operations() {
+    let manifest = open_route_manifest();
+    for (method, path, operation_id) in [
+        (
+            "GET",
+            "/open/v3/api/drive/share_links/{token}",
+            "openShareLinks.resolve",
+        ),
+        (
+            "POST",
+            "/open/v3/api/drive/share_links/{token}/download_url",
+            "openShareLinks.downloadUrls.create",
+        ),
+    ] {
+        let route = manifest
+            .match_route(method, path)
+            .unwrap_or_else(|| panic!("missing http route manifest for {method} {path}"));
+        assert_eq!(route.auth, RouteAuth::Public);
+        assert_eq!(route.operation_id, operation_id);
+    }
+}
 
 #[tokio::test]
 async fn open_share_link_resolves_and_creates_download_url_without_exposing_token_hash() {

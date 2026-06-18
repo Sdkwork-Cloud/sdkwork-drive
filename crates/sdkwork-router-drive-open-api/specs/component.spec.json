@@ -49,6 +49,11 @@
                                "purpose":  "Rust crate and module rules."
                            },
                            {
+                               "file":  "WEB_FRAMEWORK_SPEC.md",
+                               "path":  "../../../sdkwork-specs/WEB_FRAMEWORK_SPEC.md",
+                               "purpose":  "Mandatory sdkwork-web-framework integration for HTTP surfaces."
+                           },
+                           {
                                "file":  "WEB_BACKEND_SPEC.md",
                                "path":  "../../../sdkwork-specs/WEB_BACKEND_SPEC.md",
                                "purpose":  "HTTP backend controller, service, repository, and route boundary rules."
@@ -76,7 +81,7 @@
                       "runtimeEntrypoints":  [
 
                                              ],
-                      "routeManifest":  null,
+                      "routeManifest":  "sdkwork_router_drive_open_api::open_route_manifest",
                       "sdkClients":  [
 
                                      ],

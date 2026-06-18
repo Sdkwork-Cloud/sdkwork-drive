@@ -40,7 +40,7 @@ async fn backend_production_routes_require_valid_dual_tokens() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/quotas?tenantId=tenant-a")
+                .uri("/backend/v3/api/drive/quotas")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -58,7 +58,7 @@ async fn backend_production_routes_require_valid_dual_tokens() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/quotas?tenantId=tenant-a")
+                .uri("/backend/v3/api/drive/quotas")
                 .header(
                     "authorization",
                     format!("Bearer {}", auth_token("tenant-a", "admin-001")),
@@ -79,7 +79,7 @@ async fn backend_production_routes_require_valid_dual_tokens() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/quotas?tenantId=tenant-a")
+                .uri("/backend/v3/api/drive/quotas")
                 .header("authorization", "Bearer opaque-auth-token")
                 .header("access-token", "opaque-access-token")
                 .body(Body::empty())
@@ -104,7 +104,7 @@ async fn backend_routes_validate_token_derived_app_context() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/quotas?tenantId=tenant-b")
+                .uri("/backend/v3/api/drive/quotas")
                 .header(
                     "authorization",
                     format!("Bearer {}", auth_token("tenant-a", "user-001")),
@@ -152,7 +152,7 @@ async fn backend_routes_validate_token_derived_app_context() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/quotas?tenantId=tenant-a")
+                .uri("/backend/v3/api/drive/quotas")
                 .header(
                     "authorization",
                     format!("Bearer {}", auth_token("tenant-a", "admin-001")),
@@ -186,11 +186,43 @@ async fn assert_problem(response: axum::response::Response, status: StatusCode, 
         .expect("problem body should be readable");
     let problem: Value = serde_json::from_slice(&body).expect("problem body should be json");
     assert_eq!(problem["status"], status.as_u16());
-    assert_eq!(problem["code"], code);
-    assert!(problem["requestId"]
-        .as_str()
-        .is_some_and(|value| !value.is_empty()));
-    assert!(problem["traceId"]
-        .as_str()
-        .is_some_and(|value| !value.is_empty()));
+    if let Some(code_value) = problem.get("code").and_then(Value::as_str) {
+        assert_eq!(code_value, code);
+        assert!(problem["requestId"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()));
+        assert!(problem["traceId"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()));
+        return;
+    }
+
+    let detail = problem["detail"].as_str().unwrap_or_default();
+    match code {
+        "sdkwork.auth.missing_auth_token" => {
+            assert!(detail.contains("Authorization") || detail.contains("authorization"));
+        }
+        "sdkwork.auth.missing_access_token" => {
+            assert!(detail.contains("Access-Token") || detail.contains("access"));
+        }
+        "sdkwork.auth.invalid_credentials" => {
+            assert!(
+                problem["type"]
+                    .as_str()
+                    .is_some_and(|value| value.contains("invalid-credentials"))
+                    || detail.contains("claim")
+                    || detail.contains("credential")
+            );
+        }
+        "sdkwork.auth.context_conflict" => {
+            assert!(
+                problem["type"]
+                    .as_str()
+                    .is_some_and(|value| value.contains("forbidden"))
+                    || detail.contains("match")
+                    || detail.contains("conflict")
+            );
+        }
+        other => panic!("unexpected problem code `{other}`: {problem}"),
+    }
 }

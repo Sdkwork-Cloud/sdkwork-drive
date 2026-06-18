@@ -87,7 +87,10 @@
         },
         "security": [],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.open"
+        "x-sdkwork-api-authority": "sdkwork-drive.open",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-auth-mode": "anonymous"
       }
     },
     "/open/v3/api/drive/share_links/{token}/download_url": {
@@ -220,7 +223,10 @@
         },
         "security": [],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.open"
+        "x-sdkwork-api-authority": "sdkwork-drive.open",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-auth-mode": "anonymous"
       }
     }
   },

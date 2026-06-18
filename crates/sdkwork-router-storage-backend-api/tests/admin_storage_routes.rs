@@ -295,7 +295,6 @@ async fn admin_storage_default_binding_can_mount_provider_to_tenant_or_space() {
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
-                        "tenantId":"tenant-storage",
                         "spaceId":"space-git-repositories",
                         "providerId":"provider-binding",
                         "operatorId":"admin-storage"
@@ -327,7 +326,7 @@ async fn admin_storage_default_binding_can_mount_provider_to_tenant_or_space() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings/default?tenantId=tenant-storage&spaceId=space-git-repositories")
+                .uri("/admin/v3/api/drive/storage/bindings/default&spaceId=space-git-repositories")
                 .body(Body::empty())
                 .expect("get binding request should be built"),
         )
@@ -396,7 +395,6 @@ async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
-                        "tenantId":"tenant-provider-delete",
                         "spaceId":"space-provider-delete",
                         "providerId":"provider-bound-delete",
                         "operatorId":"admin-storage"
@@ -644,7 +642,6 @@ async fn admin_storage_binding_rejects_invalid_storage_root_prefix() {
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
-                        "tenantId":"tenant-root-prefix",
                         "providerId":"provider-root-prefix",
                         "storageRootPrefix":"../escape",
                         "operatorId":"admin-storage"
@@ -753,7 +750,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings?tenantId=tenant-storage")
+                .uri("/admin/v3/api/drive/storage/bindings")
                 .body(Body::empty())
                 .expect("list bindings request should be built"),
         )
@@ -781,7 +778,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings?tenantId=tenant-storage&providerId=provider-space-default")
+                .uri("/admin/v3/api/drive/storage/bindings&providerId=provider-space-default")
                 .body(Body::empty())
                 .expect("filtered bindings request should be built"),
         )
@@ -805,7 +802,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/bindings/default?tenantId=tenant-storage&spaceId=space-admin-a&operatorId=admin-unbind")
+                .uri("/admin/v3/api/drive/storage/bindings/default&spaceId=space-admin-a&operatorId=admin-unbind")
                 .body(Body::empty())
                 .expect("delete binding request should be built"),
         )
@@ -824,7 +821,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings/default?tenantId=tenant-storage&spaceId=space-admin-a")
+                .uri("/admin/v3/api/drive/storage/bindings/default&spaceId=space-admin-a")
                 .body(Body::empty())
                 .expect("get deleted binding request should be built"),
         )
@@ -1610,7 +1607,6 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
-                        "tenantId":"tenant-audit",
                         "spaceId":"space-audit",
                         "providerId":"provider-audit-s3",
                         "operatorId":"admin-bind"
@@ -1627,7 +1623,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/bindings/default?tenantId=tenant-audit&spaceId=space-audit&operatorId=admin-unbind")
+                .uri("/admin/v3/api/drive/storage/bindings/default&spaceId=space-audit&operatorId=admin-unbind")
                 .body(Body::empty())
                 .expect("delete default binding request should be built"),
         )

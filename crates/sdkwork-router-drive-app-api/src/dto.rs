@@ -6,8 +6,6 @@ use std::collections::BTreeMap;
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateSpaceRequest {
     pub(crate) id: String,
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) owner_subject_type: String,
     pub(crate) owner_subject_id: String,
     pub(crate) display_name: String,
@@ -39,7 +37,6 @@ pub(crate) struct CreateSpaceResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdateSpaceRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) display_name: Option<String>,
     pub(crate) presentation_icon: Option<String>,
     pub(crate) presentation_color: Option<String>,
@@ -59,8 +56,6 @@ pub(crate) struct DeleteSpaceResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateUploadSessionRequest {
     pub(crate) session_id: String,
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: String,
     pub(crate) node_id: String,
     pub(crate) bucket: Option<String>,
@@ -92,8 +87,6 @@ pub(crate) struct CreateUploadSessionResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateDownloadUrlRequest {
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) node_id: String,
     pub(crate) requested_ttl_seconds: Option<u32>,
 }
@@ -110,8 +103,6 @@ pub(crate) struct CreateDownloadUrlResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateDownloadPackageRequest {
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) node_ids: Vec<String>,
     pub(crate) package_name: Option<String>,
     pub(crate) requested_ttl_seconds: Option<u32>,
@@ -177,8 +168,6 @@ pub(crate) struct UploaderRetentionRequest {
 pub(crate) struct PrepareUploaderUploadRequest {
     pub(crate) id: String,
     pub(crate) task_id: String,
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) organization_id: Option<String>,
     #[serde(default)]
     pub(crate) user_id: Option<String>,
@@ -256,8 +245,6 @@ pub(crate) struct PrepareUploaderUploadResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct MarkUploaderPartUploadedRequest {
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) upload_session_id: String,
     pub(crate) offset_bytes: FlexibleI64,
     pub(crate) size_bytes: FlexibleI64,
@@ -337,7 +324,6 @@ pub(crate) struct ArchiveEntryListResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ExtractArchiveEntriesRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) entry_paths: Option<Vec<String>>,
     pub(crate) target_parent_node_id: Option<String>,
     pub(crate) operator_id: Option<String>,
@@ -353,7 +339,6 @@ pub(crate) struct ExtractArchiveEntriesResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListSpacesQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) owner_subject_type: Option<String>,
     pub(crate) owner_subject_id: Option<String>,
 }
@@ -367,7 +352,6 @@ pub(crate) struct ListSpacesResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListNodesQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) page_size: Option<i64>,
     pub(crate) page_token: Option<String>,
@@ -378,8 +362,6 @@ pub(crate) struct ListNodesQuery {
 pub(crate) struct CreateFolderRequest {
     #[serde(default)]
     pub(crate) id: Option<String>,
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: String,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) node_name: String,
@@ -391,8 +373,6 @@ pub(crate) struct CreateFolderRequest {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateFileRequest {
     pub(crate) id: String,
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: String,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) node_name: String,
@@ -410,8 +390,6 @@ pub(crate) struct CreateFileRequest {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateShortcutRequest {
     pub(crate) id: String,
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: String,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) node_name: String,
@@ -430,7 +408,6 @@ pub(crate) struct CreateFileResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdateNodeRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) node_name: Option<String>,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) operator_id: Option<String>,
@@ -439,7 +416,6 @@ pub(crate) struct UpdateNodeRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct MoveNodeRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) target_parent_node_id: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
@@ -448,7 +424,6 @@ pub(crate) struct MoveNodeRequest {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CopyNodeRequest {
     pub(crate) id: String,
-    pub(crate) tenant_id: Option<String>,
     pub(crate) target_space_id: Option<String>,
     pub(crate) target_parent_node_id: Option<String>,
     pub(crate) node_name: Option<String>,
@@ -458,14 +433,12 @@ pub(crate) struct CopyNodeRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NodeCommandRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct EmptyTrashRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
@@ -479,7 +452,6 @@ pub(crate) struct EmptyTrashResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NodeViewQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) page_size: Option<i64>,
@@ -489,7 +461,6 @@ pub(crate) struct NodeViewQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SubjectNodeViewQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) subject_type: Option<String>,
     pub(crate) subject_id: Option<String>,
     pub(crate) space_id: Option<String>,
@@ -500,7 +471,6 @@ pub(crate) struct SubjectNodeViewQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct FavoriteNodeRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) subject_type: Option<String>,
     pub(crate) subject_id: Option<String>,
     pub(crate) operator_id: Option<String>,
@@ -509,7 +479,6 @@ pub(crate) struct FavoriteNodeRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct FavoriteNodeQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) subject_type: Option<String>,
     pub(crate) subject_id: Option<String>,
     pub(crate) operator_id: Option<String>,
@@ -518,7 +487,6 @@ pub(crate) struct FavoriteNodeQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NodeCapabilitiesQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) subject_type: Option<String>,
     pub(crate) subject_id: Option<String>,
 }
@@ -598,7 +566,6 @@ pub(crate) struct NodeCapabilitiesResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NodePropertyListQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) visibility: Option<String>,
     pub(crate) page_size: Option<i64>,
     pub(crate) page_token: Option<String>,
@@ -607,7 +574,6 @@ pub(crate) struct NodePropertyListQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SetNodePropertyRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) value: String,
     pub(crate) visibility: Option<String>,
     pub(crate) operator_id: Option<String>,
@@ -616,7 +582,6 @@ pub(crate) struct SetNodePropertyRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct DeleteNodePropertyQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) visibility: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
@@ -650,7 +615,6 @@ pub(crate) struct DeleteNodePropertyResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NodeLabelListQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) label_key: Option<String>,
     pub(crate) page_size: Option<i64>,
     pub(crate) page_token: Option<String>,
@@ -659,14 +623,12 @@ pub(crate) struct NodeLabelListQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ApplyNodeLabelRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RemoveNodeLabelQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
 
@@ -711,7 +673,6 @@ pub(crate) struct RemoveNodeLabelResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct WatchChannelListQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) resource_type: Option<String>,
     pub(crate) lifecycle_status: Option<String>,
     pub(crate) page_size: Option<i64>,
@@ -720,15 +681,12 @@ pub(crate) struct WatchChannelListQuery {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct WatchChannelGetQuery {
-    pub(crate) tenant_id: Option<String>,
-}
+pub(crate) struct WatchChannelGetQuery {}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateWatchChannelRequest {
     pub(crate) id: String,
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
     pub(crate) address: String,
     pub(crate) token: Option<String>,
@@ -740,7 +698,6 @@ pub(crate) struct CreateWatchChannelRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct StopWatchChannelRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
 
@@ -791,22 +748,18 @@ pub(crate) struct InsertWatchChannel<'a> {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NodeMutationQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NodeDownloadUrlQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) requested_ttl_seconds: Option<u32>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ResolveDownloadPackageQuery {
-    pub(crate) tenant_id: Option<String>,
-}
+pub(crate) struct ResolveDownloadPackageQuery {}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -847,8 +800,6 @@ pub(crate) struct DeleteVersionResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreatePermissionRequest {
     pub(crate) id: String,
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) subject_type: String,
     pub(crate) subject_id: String,
     pub(crate) role: String,
@@ -859,7 +810,6 @@ pub(crate) struct CreatePermissionRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdatePermissionRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) role: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
@@ -912,8 +862,6 @@ pub(crate) struct EffectivePermissionListResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateShareLinkRequest {
     pub(crate) id: String,
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) token: String,
     pub(crate) role: Option<String>,
     pub(crate) expires_at_epoch_ms: Option<i64>,
@@ -946,7 +894,6 @@ pub(crate) struct ShareLinkListResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdateShareLinkRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) role: Option<String>,
     #[serde(default, deserialize_with = "deserialize_optional_i64_patch")]
     pub(crate) expires_at_epoch_ms: OptionalI64Patch,
@@ -959,8 +906,6 @@ pub(crate) struct UpdateShareLinkRequest {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateCommentRequest {
     pub(crate) id: String,
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) content: String,
     pub(crate) anchor: Option<String>,
     #[serde(default)]
@@ -970,7 +915,6 @@ pub(crate) struct CreateCommentRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdateCommentRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) content: Option<String>,
     pub(crate) anchor: Option<String>,
     pub(crate) resolved: Option<bool>,
@@ -1005,8 +949,6 @@ pub(crate) struct CommentListResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateCommentReplyRequest {
     pub(crate) id: String,
-    #[serde(default)]
-    pub(crate) tenant_id: Option<String>,
     pub(crate) content: String,
     #[serde(default)]
     pub(crate) operator_id: Option<String>,
@@ -1015,7 +957,6 @@ pub(crate) struct CreateCommentReplyRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdateCommentReplyRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) content: Option<String>,
     pub(crate) operator_id: Option<String>,
 }
@@ -1054,7 +995,6 @@ pub(crate) enum OptionalI64Patch {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SearchQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) q: Option<String>,
     pub(crate) space_id: Option<String>,
     pub(crate) page_size: Option<i64>,
@@ -1064,7 +1004,6 @@ pub(crate) struct SearchQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ChangesQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
     pub(crate) cursor: Option<i64>,
     pub(crate) page_size: Option<i64>,
@@ -1074,23 +1013,19 @@ pub(crate) struct ChangesQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct StartPageTokenQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) space_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct TenantQuery {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) page_size: Option<i64>,
     pub(crate) page_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct QuotaSummaryQuery {
-    pub(crate) tenant_id: Option<String>,
-}
+pub(crate) struct QuotaSummaryQuery {}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1103,7 +1038,6 @@ pub(crate) struct QuotaSummaryResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct PresignUploadPartRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) upload_id: Option<String>,
     pub(crate) requested_ttl_seconds: Option<u32>,
 }
@@ -1129,7 +1063,6 @@ pub(crate) struct CompletedUploadPartRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CompleteUploadSessionRequest {
-    pub(crate) tenant_id: Option<String>,
     pub(crate) upload_id: Option<String>,
     pub(crate) content_type: String,
     pub(crate) content_length: FlexibleI64,
@@ -1489,9 +1422,7 @@ impl From<CommentReplyRecord> for CommentReplyResponse {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ResolveDownloadTokenQuery {
-    pub(crate) tenant_id: Option<String>,
-}
+pub(crate) struct ResolveDownloadTokenQuery {}
 
 pub(crate) fn apply_optional_i64_patch(
     value: OptionalI64Patch,
@@ -1537,7 +1468,6 @@ mod auth_projection_request_tests {
         .expect("prepare request should deserialize without auth projection fields");
 
         assert_eq!(payload.app_id, None);
-        assert_eq!(payload.tenant_id, None);
         assert_eq!(payload.user_id, None);
         assert_eq!(payload.operator_id, None);
     }

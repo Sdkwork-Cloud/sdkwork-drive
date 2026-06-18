@@ -598,45 +598,12 @@ dependencies = [
 
 [[package]]
 name = "axum"
-version = "0.7.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edca88bc138befd0323b20752846e6587272d3b03b0343c8ea28a6f819e6e71f"
-dependencies = [
- "async-trait",
- "axum-core 0.4.5",
- "bytes",
- "futures-util",
- "http 1.4.1",
- "http-body 1.0.1",
- "http-body-util",
- "hyper 1.10.1",
- "hyper-util",
- "itoa",
- "matchit 0.7.3",
- "memchr",
- "mime",
- "percent-encoding",
- "pin-project-lite",
- "rustversion",
- "serde",
- "serde_json",
- "serde_path_to_error",
- "serde_urlencoded",
- "sync_wrapper",
- "tokio",
- "tower",
- "tower-layer",
- "tower-service",
- "tracing",
-]
-
-[[package]]
-name = "axum"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "31b698c5f9a010f6573133b09e0de5408834d0c82f8d7475a89fc1867a71cd90"
 dependencies = [
- "axum-core 0.5.6",
+ "axum-core",
+ "axum-macros",
  "base64",
  "bytes",
  "form_urlencoded",
@@ -647,7 +614,7 @@ dependencies = [
  "hyper 1.10.1",
  "hyper-util",
  "itoa",
- "matchit 0.8.4",
+ "matchit",
  "memchr",
  "mime",
  "percent-encoding",
@@ -661,27 +628,6 @@ dependencies = [
  "tokio",
  "tokio-tungstenite",
  "tower",
- "tower-layer",
- "tower-service",
- "tracing",
-]
-
-[[package]]
-name = "axum-core"
-version = "0.4.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09f2bd6146b97ae3359fa0cc6d6b376d9539582c7b4220f041a33ec24c226199"
-dependencies = [
- "async-trait",
- "bytes",
- "futures-util",
- "http 1.4.1",
- "http-body 1.0.1",
- "http-body-util",
- "mime",
- "pin-project-lite",
- "rustversion",
- "sync_wrapper",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -704,6 +650,17 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
+]
+
+[[package]]
+name = "axum-macros"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7aa268c23bfbbd2c4363b9cd302a4f504fb2a9dfe7e3451d66f35dd392e20aca"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2193,12 +2150,6 @@ dependencies = [
 
 [[package]]
 name = "matchit"
-version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
-
-[[package]]
-name = "matchit"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
@@ -3307,7 +3258,7 @@ dependencies = [
 name = "sdkwork-drive-http"
 version = "0.1.0"
 dependencies = [
- "axum 0.7.9",
+ "axum",
  "sdkwork-drive-observability",
  "serde",
  "serde_json",
@@ -3356,8 +3307,7 @@ dependencies = [
 name = "sdkwork-drive-standalone-gateway"
 version = "0.1.0"
 dependencies = [
- "axum 0.7.9",
- "axum 0.8.9",
+ "axum",
  "http 1.4.1",
  "sdkwork-drive-config",
  "sdkwork-drive-security",
@@ -3476,7 +3426,7 @@ version = "0.1.0"
 dependencies = [
  "aes-gcm",
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "base64",
  "chrono",
  "hmac 0.12.1",
@@ -3501,7 +3451,7 @@ name = "sdkwork-router-drive-app-api"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.7.9",
+ "axum",
  "chrono",
  "http 1.4.1",
  "sdkwork-drive-config",
@@ -3511,6 +3461,9 @@ dependencies = [
  "sdkwork-drive-storage-contract",
  "sdkwork-drive-storage-s3",
  "sdkwork-drive-workspace-service",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-web-axum",
+ "sdkwork-web-core",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -3527,7 +3480,7 @@ dependencies = [
 name = "sdkwork-router-drive-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.7.9",
+ "axum",
  "http 1.4.1",
  "sdkwork-drive-config",
  "sdkwork-drive-http",
@@ -3536,6 +3489,9 @@ dependencies = [
  "sdkwork-drive-storage-contract",
  "sdkwork-drive-storage-s3",
  "sdkwork-drive-workspace-service",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-web-axum",
+ "sdkwork-web-core",
  "serde",
  "serde_json",
  "sqlx",
@@ -3549,7 +3505,7 @@ dependencies = [
 name = "sdkwork-router-drive-open-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.7.9",
+ "axum",
  "http 1.4.1",
  "sdkwork-drive-config",
  "sdkwork-drive-http",
@@ -3557,6 +3513,8 @@ dependencies = [
  "sdkwork-drive-storage-contract",
  "sdkwork-drive-storage-s3",
  "sdkwork-drive-workspace-service",
+ "sdkwork-web-axum",
+ "sdkwork-web-core",
  "serde",
  "serde_json",
  "sqlx",
@@ -3573,7 +3531,7 @@ dependencies = [
  "aes-gcm",
  "argon2",
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "base64",
  "chrono",
  "hmac 0.12.1",
@@ -3601,7 +3559,7 @@ dependencies = [
 name = "sdkwork-router-storage-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.7.9",
+ "axum",
  "http 1.4.1",
  "sdkwork-drive-config",
  "sdkwork-drive-http",
@@ -3611,6 +3569,9 @@ dependencies = [
  "sdkwork-drive-storage-opendal",
  "sdkwork-drive-storage-s3",
  "sdkwork-drive-workspace-service",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-web-axum",
+ "sdkwork-web-core",
  "serde",
  "serde_json",
  "sqlx",
@@ -3625,7 +3586,7 @@ name = "sdkwork-web-axum"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "futures-util",
  "http 1.4.1",
  "sdkwork-web-core",
@@ -3648,7 +3609,7 @@ name = "sdkwork-web-core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "getrandom 0.2.17",
  "http 1.4.1",
  "sdkwork-web-contract",

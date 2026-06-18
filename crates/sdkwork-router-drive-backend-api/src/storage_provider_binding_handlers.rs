@@ -6,14 +6,17 @@ use crate::dto::{
 use crate::error::{map_service_error, not_found_binding_problem, ProblemDetail};
 use crate::mappers::map_storage_provider;
 use crate::state::BackendState;
+use crate::tenant_context::authenticated_tenant_id;
 use crate::validators::{
-    default_storage_provider_binding_id, normalize_storage_root_prefix, require_tenant_id,
+    default_storage_provider_binding_id, normalize_storage_root_prefix,
     resolve_storage_provider_binding_target, storage_provider_binding_purpose,
     storage_provider_binding_scope, StorageProviderBindingTarget,
 };
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
+use axum::Extension;
 use axum::Json;
+use sdkwork_drive_security::DriveAppContext;
 use sdkwork_drive_workspace_service::application::storage_provider_service::{
     DriveStorageProviderService, GetStorageProviderCommand,
 };
@@ -23,9 +26,10 @@ use sqlx::Row;
 
 pub(crate) async fn get_default_storage_provider_binding(
     State(state): State<BackendState>,
+    Extension(app_context): Extension<DriveAppContext>,
     Query(query): Query<DefaultStorageProviderBindingQuery>,
 ) -> Result<Json<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_tenant_id(query.tenant_id).map_err(map_service_error)?;
+    let tenant_id = authenticated_tenant_id(&app_context);
     let target = resolve_storage_provider_binding_target(query.space_id, query.space_type)?;
     let binding = find_storage_provider_binding(&state, &tenant_id, &target)
         .await?
@@ -35,14 +39,10 @@ pub(crate) async fn get_default_storage_provider_binding(
 
 pub(crate) async fn set_default_storage_provider_binding(
     State(state): State<BackendState>,
+    Extension(app_context): Extension<DriveAppContext>,
     Json(payload): Json<SetDefaultStorageProviderBindingRequest>,
 ) -> Result<Json<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = payload.tenant_id.trim().to_string();
-    if tenant_id.is_empty() {
-        return Err(map_service_error(DriveServiceError::Validation(
-            "tenant_id is required".to_string(),
-        )));
-    }
+    let tenant_id = authenticated_tenant_id(&app_context);
     let provider_id = payload.provider_id.trim().to_string();
     if provider_id.is_empty() {
         return Err(map_service_error(DriveServiceError::Validation(

@@ -63,6 +63,10 @@ on:
         description: sdkwork-id commit/ref.
         required: false
         default: main
+      sdkwork_web_framework_ref:
+        description: sdkwork-web-framework commit/ref.
+        required: false
+        default: main
 
 permissions:
   contents: write
@@ -94,6 +98,7 @@ jobs:
           "SDKWORK_SDK_COMMONS_REF": "${{ github.event.inputs.sdkwork_sdk_commons_ref || vars.SDKWORK_SDK_COMMONS_REF }}",
           "SDKWORK_SDK_GENERATOR_REF": "${{ github.event.inputs.sdkwork_sdk_generator_ref || vars.SDKWORK_SDK_GENERATOR_REF }}",
           "SDKWORK_DATABASE_REF": "${{ github.event.inputs.sdkwork_database_ref || vars.SDKWORK_DATABASE_REF }}",
-          "SDKWORK_ID_REF": "${{ github.event.inputs.sdkwork_id_ref || vars.SDKWORK_ID_REF }}"
+          "SDKWORK_ID_REF": "${{ github.event.inputs.sdkwork_id_ref || vars.SDKWORK_ID_REF }}",
+          "SDKWORK_WEB_FRAMEWORK_REF": "${{ github.event.inputs.sdkwork_web_framework_ref || vars.SDKWORK_WEB_FRAMEWORK_REF }}"
         }
     secrets: inherit

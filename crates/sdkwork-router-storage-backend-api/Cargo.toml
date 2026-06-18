@@ -18,6 +18,9 @@ sdkwork-drive-observability.workspace = true
 sdkwork-drive-workspace-service.workspace = true
 sdkwork-drive-security.workspace = true
 sdkwork-drive-storage-contract.workspace = true
+sdkwork-web-axum.workspace = true
+sdkwork-web-core.workspace = true
+sdkwork-iam-web-adapter.workspace = true
 sdkwork-drive-storage-opendal = { workspace = true, optional = true }
 sdkwork-drive-storage-s3.workspace = true
 sqlx.workspace = true

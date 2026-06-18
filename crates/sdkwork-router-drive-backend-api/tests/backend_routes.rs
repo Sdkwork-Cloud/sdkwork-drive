@@ -69,7 +69,7 @@ async fn backend_router_exposes_storage_provider_and_quota_routes() {
         ),
         (
             Method::GET,
-            "/backend/v3/api/drive/storage_provider_bindings/default?tenantId=tenant-001",
+            "/backend/v3/api/drive/storage_provider_bindings/default",
         ),
         (
             Method::PUT,

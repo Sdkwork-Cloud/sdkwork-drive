@@ -9,7 +9,13 @@ This README is the SDKWork module entrypoint for `sdkwork-router-drive-open-api`
 
 ## Public API
 
-- `.`
+- `build_router`, `build_router_with_pool`, `build_router_with_database_url`, `build_router_with_database_config`
+- `open_route_manifest`, `wrap_router_with_web_framework_from_env`
+
+## Framework Integration
+
+- Open-api share-link routes declare `RouteAuth::Public` in `HttpRouteManifest` (token-in-path anonymous access per OpenAPI `x-sdkwork-auth-mode: anonymous`).
+- `WebFrameworkLayer` applies standard pipeline stages and validates public path prefixes against the manifest.
 
 ## Required SDK Surface
 

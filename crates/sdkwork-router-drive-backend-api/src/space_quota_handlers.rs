@@ -2,10 +2,12 @@ use crate::dto::{ListSpacesQuery, QuotaQuery, QuotaResponse, SpaceListResponse};
 use crate::error::{map_service_error, ProblemDetail};
 use crate::mappers::map_space;
 use crate::state::BackendState;
-use crate::validators::require_tenant_id;
+use crate::tenant_context::authenticated_tenant_id;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
+use axum::Extension;
 use axum::Json;
+use sdkwork_drive_security::DriveAppContext;
 use sdkwork_drive_workspace_service::application::quota_service::{
     DriveQuotaService, GetTenantQuotaSummaryCommand,
 };
@@ -17,9 +19,10 @@ use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceS
 
 pub(crate) async fn list_spaces(
     State(state): State<BackendState>,
+    Extension(app_context): Extension<DriveAppContext>,
     Query(query): Query<ListSpacesQuery>,
 ) -> Result<Json<SpaceListResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_tenant_id(query.tenant_id).map_err(map_service_error)?;
+    let tenant_id = authenticated_tenant_id(&app_context);
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool));
     let items = service
         .list_spaces(ListSpacesCommand {
@@ -37,9 +40,10 @@ pub(crate) async fn list_spaces(
 
 pub(crate) async fn list_quotas(
     State(state): State<BackendState>,
-    Query(query): Query<QuotaQuery>,
+    Extension(app_context): Extension<DriveAppContext>,
+    Query(_query): Query<QuotaQuery>,
 ) -> Result<Json<QuotaResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let tenant_id = require_tenant_id(query.tenant_id).map_err(map_service_error)?;
+    let tenant_id = authenticated_tenant_id(&app_context);
     let service = DriveQuotaService::new(SqlQuotaStore::new(state.pool));
     let summary = service
         .get_tenant_quota_summary(GetTenantQuotaSummaryCommand { tenant_id })

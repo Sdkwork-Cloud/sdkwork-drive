@@ -21,14 +21,23 @@ pub(crate) struct DriveRequestContext {
 }
 
 impl DriveRequestContext {
-    pub(crate) fn resolve_tenant_id(
-        &self,
-        requested: Option<String>,
-    ) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
-        match normalize_optional_text(requested) {
-            Some(value) => self.ensure_tenant_match(&value).map(|_| value),
-            None if self.from_token => Ok(self.tenant_id.clone()),
-            None => require_query_value(None, "tenantId"),
+    pub(crate) fn from_app_context(app_context: &DriveAppContext) -> Self {
+        Self {
+            tenant_id: app_context.tenant_id.clone(),
+            user_id: app_context.user_id.clone(),
+            app_id: app_context.app_id.clone(),
+            actor_id: app_context.actor_id.clone(),
+            subject_type: app_context.actor_kind.clone(),
+            subject_id: app_context.user_id.clone(),
+            from_token: true,
+        }
+    }
+
+    pub(crate) fn resolve_tenant_id(&self) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
+        if self.from_token || !self.tenant_id.is_empty() {
+            Ok(self.tenant_id.clone())
+        } else {
+            require_query_value(None, "tenantId")
         }
     }
 
@@ -98,15 +107,6 @@ impl DriveRequestContext {
         Ok((subject_type, subject_id))
     }
 
-    fn ensure_tenant_match(&self, value: &str) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-        if !self.from_token || value == self.tenant_id {
-            return Ok(());
-        }
-        Err(context_conflict(
-            "request tenant does not match verified SDKWork AppContext tenant",
-        ))
-    }
-
     fn ensure_actor_match(&self, value: &str) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
         if !self.from_token || value == self.actor_id {
             return Ok(());
@@ -165,36 +165,31 @@ impl DriveRequestContext {
     }
 }
 
+pub(crate) fn drive_request_context_from_query(query: Option<&str>) -> DriveRequestContext {
+    let query = parse_uri_query(query);
+    DriveRequestContext {
+        tenant_id: normalize_optional_text(query.get("tenantId").cloned()).unwrap_or_default(),
+        user_id: normalize_optional_text(query.get("userId").cloned()).unwrap_or_default(),
+        app_id: normalize_optional_text(query.get("appId").cloned()),
+        actor_id: normalize_optional_text(query.get("operatorId").cloned())
+            .unwrap_or_else(|| "operator-unset".to_string()),
+        subject_type: normalize_optional_text(query.get("subjectType").cloned())
+            .unwrap_or_else(|| "user".to_string()),
+        subject_id: normalize_optional_text(query.get("subjectId").cloned()).unwrap_or_default(),
+        from_token: false,
+    }
+}
+
 pub(crate) async fn inject_drive_request_context(
     mut request: Request<Body>,
     next: Next,
 ) -> Result<Response, (StatusCode, Json<ProblemDetail>)> {
-    let query = parse_uri_query(request.uri().query());
     let context = request
         .extensions()
         .get::<DriveAppContext>()
         .cloned()
-        .map(|app_context| DriveRequestContext {
-            tenant_id: app_context.tenant_id,
-            user_id: app_context.user_id.clone(),
-            app_id: app_context.app_id.clone(),
-            actor_id: app_context.actor_id,
-            subject_type: app_context.actor_kind,
-            subject_id: app_context.user_id,
-            from_token: true,
-        })
-        .unwrap_or_else(|| DriveRequestContext {
-            tenant_id: normalize_optional_text(query.get("tenantId").cloned()).unwrap_or_default(),
-            user_id: normalize_optional_text(query.get("userId").cloned()).unwrap_or_default(),
-            app_id: normalize_optional_text(query.get("appId").cloned()),
-            actor_id: normalize_optional_text(query.get("operatorId").cloned())
-                .unwrap_or_else(|| "operator-unset".to_string()),
-            subject_type: normalize_optional_text(query.get("subjectType").cloned())
-                .unwrap_or_else(|| "user".to_string()),
-            subject_id: normalize_optional_text(query.get("subjectId").cloned())
-                .unwrap_or_default(),
-            from_token: false,
-        });
+        .map(|app_context| DriveRequestContext::from_app_context(&app_context))
+        .unwrap_or_else(|| drive_request_context_from_query(request.uri().query()));
 
     request.extensions_mut().insert(context);
     Ok(next.run(request).await)
@@ -279,11 +274,11 @@ mod tests {
             from_token: true,
         };
 
-        assert_eq!(ctx.resolve_tenant_id(None).expect("tenant"), "tenant-001");
+        assert_eq!(ctx.resolve_tenant_id().expect("tenant"), "tenant-001");
     }
 
     #[test]
-    fn reject_conflicting_tenant_id_from_token_context() {
+    fn reject_tenant_resolution_without_token_context() {
         let ctx = DriveRequestContext {
             tenant_id: "tenant-001".to_string(),
             user_id: "user-001".to_string(),
@@ -291,13 +286,11 @@ mod tests {
             actor_id: "user-001".to_string(),
             subject_type: "user".to_string(),
             subject_id: "user-001".to_string(),
-            from_token: true,
+            from_token: false,
         };
 
-        let error = ctx
-            .resolve_tenant_id(Some("tenant-002".to_string()))
-            .expect_err("conflict");
-        assert_eq!(error.0, StatusCode::FORBIDDEN);
+        let error = ctx.resolve_tenant_id().expect_err("missing token context");
+        assert_eq!(error.0, StatusCode::BAD_REQUEST);
     }
 
     #[test]

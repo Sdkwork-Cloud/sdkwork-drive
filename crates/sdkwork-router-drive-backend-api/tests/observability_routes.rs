@@ -101,7 +101,7 @@ async fn list_audit_events_emits_structured_observability_log() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/audit_events?tenantId=tenant-001&action=storage_provider.created&resourceType=storage_provider&resourceId=provider-001&requestId=request-001&traceId=trace-001&page=1&pageSize=10")
+                .uri("/backend/v3/api/drive/audit_events&action=storage_provider.created&resourceType=storage_provider&resourceId=provider-001&requestId=request-001&traceId=trace-001&page=1&pageSize=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )

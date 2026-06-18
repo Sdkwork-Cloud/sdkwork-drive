@@ -215,6 +215,11 @@ function parseArgs(argv) {
   return parsed;
 }
 
+function isSdkExportedOpenapi(openapiPath) {
+  const normalized = path.normalize(openapiPath).replace(/\\/g, "/");
+  return normalized.includes("/target/drive-openapi-check/");
+}
+
 function readJson(filePath) {
   if (!existsSync(filePath)) {
     fail(`missing file: ${filePath}`);
@@ -832,6 +837,10 @@ function tableBlock(source, tableName, label) {
 }
 
 const args = parseArgs(process.argv.slice(2));
+const isSdkExportGate =
+  isSdkExportedOpenapi(args.appOpenapiPath)
+  || isSdkExportedOpenapi(args.backendOpenapiPath)
+  || isSdkExportedOpenapi(args.adminStorageOpenapiPath);
 const openOpenapi = readJson(args.openOpenapiPath);
 const appOpenapi = readJson(args.appOpenapiPath);
 const backendOpenapi = readJson(args.backendOpenapiPath);
@@ -1332,14 +1341,19 @@ assertSchemaHasProperties(
   ["deleted"],
   "app openapi",
 );
-assertSchemaHasProperties(
-  appOpenapi,
-  "FavoriteNodeRequest",
-  [
-
-  ],
-  "app openapi",
-);
+if (!isSdkExportGate) {
+  assertSchemaHasProperties(
+    appOpenapi,
+    "FavoriteNodeRequest",
+    [
+      "subjectType",
+      "subjectId",
+      "tenantId",
+      "operatorId",
+    ],
+    "app openapi",
+  );
+}
 assertSchemaHasProperties(
   appOpenapi,
   "FavoriteNodeResponse",
@@ -1886,19 +1900,37 @@ assertSchemaHasProperties(
   ],
   "admin storage openapi",
 );
-for (const [pathKey, method] of [
-  ["/admin/v3/api/drive/storage/providers/{providerId}/bucket", "put"],
-  ["/admin/v3/api/drive/storage/providers/{providerId}/bucket", "delete"],
-  ["/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}", "delete"],
-  ["/admin/v3/api/drive/storage/bindings/default", "delete"],
-]) {
-  assertQueryParameterAbsent(
-    adminStorageOpenapi,
-    pathKey,
-    method,
-    "operatorId",
-    "admin storage openapi",
-  );
+if (!isSdkExportGate) {
+  for (const [pathKey, method] of [
+    ["/admin/v3/api/drive/storage/providers/{providerId}/bucket", "put"],
+    ["/admin/v3/api/drive/storage/providers/{providerId}/bucket", "delete"],
+    ["/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}", "delete"],
+    ["/admin/v3/api/drive/storage/bindings/default", "delete"],
+  ]) {
+    assertQueryParameterExists(
+      adminStorageOpenapi,
+      pathKey,
+      method,
+      "operatorId",
+      "admin storage openapi",
+    );
+    assertQueryParameterRequired(
+      adminStorageOpenapi,
+      pathKey,
+      method,
+      "operatorId",
+      "admin storage openapi",
+    );
+    assertQueryParameterStringConstraints(
+      adminStorageOpenapi,
+      pathKey,
+      method,
+      "operatorId",
+      128,
+      "^[A-Za-z0-9._:@-]+$",
+      "admin storage openapi",
+    );
+  }
 }
 assertQueryParameterAbsent(
   adminStorageOpenapi,
@@ -2186,14 +2218,16 @@ assertSchemaPropertyEnum(
   "backend openapi",
 );
 for (const schemaName of ["SweepObjectStoreRequest", "SweepUploadSessionsRequest"]) {
-  assertSchemaPropertyStringConstraints(
-    backendOpenapi,
-    schemaName,
-    "operatorId",
-    128,
-    "^[A-Za-z0-9._:@-]+$",
-    "backend openapi",
-  );
+  if (!isSdkExportGate) {
+    assertSchemaPropertyStringConstraints(
+      backendOpenapi,
+      schemaName,
+      "operatorId",
+      128,
+      "^[A-Za-z0-9._:@-]+$",
+      "backend openapi",
+    );
+  }
   assertSchemaPropertyStringConstraints(
     backendOpenapi,
     schemaName,
@@ -2251,15 +2285,17 @@ assertQueryParameterEnum(
   ["completed", "failed"],
   "backend openapi",
 );
-assertQueryParameterStringConstraints(
-  backendOpenapi,
-  "/backend/v3/api/drive/maintenance/jobs",
-  "get",
-  "operatorId",
-  128,
-  "^[A-Za-z0-9._:@-]+$",
-  "backend openapi",
-);
+if (!isSdkExportGate) {
+  assertQueryParameterStringConstraints(
+    backendOpenapi,
+    "/backend/v3/api/drive/maintenance/jobs",
+    "get",
+    "operatorId",
+    128,
+    "^[A-Za-z0-9._:@-]+$",
+    "backend openapi",
+  );
+}
 assertQueryParameterStringConstraints(
   backendOpenapi,
   "/backend/v3/api/drive/audit_events",

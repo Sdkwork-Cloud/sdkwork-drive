@@ -1,10 +1,13 @@
 use crate::dto::{AuditEventItemResponse, AuditEventPageResponse, ListAuditEventsQuery};
 use crate::error::{map_service_error, service_error_kind, ProblemDetail};
 use crate::state::BackendState;
+use crate::tenant_context::authenticated_tenant_id;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
+use axum::Extension;
 use axum::Json;
 use sdkwork_drive_observability::{elapsed_ms, events, has_value, start_timer};
+use sdkwork_drive_security::DriveAppContext;
 use sdkwork_drive_workspace_service::application::audit_service::{
     DriveAuditService, ListAuditEventsCommand,
 };
@@ -12,10 +15,12 @@ use sdkwork_drive_workspace_service::infrastructure::sql::audit_store::SqlAuditS
 
 pub(crate) async fn list_audit_events(
     State(state): State<BackendState>,
+    Extension(app_context): Extension<DriveAppContext>,
     Query(query): Query<ListAuditEventsQuery>,
 ) -> Result<Json<AuditEventPageResponse>, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
-    let filter_has_tenant_id = has_value(&query.tenant_id);
+    let tenant_id = Some(authenticated_tenant_id(&app_context));
+    let filter_has_tenant_id = true;
     let filter_has_action = has_value(&query.action);
     let filter_has_resource_type = has_value(&query.resource_type);
     let filter_has_resource_id = has_value(&query.resource_id);
@@ -24,7 +29,7 @@ pub(crate) async fn list_audit_events(
     let service = DriveAuditService::new(SqlAuditStore::new(state.pool));
     let page_result = service
         .list_events(ListAuditEventsCommand {
-            tenant_id: query.tenant_id,
+            tenant_id,
             action: query.action,
             resource_type: query.resource_type,
             resource_id: query.resource_id,
