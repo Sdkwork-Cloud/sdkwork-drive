@@ -16,6 +16,7 @@ import {
 import {
   DriveAuthGate,
   DriveRuntimeProvider,
+  isDriveAuthRoute,
   type DriveStorageSummary,
 } from 'sdkwork-drive-pc-core';
 import {
@@ -84,6 +85,10 @@ export default function App() {
   useEffect(() => runtime.session.subscribe(setSessionSnapshot), [runtime.session]);
 
   useEffect(() => {
+    if (isDriveAuthRoute(location.pathname)) {
+      return;
+    }
+
     const canonicalPath = driveSectionToPath(activeSection);
     if (location.pathname !== canonicalPath) {
       navigate(canonicalPath, { replace: true });

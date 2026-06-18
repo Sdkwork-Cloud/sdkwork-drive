@@ -157,7 +157,7 @@ export function DriveAuthGate({
   return React.createElement(React.Fragment, null, children);
 }
 
-function isDriveAuthRoute(pathname: string): boolean {
+export function isDriveAuthRoute(pathname: string): boolean {
   return pathname === AUTH_BASE_PATH || pathname.startsWith(`${AUTH_BASE_PATH}/`);
 }
 

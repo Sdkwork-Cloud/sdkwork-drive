@@ -10,9 +10,7 @@ pub struct DriveAuthPolicyHandle {
 
 impl DriveAuthPolicyHandle {
     pub fn shared_from_env() -> Self {
-        SHARED_POLICY
-            .get_or_init(Self::from_env)
-            .clone()
+        SHARED_POLICY.get_or_init(Self::from_env).clone()
     }
 
     pub fn from_env() -> Self {

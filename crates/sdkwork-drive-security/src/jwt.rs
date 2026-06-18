@@ -41,11 +41,13 @@ pub fn verify_jwt_hmac_claims(
     }
 
     let kid = jwt_header_kid(header_b64);
-    let secret = policy.resolve_jwt_hmac_secret(kid.as_deref()).ok_or_else(|| {
-        TokenClaimsError::InvalidCredentials(
-            "JWT signing key id is not configured for Drive auth".to_string(),
-        )
-    })?;
+    let secret = policy
+        .resolve_jwt_hmac_secret(kid.as_deref())
+        .ok_or_else(|| {
+            TokenClaimsError::InvalidCredentials(
+                "JWT signing key id is not configured for Drive auth".to_string(),
+            )
+        })?;
 
     let signing_input = format!("{header_b64}.{payload_b64}");
     let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).map_err(|_| {
@@ -167,10 +169,9 @@ fn validate_jwt_expiry(claims: &BTreeMap<String, String>) -> Result<(), TokenCla
     let Some(exp) = claims.get("exp") else {
         return Ok(());
     };
-    let exp = exp
-        .trim()
-        .parse::<i64>()
-        .map_err(|error| TokenClaimsError::InvalidCredentials(format!("invalid exp claim: {error}")))?;
+    let exp = exp.trim().parse::<i64>().map_err(|error| {
+        TokenClaimsError::InvalidCredentials(format!("invalid exp claim: {error}"))
+    })?;
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_err(|error| {

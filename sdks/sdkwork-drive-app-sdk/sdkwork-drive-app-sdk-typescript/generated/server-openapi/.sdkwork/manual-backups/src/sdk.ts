@@ -7,6 +7,7 @@ import { NodeLabelsApi, createNodeLabelsApi } from './api/node-labels';
 import { NodePropertiesApi, createNodePropertiesApi } from './api/node-properties';
 import { NodesApi, createNodesApi } from './api/nodes';
 import { WatchChannelsApi, createWatchChannelsApi } from './api/watch-channels';
+import { AssetsApi, createAssetsApi } from './api/assets';
 
 export class SdkworkAppClient {
   private httpClient: HttpClient;
@@ -16,6 +17,7 @@ export class SdkworkAppClient {
   public readonly nodeProperties: NodePropertiesApi;
   public readonly nodes: NodesApi;
   public readonly watchChannels: WatchChannelsApi;
+  public readonly assets: AssetsApi;
 
   constructor(config: SdkworkAppConfig) {
     this.httpClient = createHttpClient(config);
@@ -28,13 +30,9 @@ export class SdkworkAppClient {
     this.nodes = createNodesApi(this.httpClient);
 
     this.watchChannels = createWatchChannelsApi(this.httpClient);
-  }
 
-  setApiKey(apiKey: string): this {
-    this.httpClient.setApiKey(apiKey);
-    return this;
+    this.assets = createAssetsApi(this.httpClient);
   }
-
   setAuthToken(token: string): this {
     this.httpClient.setAuthToken(token);
     return this;

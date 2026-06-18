@@ -1,5 +1,5 @@
-use std::collections::BTreeMap;
 use jsonwebtoken::DecodingKey;
+use std::collections::BTreeMap;
 
 /// Drive auth validation policy for dual-token parsing.
 #[derive(Clone)]
@@ -13,8 +13,14 @@ impl std::fmt::Debug for DriveAuthValidationPolicy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DriveAuthValidationPolicy")
             .field("allow_inline_claim_tokens", &self.allow_inline_claim_tokens)
-            .field("jwt_hmac_secret_kids", &self.jwt_hmac_secrets.keys().collect::<Vec<_>>())
-            .field("jwt_jwks_key_ids", &self.jwt_jwks_keys.keys().collect::<Vec<_>>())
+            .field(
+                "jwt_hmac_secret_kids",
+                &self.jwt_hmac_secrets.keys().collect::<Vec<_>>(),
+            )
+            .field(
+                "jwt_jwks_key_ids",
+                &self.jwt_jwks_keys.keys().collect::<Vec<_>>(),
+            )
             .finish()
     }
 }
@@ -127,10 +133,7 @@ mod tests {
             policy.resolve_jwt_hmac_secret(Some("tenant-a")),
             Some("tenant-a-secret")
         );
-        assert_eq!(
-            policy.resolve_jwt_hmac_secret(None),
-            Some("default-secret")
-        );
+        assert_eq!(policy.resolve_jwt_hmac_secret(None), Some("default-secret"));
     }
 
     #[test]

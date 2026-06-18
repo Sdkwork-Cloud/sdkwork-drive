@@ -17,9 +17,10 @@ pub(crate) async fn app_context_guard(
     mut request: Request<Body>,
     next: Next,
 ) -> Result<Response, (StatusCode, Json<ProblemDetail>)> {
-    let context = state.auth_policy.read(|policy| {
-        validate_drive_app_context(request.headers(), request.uri(), policy)
-    }).map_err(map_auth_error)?;
+    let context = state
+        .auth_policy
+        .read(|policy| validate_drive_app_context(request.headers(), request.uri(), policy))
+        .map_err(map_auth_error)?;
 
     if request
         .headers()

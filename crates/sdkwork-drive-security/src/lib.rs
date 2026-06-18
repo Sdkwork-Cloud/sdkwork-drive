@@ -1,6 +1,6 @@
 mod context;
-mod jwt;
 mod jwks;
+mod jwt;
 mod permission;
 mod policy;
 mod policy_handle;

@@ -41,6 +41,20 @@ describe('drive auth gate', () => {
 
     expect(
       resolveDriveAuthGateDecision({
+        hasSession: false,
+        location: { pathname: '/auth/login', search: '?flow=register', hash: '' },
+      }),
+    ).toEqual({ kind: 'auth-route' });
+
+    expect(
+      resolveDriveAuthGateDecision({
+        hasSession: false,
+        location: { pathname: '/auth/register', search: '', hash: '' },
+      }),
+    ).toEqual({ kind: 'auth-route' });
+
+    expect(
+      resolveDriveAuthGateDecision({
         hasSession: true,
         location: {
           pathname: '/auth/login',
