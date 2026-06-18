@@ -9,7 +9,7 @@ public class ShareLinkListResponse {
     public List<DriveShareLink> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<DriveShareLink> items) {
         this.items = items;
     }
@@ -17,7 +17,7 @@ public class ShareLinkListResponse {
     public String getNextPageToken() {
         return this.nextPageToken;
     }
-    
+
     public void setNextPageToken(String nextPageToken) {
         this.nextPageToken = nextPageToken;
     }

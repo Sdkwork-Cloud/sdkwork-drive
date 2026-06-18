@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::UploaderRetentionRequest;
+use crate::models::{UploaderRetentionRequest};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct PrepareUploaderUploadRequest {
@@ -9,23 +9,13 @@ pub struct PrepareUploaderUploadRequest {
     #[serde(rename = "taskId")]
     pub task_id: String,
 
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     #[serde(rename = "organizationId")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub organization_id: Option<String>,
 
-    #[serde(rename = "userId")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub user_id: Option<String>,
-
     #[serde(rename = "anonymousId")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub anonymous_id: Option<String>,
-
-    #[serde(rename = "appId")]
-    pub app_id: String,
 
     #[serde(rename = "appResourceType")]
     pub app_resource_type: String,
@@ -62,9 +52,6 @@ pub struct PrepareUploaderUploadRequest {
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retention: Option<UploaderRetentionRequest>,
-
-    #[serde(rename = "operatorId")]
-    pub operator_id: String,
 
     #[serde(rename = "nowEpochMs")]
     #[serde(default, skip_serializing_if = "Option::is_none")]

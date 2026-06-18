@@ -1,6 +1,6 @@
 export interface DriveCommentReply {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   nodeId: string;
   commentId: string;
   content: string;
@@ -11,5 +11,3 @@ export interface DriveCommentReply {
   createdAt: string;
   updatedAt: string;
 }
-
-

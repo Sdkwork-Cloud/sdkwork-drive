@@ -1,6 +1,6 @@
 export interface DriveLabelSummary {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   labelKey: string;
   displayName: string;
   color?: string | null;
@@ -8,5 +8,3 @@ export interface DriveLabelSummary {
   lifecycleStatus: 'active';
   version: number;
 }
-
-

@@ -16,9 +16,8 @@ impl NodePropertiesApi {
     }
 
     /// List node custom properties
-    pub async fn list(&self, node_id: &str, tenant_id: &str, visibility: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<NodePropertyListResponse, SdkworkError> {
+    pub async fn list(&self, node_id: &str, visibility: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<NodePropertyListResponse, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("visibility", visibility, "form", true, false, None),
             QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
             QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
@@ -34,11 +33,9 @@ impl NodePropertiesApi {
     }
 
     /// Delete a node custom property
-    pub async fn delete(&self, node_id: &str, property_key: &str, tenant_id: &str, visibility: Option<&str>, operator_id: Option<&str>) -> Result<DeleteNodePropertyResponse, SdkworkError> {
+    pub async fn delete(&self, node_id: &str, property_key: &str, visibility: Option<&str>) -> Result<DeleteNodePropertyResponse, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("visibility", visibility, "form", true, false, None),
-            QueryParameterSpec::new("operatorId", operator_id, "form", true, false, None),
         ]);
         let path = append_query_string(app_path(&format!("/drive/nodes/{}/properties/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(property_key, PathParameterSpec::new("propertyKey", "simple", false)))), &query);
         self.client.delete(&path, None, None).await

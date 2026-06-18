@@ -5,7 +5,7 @@ export interface AssetItem {
   assetId: string;
   /** Deprecated alias of assetId. */
   id?: string;
-  tenantId: string;
+  tenantId?: string;
   organizationId?: string;
   userId?: string;
   driveSpaceId: string;
@@ -30,5 +30,3 @@ export interface AssetItem {
   createdAt: string;
   updatedAt: string;
 }
-
-

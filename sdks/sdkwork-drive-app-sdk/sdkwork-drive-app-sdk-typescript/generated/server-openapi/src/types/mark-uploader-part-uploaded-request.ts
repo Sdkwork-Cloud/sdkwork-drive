@@ -1,5 +1,4 @@
 export interface MarkUploaderPartUploadedRequest {
-  tenantId: string;
   uploadSessionId: string;
   offsetBytes: string;
   sizeBytes: string;
@@ -7,5 +6,3 @@ export interface MarkUploaderPartUploadedRequest {
   checksumSha256Hex?: string;
   uploadedAtEpochMs?: string;
 }
-
-

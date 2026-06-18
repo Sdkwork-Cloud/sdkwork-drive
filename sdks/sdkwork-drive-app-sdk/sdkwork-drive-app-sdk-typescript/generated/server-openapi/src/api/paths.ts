@@ -21,5 +21,3 @@ export function appApiPath(path: string): string {
   }
   return `${normalizedPrefix}${normalizedPath}`;
 }
-
-

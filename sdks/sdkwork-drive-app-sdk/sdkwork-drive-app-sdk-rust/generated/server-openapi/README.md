@@ -1,6 +1,6 @@
 # sdkwork-drive-app-sdk (Rust)
 
-Professional Rust SDK for SDKWork API.
+Generated SDKWork v3 dual-token transport SDK.
 
 ## Installation
 
@@ -12,46 +12,27 @@ cargo add sdkwork-drive-app-sdk-generated-rust
 
 ```rust
 use sdkwork_drive_app_sdk_generated_rust::{SdkworkAppClient, SdkworkConfig};
-use std::collections::HashMap;
 
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = SdkworkAppClient::new(SdkworkConfig::new("http://127.0.0.1:18080"))?;
-    client.set_api_key("your-api-key");
+    client.set_auth_token("your-auth-token");
+client.set_access_token("your-access-token");
 
-    let mut query = HashMap::new();
-    query.insert("tenantId".to_string(), serde_json::json!("1"));
-    let result = client.drive().quotas_summary(Some(&query)).await?;
+    let result = client.drive().quotas_summary().await?;
     println!("{result:?}");
     Ok(())
 }
 ```
 
-## Authentication Modes (Mutually Exclusive)
+## Authentication
 
-Choose exactly one mode for the same client instance.
-
-### Mode A: API Key
-
-```rust
-let client = SdkworkAppClient::new(SdkworkConfig::new("http://127.0.0.1:18080"))?;
-client.set_api_key("your-api-key");
-// Sends: Access-Token: <apiKey>
+```text
+Authorization: Bearer <authToken>
+Access-Token: <accessToken>
 ```
 
-### Mode B: Dual Token
-
-```rust
-let client = SdkworkAppClient::new(SdkworkConfig::new("http://127.0.0.1:18080"))?;
-client.set_auth_token("your-auth-token");
-client.set_access_token("your-access-token");
-// Sends:
-// Authorization: Bearer <authToken>
-// Access-Token: <accessToken>
-```
-
-> Do not call `set_api_key(...)` together with `set_auth_token(...)` + `set_access_token(...)` on the same client.
 
 ## Configuration (Non-Auth)
 
@@ -67,17 +48,15 @@ client.set_header("X-Custom-Header", "value");
 - `client.node_properties()` - node_properties API
 - `client.nodes()` - nodes API
 - `client.watch_channels()` - watch_channels API
+- `client.assets()` - assets API
 
 ## Usage Examples
 
 ### drive
 
 ```rust
-use std::collections::HashMap;
 // GET /app/v3/api/drive/quotas/summary
-let mut query = HashMap::new();
-query.insert("tenantId".to_string(), serde_json::json!("1"));
-let result = client.drive().quotas_summary(Some(&query)).await?;
+let result = client.drive().quotas_summary().await?;
 println!("{result:?}");
 ```
 
@@ -88,9 +67,8 @@ use std::collections::HashMap;
 // List labels applied to a node
 let node_id = "1";
 let mut query = HashMap::new();
-query.insert("tenantId".to_string(), serde_json::json!("1"));
 query.insert("labelKey".to_string(), serde_json::json!("labelkey"));
-query.insert("pageSize".to_string(), serde_json::json!(3));
+query.insert("pageSize".to_string(), serde_json::json!(2));
 query.insert("pageToken".to_string(), serde_json::json!("token"));
 let result = client.node_labels().list(node_id, Some(&query)).await?;
 println!("{result:?}");
@@ -103,9 +81,8 @@ use std::collections::HashMap;
 // List node custom properties
 let node_id = "1";
 let mut query = HashMap::new();
-query.insert("tenantId".to_string(), serde_json::json!("1"));
 query.insert("visibility".to_string(), serde_json::json!("private"));
-query.insert("pageSize".to_string(), serde_json::json!(3));
+query.insert("pageSize".to_string(), serde_json::json!(2));
 query.insert("pageToken".to_string(), serde_json::json!("token"));
 let result = client.node_properties().list(node_id, Some(&query)).await?;
 println!("{result:?}");
@@ -118,12 +95,10 @@ use sdkwork_drive_app_sdk_generated_rust::*;
 // Create a shortcut node
 let body = CreateShortcutRequest {
     id: "1".to_string(),
-    tenant_id: "1".to_string(),
     space_id: "1".to_string(),
     parent_node_id: Some("1".to_string()),
     node_name: "name".to_string(),
     target_node_id: "1".to_string(),
-    operator_id: "1".to_string(),
     ..Default::default()
 };
 let result = client.nodes().shortcuts_create(&body).await?;
@@ -136,12 +111,23 @@ println!("{result:?}");
 use std::collections::HashMap;
 // List Drive watch channels
 let mut query = HashMap::new();
-query.insert("tenantId".to_string(), serde_json::json!("1"));
 query.insert("resourceType".to_string(), serde_json::json!("changes"));
 query.insert("lifecycleStatus".to_string(), serde_json::json!("active"));
-query.insert("pageSize".to_string(), serde_json::json!(4));
+query.insert("pageSize".to_string(), serde_json::json!(3));
 query.insert("pageToken".to_string(), serde_json::json!("token"));
 let result = client.watch_channels().list(Some(&query)).await?;
+println!("{result:?}");
+```
+
+### assets
+
+```rust
+use std::collections::HashMap;
+// List asset collections
+let mut query = HashMap::new();
+query.insert("cursor".to_string(), serde_json::json!("cursor"));
+query.insert("pageSize".to_string(), serde_json::json!(2));
+let result = client.assets().asset_collections_list(Some(&query)).await?;
 println!("{result:?}");
 ```
 
@@ -149,15 +135,12 @@ println!("{result:?}");
 
 ```rust
 use sdkwork_drive_app_sdk_generated_rust::{SdkworkAppClient, SdkworkConfig};
-use std::collections::HashMap;
 
 
 let client = SdkworkAppClient::new(SdkworkConfig::new("http://127.0.0.1:18080"))?;
 
 let outcome: Result<(), _> = async {
-    let mut query = HashMap::new();
-    query.insert("tenantId".to_string(), serde_json::json!("1"));
-    client.drive().quotas_summary(Some(&query)).await?;
+    client.drive().quotas_summary().await?;
     Ok(())
 }.await;
 
@@ -198,10 +181,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

@@ -4,5 +4,3 @@ export interface ShareLinkListResponse {
   items: DriveShareLink[];
   nextPageToken?: string;
 }
-
-

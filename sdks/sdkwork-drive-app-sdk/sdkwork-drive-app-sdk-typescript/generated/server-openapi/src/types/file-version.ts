@@ -1,6 +1,6 @@
 export interface FileVersion {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   nodeId: string;
   storageObjectId?: string;
   versionNo: string;
@@ -10,5 +10,3 @@ export interface FileVersion {
   lifecycleStatus: string;
   createdAt: string;
 }
-
-

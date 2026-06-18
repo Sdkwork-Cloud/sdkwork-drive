@@ -17,7 +17,7 @@ public class EffectivePermission {
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -25,7 +25,7 @@ public class EffectivePermission {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -33,7 +33,7 @@ public class EffectivePermission {
     public String getTargetNodeId() {
         return this.targetNodeId;
     }
-    
+
     public void setTargetNodeId(String targetNodeId) {
         this.targetNodeId = targetNodeId;
     }
@@ -41,7 +41,7 @@ public class EffectivePermission {
     public String getNodeId() {
         return this.nodeId;
     }
-    
+
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -49,7 +49,7 @@ public class EffectivePermission {
     public String getSubjectType() {
         return this.subjectType;
     }
-    
+
     public void setSubjectType(String subjectType) {
         this.subjectType = subjectType;
     }
@@ -57,7 +57,7 @@ public class EffectivePermission {
     public String getSubjectId() {
         return this.subjectId;
     }
-    
+
     public void setSubjectId(String subjectId) {
         this.subjectId = subjectId;
     }
@@ -65,7 +65,7 @@ public class EffectivePermission {
     public String getRole() {
         return this.role;
     }
-    
+
     public void setRole(String role) {
         this.role = role;
     }
@@ -73,7 +73,7 @@ public class EffectivePermission {
     public Boolean getInherited() {
         return this.inherited;
     }
-    
+
     public void setInherited(Boolean inherited) {
         this.inherited = inherited;
     }
@@ -81,7 +81,7 @@ public class EffectivePermission {
     public String getInheritedFromNodeId() {
         return this.inheritedFromNodeId;
     }
-    
+
     public void setInheritedFromNodeId(String inheritedFromNodeId) {
         this.inheritedFromNodeId = inheritedFromNodeId;
     }
@@ -89,7 +89,7 @@ public class EffectivePermission {
     public String getLifecycleStatus() {
         return this.lifecycleStatus;
     }
-    
+
     public void setLifecycleStatus(String lifecycleStatus) {
         this.lifecycleStatus = lifecycleStatus;
     }
@@ -97,7 +97,7 @@ public class EffectivePermission {
     public Integer getVersion() {
         return this.version;
     }
-    
+
     public void setVersion(Integer version) {
         this.version = version;
     }

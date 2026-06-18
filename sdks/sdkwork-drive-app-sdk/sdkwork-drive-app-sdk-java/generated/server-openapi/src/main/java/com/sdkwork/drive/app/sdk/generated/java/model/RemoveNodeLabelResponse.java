@@ -7,7 +7,7 @@ public class RemoveNodeLabelResponse {
     public Boolean getRemoved() {
         return this.removed;
     }
-    
+
     public void setRemoved(Boolean removed) {
         this.removed = removed;
     }

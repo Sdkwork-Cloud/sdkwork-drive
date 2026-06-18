@@ -6,8 +6,4 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class CreatePermissionRequest:
     id: str
-    tenant_id: str
-    subject_type: str
-    subject_id: str
     role: str
-    operator_id: str

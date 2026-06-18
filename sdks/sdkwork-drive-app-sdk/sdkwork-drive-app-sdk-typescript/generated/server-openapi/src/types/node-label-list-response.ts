@@ -4,5 +4,3 @@ export interface NodeLabelListResponse {
   items: NodeLabel[];
   nextPageToken?: string | null;
 }
-
-

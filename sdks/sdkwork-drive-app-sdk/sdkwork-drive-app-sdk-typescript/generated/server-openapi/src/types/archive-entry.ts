@@ -6,5 +6,3 @@ export interface ArchiveEntry {
   compressedSizeBytes: string;
   contentType?: string;
 }
-
-

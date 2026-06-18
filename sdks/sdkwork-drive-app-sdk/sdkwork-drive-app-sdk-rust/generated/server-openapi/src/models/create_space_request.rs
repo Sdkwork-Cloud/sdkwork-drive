@@ -4,9 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct CreateSpaceRequest {
     pub id: String,
 
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     #[serde(rename = "ownerSubjectType")]
     pub owner_subject_type: String,
 
@@ -19,6 +16,14 @@ pub struct CreateSpaceRequest {
     #[serde(rename = "spaceType")]
     pub space_type: String,
 
-    #[serde(rename = "operatorId")]
-    pub operator_id: String,
+    #[serde(rename = "presentationIcon")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub presentation_icon: Option<String>,
+
+    #[serde(rename = "presentationColor")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub presentation_color: Option<String>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }

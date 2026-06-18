@@ -6,5 +6,3 @@ export interface PresignedUploadPart {
   partNo: number;
   uploadId: string;
 }
-
-

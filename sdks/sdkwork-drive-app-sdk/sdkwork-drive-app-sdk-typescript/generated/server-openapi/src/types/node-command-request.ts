@@ -1,6 +1,1 @@
-export interface NodeCommandRequest {
-  tenantId: string;
-  operatorId?: string;
-}
-
-
+export type NodeCommandRequest = Record<string, unknown>;

@@ -6,12 +6,13 @@
     "version": "0.1.0",
     "language": "typescript",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-sdk-generated-typescript"
   },
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -43,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "948a97c6523b34243b8c2e050ea80a4f1fe70c91d4d8df3d236311bb7322bb59"
+      "sha256": "093715648e81e11542d605bd814ef0788dc54010fe9bcc9c252eddad32e1e5eb"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -71,7 +72,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "4d1345d31afd61d15d02b6b7680f6d4dc2662adee77e2b3a8f8ad764ae699752"
+      "sha256": "eb09c3544c38ee862a537d50df7d9d898a75244fd44b468b0bffb083a771df7f"
     },
     {
       "path": "src/http/index.ts",

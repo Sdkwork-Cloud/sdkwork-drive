@@ -9,7 +9,7 @@ public class EffectivePermissionListResponse {
     public List<EffectivePermission> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<EffectivePermission> items) {
         this.items = items;
     }
@@ -17,7 +17,7 @@ public class EffectivePermissionListResponse {
     public String getNextPageToken() {
         return this.nextPageToken;
     }
-    
+
     public void setNextPageToken(String nextPageToken) {
         this.nextPageToken = nextPageToken;
     }

@@ -4,9 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct CreateShareLinkRequest {
     pub id: String,
 
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     pub token: String,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -19,7 +16,4 @@ pub struct CreateShareLinkRequest {
     #[serde(rename = "downloadLimit")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub download_limit: Option<i64>,
-
-    #[serde(rename = "operatorId")]
-    pub operator_id: String,
 }

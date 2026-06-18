@@ -4,5 +4,3 @@ export interface VersionListResponse {
   items: FileVersion[];
   nextPageToken?: string;
 }
-
-

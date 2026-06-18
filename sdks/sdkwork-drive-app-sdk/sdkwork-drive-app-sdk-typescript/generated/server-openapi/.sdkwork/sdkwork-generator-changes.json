@@ -6,20 +6,15 @@
     "version": "0.1.0",
     "language": "typescript",
     "sdkType": "app",
+    "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-typescript"
   },
-  "changeFingerprint": "702322355d42b2d69474562b8084c3897a3319f682fae04e15cca3795832c8d1",
+  "changeFingerprint": "0088fce451e45a3ce919e7837b56abcb870dccdf259408a7709f384fab600308",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [
-      "package.json",
-      "README.md",
-      "src/http/client.ts",
-      "src/sdk.ts",
-      "src/types/common.ts",
-      "src/types/create-space-request.ts",
-      "src/types/drive-space.ts",
-      "src/types/file-version.ts"
+      "src/api/drive.ts",
+      "src/types/prepare-uploader-upload-request.ts"
     ],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -29,10 +24,11 @@
       "bin/sdk-gen.sh",
       "CHANGELOG.md",
       "LICENSE",
+      "package.json",
+      "README.md",
       "sdkwork-sdk.json",
       "src/api/assets.ts",
       "src/api/base.ts",
-      "src/api/drive.ts",
       "src/api/index.ts",
       "src/api/node-labels.ts",
       "src/api/node-properties.ts",
@@ -40,8 +36,10 @@
       "src/api/paths.ts",
       "src/api/watch-channels.ts",
       "src/auth/index.ts",
+      "src/http/client.ts",
       "src/http/index.ts",
       "src/index.ts",
+      "src/sdk.ts",
       "src/types/apply-node-label-request.ts",
       "src/types/archive-entry-list-response.ts",
       "src/types/archive-entry.ts",
@@ -58,6 +56,7 @@
       "src/types/comment-replies-delete-response.ts",
       "src/types/comment-reply-list-response.ts",
       "src/types/comments-delete-response.ts",
+      "src/types/common.ts",
       "src/types/complete-upload-session-request.ts",
       "src/types/completed-upload-part.ts",
       "src/types/copy-node-request.ts",
@@ -76,6 +75,7 @@
       "src/types/create-permission-request.ts",
       "src/types/create-share-link-request.ts",
       "src/types/create-shortcut-request.ts",
+      "src/types/create-space-request.ts",
       "src/types/create-upload-session-request.ts",
       "src/types/create-watch-channel-request.ts",
       "src/types/delete-asset-collection-item-response.ts",
@@ -93,6 +93,7 @@
       "src/types/drive-node.ts",
       "src/types/drive-permission.ts",
       "src/types/drive-share-link.ts",
+      "src/types/drive-space.ts",
       "src/types/drive-upload-session.ts",
       "src/types/drive-watch-channel-list-response.ts",
       "src/types/drive-watch-channel.ts",
@@ -105,6 +106,7 @@
       "src/types/favorite-node-request.ts",
       "src/types/favorite-node-response.ts",
       "src/types/field-error.ts",
+      "src/types/file-version.ts",
       "src/types/index.ts",
       "src/types/list-spaces-response.ts",
       "src/types/mark-uploader-part-uploaded-request.ts",
@@ -119,7 +121,6 @@
       "src/types/node-property-list-response.ts",
       "src/types/permission-list-response.ts",
       "src/types/permissions-delete-response.ts",
-      "src/types/prepare-uploader-upload-request.ts",
       "src/types/prepare-uploader-upload-response.ts",
       "src/types/presign-upload-part-request.ts",
       "src/types/presigned-upload-part.ts",
@@ -152,66 +153,43 @@
       "custom/build-runtime.mjs",
       "custom/README.md"
     ],
-    "backedUpFiles": []
+    "backedUpFiles": [
+      "src/types/prepare-uploader-upload-request.ts"
+    ]
   },
   "impact": {
     "schemaVersion": 1,
     "areas": [
       "api-surface",
-      "models",
-      "runtime",
-      "build-metadata",
-      "documentation"
+      "models"
     ],
     "details": [
       {
         "area": "api-surface",
         "paths": [
-          "src/http/client.ts",
-          "src/sdk.ts"
+          "src/api/drive.ts"
         ]
       },
       {
         "area": "models",
         "paths": [
-          "src/types/common.ts",
-          "src/types/create-space-request.ts",
-          "src/types/drive-space.ts",
-          "src/types/file-version.ts"
-        ]
-      },
-      {
-        "area": "runtime",
-        "paths": [
-          "src/http/client.ts"
-        ]
-      },
-      {
-        "area": "build-metadata",
-        "paths": [
-          "package.json"
-        ]
-      },
-      {
-        "area": "documentation",
-        "paths": [
-          "README.md"
+          "src/types/prepare-uploader-upload-request.ts"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models, runtime, build-metadata, documentation. Verification is required."
+    "summary": "Detected impact areas: api-surface, models. Verification is required."
   },
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models, runtime, build-metadata, documentation. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, documentation.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -229,7 +207,7 @@
         "id": "build",
         "title": "Unified package build",
         "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, build-metadata, documentation.",
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -247,12 +225,14 @@
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
+    "riskLevel": "high",
     "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
     "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
+      "backed-up-generated-files",
+      "manual-review-required",
       "verification-required"
     ]
   },

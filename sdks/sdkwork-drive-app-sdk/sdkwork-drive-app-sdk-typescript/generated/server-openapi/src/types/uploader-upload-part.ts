@@ -1,6 +1,6 @@
 export interface UploaderUploadPart {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   uploadItemId: string;
   uploadSessionId: string;
   partNo: string;
@@ -12,5 +12,3 @@ export interface UploaderUploadPart {
   retryCount: string;
   uploadedAtEpochMs?: string;
 }
-
-

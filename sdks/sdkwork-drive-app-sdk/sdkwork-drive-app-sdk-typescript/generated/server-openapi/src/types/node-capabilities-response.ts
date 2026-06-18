@@ -1,8 +1,8 @@
 export interface NodeCapabilitiesResponse {
-  tenantId: string;
+  tenantId?: string;
   nodeId: string;
-  subjectType: 'user' | 'group';
-  subjectId: string;
+  subjectType?: 'user' | 'group';
+  subjectId?: string;
   role: 'none' | 'reader' | 'commenter' | 'writer' | 'owner';
   source: 'none' | 'permission' | 'space_owner';
   permissionId: string | null;
@@ -21,5 +21,3 @@ export interface NodeCapabilitiesResponse {
   canManagePermissions: boolean;
   canManageVersions: boolean;
 }
-
-

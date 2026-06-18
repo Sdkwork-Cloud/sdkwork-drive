@@ -1,0 +1,290 @@
+use async_trait::async_trait;
+use sqlx::{AnyPool, Row};
+use uuid::Uuid;
+
+use crate::ports::permission_store::{
+    CheckDriveNodePermissionCommand, DriveNodePermissionCheck, DriveNodePermissionGrant,
+    DriveNodePermissionList, DrivePermissionStore, GrantDriveNodePermissionCommand,
+    ListDriveNodePermissionsCommand, RevokeDriveNodePermissionCommand,
+};
+use crate::DriveServiceError;
+
+#[derive(Debug, Clone)]
+pub struct SqlDrivePermissionStore {
+    pool: AnyPool,
+}
+
+impl SqlDrivePermissionStore {
+    pub fn new(pool: AnyPool) -> Self {
+        Self { pool }
+    }
+
+    async fn find_permission(
+        &self,
+        tenant_id: &str,
+        node_id: &str,
+        subject_type: &str,
+        subject_id: &str,
+    ) -> Result<Option<(String, String)>, DriveServiceError> {
+        let row = sqlx::query(
+            "SELECT id, role FROM dr_drive_node_permission \
+             WHERE tenant_id = $1 AND node_id = $2 AND subject_type = $3 AND subject_id = $4 AND lifecycle_status = 'active'",
+        )
+        .bind(tenant_id)
+        .bind(node_id)
+        .bind(subject_type)
+        .bind(subject_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("read dr_drive_node_permission failed: {error}"))
+        })?;
+
+        Ok(row.map(|row| (row.get("id"), row.get("role"))))
+    }
+}
+
+#[async_trait]
+impl DrivePermissionStore for SqlDrivePermissionStore {
+    async fn resolve_space_permission_anchor_node(
+        &self,
+        tenant_id: &str,
+        space_id: &str,
+    ) -> Result<String, DriveServiceError> {
+        let space_exists = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(1) FROM dr_drive_space WHERE tenant_id = $1 AND id = $2 AND lifecycle_status = 'active'",
+        )
+        .bind(tenant_id)
+        .bind(space_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("read dr_drive_space failed: {error}"))
+        })?;
+
+        if space_exists == 0 {
+            return Err(DriveServiceError::NotFound(format!(
+                "drive space {space_id} not found or inactive"
+            )));
+        }
+
+        let node_id = sqlx::query_scalar::<_, String>(
+            "SELECT id FROM dr_drive_node \
+             WHERE tenant_id = $1 AND space_id = $2 AND parent_node_id IS NULL AND node_type = 'folder' AND lifecycle_status = 'active' \
+             ORDER BY created_at ASC, id ASC LIMIT 1",
+        )
+        .bind(tenant_id)
+        .bind(space_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|error| DriveServiceError::Internal(format!("read dr_drive_node failed: {error}")))?;
+
+        node_id.ok_or_else(|| {
+            DriveServiceError::NotFound(format!(
+                "no root folder node found for drive space {space_id}"
+            ))
+        })
+    }
+
+    async fn grant_node_permission(
+        &self,
+        command: GrantDriveNodePermissionCommand,
+    ) -> Result<DriveNodePermissionGrant, DriveServiceError> {
+        if let Some((existing_id, existing_role)) = self
+            .find_permission(
+                &command.tenant_id,
+                &command.node_id,
+                &command.subject_type,
+                &command.subject_id,
+            )
+            .await?
+        {
+            if existing_role == command.role {
+                return Ok(DriveNodePermissionGrant {
+                    id: existing_id,
+                    node_id: command.node_id,
+                    subject_type: command.subject_type,
+                    subject_id: command.subject_id,
+                    role: command.role,
+                });
+            }
+
+            sqlx::query(
+                "UPDATE dr_drive_node_permission SET role = $1, version = version + 1, updated_by = $2, updated_at = CURRENT_TIMESTAMP \
+                 WHERE id = $3 AND lifecycle_status = 'active'",
+            )
+            .bind(&command.role)
+            .bind(&command.operator_id)
+            .bind(&existing_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!("update dr_drive_node_permission failed: {error}"))
+            })?;
+
+            return Ok(DriveNodePermissionGrant {
+                id: existing_id,
+                node_id: command.node_id,
+                subject_type: command.subject_type,
+                subject_id: command.subject_id,
+                role: command.role,
+            });
+        }
+
+        let id = Uuid::new_v4().to_string();
+        sqlx::query(
+            "INSERT INTO dr_drive_node_permission \
+             (id, tenant_id, node_id, subject_type, subject_id, role, inherited, lifecycle_status, version, created_by, updated_by) \
+             VALUES ($1, $2, $3, $4, $5, $6, 0, 'active', 1, $7, $7)",
+        )
+        .bind(&id)
+        .bind(&command.tenant_id)
+        .bind(&command.node_id)
+        .bind(&command.subject_type)
+        .bind(&command.subject_id)
+        .bind(&command.role)
+        .bind(&command.operator_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|error| {
+            let message = error.to_string();
+            if message.contains("UNIQUE") || message.contains("unique") {
+                DriveServiceError::Conflict(format!(
+                    "permission already exists for {}/{} on node {}",
+                    command.subject_type, command.subject_id, command.node_id
+                ))
+            } else {
+                DriveServiceError::Internal(format!("insert dr_drive_node_permission failed: {message}"))
+            }
+        })?;
+
+        Ok(DriveNodePermissionGrant {
+            id,
+            node_id: command.node_id,
+            subject_type: command.subject_type,
+            subject_id: command.subject_id,
+            role: command.role,
+        })
+    }
+
+    async fn revoke_node_permission(
+        &self,
+        command: RevokeDriveNodePermissionCommand,
+    ) -> Result<(), DriveServiceError> {
+        let result = sqlx::query(
+            "UPDATE dr_drive_node_permission SET lifecycle_status = 'deleted', updated_by = $1, updated_at = CURRENT_TIMESTAMP \
+             WHERE tenant_id = $2 AND node_id = $3 AND subject_type = $4 AND subject_id = $5 AND lifecycle_status = 'active'",
+        )
+        .bind(&command.operator_id)
+        .bind(&command.tenant_id)
+        .bind(&command.node_id)
+        .bind(&command.subject_type)
+        .bind(&command.subject_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("delete dr_drive_node_permission failed: {error}"))
+        })?;
+
+        if result.rows_affected() == 0 {
+            return Err(DriveServiceError::NotFound(format!(
+                "no active permission for {}/{} on node {}",
+                command.subject_type, command.subject_id, command.node_id
+            )));
+        }
+
+        Ok(())
+    }
+
+    async fn list_node_permissions(
+        &self,
+        command: ListDriveNodePermissionsCommand,
+    ) -> Result<DriveNodePermissionList, DriveServiceError> {
+        let page_size = command.page_size.unwrap_or(50).min(200) as i64;
+        let rows = sqlx::query(
+            "SELECT id, node_id, subject_type, subject_id, role \
+             FROM dr_drive_node_permission \
+             WHERE tenant_id = $1 AND node_id = $2 AND lifecycle_status = 'active' \
+             ORDER BY created_at \
+             LIMIT $3",
+        )
+        .bind(&command.tenant_id)
+        .bind(&command.node_id)
+        .bind(page_size + 1)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("list dr_drive_node_permission failed: {error}"))
+        })?;
+
+        let has_more = rows.len() > page_size as usize;
+        let items = rows
+            .into_iter()
+            .take(page_size as usize)
+            .map(|row| DriveNodePermissionGrant {
+                id: row.get("id"),
+                node_id: row.get("node_id"),
+                subject_type: row.get("subject_type"),
+                subject_id: row.get("subject_id"),
+                role: row.get("role"),
+            })
+            .collect::<Vec<_>>();
+
+        let next_page_token = if has_more {
+            items.last().map(|item| item.id.clone())
+        } else {
+            None
+        };
+
+        Ok(DriveNodePermissionList {
+            items,
+            next_page_token,
+        })
+    }
+
+    async fn check_node_permission(
+        &self,
+        command: CheckDriveNodePermissionCommand,
+    ) -> Result<DriveNodePermissionCheck, DriveServiceError> {
+        let role = sqlx::query_scalar::<_, String>(
+            "SELECT role FROM dr_drive_node_permission \
+             WHERE tenant_id = $1 AND node_id = $2 AND subject_type = $3 AND subject_id = $4 AND lifecycle_status = 'active'",
+        )
+        .bind(&command.tenant_id)
+        .bind(&command.node_id)
+        .bind(&command.subject_type)
+        .bind(&command.subject_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("read dr_drive_node_permission failed: {error}"))
+        })?;
+
+        Ok(match role {
+            Some(role) => DriveNodePermissionCheck {
+                allowed: role_satisfies(&role, &command.required_role),
+                effective_role: Some(role),
+            },
+            None => DriveNodePermissionCheck {
+                allowed: false,
+                effective_role: None,
+            },
+        })
+    }
+}
+
+fn role_satisfies(effective: &str, required: &str) -> bool {
+    let rank = match effective {
+        "reader" | "commenter" => 1,
+        "writer" => 2,
+        "owner" => 3,
+        _ => 0,
+    };
+    let needed = match required {
+        "reader" => 1,
+        "writer" => 2,
+        "owner" => 3,
+        _ => 0,
+    };
+    rank >= needed
+}

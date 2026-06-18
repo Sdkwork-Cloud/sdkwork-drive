@@ -9,7 +9,7 @@ public class ExtractArchiveEntriesResponse {
     public List<DriveNode> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<DriveNode> items) {
         this.items = items;
     }
@@ -17,7 +17,7 @@ public class ExtractArchiveEntriesResponse {
     public Integer getExtractedCount() {
         return this.extractedCount;
     }
-    
+
     public void setExtractedCount(Integer extractedCount) {
         this.extractedCount = extractedCount;
     }

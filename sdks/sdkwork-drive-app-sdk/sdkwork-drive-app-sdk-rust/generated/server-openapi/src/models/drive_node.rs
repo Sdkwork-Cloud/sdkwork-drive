@@ -5,7 +5,8 @@ pub struct DriveNode {
     pub id: String,
 
     #[serde(rename = "tenantId")]
-    pub tenant_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
 
     #[serde(rename = "spaceId")]
     pub space_id: String,
@@ -37,4 +38,32 @@ pub struct DriveNode {
     /// Drive uploader usage context identifier. Optional semantic context for idempotency, ownership, and cleanup scoping.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+
+    #[serde(rename = "spaceType")]
+    pub space_type: String,
+
+    /// File content lifecycle on the node. Folders and shortcuts remain empty.
+    #[serde(rename = "contentState")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_state: Option<String>,
+
+    /// Normalized file extension without a leading dot.
+    #[serde(rename = "fileExtension")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_extension: Option<String>,
+
+    /// MIME type of the latest active file version.
+    #[serde(rename = "contentType")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_type: Option<String>,
+
+    /// Coarse file category derived from contentType for list filtering and icons.
+    #[serde(rename = "contentTypeGroup")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_type_group: Option<String>,
+
+    /// Byte size of the latest active file version.
+    #[serde(rename = "contentLength")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_length: Option<i64>,
 }

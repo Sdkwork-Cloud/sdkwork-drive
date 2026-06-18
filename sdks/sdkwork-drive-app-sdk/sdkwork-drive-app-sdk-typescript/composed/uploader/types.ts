@@ -29,6 +29,7 @@ export interface DriveUploaderBlobLike {
   readonly name?: string;
   arrayBuffer(): Promise<ArrayBuffer>;
   slice(start?: number, end?: number, contentType?: string): Blob;
+  readRange?(offsetBytes: number, lengthBytes: number): Promise<ArrayBuffer>;
 }
 
 export interface DriveUploaderRequest
@@ -43,10 +44,12 @@ export interface DriveUploaderRequest
     | "contentLength"
     | "chunkSizeBytes"
     | "nowEpochMs"
+    | "userId"
   > {
   file: DriveUploaderBlobLike;
   id?: string;
   taskId?: string;
+  userId?: string;
   uploadProfileCode?: DriveUploaderProfile;
   fileFingerprint?: string;
   originalFileName?: string;
@@ -62,11 +65,11 @@ export interface DriveUploaderRequest
 
 export interface DriveUploaderReplaceNodeContentRequest {
   file: DriveUploaderBlobLike;
-  tenantId: string;
+  tenantId?: string;
   organizationId?: string;
   userId?: string;
   anonymousId?: string;
-  appId: string;
+  appId?: string;
   appResourceType: string;
   appResourceId: string;
   scene?: string;
@@ -81,7 +84,7 @@ export interface DriveUploaderReplaceNodeContentRequest {
   idempotencyKey?: string;
   expiresAtEpochMs?: string;
   chunkSizeBytes?: number;
-  operatorId: string;
+  operatorId?: string;
   checksumSha256Hex?: string;
   uploadFetch?: typeof fetch;
   requestedPartTtlSeconds?: number;
@@ -99,6 +102,7 @@ export interface DriveUploaderProgress {
   taskId: string;
   uploadItemId: string;
   uploadSessionId: string;
+  nodeId?: string;
   partNo?: number;
   uploadedBytes: number;
   totalBytes: number;
@@ -139,7 +143,9 @@ export interface DriveUploaderTransport {
     uploader: {
       uploads: {
         prepare(
-          body: PrepareUploaderUploadRequest,
+          body: Omit<PrepareUploaderUploadRequest, "userId"> & {
+            userId?: string;
+          },
           options?: DriveUploaderTransportOptions,
         ): Promise<PrepareUploaderUploadResponse>;
         parts: {
@@ -162,7 +168,7 @@ export interface DriveUploaderTransport {
           uploadSessionId: string,
           partNo: number,
           body: {
-            tenantId: string;
+            tenantId?: string;
             uploadId?: string;
             requestedTtlSeconds?: number;
           },
@@ -172,7 +178,7 @@ export interface DriveUploaderTransport {
       complete(
         uploadSessionId: string,
         body: {
-          tenantId: string;
+          tenantId?: string;
           uploadId?: string;
           contentType: string;
           contentLength: string;
@@ -185,7 +191,7 @@ export interface DriveUploaderTransport {
       abort?(
         uploadSessionId: string,
         body: {
-          tenantId: string;
+          tenantId?: string;
           operatorId?: string;
         },
         options?: DriveUploaderTransportOptions,

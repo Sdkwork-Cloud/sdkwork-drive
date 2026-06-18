@@ -6,7 +6,8 @@ pub struct Change {
     pub sequence_no: i64,
 
     #[serde(rename = "tenantId")]
-    pub tenant_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
 
     #[serde(rename = "spaceId")]
     pub space_id: String,

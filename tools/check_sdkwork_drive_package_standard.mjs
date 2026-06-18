@@ -5,7 +5,14 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const failures = [];
 
-const skippedDirectoryNames = new Set(['.git', 'dist', 'generated', 'node_modules', 'target']);
+const skippedDirectoryNames = new Set([
+  '.git',
+  'dist',
+  'generated',
+  'node_modules',
+  'target',
+  'target-test-migrate',
+]);
 const authoredPackageRoots = [
   'apps/sdkwork-drive-pc',
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons',

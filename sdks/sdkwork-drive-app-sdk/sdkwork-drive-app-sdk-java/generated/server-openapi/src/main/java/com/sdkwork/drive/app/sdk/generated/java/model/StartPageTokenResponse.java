@@ -7,7 +7,7 @@ public class StartPageTokenResponse {
     public String getStartPageToken() {
         return this.startPageToken;
     }
-    
+
     public void setStartPageToken(String startPageToken) {
         this.startPageToken = startPageToken;
     }

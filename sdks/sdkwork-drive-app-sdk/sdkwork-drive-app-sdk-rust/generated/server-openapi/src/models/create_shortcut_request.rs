@@ -4,9 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct CreateShortcutRequest {
     pub id: String,
 
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     #[serde(rename = "spaceId")]
     pub space_id: String,
 
@@ -19,7 +16,4 @@ pub struct CreateShortcutRequest {
 
     #[serde(rename = "targetNodeId")]
     pub target_node_id: String,
-
-    #[serde(rename = "operatorId")]
-    pub operator_id: String,
 }

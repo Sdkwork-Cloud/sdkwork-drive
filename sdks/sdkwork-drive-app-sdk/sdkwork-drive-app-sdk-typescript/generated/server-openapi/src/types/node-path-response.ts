@@ -4,5 +4,3 @@ export interface NodePathResponse {
   items: DriveNode[];
   pathSegments: string[];
 }
-
-

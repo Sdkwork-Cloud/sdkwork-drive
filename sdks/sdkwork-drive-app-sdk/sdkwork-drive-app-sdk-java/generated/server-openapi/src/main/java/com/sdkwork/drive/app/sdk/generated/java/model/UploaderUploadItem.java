@@ -43,7 +43,7 @@ public class UploaderUploadItem {
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -51,7 +51,7 @@ public class UploaderUploadItem {
     public String getTaskId() {
         return this.taskId;
     }
-    
+
     public void setTaskId(String taskId) {
         this.taskId = taskId;
     }
@@ -59,7 +59,7 @@ public class UploaderUploadItem {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -67,7 +67,7 @@ public class UploaderUploadItem {
     public String getOrganizationId() {
         return this.organizationId;
     }
-    
+
     public void setOrganizationId(String organizationId) {
         this.organizationId = organizationId;
     }
@@ -75,7 +75,7 @@ public class UploaderUploadItem {
     public String getUserId() {
         return this.userId;
     }
-    
+
     public void setUserId(String userId) {
         this.userId = userId;
     }
@@ -83,7 +83,7 @@ public class UploaderUploadItem {
     public String getActorType() {
         return this.actorType;
     }
-    
+
     public void setActorType(String actorType) {
         this.actorType = actorType;
     }
@@ -91,7 +91,7 @@ public class UploaderUploadItem {
     public String getActorId() {
         return this.actorId;
     }
-    
+
     public void setActorId(String actorId) {
         this.actorId = actorId;
     }
@@ -99,7 +99,7 @@ public class UploaderUploadItem {
     public String getAppId() {
         return this.appId;
     }
-    
+
     public void setAppId(String appId) {
         this.appId = appId;
     }
@@ -107,7 +107,7 @@ public class UploaderUploadItem {
     public String getAppResourceType() {
         return this.appResourceType;
     }
-    
+
     public void setAppResourceType(String appResourceType) {
         this.appResourceType = appResourceType;
     }
@@ -115,7 +115,7 @@ public class UploaderUploadItem {
     public String getAppResourceId() {
         return this.appResourceId;
     }
-    
+
     public void setAppResourceId(String appResourceId) {
         this.appResourceId = appResourceId;
     }
@@ -123,7 +123,7 @@ public class UploaderUploadItem {
     public String getUploadProfileCode() {
         return this.uploadProfileCode;
     }
-    
+
     public void setUploadProfileCode(String uploadProfileCode) {
         this.uploadProfileCode = uploadProfileCode;
     }
@@ -131,7 +131,7 @@ public class UploaderUploadItem {
     public String getFileFingerprint() {
         return this.fileFingerprint;
     }
-    
+
     public void setFileFingerprint(String fileFingerprint) {
         this.fileFingerprint = fileFingerprint;
     }
@@ -139,7 +139,7 @@ public class UploaderUploadItem {
     public String getSpaceId() {
         return this.spaceId;
     }
-    
+
     public void setSpaceId(String spaceId) {
         this.spaceId = spaceId;
     }
@@ -147,7 +147,7 @@ public class UploaderUploadItem {
     public String getNodeId() {
         return this.nodeId;
     }
-    
+
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -155,7 +155,7 @@ public class UploaderUploadItem {
     public String getUploadSessionId() {
         return this.uploadSessionId;
     }
-    
+
     public void setUploadSessionId(String uploadSessionId) {
         this.uploadSessionId = uploadSessionId;
     }
@@ -163,7 +163,7 @@ public class UploaderUploadItem {
     public String getStorageProviderId() {
         return this.storageProviderId;
     }
-    
+
     public void setStorageProviderId(String storageProviderId) {
         this.storageProviderId = storageProviderId;
     }
@@ -171,7 +171,7 @@ public class UploaderUploadItem {
     public String getStorageUploadId() {
         return this.storageUploadId;
     }
-    
+
     public void setStorageUploadId(String storageUploadId) {
         this.storageUploadId = storageUploadId;
     }
@@ -179,7 +179,7 @@ public class UploaderUploadItem {
     public String getOriginalFileName() {
         return this.originalFileName;
     }
-    
+
     public void setOriginalFileName(String originalFileName) {
         this.originalFileName = originalFileName;
     }
@@ -187,7 +187,7 @@ public class UploaderUploadItem {
     public String getFileExtension() {
         return this.fileExtension;
     }
-    
+
     public void setFileExtension(String fileExtension) {
         this.fileExtension = fileExtension;
     }
@@ -195,7 +195,7 @@ public class UploaderUploadItem {
     public String getContentType() {
         return this.contentType;
     }
-    
+
     public void setContentType(String contentType) {
         this.contentType = contentType;
     }
@@ -203,7 +203,7 @@ public class UploaderUploadItem {
     public String getContentTypeGroup() {
         return this.contentTypeGroup;
     }
-    
+
     public void setContentTypeGroup(String contentTypeGroup) {
         this.contentTypeGroup = contentTypeGroup;
     }
@@ -211,7 +211,7 @@ public class UploaderUploadItem {
     public String getDetectedContentType() {
         return this.detectedContentType;
     }
-    
+
     public void setDetectedContentType(String detectedContentType) {
         this.detectedContentType = detectedContentType;
     }
@@ -219,7 +219,7 @@ public class UploaderUploadItem {
     public Integer getContentLength() {
         return this.contentLength;
     }
-    
+
     public void setContentLength(Integer contentLength) {
         this.contentLength = contentLength;
     }
@@ -227,7 +227,7 @@ public class UploaderUploadItem {
     public String getChecksumSha256Hex() {
         return this.checksumSha256Hex;
     }
-    
+
     public void setChecksumSha256Hex(String checksumSha256Hex) {
         this.checksumSha256Hex = checksumSha256Hex;
     }
@@ -235,7 +235,7 @@ public class UploaderUploadItem {
     public Integer getChunkSizeBytes() {
         return this.chunkSizeBytes;
     }
-    
+
     public void setChunkSizeBytes(Integer chunkSizeBytes) {
         this.chunkSizeBytes = chunkSizeBytes;
     }
@@ -243,7 +243,7 @@ public class UploaderUploadItem {
     public Integer getTotalParts() {
         return this.totalParts;
     }
-    
+
     public void setTotalParts(Integer totalParts) {
         this.totalParts = totalParts;
     }
@@ -251,7 +251,7 @@ public class UploaderUploadItem {
     public Integer getUploadedPartsCount() {
         return this.uploadedPartsCount;
     }
-    
+
     public void setUploadedPartsCount(Integer uploadedPartsCount) {
         this.uploadedPartsCount = uploadedPartsCount;
     }
@@ -259,7 +259,7 @@ public class UploaderUploadItem {
     public Integer getUploadedBytes() {
         return this.uploadedBytes;
     }
-    
+
     public void setUploadedBytes(Integer uploadedBytes) {
         this.uploadedBytes = uploadedBytes;
     }
@@ -267,7 +267,7 @@ public class UploaderUploadItem {
     public String getStatus() {
         return this.status;
     }
-    
+
     public void setStatus(String status) {
         this.status = status;
     }
@@ -275,7 +275,7 @@ public class UploaderUploadItem {
     public String getRetentionMode() {
         return this.retentionMode;
     }
-    
+
     public void setRetentionMode(String retentionMode) {
         this.retentionMode = retentionMode;
     }
@@ -283,7 +283,7 @@ public class UploaderUploadItem {
     public Integer getRetentionExpiresAtEpochMs() {
         return this.retentionExpiresAtEpochMs;
     }
-    
+
     public void setRetentionExpiresAtEpochMs(Integer retentionExpiresAtEpochMs) {
         this.retentionExpiresAtEpochMs = retentionExpiresAtEpochMs;
     }
@@ -291,7 +291,7 @@ public class UploaderUploadItem {
     public String getCleanupAction() {
         return this.cleanupAction;
     }
-    
+
     public void setCleanupAction(String cleanupAction) {
         this.cleanupAction = cleanupAction;
     }
@@ -299,7 +299,7 @@ public class UploaderUploadItem {
     public Integer getHardDeleteAfterEpochMs() {
         return this.hardDeleteAfterEpochMs;
     }
-    
+
     public void setHardDeleteAfterEpochMs(Integer hardDeleteAfterEpochMs) {
         this.hardDeleteAfterEpochMs = hardDeleteAfterEpochMs;
     }
@@ -307,7 +307,7 @@ public class UploaderUploadItem {
     public String getCleanupStatus() {
         return this.cleanupStatus;
     }
-    
+
     public void setCleanupStatus(String cleanupStatus) {
         this.cleanupStatus = cleanupStatus;
     }
@@ -315,7 +315,7 @@ public class UploaderUploadItem {
     public String getPostProcessStatus() {
         return this.postProcessStatus;
     }
-    
+
     public void setPostProcessStatus(String postProcessStatus) {
         this.postProcessStatus = postProcessStatus;
     }
@@ -323,7 +323,7 @@ public class UploaderUploadItem {
     public String getScene() {
         return this.scene;
     }
-    
+
     public void setScene(String scene) {
         this.scene = scene;
     }
@@ -331,7 +331,7 @@ public class UploaderUploadItem {
     public String getSource() {
         return this.source;
     }
-    
+
     public void setSource(String source) {
         this.source = source;
     }

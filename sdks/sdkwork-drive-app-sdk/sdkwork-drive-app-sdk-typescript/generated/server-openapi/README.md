@@ -27,10 +27,7 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-const params = {
-  tenantId: 'tenantId',
-};
-const result = await client.drive.quotas.summary(params);
+const result = await client.drive.quotas.summary();
 ```
 
 ## Authentication
@@ -70,10 +67,7 @@ const client = new SdkworkAppClient({
 
 ```typescript
 // GET /app/v3/api/drive/quotas/summary
-const params = {
-  tenantId: 'tenantId',
-};
-const result = await client.drive.quotas.summary(params);
+const result = await client.drive.quotas.summary();
 ```
 
 ### node_labels
@@ -82,9 +76,8 @@ const result = await client.drive.quotas.summary(params);
 // List labels applied to a node
 const nodeId = '1';
 const params = {
-  tenantId: 'tenantId',
   labelKey: 'labelKey',
-  pageSize: 3,
+  pageSize: 2,
   pageToken: 'pageToken',
 };
 const result = await client.nodeLabels.list(nodeId, params);
@@ -96,9 +89,8 @@ const result = await client.nodeLabels.list(nodeId, params);
 // List node custom properties
 const nodeId = '1';
 const params = {
-  tenantId: 'tenantId',
   visibility: 'private',
-  pageSize: 3,
+  pageSize: 2,
   pageToken: 'pageToken',
 };
 const result = await client.nodeProperties.list(nodeId, params);
@@ -110,12 +102,10 @@ const result = await client.nodeProperties.list(nodeId, params);
 // Create a shortcut node
 const body = {
   id: 'id',
-  tenantId: 'tenantId',
   spaceId: 'spaceId',
   parentNodeId: 'parentNodeId',
   nodeName: 'nodeName',
   targetNodeId: 'targetNodeId',
-  operatorId: 'operatorId',
 };
 const result = await client.nodes.shortcuts.create(body);
 ```
@@ -125,10 +115,9 @@ const result = await client.nodes.shortcuts.create(body);
 ```typescript
 // List Drive watch channels
 const params = {
-  tenantId: 'tenantId',
   resourceType: 'changes',
   lifecycleStatus: 'active',
-  pageSize: 4,
+  pageSize: 3,
   pageToken: 'pageToken',
 };
 const result = await client.watchChannels.list(params);
@@ -139,9 +128,8 @@ const result = await client.watchChannels.list(params);
 ```typescript
 // List asset collections
 const params = {
-  tenantId: 'tenantId',
   cursor: 'cursor',
-  pageSize: 3,
+  pageSize: 2,
 };
 const result = await client.assets.assetCollections.list(params);
 ```
@@ -152,10 +140,7 @@ const result = await client.assets.assetCollections.list(params);
 import { SdkworkAppClient, NetworkError, TimeoutError, AuthenticationError } from 'sdkwork-drive-app-sdk-generated-typescript';
 
 try {
-  const params = {
-    tenantId: 'tenantId',
-  };
-  const result = await client.drive.quotas.summary(params);
+  const result = await client.drive.quotas.summary();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);
@@ -200,10 +185,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

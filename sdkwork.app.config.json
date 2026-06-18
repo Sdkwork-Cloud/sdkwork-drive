@@ -12,7 +12,7 @@
     "privacyPolicyUrl": "https://sdkwork.com/privacy",
     "termsOfServiceUrl": "https://sdkwork.com/terms",
     "iconUrl": "https://cdn.sdkwork.com/apps/sdkwork-drive/assets/icon-1024.png",
-    "appType": "APP_HTML",
+    "appType": "APP_REACT",
     "versionSource": "package.json",
     "identifiers": {
       "packageName": null,
@@ -269,7 +269,7 @@
   "security": {
     "checksumRequired": false,
     "signatureRequired": false,
-    "sbomRequired": false
+    "sbomRequired": true
   },
   "devApp": {
     "build": {

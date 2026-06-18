@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::DrivePermission;
+use crate::models::{DrivePermission};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct PermissionListResponse {

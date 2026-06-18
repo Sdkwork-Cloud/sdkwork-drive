@@ -1,6 +1,6 @@
 export interface AssetCollection {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   organizationId?: string;
   userId: string;
   title: string;
@@ -11,5 +11,3 @@ export interface AssetCollection {
   createdAt: string;
   updatedAt: string;
 }
-
-

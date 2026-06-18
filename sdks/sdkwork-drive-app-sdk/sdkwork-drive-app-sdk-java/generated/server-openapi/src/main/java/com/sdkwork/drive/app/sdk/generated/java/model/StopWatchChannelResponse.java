@@ -8,7 +8,7 @@ public class StopWatchChannelResponse {
     public Boolean getStopped() {
         return this.stopped;
     }
-    
+
     public void setStopped(Boolean stopped) {
         this.stopped = stopped;
     }
@@ -16,7 +16,7 @@ public class StopWatchChannelResponse {
     public DriveWatchChannel getChannel() {
         return this.channel;
     }
-    
+
     public void setChannel(DriveWatchChannel channel) {
         this.channel = channel;
     }

@@ -33,15 +33,10 @@ export class WatchChannelsChangesApi {
 }
 
 export interface WatchChannelsListParams {
-  tenantId: string;
   resourceType?: 'changes' | 'node';
   lifecycleStatus?: 'active' | 'stopped' | 'expired';
   pageSize?: number;
   pageToken?: string;
-}
-
-export interface WatchChannelsGetParams {
-  tenantId: string;
 }
 
 export class WatchChannelsApi {
@@ -57,23 +52,19 @@ export class WatchChannelsApi {
 
 
 /** List Drive watch channels */
-  async list(params: WatchChannelsListParams): Promise<DriveWatchChannelListResponse> {
+  async list(params?: WatchChannelsListParams): Promise<DriveWatchChannelListResponse> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-      { name: 'resourceType', value: params.resourceType, style: 'form', explode: true, allowReserved: false },
-      { name: 'lifecycleStatus', value: params.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageToken', value: params.pageToken, style: 'form', explode: true, allowReserved: false },
+      { name: 'resourceType', value: params?.resourceType, style: 'form', explode: true, allowReserved: false },
+      { name: 'lifecycleStatus', value: params?.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<DriveWatchChannelListResponse>(appendQueryString(appApiPath(`/drive/watch_channels`), query));
   }
 
 /** Get a Drive watch channel */
-  async get(channelId: string, params: WatchChannelsGetParams): Promise<DriveWatchChannel> {
-    const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.get<DriveWatchChannel>(appendQueryString(appApiPath(`/drive/watch_channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`), query));
+  async get(channelId: string): Promise<DriveWatchChannel> {
+    return this.client.get<DriveWatchChannel>(appApiPath(`/drive/watch_channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
   }
 
 /** Stop a Drive watch channel */
@@ -317,5 +308,3 @@ function encodeQueryValue(value: string, allowReserved: boolean): string {
     .replace(/%3B/gi, ';')
     .replace(/%3D/gi, '=');
 }
-
-

@@ -4,9 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct CreateWatchChannelRequest {
     pub id: String,
 
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     #[serde(rename = "spaceId")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub space_id: Option<String>,
@@ -22,8 +19,4 @@ pub struct CreateWatchChannelRequest {
 
     #[serde(rename = "expirationEpochMs")]
     pub expiration_epoch_ms: i64,
-
-    #[serde(rename = "operatorId")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operator_id: Option<String>,
 }

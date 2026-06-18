@@ -13,6 +13,12 @@ public class DriveNode {
     private String shortcutTargetNodeId;
     private String scene;
     private String source;
+    private String spaceType;
+    private String contentState;
+    private String fileExtension;
+    private String contentType;
+    private String contentTypeGroup;
+    private Integer contentLength;
 
     public String getId() {
         return this.id;
@@ -100,5 +106,53 @@ public class DriveNode {
 
     public void setSource(String source) {
         this.source = source;
+    }
+
+    public String getSpaceType() {
+        return this.spaceType;
+    }
+
+    public void setSpaceType(String spaceType) {
+        this.spaceType = spaceType;
+    }
+
+    public String getContentState() {
+        return this.contentState;
+    }
+
+    public void setContentState(String contentState) {
+        this.contentState = contentState;
+    }
+
+    public String getFileExtension() {
+        return this.fileExtension;
+    }
+
+    public void setFileExtension(String fileExtension) {
+        this.fileExtension = fileExtension;
+    }
+
+    public String getContentType() {
+        return this.contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public String getContentTypeGroup() {
+        return this.contentTypeGroup;
+    }
+
+    public void setContentTypeGroup(String contentTypeGroup) {
+        this.contentTypeGroup = contentTypeGroup;
+    }
+
+    public Integer getContentLength() {
+        return this.contentLength;
+    }
+
+    public void setContentLength(Integer contentLength) {
+        this.contentLength = contentLength;
     }
 }

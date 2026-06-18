@@ -106,5 +106,3 @@ export const operations = {
   "watchChannels.list": { method: "GET", path: "/app/v3/api/drive/watch_channels" },
   "watchChannels.stop": { method: "POST", path: "/app/v3/api/drive/watch_channels/{channelId}/stop" },
 } as const;
-
-

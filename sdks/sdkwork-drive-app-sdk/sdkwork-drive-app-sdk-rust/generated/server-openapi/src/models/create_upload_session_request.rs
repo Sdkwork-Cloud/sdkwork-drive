@@ -5,9 +5,6 @@ pub struct CreateUploadSessionRequest {
     #[serde(rename = "sessionId")]
     pub session_id: String,
 
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     #[serde(rename = "spaceId")]
     pub space_id: String,
 
@@ -24,9 +21,6 @@ pub struct CreateUploadSessionRequest {
 
     #[serde(rename = "idempotencyKey")]
     pub idempotency_key: String,
-
-    #[serde(rename = "operatorId")]
-    pub operator_id: String,
 
     #[serde(rename = "expiresAtEpochMs")]
     pub expires_at_epoch_ms: i64,

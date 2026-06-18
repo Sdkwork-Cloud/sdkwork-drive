@@ -1,3 +1,4 @@
+import type { PrepareUploaderUploadRequest } from "../generated/server-openapi/src/types";
 import {
   createClient as createGeneratedDriveAppClient,
   SdkworkAppClient,
@@ -60,7 +61,8 @@ export function createDriveUploaderTransport(
     drive: {
       uploader: {
         uploads: {
-          prepare: (body) => client.drive.uploader.uploads.prepare(body),
+          prepare: (body) =>
+            client.drive.uploader.uploads.prepare(body as PrepareUploaderUploadRequest),
           parts: {
             markUploaded: (uploadItemId, partNo, body) =>
               client.drive.uploader.uploads.parts.markUploaded(uploadItemId, partNo, body),

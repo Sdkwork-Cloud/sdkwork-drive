@@ -8,7 +8,8 @@ pub struct UploaderUploadItem {
     pub task_id: String,
 
     #[serde(rename = "tenantId")]
-    pub tenant_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
 
     #[serde(rename = "organizationId")]
     #[serde(default, skip_serializing_if = "Option::is_none")]

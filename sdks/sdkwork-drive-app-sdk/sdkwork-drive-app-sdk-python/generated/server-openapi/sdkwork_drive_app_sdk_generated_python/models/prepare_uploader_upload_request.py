@@ -10,8 +10,6 @@ if TYPE_CHECKING:
 class PrepareUploaderUploadRequest:
     id: str
     task_id: str
-    tenant_id: str
-    app_id: str
     app_resource_type: str
     app_resource_id: str
     file_fingerprint: str
@@ -19,9 +17,7 @@ class PrepareUploaderUploadRequest:
     content_type: str
     content_length: int
     chunk_size_bytes: int
-    operator_id: str
     organization_id: Optional[str] = None
-    user_id: Optional[str] = None
     anonymous_id: Optional[str] = None
     upload_profile_code: Optional[str] = None
     space_id: Optional[str] = None

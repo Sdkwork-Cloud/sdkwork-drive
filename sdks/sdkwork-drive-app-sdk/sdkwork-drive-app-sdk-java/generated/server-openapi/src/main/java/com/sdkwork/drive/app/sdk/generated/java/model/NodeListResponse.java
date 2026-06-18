@@ -9,7 +9,7 @@ public class NodeListResponse {
     public List<DriveNode> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<DriveNode> items) {
         this.items = items;
     }
@@ -17,7 +17,7 @@ public class NodeListResponse {
     public String getNextPageToken() {
         return this.nextPageToken;
     }
-    
+
     public void setNextPageToken(String nextPageToken) {
         this.nextPageToken = nextPageToken;
     }

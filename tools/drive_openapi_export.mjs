@@ -1006,7 +1006,83 @@ function normalizeOpenapiDocument(document, label) {
   normalizeObjectKeyContract(normalized);
   normalizeUploaderUsageContextSchemas(normalized);
   normalizeAdminStorageMutationOperatorContract(normalized);
+  normalizeAuthProjectionRequestSurfaces(normalized);
   return normalized;
+}
+
+const AUTH_PROJECTION_REQUEST_FIELDS = new Set([
+  "tenantId",
+  "userId",
+  "appId",
+  "operatorId",
+  "subjectType",
+  "subjectId",
+]);
+
+function isRequestSchemaName(schemaName) {
+  return /Request$/.test(schemaName);
+}
+
+function stripAuthProjectionFromSchema(schema) {
+  if (!schema || typeof schema !== "object") {
+    return;
+  }
+  if (schema.properties && typeof schema.properties === "object") {
+    for (const field of AUTH_PROJECTION_REQUEST_FIELDS) {
+      delete schema.properties[field];
+    }
+  }
+  if (Array.isArray(schema.required)) {
+    schema.required = schema.required.filter((field) => !AUTH_PROJECTION_REQUEST_FIELDS.has(field));
+  }
+}
+
+function normalizeAuthProjectionRequestSurfaces(document) {
+  const paths = document.paths;
+  if (!paths || typeof paths !== "object") {
+    return;
+  }
+
+  for (const pathItem of Object.values(paths)) {
+    if (!pathItem || typeof pathItem !== "object") {
+      continue;
+    }
+    for (const method of HTTP_METHODS) {
+      const operation = pathItem[method];
+      if (!operation || typeof operation !== "object") {
+        continue;
+      }
+      if (Array.isArray(operation.parameters)) {
+        operation.parameters = operation.parameters.filter(
+          (parameter) =>
+            !(
+              parameter?.in === "query"
+              && AUTH_PROJECTION_REQUEST_FIELDS.has(parameter?.name)
+            ),
+        );
+      }
+      const requestBody = operation.requestBody?.content?.["application/json"]?.schema;
+      if (requestBody?.$ref) {
+        const schemaName = String(requestBody.$ref).split("/").pop();
+        const schema = document.components?.schemas?.[schemaName];
+        if (schemaName && isRequestSchemaName(schemaName)) {
+          stripAuthProjectionFromSchema(schema);
+        }
+      } else if (requestBody && typeof requestBody === "object") {
+        stripAuthProjectionFromSchema(requestBody);
+      }
+    }
+  }
+
+  const schemas = document.components?.schemas;
+  if (!schemas || typeof schemas !== "object") {
+    return;
+  }
+  for (const [schemaName, schema] of Object.entries(schemas)) {
+    if (isRequestSchemaName(schemaName)) {
+      stripAuthProjectionFromSchema(schema);
+    }
+  }
 }
 
 function normalizeDriveSpaceTypeSchemas(document) {

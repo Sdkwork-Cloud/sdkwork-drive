@@ -27,7 +27,7 @@ public class NodeCapabilitiesResponse {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -35,7 +35,7 @@ public class NodeCapabilitiesResponse {
     public String getNodeId() {
         return this.nodeId;
     }
-    
+
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -43,7 +43,7 @@ public class NodeCapabilitiesResponse {
     public String getSubjectType() {
         return this.subjectType;
     }
-    
+
     public void setSubjectType(String subjectType) {
         this.subjectType = subjectType;
     }
@@ -51,7 +51,7 @@ public class NodeCapabilitiesResponse {
     public String getSubjectId() {
         return this.subjectId;
     }
-    
+
     public void setSubjectId(String subjectId) {
         this.subjectId = subjectId;
     }
@@ -59,7 +59,7 @@ public class NodeCapabilitiesResponse {
     public String getRole() {
         return this.role;
     }
-    
+
     public void setRole(String role) {
         this.role = role;
     }
@@ -67,7 +67,7 @@ public class NodeCapabilitiesResponse {
     public String getSource() {
         return this.source;
     }
-    
+
     public void setSource(String source) {
         this.source = source;
     }
@@ -75,7 +75,7 @@ public class NodeCapabilitiesResponse {
     public String getPermissionId() {
         return this.permissionId;
     }
-    
+
     public void setPermissionId(String permissionId) {
         this.permissionId = permissionId;
     }
@@ -83,7 +83,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getInherited() {
         return this.inherited;
     }
-    
+
     public void setInherited(Boolean inherited) {
         this.inherited = inherited;
     }
@@ -91,7 +91,7 @@ public class NodeCapabilitiesResponse {
     public String getInheritedFromNodeId() {
         return this.inheritedFromNodeId;
     }
-    
+
     public void setInheritedFromNodeId(String inheritedFromNodeId) {
         this.inheritedFromNodeId = inheritedFromNodeId;
     }
@@ -99,7 +99,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanRead() {
         return this.canRead;
     }
-    
+
     public void setCanRead(Boolean canRead) {
         this.canRead = canRead;
     }
@@ -107,7 +107,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanComment() {
         return this.canComment;
     }
-    
+
     public void setCanComment(Boolean canComment) {
         this.canComment = canComment;
     }
@@ -115,7 +115,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanWrite() {
         return this.canWrite;
     }
-    
+
     public void setCanWrite(Boolean canWrite) {
         this.canWrite = canWrite;
     }
@@ -123,7 +123,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanDownload() {
         return this.canDownload;
     }
-    
+
     public void setCanDownload(Boolean canDownload) {
         this.canDownload = canDownload;
     }
@@ -131,7 +131,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanCopy() {
         return this.canCopy;
     }
-    
+
     public void setCanCopy(Boolean canCopy) {
         this.canCopy = canCopy;
     }
@@ -139,7 +139,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanMove() {
         return this.canMove;
     }
-    
+
     public void setCanMove(Boolean canMove) {
         this.canMove = canMove;
     }
@@ -147,7 +147,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanTrash() {
         return this.canTrash;
     }
-    
+
     public void setCanTrash(Boolean canTrash) {
         this.canTrash = canTrash;
     }
@@ -155,7 +155,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanRestore() {
         return this.canRestore;
     }
-    
+
     public void setCanRestore(Boolean canRestore) {
         this.canRestore = canRestore;
     }
@@ -163,7 +163,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanDelete() {
         return this.canDelete;
     }
-    
+
     public void setCanDelete(Boolean canDelete) {
         this.canDelete = canDelete;
     }
@@ -171,7 +171,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanShare() {
         return this.canShare;
     }
-    
+
     public void setCanShare(Boolean canShare) {
         this.canShare = canShare;
     }
@@ -179,7 +179,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanManagePermissions() {
         return this.canManagePermissions;
     }
-    
+
     public void setCanManagePermissions(Boolean canManagePermissions) {
         this.canManagePermissions = canManagePermissions;
     }
@@ -187,7 +187,7 @@ public class NodeCapabilitiesResponse {
     public Boolean getCanManageVersions() {
         return this.canManageVersions;
     }
-    
+
     public void setCanManageVersions(Boolean canManageVersions) {
         this.canManageVersions = canManageVersions;
     }

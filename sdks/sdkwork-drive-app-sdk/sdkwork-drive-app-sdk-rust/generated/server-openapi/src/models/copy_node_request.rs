@@ -4,9 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct CopyNodeRequest {
     pub id: String,
 
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     #[serde(rename = "targetSpaceId")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target_space_id: Option<String>,
@@ -18,8 +15,4 @@ pub struct CopyNodeRequest {
     #[serde(rename = "nodeName")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<String>,
-
-    #[serde(rename = "operatorId")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operator_id: Option<String>,
 }

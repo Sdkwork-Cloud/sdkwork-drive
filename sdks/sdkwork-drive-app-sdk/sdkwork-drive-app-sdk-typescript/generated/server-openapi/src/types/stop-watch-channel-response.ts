@@ -4,5 +4,3 @@ export interface StopWatchChannelResponse {
   stopped: boolean;
   channel: DriveWatchChannel;
 }
-
-

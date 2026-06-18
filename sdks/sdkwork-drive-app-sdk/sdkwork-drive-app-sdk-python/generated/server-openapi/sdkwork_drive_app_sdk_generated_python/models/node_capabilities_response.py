@@ -5,10 +5,7 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 @dataclass
 class NodeCapabilitiesResponse:
-    tenant_id: str
     node_id: str
-    subject_type: str
-    subject_id: str
     role: str
     source: str
     permission_id: str
@@ -26,3 +23,6 @@ class NodeCapabilitiesResponse:
     can_share: bool
     can_manage_permissions: bool
     can_manage_versions: bool
+    tenant_id: Optional[str] = None
+    subject_type: Optional[str] = None
+    subject_id: Optional[str] = None

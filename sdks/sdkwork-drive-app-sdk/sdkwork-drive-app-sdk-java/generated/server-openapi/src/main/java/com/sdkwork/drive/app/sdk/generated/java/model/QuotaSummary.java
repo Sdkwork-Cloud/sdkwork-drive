@@ -9,7 +9,7 @@ public class QuotaSummary {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -17,7 +17,7 @@ public class QuotaSummary {
     public Integer getUsedBytes() {
         return this.usedBytes;
     }
-    
+
     public void setUsedBytes(Integer usedBytes) {
         this.usedBytes = usedBytes;
     }
@@ -25,7 +25,7 @@ public class QuotaSummary {
     public Integer getObjectCount() {
         return this.objectCount;
     }
-    
+
     public void setObjectCount(Integer objectCount) {
         this.objectCount = objectCount;
     }

@@ -1,6 +1,6 @@
 export interface DriveUploadSession {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   spaceId: string;
   nodeId: string;
   bucket: string;
@@ -14,5 +14,3 @@ export interface DriveUploadSession {
   /** Provider-side multipart upload id used by the configured object store. */
   storageUploadId: string;
 }
-
-

@@ -1,7 +1,5 @@
 export interface QuotaSummary {
-  tenantId: string;
+  tenantId?: string;
   usedBytes: string;
   objectCount: string;
 }
-
-

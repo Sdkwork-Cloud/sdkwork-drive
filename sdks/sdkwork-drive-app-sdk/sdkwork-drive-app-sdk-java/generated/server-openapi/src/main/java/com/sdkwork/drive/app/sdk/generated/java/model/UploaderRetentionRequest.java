@@ -10,7 +10,7 @@ public class UploaderRetentionRequest {
     public String getMode() {
         return this.mode;
     }
-    
+
     public void setMode(String mode) {
         this.mode = mode;
     }
@@ -18,7 +18,7 @@ public class UploaderRetentionRequest {
     public Integer getTtlSeconds() {
         return this.ttlSeconds;
     }
-    
+
     public void setTtlSeconds(Integer ttlSeconds) {
         this.ttlSeconds = ttlSeconds;
     }
@@ -26,7 +26,7 @@ public class UploaderRetentionRequest {
     public String getCleanupAction() {
         return this.cleanupAction;
     }
-    
+
     public void setCleanupAction(String cleanupAction) {
         this.cleanupAction = cleanupAction;
     }
@@ -34,7 +34,7 @@ public class UploaderRetentionRequest {
     public Integer getHardDeleteAfterSeconds() {
         return this.hardDeleteAfterSeconds;
     }
-    
+
     public void setHardDeleteAfterSeconds(Integer hardDeleteAfterSeconds) {
         this.hardDeleteAfterSeconds = hardDeleteAfterSeconds;
     }

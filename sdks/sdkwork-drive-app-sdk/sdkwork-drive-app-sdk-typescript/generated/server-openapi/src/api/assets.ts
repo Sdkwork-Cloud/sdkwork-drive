@@ -4,10 +4,6 @@ import type { HttpClient } from '../http/client';
 import type { AssetActionRequest, AssetCollection, AssetCollectionItem, AssetCollectionPage, AssetItem, AssetPage, AssetRelation, CreateAssetCollectionItemRequest, CreateAssetCollectionRequest, CreateAssetRelationRequest, CreateAssetRequest, DeleteAssetCollectionItemResponse, DeleteAssetRelationResponse, UpdateAssetRequest } from '../types';
 
 
-export interface AssetsAssetRelationsDeleteParams {
-  tenantId: string;
-}
-
 export class AssetsAssetRelationsApi {
   private client: HttpClient;
 
@@ -22,16 +18,9 @@ export class AssetsAssetRelationsApi {
   }
 
 /** Delete an asset relation */
-  async delete(assetId: string, relationId: string, params: AssetsAssetRelationsDeleteParams): Promise<DeleteAssetRelationResponse> {
-    const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.delete<DeleteAssetRelationResponse>(appendQueryString(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/relations/${serializePathParameter(relationId, { name: 'relationId', style: 'simple', explode: false })}`), query));
+  async delete(assetId: string, relationId: string): Promise<DeleteAssetRelationResponse> {
+    return this.client.delete<DeleteAssetRelationResponse>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/relations/${serializePathParameter(relationId, { name: 'relationId', style: 'simple', explode: false })}`));
   }
-}
-
-export interface AssetsAssetCollectionItemsDeleteParams {
-  tenantId: string;
 }
 
 export class AssetsAssetCollectionItemsApi {
@@ -48,16 +37,12 @@ export class AssetsAssetCollectionItemsApi {
   }
 
 /** Remove an asset from a collection */
-  async delete(collectionId: string, itemId: string, params: AssetsAssetCollectionItemsDeleteParams): Promise<DeleteAssetCollectionItemResponse> {
-    const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.delete<DeleteAssetCollectionItemResponse>(appendQueryString(appApiPath(`/assets/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'itemId', style: 'simple', explode: false })}`), query));
+  async delete(collectionId: string, itemId: string): Promise<DeleteAssetCollectionItemResponse> {
+    return this.client.delete<DeleteAssetCollectionItemResponse>(appApiPath(`/assets/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'itemId', style: 'simple', explode: false })}`));
   }
 }
 
 export interface AssetsAssetCollectionsListParams {
-  tenantId: string;
   cursor?: string;
   pageSize?: number;
 }
@@ -71,11 +56,10 @@ export class AssetsAssetCollectionsApi {
 
 
 /** List asset collections */
-  async list(params: AssetsAssetCollectionsListParams): Promise<AssetCollectionPage> {
+  async list(params?: AssetsAssetCollectionsListParams): Promise<AssetCollectionPage> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-      { name: 'cursor', value: params.cursor, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<AssetCollectionPage>(appendQueryString(appApiPath(`/assets/collections`), query));
   }
@@ -87,16 +71,11 @@ export class AssetsAssetCollectionsApi {
 }
 
 export interface AssetsListParams {
-  tenantId: string;
   cursor?: string;
   pageSize?: number;
   kind?: string;
   sourceType?: string;
   q?: string;
-}
-
-export interface AssetsGetParams {
-  tenantId: string;
 }
 
 export class AssetsApi {
@@ -114,14 +93,13 @@ export class AssetsApi {
 
 
 /** List global assets */
-  async list(params: AssetsListParams): Promise<AssetPage> {
+  async list(params?: AssetsListParams): Promise<AssetPage> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-      { name: 'cursor', value: params.cursor, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'kind', value: params.kind, style: 'form', explode: true, allowReserved: false },
-      { name: 'sourceType', value: params.sourceType, style: 'form', explode: true, allowReserved: false },
-      { name: 'q', value: params.q, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'kind', value: params?.kind, style: 'form', explode: true, allowReserved: false },
+      { name: 'sourceType', value: params?.sourceType, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<AssetPage>(appendQueryString(appApiPath(`/assets`), query));
   }
@@ -132,11 +110,8 @@ export class AssetsApi {
   }
 
 /** Get a global asset */
-  async get(assetId: string, params: AssetsGetParams): Promise<AssetItem> {
-    const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.get<AssetItem>(appendQueryString(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}`), query));
+  async get(assetId: string): Promise<AssetItem> {
+    return this.client.get<AssetItem>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}`));
   }
 
 /** Update a global asset */
@@ -390,5 +365,3 @@ function encodeQueryValue(value: string, allowReserved: boolean): string {
     .replace(/%3B/gi, ';')
     .replace(/%3D/gi, '=');
 }
-
-

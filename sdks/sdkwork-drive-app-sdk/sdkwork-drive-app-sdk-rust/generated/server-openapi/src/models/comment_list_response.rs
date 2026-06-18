@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::DriveComment;
+use crate::models::{DriveComment};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct CommentListResponse {

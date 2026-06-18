@@ -15,7 +15,7 @@ public class DrivePermission {
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -23,7 +23,7 @@ public class DrivePermission {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -31,7 +31,7 @@ public class DrivePermission {
     public String getNodeId() {
         return this.nodeId;
     }
-    
+
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -39,7 +39,7 @@ public class DrivePermission {
     public String getSubjectType() {
         return this.subjectType;
     }
-    
+
     public void setSubjectType(String subjectType) {
         this.subjectType = subjectType;
     }
@@ -47,7 +47,7 @@ public class DrivePermission {
     public String getSubjectId() {
         return this.subjectId;
     }
-    
+
     public void setSubjectId(String subjectId) {
         this.subjectId = subjectId;
     }
@@ -55,7 +55,7 @@ public class DrivePermission {
     public String getRole() {
         return this.role;
     }
-    
+
     public void setRole(String role) {
         this.role = role;
     }
@@ -63,7 +63,7 @@ public class DrivePermission {
     public Boolean getInherited() {
         return this.inherited;
     }
-    
+
     public void setInherited(Boolean inherited) {
         this.inherited = inherited;
     }
@@ -71,7 +71,7 @@ public class DrivePermission {
     public String getLifecycleStatus() {
         return this.lifecycleStatus;
     }
-    
+
     public void setLifecycleStatus(String lifecycleStatus) {
         this.lifecycleStatus = lifecycleStatus;
     }
@@ -79,7 +79,7 @@ public class DrivePermission {
     public Integer getVersion() {
         return this.version;
     }
-    
+
     public void setVersion(Integer version) {
         this.version = version;
     }

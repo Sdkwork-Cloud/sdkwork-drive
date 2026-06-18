@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class UploadSessionMutationResponse:
     id: str
-    tenant_id: str
     space_id: str
     node_id: str
     bucket: str
@@ -16,3 +15,4 @@ class UploadSessionMutationResponse:
     version: int
     storage_provider_id: str
     storage_upload_id: str
+    tenant_id: Optional[str] = None

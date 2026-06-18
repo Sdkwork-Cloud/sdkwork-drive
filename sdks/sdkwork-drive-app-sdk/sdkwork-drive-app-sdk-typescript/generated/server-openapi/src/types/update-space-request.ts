@@ -1,7 +1,6 @@
 export interface UpdateSpaceRequest {
-  tenantId: string;
   displayName?: string;
-  operatorId?: string;
+  presentationIcon?: string;
+  presentationColor?: string;
+  description?: string;
 }
-
-

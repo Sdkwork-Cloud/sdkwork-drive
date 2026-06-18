@@ -4,9 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct CreateFileRequest {
     pub id: String,
 
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     #[serde(rename = "spaceId")]
     pub space_id: String,
 
@@ -16,9 +13,6 @@ pub struct CreateFileRequest {
 
     #[serde(rename = "nodeName")]
     pub node_name: String,
-
-    #[serde(rename = "operatorId")]
-    pub operator_id: String,
 
     #[serde(rename = "uploadSessionId")]
     pub upload_session_id: String,

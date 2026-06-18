@@ -4,11 +4,5 @@ use serde::{Deserialize, Serialize};
 pub struct CreateCommentReplyRequest {
     pub id: String,
 
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     pub content: String,
-
-    #[serde(rename = "operatorId")]
-    pub operator_id: String,
 }

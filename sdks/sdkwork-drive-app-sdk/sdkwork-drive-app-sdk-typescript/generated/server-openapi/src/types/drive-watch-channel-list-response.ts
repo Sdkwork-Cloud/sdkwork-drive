@@ -4,5 +4,3 @@ export interface DriveWatchChannelListResponse {
   items: DriveWatchChannel[];
   nextPageToken?: string | null;
 }
-
-

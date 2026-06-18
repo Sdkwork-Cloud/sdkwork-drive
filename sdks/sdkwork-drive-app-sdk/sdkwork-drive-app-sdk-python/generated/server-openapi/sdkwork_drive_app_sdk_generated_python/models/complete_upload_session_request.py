@@ -8,10 +8,8 @@ if TYPE_CHECKING:
 
 @dataclass
 class CompleteUploadSessionRequest:
-    tenant_id: str
     content_type: str
     content_length: int
     checksum_sha256hex: str
     parts: List[CompletedUploadPart]
     upload_id: Optional[str] = None
-    operator_id: Optional[str] = None

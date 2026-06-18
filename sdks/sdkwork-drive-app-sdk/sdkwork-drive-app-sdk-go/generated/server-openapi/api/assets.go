@@ -1,0 +1,408 @@
+package api
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/url"
+    "strings"
+    sdktypes "sdkwork-drive-app-sdk-generated-go/types"
+    sdkhttp "sdkwork-drive-app-sdk-generated-go/http"
+)
+
+type AssetsApi struct {
+    client *sdkhttp.Client
+}
+
+func NewAssetsApi(client *sdkhttp.Client) *AssetsApi {
+    return &AssetsApi{client: client}
+}
+
+// List global assets
+func (a *AssetsApi) List(cursor *string, pageSize *int, kind *string, sourceType *string, q *string) (sdktypes.AssetPage, error) {
+    query := BuildQueryString([]QueryParameterSpec{
+        {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "kind", Value: func() interface{} { if kind == nil { return nil }; return *kind }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "sourceType", Value: func() interface{} { if sourceType == nil { return nil }; return *sourceType }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "q", Value: func() interface{} { if q == nil { return nil }; return *q }(), Style: "form", Explode: true, AllowReserved: false},
+    })
+    raw, err := a.client.Get(AppendQueryString(AppApiPath("/assets"), query), nil, nil)
+    if err != nil {
+        var zero sdktypes.AssetPage
+        return zero, err
+    }
+    return decodeResult[sdktypes.AssetPage](raw)
+}
+
+// Create a global asset metadata record
+func (a *AssetsApi) Create(body sdktypes.CreateAssetRequest) (sdktypes.AssetItem, error) {
+    raw, err := a.client.Post(AppApiPath("/assets"), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.AssetItem
+        return zero, err
+    }
+    return decodeResult[sdktypes.AssetItem](raw)
+}
+
+// Get a global asset
+func (a *AssetsApi) Get(assetId string) (sdktypes.AssetItem, error) {
+    raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/assets/%s", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero sdktypes.AssetItem
+        return zero, err
+    }
+    return decodeResult[sdktypes.AssetItem](raw)
+}
+
+// Update a global asset
+func (a *AssetsApi) Update(assetId string, body sdktypes.UpdateAssetRequest) (sdktypes.AssetItem, error) {
+    raw, err := a.client.Patch(AppApiPath(fmt.Sprintf("/assets/%s", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.AssetItem
+        return zero, err
+    }
+    return decodeResult[sdktypes.AssetItem](raw)
+}
+
+// Archive a global asset
+func (a *AssetsApi) Archive(assetId string, body sdktypes.AssetActionRequest) (sdktypes.AssetItem, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/%s/archive", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.AssetItem
+        return zero, err
+    }
+    return decodeResult[sdktypes.AssetItem](raw)
+}
+
+// Restore an archived global asset
+func (a *AssetsApi) Restore(assetId string, body sdktypes.AssetActionRequest) (sdktypes.AssetItem, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/%s/restore", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.AssetItem
+        return zero, err
+    }
+    return decodeResult[sdktypes.AssetItem](raw)
+}
+
+// List asset collections
+func (a *AssetsApi) AssetCollectionsList(cursor *string, pageSize *int) (sdktypes.AssetCollectionPage, error) {
+    query := BuildQueryString([]QueryParameterSpec{
+        {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+    })
+    raw, err := a.client.Get(AppendQueryString(AppApiPath("/assets/collections"), query), nil, nil)
+    if err != nil {
+        var zero sdktypes.AssetCollectionPage
+        return zero, err
+    }
+    return decodeResult[sdktypes.AssetCollectionPage](raw)
+}
+
+// Create an asset collection
+func (a *AssetsApi) AssetCollectionsCreate(body sdktypes.CreateAssetCollectionRequest) (sdktypes.AssetCollection, error) {
+    raw, err := a.client.Post(AppApiPath("/assets/collections"), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.AssetCollection
+        return zero, err
+    }
+    return decodeResult[sdktypes.AssetCollection](raw)
+}
+
+// Add an asset to a collection
+func (a *AssetsApi) AssetCollectionItemsCreate(collectionId string, body sdktypes.CreateAssetCollectionItemRequest) (sdktypes.AssetCollectionItem, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/collections/%s/items", SerializePathParameter(collectionId, PathParameterSpec{Name: "collectionId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.AssetCollectionItem
+        return zero, err
+    }
+    return decodeResult[sdktypes.AssetCollectionItem](raw)
+}
+
+// Remove an asset from a collection
+func (a *AssetsApi) AssetCollectionItemsDelete(collectionId string, itemId string) (sdktypes.DeleteAssetCollectionItemResponse, error) {
+    raw, err := a.client.Delete(AppApiPath(fmt.Sprintf("/assets/collections/%s/items/%s", SerializePathParameter(collectionId, PathParameterSpec{Name: "collectionId", Style: "simple", Explode: false}), SerializePathParameter(itemId, PathParameterSpec{Name: "itemId", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero sdktypes.DeleteAssetCollectionItemResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.DeleteAssetCollectionItemResponse](raw)
+}
+
+// Create an asset relation
+func (a *AssetsApi) AssetRelationsCreate(assetId string, body sdktypes.CreateAssetRelationRequest) (sdktypes.AssetRelation, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/%s/relations", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.AssetRelation
+        return zero, err
+    }
+    return decodeResult[sdktypes.AssetRelation](raw)
+}
+
+// Delete an asset relation
+func (a *AssetsApi) AssetRelationsDelete(assetId string, relationId string) (sdktypes.DeleteAssetRelationResponse, error) {
+    raw, err := a.client.Delete(AppApiPath(fmt.Sprintf("/assets/%s/relations/%s", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}), SerializePathParameter(relationId, PathParameterSpec{Name: "relationId", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero sdktypes.DeleteAssetRelationResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.DeleteAssetRelationResponse](raw)
+}
+
+type PathParameterSpec struct {
+    Name    string
+    Style   string
+    Explode bool
+}
+
+func SerializePathParameter(value interface{}, spec PathParameterSpec) string {
+    if value == nil {
+        return ""
+    }
+    style := spec.Style
+    if style == "" {
+        style = "simple"
+    }
+
+    switch typed := value.(type) {
+    case []string:
+        return SerializePathArray(spec.Name, stringSliceToInterface(typed), style, spec.Explode)
+    case []int:
+        return SerializePathArray(spec.Name, intSliceToInterface(typed), style, spec.Explode)
+    case []interface{}:
+        return SerializePathArray(spec.Name, typed, style, spec.Explode)
+    case map[string]string:
+        return SerializePathObject(spec.Name, stringMapToInterface(typed), style, spec.Explode)
+    case map[string]int:
+        return SerializePathObject(spec.Name, intMapToInterface(typed), style, spec.Explode)
+    case map[string]interface{}:
+        return SerializePathObject(spec.Name, typed, style, spec.Explode)
+    default:
+        return PathPrefix(spec.Name, style) + url.PathEscape(fmt.Sprint(value))
+    }
+}
+
+func SerializePathArray(name string, values []interface{}, style string, explode bool) string {
+    serialized := make([]string, 0, len(values))
+    for _, item := range values {
+        if item != nil {
+            serialized = append(serialized, url.PathEscape(fmt.Sprint(item)))
+        }
+    }
+    if len(serialized) == 0 {
+        return PathPrefix(name, style)
+    }
+    if style == "matrix" {
+        if explode {
+            parts := make([]string, 0, len(serialized))
+            for _, item := range serialized {
+                parts = append(parts, ";"+name+"="+item)
+            }
+            return strings.Join(parts, "")
+        }
+        return ";" + name + "=" + strings.Join(serialized, ",")
+    }
+    separator := ","
+    if explode {
+        separator = "."
+    }
+    return PathPrefix(name, style) + strings.Join(serialized, separator)
+}
+
+func SerializePathObject(name string, values map[string]interface{}, style string, explode bool) string {
+    entries := make([]string, 0, len(values)*2)
+    exploded := make([]string, 0, len(values))
+    for key, value := range values {
+        if value == nil {
+            continue
+        }
+        escapedKey := url.PathEscape(key)
+        escapedValue := url.PathEscape(fmt.Sprint(value))
+        if explode {
+            if style == "matrix" {
+                exploded = append(exploded, ";"+escapedKey+"="+escapedValue)
+            } else {
+                exploded = append(exploded, escapedKey+"="+escapedValue)
+            }
+        } else {
+            entries = append(entries, escapedKey, escapedValue)
+        }
+    }
+    if style == "matrix" {
+        if explode {
+            return strings.Join(exploded, "")
+        }
+        return ";" + name + "=" + strings.Join(entries, ",")
+    }
+    if explode {
+        separator := ","
+        if style == "label" {
+            separator = "."
+        }
+        return PathPrefix(name, style) + strings.Join(exploded, separator)
+    }
+    return PathPrefix(name, style) + strings.Join(entries, ",")
+}
+
+func PathPrefix(name string, style string) string {
+    if style == "label" {
+        return "."
+    }
+    if style == "matrix" {
+        return ";" + name
+    }
+    return ""
+}
+type QueryParameterSpec struct {
+    Name          string
+    Value         interface{}
+    Style         string
+    Explode       bool
+    AllowReserved bool
+    ContentType   string
+}
+
+func BuildQueryString(parameters []QueryParameterSpec) string {
+    pairs := make([]string, 0)
+    for _, parameter := range parameters {
+        AppendSerializedParameter(&pairs, parameter)
+    }
+    return strings.Join(pairs, "&")
+}
+
+func AppendSerializedParameter(pairs *[]string, parameter QueryParameterSpec) {
+    if parameter.Value == nil {
+        return
+    }
+
+    if parameter.ContentType != "" {
+        encoded, _ := json.Marshal(parameter.Value)
+        *pairs = append(*pairs, url.QueryEscape(parameter.Name)+"="+EncodeQueryValue(string(encoded), parameter.AllowReserved))
+        return
+    }
+
+    style := parameter.Style
+    if style == "" {
+        style = "form"
+    }
+
+    switch value := parameter.Value.(type) {
+    case []string:
+        AppendArrayParameter(pairs, parameter.Name, stringSliceToInterface(value), style, parameter.Explode, parameter.AllowReserved)
+    case []int:
+        AppendArrayParameter(pairs, parameter.Name, intSliceToInterface(value), style, parameter.Explode, parameter.AllowReserved)
+    case []interface{}:
+        AppendArrayParameter(pairs, parameter.Name, value, style, parameter.Explode, parameter.AllowReserved)
+    case map[string]int:
+        AppendObjectParameter(pairs, parameter.Name, intMapToInterface(value), style, parameter.Explode, parameter.AllowReserved)
+    case map[string]string:
+        AppendObjectParameter(pairs, parameter.Name, stringMapToInterface(value), style, parameter.Explode, parameter.AllowReserved)
+    case map[string]interface{}:
+        if style == "deepObject" {
+            AppendDeepObjectParameter(pairs, parameter.Name, value, parameter.AllowReserved)
+        } else {
+            AppendObjectParameter(pairs, parameter.Name, value, style, parameter.Explode, parameter.AllowReserved)
+        }
+    default:
+        *pairs = append(*pairs, url.QueryEscape(parameter.Name)+"="+EncodeQueryValue(fmt.Sprint(value), parameter.AllowReserved))
+    }
+}
+
+func AppendArrayParameter(pairs *[]string, name string, value []interface{}, style string, explode bool, allowReserved bool) {
+    values := make([]string, 0, len(value))
+    for _, item := range value {
+        if item != nil {
+            values = append(values, fmt.Sprint(item))
+        }
+    }
+    if len(values) == 0 {
+        return
+    }
+    if style == "form" && explode {
+        for _, item := range values {
+            *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(item, allowReserved))
+        }
+        return
+    }
+    *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(strings.Join(values, ","), allowReserved))
+}
+
+func AppendObjectParameter(pairs *[]string, name string, value map[string]interface{}, style string, explode bool, allowReserved bool) {
+    entries := make([]string, 0, len(value)*2)
+    for key, item := range value {
+        if item == nil {
+            continue
+        }
+        if style == "form" && explode {
+            *pairs = append(*pairs, url.QueryEscape(key)+"="+EncodeQueryValue(fmt.Sprint(item), allowReserved))
+            continue
+        }
+        entries = append(entries, key, fmt.Sprint(item))
+    }
+    if len(entries) == 0 {
+        return
+    }
+    if !(style == "form" && explode) {
+        *pairs = append(*pairs, url.QueryEscape(name)+"="+EncodeQueryValue(strings.Join(entries, ","), allowReserved))
+    }
+}
+
+func AppendDeepObjectParameter(pairs *[]string, name string, value map[string]interface{}, allowReserved bool) {
+    for key, item := range value {
+        if item == nil {
+            continue
+        }
+        *pairs = append(*pairs, url.QueryEscape(fmt.Sprintf("%s[%s]", name, key))+"="+EncodeQueryValue(fmt.Sprint(item), allowReserved))
+    }
+}
+
+func EncodeQueryValue(value string, allowReserved bool) string {
+    encoded := url.QueryEscape(value)
+    if !allowReserved {
+        return encoded
+    }
+    replacements := map[string]string{
+        "%3A": ":", "%2F": "/", "%3F": "?", "%23": "#",
+        "%5B": "[", "%5D": "]", "%40": "@", "%21": "!",
+        "%24": "$", "%26": "&", "%27": "'", "%28": "(",
+        "%29": ")", "%2A": "*", "%2B": "+", "%2C": ",",
+        "%3B": ";", "%3D": "=",
+    }
+    for escaped, reserved := range replacements {
+        encoded = strings.ReplaceAll(encoded, escaped, reserved)
+    }
+    return encoded
+}
+
+
+
+func stringSliceToInterface(values []string) []interface{} {
+    result := make([]interface{}, 0, len(values))
+    for _, value := range values {
+        result = append(result, value)
+    }
+    return result
+}
+
+func intSliceToInterface(values []int) []interface{} {
+    result := make([]interface{}, 0, len(values))
+    for _, value := range values {
+        result = append(result, value)
+    }
+    return result
+}
+
+func stringMapToInterface(values map[string]string) map[string]interface{} {
+    result := make(map[string]interface{}, len(values))
+    for key, value := range values {
+        result[key] = value
+    }
+    return result
+}
+
+func intMapToInterface(values map[string]int) map[string]interface{} {
+    result := make(map[string]interface{}, len(values))
+    for key, value := range values {
+        result[key] = value
+    }
+    return result
+}

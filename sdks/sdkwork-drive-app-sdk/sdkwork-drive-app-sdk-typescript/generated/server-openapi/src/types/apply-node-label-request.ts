@@ -1,6 +1,1 @@
-export interface ApplyNodeLabelRequest {
-  tenantId: string;
-  operatorId?: string;
-}
-
-
+export interface ApplyNodeLabelRequest {}

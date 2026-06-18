@@ -28,9 +28,8 @@ impl WatchChannelsApi {
     }
 
     /// List Drive watch channels
-    pub async fn list(&self, tenant_id: &str, resource_type: Option<&str>, lifecycle_status: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<DriveWatchChannelListResponse, SdkworkError> {
+    pub async fn list(&self, resource_type: Option<&str>, lifecycle_status: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<DriveWatchChannelListResponse, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("resourceType", resource_type, "form", true, false, None),
             QueryParameterSpec::new("lifecycleStatus", lifecycle_status, "form", true, false, None),
             QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
@@ -41,11 +40,8 @@ impl WatchChannelsApi {
     }
 
     /// Get a Drive watch channel
-    pub async fn get(&self, channel_id: &str, tenant_id: &str) -> Result<DriveWatchChannel, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
-        ]);
-        let path = append_query_string(app_path(&format!("/drive/watch_channels/{}", serialize_path_parameter(channel_id, PathParameterSpec::new("channelId", "simple", false)))), &query);
+    pub async fn get(&self, channel_id: &str) -> Result<DriveWatchChannel, SdkworkError> {
+        let path = app_path(&format!("/drive/watch_channels/{}", serialize_path_parameter(channel_id, PathParameterSpec::new("channelId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 

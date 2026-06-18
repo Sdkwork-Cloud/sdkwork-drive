@@ -191,10 +191,9 @@ class NodeLabelsApi:
         self._client = client
 
 
-    def list(self, node_id: str, tenant_id: str, label_key: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeLabelListResponse:
+    def list(self, node_id: str, label_key: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeLabelListResponse:
         """List labels applied to a node"""
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'labelKey', 'value': label_key, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -205,10 +204,6 @@ class NodeLabelsApi:
         """Apply a label to a node"""
         return self._client.put(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def remove(self, node_id: str, label_id: str, tenant_id: str, operator_id: Optional[str] = None) -> RemoveNodeLabelResponse:
+    def remove(self, node_id: str, label_id: str) -> RemoveNodeLabelResponse:
         """Remove a label from a node"""
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.delete(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}", query))
+        return self._client.delete(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}")

@@ -6,12 +6,13 @@
     "version": "0.1.0",
     "language": "typescript",
     "sdkType": "backend",
+    "protocol": "http",
     "packageName": "sdkwork-drive-backend-sdk-generated-typescript"
   },
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -43,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "cf505ea0d051f1185003af83eccf69bc2aaa8cc583bbaea3944572edf4bec4d0"
+      "sha256": "7071a2974abe28888b79e55d78c3cc1eca23a6161f18f60c1893b02f290ef2c6"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -55,7 +56,7 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "b651b72b90bac7d06d663b63118c6aa529ad8d435ea75a66a07f50103a069f97"
+      "sha256": "e06ae552cc2254b0811064d93f5c9c9b1fe9700941166d9cc98a973b781c0019"
     },
     {
       "path": "src/api/index.ts",
@@ -75,7 +76,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "8e22baf6ea589cda56bf7a8f5827b6f6f91887467da7383f2461e9485fe337de"
+      "sha256": "e1026e5587705492dcf32bf25ebb2584d5645b11a1046db92e9d4808f4b3edc0"
     },
     {
       "path": "src/http/index.ts",
@@ -135,7 +136,7 @@
     },
     {
       "path": "src/types/drive-space.ts",
-      "sha256": "4838dce44327a6f90608a0022c3325b09af8310de181a617fab0908e703170fd"
+      "sha256": "778a57ee672daa69fd99166dcc03c392e2ba6734c219da4c4b89f48aeb3d2c5a"
     },
     {
       "path": "src/types/index.ts",
@@ -199,11 +200,11 @@
     },
     {
       "path": "src/types/set-default-storage-provider-binding-request.ts",
-      "sha256": "f349827b25f15bed492361aeb39e6d9cea1715a6ce921800293c65d26102574b"
+      "sha256": "9362b528faf5c9e50d5a6994f3a33e6dfd9ee5eea6d8ea39bee1bbc2aea64714"
     },
     {
       "path": "src/types/storage-provider-binding.ts",
-      "sha256": "4aed0f58f57c7e3a99aa8c247007c2b7c0da4b9c88a2b57311f37f77306d33b8"
+      "sha256": "862d2c6cea62c8deffdb259a51ee8e5e1a063b3389f1c06b4a10fe321db7a30c"
     },
     {
       "path": "src/types/storage-provider-capabilities.ts",

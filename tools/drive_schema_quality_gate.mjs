@@ -679,6 +679,19 @@ function assertQueryParameterStringConstraints(
   }
 }
 
+function assertQueryParameterAbsent(document, pathKey, method, parameterName, label) {
+  const operation = document.paths?.[pathKey]?.[method];
+  if (!operation || typeof operation !== "object") {
+    fail(`${label} missing operation ${method.toUpperCase()} ${pathKey}`);
+  }
+  const parameters = Array.isArray(operation.parameters) ? operation.parameters : [];
+  if (parameters.some((parameter) => parameter?.name === parameterName)) {
+    fail(
+      `${label} ${method.toUpperCase()} ${pathKey} must not expose auth projection query parameter ${parameterName}`,
+    );
+  }
+}
+
 function assertQueryParameterRequired(document, pathKey, method, parameterName, label) {
   const pathItem = document.paths && document.paths[pathKey];
   if (!pathItem || !pathItem[method]) {
@@ -1197,13 +1210,19 @@ assertSchemaOptional(appOpenapi, "FileVersion", "storageObjectId", "app openapi"
 assertSchemaHasProperties(
   appOpenapi,
   "UpdatePermissionRequest",
-  ["tenantId", "role", "operatorId"],
+  [
+  "role"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
   appOpenapi,
   "UpdateShareLinkRequest",
-  ["tenantId", "role", "expiresAtEpochMs", "downloadLimit", "operatorId"],
+  [
+  "role",
+  "expiresAtEpochMs",
+  "downloadLimit"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1215,13 +1234,19 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "CreateCommentRequest",
-  ["id", "tenantId", "content", "operatorId"],
+  [
+  "id",
+  "content"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
   appOpenapi,
   "UpdateCommentRequest",
-  ["tenantId", "content", "resolved", "operatorId"],
+  [
+  "content",
+  "resolved"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1251,13 +1276,18 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "CreateCommentReplyRequest",
-  ["id", "tenantId", "content", "operatorId"],
+  [
+  "id",
+  "content"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
   appOpenapi,
   "UpdateCommentReplyRequest",
-  ["tenantId", "content", "operatorId"],
+  [
+  "content"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1305,7 +1335,9 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "FavoriteNodeRequest",
-  ["tenantId", "subjectType", "subjectId"],
+  [
+
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1320,14 +1352,12 @@ assertSchemaHasProperties(
   appOpenapi,
   "CreateFileRequest",
   [
-    "id",
-    "tenantId",
-    "spaceId",
-    "nodeName",
-    "operatorId",
-    "uploadSessionId",
-    "idempotencyKey",
-    "expiresAtEpochMs",
+  "id",
+  "spaceId",
+  "nodeName",
+  "uploadSessionId",
+  "idempotencyKey",
+  "expiresAtEpochMs"
   ],
   "app openapi",
 );
@@ -1340,7 +1370,9 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "EmptyTrashRequest",
-  ["tenantId", "spaceId", "operatorId"],
+  [
+  "spaceId"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1352,7 +1384,9 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "MoveNodeRequest",
-  ["tenantId", "targetParentNodeId", "operatorId"],
+  [
+  "targetParentNodeId"
+  ],
   "app openapi",
 );
 for (const schemaName of [
@@ -1366,7 +1400,12 @@ for (const schemaName of [
 assertSchemaHasProperties(
   appOpenapi,
   "CopyNodeRequest",
-  ["id", "tenantId", "targetSpaceId", "targetParentNodeId", "nodeName", "operatorId"],
+  [
+  "id",
+  "targetSpaceId",
+  "targetParentNodeId",
+  "nodeName"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1407,7 +1446,10 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "PresignUploadPartRequest",
-  ["tenantId", "uploadId", "requestedTtlSeconds"],
+  [
+  "uploadId",
+  "requestedTtlSeconds"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1419,7 +1461,13 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "CompleteUploadSessionRequest",
-  ["tenantId", "uploadId", "contentType", "contentLength", "checksumSha256Hex", "parts"],
+  [
+  "uploadId",
+  "contentType",
+  "contentLength",
+  "checksumSha256Hex",
+  "parts"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1432,15 +1480,13 @@ assertSchemaHasProperties(
   appOpenapi,
   "PrepareUploaderUploadRequest",
   [
-    "id",
-    "taskId",
-    "tenantId",
-    "appId",
-    "appResourceType",
-    "appResourceId",
-    "scene",
-    "source",
-    "shareToken",
+  "id",
+  "taskId",
+  "appResourceType",
+  "appResourceId",
+  "scene",
+  "source",
+  "shareToken"
   ],
   "app openapi",
 );
@@ -1640,7 +1686,9 @@ assertSchemaPropertyStringConstraints(
 assertSchemaHasProperties(
   backendOpenapi,
   "RotateStorageProviderCredentialRequest",
-  ["credentialRef", "operatorId"],
+  [
+  "credentialRef"
+  ],
   "backend openapi",
 );
 for (const schemaName of [
@@ -1654,7 +1702,10 @@ for (const schemaName of [
 assertSchemaHasProperties(
   backendOpenapi,
   "SetDefaultStorageProviderBindingRequest",
-  ["tenantId", "providerId", "storageRootPrefix", "operatorId"],
+  [
+  "providerId",
+  "storageRootPrefix"
+  ],
   "backend openapi",
 );
 assertSchemaHasProperties(
@@ -1800,7 +1851,9 @@ assertSchemaPropertyStringConstraints(
 assertSchemaHasProperties(
   adminStorageOpenapi,
   "RotateStorageProviderCredentialRequest",
-  ["credentialRef", "operatorId"],
+  [
+  "credentialRef"
+  ],
   "admin storage openapi",
 );
 for (const schemaName of [
@@ -1818,27 +1871,19 @@ for (const schemaName of [
 assertSchemaHasProperties(
   adminStorageOpenapi,
   "SetDefaultStorageProviderBindingRequest",
-  ["tenantId", "providerId", "storageRootPrefix", "operatorId"],
+  [
+  "providerId",
+  "storageRootPrefix"
+  ],
   "admin storage openapi",
 );
 assertSchemaHasProperties(
   adminStorageOpenapi,
   "CopyProviderObjectRequest",
-  ["sourceObjectKey", "destinationObjectKey", "operatorId"],
-  "admin storage openapi",
-);
-assertSchemaRequired(
-  adminStorageOpenapi,
-  "CopyProviderObjectRequest",
-  "operatorId",
-  "admin storage openapi",
-);
-assertSchemaPropertyStringConstraints(
-  adminStorageOpenapi,
-  "CopyProviderObjectRequest",
-  "operatorId",
-  OPERATOR_ID_MAX_LENGTH,
-  OPERATOR_ID_PATTERN,
+  [
+  "sourceObjectKey",
+  "destinationObjectKey"
+  ],
   "admin storage openapi",
 );
 for (const [pathKey, method] of [
@@ -1847,24 +1892,15 @@ for (const [pathKey, method] of [
   ["/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}", "delete"],
   ["/admin/v3/api/drive/storage/bindings/default", "delete"],
 ]) {
-  assertQueryParameterRequired(
+  assertQueryParameterAbsent(
     adminStorageOpenapi,
     pathKey,
     method,
     "operatorId",
-    "admin storage openapi",
-  );
-  assertQueryParameterStringConstraints(
-    adminStorageOpenapi,
-    pathKey,
-    method,
-    "operatorId",
-    OPERATOR_ID_MAX_LENGTH,
-    OPERATOR_ID_PATTERN,
     "admin storage openapi",
   );
 }
-assertQueryParameterRequired(
+assertQueryParameterAbsent(
   adminStorageOpenapi,
   "/admin/v3/api/drive/storage/bindings",
   "get",
@@ -1920,13 +1956,19 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   backendOpenapi,
   "CreateLabelRequest",
-  ["id", "tenantId", "labelKey", "displayName", "operatorId"],
+  [
+  "id",
+  "labelKey",
+  "displayName"
+  ],
   "backend openapi",
 );
 assertSchemaHasProperties(
   backendOpenapi,
   "UpdateLabelRequest",
-  ["tenantId", "operatorId"],
+  [
+
+  ],
   "backend openapi",
 );
 assertSchemaHasProperties(
@@ -1970,7 +2012,9 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "ApplyNodeLabelRequest",
-  ["tenantId"],
+  [
+
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -2003,13 +2047,19 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "CreateWatchChannelRequest",
-  ["id", "tenantId", "address", "expirationEpochMs"],
+  [
+  "id",
+  "address",
+  "expirationEpochMs"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
   appOpenapi,
   "StopWatchChannelRequest",
-  ["tenantId"],
+  [
+
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -2050,13 +2100,20 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "CreateAssetRequest",
-  ["tenantId", "driveNodeId", "virtualReference"],
+  [
+  "driveNodeId",
+  "virtualReference"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
   appOpenapi,
   "UpdateAssetRequest",
-  ["tenantId", "title", "description", "tags"],
+  [
+  "title",
+  "description",
+  "tags"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -2068,7 +2125,9 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "CreateAssetCollectionRequest",
-  ["tenantId", "title"],
+  [
+  "title"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -2080,7 +2139,9 @@ assertSchemaHasProperties(
 assertSchemaHasProperties(
   appOpenapi,
   "CreateAssetRelationRequest",
-  ["tenantId", "relationType"],
+  [
+  "relationType"
+  ],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -2463,6 +2524,7 @@ for (const indexName of [
   "ix_dr_drive_watch_channel_expires",
   "ux_dr_drive_change_log_space_sequence",
   "ix_dr_drive_change_log_tenant_space_created",
+  "ix_dr_drive_domain_outbox_pending",
   "ix_dr_drive_audit_event_tenant_created",
   "ix_dr_drive_audit_event_resource",
   "ix_dr_drive_audit_event_action_created",
@@ -2481,6 +2543,7 @@ for (const marker of [
   "dr_drive_node_label",
   "dr_drive_watch_channel",
   "dr_drive_change_log",
+  "dr_drive_domain_outbox",
   "node_id",
   "comment_id",
   "subject_id",

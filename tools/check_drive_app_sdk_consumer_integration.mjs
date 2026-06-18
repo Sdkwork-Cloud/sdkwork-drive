@@ -161,10 +161,11 @@ function driveConsumerUsages(appRoot, workspaceRoot) {
 function isExcludedApp(appRoot, workspaceRoot) {
   const relativeRoot = relativeFromWorkspace(workspaceRoot, appRoot);
   return (
-    relativeRoot === "sdkwork-appbase" ||
-    relativeRoot.startsWith("sdkwork-appbase/") ||
+    relativeRoot === "" ||
     relativeRoot === "sdkwork-drive" ||
-    relativeRoot.startsWith("sdkwork-drive/")
+    relativeRoot.startsWith("sdkwork-drive/") ||
+    relativeRoot === "sdkwork-appbase" ||
+    relativeRoot.startsWith("sdkwork-appbase/")
   );
 }
 
@@ -182,12 +183,26 @@ function classifyApp(manifestPath, workspaceRoot) {
   };
 }
 
+function resolveSpecsRoot(workspaceRoot, driveRoot) {
+  const candidates = [
+    path.join(workspaceRoot, "sdkwork-specs"),
+    path.join(path.dirname(driveRoot), "sdkwork-specs"),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(path.join(candidate, "DRIVE_SPEC.md"))) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 export function analyzeDriveAppSdkConsumerIntegration({
   workspaceRoot = DEFAULT_WORKSPACE_ROOT,
   driveRoot = DEFAULT_DRIVE_ROOT,
 } = {}) {
-  if (!existsSync(path.join(workspaceRoot, "sdkwork-specs", "DRIVE_SPEC.md"))) {
-    throw new Error(`Cannot resolve SDKWork specs from ${workspaceRoot}.`);
+  const specsRoot = resolveSpecsRoot(workspaceRoot, driveRoot);
+  if (!specsRoot) {
+    throw new Error(`Cannot resolve SDKWork specs from ${workspaceRoot} or ${path.dirname(driveRoot)}.`);
   }
 
   if (!existsSync(path.join(driveRoot, "sdks", "sdkwork-drive-app-sdk"))) {
@@ -225,7 +240,10 @@ export function analyzeDriveAppSdkConsumerIntegration({
 }
 
 function main() {
-  const { apps, failures } = analyzeDriveAppSdkConsumerIntegration();
+  const { apps, failures } = analyzeDriveAppSdkConsumerIntegration({
+    workspaceRoot: DEFAULT_DRIVE_ROOT,
+    driveRoot: DEFAULT_DRIVE_ROOT,
+  });
 
   if (failures.length > 0) {
     console.error("Drive app SDK consumer integration check failed.");

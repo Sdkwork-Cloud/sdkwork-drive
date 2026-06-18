@@ -2,9 +2,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct MarkUploaderPartUploadedRequest {
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     #[serde(rename = "uploadSessionId")]
     pub upload_session_id: String,
 

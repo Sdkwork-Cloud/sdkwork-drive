@@ -8,5 +8,3 @@ export interface DownloadPackageItem {
   contentLength: string;
   checksumSha256Hex: string;
 }
-
-

@@ -1,6 +1,1 @@
-export interface StopWatchChannelRequest {
-  tenantId: string;
-  operatorId?: string;
-}
-
-
+export interface StopWatchChannelRequest {}

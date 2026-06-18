@@ -2,7 +2,7 @@ import type { DownloadPackageItem } from './download-package-item';
 
 export interface DownloadPackageResponse {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   packageName: string;
   state: 'creating' | 'ready' | 'failed' | 'expired';
   storageProviderId: string;
@@ -18,5 +18,3 @@ export interface DownloadPackageResponse {
   method: 'GET';
   items: DownloadPackageItem[];
 }
-
-

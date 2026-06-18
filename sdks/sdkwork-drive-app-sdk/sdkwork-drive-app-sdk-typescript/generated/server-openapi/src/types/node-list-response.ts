@@ -4,5 +4,3 @@ export interface NodeListResponse {
   items: DriveNode[];
   nextPageToken?: string;
 }
-
-

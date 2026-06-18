@@ -193,10 +193,9 @@ class WatchChannelsApi:
         self.nodes = WatchChannelsNodesApi(client)
 
 
-    def list(self, tenant_id: str, resource_type: Optional[str] = None, lifecycle_status: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> DriveWatchChannelListResponse:
+    def list(self, resource_type: Optional[str] = None, lifecycle_status: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> DriveWatchChannelListResponse:
         """List Drive watch channels"""
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'resourceType', 'value': resource_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'lifecycleStatus', 'value': lifecycle_status, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -204,12 +203,9 @@ class WatchChannelsApi:
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/watch_channels", query))
 
-    def retrieve(self, channel_id: str, tenant_id: str) -> DriveWatchChannel:
+    def retrieve(self, channel_id: str) -> DriveWatchChannel:
         """Get a Drive watch channel"""
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/watch_channels/{serialize_path_parameter(channel_id, {'name': 'channelId', 'style': 'simple', 'explode': False})}", query))
+        return self._client.get(f"/app/v3/api/drive/watch_channels/{serialize_path_parameter(channel_id, {'name': 'channelId', 'style': 'simple', 'explode': False})}")
 
     def create_stop(self, channel_id: str, body: StopWatchChannelRequest) -> StopWatchChannelResponse:
         """Stop a Drive watch channel"""

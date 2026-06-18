@@ -9,7 +9,7 @@ public class FieldError {
     public String getField() {
         return this.field;
     }
-    
+
     public void setField(String field) {
         this.field = field;
     }
@@ -17,7 +17,7 @@ public class FieldError {
     public String getMessage() {
         return this.message;
     }
-    
+
     public void setMessage(String message) {
         this.message = message;
     }
@@ -25,7 +25,7 @@ public class FieldError {
     public String getCode() {
         return this.code;
     }
-    
+
     public void setCode(String code) {
         this.code = code;
     }

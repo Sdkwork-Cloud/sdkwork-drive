@@ -9,7 +9,7 @@ public class PermissionListResponse {
     public List<DrivePermission> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<DrivePermission> items) {
         this.items = items;
     }
@@ -17,7 +17,7 @@ public class PermissionListResponse {
     public String getNextPageToken() {
         return this.nextPageToken;
     }
-    
+
     public void setNextPageToken(String nextPageToken) {
         this.nextPageToken = nextPageToken;
     }

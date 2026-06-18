@@ -18,7 +18,7 @@ public class DriveUploadSession {
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -26,7 +26,7 @@ public class DriveUploadSession {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -34,7 +34,7 @@ public class DriveUploadSession {
     public String getSpaceId() {
         return this.spaceId;
     }
-    
+
     public void setSpaceId(String spaceId) {
         this.spaceId = spaceId;
     }
@@ -42,7 +42,7 @@ public class DriveUploadSession {
     public String getNodeId() {
         return this.nodeId;
     }
-    
+
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -50,7 +50,7 @@ public class DriveUploadSession {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -58,7 +58,7 @@ public class DriveUploadSession {
     public String getObjectKey() {
         return this.objectKey;
     }
-    
+
     public void setObjectKey(String objectKey) {
         this.objectKey = objectKey;
     }
@@ -66,7 +66,7 @@ public class DriveUploadSession {
     public String getIdempotencyKey() {
         return this.idempotencyKey;
     }
-    
+
     public void setIdempotencyKey(String idempotencyKey) {
         this.idempotencyKey = idempotencyKey;
     }
@@ -74,7 +74,7 @@ public class DriveUploadSession {
     public String getState() {
         return this.state;
     }
-    
+
     public void setState(String state) {
         this.state = state;
     }
@@ -82,7 +82,7 @@ public class DriveUploadSession {
     public Integer getExpiresAtEpochMs() {
         return this.expiresAtEpochMs;
     }
-    
+
     public void setExpiresAtEpochMs(Integer expiresAtEpochMs) {
         this.expiresAtEpochMs = expiresAtEpochMs;
     }
@@ -90,7 +90,7 @@ public class DriveUploadSession {
     public Integer getVersion() {
         return this.version;
     }
-    
+
     public void setVersion(Integer version) {
         this.version = version;
     }
@@ -98,7 +98,7 @@ public class DriveUploadSession {
     public String getStorageProviderId() {
         return this.storageProviderId;
     }
-    
+
     public void setStorageProviderId(String storageProviderId) {
         this.storageProviderId = storageProviderId;
     }
@@ -106,7 +106,7 @@ public class DriveUploadSession {
     public String getStorageUploadId() {
         return this.storageUploadId;
     }
-    
+
     public void setStorageUploadId(String storageUploadId) {
         this.storageUploadId = storageUploadId;
     }

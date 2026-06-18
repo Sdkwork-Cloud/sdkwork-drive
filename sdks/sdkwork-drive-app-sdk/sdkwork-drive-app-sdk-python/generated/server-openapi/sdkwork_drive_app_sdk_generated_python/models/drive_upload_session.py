@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class DriveUploadSession:
     id: str
-    tenant_id: str
     space_id: str
     node_id: str
     bucket: str
@@ -17,3 +16,4 @@ class DriveUploadSession:
     version: int
     storage_provider_id: str
     storage_upload_id: str
+    tenant_id: Optional[str] = None

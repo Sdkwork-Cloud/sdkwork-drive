@@ -15,7 +15,7 @@ public class DriveShareLink {
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -23,7 +23,7 @@ public class DriveShareLink {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -31,7 +31,7 @@ public class DriveShareLink {
     public String getNodeId() {
         return this.nodeId;
     }
-    
+
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -39,7 +39,7 @@ public class DriveShareLink {
     public String getRole() {
         return this.role;
     }
-    
+
     public void setRole(String role) {
         this.role = role;
     }
@@ -47,7 +47,7 @@ public class DriveShareLink {
     public Integer getExpiresAtEpochMs() {
         return this.expiresAtEpochMs;
     }
-    
+
     public void setExpiresAtEpochMs(Integer expiresAtEpochMs) {
         this.expiresAtEpochMs = expiresAtEpochMs;
     }
@@ -55,7 +55,7 @@ public class DriveShareLink {
     public Integer getDownloadLimit() {
         return this.downloadLimit;
     }
-    
+
     public void setDownloadLimit(Integer downloadLimit) {
         this.downloadLimit = downloadLimit;
     }
@@ -63,7 +63,7 @@ public class DriveShareLink {
     public Integer getDownloadCount() {
         return this.downloadCount;
     }
-    
+
     public void setDownloadCount(Integer downloadCount) {
         this.downloadCount = downloadCount;
     }
@@ -71,7 +71,7 @@ public class DriveShareLink {
     public String getLifecycleStatus() {
         return this.lifecycleStatus;
     }
-    
+
     public void setLifecycleStatus(String lifecycleStatus) {
         this.lifecycleStatus = lifecycleStatus;
     }
@@ -79,7 +79,7 @@ public class DriveShareLink {
     public Integer getVersion() {
         return this.version;
     }
-    
+
     public void setVersion(Integer version) {
         this.version = version;
     }

@@ -5,16 +5,13 @@ import type { DeleteNodePropertyResponse, DriveNodeProperty, NodePropertyListRes
 
 
 export interface NodePropertiesListParams {
-  tenantId: string;
   visibility?: 'private' | 'app_public';
   pageSize?: number;
   pageToken?: string;
 }
 
 export interface NodePropertiesDeleteParams {
-  tenantId: string;
   visibility?: 'private' | 'app_public';
-  operatorId?: string;
 }
 
 export class NodePropertiesApi {
@@ -26,12 +23,11 @@ export class NodePropertiesApi {
 
 
 /** List node custom properties */
-  async list(nodeId: string, params: NodePropertiesListParams): Promise<NodePropertyListResponse> {
+  async list(nodeId: string, params?: NodePropertiesListParams): Promise<NodePropertyListResponse> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-      { name: 'visibility', value: params.visibility, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageToken', value: params.pageToken, style: 'form', explode: true, allowReserved: false },
+      { name: 'visibility', value: params?.visibility, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<NodePropertyListResponse>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties`), query));
   }
@@ -42,11 +38,9 @@ export class NodePropertiesApi {
   }
 
 /** Delete a node custom property */
-  async delete(nodeId: string, propertyKey: string, params: NodePropertiesDeleteParams): Promise<DeleteNodePropertyResponse> {
+  async delete(nodeId: string, propertyKey: string, params?: NodePropertiesDeleteParams): Promise<DeleteNodePropertyResponse> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-      { name: 'visibility', value: params.visibility, style: 'form', explode: true, allowReserved: false },
-      { name: 'operatorId', value: params.operatorId, style: 'form', explode: true, allowReserved: false },
+      { name: 'visibility', value: params?.visibility, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.delete<DeleteNodePropertyResponse>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties/${serializePathParameter(propertyKey, { name: 'propertyKey', style: 'simple', explode: false })}`), query));
   }
@@ -287,5 +281,3 @@ function encodeQueryValue(value: string, allowReserved: boolean): string {
     .replace(/%3B/gi, ';')
     .replace(/%3D/gi, '=');
 }
-
-

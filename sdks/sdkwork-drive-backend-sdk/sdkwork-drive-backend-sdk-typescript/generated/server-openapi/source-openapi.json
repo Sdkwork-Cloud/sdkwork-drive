@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.0",
+  "openapi": "3.1.2",
   "info": {
     "title": "SDKWork Drive Backend API",
     "version": "0.1.0",
@@ -1151,6 +1151,26 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "spaceType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "personal",
+                "team",
+                "knowledge_base",
+                "ai_generated",
+                "git_repository",
+                "deployment",
+                "app_upload",
+                "im",
+                "rtc",
+                "notary"
+              ]
             }
           }
         ],
@@ -3468,7 +3488,8 @@
               "deployment",
               "app_upload",
               "im",
-              "rtc"
+              "rtc",
+              "notary"
             ]
           },
           "lifecycleStatus": {
@@ -3732,6 +3753,21 @@
           "spaceId": {
             "type": "string"
           },
+          "spaceType": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "team",
+              "knowledge_base",
+              "ai_generated",
+              "git_repository",
+              "deployment",
+              "app_upload",
+              "im",
+              "rtc",
+              "notary"
+            ]
+          },
           "providerId": {
             "type": "string"
           },
@@ -3852,14 +3888,12 @@
             "type": "string",
             "enum": [
               "tenant",
-              "space"
+              "space",
+              "space_type"
             ]
           },
           "purpose": {
-            "type": "string",
-            "enum": [
-              "primary"
-            ]
+            "type": "string"
           },
           "lifecycleStatus": {
             "type": "string"

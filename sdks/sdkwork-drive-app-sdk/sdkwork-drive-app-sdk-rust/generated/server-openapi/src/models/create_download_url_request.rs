@@ -2,9 +2,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct CreateDownloadUrlRequest {
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     #[serde(rename = "nodeId")]
     pub node_id: String,
 

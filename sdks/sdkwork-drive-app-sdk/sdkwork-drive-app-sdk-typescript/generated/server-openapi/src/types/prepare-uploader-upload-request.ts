@@ -3,11 +3,8 @@ import type { UploaderRetentionRequest } from './uploader-retention-request';
 export interface PrepareUploaderUploadRequest {
   id: string;
   taskId: string;
-  tenantId: string;
   organizationId?: string;
-  userId?: string;
   anonymousId?: string;
-  appId: string;
   appResourceType: string;
   appResourceId: string;
   uploadProfileCode?: 'generic' | 'video' | 'image' | 'audio' | 'document' | 'archive' | 'text' | 'dataset' | 'attachment' | 'avatar' | 'thumbnail';
@@ -19,7 +16,6 @@ export interface PrepareUploaderUploadRequest {
   spaceId?: string;
   parentNodeId?: string;
   retention?: UploaderRetentionRequest;
-  operatorId: string;
   nowEpochMs?: string;
   /** Drive uploader usage context identifier. Optional semantic context for idempotency, ownership, and cleanup scoping. */
   scene?: string;
@@ -28,5 +24,3 @@ export interface PrepareUploaderUploadRequest {
   /** Optional Drive share token authorizing anonymous or external uploads into an explicit target folder. The raw token is accepted only on prepare requests and is never returned. */
   shareToken?: string;
 }
-
-

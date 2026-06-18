@@ -8,7 +8,7 @@ public class ListSpacesResponse {
     public List<DriveSpace> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<DriveSpace> items) {
         this.items = items;
     }

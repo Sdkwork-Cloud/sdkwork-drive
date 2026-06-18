@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class DriveCommentReply:
     id: str
-    tenant_id: str
     node_id: str
     comment_id: str
     content: str
@@ -16,3 +15,4 @@ class DriveCommentReply:
     updated_by: str
     created_at: str
     updated_at: str
+    tenant_id: Optional[str] = None

@@ -7,7 +7,7 @@ public class EmptyTrashResponse {
     public Integer getDeletedCount() {
         return this.deletedCount;
     }
-    
+
     public void setDeletedCount(Integer deletedCount) {
         this.deletedCount = deletedCount;
     }

@@ -16,9 +16,8 @@ impl NodeLabelsApi {
     }
 
     /// List labels applied to a node
-    pub async fn list(&self, node_id: &str, tenant_id: &str, label_key: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<NodeLabelListResponse, SdkworkError> {
+    pub async fn list(&self, node_id: &str, label_key: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<NodeLabelListResponse, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("labelKey", label_key, "form", true, false, None),
             QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
             QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
@@ -34,12 +33,8 @@ impl NodeLabelsApi {
     }
 
     /// Remove a label from a node
-    pub async fn remove(&self, node_id: &str, label_id: &str, tenant_id: &str, operator_id: Option<&str>) -> Result<RemoveNodeLabelResponse, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
-            QueryParameterSpec::new("operatorId", operator_id, "form", true, false, None),
-        ]);
-        let path = append_query_string(app_path(&format!("/drive/nodes/{}/labels/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(label_id, PathParameterSpec::new("labelId", "simple", false)))), &query);
+    pub async fn remove(&self, node_id: &str, label_id: &str) -> Result<RemoveNodeLabelResponse, SdkworkError> {
+        let path = app_path(&format!("/drive/nodes/{}/labels/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(label_id, PathParameterSpec::new("labelId", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 

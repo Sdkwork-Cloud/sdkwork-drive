@@ -6,5 +6,3 @@ export { NodePropertiesApi, createNodePropertiesApi } from './node-properties';
 export { NodesApi, createNodesApi } from './nodes';
 export { WatchChannelsApi, createWatchChannelsApi } from './watch-channels';
 export { AssetsApi, createAssetsApi } from './assets';
-
-

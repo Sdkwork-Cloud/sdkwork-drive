@@ -219,9 +219,8 @@ class DriveChangesApi:
         self.start_page_token = DriveChangesStartPageTokenApi(client)
 
 
-    def list(self, tenant_id: str, space_id: Optional[str] = None, cursor: Optional[int] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> ChangeListResponse:
+    def list(self, space_id: Optional[str] = None, cursor: Optional[int] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> ChangeListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -236,9 +235,8 @@ class DriveChangesStartPageTokenApi:
         self._client = client
 
 
-    def get(self, tenant_id: str, space_id: Optional[str] = None) -> StartPageTokenResponse:
+    def get(self, space_id: Optional[str] = None) -> StartPageTokenResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/changes/start_page_token", query))
@@ -250,11 +248,8 @@ class DriveDownloadTokensApi:
         self._client = client
 
 
-    def resolve(self, token: str, tenant_id: str) -> ProblemDetail:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/download_tokens/{serialize_path_parameter(token, {'name': 'token', 'style': 'simple', 'explode': False})}", query))
+    def resolve(self, token: str) -> ProblemDetail:
+        return self._client.get(f"/app/v3/api/drive/download_tokens/{serialize_path_parameter(token, {'name': 'token', 'style': 'simple', 'explode': False})}")
 
 class DriveDownloadUrlsApi:
     """drive drive.download_urls API client."""
@@ -273,11 +268,8 @@ class DriveFavoritesApi:
         self._client = client
 
 
-    def list(self, tenant_id: str, subject_type: str, subject_id: str, space_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
+    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'subjectType', 'value': subject_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'subjectId', 'value': subject_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -287,14 +279,8 @@ class DriveFavoritesApi:
     def set(self, node_id: str, body: FavoriteNodeRequest) -> FavoriteNodeResponse:
         return self._client.put(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/favorite", json=body)
 
-    def delete(self, node_id: str, tenant_id: str, subject_type: str, subject_id: str, operator_id: Optional[str] = None) -> FavoriteNodeResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'subjectType', 'value': subject_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'subjectId', 'value': subject_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.delete(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/favorite", query))
+    def delete(self, node_id: str) -> FavoriteNodeResponse:
+        return self._client.delete(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/favorite")
 
 class DriveQuotasApi:
     """drive drive.quotas API client."""
@@ -303,11 +289,8 @@ class DriveQuotasApi:
         self._client = client
 
 
-    def summary(self, tenant_id: str) -> QuotaSummary:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/quotas/summary", query))
+    def summary(self) -> QuotaSummary:
+        return self._client.get(f"/app/v3/api/drive/quotas/summary")
 
 class DriveNodesApi:
     """drive drive.nodes API client."""
@@ -324,18 +307,11 @@ class DriveNodesApi:
     def update(self, node_id: str, body: UpdateNodeRequest) -> DriveNode:
         return self._client.patch(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def get(self, node_id: str, tenant_id: str) -> DriveNode:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}", query))
+    def get(self, node_id: str) -> DriveNode:
+        return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}")
 
-    def delete(self, node_id: str, tenant_id: str, operator_id: Optional[str] = None) -> DeleteNodeResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.delete(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}", query))
+    def delete(self, node_id: str) -> DeleteNodeResponse:
+        return self._client.delete(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}")
 
     def copy(self, node_id: str, body: CopyNodeRequest) -> DriveNode:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/copy", json=body)
@@ -343,9 +319,8 @@ class DriveNodesApi:
     def move(self, node_id: str, body: MoveNodeRequest) -> DriveNode:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/move", json=body)
 
-    def list(self, space_id: str, tenant_id: str, parent_node_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
+    def list(self, space_id: str, parent_node_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'parentNodeId', 'value': parent_node_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -359,13 +334,8 @@ class DriveNodesCapabilitiesApi:
         self._client = client
 
 
-    def get(self, node_id: str, tenant_id: str, subject_type: str, subject_id: str) -> NodeCapabilitiesResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'subjectType', 'value': subject_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'subjectId', 'value': subject_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/capabilities", query))
+    def get(self, node_id: str) -> NodeCapabilitiesResponse:
+        return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/capabilities")
 
 class DriveNodesDownloadUrlsApi:
     """drive drive.nodes.download_urls API client."""
@@ -374,9 +344,8 @@ class DriveNodesDownloadUrlsApi:
         self._client = client
 
 
-    def create(self, node_id: str, tenant_id: str, requested_ttl_seconds: Optional[int] = None) -> CreateDownloadUrlResponse:
+    def create(self, node_id: str, requested_ttl_seconds: Optional[int] = None) -> CreateDownloadUrlResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'requestedTtlSeconds', 'value': requested_ttl_seconds, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/download_url", query))
@@ -388,11 +357,8 @@ class DriveNodesPathApi:
         self._client = client
 
 
-    def get(self, node_id: str, tenant_id: str) -> NodePathResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/path", query))
+    def get(self, node_id: str) -> NodePathResponse:
+        return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/path")
 
 class DriveNodesFilesApi:
     """drive drive.nodes.files API client."""
@@ -421,9 +387,8 @@ class DriveCommentsApi:
         self._client = client
 
 
-    def list(self, node_id: str, tenant_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> CommentListResponse:
+    def list(self, node_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> CommentListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
@@ -432,21 +397,14 @@ class DriveCommentsApi:
     def create(self, node_id: str, body: CreateCommentRequest) -> DriveComment:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments", json=body)
 
-    def get(self, node_id: str, comment_id: str, tenant_id: str) -> DriveComment:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}", query))
+    def get(self, node_id: str, comment_id: str) -> DriveComment:
+        return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}")
 
     def update(self, node_id: str, comment_id: str, body: UpdateCommentRequest) -> DriveComment:
         return self._client.patch(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def delete(self, node_id: str, comment_id: str, tenant_id: str, operator_id: Optional[str] = None) -> CommentsDeleteResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.delete(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}", query))
+    def delete(self, node_id: str, comment_id: str) -> CommentsDeleteResponse:
+        return self._client.delete(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}")
 
 class DriveCommentRepliesApi:
     """drive drive.comment_replies API client."""
@@ -455,9 +413,8 @@ class DriveCommentRepliesApi:
         self._client = client
 
 
-    def list(self, node_id: str, comment_id: str, tenant_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> CommentReplyListResponse:
+    def list(self, node_id: str, comment_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> CommentReplyListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
@@ -466,21 +423,14 @@ class DriveCommentRepliesApi:
     def create(self, node_id: str, comment_id: str, body: CreateCommentReplyRequest) -> DriveCommentReply:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}/replies", json=body)
 
-    def get(self, node_id: str, comment_id: str, reply_id: str, tenant_id: str) -> DriveCommentReply:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}/replies/{serialize_path_parameter(reply_id, {'name': 'replyId', 'style': 'simple', 'explode': False})}", query))
+    def get(self, node_id: str, comment_id: str, reply_id: str) -> DriveCommentReply:
+        return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}/replies/{serialize_path_parameter(reply_id, {'name': 'replyId', 'style': 'simple', 'explode': False})}")
 
     def update(self, node_id: str, comment_id: str, reply_id: str, body: UpdateCommentReplyRequest) -> DriveCommentReply:
         return self._client.patch(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}/replies/{serialize_path_parameter(reply_id, {'name': 'replyId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def delete(self, node_id: str, comment_id: str, reply_id: str, tenant_id: str, operator_id: Optional[str] = None) -> CommentRepliesDeleteResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.delete(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}/replies/{serialize_path_parameter(reply_id, {'name': 'replyId', 'style': 'simple', 'explode': False})}", query))
+    def delete(self, node_id: str, comment_id: str, reply_id: str) -> CommentRepliesDeleteResponse:
+        return self._client.delete(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}/replies/{serialize_path_parameter(reply_id, {'name': 'replyId', 'style': 'simple', 'explode': False})}")
 
 class DrivePermissionsApi:
     """drive drive.permissions API client."""
@@ -490,9 +440,8 @@ class DrivePermissionsApi:
         self.effective = DrivePermissionsEffectiveApi(client)
 
 
-    def list(self, node_id: str, tenant_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> PermissionListResponse:
+    def list(self, node_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> PermissionListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
@@ -501,20 +450,14 @@ class DrivePermissionsApi:
     def create(self, node_id: str, body: CreatePermissionRequest) -> DrivePermission:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/permissions", json=body)
 
-    def delete(self, node_id: str, permission_id: str, tenant_id: str) -> PermissionsDeleteResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.delete(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/permissions/{serialize_path_parameter(permission_id, {'name': 'permissionId', 'style': 'simple', 'explode': False})}", query))
+    def delete(self, node_id: str, permission_id: str) -> PermissionsDeleteResponse:
+        return self._client.delete(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/permissions/{serialize_path_parameter(permission_id, {'name': 'permissionId', 'style': 'simple', 'explode': False})}")
 
     def update(self, node_id: str, permission_id: str, body: UpdatePermissionRequest) -> DrivePermission:
         return self._client.patch(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/permissions/{serialize_path_parameter(permission_id, {'name': 'permissionId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def get(self, node_id: str, permission_id: str, tenant_id: str) -> DrivePermission:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/permissions/{serialize_path_parameter(permission_id, {'name': 'permissionId', 'style': 'simple', 'explode': False})}", query))
+    def get(self, node_id: str, permission_id: str) -> DrivePermission:
+        return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/permissions/{serialize_path_parameter(permission_id, {'name': 'permissionId', 'style': 'simple', 'explode': False})}")
 
 class DrivePermissionsEffectiveApi:
     """drive drive.permissions.effective API client."""
@@ -523,9 +466,8 @@ class DrivePermissionsEffectiveApi:
         self._client = client
 
 
-    def list(self, node_id: str, tenant_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> EffectivePermissionListResponse:
+    def list(self, node_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> EffectivePermissionListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
@@ -541,28 +483,21 @@ class DriveShareLinksApi:
     def create(self, node_id: str, body: CreateShareLinkRequest) -> DriveShareLink:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/share_links", json=body)
 
-    def list(self, node_id: str, tenant_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> ShareLinkListResponse:
+    def list(self, node_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> ShareLinkListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/share_links", query))
 
-    def revoke(self, share_link_id: str, tenant_id: str) -> ShareLinksRevokeResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.delete(_append_query_string(f"/app/v3/api/drive/share_links/{serialize_path_parameter(share_link_id, {'name': 'shareLinkId', 'style': 'simple', 'explode': False})}", query))
+    def revoke(self, share_link_id: str) -> ShareLinksRevokeResponse:
+        return self._client.delete(f"/app/v3/api/drive/share_links/{serialize_path_parameter(share_link_id, {'name': 'shareLinkId', 'style': 'simple', 'explode': False})}")
 
     def update(self, share_link_id: str, body: UpdateShareLinkRequest) -> DriveShareLink:
         return self._client.patch(f"/app/v3/api/drive/share_links/{serialize_path_parameter(share_link_id, {'name': 'shareLinkId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def get(self, share_link_id: str, tenant_id: str) -> DriveShareLink:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/share_links/{serialize_path_parameter(share_link_id, {'name': 'shareLinkId', 'style': 'simple', 'explode': False})}", query))
+    def get(self, share_link_id: str) -> DriveShareLink:
+        return self._client.get(f"/app/v3/api/drive/share_links/{serialize_path_parameter(share_link_id, {'name': 'shareLinkId', 'style': 'simple', 'explode': False})}")
 
 class DriveTrashApi:
     """drive drive.trash API client."""
@@ -574,12 +509,12 @@ class DriveTrashApi:
     def move(self, node_id: str, body: NodeCommandRequest) -> DriveNode:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/trash", json=body)
 
-    def list(self, tenant_id: str, space_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
+    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None, parent_node_id: Optional[str] = None) -> NodeListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'parentNodeId', 'value': parent_node_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/trash", query))
 
@@ -596,26 +531,18 @@ class DriveVersionsApi:
         self._client = client
 
 
-    def list(self, node_id: str, tenant_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> VersionListResponse:
+    def list(self, node_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> VersionListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/versions", query))
 
-    def delete(self, node_id: str, version_id: str, tenant_id: str, operator_id: Optional[str] = None) -> DeleteVersionResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.delete(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/versions/{serialize_path_parameter(version_id, {'name': 'versionId', 'style': 'simple', 'explode': False})}", query))
+    def delete(self, node_id: str, version_id: str) -> DeleteVersionResponse:
+        return self._client.delete(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/versions/{serialize_path_parameter(version_id, {'name': 'versionId', 'style': 'simple', 'explode': False})}")
 
-    def get(self, node_id: str, version_id: str, tenant_id: str) -> FileVersion:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/versions/{serialize_path_parameter(version_id, {'name': 'versionId', 'style': 'simple', 'explode': False})}", query))
+    def get(self, node_id: str, version_id: str) -> FileVersion:
+        return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/versions/{serialize_path_parameter(version_id, {'name': 'versionId', 'style': 'simple', 'explode': False})}")
 
     def restore(self, node_id: str, version_id: str, body: NodeCommandRequest) -> DriveNode:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/versions/{serialize_path_parameter(version_id, {'name': 'versionId', 'style': 'simple', 'explode': False})}/restore", json=body)
@@ -627,9 +554,8 @@ class DriveRecentApi:
         self._client = client
 
 
-    def list(self, tenant_id: str, space_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
+    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -643,9 +569,8 @@ class DriveSearchApi:
         self._client = client
 
 
-    def query(self, tenant_id: str, q: Optional[str] = None, space_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
+    def query(self, q: Optional[str] = None, space_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -660,11 +585,8 @@ class DriveSharedWithMeApi:
         self._client = client
 
 
-    def list(self, tenant_id: str, subject_type: str, subject_id: str, space_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
+    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'subjectType', 'value': subject_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'subjectId', 'value': subject_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -678,9 +600,8 @@ class DriveSpacesApi:
         self._client = client
 
 
-    def list(self, tenant_id: str, owner_subject_type: Optional[str] = None, owner_subject_id: Optional[str] = None) -> ListSpacesResponse:
+    def list(self, owner_subject_type: Optional[str] = None, owner_subject_id: Optional[str] = None) -> ListSpacesResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'ownerSubjectType', 'value': owner_subject_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'ownerSubjectId', 'value': owner_subject_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
@@ -689,21 +610,14 @@ class DriveSpacesApi:
     def create(self, body: CreateSpaceRequest) -> DriveSpace:
         return self._client.post(f"/app/v3/api/drive/spaces", json=body)
 
-    def get(self, space_id: str, tenant_id: str) -> DriveSpace:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/spaces/{serialize_path_parameter(space_id, {'name': 'spaceId', 'style': 'simple', 'explode': False})}", query))
+    def get(self, space_id: str) -> DriveSpace:
+        return self._client.get(f"/app/v3/api/drive/spaces/{serialize_path_parameter(space_id, {'name': 'spaceId', 'style': 'simple', 'explode': False})}")
 
     def update(self, space_id: str, body: UpdateSpaceRequest) -> DriveSpace:
         return self._client.patch(f"/app/v3/api/drive/spaces/{serialize_path_parameter(space_id, {'name': 'spaceId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def delete(self, space_id: str, tenant_id: str, operator_id: Optional[str] = None) -> DeleteSpaceResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.delete(_append_query_string(f"/app/v3/api/drive/spaces/{serialize_path_parameter(space_id, {'name': 'spaceId', 'style': 'simple', 'explode': False})}", query))
+    def delete(self, space_id: str) -> DeleteSpaceResponse:
+        return self._client.delete(f"/app/v3/api/drive/spaces/{serialize_path_parameter(space_id, {'name': 'spaceId', 'style': 'simple', 'explode': False})}")
 
 class DriveUploadSessionsApi:
     """drive drive.upload_sessions API client."""
@@ -716,11 +630,8 @@ class DriveUploadSessionsApi:
     def create(self, body: CreateUploadSessionRequest) -> DriveUploadSession:
         return self._client.post(f"/app/v3/api/drive/upload_sessions", json=body)
 
-    def get(self, upload_session_id: str, tenant_id: str) -> UploadSessionMutationResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/upload_sessions/{serialize_path_parameter(upload_session_id, {'name': 'uploadSessionId', 'style': 'simple', 'explode': False})}", query))
+    def get(self, upload_session_id: str) -> UploadSessionMutationResponse:
+        return self._client.get(f"/app/v3/api/drive/upload_sessions/{serialize_path_parameter(upload_session_id, {'name': 'uploadSessionId', 'style': 'simple', 'explode': False})}")
 
     def abort(self, upload_session_id: str, body: NodeCommandRequest) -> UploadSessionMutationResponse:
         return self._client.post(f"/app/v3/api/drive/upload_sessions/{serialize_path_parameter(upload_session_id, {'name': 'uploadSessionId', 'style': 'simple', 'explode': False})}/abort", json=body)
@@ -756,11 +667,8 @@ class DriveDownloadPackagesDownloadUrlsApi:
         self._client = client
 
 
-    def get(self, package_id: str, tenant_id: str) -> DownloadPackageResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/download_packages/{serialize_path_parameter(package_id, {'name': 'packageId', 'style': 'simple', 'explode': False})}/download_url", query))
+    def get(self, package_id: str) -> DownloadPackageResponse:
+        return self._client.get(f"/app/v3/api/drive/download_packages/{serialize_path_parameter(package_id, {'name': 'packageId', 'style': 'simple', 'explode': False})}/download_url")
 
 class DriveArchiveEntriesApi:
     """drive drive.archive_entries API client."""
@@ -769,11 +677,8 @@ class DriveArchiveEntriesApi:
         self._client = client
 
 
-    def list(self, node_id: str, tenant_id: str) -> ArchiveEntryListResponse:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/archive_entries", query))
+    def list(self, node_id: str) -> ArchiveEntryListResponse:
+        return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/archive_entries")
 
     def extract(self, node_id: str, body: ExtractArchiveEntriesRequest) -> ExtractArchiveEntriesResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/archive_entries/extract", json=body)

@@ -4,5 +4,3 @@ export interface NodePropertyListResponse {
   items: DriveNodeProperty[];
   nextPageToken?: string | null;
 }
-
-

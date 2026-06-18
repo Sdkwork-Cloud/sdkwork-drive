@@ -4,5 +4,3 @@ export interface CommentReplyListResponse {
   items: DriveCommentReply[];
   nextPageToken?: string;
 }
-
-

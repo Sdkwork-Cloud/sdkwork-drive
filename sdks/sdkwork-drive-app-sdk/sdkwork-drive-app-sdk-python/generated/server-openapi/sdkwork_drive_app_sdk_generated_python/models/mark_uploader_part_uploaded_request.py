@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 @dataclass
 class MarkUploaderPartUploadedRequest:
-    tenant_id: str
     upload_session_id: str
     offset_bytes: int
     size_bytes: int

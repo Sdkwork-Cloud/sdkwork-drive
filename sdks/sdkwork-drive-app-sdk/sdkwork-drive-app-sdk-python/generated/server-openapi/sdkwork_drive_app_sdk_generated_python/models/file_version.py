@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class FileVersion:
     id: str
-    tenant_id: str
     node_id: str
     version_no: int
     content_type: str
@@ -14,3 +13,5 @@ class FileVersion:
     checksum_sha256hex: str
     lifecycle_status: str
     created_at: str
+    tenant_id: Optional[str] = None
+    storage_object_id: Optional[str] = None

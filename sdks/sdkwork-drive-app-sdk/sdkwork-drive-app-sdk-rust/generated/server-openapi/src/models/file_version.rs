@@ -5,10 +5,15 @@ pub struct FileVersion {
     pub id: String,
 
     #[serde(rename = "tenantId")]
-    pub tenant_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
 
     #[serde(rename = "nodeId")]
     pub node_id: String,
+
+    #[serde(rename = "storageObjectId")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub storage_object_id: Option<String>,
 
     #[serde(rename = "versionNo")]
     pub version_no: i64,

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 @dataclass
 class UpdateSpaceRequest:
-    tenant_id: str
     display_name: Optional[str] = None
-    operator_id: Optional[str] = None
+    presentation_icon: Optional[str] = None
+    presentation_color: Optional[str] = None
+    description: Optional[str] = None

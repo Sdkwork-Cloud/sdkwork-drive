@@ -17,7 +17,7 @@ public class DriveWatchChannel {
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -25,7 +25,7 @@ public class DriveWatchChannel {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -33,7 +33,7 @@ public class DriveWatchChannel {
     public String getSpaceId() {
         return this.spaceId;
     }
-    
+
     public void setSpaceId(String spaceId) {
         this.spaceId = spaceId;
     }
@@ -41,7 +41,7 @@ public class DriveWatchChannel {
     public String getNodeId() {
         return this.nodeId;
     }
-    
+
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -49,7 +49,7 @@ public class DriveWatchChannel {
     public String getResourceType() {
         return this.resourceType;
     }
-    
+
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
@@ -57,7 +57,7 @@ public class DriveWatchChannel {
     public String getResourceId() {
         return this.resourceId;
     }
-    
+
     public void setResourceId(String resourceId) {
         this.resourceId = resourceId;
     }
@@ -65,7 +65,7 @@ public class DriveWatchChannel {
     public String getChannelType() {
         return this.channelType;
     }
-    
+
     public void setChannelType(String channelType) {
         this.channelType = channelType;
     }
@@ -73,7 +73,7 @@ public class DriveWatchChannel {
     public String getAddress() {
         return this.address;
     }
-    
+
     public void setAddress(String address) {
         this.address = address;
     }
@@ -81,7 +81,7 @@ public class DriveWatchChannel {
     public Integer getExpirationEpochMs() {
         return this.expirationEpochMs;
     }
-    
+
     public void setExpirationEpochMs(Integer expirationEpochMs) {
         this.expirationEpochMs = expirationEpochMs;
     }
@@ -89,7 +89,7 @@ public class DriveWatchChannel {
     public String getLifecycleStatus() {
         return this.lifecycleStatus;
     }
-    
+
     public void setLifecycleStatus(String lifecycleStatus) {
         this.lifecycleStatus = lifecycleStatus;
     }
@@ -97,7 +97,7 @@ public class DriveWatchChannel {
     public Integer getVersion() {
         return this.version;
     }
-    
+
     public void setVersion(Integer version) {
         this.version = version;
     }

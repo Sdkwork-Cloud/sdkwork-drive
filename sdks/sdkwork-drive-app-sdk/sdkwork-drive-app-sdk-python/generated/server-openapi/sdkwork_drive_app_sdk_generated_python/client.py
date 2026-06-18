@@ -4,6 +4,7 @@ from .api.node_labels import NodeLabelsApi
 from .api.node_properties import NodePropertiesApi
 from .api.nodes import NodesApi
 from .api.watch_channels import WatchChannelsApi
+from .api.assets import AssetsApi
 
 
 class SdkworkAppClient:
@@ -16,6 +17,7 @@ class SdkworkAppClient:
         self.node_properties: NodePropertiesApi
         self.nodes: NodesApi
         self.watch_channels: WatchChannelsApi
+        self.assets: AssetsApi
 
         # Initialize API modules
         self.drive = DriveApi(self._client)
@@ -23,12 +25,7 @@ class SdkworkAppClient:
         self.node_properties = NodePropertiesApi(self._client)
         self.nodes = NodesApi(self._client)
         self.watch_channels = WatchChannelsApi(self._client)
-
-    def set_api_key(self, api_key: str) -> 'SdkworkAppClient':
-        """Set API key for authentication."""
-        self._client.set_api_key(api_key)
-        return self
-
+        self.assets = AssetsApi(self._client)
     def set_auth_token(self, token: str) -> 'SdkworkAppClient':
         """Set auth token for authentication."""
         self._client.set_auth_token(token)

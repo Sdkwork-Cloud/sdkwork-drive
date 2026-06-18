@@ -191,10 +191,9 @@ class NodePropertiesApi:
         self._client = client
 
 
-    def list(self, node_id: str, tenant_id: str, visibility: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodePropertyListResponse:
+    def list(self, node_id: str, visibility: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodePropertyListResponse:
         """List node custom properties"""
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'visibility', 'value': visibility, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -205,11 +204,9 @@ class NodePropertiesApi:
         """Create or update a node custom property"""
         return self._client.put(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/properties/{serialize_path_parameter(property_key, {'name': 'propertyKey', 'style': 'simple', 'explode': False})}", json=body)
 
-    def delete(self, node_id: str, property_key: str, tenant_id: str, visibility: Optional[str] = None, operator_id: Optional[str] = None) -> DeleteNodePropertyResponse:
+    def delete(self, node_id: str, property_key: str, visibility: Optional[str] = None) -> DeleteNodePropertyResponse:
         """Delete a node custom property"""
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'visibility', 'value': visibility, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.delete(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/properties/{serialize_path_parameter(property_key, {'name': 'propertyKey', 'style': 'simple', 'explode': False})}", query))

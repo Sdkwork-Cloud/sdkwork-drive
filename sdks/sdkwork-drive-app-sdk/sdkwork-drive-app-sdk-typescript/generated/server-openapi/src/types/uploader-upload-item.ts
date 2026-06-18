@@ -1,7 +1,7 @@
 export interface UploaderUploadItem {
   id: string;
   taskId: string;
-  tenantId: string;
+  tenantId?: string;
   organizationId?: string;
   userId?: string;
   actorType: string;
@@ -39,5 +39,3 @@ export interface UploaderUploadItem {
   /** Drive uploader usage context identifier. Optional semantic context for idempotency, ownership, and cleanup scoping. */
   source?: string;
 }
-
-

@@ -1,13 +1,14 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::DriveLabelSummary;
+use crate::models::{DriveLabelSummary};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct NodeLabel {
     pub id: String,
 
     #[serde(rename = "tenantId")]
-    pub tenant_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
 
     #[serde(rename = "nodeId")]
     pub node_id: String,

@@ -5,7 +5,8 @@ pub struct EffectivePermission {
     pub id: String,
 
     #[serde(rename = "tenantId")]
-    pub tenant_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
 
     #[serde(rename = "targetNodeId")]
     pub target_node_id: String,
@@ -14,10 +15,12 @@ pub struct EffectivePermission {
     pub node_id: String,
 
     #[serde(rename = "subjectType")]
-    pub subject_type: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subject_type: Option<String>,
 
     #[serde(rename = "subjectId")]
-    pub subject_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subject_id: Option<String>,
 
     pub role: String,
 

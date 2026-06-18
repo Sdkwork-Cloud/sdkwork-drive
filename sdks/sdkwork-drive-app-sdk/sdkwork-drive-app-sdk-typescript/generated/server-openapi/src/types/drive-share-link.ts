@@ -1,6 +1,6 @@
 export interface DriveShareLink {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   nodeId: string;
   role: string;
   expiresAtEpochMs?: string;
@@ -9,5 +9,3 @@ export interface DriveShareLink {
   lifecycleStatus: string;
   version: string;
 }
-
-

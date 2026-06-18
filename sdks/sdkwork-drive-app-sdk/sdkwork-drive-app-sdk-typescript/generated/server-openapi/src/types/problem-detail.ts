@@ -12,5 +12,3 @@ export interface ProblemDetail {
   requestId?: string;
   errors?: FieldError[];
 }
-
-

@@ -8,7 +8,7 @@ public class PrepareUploaderUploadResponse {
     public UploaderUploadItem getUploadItem() {
         return this.uploadItem;
     }
-    
+
     public void setUploadItem(UploaderUploadItem uploadItem) {
         this.uploadItem = uploadItem;
     }
@@ -16,7 +16,7 @@ public class PrepareUploaderUploadResponse {
     public UploadSessionMutationResponse getUploadSession() {
         return this.uploadSession;
     }
-    
+
     public void setUploadSession(UploadSessionMutationResponse uploadSession) {
         this.uploadSession = uploadSession;
     }

@@ -1,6 +1,6 @@
 export interface DriveWatchChannel {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   spaceId?: string | null;
   nodeId?: string | null;
   resourceType: 'changes' | 'node';
@@ -11,5 +11,3 @@ export interface DriveWatchChannel {
   lifecycleStatus: 'active' | 'stopped' | 'expired';
   version: number;
 }
-
-

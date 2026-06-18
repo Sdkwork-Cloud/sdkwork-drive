@@ -13,7 +13,7 @@ public class PresignedUploadPart {
     public String getUploadUrl() {
         return this.uploadUrl;
     }
-    
+
     public void setUploadUrl(String uploadUrl) {
         this.uploadUrl = uploadUrl;
     }
@@ -21,7 +21,7 @@ public class PresignedUploadPart {
     public Integer getExpiresAtEpochMs() {
         return this.expiresAtEpochMs;
     }
-    
+
     public void setExpiresAtEpochMs(Integer expiresAtEpochMs) {
         this.expiresAtEpochMs = expiresAtEpochMs;
     }
@@ -29,7 +29,7 @@ public class PresignedUploadPart {
     public String getMethod() {
         return this.method;
     }
-    
+
     public void setMethod(String method) {
         this.method = method;
     }
@@ -37,7 +37,7 @@ public class PresignedUploadPart {
     public Map<String, String> getHeaders() {
         return this.headers;
     }
-    
+
     public void setHeaders(Map<String, String> headers) {
         this.headers = headers;
     }
@@ -45,7 +45,7 @@ public class PresignedUploadPart {
     public Integer getPartNo() {
         return this.partNo;
     }
-    
+
     public void setPartNo(Integer partNo) {
         this.partNo = partNo;
     }
@@ -53,7 +53,7 @@ public class PresignedUploadPart {
     public String getUploadId() {
         return this.uploadId;
     }
-    
+
     public void setUploadId(String uploadId) {
         this.uploadId = uploadId;
     }

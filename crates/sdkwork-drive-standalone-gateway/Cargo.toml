@@ -1,0 +1,30 @@
+[package]
+name = "sdkwork-drive-standalone-gateway"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "sdkwork-drive-standalone-gateway"
+path = "src/main.rs"
+
+[dependencies]
+axum = "0.8"
+axum07 = { package = "axum", version = "0.7" }
+http = "1.4"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "net", "signal"] }
+toml = { workspace = true }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+sdkwork_drive_config = { package = "sdkwork-drive-config", path = "../sdkwork-drive-config" }
+sdkwork_drive_security = { package = "sdkwork-drive-security", path = "../sdkwork-drive-security" }
+sdkwork_drive_workspace_service = { package = "sdkwork-drive-workspace-service", path = "../sdkwork-drive-workspace-service" }
+sdkwork_router_drive_app_api = { package = "sdkwork-router-drive-app-api", path = "../sdkwork-router-drive-app-api" }
+sdkwork_router_drive_backend_api = { package = "sdkwork-router-drive-backend-api", path = "../sdkwork-router-drive-backend-api" }
+sdkwork_router_drive_open_api = { package = "sdkwork-router-drive-open-api", path = "../sdkwork-router-drive-open-api" }
+sdkwork_router_storage_backend_api = { package = "sdkwork-router-storage-backend-api", path = "../sdkwork-router-storage-backend-api" }
+sdkwork_router_iam_app_api = { package = "sdkwork-router-iam-app-api", path = "../../../sdkwork-appbase/crates/sdkwork-router-iam-app-api" }

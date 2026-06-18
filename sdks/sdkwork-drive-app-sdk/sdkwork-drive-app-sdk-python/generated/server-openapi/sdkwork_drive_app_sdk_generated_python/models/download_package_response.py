@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 @dataclass
 class DownloadPackageResponse:
     id: str
-    tenant_id: str
     package_name: str
     state: str
     storage_provider_id: str
@@ -24,3 +23,4 @@ class DownloadPackageResponse:
     signed_source_url: str
     method: str
     items: List[DownloadPackageItem]
+    tenant_id: Optional[str] = None

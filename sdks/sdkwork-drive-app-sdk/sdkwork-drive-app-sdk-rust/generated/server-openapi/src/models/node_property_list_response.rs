@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::DriveNodeProperty;
+use crate::models::{DriveNodeProperty};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct NodePropertyListResponse {

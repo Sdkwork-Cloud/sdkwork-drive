@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 class UploaderUploadItem:
     id: str
     task_id: str
-    tenant_id: str
     actor_type: str
     actor_id: str
     app_id: str
@@ -29,6 +28,7 @@ class UploaderUploadItem:
     retention_mode: str
     cleanup_status: str
     post_process_status: str
+    tenant_id: Optional[str] = None
     organization_id: Optional[str] = None
     user_id: Optional[str] = None
     upload_session_id: Optional[str] = None

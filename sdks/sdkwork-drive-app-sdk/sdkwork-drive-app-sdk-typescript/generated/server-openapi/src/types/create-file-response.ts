@@ -5,5 +5,3 @@ export interface CreateFileResponse {
   node: DriveNode;
   uploadSession: DriveUploadSession;
 }
-
-

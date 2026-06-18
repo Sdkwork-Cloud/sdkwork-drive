@@ -9,7 +9,7 @@ public class NodePathResponse {
     public List<DriveNode> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<DriveNode> items) {
         this.items = items;
     }
@@ -17,7 +17,7 @@ public class NodePathResponse {
     public List<String> getPathSegments() {
         return this.pathSegments;
     }
-    
+
     public void setPathSegments(List<String> pathSegments) {
         this.pathSegments = pathSegments;
     }

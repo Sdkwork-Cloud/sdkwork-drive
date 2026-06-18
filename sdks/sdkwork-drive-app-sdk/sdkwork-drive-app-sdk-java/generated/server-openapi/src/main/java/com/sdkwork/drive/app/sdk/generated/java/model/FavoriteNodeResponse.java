@@ -7,7 +7,7 @@ public class FavoriteNodeResponse {
     public Boolean getFavorited() {
         return this.favorited;
     }
-    
+
     public void setFavorited(Boolean favorited) {
         this.favorited = favorited;
     }

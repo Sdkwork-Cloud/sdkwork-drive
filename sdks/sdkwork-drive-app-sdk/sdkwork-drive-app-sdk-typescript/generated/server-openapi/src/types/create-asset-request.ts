@@ -1,7 +1,6 @@
 import type { MediaResource } from './media-resource';
 
 export interface CreateAssetRequest {
-  tenantId: string;
   organizationId?: string;
   /** Existing Drive node to expose through /assets. */
   driveNodeId?: string;
@@ -12,5 +11,3 @@ export interface CreateAssetRequest {
   source?: string;
   tags?: string[];
 }
-
-

@@ -5,8 +5,8 @@ export interface StorageProviderBinding {
   tenantId: string;
   spaceId?: string;
   providerId: string;
-  bindingScope: 'tenant' | 'space';
-  purpose: 'primary';
+  bindingScope: 'tenant' | 'space' | 'space_type';
+  purpose: string;
   lifecycleStatus: string;
   version: string;
   storageProvider: StorageProvider;

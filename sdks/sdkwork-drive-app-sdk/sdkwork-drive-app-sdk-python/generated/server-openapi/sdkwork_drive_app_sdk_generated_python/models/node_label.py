@@ -9,9 +9,9 @@ if TYPE_CHECKING:
 @dataclass
 class NodeLabel:
     id: str
-    tenant_id: str
     node_id: str
     label_id: str
     lifecycle_status: str
     version: int
     label: DriveLabelSummary
+    tenant_id: Optional[str] = None

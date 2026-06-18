@@ -1,5 +1,4 @@
 export interface UpdateAssetRequest {
-  tenantId: string;
   title?: string;
   description?: string;
   scene?: string;
@@ -7,5 +6,3 @@ export interface UpdateAssetRequest {
   tags?: string[];
   visibility?: 'private' | 'organization' | 'public';
 }
-
-

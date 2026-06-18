@@ -14,7 +14,7 @@ public class DriveLabelSummary {
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -22,7 +22,7 @@ public class DriveLabelSummary {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -30,7 +30,7 @@ public class DriveLabelSummary {
     public String getLabelKey() {
         return this.labelKey;
     }
-    
+
     public void setLabelKey(String labelKey) {
         this.labelKey = labelKey;
     }
@@ -38,7 +38,7 @@ public class DriveLabelSummary {
     public String getDisplayName() {
         return this.displayName;
     }
-    
+
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
@@ -46,7 +46,7 @@ public class DriveLabelSummary {
     public String getColor() {
         return this.color;
     }
-    
+
     public void setColor(String color) {
         this.color = color;
     }
@@ -54,7 +54,7 @@ public class DriveLabelSummary {
     public String getDescription() {
         return this.description;
     }
-    
+
     public void setDescription(String description) {
         this.description = description;
     }
@@ -62,7 +62,7 @@ public class DriveLabelSummary {
     public String getLifecycleStatus() {
         return this.lifecycleStatus;
     }
-    
+
     public void setLifecycleStatus(String lifecycleStatus) {
         this.lifecycleStatus = lifecycleStatus;
     }
@@ -70,7 +70,7 @@ public class DriveLabelSummary {
     public Integer getVersion() {
         return this.version;
     }
-    
+
     public void setVersion(Integer version) {
         this.version = version;
     }

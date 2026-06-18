@@ -1,6 +1,6 @@
 export interface DriveNodeProperty {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   nodeId: string;
   propertyKey: string;
   propertyValue: string;
@@ -8,5 +8,3 @@ export interface DriveNodeProperty {
   lifecycleStatus: 'active';
   version: number;
 }
-
-

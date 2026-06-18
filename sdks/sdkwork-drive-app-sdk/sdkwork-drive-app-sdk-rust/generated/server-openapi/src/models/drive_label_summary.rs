@@ -5,7 +5,8 @@ pub struct DriveLabelSummary {
     pub id: String,
 
     #[serde(rename = "tenantId")]
-    pub tenant_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
 
     #[serde(rename = "labelKey")]
     pub label_key: String,

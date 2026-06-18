@@ -10,3 +10,5 @@ pub mod nodes;
 pub use nodes::NodesApi;
 pub mod watch_channels;
 pub use watch_channels::WatchChannelsApi;
+pub mod assets;
+pub use assets::AssetsApi;

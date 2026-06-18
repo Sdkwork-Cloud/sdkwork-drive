@@ -1,6 +1,7 @@
 import { DEFAULT_UPLOADER_CHUNK_SIZE_BYTES, inferUploaderContentType, inferUploaderFileName, planUploaderParts } from "./uploadPlanner";
 import { createInMemoryUploaderStateStore } from "./uploadStateStore";
 import type {
+  DriveUploaderBlobLike,
   DriveUploaderClientOptions,
   DriveUploaderCompletedPart,
   DriveUploaderProgress,
@@ -10,6 +11,7 @@ import type {
   DriveUploaderStateSnapshot,
   DriveUploaderStateStore,
   DriveUploaderTransport,
+  DriveUploaderTransportOptions,
   DriveUploaderUploadResult,
   DriveUploaderProfile,
 } from "./types";
@@ -61,7 +63,20 @@ function defaultReplacementExpiryEpochMs(nowEpochMs?: string): string {
   return String(now + 60 * 60 * 1000);
 }
 
-async function sha256Checksum(file: { arrayBuffer(): Promise<ArrayBuffer> }): Promise<string> {
+async function readUploadPartBody(
+  file: DriveUploaderBlobLike,
+  offsetBytes: number,
+  sizeBytes: number,
+  contentType: string,
+): Promise<Blob> {
+  if (file.readRange) {
+    const bytes = await file.readRange(offsetBytes, sizeBytes);
+    return new Blob([bytes], { type: contentType });
+  }
+  return file.slice(offsetBytes, offsetBytes + sizeBytes, contentType);
+}
+
+async function sha256Checksum(file: DriveUploaderBlobLike): Promise<string> {
   if (!globalThis.crypto?.subtle) {
     throw new Error("Web Crypto SHA-256 support is required for Drive uploader completion.");
   }
@@ -83,13 +98,19 @@ function etagFromResponse(response: Response): string {
 
 function emitProgress(
   request: NormalizedUploadRequest,
-  snapshot: Pick<DriveUploaderStateSnapshot, "uploadItemId" | "uploadSessionId">,
-  progress: Omit<DriveUploaderProgress, "taskId" | "uploadItemId" | "uploadSessionId" | "totalBytes">,
+  snapshot: Pick<DriveUploaderStateSnapshot, "uploadItemId" | "uploadSessionId"> & {
+    nodeId?: string;
+  },
+  progress: Omit<
+    DriveUploaderProgress,
+    "taskId" | "uploadItemId" | "uploadSessionId" | "totalBytes" | "nodeId"
+  >,
 ): void {
   request.onProgress?.({
     taskId: request.taskId,
     uploadItemId: snapshot.uploadItemId,
     uploadSessionId: snapshot.uploadSessionId,
+    nodeId: snapshot.nodeId,
     totalBytes: request.file.size,
     ...progress,
   });
@@ -201,11 +222,8 @@ export class DriveUploaderClient {
     const prepared = await this.transport.drive.uploader.uploads.prepare({
       id: normalized.id,
       taskId: normalized.taskId,
-      tenantId: normalized.tenantId,
       organizationId: normalized.organizationId,
-      userId: normalized.userId,
       anonymousId: normalized.anonymousId,
-      appId: normalized.appId,
       appResourceType: normalized.appResourceType,
       appResourceId: normalized.appResourceId,
       scene: normalized.scene,
@@ -220,27 +238,33 @@ export class DriveUploaderClient {
       parentNodeId: normalized.parentNodeId,
       shareToken: normalized.shareToken,
       retention: normalized.retention,
-      operatorId: normalized.operatorId,
       nowEpochMs: normalized.nowEpochMs,
     }, { signal: normalized.signal });
     const uploadItem = prepared.uploadItem;
     const uploadSession = prepared.uploadSession;
     const uploadSessionId = uploadItem.uploadSessionId || uploadSession.id;
     const storageUploadId = uploadItem.storageUploadId || uploadSession.storageUploadId;
+    const preparedNodeId = uploadItem.nodeId;
     const previousState = await this.stateStore.get(normalized.taskId);
+    const carryUploadedParts =
+      previousState?.uploadSessionId === uploadSessionId
+        ? sortedCompletedParts(previousState.uploadedParts)
+        : [];
     const baseState: DriveUploaderStateSnapshot = {
       taskId: normalized.taskId,
       uploadItemId: uploadItem.id,
       uploadSessionId,
       storageUploadId,
-      uploadedParts:
-        previousState?.uploadItemId === uploadItem.id
-          ? sortedCompletedParts(previousState.uploadedParts)
-          : [],
+      uploadedParts: carryUploadedParts,
       updatedAtEpochMs: Date.now(),
     };
+    const progressSnapshot = {
+      uploadItemId: baseState.uploadItemId,
+      uploadSessionId: baseState.uploadSessionId,
+      nodeId: preparedNodeId,
+    };
 
-    emitProgress(normalized, baseState, {
+    emitProgress(normalized, progressSnapshot, {
       uploadedBytes: baseState.uploadedParts.reduce((sum, part) => sum + part.sizeBytes, 0),
       uploadedPartsCount: baseState.uploadedParts.length,
       totalParts: parts.length,
@@ -254,7 +278,7 @@ export class DriveUploaderClient {
           continue;
         }
 
-        emitProgress(normalized, baseState, {
+        emitProgress(normalized, progressSnapshot, {
           partNo: part.partNo,
           uploadedBytes: [...completedParts.values()].reduce((sum, item) => sum + item.sizeBytes, 0),
           uploadedPartsCount: completedParts.size,
@@ -263,13 +287,13 @@ export class DriveUploaderClient {
         });
 
         const presigned = await this.transport.drive.uploadSessions.parts.presign(uploadSessionId, part.partNo, {
-          tenantId: normalized.tenantId,
           uploadId: storageUploadId,
           requestedTtlSeconds: normalized.requestedPartTtlSeconds,
         }, { signal: normalized.signal });
-        const body = normalized.file.slice(
+        const body = await readUploadPartBody(
+          normalized.file,
           part.offsetBytes,
-          part.offsetBytes + part.sizeBytes,
+          part.sizeBytes,
           normalized.contentType,
         );
         const response = await uploadPresignedPart({
@@ -288,7 +312,6 @@ export class DriveUploaderClient {
         };
 
         await this.transport.drive.uploader.uploads.parts.markUploaded(uploadItem.id, part.partNo, {
-          tenantId: normalized.tenantId,
           uploadSessionId,
           offsetBytes: String(part.offsetBytes),
           sizeBytes: String(part.sizeBytes),
@@ -302,7 +325,7 @@ export class DriveUploaderClient {
           updatedAtEpochMs: Date.now(),
         });
 
-        emitProgress(normalized, baseState, {
+        emitProgress(normalized, progressSnapshot, {
           partNo: part.partNo,
           uploadedBytes: [...completedParts.values()].reduce((sum, item) => sum + item.sizeBytes, 0),
           uploadedPartsCount: completedParts.size,
@@ -312,7 +335,7 @@ export class DriveUploaderClient {
       }
 
       const finalParts = sortedCompletedParts([...completedParts.values()]);
-      emitProgress(normalized, baseState, {
+      emitProgress(normalized, progressSnapshot, {
         uploadedBytes: finalParts.reduce((sum, part) => sum + part.sizeBytes, 0),
         uploadedPartsCount: finalParts.length,
         totalParts: parts.length,
@@ -320,19 +343,17 @@ export class DriveUploaderClient {
       });
 
       const completedSession = await this.transport.drive.uploadSessions.complete(uploadSessionId, {
-        tenantId: normalized.tenantId,
         uploadId: storageUploadId,
         contentType: normalized.contentType,
         contentLength: String(normalized.file.size),
         checksumSha256Hex: normalized.checksumSha256Hex,
-        operatorId: normalized.operatorId,
         parts: finalParts.map((part) => ({
           partNo: part.partNo,
           etag: part.etag,
         })),
       }, { signal: normalized.signal });
       await this.stateStore.clear(normalized.taskId);
-      emitProgress(normalized, baseState, {
+      emitProgress(normalized, progressSnapshot, {
         uploadedBytes: normalized.file.size,
         uploadedPartsCount: finalParts.length,
         totalParts: parts.length,
@@ -349,6 +370,16 @@ export class DriveUploaderClient {
         uploadedParts: sortedCompletedParts([...completedParts.values()]),
         updatedAtEpochMs: Date.now(),
       });
+      // Industry behavior: keep sessions alive for retry/resume unless the caller explicitly aborted.
+      // Aborting on transient network/storage errors prevents true resumable uploads.
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        await this.abortUploadSession(
+          {
+            signal: normalized.signal,
+          },
+          uploadSessionId,
+        );
+      }
       throw error;
     }
   }
@@ -359,11 +390,9 @@ export class DriveUploaderClient {
     const normalized = await this.normalizeReplaceNodeContentRequest(request);
     const uploadSession = await this.transport.drive.uploadSessions.create({
       sessionId: normalized.sessionId,
-      tenantId: normalized.tenantId,
       spaceId: normalized.spaceId,
       nodeId: normalized.nodeId,
       idempotencyKey: normalized.idempotencyKey,
-      operatorId: normalized.operatorId,
       expiresAtEpochMs: normalized.expiresAtEpochMs,
     }, { signal: normalized.signal });
     const uploadSessionId = uploadSession.id || normalized.sessionId;
@@ -377,7 +406,6 @@ export class DriveUploaderClient {
           uploadSessionId,
           part.partNo,
           {
-            tenantId: normalized.tenantId,
             uploadId: storageUploadId,
             requestedTtlSeconds: normalized.requestedPartTtlSeconds,
           },
@@ -388,9 +416,10 @@ export class DriveUploaderClient {
           url: presigned.uploadUrl,
           method: presigned.method || "PUT",
           headers: presigned.headers,
-          body: normalized.file.slice(
+          body: await readUploadPartBody(
+            normalized.file,
             part.offsetBytes,
-            part.offsetBytes + part.sizeBytes,
+            part.sizeBytes,
             normalized.contentType,
           ),
           signal: normalized.signal,
@@ -404,12 +433,10 @@ export class DriveUploaderClient {
       }
 
       const completedSession = await this.transport.drive.uploadSessions.complete(uploadSessionId, {
-        tenantId: normalized.tenantId,
         uploadId: storageUploadId,
         contentType: normalized.contentType,
         contentLength: String(normalized.file.size),
         checksumSha256Hex: normalized.checksumSha256Hex,
-        operatorId: normalized.operatorId,
         parts: completedParts.map((part) => ({
           partNo: part.partNo,
           etag: part.etag,
@@ -421,7 +448,12 @@ export class DriveUploaderClient {
         parts: completedParts,
       };
     } catch (error) {
-      await this.abortReplaceNodeContentSession(normalized, uploadSessionId);
+      await this.abortUploadSession(
+        {
+          signal: normalized.signal,
+        },
+        uploadSessionId,
+      );
       throw error;
     }
   }
@@ -467,8 +499,10 @@ export class DriveUploaderClient {
     };
   }
 
-  private async abortReplaceNodeContentSession(
-    request: NormalizedReplaceNodeContentRequest,
+  private async abortUploadSession(
+    request: {
+      signal?: AbortSignal;
+    },
     uploadSessionId: string,
   ): Promise<void> {
     if (!this.transport.drive.uploadSessions.abort) {
@@ -477,9 +511,7 @@ export class DriveUploaderClient {
 
     try {
       await this.transport.drive.uploadSessions.abort(uploadSessionId, {
-        tenantId: request.tenantId,
-        operatorId: request.operatorId,
-      }, { signal: request.signal });
+        }, { signal: request.signal });
     } catch {
       // Preserve the original upload failure; Drive will expire abandoned sessions.
     }
