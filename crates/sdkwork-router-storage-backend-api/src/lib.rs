@@ -10,6 +10,7 @@ mod dto;
 mod error;
 mod handlers;
 mod health_handlers;
+pub mod http_route_manifest;
 mod object_handlers;
 mod object_store;
 mod provider_handlers;
@@ -19,10 +20,9 @@ mod routes;
 mod state;
 mod validators;
 mod web_bootstrap;
-pub mod http_route_manifest;
 
-pub use http_route_manifest::storage_route_manifest;
 pub use config::{AdminStorageConfig, DriveAdminStorageObjectStoreAdapter};
+pub use http_route_manifest::storage_route_manifest;
 pub use routes::*;
 pub use state::AdminStorageState;
 pub use web_bootstrap::{

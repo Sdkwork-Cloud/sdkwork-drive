@@ -128,7 +128,9 @@ where
     let route_manifest = storage_route_manifest();
     route_manifest
         .validate_public_path_prefixes(&drive_admin_storage_public_path_prefixes())
-        .expect("drive storage backend-api public prefixes must not cover protected manifest routes");
+        .expect(
+            "drive storage backend-api public prefixes must not cover protected manifest routes",
+        );
 
     WebFrameworkLayer::new(resolver)
         .with_profile(WebRequestContextProfile {

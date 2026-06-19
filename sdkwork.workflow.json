@@ -90,19 +90,26 @@
       {
         "name": "Package gateway server archive",
         "shell": "pwsh",
-        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_PROFILE) {\n  'standalone' { pnpm gateway:standalone:pack }\n  'cloud-config' { pnpm gateway:cloud:bundle }\n  default { Write-Host \"Skipping gateway archive for profile $($env:SDKWORK_PACKAGE_PROFILE)\" }\n}"
+        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_VARIANT) {\n  'gateway' { pnpm gateway:standalone:pack }\n  'config-bundle' { pnpm gateway:cloud:bundle }\n  default { Write-Host \"Skipping gateway archive for profile $($env:SDKWORK_PACKAGE_VARIANT)\" }\n}"
       },
       {
         "name": "Write package evidence manifest",
         "shell": "pwsh",
-        "run": "$ErrorActionPreference = \"Stop\"\nNew-Item -ItemType Directory -Force -Path \"artifacts/release\" | Out-Null\nnode tools/generate_release_sbom.mjs artifacts/release/sbom.sdkwork-drive.json\n$manifest = [ordered]@{\n  appId = $env:SDKWORK_APP_ID\n  packageId = $env:SDKWORK_PACKAGE_ID\n  packageVersion = $env:SDKWORK_PACKAGE_VERSION\n  targetId = $env:SDKWORK_PACKAGE_TARGET_ID\n  dependencyWorkspace = \"..\"\n  sbomPath = \"artifacts/release/sbom.sdkwork-drive.json\"\n}\n$manifest | ConvertTo-Json -Depth 5 | Set-Content -Path \"artifacts/release/sdkwork-drive-$env:SDKWORK_PACKAGE_ID.json\" -Encoding utf8"
+        "run": "$ErrorActionPreference = \"Stop\"\nNew-Item -ItemType Directory -Force -Path \"artifacts/release\" | Out-Null\n$manifest = [ordered]@{\n  appId = $env:SDKWORK_APP_ID\n  packageId = $env:SDKWORK_PACKAGE_ID\n  packageVersion = $env:SDKWORK_PACKAGE_VERSION\n  targetId = $env:SDKWORK_PACKAGE_TARGET_ID\n  dependencyWorkspace = \"..\"\n  sbomPath = \"artifacts/release/sbom.sdkwork-drive.json\"\n}\n$manifest | ConvertTo-Json -Depth 5 | Set-Content -Path \"artifacts/release/sdkwork-drive-$env:SDKWORK_PACKAGE_ID.json\" -Encoding utf8"
+      }
+    ],
+    "sbom": [
+      {
+        "name": "Write Drive package SBOM evidence",
+        "shell": "pwsh",
+        "run": "$ErrorActionPreference = \"Stop\"\nNew-Item -ItemType Directory -Force -Path \"artifacts/release\" | Out-Null\nnode tools/generate_release_sbom.mjs artifacts/release/sbom.sdkwork-drive.json"
       }
     ],
     "validate": [
       {
         "name": "Validate gateway server archive",
         "shell": "pwsh",
-        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_PROFILE) {\n  'standalone' { pnpm gateway:standalone:pack:validate }\n  'cloud-config' { pnpm gateway:cloud:bundle:validate }\n  default { Write-Host \"Skipping gateway archive validation for profile $($env:SDKWORK_PACKAGE_PROFILE)\" }\n}"
+        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_VARIANT) {\n  'gateway' { pnpm gateway:standalone:pack:validate }\n  'config-bundle' { pnpm gateway:cloud:bundle:validate }\n  default { Write-Host \"Skipping gateway archive validation for profile $($env:SDKWORK_PACKAGE_VARIANT)\" }\n}"
       },
       {
         "name": "Validate package evidence",
@@ -113,76 +120,131 @@
   },
   "targets": [
     {
-      "id": "linux-x64-server-tar-gz",
+      "id": "linux-x64-standalone-server-tar-gz",
       "profile": "server",
       "platform": "linux",
       "architecture": "x64",
-      "formats": ["tar.gz"],
+      "formats": [
+        "tar.gz"
+      ],
       "runner": "ubuntu-24.04",
-      "outputGlobs": ["artifacts/release/**/*"]
+      "outputGlobs": [
+        "artifacts/release/**/*"
+      ],
+      "deploymentProfile": "standalone",
+      "runtimeTarget": "server"
     },
     {
-      "id": "linux-x64-standalone-gateway-tar-gz",
-      "profile": "standalone",
+      "id": "linux-x64-standalone-server-gateway-tar-gz",
+      "profile": "server",
       "platform": "linux",
       "architecture": "x64",
-      "formats": ["tar.gz"],
+      "formats": [
+        "tar.gz"
+      ],
       "runner": "ubuntu-24.04",
-      "outputGlobs": ["dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-linux-x64-standalone-gateway.tar.gz"]
+      "outputGlobs": [
+        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-linux-x64-standalone-gateway.tar.gz"
+      ],
+      "deploymentProfile": "standalone",
+      "runtimeTarget": "server",
+      "variant": "gateway"
     },
     {
-      "id": "linux-arm64-standalone-gateway-tar-gz",
-      "profile": "standalone",
+      "id": "linux-arm64-standalone-server-gateway-tar-gz",
+      "profile": "server",
       "platform": "linux",
       "architecture": "arm64",
-      "formats": ["tar.gz"],
+      "formats": [
+        "tar.gz"
+      ],
       "runner": "ubuntu-24.04",
-      "outputGlobs": ["dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-linux-arm64-standalone-gateway.tar.gz"]
+      "outputGlobs": [
+        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-linux-arm64-standalone-gateway.tar.gz"
+      ],
+      "deploymentProfile": "standalone",
+      "runtimeTarget": "server",
+      "variant": "gateway"
     },
     {
-      "id": "windows-x64-standalone-gateway-tar-gz",
-      "profile": "standalone",
+      "id": "windows-x64-standalone-server-gateway-tar-gz",
+      "profile": "server",
       "platform": "windows",
       "architecture": "x64",
-      "formats": ["tar.gz"],
+      "formats": [
+        "tar.gz"
+      ],
       "runner": "windows-latest",
-      "outputGlobs": ["dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-windows-x64-standalone-gateway.tar.gz"]
+      "outputGlobs": [
+        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-windows-x64-standalone-gateway.tar.gz"
+      ],
+      "deploymentProfile": "standalone",
+      "runtimeTarget": "server",
+      "variant": "gateway"
     },
     {
-      "id": "windows-arm64-standalone-gateway-tar-gz",
-      "profile": "standalone",
+      "id": "windows-arm64-standalone-server-gateway-tar-gz",
+      "profile": "server",
       "platform": "windows",
       "architecture": "arm64",
-      "formats": ["tar.gz"],
+      "formats": [
+        "tar.gz"
+      ],
       "runner": "windows-latest",
-      "outputGlobs": ["dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-windows-arm64-standalone-gateway.tar.gz"]
+      "outputGlobs": [
+        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-windows-arm64-standalone-gateway.tar.gz"
+      ],
+      "deploymentProfile": "standalone",
+      "runtimeTarget": "server",
+      "variant": "gateway"
     },
     {
-      "id": "macos-x64-standalone-gateway-tar-gz",
-      "profile": "standalone",
+      "id": "macos-x64-standalone-server-gateway-tar-gz",
+      "profile": "server",
       "platform": "macos",
       "architecture": "x64",
-      "formats": ["tar.gz"],
+      "formats": [
+        "tar.gz"
+      ],
       "runner": "macos-14",
-      "outputGlobs": ["dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-macos-x64-standalone-gateway.tar.gz"]
+      "outputGlobs": [
+        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-macos-x64-standalone-gateway.tar.gz"
+      ],
+      "deploymentProfile": "standalone",
+      "runtimeTarget": "server",
+      "variant": "gateway"
     },
     {
-      "id": "macos-arm64-standalone-gateway-tar-gz",
-      "profile": "standalone",
+      "id": "macos-arm64-standalone-server-gateway-tar-gz",
+      "profile": "server",
       "platform": "macos",
       "architecture": "arm64",
-      "formats": ["tar.gz"],
+      "formats": [
+        "tar.gz"
+      ],
       "runner": "macos-14",
-      "outputGlobs": ["dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-macos-arm64-standalone-gateway.tar.gz"]
+      "outputGlobs": [
+        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-macos-arm64-standalone-gateway.tar.gz"
+      ],
+      "deploymentProfile": "standalone",
+      "runtimeTarget": "server",
+      "variant": "gateway"
     },
     {
-      "id": "cloud-config-bundle-tar-gz",
-      "profile": "cloud-config",
-      "platform": "all",
-      "architecture": "all",
-      "formats": ["tar.gz"],
+      "id": "container-noarch-cloud-container-config-bundle-tar-gz",
+      "profile": "container",
+      "platform": "container",
+      "architecture": "noarch",
+      "formats": [
+        "tar.gz"
+      ],
       "runner": "ubuntu-24.04",
-      "outputGlobs": ["dist/cloud-config/sdkwork-drive-api-gateway-config-*.tar.gz"]
+      "outputGlobs": [
+        "dist/config-bundle/sdkwork-drive-api-gateway-config-*.tar.gz"
+      ],
+      "deploymentProfile": "cloud",
+      "runtimeTarget": "container",
+      "variant": "config-bundle"
     }
   ],
   "security": {

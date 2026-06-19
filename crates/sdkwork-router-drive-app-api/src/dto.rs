@@ -681,10 +681,6 @@ pub(crate) struct WatchChannelListQuery {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct WatchChannelGetQuery {}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub(crate) struct CreateWatchChannelRequest {
     pub(crate) id: String,
     pub(crate) space_id: Option<String>,
@@ -756,10 +752,6 @@ pub(crate) struct NodeMutationQuery {
 pub(crate) struct NodeDownloadUrlQuery {
     pub(crate) requested_ttl_seconds: Option<u32>,
 }
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ResolveDownloadPackageQuery {}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1018,14 +1010,10 @@ pub(crate) struct StartPageTokenQuery {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct TenantQuery {
+pub(crate) struct PageQuery {
     pub(crate) page_size: Option<i64>,
     pub(crate) page_token: Option<String>,
 }
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct QuotaSummaryQuery {}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1419,10 +1407,6 @@ impl From<CommentReplyRecord> for CommentReplyResponse {
         }
     }
 }
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ResolveDownloadTokenQuery {}
 
 pub(crate) fn apply_optional_i64_patch(
     value: OptionalI64Patch,

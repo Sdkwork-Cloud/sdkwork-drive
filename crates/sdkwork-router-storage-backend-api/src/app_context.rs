@@ -32,7 +32,7 @@ impl DriveRequestContext {
     }
 
     pub(crate) fn resolve_tenant_id(&self) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
-        if self.from_token || !self.tenant_id.is_empty() {
+        if self.from_token {
             Ok(self.tenant_id.clone())
         } else {
             Err(map_service_error(DriveServiceError::Validation(
@@ -54,15 +54,6 @@ impl DriveRequestContext {
         }
     }
 
-    fn ensure_tenant_match(&self, value: &str) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-        if !self.from_token || value == self.tenant_id {
-            return Ok(());
-        }
-        Err(context_conflict(
-            "request tenant does not match verified SDKWork AppContext tenant",
-        ))
-    }
-
     fn ensure_actor_match(&self, value: &str) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
         if !self.from_token || value == self.actor_id {
             return Ok(());
@@ -76,7 +67,7 @@ impl DriveRequestContext {
 pub(crate) fn drive_request_context_from_query(query: Option<&str>) -> DriveRequestContext {
     let query = parse_uri_query(query);
     DriveRequestContext {
-        tenant_id: normalize_optional_text(query.get("tenantId").cloned()).unwrap_or_default(),
+        tenant_id: String::new(),
         actor_id: normalize_optional_text(query.get("operatorId").cloned())
             .unwrap_or_else(|| "operator-unset".to_string()),
         subject_type: normalize_optional_text(query.get("subjectType").cloned())

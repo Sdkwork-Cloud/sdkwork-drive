@@ -6,7 +6,7 @@ use crate::constants::{DOWNLOAD_PACKAGE_MAX_FILES, DOWNLOAD_PACKAGE_MAX_TOTAL_BY
 use crate::dto::{
     CreateDownloadPackageRequest, DownloadPackageFileItem, DownloadPackageItemResponse,
     DownloadPackageRecordView, DownloadPackageResponse, DriveNodeResponse,
-    InsertDownloadPackageRecord, ResolveDownloadPackageQuery,
+    InsertDownloadPackageRecord,
 };
 use crate::error::{
     internal_problem, internal_sql_error, map_object_store_route_error, map_service_error,
@@ -22,7 +22,7 @@ use crate::object_store::{
 use crate::state::AppState;
 use crate::time::{current_epoch_ms, signing_ttl_seconds};
 use crate::validators::{normalize_optional_text, validate_requested_ttl_seconds};
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Extension;
 use axum::Json;
@@ -184,7 +184,6 @@ pub(crate) async fn resolve_download_package_url(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(package_id): Path<String>,
-    Query(query): Query<ResolveDownloadPackageQuery>,
 ) -> Result<Json<DownloadPackageResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let package = find_download_package_record(&state.pool, &tenant_id, &package_id).await?;

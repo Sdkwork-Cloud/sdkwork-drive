@@ -8,6 +8,7 @@ mod dto;
 mod error;
 mod handlers;
 mod health_handlers;
+pub mod http_route_manifest;
 mod label_handlers;
 mod maintenance_handlers;
 mod mappers;
@@ -20,7 +21,6 @@ mod storage_provider_handlers;
 mod tenant_context;
 mod validators;
 mod web_bootstrap;
-pub mod http_route_manifest;
 
 pub use http_route_manifest::backend_route_manifest;
 pub use routes::*;

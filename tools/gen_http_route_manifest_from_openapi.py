@@ -18,7 +18,7 @@ METHOD_MAP = {
 AUTH_MAP = {
     "dual-token": "dual_token",
     "anonymous": "public",
-    "refresh-token": "public",
+    "refresh-token": "refresh_token",
     "api-key": "api_key",
     "oauth": "oauth",
     "open-api-flexible": "open_api_flexible",

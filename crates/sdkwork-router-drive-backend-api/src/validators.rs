@@ -472,19 +472,6 @@ pub(crate) fn normalize_storage_root_prefix(
     Ok(prefix)
 }
 
-pub(crate) fn require_tenant_id(tenant_id: Option<String>) -> Result<String, DriveServiceError> {
-    let tenant_id = tenant_id
-        .ok_or_else(|| DriveServiceError::Validation("tenant_id is required".to_string()))?
-        .trim()
-        .to_string();
-    if tenant_id.is_empty() {
-        return Err(DriveServiceError::Validation(
-            "tenant_id is required".to_string(),
-        ));
-    }
-    Ok(tenant_id)
-}
-
 pub(crate) fn parse_storage_provider_kind(
     raw: &str,
 ) -> Result<DriveStorageProviderKind, DriveServiceError> {

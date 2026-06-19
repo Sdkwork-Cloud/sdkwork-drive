@@ -34,7 +34,7 @@ impl DriveRequestContext {
     }
 
     pub(crate) fn resolve_tenant_id(&self) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
-        if self.from_token || !self.tenant_id.is_empty() {
+        if self.from_token {
             Ok(self.tenant_id.clone())
         } else {
             require_query_value(None, "tenantId")
@@ -168,7 +168,7 @@ impl DriveRequestContext {
 pub(crate) fn drive_request_context_from_query(query: Option<&str>) -> DriveRequestContext {
     let query = parse_uri_query(query);
     DriveRequestContext {
-        tenant_id: normalize_optional_text(query.get("tenantId").cloned()).unwrap_or_default(),
+        tenant_id: String::new(),
         user_id: normalize_optional_text(query.get("userId").cloned()).unwrap_or_default(),
         app_id: normalize_optional_text(query.get("appId").cloned()),
         actor_id: normalize_optional_text(query.get("operatorId").cloned())

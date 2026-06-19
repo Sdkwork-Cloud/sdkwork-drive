@@ -165,7 +165,10 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(admin_storage.contains("\"operationId\": \"storageProviderBindings.list\""));
     assert!(admin_storage.contains("\"operationId\": \"storageProviderBindings.default.delete\""));
     assert!(app.contains("\"operationId\": \"spaces.list\""));
-    assert!(app.contains("\"name\": \"tenantId\""));
+    assert!(
+        !app.contains("\"name\": \"tenantId\""),
+        "app OpenAPI must not expose client tenantId query parameters",
+    );
     assert!(app.contains("\"201\""));
     assert!(app.contains("/app/v3/api/drive/download_tokens/{token}"));
     assert!(app.contains("/app/v3/api/drive/download_packages"));
@@ -398,13 +401,13 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_schema_property_exists(&app_json, "DriveLabelSummary", "labelKey");
     assert_schema_property_exists(&app_json, "NodeLabel", "label");
     assert_schema_property_exists(&app_json, "NodeLabelListResponse", "nextPageToken");
-    assert_schema_property_exists(&app_json, "ApplyNodeLabelRequest", "tenantId");
+    assert_schema_property_absent(&app_json, "ApplyNodeLabelRequest", "tenantId");
     assert_schema_property_exists(&app_json, "RemoveNodeLabelResponse", "removed");
     assert_schema_property_exists(&app_json, "DriveWatchChannel", "resourceType");
     assert_schema_property_exists(&app_json, "DriveWatchChannel", "expirationEpochMs");
     assert_schema_property_exists(&app_json, "DriveWatchChannelListResponse", "nextPageToken");
     assert_schema_property_exists(&app_json, "CreateWatchChannelRequest", "address");
-    assert_schema_property_exists(&app_json, "StopWatchChannelRequest", "tenantId");
+    assert_schema_property_absent(&app_json, "StopWatchChannelRequest", "tenantId");
     assert_schema_property_exists(&app_json, "StopWatchChannelResponse", "stopped");
     assert_schema_property_exists(&app_json, "CreateDownloadPackageRequest", "nodeIds");
     assert_schema_property_exists(&app_json, "PrepareUploaderUploadRequest", "scene");

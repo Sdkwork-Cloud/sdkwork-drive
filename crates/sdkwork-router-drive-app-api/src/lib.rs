@@ -12,6 +12,7 @@ mod error;
 mod handlers;
 mod hashing;
 mod health_handlers;
+pub mod http_route_manifest;
 mod ids;
 mod mappers;
 mod metadata_repository;
@@ -26,7 +27,6 @@ mod uploader;
 mod validators;
 mod watch_repository;
 mod web_bootstrap;
-pub mod http_route_manifest;
 
 pub use http_route_manifest::app_route_manifest;
 pub use routes::*;

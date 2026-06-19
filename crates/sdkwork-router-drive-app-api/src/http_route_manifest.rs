@@ -123,7 +123,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "drive",
         "sessions.organizationSelection.create",
     ),
-    HttpRoute::public(
+    HttpRoute::refresh_token(
         HttpMethod::Post,
         "/app/v3/api/auth/sessions/refresh",
         "drive",

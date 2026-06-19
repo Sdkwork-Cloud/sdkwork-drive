@@ -27,7 +27,6 @@
     "grantMode": "current",
     "platform": "WEB",
     "appId": "sdkwork-drive-pc",
-    "tenantId": null,
     "organizationId": null
   },
   "runtime": {
@@ -42,7 +41,11 @@
       "DIRECT_DOWNLOAD"
     ],
     "defaultPlatform": "WEB",
-    "defaultArchitecture": "x64"
+    "defaultArchitecture": "x64",
+    "supportedDeploymentProfiles": [
+      "cloud"
+    ],
+    "defaultDeploymentProfile": "cloud"
   },
   "media": {
     "icons": {
@@ -134,7 +137,7 @@
       "DESKTOP_MACOS",
       "DESKTOP_LINUX"
     ],
-    "defaultPackageId": "web-x64-web-url",
+    "defaultPackageId": "web-universal-cloud-browser-other",
     "storeUrl": "https://sdkwork.com/apps/sdkwork-drive-pc",
     "stores": [],
     "config": {
@@ -167,24 +170,26 @@
   },
   "artifacts": {
     "installConfig": {
-      "defaultPackageId": "web-x64-web-url",
+      "defaultPackageId": "web-universal-cloud-browser-other",
       "installCommand": "sdkwork install sdkwork-drive-pc",
       "launchCommand": "sdkwork open sdkwork-drive-pc",
       "uninstallCommand": "sdkwork uninstall sdkwork-drive-pc",
       "packages": [
         {
-          "id": "web-x64-web-url",
+          "id": "web-universal-cloud-browser-other",
           "name": "SDKWork Drive PC Web",
           "sourceType": "WEB_URL",
           "packageFormat": "OTHER",
           "platform": "WEB",
-          "architecture": "x64",
+          "architecture": "universal",
           "url": "https://drive.sdkwork.com",
           "enabled": true,
           "metadata": {
             "runtimeTarget": "browser",
             "releaseArtifact": "web-url"
-          }
+          },
+          "deploymentProfile": "cloud",
+          "runtimeTarget": "browser"
         }
       ],
       "metadata": {
@@ -213,7 +218,7 @@
           "Standard package and config ownership"
         ],
         "packageIds": [
-          "web-x64-web-url"
+          "web-universal-cloud-browser-other"
         ],
         "publishedAt": "2026-06-06T00:00:00Z",
         "current": true,

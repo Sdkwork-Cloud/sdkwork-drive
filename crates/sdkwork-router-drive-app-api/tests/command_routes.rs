@@ -8326,18 +8326,30 @@ fn hex_encode(value: &str) -> String {
 async fn fetch_paged_items(
     app: axum::Router,
     uri: &str,
+    tenant: &str,
+    user: &str,
 ) -> (Vec<serde_json::Value>, Option<String>) {
+    let sanitized_uri = common::strip_client_tenant_id_from_uri(uri);
     let response = app
         .oneshot(
             Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token(tenant, user)),
+                )
+                .header("access-token", common::access_token(tenant, user))
                 .method(Method::GET)
-                .uri(uri)
+                .uri(sanitized_uri.as_str())
                 .body(Body::empty())
                 .expect("paged request should be built"),
         )
         .await
         .expect("paged request should be handled");
-    assert_eq!(response.status(), StatusCode::OK, "{uri} should return OK");
+    assert_eq!(
+        response.status(),
+        StatusCode::OK,
+        "{sanitized_uri} should return OK"
+    );
     let payload: serde_json::Value = serde_json::from_slice(
         &to_bytes(response.into_body(), usize::MAX)
             .await
@@ -8352,18 +8364,33 @@ async fn fetch_paged_items(
     (items, next_page_token)
 }
 
-async fn fetch_json(app: axum::Router, uri: &str) -> serde_json::Value {
+async fn fetch_json(
+    app: axum::Router,
+    uri: &str,
+    tenant: &str,
+    user: &str,
+) -> serde_json::Value {
+    let sanitized_uri = common::strip_client_tenant_id_from_uri(uri);
     let response = app
         .oneshot(
             Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token(tenant, user)),
+                )
+                .header("access-token", common::access_token(tenant, user))
                 .method(Method::GET)
-                .uri(uri)
+                .uri(sanitized_uri.as_str())
                 .body(Body::empty())
                 .expect("json request should be built"),
         )
         .await
         .expect("json request should be handled");
-    assert_eq!(response.status(), StatusCode::OK, "{uri} should return OK");
+    assert_eq!(
+        response.status(),
+        StatusCode::OK,
+        "{sanitized_uri} should return OK"
+    );
     serde_json::from_slice(
         &to_bytes(response.into_body(), usize::MAX)
             .await

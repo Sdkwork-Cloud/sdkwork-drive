@@ -100,7 +100,10 @@ pub fn build_router() -> Router {
 }
 
 pub fn build_router_with_pool(pool: AnyPool) -> Router {
-    build_router_with_state(AppState::new(pool), false)
+    build_router_with_pool_and_iam_policy(
+        pool,
+        DriveAuthValidationPolicy::allow_unsigned_for_development(),
+    )
 }
 
 pub fn build_router_with_pool_and_iam(pool: AnyPool) -> Router {
@@ -504,7 +507,6 @@ async fn get_space(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(space_id): Path<String>,
-    Query(query): Query<TenantQuery>,
 ) -> Result<Json<CreateSpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
     let tenant_id = match ctx.resolve_tenant_id() {
@@ -817,7 +819,6 @@ async fn get_upload_session(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(upload_session_id): Path<String>,
-    Query(query): Query<TenantQuery>,
 ) -> Result<Json<UploadSessionMutationResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let upload_session = find_upload_session(&state.pool, &tenant_id, &upload_session_id).await?;
@@ -1371,7 +1372,6 @@ async fn get_node(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Query(query): Query<TenantQuery>,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     Ok(Json(find_node(&state.pool, &tenant_id, &node_id).await?))
@@ -1381,7 +1381,6 @@ async fn get_node_path(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Query(query): Query<TenantQuery>,
 ) -> Result<Json<NodePathResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let items = resolve_node_path(&state.pool, &tenant_id, &node_id).await?;
@@ -1502,7 +1501,6 @@ async fn list_archive_entries(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Query(query): Query<TenantQuery>,
 ) -> Result<Json<ArchiveEntryListResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let archive_bytes = read_archive_node_bytes(&state, &tenant_id, &node_id).await?;
@@ -2598,7 +2596,6 @@ async fn list_favorite_nodes(
 async fn get_quota_summary(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
-    Query(query): Query<QuotaSummaryQuery>,
 ) -> Result<Json<QuotaSummaryResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let service = DriveQuotaService::new(SqlQuotaStore::new(state.pool.clone()));
@@ -2797,7 +2794,7 @@ async fn list_versions(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Query(query): Query<TenantQuery>,
+    Query(query): Query<PageQuery>,
 ) -> Result<Json<VersionListResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
@@ -2864,7 +2861,6 @@ async fn get_version(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, version_id)): Path<(String, String)>,
-    Query(query): Query<TenantQuery>,
 ) -> Result<Json<FileVersionResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -3166,7 +3162,7 @@ async fn list_permissions(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Query(query): Query<TenantQuery>,
+    Query(query): Query<PageQuery>,
 ) -> Result<Json<PermissionListResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
@@ -3198,7 +3194,6 @@ async fn get_permission(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, permission_id)): Path<(String, String)>,
-    Query(query): Query<TenantQuery>,
 ) -> Result<Json<PermissionResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -3223,7 +3218,7 @@ async fn list_effective_permissions(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Query(query): Query<TenantQuery>,
+    Query(query): Query<PageQuery>,
 ) -> Result<Json<EffectivePermissionListResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
@@ -3459,7 +3454,7 @@ async fn list_share_links(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Query(query): Query<TenantQuery>,
+    Query(query): Query<PageQuery>,
 ) -> Result<Json<ShareLinkListResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
@@ -3492,7 +3487,6 @@ async fn get_share_link(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(share_link_id): Path<String>,
-    Query(query): Query<TenantQuery>,
 ) -> Result<Json<ShareLinkResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let current = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
@@ -3666,7 +3660,7 @@ async fn list_comments(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Query(query): Query<TenantQuery>,
+    Query(query): Query<PageQuery>,
 ) -> Result<Json<CommentListResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
@@ -3702,7 +3696,6 @@ async fn get_comment(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
-    Query(query): Query<TenantQuery>,
 ) -> Result<Json<CommentResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -3873,7 +3866,7 @@ async fn list_comment_replies(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
-    Query(query): Query<TenantQuery>,
+    Query(query): Query<PageQuery>,
 ) -> Result<Json<CommentReplyListResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
@@ -3913,7 +3906,6 @@ async fn get_comment_reply(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id, reply_id)): Path<(String, String, String)>,
-    Query(query): Query<TenantQuery>,
 ) -> Result<Json<CommentReplyResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -4363,7 +4355,6 @@ async fn get_watch_channel(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(channel_id): Path<String>,
-    Query(query): Query<WatchChannelGetQuery>,
 ) -> Result<Json<DriveWatchChannelResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     Ok(Json(
@@ -4769,7 +4760,6 @@ async fn resolve_download_token(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(token): Path<String>,
-    Query(query): Query<ResolveDownloadTokenQuery>,
 ) -> Result<Response, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
     let tenant_id = ctx.resolve_tenant_id()?;

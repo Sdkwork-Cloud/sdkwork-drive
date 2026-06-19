@@ -1348,7 +1348,6 @@ if (!isSdkExportGate) {
     [
       "subjectType",
       "subjectId",
-      "tenantId",
       "operatorId",
     ],
     "app openapi",
@@ -2702,6 +2701,28 @@ for (const marker of [
   "asset_upload_session",
 ]) {
   assertNotContains(globalAssetsSchema, marker, "global assets schema");
+}
+
+for (const [schemaName, schema] of Object.entries(appOpenapi.components?.schemas ?? {})) {
+  if (!schemaName.endsWith("Request")) {
+    continue;
+  }
+  assertSchemaPropertyAbsent(appOpenapi, schemaName, "tenantId", "app openapi");
+}
+
+for (const [pathKey, pathItem] of Object.entries(appOpenapi.paths ?? {})) {
+  for (const [method, operation] of Object.entries(pathItem ?? {})) {
+    if (!operation || typeof operation !== "object" || !Array.isArray(operation.parameters)) {
+      continue;
+    }
+    for (const parameter of operation.parameters) {
+      if (parameter?.in === "query" && parameter?.name === "tenantId") {
+        throw new Error(
+          `[drive_schema_quality_gate] app openapi ${method.toUpperCase()} ${pathKey} must not accept client tenantId query params`,
+        );
+      }
+    }
+  }
 }
 
 process.stdout.write("[drive_schema_quality_gate] passed\n");

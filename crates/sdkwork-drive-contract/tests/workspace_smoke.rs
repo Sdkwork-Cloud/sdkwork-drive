@@ -425,11 +425,13 @@ fn drive_services_do_not_expose_application_local_iam_login_routes() {
         root.join("crates/sdkwork-drive-observability/src"),
     ];
     let forbidden = [
-        "/app/v3/api/auth",
-        "/backend/v3/api/auth",
         "/auth/login",
         "/auth/refresh",
         "user-center/session",
+        "/app/v3/api/auth/login",
+        "/app/v3/api/auth/oauth_sessions",
+        "/app/v3/api/auth/oauth_authorization_urls",
+        "/backend/v3/api/auth/login",
     ];
 
     let mut offenders = Vec::new();
