@@ -3430,6 +3430,7 @@ dependencies = [
  "base64",
  "chrono",
  "hmac 0.12.1",
+ "rand_core 0.6.4",
  "sdkwork-database-sqlx",
  "sdkwork-iam-context-service",
  "sdkwork-web-axum",
@@ -3528,7 +3529,6 @@ dependencies = [
 name = "sdkwork-router-iam-app-api"
 version = "0.1.0"
 dependencies = [
- "aes-gcm",
  "argon2",
  "async-trait",
  "axum",

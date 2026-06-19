@@ -152,6 +152,11 @@ async fn app_routes_emit_standardized_observability_events() {
                 format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
             )
             .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/spaces")
                 .header("content-type", "application/json")
@@ -289,6 +294,11 @@ async fn app_routes_emit_standardized_observability_events() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
@@ -507,4 +517,5 @@ fn now_epoch_ms() -> i64 {
         .expect("system time should be valid")
         .as_millis() as i64
 }
+
 

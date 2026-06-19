@@ -18,6 +18,11 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
                 format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
             )
             .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces")
                 .body(Body::empty())
@@ -306,4 +311,5 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
         );
     }
 }
+
 

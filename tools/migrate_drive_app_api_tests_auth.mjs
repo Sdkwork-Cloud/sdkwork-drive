@@ -60,9 +60,8 @@ function tenantFromSqlContext(context) {
 function stripTenantIdFromUri(uri) {
   return uri
     .replace(/([?&])tenantId=[^&"']+&/g, '$1')
-    .replace(/([?&])tenantId=[^&"']+$/g, '')
-    .replace(/\?&/g, '?')
-    .replace(/\?$/g, '');
+    .replace(/&tenantId=[^&"']+/g, '')
+    .replace(/\?tenantId=[^&"']+(?=")/g, '');
 }
 
 function stripTenantIdFromJson(jsonText) {
@@ -91,7 +90,6 @@ function inferAuthPair(context) {
   const bodyMatch = context.match(/Body::from\(\s*r#"(.*?)"#/s) ?? context.match(/Body::from\(\s*"(.*?)"\s*\)/s);
   const uriLiteral = uriMatch?.[1] ?? '';
   const bodyLiteral = bodyMatch?.[1] ?? '';
-
   const tenant =
     tenantFromUri(uriLiteral) ??
     tenantFromJson(bodyLiteral) ??
@@ -101,65 +99,6 @@ function inferAuthPair(context) {
   return { tenant, user };
 }
 
-function findMatchingParen(text, openIndex) {
-  let depth = 0;
-  for (let index = openIndex; index < text.length; index += 1) {
-    const char = text[index];
-    if (char === '(') {
-      depth += 1;
-    } else if (char === ')') {
-      depth -= 1;
-      if (depth === 0) {
-        return index;
-      }
-    }
-  }
-  return -1;
-}
-
-function migrateFetchCalls(source) {
-  const fnNames = ['fetch_json', 'fetch_paged_items'];
-  let result = source;
-  for (const fn of fnNames) {
-    let searchIndex = 0;
-    while (true) {
-      const start = result.indexOf(`${fn}(`, searchIndex);
-      if (start === -1) {
-        break;
-      }
-      const end = findMatchingParen(result, start + fn.length);
-      if (end === -1) {
-        break;
-      }
-      const callText = result.slice(start, end + 1);
-      if (/, "[^"]+", "[^"]+"\s*\)\s*$/.test(callText)) {
-        searchIndex = end + 1;
-        continue;
-      }
-      const inner = callText.slice(fn.length + 1, -1);
-      const uriLiteralMatch = inner.match(/"([^"]+)"/);
-      const formatMatch = inner.match(/&format!\(\s*\n?\s*"([^"]+)"/s);
-      const uriTemplate = uriLiteralMatch?.[1] ?? formatMatch?.[1] ?? '';
-      const tenant = tenantFromUri(uriTemplate) ?? tenantFromSqlContext(result.slice(Math.max(0, start - 4000), start)) ?? 'tenant-001';
-      const user = userFromUri(uriTemplate, tenant);
-      const strippedUriTemplate = stripTenantIdFromUri(uriTemplate);
-      let replacementInner = inner;
-      if (uriLiteralMatch) {
-        replacementInner = inner.replace(`"${uriLiteralMatch[1]}"`, `"${strippedUriTemplate}"`);
-      } else if (formatMatch) {
-        replacementInner = inner.replace(formatMatch[1], stripTenantIdFromUri(formatMatch[1]));
-      }
-      if (!replacementInner.includes('"tenant-page"')) {
-        replacementInner = `${replacementInner.trimEnd()},\n        "${tenant}",\n        "${user}"`;
-      }
-      const replacement = `${fn}(${replacementInner})`;
-      result = `${result.slice(0, start)}${replacement}${result.slice(end + 1)}`;
-      searchIndex = start + replacement.length;
-    }
-  }
-  return result;
-}
-
 function migrateRequestBlocks(source) {
   const lines = source.split('\n');
   let output = '';
@@ -167,6 +106,22 @@ function migrateRequestBlocks(source) {
 
   while (index < lines.length) {
     const line = lines[index];
+    if (
+      line.includes('async fn fetch_paged_items(')
+      || line.includes('async fn fetch_json(')
+    ) {
+      output += `${line}\n`;
+      index += 1;
+      while (index < lines.length && !/^}\s*$/.test(lines[index])) {
+        output += `${lines[index]}\n`;
+        index += 1;
+      }
+      if (index < lines.length) {
+        output += `${lines[index]}\n`;
+        index += 1;
+      }
+      continue;
+    }
     if (!line.includes('Request::builder()')) {
       output += `${line}\n`;
       index += 1;
@@ -211,6 +166,20 @@ function migrateRequestBlocks(source) {
   return output.replace(/\n$/, '');
 }
 
+function stripTenantIdLiterals(source) {
+  return source
+    .replace(/\?tenantId=[^&"']+&/g, '?')
+    .replace(/&tenantId=[^&"']+/g, '')
+    .replace(/\?tenantId=[^&"']+(?=")/g, '');
+}
+
+function stripTenantIdFromJsonBodies(source) {
+  return source
+    .replace(/"tenantId"\s*:\s*"[^"]*"\s*,\s*\n/g, '')
+    .replace(/"tenantId"\s*:\s*"[^"]*"\s*,\s*/g, '')
+    .replace(/,\s*\n?\s*"tenantId"\s*:\s*"[^"]*"/g, '');
+}
+
 function ensureCommonModule(source) {
   if (source.includes('mod common;')) {
     return source;
@@ -232,8 +201,8 @@ for (const relativeFile of testFiles) {
     '',
   );
   source = source.replaceAll('build_router_with_pool(', 'common::test_router_with_pool(');
-  source = migrateFetchCalls(source);
   source = migrateRequestBlocks(source);
+  // Keep tenantId in fetch_* URI literals; helpers strip before dispatch and infer auth first.
   fs.writeFileSync(absolutePath, `${source}\n`);
   const count = (source.match(/common::auth_token\(/g) ?? []).length;
   process.stdout.write(`${relativeFile}: normalized ${count} authed requests\n`);

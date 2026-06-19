@@ -851,6 +851,11 @@ async fn quota_summary_route_counts_active_storage_objects() {
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-quota", "user-quota")),
             )
             .header("access-token", common::access_token("tenant-quota", "user-quota"))
@@ -1283,6 +1288,11 @@ async fn create_upload_session_resolves_default_bucket_and_generates_standard_ke
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-upload-create-trash", "user-upload-create-trash")),
+            )
+            .header("access-token", common::access_token("tenant-upload-create-trash", "user-upload-create-trash"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-keygen", "user-keygen")),
@@ -1871,6 +1881,11 @@ async fn create_upload_session_requires_active_object_store_provider() {
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-create-no-provider", "user-create-no-provider")),
             )
             .header("access-token", common::access_token("tenant-create-no-provider", "user-create-no-provider"))
@@ -1968,6 +1983,11 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-s3", "user-s3")),
             )
             .header("access-token", common::access_token("tenant-s3", "user-s3"))
@@ -2052,6 +2072,11 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-s3", "user-s3")),
@@ -2987,6 +3012,11 @@ async fn uploader_routes_accept_generated_sdk_int64_strings() {
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-version-upload", "user-version-upload")),
+            )
+            .header("access-token", common::access_token("tenant-version-upload", "user-version-upload"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-uploader-string-int", "user-uploader-string-int")),
             )
             .header("access-token", common::access_token("tenant-uploader-string-int", "user-uploader-string-int"))
@@ -3315,6 +3345,11 @@ async fn presign_upload_part_rejects_ttl_outside_contract_before_object_store_ca
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-upload-ttl", "user-upload-ttl")),
             )
             .header("access-token", common::access_token("tenant-upload-ttl", "user-upload-ttl"))
@@ -3403,6 +3438,11 @@ async fn upload_session_presign_rejects_when_persisted_provider_is_disabled() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-provider-stickiness", "user-provider-stickiness")),
@@ -3754,6 +3794,11 @@ async fn complete_upload_session_rejects_metadata_conflict_before_object_store_c
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-complete-metadata-conflict", "user-complete-metadata-conflict")),
             )
             .header("access-token", common::access_token("tenant-complete-metadata-conflict", "user-complete-metadata-conflict"))
@@ -3951,6 +3996,11 @@ async fn complete_upload_session_rejects_storage_version_drift_before_object_sto
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-complete-version-drift", "user-complete-version-drift")),
             )
             .header("access-token", common::access_token("tenant-complete-version-drift", "user-complete-version-drift"))
@@ -4066,6 +4116,11 @@ async fn s3_upload_session_abort_calls_object_store_abort() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-s3-abort", "user-s3-abort")),
@@ -4207,6 +4262,11 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-life", "user-life")),
@@ -4625,6 +4685,11 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-tree-restore", "user-tree-restore")),
+            )
+            .header("access-token", common::access_token("tenant-tree-restore", "user-tree-restore"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-tree-delete", "user-tree-delete")),
@@ -5252,6 +5317,11 @@ async fn presign_upload_part_requires_active_object_store_provider() {
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-no-provider", "user-no-provider")),
             )
             .header("access-token", common::access_token("tenant-no-provider", "user-no-provider"))
@@ -5342,6 +5412,11 @@ async fn complete_upload_session_rejects_invalid_multipart_parts() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-invalid-parts", "user-invalid-parts")),
@@ -5883,6 +5958,11 @@ async fn create_download_url_and_resolve_token_redirects_to_signed_source() {
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-download-ttl", "user-download-ttl")),
             )
             .header("access-token", common::access_token("tenant-download-ttl", "user-download-ttl"))
@@ -6098,6 +6178,11 @@ async fn resolve_download_token_requires_active_object_store_provider() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-download-no-provider", "user-download-no-provider")),
@@ -6568,6 +6653,11 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
                 Request::builder()
                 .header(
                     "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                )
+                .header("access-token", common::access_token("tenant-001", "user-001"))
+                .header(
+                    "authorization",
                     format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
                 )
                 .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
@@ -6804,6 +6894,11 @@ async fn create_download_package_reads_objects_from_their_bound_provider_when_bu
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-shared-provider", "user-shared-provider")),
             )
             .header("access-token", common::access_token("tenant-shared-provider", "user-shared-provider"))
@@ -6877,6 +6972,11 @@ async fn list_archive_entries_reads_zip_contents_from_drive_storage() {
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-archive", "user-archive")),
             )
             .header("access-token", common::access_token("tenant-archive", "user-archive"))
@@ -6938,6 +7038,11 @@ async fn extract_archive_entries_creates_drive_nodes_and_writes_objects_to_defau
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-archive", "user-archive")),
@@ -7317,6 +7422,11 @@ async fn create_download_package_rejects_ttl_outside_contract_before_writing_pac
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
             )
             .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
@@ -7407,6 +7517,11 @@ async fn create_download_package_reads_files_from_multiple_storage_buckets() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
@@ -7659,6 +7774,11 @@ async fn create_download_package_rejects_folder_expansion_above_file_limit_befor
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-package-limit", "user-package-limit")),
             )
             .header("access-token", common::access_token("tenant-package-limit", "user-package-limit"))
@@ -7717,6 +7837,11 @@ async fn create_download_package_expands_selected_folder_descendants() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
@@ -7816,6 +7941,11 @@ async fn resolve_download_package_treats_subsecond_remaining_ttl_as_expired() {
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
             )
             .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
@@ -7866,6 +7996,11 @@ async fn resolve_expired_download_token_returns_gone() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-token-lifecycle", "user-token-lifecycle")),
@@ -8429,24 +8564,17 @@ fn hex_encode(value: &str) -> String {
 async fn fetch_paged_items(
     app: axum::Router,
     uri: &str,
-    tenant: &str,
-    user: &str,
-        "tenant-001",
-        "user-001") -> (Vec<serde_json::Value>, Option<String>) {
+) -> (Vec<serde_json::Value>, Option<String>) {
+    let (tenant, user) = common::auth_context_from_uri(uri);
     let sanitized_uri = common::strip_client_tenant_id_from_uri(uri);
     let response = app
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .header(
                     "authorization",
-                    format!("Bearer {}", common::auth_token(tenant, user)),
+                    format!("Bearer {}", common::auth_token(&tenant, &user)),
                 )
-                .header("access-token", common::access_token(tenant, user))
+                .header("access-token", common::access_token(&tenant, &user))
                 .method(Method::GET)
                 .uri(sanitized_uri.as_str())
                 .body(Body::empty())
@@ -8473,27 +8601,17 @@ async fn fetch_paged_items(
     (items, next_page_token)
 }
 
-async fn fetch_json(
-    app: axum::Router,
-    uri: &str,
-    tenant: &str,
-    user: &str,
-        "tenant-001",
-        "user-001") -> serde_json::Value {
+async fn fetch_json(app: axum::Router, uri: &str) -> serde_json::Value {
+    let (tenant, user) = common::auth_context_from_uri(uri);
     let sanitized_uri = common::strip_client_tenant_id_from_uri(uri);
     let response = app
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .header(
                     "authorization",
-                    format!("Bearer {}", common::auth_token(tenant, user)),
+                    format!("Bearer {}", common::auth_token(&tenant, &user)),
                 )
-                .header("access-token", common::access_token(tenant, user))
+                .header("access-token", common::access_token(&tenant, &user))
                 .method(Method::GET)
                 .uri(sanitized_uri.as_str())
                 .body(Body::empty())
@@ -9200,6 +9318,11 @@ async fn empty_trash_rejects_missing_or_deleted_explicit_space_before_deleting_n
                 Request::builder()
                 .header(
                     "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-trash-filter", "user-trash-filter")),
+                )
+                .header("access-token", common::access_token("tenant-trash-filter", "user-trash-filter"))
+                .header(
+                    "authorization",
                     format!("Bearer {}", common::auth_token("tenant-core", "user-core")),
                 )
                 .header("access-token", common::access_token("tenant-core", "user-core"))
@@ -9528,6 +9651,11 @@ async fn app_dr_drive_node_share_link_create_rejects_negative_download_limit_bef
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-resource", "user-resource")),
+            )
+            .header("access-token", common::access_token("tenant-resource", "user-resource"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-share-expired-update", "user-share-expired-update")),
@@ -10463,6 +10591,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
                 Request::builder()
                 .header(
                     "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                )
+                .header("access-token", common::access_token("tenant-001", "user-001"))
+                .header(
+                    "authorization",
                     format!("Bearer {}", common::auth_token("tenant-comments", "user-comments")),
                 )
                 .header("access-token", common::access_token("tenant-comments", "user-comments"))
@@ -11062,6 +11195,11 @@ async fn app_drive_changes_rejects_page_size_outside_contract() {
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-change-page-size", "user-change-page-size")),
             )
             .header("access-token", common::access_token("tenant-change-page-size", "user-change-page-size"))
@@ -11227,6 +11365,11 @@ async fn app_dr_drive_node_path_route_returns_ordered_breadcrumbs() {
             Request::builder()
             .header(
                 "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
                 format!("Bearer {}", common::auth_token("tenant-path", "user-path")),
             )
             .header("access-token", common::access_token("tenant-path", "user-path"))
@@ -11276,6 +11419,11 @@ async fn app_dr_drive_node_path_route_returns_ordered_breadcrumbs() {
     let missing_path_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-views", "user-views")),
@@ -11628,6 +11776,11 @@ async fn app_drive_standard_views_validate_explicit_space_filter() {
                     Request::builder()
                     .header(
                         "authorization",
+                        format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                    )
+                    .header("access-token", common::access_token("tenant-001", "user-001"))
+                    .header(
+                        "authorization",
                         format!("Bearer {}", common::auth_token("tenant-list-page-size", "user-list-page-size")),
                     )
                     .header("access-token", common::access_token("tenant-list-page-size", "user-list-page-size"))
@@ -11749,43 +11902,38 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let app = common::test_router_with_pool(pool);
     let (first_nodes, next_nodes_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/spaces/space-page/nodes?pageSize=1",
-        "tenant-page",
-        "user-page")
+        "/app/v3/api/drive/spaces/space-page/nodes?tenantId=tenant-page&pageSize=1"
+        )
     .await;
     assert_eq!(first_nodes[0]["id"].as_str(), Some("node-page-a"));
     let next_nodes_token = next_nodes_token.expect("nodes first page should have nextPageToken");
     let (second_nodes, _) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/spaces/space-page/nodes?pageSize=1&pageToken={next_nodes_token}"
-        ),
-        "tenant-page",
-        "user-page")
+            "/app/v3/api/drive/spaces/space-page/nodes?tenantId=tenant-page&pageSize=1&pageToken={next_nodes_token}"
+        )
+        )
     .await;
     assert_eq!(second_nodes[0]["id"].as_str(), Some("node-page-b"));
 
     let (first_recent, next_recent_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/recent?pageSize=1",
-        "tenant-page",
-        "user-page")
+        "/app/v3/api/drive/recent?tenantId=tenant-page&pageSize=1"
+        )
     .await;
     assert_eq!(first_recent[0]["id"].as_str(), Some("node-page-b"));
     let next_recent_token = next_recent_token.expect("recent first page should have nextPageToken");
     let (second_recent, _) = fetch_paged_items(
         app.clone(),
-        &format!("/app/v3/api/drive/recent?pageSize=1&pageToken={next_recent_token}"),
-        "tenant-page",
-        "user-page")
+        &format!("/app/v3/api/drive/recent?pageSize=1&pageToken={next_recent_token}")
+        )
     .await;
     assert_eq!(second_recent[0]["id"].as_str(), Some("node-page-a"));
 
     let (first_permissions, next_permissions_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-page-a/permissions?pageSize=1",
-        "tenant-page",
-        "user-page")
+        "/app/v3/api/drive/nodes/node-page-a/permissions?tenantId=tenant-page&pageSize=1"
+        )
     .await;
     assert_eq!(
         first_permissions[0]["id"].as_str(),
@@ -11796,10 +11944,9 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let (second_permissions, _) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/nodes/node-page-a/permissions?pageSize=1&pageToken={next_permissions_token}"
-        ),
-        "tenant-page",
-        "user-page")
+            "/app/v3/api/drive/nodes/node-page-a/permissions?tenantId=tenant-page&pageSize=1&pageToken={next_permissions_token}"
+        )
+        )
     .await;
     assert_eq!(
         second_permissions[0]["id"].as_str(),
@@ -11808,9 +11955,8 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
 
     let (first_share_links, next_share_links_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-page-a/share_links?pageSize=1",
-        "tenant-page",
-        "user-page")
+        "/app/v3/api/drive/nodes/node-page-a/share_links?tenantId=tenant-page&pageSize=1"
+        )
     .await;
     assert_eq!(first_share_links[0]["id"].as_str(), Some("share-page-b"));
     let next_share_links_token =
@@ -11818,18 +11964,16 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let (second_share_links, _) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/nodes/node-page-a/share_links?pageSize=1&pageToken={next_share_links_token}"
-        ),
-        "tenant-page",
-        "user-page")
+            "/app/v3/api/drive/nodes/node-page-a/share_links?tenantId=tenant-page&pageSize=1&pageToken={next_share_links_token}"
+        )
+        )
     .await;
     assert_eq!(second_share_links[0]["id"].as_str(), Some("share-page-a"));
 
     let (first_versions, next_versions_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-page-a/versions?pageSize=1",
-        "tenant-page",
-        "user-page")
+        "/app/v3/api/drive/nodes/node-page-a/versions?tenantId=tenant-page&pageSize=1"
+        )
     .await;
     assert_eq!(first_versions[0]["id"].as_str(), Some("version-page-2"));
     let next_versions_token =
@@ -11837,10 +11981,9 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let (second_versions, _) = fetch_paged_items(
         app,
         &format!(
-            "/app/v3/api/drive/nodes/node-page-a/versions?pageSize=1&pageToken={next_versions_token}"
-        ),
-        "tenant-page",
-        "user-page")
+            "/app/v3/api/drive/nodes/node-page-a/versions?tenantId=tenant-page&pageSize=1&pageToken={next_versions_token}"
+        )
+        )
     .await;
     assert_eq!(second_versions[0]["id"].as_str(), Some("version-page-1"));
 }
@@ -11988,9 +12131,8 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
     let app = common::test_router_with_pool(pool);
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?pageSize=2",
-        "tenant-effective-perm",
-        "user-effective-perm")
+        "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?tenantId=tenant-effective-perm&pageSize=2"
+        )
     .await;
 
     assert_eq!(first_items.len(), 2);
@@ -12028,10 +12170,9 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
     let (second_items, final_token) = fetch_paged_items(
         app,
         &format!(
-            "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?pageSize=2&pageToken={next_token}"
-        ),
-        "tenant-effective-perm",
-        "user-effective-perm")
+            "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?tenantId=tenant-effective-perm&pageSize=2&pageToken={next_token}"
+        )
+        )
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(second_items[0]["id"].as_str(), Some("perm-effective-root"));
@@ -12122,9 +12263,8 @@ async fn app_drive_effective_permissions_prefer_direct_then_nearest_acl_for_same
     let app = common::test_router_with_pool(pool);
     let (items, next_token) = fetch_paged_items(
         app,
-        "/app/v3/api/drive/nodes/node-override-file/permissions/effective",
-        "tenant-effective-override",
-        "user-effective-override")
+        "/app/v3/api/drive/nodes/node-override-file/permissions/effective?tenantId=tenant-effective-override"
+        )
     .await;
 
     assert_eq!(
@@ -12219,9 +12359,8 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
     let app = common::test_router_with_pool(pool);
     let direct = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-direct-commenter",
-        "tenant-capability",
-        "user-direct-commenter")
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?tenantId=tenant-capability&subjectType=user&subjectId=user-direct-commenter"
+        )
     .await;
     assert_eq!(direct["role"].as_str(), Some("commenter"));
     assert_eq!(direct["source"].as_str(), Some("permission"));
@@ -12235,9 +12374,8 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
 
     let inherited = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-inherited-writer",
-        "tenant-capability",
-        "user-inherited-writer")
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?tenantId=tenant-capability&subjectType=user&subjectId=user-inherited-writer"
+        )
     .await;
     assert_eq!(inherited["role"].as_str(), Some("writer"));
     assert_eq!(inherited["source"].as_str(), Some("permission"));
@@ -12253,9 +12391,8 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
 
     let owner = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-owner",
-        "tenant-capability",
-        "user-owner")
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?tenantId=tenant-capability&subjectType=user&subjectId=user-owner"
+        )
     .await;
     assert_eq!(owner["role"].as_str(), Some("owner"));
     assert_eq!(owner["source"].as_str(), Some("space_owner"));
@@ -12264,9 +12401,8 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
 
     let missing = fetch_json(
         app,
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-missing",
-        "tenant-capability",
-        "user-missing")
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?tenantId=tenant-capability&subjectType=user&subjectId=user-missing"
+        )
     .await;
     assert_eq!(missing["role"].as_str(), Some("none"));
     assert_eq!(missing["source"].as_str(), Some("none"));
@@ -12342,9 +12478,8 @@ async fn app_dr_drive_node_capabilities_support_trashed_nodes_with_restore_only_
     let app = common::test_router_with_pool(pool);
     let writer = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?subjectType=user&subjectId=user-writer",
-        "tenant-cap-trash",
-        "user-writer")
+        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?tenantId=tenant-cap-trash&subjectType=user&subjectId=user-writer"
+        )
     .await;
     assert_eq!(writer["role"].as_str(), Some("writer"));
     assert_eq!(writer["source"].as_str(), Some("permission"));
@@ -12367,9 +12502,8 @@ async fn app_dr_drive_node_capabilities_support_trashed_nodes_with_restore_only_
 
     let owner = fetch_json(
         app,
-        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?subjectType=user&subjectId=user-owner",
-        "tenant-cap-trash",
-        "user-owner")
+        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?tenantId=tenant-cap-trash&subjectType=user&subjectId=user-owner"
+        )
     .await;
     assert_eq!(owner["role"].as_str(), Some("owner"));
     assert_eq!(owner["source"].as_str(), Some("space_owner"));
@@ -12418,6 +12552,11 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-copy-space", "user-copy-space")),
+            )
+            .header("access-token", common::access_token("tenant-copy-space", "user-copy-space"))
             .header(
                 "authorization",
                 format!("Bearer {}", common::auth_token("tenant-trashed-write", "user-trashed-write")),
@@ -12496,9 +12635,8 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
 
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-property/properties?pageSize=1",
-        "tenant-property",
-        "user-property")
+        "/app/v3/api/drive/nodes/node-property/properties?tenantId=tenant-property&pageSize=1"
+        )
     .await;
     assert_eq!(first_items.len(), 1);
     assert_eq!(first_items[0]["propertyKey"].as_str(), Some("customerId"));
@@ -12506,10 +12644,9 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
     let (second_items, final_token) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/nodes/node-property/properties?pageSize=1&pageToken={next_token}"
-        ),
-        "tenant-property",
-        "user-property")
+            "/app/v3/api/drive/nodes/node-property/properties?tenantId=tenant-property&pageSize=1&pageToken={next_token}"
+        )
+        )
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(second_items[0]["propertyKey"].as_str(), Some("orderId"));
@@ -12517,9 +12654,8 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
 
     let private_only = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-property/properties?visibility=private",
-        "tenant-property",
-        "user-property")
+        "/app/v3/api/drive/nodes/node-property/properties?tenantId=tenant-property&visibility=private"
+        )
     .await
     .0;
     assert_eq!(private_only.len(), 1);
@@ -12547,9 +12683,8 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
 
     let remaining = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-property/properties",
-        "tenant-property",
-        "user-property")
+        "/app/v3/api/drive/nodes/node-property/properties?tenantId=tenant-property"
+        )
     .await
     .0;
     assert_eq!(remaining.len(), 1);
@@ -12557,9 +12692,8 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
 
     let changes = fetch_paged_items(
         app,
-        "/app/v3/api/drive/changes?spaceId=space-property",
-        "tenant-property",
-        "user-property")
+        "/app/v3/api/drive/changes?tenantId=tenant-property&spaceId=space-property"
+        )
     .await
     .0;
     let events = changes
@@ -13441,17 +13575,15 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
 
     let detail = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/shortcut-001",
-        "tenant-shortcut",
-        "user-shortcut")
+        "/app/v3/api/drive/nodes/shortcut-001?tenantId=tenant-shortcut"
+        )
     .await;
     assert_eq!(detail["shortcutTargetNodeId"].as_str(), Some("node-target"));
 
     let (listed, _) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/spaces/space-shortcut/nodes?parentNodeId=folder-shortcut",
-        "tenant-shortcut",
-        "user-shortcut")
+        "/app/v3/api/drive/spaces/space-shortcut/nodes?tenantId=tenant-shortcut&parentNodeId=folder-shortcut"
+        )
     .await;
     assert_eq!(listed.len(), 1);
     assert_eq!(listed[0]["id"].as_str(), Some("shortcut-001"));
@@ -13462,9 +13594,8 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
 
     let changes = fetch_paged_items(
         app,
-        "/app/v3/api/drive/changes?spaceId=space-shortcut",
-        "tenant-shortcut",
-        "user-shortcut")
+        "/app/v3/api/drive/changes?tenantId=tenant-shortcut&spaceId=space-shortcut"
+        )
     .await
     .0;
     let events = changes
@@ -14248,9 +14379,8 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
 
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-label/labels?pageSize=1",
-        "tenant-label",
-        "user-label")
+        "/app/v3/api/drive/nodes/node-label/labels?tenantId=tenant-label&pageSize=1"
+        )
     .await;
     assert_eq!(first_items.len(), 1);
     assert_eq!(
@@ -14261,10 +14391,9 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
     let (second_items, final_token) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/nodes/node-label/labels?pageSize=1&pageToken={next_token}"
-        ),
-        "tenant-label",
-        "user-label")
+            "/app/v3/api/drive/nodes/node-label/labels?tenantId=tenant-label&pageSize=1&pageToken={next_token}"
+        )
+        )
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(
@@ -14275,9 +14404,8 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
 
     let filtered = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-label/labels?labelKey=classification.public",
-        "tenant-label",
-        "user-label")
+        "/app/v3/api/drive/nodes/node-label/labels?tenantId=tenant-label&labelKey=classification.public"
+        )
     .await
     .0;
     assert_eq!(filtered.len(), 1);
@@ -14305,9 +14433,8 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
 
     let remaining = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-label/labels",
-        "tenant-label",
-        "user-label")
+        "/app/v3/api/drive/nodes/node-label/labels?tenantId=tenant-label"
+        )
     .await
     .0;
     assert_eq!(remaining.len(), 1);
@@ -14315,9 +14442,8 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
 
     let changes = fetch_paged_items(
         app,
-        "/app/v3/api/drive/changes?spaceId=space-label",
-        "tenant-label",
-        "user-label")
+        "/app/v3/api/drive/changes?tenantId=tenant-label&spaceId=space-label"
+        )
     .await
     .0;
     let events = changes
@@ -14438,9 +14564,8 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/watch_channels?pageSize=1",
-        "tenant-watch",
-        "user-watch")
+        "/app/v3/api/drive/watch_channels?tenantId=tenant-watch&pageSize=1"
+        )
     .await;
     assert_eq!(first_items.len(), 1);
     assert_eq!(first_items[0]["id"].as_str(), Some("watch-changes-001"));
@@ -14448,10 +14573,9 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     let (second_items, final_token) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/watch_channels?pageSize=1&pageToken={next_token}"
-        ),
-        "tenant-watch",
-        "user-watch")
+            "/app/v3/api/drive/watch_channels?tenantId=tenant-watch&pageSize=1&pageToken={next_token}"
+        )
+        )
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(second_items[0]["id"].as_str(), Some("watch-node-001"));
@@ -14459,9 +14583,8 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let node_filtered = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/watch_channels?resourceType=node",
-        "tenant-watch",
-        "user-watch")
+        "/app/v3/api/drive/watch_channels?tenantId=tenant-watch&resourceType=node"
+        )
     .await
     .0;
     assert_eq!(node_filtered.len(), 1);
@@ -14469,9 +14592,8 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let get_payload = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/watch_channels/watch-node-001",
-        "tenant-watch",
-        "user-watch")
+        "/app/v3/api/drive/watch_channels/watch-node-001?tenantId=tenant-watch"
+        )
     .await;
     assert_eq!(
         get_payload["address"].as_str(),
@@ -14510,9 +14632,8 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let active_after_stop = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/watch_channels",
-        "tenant-watch",
-        "user-watch")
+        "/app/v3/api/drive/watch_channels?tenantId=tenant-watch"
+        )
     .await
     .0;
     assert_eq!(active_after_stop.len(), 1);
@@ -14523,9 +14644,8 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let stopped_filtered = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/watch_channels?lifecycleStatus=stopped",
-        "tenant-watch",
-        "user-watch")
+        "/app/v3/api/drive/watch_channels?tenantId=tenant-watch&lifecycleStatus=stopped"
+        )
     .await
     .0;
     assert_eq!(stopped_filtered.len(), 1);
@@ -14533,9 +14653,8 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let changes = fetch_paged_items(
         app,
-        "/app/v3/api/drive/changes?spaceId=space-watch",
-        "tenant-watch",
-        "user-watch")
+        "/app/v3/api/drive/changes?tenantId=tenant-watch&spaceId=space-watch"
+        )
     .await
     .0;
     let events = changes
@@ -14694,4 +14813,7 @@ async fn app_dr_drive_watch_node_rejects_trashed_node_before_creating_channel() 
     .expect("watch channel count should be queryable");
     assert_eq!(watch_count, 0);
 }
+
+
+
 

@@ -31,6 +31,11 @@ async fn version_routes_prefer_logical_node_version_ids() {
                 format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
             )
             .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/node-001/versions")
                 .body(Body::empty())
@@ -228,4 +233,5 @@ async fn seed_file_version(pool: &sqlx::AnyPool) {
         .expect("logical node version should be seeded");
     }
 }
+
 

@@ -27,7 +27,9 @@ pub fn default_user_for_tenant(tenant: &str) -> String {
 }
 
 pub fn strip_client_tenant_id_from_uri(uri: &str) -> String {
-    let (path, query) = uri.split_once('?').map_or((uri, None), |(path, query)| (path, Some(query)));
+    let (path, query) = uri
+        .split_once('?')
+        .map_or((uri, None), |(path, query)| (path, Some(query)));
     let Some(query) = query else {
         return path.to_string();
     };
@@ -67,6 +69,12 @@ pub fn user_from_uri(uri: &str, tenant: &str) -> String {
     default_user_for_tenant(tenant)
 }
 
+pub fn auth_context_from_uri(uri: &str) -> (String, String) {
+    let tenant = tenant_from_uri(uri).unwrap_or_else(|| "tenant-001".to_string());
+    let user = user_from_uri(uri, &tenant);
+    (tenant, user)
+}
+
 fn percent_decode(value: &str) -> String {
     value.replace("%40", "@")
 }
@@ -87,7 +95,7 @@ pub fn authed_request(
 ) -> Request<Body> {
     Request::builder()
         .method(method)
-        .uri(uri.as_ref())
+        .uri(strip_client_tenant_id_from_uri(uri.as_ref()))
         .header(
             "authorization",
             format!("Bearer {}", auth_token(tenant, user)),
@@ -109,7 +117,7 @@ pub fn authed_post_json(
 ) -> Request<Body> {
     Request::builder()
         .method(Method::POST)
-        .uri(uri.as_ref())
+        .uri(strip_client_tenant_id_from_uri(uri.as_ref()))
         .header(
             "authorization",
             format!("Bearer {}", auth_token(tenant, user)),
