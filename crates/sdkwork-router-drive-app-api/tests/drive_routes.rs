@@ -13,11 +13,17 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
         .clone()
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces")
                 .body(Body::empty())
@@ -31,11 +37,17 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
         .clone()
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .body(Body::empty())
@@ -50,31 +62,16 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
         (Method::POST, "/app/v3/api/drive/nodes/folders"),
         (Method::POST, "/app/v3/api/drive/nodes/files"),
         (Method::PATCH, "/app/v3/api/drive/nodes/node-001"),
-        (
-            Method::GET,
-            "/app/v3/api/drive/nodes/node-001",
-        ),
-        (
-            Method::DELETE,
-            "/app/v3/api/drive/nodes/node-001",
-        ),
+        (Method::GET, "/app/v3/api/drive/nodes/node-001"),
+        (Method::DELETE, "/app/v3/api/drive/nodes/node-001"),
         (Method::POST, "/app/v3/api/drive/nodes/node-001/move"),
         (Method::POST, "/app/v3/api/drive/nodes/node-001/copy"),
         (Method::POST, "/app/v3/api/drive/nodes/node-001/trash"),
-        (
-            Method::GET,
-            "/app/v3/api/drive/nodes/node-001/download_url",
-        ),
+        (Method::GET, "/app/v3/api/drive/nodes/node-001/download_url"),
         (Method::POST, "/app/v3/api/drive/trash/node-001/restore"),
-        (
-            Method::GET,
-            "/app/v3/api/drive/trash?spaceId=space-001",
-        ),
+        (Method::GET, "/app/v3/api/drive/trash?spaceId=space-001"),
         (Method::POST, "/app/v3/api/drive/trash/empty"),
-        (
-            Method::GET,
-            "/app/v3/api/drive/recent?spaceId=space-001",
-        ),
+        (Method::GET, "/app/v3/api/drive/recent?spaceId=space-001"),
         (
             Method::GET,
             "/app/v3/api/drive/shared_with_me?subjectType=user&subjectId=user-001",
@@ -83,14 +80,8 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
             Method::GET,
             "/app/v3/api/drive/favorites?subjectType=user&subjectId=user-001",
         ),
-        (
-            Method::GET,
-            "/app/v3/api/drive/quotas/summary",
-        ),
-        (
-            Method::PUT,
-            "/app/v3/api/drive/nodes/node-001/favorite",
-        ),
+        (Method::GET, "/app/v3/api/drive/quotas/summary"),
+        (Method::PUT, "/app/v3/api/drive/nodes/node-001/favorite"),
         (
             Method::DELETE,
             "/app/v3/api/drive/nodes/node-001/favorite?subjectType=user&subjectId=user-001",
@@ -122,32 +113,20 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
             Method::DELETE,
             "/app/v3/api/drive/nodes/node-001/permissions/permission-001",
         ),
-        (
-            Method::GET,
-            "/app/v3/api/drive/nodes/node-001/share_links",
-        ),
+        (Method::GET, "/app/v3/api/drive/nodes/node-001/share_links"),
         (Method::POST, "/app/v3/api/drive/nodes/node-001/share_links"),
         (
             Method::PATCH,
             "/app/v3/api/drive/share_links/share-link-001",
         ),
-        (
-            Method::GET,
-            "/app/v3/api/drive/share_links/share-link-001",
-        ),
+        (Method::GET, "/app/v3/api/drive/share_links/share-link-001"),
         (
             Method::DELETE,
             "/app/v3/api/drive/share_links/share-link-001",
         ),
-        (
-            Method::GET,
-            "/app/v3/api/drive/search?q=report",
-        ),
+        (Method::GET, "/app/v3/api/drive/search?q=report"),
         (Method::GET, "/app/v3/api/drive/changes"),
-        (
-            Method::GET,
-            "/app/v3/api/drive/upload_sessions/session-001",
-        ),
+        (Method::GET, "/app/v3/api/drive/upload_sessions/session-001"),
         (Method::POST, "/app/v3/api/drive/uploader/uploads"),
         (
             Method::PUT,
@@ -167,17 +146,11 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
         ),
         (Method::GET, "/app/v3/api/assets"),
         (Method::POST, "/app/v3/api/assets"),
-        (
-            Method::GET,
-            "/app/v3/api/assets/asset-001",
-        ),
+        (Method::GET, "/app/v3/api/assets/asset-001"),
         (Method::PATCH, "/app/v3/api/assets/asset-001"),
         (Method::POST, "/app/v3/api/assets/asset-001/archive"),
         (Method::POST, "/app/v3/api/assets/asset-001/restore"),
-        (
-            Method::GET,
-            "/app/v3/api/assets/collections",
-        ),
+        (Method::GET, "/app/v3/api/assets/collections"),
         (Method::POST, "/app/v3/api/assets/collections"),
         (
             Method::POST,
@@ -187,10 +160,7 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
             Method::DELETE,
             "/app/v3/api/assets/collections/collection-001/items/item-001",
         ),
-        (
-            Method::POST,
-            "/app/v3/api/assets/asset-001/relations",
-        ),
+        (Method::POST, "/app/v3/api/assets/asset-001/relations"),
         (
             Method::DELETE,
             "/app/v3/api/assets/asset-001/relations/relation-001",
@@ -200,11 +170,17 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
             .clone()
             .oneshot(
                 Request::builder()
-                .header(
-                    "authorization",
-                    format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-                )
-                .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                    .header(
+                        "authorization",
+                        format!(
+                            "Bearer {}",
+                            common::auth_token("tenant-001", "user-001", "appbase")
+                        ),
+                    )
+                    .header(
+                        "access-token",
+                        common::access_token("tenant-001", "user-001", "appbase"),
+                    )
                     .method(method)
                     .uri(uri)
                     .header("content-type", "application/json")
@@ -301,11 +277,17 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
             .clone()
             .oneshot(
                 Request::builder()
-                .header(
-                    "authorization",
-                    format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-                )
-                .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                    .header(
+                        "authorization",
+                        format!(
+                            "Bearer {}",
+                            common::auth_token("tenant-001", "user-001", "appbase")
+                        ),
+                    )
+                    .header(
+                        "access-token",
+                        common::access_token("tenant-001", "user-001", "appbase"),
+                    )
                     .method(method)
                     .uri(uri)
                     .header("content-type", "application/json")
@@ -321,5 +303,3 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
         );
     }
 }
-
-

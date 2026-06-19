@@ -23,67 +23,85 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
         .and_then(serde_json::Value::as_object)
         .expect("package.json scripts should exist");
 
-    let drive_dev = scripts
-        .get("drive:dev")
+    let dev_script = scripts
+        .get("dev")
         .and_then(serde_json::Value::as_str)
-        .expect("pnpm drive:dev script should exist");
-    let drive_dev_sqlite = scripts
-        .get("drive:dev:sqlite")
+        .expect("pnpm dev script should exist");
+    let dev_sqlite_script = scripts
+        .get("dev:browser:sqlite")
         .and_then(serde_json::Value::as_str)
-        .expect("pnpm drive:dev:sqlite script should exist");
+        .expect("pnpm dev:browser:sqlite script should exist");
+    let dev_desktop_script = scripts
+        .get("dev:desktop")
+        .and_then(serde_json::Value::as_str)
+        .expect("pnpm dev:desktop script should exist");
+
+    let dispatcher_path = root.join("scripts/sdkwork-command.mjs");
+    let dispatcher = std::fs::read_to_string(&dispatcher_path)
+        .expect("scripts/sdkwork-command.mjs should exist");
 
     assert!(
-        drive_dev.contains("drive-dev.mjs") && drive_dev.contains("--database postgres"),
-        "pnpm drive:dev must use PostgreSQL profile, got: {drive_dev}"
+        dev_script.contains("dev:browser"),
+        "pnpm dev must delegate to dev:browser, got: {dev_script}"
     );
     assert!(
-        drive_dev.contains("--hosting self-hosted"),
-        "pnpm drive:dev must target self-hosted runtime, got: {drive_dev}"
+        dispatcher.contains("drive-dev.mjs")
+            && dispatcher.contains("'--database', 'postgres'")
+            && dispatcher.contains("'--deployment-profile', 'standalone'"),
+        "sdkwork-command.mjs must dispatch default dev to drive-dev.mjs with PostgreSQL and standalone profile"
+    );
+
+    assert!(
+        dev_sqlite_script.contains("sdkwork-command.mjs"),
+        "pnpm dev:browser:sqlite must delegate through sdkwork-command.mjs, got: {dev_sqlite_script}"
     );
     assert!(
-        drive_dev_sqlite.contains("drive-dev.mjs")
-            && drive_dev_sqlite.contains("--database sqlite"),
-        "pnpm drive:dev:sqlite must use SQLite database, got: {drive_dev_sqlite}"
+        dispatcher.contains("'--database', 'sqlite'") && dispatcher.contains("'--deployment-profile', 'standalone'"),
+        "sdkwork-command.mjs must dispatch dev:browser:sqlite with SQLite and standalone profile"
     );
+
     assert!(
-        drive_dev_sqlite.contains("--hosting self-hosted"),
-        "pnpm drive:dev:sqlite must target self-hosted runtime, got: {drive_dev_sqlite}"
+        dev_desktop_script.contains("dev:desktop:postgres:unified-process:standalone"),
+        "pnpm dev:desktop must delegate to the standalone desktop variant, got: {dev_desktop_script}"
     );
 
     let package_script = scripts
-        .get("gateway:standalone:pack")
+        .get("gateway:package:standalone")
         .and_then(serde_json::Value::as_str)
-        .expect("pnpm gateway:standalone:pack script should exist");
+        .expect("pnpm gateway:package:standalone script should exist");
     assert!(
-        package_script.contains("gateway-standalone-pack.mjs"),
-        "pnpm gateway:standalone:pack must invoke gateway-standalone-pack.mjs, got: {package_script}"
+        package_script.contains("sdkwork-command.mjs"),
+        "pnpm gateway:package:standalone must delegate through sdkwork-command.mjs, got: {package_script}"
+    );
+    assert!(
+        dispatcher.contains("gateway-standalone-pack.mjs"),
+        "sdkwork-command.mjs must dispatch gateway:package:standalone to gateway-standalone-pack.mjs"
     );
 
     let cloud_bundle_script = scripts
-        .get("gateway:cloud:bundle")
+        .get("gateway:package:cloud")
         .and_then(serde_json::Value::as_str)
-        .expect("pnpm gateway:cloud:bundle script should exist");
+        .expect("pnpm gateway:package:cloud script should exist");
     assert!(
-        cloud_bundle_script.contains("gateway-cloud-bundle.mjs"),
-        "pnpm gateway:cloud:bundle must invoke gateway-cloud-bundle.mjs, got: {cloud_bundle_script}"
+        cloud_bundle_script.contains("sdkwork-command.mjs"),
+        "pnpm gateway:package:cloud must delegate through sdkwork-command.mjs, got: {cloud_bundle_script}"
+    );
+    assert!(
+        dispatcher.contains("gateway-cloud-bundle.mjs"),
+        "sdkwork-command.mjs must dispatch gateway:package:cloud to gateway-cloud-bundle.mjs"
     );
 
     let drive_build = scripts
-        .get("drive:build")
+        .get("build")
         .and_then(serde_json::Value::as_str)
-        .expect("pnpm drive:build script should exist");
+        .expect("pnpm build script should exist");
     assert!(
-        drive_build.contains("drive-build.mjs") && drive_build.contains("--hosting cloud-hosted"),
-        "pnpm drive:build must default to cloud-hosted runtime, got: {drive_build}"
+        drive_build.contains("sdkwork-command.mjs"),
+        "pnpm build must delegate through sdkwork-command.mjs, got: {drive_build}"
     );
-
-    let drive_dev_desktop = scripts
-        .get("drive:dev:desktop")
-        .and_then(serde_json::Value::as_str)
-        .expect("pnpm drive:dev:desktop script should exist");
     assert!(
-        drive_dev_desktop.contains("--hosting self-hosted"),
-        "pnpm drive:dev:desktop must target self-hosted runtime, got: {drive_dev_desktop}"
+        dispatcher.contains("drive-build.mjs") && dispatcher.contains("'--deployment-profile', 'cloud'"),
+        "sdkwork-command.mjs must dispatch build to drive-build.mjs with cloud deployment profile"
     );
 }
 

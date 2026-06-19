@@ -50,7 +50,7 @@ pub fn tenant_from_uri(uri: &str) -> Option<String> {
         query.split('&').find_map(|segment| {
             segment
                 .strip_prefix("tenantId=")
-                .map(|value| percent_decode(value))
+                .map(percent_decode)
         })
     })
 }

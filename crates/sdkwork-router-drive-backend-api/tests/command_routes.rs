@@ -702,7 +702,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
     assert_eq!(create_second.status(), StatusCode::CREATED);
 
     let (first_items, next_token) =
-        fetch_backend_paged_items(app.clone(), "/backend/v3/api/drive/labels&pageSize=1").await;
+        fetch_backend_paged_items(app.clone(), "/backend/v3/api/drive/labels?pageSize=1").await;
     assert_eq!(first_items.len(), 1);
     assert_eq!(
         first_items[0]["labelKey"].as_str(),
@@ -711,7 +711,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
     let next_token = next_token.expect("label list should expose next page token");
     let (second_items, final_token) = fetch_backend_paged_items(
         app.clone(),
-        &format!("/backend/v3/api/drive/labels&pageSize=1&pageToken={next_token}"),
+        &format!("/backend/v3/api/drive/labels?pageSize=1&pageToken={next_token}"),
     )
     .await;
     assert_eq!(second_items.len(), 1);
@@ -726,7 +726,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/backend/v3/api/drive/labels/label-public&operatorId=admin-label")
+                .uri("/backend/v3/api/drive/labels/label-public?operatorId=admin-label")
                 .body(Body::empty())
                 .expect("delete label request should be built"),
         )
@@ -776,7 +776,7 @@ async fn backend_label_list_rejects_page_size_outside_contract() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/labels&pageSize=0")
+                .uri("/backend/v3/api/drive/labels?pageSize=0")
                 .body(Body::empty())
                 .expect("label list request should be built"),
         )
@@ -967,7 +967,7 @@ async fn storage_provider_admin_routes_manage_detail_capabilities_status_credent
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES ('space-storage', 'tenant-storage', 'group', 'team-storage', 'team', 'Storage', 'active', 1, 'admin-001', 'admin-001')",
+        ) VALUES ('space-storage', 'tenant-001', 'group', 'team-storage', 'team', 'Storage', 'active', 1, 'admin-001', 'admin-001')",
     )
     .execute(&pool)
     .await
@@ -1172,7 +1172,7 @@ async fn storage_provider_admin_routes_manage_detail_capabilities_status_credent
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/backend/v3/api/drive/storage_provider_bindings/default&spaceId=space-storage",
+                    "/backend/v3/api/drive/storage_provider_bindings/default?spaceId=space-storage",
                 )
                 .body(Body::empty())
                 .expect("get binding request should be built"),
@@ -1471,7 +1471,7 @@ async fn list_audit_events_route_supports_filters_and_pagination() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/audit_events&resourceType=storage_provider&page=1&pageSize=1")
+                .uri("/backend/v3/api/drive/audit_events?resourceType=storage_provider&page=1&pageSize=1")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -1560,7 +1560,7 @@ async fn list_audit_events_route_supports_request_and_trace_filters() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/audit_events&resourceType=storage_provider&requestId=request-002&traceId=trace-002&page=1&pageSize=10")
+                .uri("/backend/v3/api/drive/audit_events?resourceType=storage_provider&requestId=request-002&traceId=trace-002&page=1&pageSize=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -2015,7 +2015,7 @@ async fn list_download_packages_route_supports_filters_and_pagination() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/download_packages&state=ready&page=1&pageSize=1")
+                .uri("/backend/v3/api/drive/download_packages?state=ready&page=1&pageSize=1")
                 .body(Body::empty())
                 .expect("request should be built"),
         )

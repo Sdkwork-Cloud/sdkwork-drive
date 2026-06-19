@@ -242,28 +242,28 @@
       "targets": [
         {
           "id": "web-development",
-          "command": "pnpm drive:dev",
+          "command": "pnpm dev",
           "outputs": [
             "dist"
           ]
         },
         {
           "id": "desktop-cloud-release",
-          "command": "pnpm drive:build",
+          "command": "pnpm build:desktop",
           "outputs": [
             "apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-desktop/src-tauri/target"
           ]
         },
         {
           "id": "desktop-standalone-release",
-          "command": "pnpm drive:build:standalone",
+          "command": "pnpm build:standalone",
           "outputs": [
             "apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-desktop/src-tauri/target"
           ]
         },
         {
           "id": "desktop-local-debug",
-          "command": "pnpm drive:build:debug",
+          "command": "pnpm build:debug",
           "outputs": [
             "packages/sdkwork-drive-pc-desktop/src-tauri/target"
           ]

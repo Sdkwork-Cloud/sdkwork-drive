@@ -48,6 +48,16 @@ const SDKWORK_API_GATEWAY_BASE_URL_ENV_KEYS = [
   'SDKWORK_DRIVE_API_GATEWAY_BASE_URL',
 ];
 
+function deploymentProfileToHosting(deploymentProfile) {
+  if (deploymentProfile === 'standalone') {
+    return 'self-hosted';
+  }
+  if (deploymentProfile === 'cloud') {
+    return 'cloud-hosted';
+  }
+  throw new Error('--deployment-profile must be standalone or cloud');
+}
+
 function pnpmCommand() {
   return process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 }
@@ -366,7 +376,9 @@ function parseArgs(argv) {
     target: 'browser',
     database: undefined,
     devEnvFile: null,
+    deploymentProfile: 'standalone',
     hosting: 'self-hosted',
+    serviceLayout: 'unified-process',
     dryRun: false,
     help: false,
   };
@@ -415,25 +427,27 @@ function parseArgs(argv) {
       index += 1;
       continue;
     }
-    if (arg === '--hosting') {
+    if (arg === '--deployment-profile') {
       const value = argv[index + 1];
       if (!value || value.startsWith('--')) {
-        throw new Error('--hosting requires a value (self-hosted or cloud-hosted)');
+        throw new Error('--deployment-profile requires a value (standalone or cloud)');
       }
-      if (value !== 'self-hosted' && value !== 'cloud-hosted') {
-        throw new Error('--hosting must be self-hosted or cloud-hosted');
-      }
-      settings.hosting = value;
+      settings.deploymentProfile = value;
+      settings.hosting = deploymentProfileToHosting(value);
       index += 1;
       continue;
     }
-    if (arg === '--topology') {
+    if (arg === '--service-layout') {
       const value = argv[index + 1];
       if (!value || value.startsWith('--')) {
-        throw new Error('--topology is retired; use --hosting (standalone -> self-hosted, cloud -> cloud-hosted)');
+        throw new Error('--service-layout requires a value (unified-process or split-services)');
       }
-      settings.hosting = value === 'cloud' ? 'cloud-hosted' : 'self-hosted';
+      if (value !== 'unified-process' && value !== 'split-services') {
+        throw new Error('--service-layout must be unified-process or split-services');
+      }
+      settings.serviceLayout = value;
       index += 1;
+      continue;
     }
   }
   return settings;
@@ -575,7 +589,7 @@ function createDevServerProcess({ env, target }) {
 
   if (isDesktop) {
     return {
-      args: ['--dir', 'apps/sdkwork-drive-pc', 'desktop:dev'],
+      args: ['--dir', 'apps/sdkwork-drive-pc', 'dev:desktop'],
       command,
       cwd: repoRoot,
       env,
@@ -689,24 +703,24 @@ function printHelp() {
 
 Options:
   --target <browser|desktop>       Target platform (default: browser)
-  --database <postgres|sqlite>     Database profile (default: postgres for browser, sqlite for desktop)
-  --hosting <self-hosted|cloud-hosted>  Drive hosting model (default: self-hosted)
-  --topology <standalone|cloud>           Retired alias for --hosting
+  --database <postgres|sqlite>     Database profile (default: postgres)
+  --deployment-profile <standalone|cloud> Deployment profile (default: standalone)
+  --service-layout <unified-process|split-services> Service layout (default: unified-process)
   --dev-env-file <path>            Path to env file
   --dry-run                        Print plan without executing
   --help, -h                       Show this help
 
-Hosting policy (self-hosted default for dev):
-  Profiles load from configs/topology/{hosting}.{serviceLayout}.development.env
+Deployment policy (standalone default for dev):
+  Profiles load from configs/topology according to deployment profile and service layout.
   Dev autostarts the gateway on ${DEFAULT_SDKWORK_API_GATEWAY_BIND} when it is not already listening.
-  Use --hosting cloud-hosted to route through sdkwork-api-gateway instead.
+  Use --deployment-profile cloud to route through sdkwork-api-gateway instead.
   IAM login requires PostgreSQL (copy .env.postgres.example to .env.postgres and start PostgreSQL).
   Vite/desktop starts only after the gateway health check passes.
   Set SDKWORK_DRIVE_GATEWAY_AUTOSTART=false to skip gateway autostart.
 
 Desktop packaging:
-  pnpm drive:build defaults to cloud-hosted production URLs.
-  pnpm drive:build:self-hosted targets local application ingress URLs.
+  pnpm build defaults to the cloud production profile.
+  pnpm build:standalone targets local application ingress URLs.
 
 Desktop dev port policy:
   Desktop dev reclaims ${DRIVE_PC_DEV_PORT} from stale Vite processes by default.
@@ -722,13 +736,13 @@ async function main() {
       process.exit(0);
     }
 
-    const defaultDatabaseProfile = settings.target === 'desktop' ? 'sqlite' : 'postgres';
+    const defaultDatabaseProfile = 'postgres';
     const databaseProfile = settings.database || defaultDatabaseProfile;
 
     const postgresEnvFile = '.env.postgres';
     const envFile = settings.devEnvFile
       || (databaseProfile === 'postgres' ? postgresEnvFile : undefined);
-    const profileId = resolveDevProfileId(settings.hosting);
+    const profileId = resolveDevProfileId(settings.hosting, settings.serviceLayout);
     const profileEnv = loadProfile(profileId);
     const postgresEnv = loadEnvFile(postgresEnvFile);
     const fileEnv = loadEnvFile(envFile);

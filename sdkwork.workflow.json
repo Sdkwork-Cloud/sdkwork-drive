@@ -90,7 +90,7 @@
       {
         "name": "Package gateway server archive",
         "shell": "pwsh",
-        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_VARIANT) {\n  'gateway' { pnpm gateway:standalone:pack }\n  'config-bundle' { pnpm gateway:cloud:bundle }\n  default { Write-Host \"Skipping gateway archive for profile $($env:SDKWORK_PACKAGE_VARIANT)\" }\n}"
+        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_VARIANT) {\n  'gateway' { pnpm gateway:package:standalone }\n  'config-bundle' { pnpm gateway:package:cloud }\n  default { Write-Host \"Skipping gateway archive for profile $($env:SDKWORK_PACKAGE_VARIANT)\" }\n}"
       },
       {
         "name": "Write package evidence manifest",
@@ -109,7 +109,7 @@
       {
         "name": "Validate gateway server archive",
         "shell": "pwsh",
-        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_VARIANT) {\n  'gateway' { pnpm gateway:standalone:pack:validate }\n  'config-bundle' { pnpm gateway:cloud:bundle:validate }\n  default { Write-Host \"Skipping gateway archive validation for profile $($env:SDKWORK_PACKAGE_VARIANT)\" }\n}"
+        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_VARIANT) {\n  'gateway' { pnpm gateway:validate:standalone }\n  'config-bundle' { pnpm gateway:validate:cloud }\n  default { Write-Host \"Skipping gateway archive validation for profile $($env:SDKWORK_PACKAGE_VARIANT)\" }\n}"
       },
       {
         "name": "Validate package evidence",

@@ -93,7 +93,7 @@ Run the web renderer:
 pnpm dev
 ```
 
-The renderer dev server uses `127.0.0.1:5183` with `--strictPort` because the Tauri shell `devUrl` points to the same port. Stop any other service on 5183 before running `pnpm dev` or `pnpm tauri:dev`.
+The renderer dev server uses `127.0.0.1:5183` with `--strictPort` because the Tauri shell `devUrl` points to the same port. Stop any other service on 5183 before running `pnpm dev` or `pnpm dev:desktop`.
 
 Start the Drive services from the repository root before opening the renderer:
 
@@ -104,7 +104,7 @@ pnpm dev
 Run desktop development shell:
 
 ```powershell
-pnpm tauri:dev
+pnpm dev:desktop
 ```
 
 Build renderer assets:
@@ -116,7 +116,7 @@ pnpm --dir apps/sdkwork-drive-pc build
 Build a local debug desktop bundle:
 
 ```powershell
-pnpm --dir apps/sdkwork-drive-pc desktop:build:local
+pnpm --dir apps/sdkwork-drive-pc build:desktop:local
 ```
 
 ## Verification

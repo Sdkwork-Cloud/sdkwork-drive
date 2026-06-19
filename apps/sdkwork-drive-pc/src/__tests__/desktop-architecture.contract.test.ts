@@ -1049,16 +1049,18 @@ describe('desktop architecture contract', () => {
       ),
     );
 
-    expect(rootPackageJson.scripts['drive:dev']).toBe(
-      'node scripts/drive-dev.mjs --target browser --database postgres --hosting self-hosted',
+    expect(rootPackageJson.scripts.dev).toBe('pnpm dev:browser');
+    expect(rootPackageJson.scripts['dev:browser']).toBe(
+      'pnpm dev:browser:postgres:unified-process:standalone',
     );
     expect(rootPackageJson.scripts['dev:pc']).toBeUndefined();
-    expect(rootPackageJson.scripts['drive:dev:desktop']).toBe(
-      'node scripts/drive-dev.mjs --target desktop --database sqlite --hosting self-hosted',
+    expect(rootPackageJson.scripts['dev:desktop']).toBe(
+      'pnpm dev:desktop:postgres:unified-process:standalone',
     );
-    expect(rootPackageJson.scripts['drive:build']).toBe(
-      'node scripts/drive-build.mjs --hosting cloud-hosted',
+    expect(rootPackageJson.scripts['dev:desktop:postgres:unified-process:standalone']).toBe(
+      'node scripts/sdkwork-command.mjs dev:desktop:postgres:unified-process:standalone',
     );
+    expect(rootPackageJson.scripts.build).toBe('node scripts/sdkwork-command.mjs build');
     expect(rootPackageJson.scripts['dev:server']).toBe(
       'node scripts/run-drive-api-server.mjs server --dev-env-file .env.postgres',
     );

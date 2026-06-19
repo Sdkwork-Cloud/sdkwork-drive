@@ -40,10 +40,10 @@ generated language workspaces, and generated transport output live under
 ## Database Development Modes
 
 ```bash
-pnpm dev          # PostgreSQL profile through .env.postgres
-pnpm dev:sqlite   # SQLite local database at target/dev/sdkwork-drive.sqlite
-pnpm server:plan:postgres
-pnpm server:plan:sqlite
+pnpm dev:server:postgres          # PostgreSQL profile through .env.postgres
+pnpm dev:server:sqlite            # SQLite local database at target/dev/sdkwork-drive.sqlite
+pnpm topology:plan:server:postgres
+pnpm topology:plan:server:sqlite
 ```
 
 Database policy and current runtime boundaries are documented in

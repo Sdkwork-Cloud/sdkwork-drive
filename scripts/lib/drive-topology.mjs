@@ -37,12 +37,12 @@ export const APPLICATION_PUBLIC_INGRESS_PACKAGE_TARGETS = runtime.listPackageTar
 export const PLATFORM_CONFIG_BUNDLE_TARGET = runtime.findPackageTarget('platform-config-bundle-tar-gz');
 export const DRIVE_CLOUD_GATEWAY_CONFIGS = spec.packaging?.cloudConfigFiles ?? [];
 
-export function resolveDevProfileId(hosting) {
+export function resolveDevProfileId(hosting, serviceLayout) {
   runtime.assertHosting(hosting);
-  if (hosting === 'self-hosted') {
-    return buildProfileId(hosting, 'unified-process', 'development');
-  }
-  return buildProfileId(hosting, 'split-services', 'development');
+  const resolvedServiceLayout = serviceLayout
+    || (hosting === 'self-hosted' ? 'unified-process' : 'split-services');
+  runtime.assertServiceLayout(resolvedServiceLayout);
+  return buildProfileId(hosting, resolvedServiceLayout, 'development');
 }
 
 export function resolveBuildProfileId(hosting) {

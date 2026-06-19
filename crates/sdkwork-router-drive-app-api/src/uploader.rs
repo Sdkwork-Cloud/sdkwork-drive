@@ -17,16 +17,21 @@ pub(crate) fn prepare_uploader_command(
     operator_id: String,
 ) -> Result<PrepareUploaderUploadCommand, (StatusCode, Json<ProblemDetail>)> {
     let app_id = ctx.resolve_app_id(payload.app_id)?;
-    let resolved_user_id = ctx.resolve_uploader_user_id(payload.user_id)?;
-    let actor = match resolved_user_id {
-        Some(user_id) => UploaderActor::User { user_id },
-        None => UploaderActor::Anonymous {
-            anonymous_id: payload
-                .anonymous_id
-                .map(|value| value.trim().to_string())
-                .filter(|value| !value.is_empty())
-                .unwrap_or_else(|| format!("app:{app_id}:anonymous")),
-        },
+    let anonymous_id = payload
+        .anonymous_id
+        .as_ref()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty());
+    let actor = if let Some(anonymous_id) = anonymous_id {
+        UploaderActor::Anonymous { anonymous_id }
+    } else {
+        let resolved_user_id = ctx.resolve_uploader_user_id(payload.user_id)?;
+        match resolved_user_id {
+            Some(user_id) => UploaderActor::User { user_id },
+            None => UploaderActor::Anonymous {
+                anonymous_id: format!("app:{app_id}:anonymous"),
+            },
+        }
     };
     let target = match payload.space_id {
         Some(space_id) if !space_id.trim().is_empty() => UploaderTarget::Space {

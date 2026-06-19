@@ -3,6 +3,8 @@ use http::{Method, Request, StatusCode};
 use sdkwork_drive_security::DriveAuthValidationPolicy;
 use sdkwork_router_drive_backend_api::{build_router, build_router_with_pool_and_iam_policy};
 use serde_json::Value;
+use sdkwork_drive_config::DatabaseEngine;
+use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 
@@ -97,14 +99,14 @@ async fn backend_production_routes_require_valid_dual_tokens() {
 
 #[tokio::test]
 async fn backend_routes_validate_token_derived_app_context() {
-    let app = backend_router_allowing_unsigned_context();
+    let app = backend_router_allowing_unsigned_context().await;
 
     let tenant_conflict = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/quotas")
+                .uri("/backend/v3/api/drive/quotas?tenantId=tenant-b")
                 .header(
                     "authorization",
                     format!("Bearer {}", auth_token("tenant-a", "user-001")),
@@ -167,12 +169,16 @@ async fn backend_routes_validate_token_derived_app_context() {
     assert_ne!(allowed.status(), StatusCode::FORBIDDEN);
 }
 
-fn backend_router_allowing_unsigned_context() -> axum::Router {
+async fn backend_router_allowing_unsigned_context() -> axum::Router {
     sqlx::any::install_default_drivers();
     let pool = AnyPoolOptions::new()
         .max_connections(1)
-        .connect_lazy("sqlite::memory:")
-        .expect("create in-memory sqlite pool");
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
     build_router_with_pool_and_iam_policy(
         pool,
         DriveAuthValidationPolicy::allow_unsigned_for_development(),

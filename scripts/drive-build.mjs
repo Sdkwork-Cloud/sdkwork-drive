@@ -19,7 +19,7 @@ function pnpmCommand() {
 
 function parseArgs(argv) {
   const settings = {
-    hosting: 'cloud-hosted',
+    deploymentProfile: 'cloud',
     debug: false,
     help: false,
   };
@@ -34,25 +34,17 @@ function parseArgs(argv) {
       settings.debug = true;
       continue;
     }
-    if (arg === '--hosting') {
+    if (arg === '--deployment-profile') {
       const value = argv[index + 1];
       if (!value || value.startsWith('--')) {
-        throw new Error('--hosting requires a value (cloud-hosted or self-hosted)');
+        throw new Error('--deployment-profile requires a value (cloud or standalone)');
       }
-      if (value !== 'cloud-hosted' && value !== 'self-hosted') {
-        throw new Error('--hosting must be cloud-hosted or self-hosted');
+      if (value !== 'cloud' && value !== 'standalone') {
+        throw new Error('--deployment-profile must be cloud or standalone');
       }
-      settings.hosting = value;
+      settings.deploymentProfile = value;
       index += 1;
       continue;
-    }
-    if (arg === '--topology') {
-      const value = argv[index + 1];
-      if (!value || value.startsWith('--')) {
-        throw new Error('--topology is retired; use --hosting');
-      }
-      settings.hosting = value === 'cloud' ? 'cloud-hosted' : 'self-hosted';
-      index += 1;
     }
   }
 
@@ -65,14 +57,13 @@ function printHelp() {
 Build the Drive PC desktop app (Tauri).
 
 Defaults:
-  hosting cloud-hosted     Release desktop builds target cloud-hosted production profile.
-  hosting self-hosted      On-prem desktop builds target self-hosted unified-process production.
+  deploymentProfile cloud       Release desktop builds target the cloud production profile.
+  deploymentProfile standalone  Standalone desktop builds target local application ingress URLs.
 
-Profiles load from configs/topology/{hosting}.{serviceLayout}.production.env
+Profiles load from configs/topology according to deployment profile and service layout.
 
 Options:
-  --hosting <cloud-hosted|self-hosted>  Drive hosting model (default: cloud-hosted)
-  --topology <cloud|standalone>         Retired alias for --hosting
+  --deployment-profile <cloud|standalone>  Deployment profile (default: cloud)
   --debug                               Build debug desktop bundle instead of release
   --help, -h                            Show this help
 `);
@@ -85,14 +76,15 @@ function main() {
     process.exit(0);
   }
 
-  const profileId = resolveBuildProfileId(settings.hosting);
+  const hosting = settings.deploymentProfile === 'standalone' ? 'self-hosted' : 'cloud-hosted';
+  const profileId = resolveBuildProfileId(hosting);
   const profileEnv = loadProfile(profileId);
   const buildEnv = mergeRuntimeEnv(process.env, profileEnv, {
-    SDKWORK_DRIVE_HOSTING: settings.hosting,
-    VITE_DRIVE_PC_HOSTING: settings.hosting,
+    SDKWORK_DRIVE_HOSTING: hosting,
+    VITE_DRIVE_PC_HOSTING: hosting,
     SDKWORK_DRIVE_PROFILE_ID: profileId,
   });
-  const buildScript = settings.debug ? 'desktop:build:local' : 'desktop:build';
+  const buildScript = settings.debug ? 'build:desktop:local' : 'build:desktop';
 
   const child = spawn(
     pnpmCommand(),

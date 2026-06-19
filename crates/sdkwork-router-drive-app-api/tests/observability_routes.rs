@@ -147,15 +147,22 @@ async fn app_routes_emit_standardized_observability_events() {
         .clone()
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/spaces")
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{
+                .body(Body::from(
+                    r#"{
                         "id":"space-obs-001",
                         "ownerSubjectType":"user",
                         "ownerSubjectId":"user-001",
@@ -208,15 +215,22 @@ async fn app_routes_emit_standardized_observability_events() {
         .clone()
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{
+                .body(Body::from(
+                    r#"{
                         "sessionId":"upload-obs-001",
                         "spaceId":"space-obs-001",
                         "nodeId":"node-obs-001",
@@ -263,15 +277,22 @@ async fn app_routes_emit_standardized_observability_events() {
         .clone()
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{
+                .body(Body::from(
+                    r#"{
                         "nodeId":"node-obs-001",
                         "requestedTtlSeconds":120
                     }"#,
@@ -299,11 +320,17 @@ async fn app_routes_emit_standardized_observability_events() {
         .clone()
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces?ownerSubjectType=user&ownerSubjectId=user-001")
                 .body(Body::empty())
@@ -320,11 +347,17 @@ async fn app_routes_emit_standardized_observability_events() {
         .clone()
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces/space-obs-001")
                 .body(Body::empty())
@@ -341,15 +374,22 @@ async fn app_routes_emit_standardized_observability_events() {
         .clone()
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/spaces/space-obs-001")
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{
+                .body(Body::from(
+                    r#"{
                         "displayName":"Obs Space Updated",
                         "operatorId":"user-001"
                     }"#,
@@ -367,15 +407,19 @@ async fn app_routes_emit_standardized_observability_events() {
         .clone()
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::GET)
-                .uri(format!(
-            "/app/v3/api/drive/download_tokens/{token}"
-        ))
+                .uri(format!("/app/v3/api/drive/download_tokens/{token}"))
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -389,11 +433,17 @@ async fn app_routes_emit_standardized_observability_events() {
     let delete_space_response = app
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::DELETE)
                 .uri("/app/v3/api/drive/spaces/space-obs-001?operatorId=user-001")
                 .body(Body::empty())
@@ -459,15 +509,22 @@ async fn app_route_errors_emit_standardized_observability_events() {
         .clone()
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/spaces")
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{
+                .body(Body::from(
+                    r#"{
                         "id":"space-obs-err-001",
                         "ownerSubjectType":"user",
                         "ownerSubjectId":"user-001",
@@ -491,11 +548,17 @@ async fn app_route_errors_emit_standardized_observability_events() {
     let resolve_error_response = app
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
                 .method(Method::GET)
                 .uri(format!(
                     "/app/v3/api/drive/download_tokens/{}",
@@ -547,5 +610,3 @@ fn now_epoch_ms() -> i64 {
         .expect("system time should be valid")
         .as_millis() as i64
 }
-
-

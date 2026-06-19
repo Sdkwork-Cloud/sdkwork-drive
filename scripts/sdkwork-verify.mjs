@@ -21,6 +21,7 @@ const steps = [
   ['test:app-openapi-context', [pnpmCommand(), ['test:app-openapi-context']]],
   ['sbom:generate', [pnpmCommand(), ['sbom:generate']]],
   ['check:pnpm-script-standard', [pnpmCommand(), ['check:pnpm-script-standard']]],
+  ['check:agent-workflow-standard', [pnpmCommand(), ['check:agent-workflow-standard']]],
 ];
 
 for (const [label, [command, args]] of steps) {

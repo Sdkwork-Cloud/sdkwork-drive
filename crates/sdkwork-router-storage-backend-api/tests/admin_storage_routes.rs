@@ -326,7 +326,7 @@ async fn admin_storage_default_binding_can_mount_provider_to_tenant_or_space() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings/default&spaceId=space-git-repositories")
+                .uri("/admin/v3/api/drive/storage/bindings/default?spaceId=space-git-repositories")
                 .body(Body::empty())
                 .expect("get binding request should be built"),
         )
@@ -778,7 +778,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings&providerId=provider-space-default")
+                .uri("/admin/v3/api/drive/storage/bindings?providerId=provider-space-default")
                 .body(Body::empty())
                 .expect("filtered bindings request should be built"),
         )
@@ -802,7 +802,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/bindings/default&spaceId=space-admin-a&operatorId=admin-unbind")
+                .uri("/admin/v3/api/drive/storage/bindings/default?spaceId=space-admin-a&operatorId=admin-unbind")
                 .body(Body::empty())
                 .expect("delete binding request should be built"),
         )
@@ -821,7 +821,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings/default&spaceId=space-admin-a")
+                .uri("/admin/v3/api/drive/storage/bindings/default?spaceId=space-admin-a")
                 .body(Body::empty())
                 .expect("get deleted binding request should be built"),
         )
@@ -1623,7 +1623,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/bindings/default&spaceId=space-audit&operatorId=admin-unbind")
+                .uri("/admin/v3/api/drive/storage/bindings/default?spaceId=space-audit&operatorId=admin-unbind")
                 .body(Body::empty())
                 .expect("delete default binding request should be built"),
         )

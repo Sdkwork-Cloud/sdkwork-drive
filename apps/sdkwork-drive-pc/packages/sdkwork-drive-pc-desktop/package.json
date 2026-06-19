@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "desktop:dev": "tauri dev",
-    "desktop:build": "tauri build",
-    "desktop:build:local": "tauri build --debug"
+    "dev:desktop": "tauri dev",
+    "build:desktop": "tauri build",
+    "build:desktop:local": "tauri build --debug"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.2"

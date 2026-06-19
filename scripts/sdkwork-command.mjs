@@ -44,25 +44,26 @@ function cargo(args) {
 }
 
 const COMMANDS = new Map([
-  ['dev', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'postgres', '--hosting', 'self-hosted'])],
-  ['dev:browser', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'postgres', '--hosting', 'self-hosted'])],
-  ['dev:browser:postgres', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'postgres', '--hosting', 'self-hosted'])],
-  ['dev:browser:sqlite', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'sqlite', '--hosting', 'self-hosted'])],
-  ['dev:browser:postgres:unified-process:standalone', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'postgres', '--hosting', 'self-hosted'])],
-  ['dev:browser:postgres:split-services:cloud', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'postgres', '--hosting', 'cloud-hosted'])],
-  ['dev:desktop', nodeScript('scripts/drive-dev.mjs', ['--target', 'desktop', '--database', 'sqlite', '--hosting', 'self-hosted'])],
-  ['dev:desktop:postgres', nodeScript('scripts/drive-dev.mjs', ['--target', 'desktop', '--database', 'postgres', '--hosting', 'self-hosted'])],
-  ['dev:desktop:sqlite', nodeScript('scripts/drive-dev.mjs', ['--target', 'desktop', '--database', 'sqlite', '--hosting', 'self-hosted'])],
-  ['dev:desktop:cloud', nodeScript('scripts/drive-dev.mjs', ['--target', 'desktop', '--database', 'sqlite', '--hosting', 'cloud-hosted'])],
+  ['dev', pnpm(['dev:browser'])],
+  ['dev:browser', pnpm(['dev:browser:postgres:unified-process:standalone'])],
+  ['dev:browser:postgres', pnpm(['dev:browser:postgres:unified-process:standalone'])],
+  ['dev:browser:sqlite', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'sqlite', '--service-layout', 'unified-process', '--deployment-profile', 'standalone'])],
+  ['dev:browser:postgres:unified-process:standalone', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'postgres', '--service-layout', 'unified-process', '--deployment-profile', 'standalone'])],
+  ['dev:browser:postgres:split-services:cloud', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'postgres', '--service-layout', 'split-services', '--deployment-profile', 'cloud'])],
+  ['dev:desktop', pnpm(['dev:desktop:postgres:unified-process:standalone'])],
+  ['dev:desktop:postgres', pnpm(['dev:desktop:postgres:unified-process:standalone'])],
+  ['dev:desktop:postgres:unified-process:standalone', nodeScript('scripts/drive-dev.mjs', ['--target', 'desktop', '--database', 'postgres', '--service-layout', 'unified-process', '--deployment-profile', 'standalone'])],
+  ['dev:desktop:sqlite', nodeScript('scripts/drive-dev.mjs', ['--target', 'desktop', '--database', 'sqlite', '--service-layout', 'unified-process', '--deployment-profile', 'standalone'])],
+  ['dev:desktop:postgres:split-services:cloud', nodeScript('scripts/drive-dev.mjs', ['--target', 'desktop', '--database', 'postgres', '--service-layout', 'split-services', '--deployment-profile', 'cloud'])],
   ['dev:server', nodeScript('scripts/run-drive-api-server.mjs', ['server', '--dev-env-file', '.env.postgres'])],
   ['dev:server:postgres', nodeScript('scripts/run-drive-api-server.mjs', ['server', '--dev-env-file', '.env.postgres'])],
   ['dev:server:sqlite', nodeScript('scripts/run-drive-api-server.mjs', ['server', '--', '--database-url', 'sqlite://target/dev/sdkwork-drive.sqlite'])],
 
-  ['build', nodeScript('scripts/drive-build.mjs', ['--hosting', 'cloud-hosted'])],
-  ['build:cloud', nodeScript('scripts/drive-build.mjs', ['--hosting', 'cloud-hosted'])],
-  ['build:standalone', nodeScript('scripts/drive-build.mjs', ['--hosting', 'self-hosted'])],
-  ['build:desktop', nodeScript('scripts/drive-build.mjs', ['--hosting', 'self-hosted'])],
-  ['build:debug', nodeScript('scripts/drive-build.mjs', ['--hosting', 'cloud-hosted', '--debug'])],
+  ['build', nodeScript('scripts/drive-build.mjs', ['--deployment-profile', 'cloud'])],
+  ['build:cloud', nodeScript('scripts/drive-build.mjs', ['--deployment-profile', 'cloud'])],
+  ['build:standalone', nodeScript('scripts/drive-build.mjs', ['--deployment-profile', 'standalone'])],
+  ['build:desktop', nodeScript('scripts/drive-build.mjs', ['--deployment-profile', 'standalone'])],
+  ['build:debug', nodeScript('scripts/drive-build.mjs', ['--deployment-profile', 'cloud', '--debug'])],
 
   ['start', nodeScript('scripts/run-drive-api-server.mjs', ['server', '--dev-env-file', '.env.postgres'])],
   ['test', cargo(['test', '--workspace'])],
@@ -82,6 +83,7 @@ const COMMANDS = new Map([
   ['check:package-standard', nodeScript('tools/check_sdkwork_drive_package_standard.mjs')],
   ['check:architecture-alignment', nodeScript('tools/check_sdkwork_drive_architecture_alignment.mjs')],
   ['check:pnpm-script-standard', nodeScript('../sdkwork-specs/tools/check-pnpm-script-standard.mjs', ['--root', '.', '--product-prefix', 'drive'])],
+  ['check:agent-workflow-standard', nodeScript('../sdkwork-specs/tools/check-agent-workflow-standard.mjs', ['--root', '.'])],
 
   ['topology:plan:server', nodeScript('scripts/run-drive-api-server.mjs', ['plan'])],
   ['topology:plan:server:postgres', nodeScript('scripts/run-drive-api-server.mjs', ['plan', '--dev-env-file', '.env.postgres'])],
@@ -142,6 +144,7 @@ Examples:
   pnpm build:standalone
   pnpm gateway:package:cloud
   pnpm check:pnpm-script-standard
+  pnpm check:agent-workflow-standard
 `);
 }
 

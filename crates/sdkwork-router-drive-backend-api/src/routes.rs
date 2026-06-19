@@ -4,9 +4,9 @@ use crate::state::BackendState;
 use crate::web_bootstrap::wrap_router_with_web_framework;
 use axum::middleware;
 use axum::routing::{get, post};
-use axum::Router;
+use axum::{Extension, Router};
 use sdkwork_drive_config::DatabaseConfig;
-use sdkwork_drive_security::DriveAuthValidationPolicy;
+use sdkwork_drive_security::{DriveAppContext, DriveAuthValidationPolicy};
 use sdkwork_drive_workspace_service::infrastructure::sql::connect_any_database_and_install_schema;
 use sqlx::any::AnyPoolOptions;
 use sqlx::AnyPool;
@@ -22,6 +22,33 @@ pub fn build_router() -> Router {
 
 pub fn build_router_with_pool(pool: AnyPool) -> Router {
     build_router_with_state(BackendState::new(pool), false)
+        .layer(Extension(default_test_app_context()))
+}
+
+/// Constructs a `DriveAppContext` with well-known test claims.
+///
+/// `build_router_with_pool` is a test-only entrypoint that bypasses the IAM web
+/// framework. Handlers still require `Extension<DriveAppContext>` to resolve the
+/// authenticated tenant, so we inject a default context with `tenant-001` to keep
+/// tests deterministic without requiring dual-token headers.
+fn default_test_app_context() -> DriveAppContext {
+    DriveAppContext {
+        tenant_id: "tenant-001".to_string(),
+        user_id: "user-001".to_string(),
+        organization_id: None,
+        session_id: None,
+        app_id: Some("appbase".to_string()),
+        environment: Some("dev".to_string()),
+        deployment_mode: Some("saas".to_string()),
+        auth_level: Some("password".to_string()),
+        data_scope: Vec::new(),
+        permission_scope: Vec::new(),
+        actor_id: "user-001".to_string(),
+        actor_kind: "user".to_string(),
+        device_id: None,
+        request_id: "request-test".to_string(),
+        trace_id: "trace-test".to_string(),
+    }
 }
 
 pub fn build_router_with_pool_and_iam(pool: AnyPool) -> Router {

@@ -14,10 +14,10 @@ Human summary. Machine contract: `specs/topology.spec.json`.
 
 ## Default dev profile
 
-**self-hosted.split-services.development** — `pnpm drive:dev`
+**self-hosted.split-services.development** - `pnpm dev`
 
 ## Cloud production
 
-**cloud-hosted.split-services.production** — `pnpm drive:build`
+**cloud-hosted.split-services.production** - `pnpm build`
 
 Public hosts: application `drive.sdkwork.com`, platform `api.sdkwork.com`.
