@@ -327,9 +327,9 @@ async fn create_space_route_persists_space_with_special_type() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/spaces")
                 .header("content-type", "application/json")
@@ -375,6 +375,11 @@ async fn create_space_route_persists_user_git_repository_space() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/spaces")
                 .header("content-type", "application/json")
@@ -437,6 +442,11 @@ async fn delete_space_route_rejects_user_git_repository_space() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-git-repository-delete-guard", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-git-repository-delete-guard", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri("/app/v3/api/drive/spaces/space-git-repository-delete-guard?operatorId=user-owner")
                 .body(Body::empty())
@@ -569,6 +579,11 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
             .clone()
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-list-guard", "user-owner", "appbase")),
+                )
+                .header("access-token", common::access_token("tenant-list-guard", "user-owner", "appbase"))
                     .method(Method::GET)
                     .uri(uri)
                     .body(Body::empty())
@@ -590,6 +605,11 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-list-guard", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-list-guard", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces/space-list-guard/nodes?parentNodeId=folder-list-missing")
                 .body(Body::empty())
@@ -613,6 +633,11 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-list-guard", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-list-guard", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces/space-list-guard/nodes?parentNodeId=file-list-parent")
                 .body(Body::empty())
@@ -635,6 +660,11 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
     let valid_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-list-guard", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-list-guard", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces/space-list-guard/nodes?parentNodeId=folder-list-parent")
                 .body(Body::empty())
@@ -734,9 +764,9 @@ async fn recent_search_and_favorite_routes_hide_uploading_nodes_until_ready() {
                 Request::builder()
                 .header(
                     "authorization",
-                    format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                    format!("Bearer {}", common::auth_token("tenant-visibility", "user-owner", "appbase")),
                 )
-                .header("access-token", common::access_token("tenant-001", "user-001"))
+                .header("access-token", common::access_token("tenant-visibility", "user-owner", "appbase"))
                     .method(Method::GET)
                     .uri(uri)
                     .body(Body::empty())
@@ -851,14 +881,9 @@ async fn quota_summary_route_counts_active_storage_objects() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-quota", "user-001", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-quota", "user-quota")),
-            )
-            .header("access-token", common::access_token("tenant-quota", "user-quota"))
+            .header("access-token", common::access_token("tenant-quota", "user-001", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/quotas/summary")
                 .body(Body::empty())
@@ -968,6 +993,11 @@ async fn create_upload_session_route_is_idempotent() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -987,6 +1017,11 @@ async fn create_upload_session_route_is_idempotent() {
     let second_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -1067,6 +1102,11 @@ async fn app_api_rejects_storage_provider_administration_routes_without_s3_side_
             .clone()
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-001", "admin-app", "appbase")),
+                )
+                .header("access-token", common::access_token("tenant-001", "admin-app", "appbase"))
                     .method(method)
                     .uri(uri)
                     .header("content-type", "application/json")
@@ -1177,9 +1217,9 @@ async fn create_upload_session_rejects_existing_session_id_before_storage_side_e
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-upload-id-conflict", "user-upload-id-conflict")),
+                format!("Bearer {}", common::auth_token("tenant-upload-id-conflict", "user-upload", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-upload-id-conflict", "user-upload-id-conflict"))
+            .header("access-token", common::access_token("tenant-upload-id-conflict", "user-upload", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -1290,14 +1330,9 @@ async fn create_upload_session_resolves_default_bucket_and_generates_standard_ke
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-upload-create-trash", "user-upload-create-trash")),
+                format!("Bearer {}", common::auth_token("tenant-keygen", "user-keygen", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-upload-create-trash", "user-upload-create-trash"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-keygen", "user-keygen")),
-            )
-            .header("access-token", common::access_token("tenant-keygen", "user-keygen"))
+            .header("access-token", common::access_token("tenant-keygen", "user-keygen", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -1399,6 +1434,11 @@ async fn create_upload_session_rejects_trashed_node_before_storage_side_effects(
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-upload-create-trash", "user-upload", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-upload-create-trash", "user-upload", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -1500,9 +1540,9 @@ async fn create_upload_session_rejects_past_expiration_before_storage_side_effec
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-upload-create-expired", "user-upload-create-expired")),
+                format!("Bearer {}", common::auth_token("tenant-upload-create-expired", "user-upload", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-upload-create-expired", "user-upload-create-expired"))
+            .header("access-token", common::access_token("tenant-upload-create-expired", "user-upload", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -1623,9 +1663,9 @@ async fn create_upload_session_rejects_empty_idempotency_key_before_storage_side
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-upload-empty-idem", "user-upload-empty-idem")),
+                format!("Bearer {}", common::auth_token("tenant-upload-empty-idem", "user-upload", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-upload-empty-idem", "user-upload-empty-idem"))
+            .header("access-token", common::access_token("tenant-upload-empty-idem", "user-upload", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -1746,9 +1786,9 @@ async fn create_upload_session_normalizes_identifiers_before_idempotency_and_sto
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-upload-normalized", "user-upload-normalized")),
+                format!("Bearer {}", common::auth_token("tenant-upload-normalized", "  user-upload  ", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-upload-normalized", "user-upload-normalized"))
+            .header("access-token", common::access_token("tenant-upload-normalized", "  user-upload  ", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -1781,6 +1821,11 @@ async fn create_upload_session_normalizes_identifiers_before_idempotency_and_sto
     let second_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-upload-normalized", "  user-upload  ", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-upload-normalized", "  user-upload  ", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -1881,14 +1926,9 @@ async fn create_upload_session_requires_active_object_store_provider() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-create-no-provider", "user-create-no-provider", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-create-no-provider", "user-create-no-provider")),
-            )
-            .header("access-token", common::access_token("tenant-create-no-provider", "user-create-no-provider"))
+            .header("access-token", common::access_token("tenant-create-no-provider", "user-create-no-provider", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -1983,14 +2023,9 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-s3", "user-s3", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-s3", "user-s3")),
-            )
-            .header("access-token", common::access_token("tenant-s3", "user-s3"))
+            .header("access-token", common::access_token("tenant-s3", "user-s3", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -2044,6 +2079,11 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-s3", "user-s3", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-s3", "user-s3", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-s3/parts/1")
                 .header("content-type", "application/json")
@@ -2074,14 +2114,9 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-s3", "user-s3", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-s3", "user-s3")),
-            )
-            .header("access-token", common::access_token("tenant-s3", "user-s3"))
+            .header("access-token", common::access_token("tenant-s3", "user-s3", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-s3/complete")
                 .header("content-type", "application/json")
@@ -2165,9 +2200,9 @@ async fn uploader_prepare_creates_upload_space_item_and_real_multipart_upload() 
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-uploader-app", "user-uploader-app")),
+                format!("Bearer {}", common::auth_token("tenant-uploader-app", "user-uploader-app", "drive-pc")),
             )
-            .header("access-token", common::access_token("tenant-uploader-app", "user-uploader-app"))
+            .header("access-token", common::access_token("tenant-uploader-app", "user-uploader-app", "drive-pc"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
@@ -2325,9 +2360,9 @@ async fn uploader_prepare_to_target_space_enforces_writer_permission_and_preserv
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-uploader-permission", "user-uploader-permission")),
+                format!("Bearer {}", common::auth_token("tenant-uploader-permission", "user-no-writer", "drive-pc")),
             )
-            .header("access-token", common::access_token("tenant-uploader-permission", "user-uploader-permission"))
+            .header("access-token", common::access_token("tenant-uploader-permission", "user-no-writer", "drive-pc"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
@@ -2385,6 +2420,11 @@ async fn uploader_prepare_to_target_space_enforces_writer_permission_and_preserv
     let allowed_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-uploader-permission", "user-writer", "drive-pc")),
+            )
+            .header("access-token", common::access_token("tenant-uploader-permission", "user-writer", "drive-pc"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
@@ -2521,6 +2561,11 @@ async fn uploader_prepare_anonymous_target_space_requires_public_writer_share_to
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-uploader-anon-share", "anon-public-uploader", "drive-public")),
+            )
+            .header("access-token", common::access_token("tenant-uploader-anon-share", "anon-public-uploader", "drive-public"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
@@ -2570,6 +2615,11 @@ async fn uploader_prepare_anonymous_target_space_requires_public_writer_share_to
     let allowed_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-uploader-anon-share", "anon-public-uploader", "drive-public")),
+            )
+            .header("access-token", common::access_token("tenant-uploader-anon-share", "anon-public-uploader", "drive-public"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
@@ -2730,6 +2780,11 @@ async fn uploader_mark_part_uploaded_records_resumable_part_progress() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-uploader-part", "user-uploader-part", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-uploader-part", "user-uploader-part", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/uploader/uploads/upload-item-uploader-part/parts/1")
                 .header("content-type", "application/json")
@@ -2794,6 +2849,11 @@ async fn uploader_upload_session_complete_updates_upload_item_and_sensitive_oper
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-uploader-complete", "user-uploader-complete", "drive-pc")),
+            )
+            .header("access-token", common::access_token("tenant-uploader-complete", "user-uploader-complete", "drive-pc"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
@@ -2839,9 +2899,9 @@ async fn uploader_upload_session_complete_updates_upload_item_and_sensitive_oper
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-uploader-complete", "user-uploader-complete")),
+                format!("Bearer {}", common::auth_token("tenant-uploader-complete", "user-uploader-complete", "drive-pc")),
             )
-            .header("access-token", common::access_token("tenant-uploader-complete", "user-uploader-complete"))
+            .header("access-token", common::access_token("tenant-uploader-complete", "user-uploader-complete", "drive-pc"))
                 .method(Method::POST)
                 .uri(format!(
                     "/app/v3/api/drive/upload_sessions/{upload_session_id}/complete"
@@ -3012,14 +3072,9 @@ async fn uploader_routes_accept_generated_sdk_int64_strings() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-version-upload", "user-version-upload")),
+                format!("Bearer {}", common::auth_token("tenant-001", "user-uploader-string-int", "drive-pc")),
             )
-            .header("access-token", common::access_token("tenant-version-upload", "user-version-upload"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-uploader-string-int", "user-uploader-string-int")),
-            )
-            .header("access-token", common::access_token("tenant-uploader-string-int", "user-uploader-string-int"))
+            .header("access-token", common::access_token("tenant-001", "user-uploader-string-int", "drive-pc"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
@@ -3058,6 +3113,11 @@ async fn uploader_routes_accept_generated_sdk_int64_strings() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-uploader-string-int", "drive-pc")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-uploader-string-int", "drive-pc"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/uploader/uploads/upload-item-string-int/parts/1")
                 .header("content-type", "application/json")
@@ -3078,6 +3138,11 @@ async fn uploader_routes_accept_generated_sdk_int64_strings() {
     let complete_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-uploader-string-int", "drive-pc")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-uploader-string-int", "drive-pc"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/session-upload-item-string-int/complete")
                 .header("content-type", "application/json")
@@ -3181,6 +3246,11 @@ async fn create_upload_session_for_existing_file_uses_next_storage_version_in_ob
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-version-upload", "user-version-upload", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-version-upload", "user-version-upload", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -3223,6 +3293,11 @@ async fn create_upload_session_for_existing_file_uses_next_storage_version_in_ob
     let complete_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-version-upload", "user-version-upload", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-version-upload", "user-version-upload", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-version-v2/complete")
                 .header("content-type", "application/json")
@@ -3345,14 +3420,9 @@ async fn presign_upload_part_rejects_ttl_outside_contract_before_object_store_ca
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-upload-ttl", "user-upload-ttl", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-upload-ttl", "user-upload-ttl")),
-            )
-            .header("access-token", common::access_token("tenant-upload-ttl", "user-upload-ttl"))
+            .header("access-token", common::access_token("tenant-upload-ttl", "user-upload-ttl", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-ttl/parts/1")
                 .header("content-type", "application/json")
@@ -3440,14 +3510,9 @@ async fn upload_session_presign_rejects_when_persisted_provider_is_disabled() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-provider-stickiness", "user-provider-stickiness", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-provider-stickiness", "user-provider-stickiness")),
-            )
-            .header("access-token", common::access_token("tenant-provider-stickiness", "user-provider-stickiness"))
+            .header("access-token", common::access_token("tenant-provider-stickiness", "user-provider-stickiness", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -3493,6 +3558,11 @@ async fn upload_session_presign_rejects_when_persisted_provider_is_disabled() {
     let part_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-provider-stickiness", "user-provider-stickiness", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-provider-stickiness", "user-provider-stickiness", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-provider-stickiness/parts/1")
                 .header("content-type", "application/json")
@@ -3617,9 +3687,9 @@ async fn complete_upload_session_allows_only_one_in_flight_completion() {
         Request::builder()
         .header(
             "authorization",
-            format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            format!("Bearer {}", common::auth_token("tenant-complete-race", "user-race", "appbase")),
         )
-        .header("access-token", common::access_token("tenant-001", "user-001"))
+        .header("access-token", common::access_token("tenant-complete-race", "user-race", "appbase"))
             .method(Method::POST)
             .uri("/app/v3/api/drive/upload_sessions/upload-complete-race/complete")
             .header("content-type", "application/json")
@@ -3628,6 +3698,11 @@ async fn complete_upload_session_allows_only_one_in_flight_completion() {
     );
     let second = app.oneshot(
         Request::builder()
+        .header(
+            "authorization",
+            format!("Bearer {}", common::auth_token("tenant-complete-race", "user-race", "appbase")),
+        )
+        .header("access-token", common::access_token("tenant-complete-race", "user-race", "appbase"))
             .method(Method::POST)
             .uri("/app/v3/api/drive/upload_sessions/upload-complete-race/complete")
             .header("content-type", "application/json")
@@ -3794,14 +3869,9 @@ async fn complete_upload_session_rejects_metadata_conflict_before_object_store_c
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-complete-metadata-conflict", "user-complete", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-complete-metadata-conflict", "user-complete-metadata-conflict")),
-            )
-            .header("access-token", common::access_token("tenant-complete-metadata-conflict", "user-complete-metadata-conflict"))
+            .header("access-token", common::access_token("tenant-complete-metadata-conflict", "user-complete", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-metadata-conflict/complete")
                 .header("content-type", "application/json")
@@ -3996,14 +4066,9 @@ async fn complete_upload_session_rejects_storage_version_drift_before_object_sto
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-complete-version-drift", "user-complete-version-drift", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-complete-version-drift", "user-complete-version-drift")),
-            )
-            .header("access-token", common::access_token("tenant-complete-version-drift", "user-complete-version-drift"))
+            .header("access-token", common::access_token("tenant-complete-version-drift", "user-complete-version-drift", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-complete-version-drift/complete")
                 .header("content-type", "application/json")
@@ -4118,14 +4183,9 @@ async fn s3_upload_session_abort_calls_object_store_abort() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-s3-abort", "user-s3", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-s3-abort", "user-s3-abort")),
-            )
-            .header("access-token", common::access_token("tenant-s3-abort", "user-s3-abort"))
+            .header("access-token", common::access_token("tenant-s3-abort", "user-s3", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -4149,6 +4209,11 @@ async fn s3_upload_session_abort_calls_object_store_abort() {
     let abort_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-s3-abort", "user-s3", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-s3-abort", "user-s3", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-s3-abort/abort")
                 .header("content-type", "application/json")
@@ -4264,14 +4329,9 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-life", "user-life")),
-            )
-            .header("access-token", common::access_token("tenant-life", "user-life"))
+            .header("access-token", common::access_token("tenant-life", "user-life", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
@@ -4296,6 +4356,11 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-life", "user-life", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-life/parts/1")
                 .header("content-type", "application/json")
@@ -4327,9 +4392,9 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-life", "user-life")),
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-life", "user-life"))
+            .header("access-token", common::access_token("tenant-life", "user-life", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-life/complete")
                 .header("content-type", "application/json")
@@ -4375,6 +4440,11 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-life", "user-life", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/node-file")
                 .body(Body::empty())
@@ -4396,6 +4466,11 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-life", "user-life", "appbase"))
                 .method(Method::GET)
                 .uri(
                     "/app/v3/api/drive/nodes/node-file/download_url?requestedTtlSeconds=120",
@@ -4423,9 +4498,9 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-life", "user-life")),
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-life", "user-life"))
+            .header("access-token", common::access_token("tenant-life", "user-life", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-file/move")
                 .header("content-type", "application/json")
@@ -4451,6 +4526,11 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-life", "user-life", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-file/copy")
                 .header("content-type", "application/json")
@@ -4508,6 +4588,11 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-life", "user-life", "appbase"))
                 .method(Method::DELETE)
                 .uri("/app/v3/api/drive/nodes/node-file?operatorId=user-life")
                 .body(Body::empty())
@@ -4528,6 +4613,11 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-life", "user-life", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/node-file")
                 .body(Body::empty())
@@ -4540,6 +4630,11 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
     let changes_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-life", "user-life", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/changes?spaceId=space-life")
                 .body(Body::empty())
@@ -4687,14 +4782,9 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-tree-restore", "user-tree-restore")),
+                format!("Bearer {}", common::auth_token("tenant-tree-delete", "user-tree-delete", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-tree-restore", "user-tree-restore"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-tree-delete", "user-tree-delete")),
-            )
-            .header("access-token", common::access_token("tenant-tree-delete", "user-tree-delete"))
+            .header("access-token", common::access_token("tenant-tree-delete", "user-tree-delete", "appbase"))
                 .method(Method::DELETE)
                 .uri("/app/v3/api/drive/nodes/folder-tree-root?operatorId=user-tree-delete")
                 .body(Body::empty())
@@ -4744,6 +4834,11 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-tree-delete", "user-tree-delete", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-tree-delete", "user-tree-delete", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/file-tree-child")
                 .body(Body::empty())
@@ -4756,6 +4851,11 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
     let search_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-tree-delete", "user-tree-delete", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-tree-delete", "user-tree-delete", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/search?spaceId=space-tree-delete&q=child")
                 .body(Body::empty())
@@ -4845,6 +4945,11 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-tree-trash", "user-tree-trash", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-tree-trash", "user-tree-trash", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folder-trash-root/trash")
                 .header("content-type", "application/json")
@@ -4886,6 +4991,11 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-tree-trash", "user-tree-trash", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-tree-trash", "user-tree-trash", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/file-trash-child")
                 .body(Body::empty())
@@ -4908,6 +5018,11 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
     let search_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-tree-trash", "user-tree-trash", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-tree-trash", "user-tree-trash", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/search?spaceId=space-tree-trash&q=child")
                 .body(Body::empty())
@@ -5004,6 +5119,11 @@ async fn app_drive_restore_folder_recursively_restores_descendants_and_requires_
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-tree-restore", "user-tree-restore", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-tree-restore", "user-tree-restore", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/trash/file-restore-block-child/restore")
                 .header("content-type", "application/json")
@@ -5031,6 +5151,11 @@ async fn app_drive_restore_folder_recursively_restores_descendants_and_requires_
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-tree-restore", "user-tree-restore", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-tree-restore", "user-tree-restore", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/trash/folder-restore-root/restore")
                 .header("content-type", "application/json")
@@ -5142,6 +5267,11 @@ async fn app_dr_drive_upload_session_abort_marks_session_aborted() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-abort", "user-abort", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-abort", "user-abort", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-abort/abort")
                 .header("content-type", "application/json")
@@ -5230,6 +5360,11 @@ async fn app_dr_drive_upload_session_abort_rejects_terminal_sessions_without_obj
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-abort-terminal", "user-abort", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-abort-terminal", "user-abort", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-abort-terminal/abort")
                 .header("content-type", "application/json")
@@ -5317,14 +5452,9 @@ async fn presign_upload_part_requires_active_object_store_provider() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-no-provider", "user-no-provider", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-no-provider", "user-no-provider")),
-            )
-            .header("access-token", common::access_token("tenant-no-provider", "user-no-provider"))
+            .header("access-token", common::access_token("tenant-no-provider", "user-no-provider", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-no-provider/parts/1")
                 .header("content-type", "application/json")
@@ -5414,14 +5544,9 @@ async fn complete_upload_session_rejects_invalid_multipart_parts() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-invalid-parts", "user-invalid-parts", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-invalid-parts", "user-invalid-parts")),
-            )
-            .header("access-token", common::access_token("tenant-invalid-parts", "user-invalid-parts"))
+            .header("access-token", common::access_token("tenant-invalid-parts", "user-invalid-parts", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-invalid-parts/complete")
                 .header("content-type", "application/json")
@@ -5538,9 +5663,9 @@ async fn upload_session_mutations_reject_trashed_node_before_storage_side_effect
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-upload-trashed", "user-upload-trashed")),
+                format!("Bearer {}", common::auth_token("tenant-upload-trashed", "user-upload", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-upload-trashed", "user-upload-trashed"))
+            .header("access-token", common::access_token("tenant-upload-trashed", "user-upload", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-trashed-presign/parts/1")
                 .header("content-type", "application/json")
@@ -5553,6 +5678,11 @@ async fn upload_session_mutations_reject_trashed_node_before_storage_side_effect
         (
             "complete",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-upload-trashed", "user-upload", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-upload-trashed", "user-upload", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-trashed-complete/complete")
                 .header("content-type", "application/json")
@@ -5569,6 +5699,11 @@ async fn upload_session_mutations_reject_trashed_node_before_storage_side_effect
         (
             "abort",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-upload-trashed", "user-upload", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-upload-trashed", "user-upload", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-trashed-abort/abort")
                 .header("content-type", "application/json")
@@ -5726,9 +5861,9 @@ async fn complete_upload_session_rejects_invalid_object_metadata_before_storage_
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-invalid-metadata", "user-invalid-metadata")),
+                format!("Bearer {}", common::auth_token("tenant-invalid-metadata", "user-invalid-metadata", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-invalid-metadata", "user-invalid-metadata"))
+            .header("access-token", common::access_token("tenant-invalid-metadata", "user-invalid-metadata", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-invalid-metadata/complete")
                 .header("content-type", "application/json")
@@ -5844,9 +5979,9 @@ async fn list_spaces_route_returns_tenant_scoped_items() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces")
                 .body(Body::empty())
@@ -5958,14 +6093,9 @@ async fn create_download_url_and_resolve_token_redirects_to_signed_source() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-download-ttl", "user-download-ttl")),
-            )
-            .header("access-token", common::access_token("tenant-download-ttl", "user-download-ttl"))
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
@@ -6002,6 +6132,11 @@ async fn create_download_url_and_resolve_token_redirects_to_signed_source() {
     let resolve_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::GET)
                 .uri(format!(
             "/app/v3/api/drive/download_tokens/{token}"
@@ -6086,6 +6221,11 @@ async fn create_download_url_rejects_ttl_outside_contract() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-download-ttl", "user-download-ttl", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-download-ttl", "user-download-ttl", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
@@ -6180,14 +6320,9 @@ async fn resolve_download_token_requires_active_object_store_provider() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-download-no-provider", "user-download-no-provider", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-download-no-provider", "user-download-no-provider")),
-            )
-            .header("access-token", common::access_token("tenant-download-no-provider", "user-download-no-provider"))
+            .header("access-token", common::access_token("tenant-download-no-provider", "user-download-no-provider", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
@@ -6309,9 +6444,9 @@ async fn resolve_download_token_uses_active_s3_provider_configuration_when_prese
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
@@ -6342,6 +6477,11 @@ async fn resolve_download_token_uses_active_s3_provider_configuration_when_prese
     let resolve_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::GET)
                 .uri(format!(
             "/app/v3/api/drive/download_tokens/{token}"
@@ -6455,6 +6595,11 @@ async fn resolve_download_token_uses_aliyun_oss_provider_kind_with_s3_signer() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
@@ -6485,6 +6630,11 @@ async fn resolve_download_token_uses_aliyun_oss_provider_kind_with_s3_signer() {
     let resolve_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::GET)
                 .uri(format!(
             "/app/v3/api/drive/download_tokens/{token}"
@@ -6616,6 +6766,11 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
             .clone()
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-cloud-s3", "admin-cloud-s3", "appbase")),
+                )
+                .header("access-token", common::access_token("tenant-cloud-s3", "admin-cloud-s3", "appbase"))
                     .method(Method::POST)
                     .uri("/app/v3/api/drive/download_urls")
                     .header("content-type", "application/json")
@@ -6653,14 +6808,9 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
                 Request::builder()
                 .header(
                     "authorization",
-                    format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                    format!("Bearer {}", common::auth_token("tenant-cloud-s3", "admin-cloud-s3", "appbase")),
                 )
-                .header("access-token", common::access_token("tenant-001", "user-001"))
-                .header(
-                    "authorization",
-                    format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
-                )
-                .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
+                .header("access-token", common::access_token("tenant-cloud-s3", "admin-cloud-s3", "appbase"))
                     .method(Method::GET)
                     .uri(format!(
             "/app/v3/api/drive/download_tokens/{token}"
@@ -6712,6 +6862,11 @@ async fn create_download_package_for_multiple_files_writes_zip_archive_and_retur
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
@@ -6894,14 +7049,9 @@ async fn create_download_package_reads_objects_from_their_bound_provider_when_bu
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-shared-provider", "user-shared", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-shared-provider", "user-shared-provider")),
-            )
-            .header("access-token", common::access_token("tenant-shared-provider", "user-shared-provider"))
+            .header("access-token", common::access_token("tenant-shared-provider", "user-shared", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
@@ -6972,14 +7122,9 @@ async fn list_archive_entries_reads_zip_contents_from_drive_storage() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive")),
-            )
-            .header("access-token", common::access_token("tenant-archive", "user-archive"))
+            .header("access-token", common::access_token("tenant-archive", "user-archive", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/node-archive/archive_entries")
                 .body(Body::empty())
@@ -7040,14 +7185,9 @@ async fn extract_archive_entries_creates_drive_nodes_and_writes_objects_to_defau
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive")),
-            )
-            .header("access-token", common::access_token("tenant-archive", "user-archive"))
+            .header("access-token", common::access_token("tenant-archive", "user-archive", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-archive/archive_entries/extract")
                 .header("content-type", "application/json")
@@ -7198,9 +7338,9 @@ async fn extract_archive_entries_rejects_trashed_source_before_storage_side_effe
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive")),
+                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-archive", "user-archive"))
+            .header("access-token", common::access_token("tenant-archive", "user-archive", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-archive/archive_entries/extract")
                 .header("content-type", "application/json")
@@ -7312,9 +7452,9 @@ async fn extract_archive_entries_rejects_any_target_conflict_before_partial_side
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive")),
+                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-archive", "user-archive"))
+            .header("access-token", common::access_token("tenant-archive", "user-archive", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-archive/archive_entries/extract")
                 .header("content-type", "application/json")
@@ -7422,14 +7562,9 @@ async fn create_download_package_rejects_ttl_outside_contract_before_writing_pac
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
-            )
-            .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
@@ -7519,14 +7654,9 @@ async fn create_download_package_reads_files_from_multiple_storage_buckets() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
-            )
-            .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
@@ -7593,9 +7723,9 @@ async fn create_download_package_rejects_empty_node_selection() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
@@ -7649,6 +7779,11 @@ async fn create_download_package_rejects_trashed_selected_node_before_reading_ob
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
@@ -7774,14 +7909,9 @@ async fn create_download_package_rejects_folder_expansion_above_file_limit_befor
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-package-limit", "user-bulk", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-package-limit", "user-package-limit")),
-            )
-            .header("access-token", common::access_token("tenant-package-limit", "user-package-limit"))
+            .header("access-token", common::access_token("tenant-package-limit", "user-bulk", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
@@ -7839,14 +7969,9 @@ async fn create_download_package_expands_selected_folder_descendants() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
-            )
-            .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
@@ -7941,14 +8066,9 @@ async fn resolve_download_package_treats_subsecond_remaining_ttl_as_expired() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
-            )
-            .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/download_packages/package-subsecond/download_url")
                 .body(Body::empty())
@@ -7998,14 +8118,9 @@ async fn resolve_expired_download_token_returns_gone() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-token-lifecycle", "user-token-lifecycle")),
-            )
-            .header("access-token", common::access_token("tenant-token-lifecycle", "user-token-lifecycle"))
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::GET)
                 .uri(format!(
             "/app/v3/api/drive/download_tokens/{token}"
@@ -8088,6 +8203,11 @@ async fn resolve_download_token_rejects_node_after_it_is_moved_to_trash() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-token-lifecycle", "user-token-lifecycle", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-token-lifecycle", "user-token-lifecycle", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
@@ -8129,9 +8249,9 @@ async fn resolve_download_token_rejects_node_after_it_is_moved_to_trash() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-token-lifecycle", "user-token-lifecycle", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header("access-token", common::access_token("tenant-token-lifecycle", "user-token-lifecycle", "appbase"))
                 .method(Method::GET)
                 .uri(format!(
             "/app/v3/api/drive/download_tokens/{token}"
@@ -8218,6 +8338,11 @@ async fn resolve_download_token_treats_subsecond_remaining_ttl_as_expired() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-token-subsecond", "user-token-subsecond", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-token-subsecond", "user-token-subsecond", "appbase"))
                 .method(Method::GET)
                 .uri(format!(
             "/app/v3/api/drive/download_tokens/{token}"
@@ -8572,9 +8697,9 @@ async fn fetch_paged_items(
             Request::builder()
                 .header(
                     "authorization",
-                    format!("Bearer {}", common::auth_token(&tenant, &user)),
+                    format!("Bearer {}", common::auth_token(&tenant, &user, "appbase")),
                 )
-                .header("access-token", common::access_token(&tenant, &user))
+                .header("access-token", common::access_token(&tenant, &user, "appbase"))
                 .method(Method::GET)
                 .uri(sanitized_uri.as_str())
                 .body(Body::empty())
@@ -8609,9 +8734,9 @@ async fn fetch_json(app: axum::Router, uri: &str) -> serde_json::Value {
             Request::builder()
                 .header(
                     "authorization",
-                    format!("Bearer {}", common::auth_token(&tenant, &user)),
+                    format!("Bearer {}", common::auth_token(&tenant, &user, "appbase")),
                 )
-                .header("access-token", common::access_token(&tenant, &user))
+                .header("access-token", common::access_token(&tenant, &user, "appbase"))
                 .method(Method::GET)
                 .uri(sanitized_uri.as_str())
                 .body(Body::empty())
@@ -8720,9 +8845,9 @@ async fn create_file_rejects_existing_node_id_before_storage_side_effects() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-file-conflict", "user-file-conflict")),
+                format!("Bearer {}", common::auth_token("tenant-file-conflict", "user-file", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-file-conflict", "user-file-conflict"))
+            .header("access-token", common::access_token("tenant-file-conflict", "user-file", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/files")
                 .header("content-type", "application/json")
@@ -8844,9 +8969,9 @@ async fn create_file_rejects_past_expiration_before_storage_side_effects() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-file-expired", "user-file-expired")),
+                format!("Bearer {}", common::auth_token("tenant-file-expired", "user-file", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-file-expired", "user-file-expired"))
+            .header("access-token", common::access_token("tenant-file-expired", "user-file", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/files")
                 .header("content-type", "application/json")
@@ -8984,9 +9109,9 @@ async fn create_file_route_is_idempotent_without_repeating_storage_or_changes() 
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-file-idem", "user-file-idem")),
+                format!("Bearer {}", common::auth_token("tenant-file-idem", "user-file-idem", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-file-idem", "user-file-idem"))
+            .header("access-token", common::access_token("tenant-file-idem", "user-file-idem", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/files")
                 .header("content-type", "application/json")
@@ -9006,6 +9131,11 @@ async fn create_file_route_is_idempotent_without_repeating_storage_or_changes() 
     let second_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-file-idem", "user-file-idem", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-file-idem", "user-file-idem", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/files")
                 .header("content-type", "application/json")
@@ -9124,9 +9254,9 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-pro", "user-pro")),
+                format!("Bearer {}", common::auth_token("tenant-pro", "user-pro", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-pro", "user-pro"))
+            .header("access-token", common::access_token("tenant-pro", "user-pro", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/files")
                 .header("content-type", "application/json")
@@ -9169,6 +9299,11 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-pro", "user-pro", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-pro", "user-pro", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/upload_sessions/upload-pro")
                 .body(Body::empty())
@@ -9198,6 +9333,11 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-pro", "user-pro", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-pro", "user-pro", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/file-pro/trash")
                 .header("content-type", "application/json")
@@ -9215,6 +9355,11 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-pro", "user-pro", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-pro", "user-pro", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/trash/empty")
                 .header("content-type", "application/json")
@@ -9251,6 +9396,11 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
     let changes_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-pro", "user-pro", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-pro", "user-pro", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/changes?spaceId=space-pro")
                 .body(Body::empty())
@@ -9318,14 +9468,9 @@ async fn empty_trash_rejects_missing_or_deleted_explicit_space_before_deleting_n
                 Request::builder()
                 .header(
                     "authorization",
-                    format!("Bearer {}", common::auth_token("tenant-trash-filter", "user-trash-filter")),
+                    format!("Bearer {}", common::auth_token("tenant-trash-filter", "user-trash", "appbase")),
                 )
-                .header("access-token", common::access_token("tenant-trash-filter", "user-trash-filter"))
-                .header(
-                    "authorization",
-                    format!("Bearer {}", common::auth_token("tenant-core", "user-core")),
-                )
-                .header("access-token", common::access_token("tenant-core", "user-core"))
+                .header("access-token", common::access_token("tenant-trash-filter", "user-trash", "appbase"))
                     .method(Method::POST)
                     .uri("/app/v3/api/drive/trash/empty")
                     .header("content-type", "application/json")
@@ -9392,6 +9537,11 @@ async fn create_folder_assigns_server_id_when_client_id_is_omitted() {
     let create_folder_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-server-id", "user-server-id", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-server-id", "user-server-id", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folders")
                 .header("content-type", "application/json")
@@ -9449,6 +9599,11 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-core", "user-core", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-core", "user-core", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folders")
                 .header("content-type", "application/json")
@@ -9477,6 +9632,11 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-core", "user-core", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-core", "user-core", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces/space-core/nodes")
                 .body(Body::empty())
@@ -9497,6 +9657,11 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-core", "user-core", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-core", "user-core", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-core-folder/permissions")
                 .header("content-type", "application/json")
@@ -9518,6 +9683,11 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-core", "user-core", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-core", "user-core", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-core-folder/permissions")
                 .header("content-type", "application/json")
@@ -9539,6 +9709,11 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-core", "user-core", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-core", "user-core", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-core-folder/share_links")
                 .header("content-type", "application/json")
@@ -9571,6 +9746,11 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-core", "user-core", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-core", "user-core", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/search?q=Project")
                 .body(Body::empty())
@@ -9590,6 +9770,11 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
     let changes_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-core", "user-core", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-core", "user-core", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/changes?spaceId=space-core")
                 .body(Body::empty())
@@ -9653,14 +9838,9 @@ async fn app_dr_drive_node_share_link_create_rejects_negative_download_limit_bef
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-resource", "user-resource")),
+                format!("Bearer {}", common::auth_token("tenant-share-validation", "user-owner", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-resource", "user-resource"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-share-expired-update", "user-share-expired-update")),
-            )
-            .header("access-token", common::access_token("tenant-share-expired-update", "user-share-expired-update"))
+            .header("access-token", common::access_token("tenant-share-validation", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-share-validation/share_links")
                 .header("content-type", "application/json")
@@ -9730,6 +9910,11 @@ async fn app_dr_drive_node_share_link_create_rejects_past_expiration_before_data
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-share-expired-create", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-share-expired-create", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-share-expired-create/share_links")
                 .header("content-type", "application/json")
@@ -9812,6 +9997,11 @@ async fn app_dr_drive_node_share_link_update_rejects_past_expiration_before_data
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-share-expired-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-share-expired-update", "user-owner", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/share_links/share-expired-update")
                 .header("content-type", "application/json")
@@ -9880,6 +10070,11 @@ async fn app_dr_drive_node_permission_create_rejects_invalid_dictionaries_before
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-permission-validation", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-permission-validation", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-permission-validation/permissions")
                 .header("content-type", "application/json")
@@ -9910,6 +10105,11 @@ async fn app_dr_drive_node_permission_create_rejects_invalid_dictionaries_before
     let invalid_role_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-permission-validation", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-permission-validation", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-permission-validation/permissions")
                 .header("content-type", "application/json")
@@ -9997,6 +10197,11 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-resource", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-resource", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces/space-resource")
                 .body(Body::empty())
@@ -10019,6 +10224,11 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-resource", "user-admin", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-resource", "user-admin", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/spaces/space-resource")
                 .header("content-type", "application/json")
@@ -10048,6 +10258,11 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-resource", "user-admin", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-resource", "user-admin", "appbase"))
                 .method(Method::DELETE)
                 .uri("/app/v3/api/drive/spaces/space-resource?operatorId=user-admin")
                 .body(Body::empty())
@@ -10074,6 +10289,11 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-resource", "user-admin", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-resource", "user-admin", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces")
                 .body(Body::empty())
@@ -10094,6 +10314,11 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-resource", "user-admin", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-resource", "user-admin", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces/space-resource")
                 .body(Body::empty())
@@ -10121,6 +10346,11 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
     let changes_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-resource", "user-admin", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-resource", "user-admin", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/changes?spaceId=space-resource")
                 .body(Body::empty())
@@ -10236,9 +10466,9 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-gov", "user-gov")),
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-owner", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-gov", "user-gov"))
+            .header("access-token", common::access_token("tenant-gov", "user-owner", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-gov/permissions/perm-gov")
                 .header("content-type", "application/json")
@@ -10265,6 +10495,11 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-gov", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/node-gov/permissions/perm-gov")
                 .body(Body::empty())
@@ -10289,6 +10524,11 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-gov", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/node-gov/share_links")
                 .body(Body::empty())
@@ -10324,6 +10564,11 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-gov", "user-owner", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/share_links/share-gov")
                 .header("content-type", "application/json")
@@ -10362,6 +10607,11 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-gov", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/share_links/share-gov")
                 .body(Body::empty())
@@ -10391,6 +10641,11 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-gov", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri("/app/v3/api/drive/share_links/share-gov?operatorId=user-owner")
                 .body(Body::empty())
@@ -10418,6 +10673,11 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-gov", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/node-gov/share_links")
                 .body(Body::empty())
@@ -10446,9 +10706,9 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-gov", "user-gov")),
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-owner", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-gov", "user-gov"))
+            .header("access-token", common::access_token("tenant-gov", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/node-gov/versions/version-gov-1")
                 .body(Body::empty())
@@ -10470,6 +10730,11 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-gov", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-gov/versions/version-gov-1?operatorId=user-owner",
@@ -10502,6 +10767,11 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-gov", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-gov/versions/version-gov-2?operatorId=user-owner",
@@ -10516,6 +10786,11 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
     let changes_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-gov", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/changes?spaceId=space-gov")
                 .body(Body::empty())
@@ -10591,14 +10866,9 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
                 Request::builder()
                 .header(
                     "authorization",
-                    format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                    format!("Bearer {}", common::auth_token("tenant-comments", "user-reviewer", "appbase")),
                 )
-                .header("access-token", common::access_token("tenant-001", "user-001"))
-                .header(
-                    "authorization",
-                    format!("Bearer {}", common::auth_token("tenant-comments", "user-comments")),
-                )
-                .header("access-token", common::access_token("tenant-comments", "user-comments"))
+                .header("access-token", common::access_token("tenant-comments", "user-reviewer", "appbase"))
                     .method(Method::POST)
                     .uri("/app/v3/api/drive/nodes/node-comments/comments")
                     .header("content-type", "application/json")
@@ -10621,6 +10891,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri(
                     "/app/v3/api/drive/nodes/node-comments/comments?pageSize=1",
@@ -10650,6 +10925,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri(format!(
             "/app/v3/api/drive/nodes/node-comments/comments?pageSize=1&pageToken={next_page_token}"
@@ -10676,6 +10956,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri(
                     "/app/v3/api/drive/nodes/node-comments/comments/comment-one",
@@ -10702,6 +10987,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-reviewer", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-comments/comments/comment-one")
                 .header("content-type", "application/json")
@@ -10737,6 +11027,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             .clone()
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-comments", "user-reviewer", "appbase")),
+                )
+                .header("access-token", common::access_token("tenant-comments", "user-reviewer", "appbase"))
                     .method(Method::POST)
                     .uri("/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies")
                     .header("content-type", "application/json")
@@ -10758,6 +11053,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-reviewer", "appbase"))
                 .method(Method::GET)
                 .uri(
                     "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies?pageSize=1",
@@ -10788,6 +11088,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-reviewer", "appbase"))
                 .method(Method::GET)
                 .uri(
                     "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies/reply-one",
@@ -10813,6 +11118,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-reviewer", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies/reply-one")
                 .header("content-type", "application/json")
@@ -10842,6 +11152,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-reviewer", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies/reply-one?operatorId=user-collaborator",
@@ -10864,6 +11179,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-reviewer", "appbase"))
                 .method(Method::GET)
                 .uri(
                     "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies/reply-one",
@@ -10879,6 +11199,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-reviewer", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-comments/comments/comment-one?operatorId=user-reviewer",
@@ -10901,6 +11226,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-reviewer", "appbase"))
                 .method(Method::GET)
                 .uri(
                     "/app/v3/api/drive/nodes/node-comments/comments/comment-one",
@@ -10915,6 +11245,11 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
     let changes_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-comments", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-comments", "user-reviewer", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/changes?spaceId=space-comments")
                 .body(Body::empty())
@@ -10993,9 +11328,9 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-changes", "user-owner", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header("access-token", common::access_token("tenant-changes", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri(
                     "/app/v3/api/drive/changes/start_page_token?spaceId=space-changes",
@@ -11018,6 +11353,11 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-changes", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-changes", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri(
                     "/app/v3/api/drive/changes?spaceId=space-changes&pageSize=1",
@@ -11046,6 +11386,11 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-changes", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-changes", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri(
                     "/app/v3/api/drive/changes?spaceId=space-changes&pageSize=2&pageToken=1",
@@ -11121,9 +11466,9 @@ async fn app_drive_changes_validate_explicit_space_filter() {
                 Request::builder()
                 .header(
                     "authorization",
-                    format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                    format!("Bearer {}", common::auth_token("tenant-changes-filter", "user-deleted-owner", "appbase")),
                 )
-                .header("access-token", common::access_token("tenant-001", "user-001"))
+                .header("access-token", common::access_token("tenant-changes-filter", "user-deleted-owner", "appbase"))
                     .method(Method::GET)
                     .uri(uri)
                     .body(Body::empty())
@@ -11144,6 +11489,11 @@ async fn app_drive_changes_validate_explicit_space_filter() {
     let deleted_history_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-changes-filter", "user-deleted-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-changes-filter", "user-deleted-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/changes?spaceId=space-changes-deleted")
                 .body(Body::empty())
@@ -11195,14 +11545,9 @@ async fn app_drive_changes_rejects_page_size_outside_contract() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-change-page-size", "user-change-page-size", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-change-page-size", "user-change-page-size")),
-            )
-            .header("access-token", common::access_token("tenant-change-page-size", "user-change-page-size"))
+            .header("access-token", common::access_token("tenant-change-page-size", "user-change-page-size", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/changes?spaceId=space-change-page-size&pageSize=0")
                 .body(Body::empty())
@@ -11267,9 +11612,9 @@ async fn app_drive_change_feed_allocates_unique_sequences_for_concurrent_writes(
                 Request::builder()
                 .header(
                     "authorization",
-                    format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                    format!("Bearer {}", common::auth_token("tenant-change-concurrent", "user-change", "appbase")),
                 )
-                .header("access-token", common::access_token("tenant-001", "user-001"))
+                .header("access-token", common::access_token("tenant-change-concurrent", "user-change", "appbase"))
                     .method(Method::POST)
                     .uri("/app/v3/api/drive/nodes/folders")
                     .header("content-type", "application/json")
@@ -11365,14 +11710,9 @@ async fn app_dr_drive_node_path_route_returns_ordered_breadcrumbs() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-path", "user-owner", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-path", "user-path")),
-            )
-            .header("access-token", common::access_token("tenant-path", "user-path"))
+            .header("access-token", common::access_token("tenant-path", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/node-leaf-file/path")
                 .body(Body::empty())
@@ -11421,14 +11761,9 @@ async fn app_dr_drive_node_path_route_returns_ordered_breadcrumbs() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-path", "user-owner", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-views", "user-views")),
-            )
-            .header("access-token", common::access_token("tenant-views", "user-views"))
+            .header("access-token", common::access_token("tenant-path", "user-owner", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/missing-node/path")
                 .body(Body::empty())
@@ -11537,6 +11872,11 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-views", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-views", "user-reviewer", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/trash?spaceId=space-views")
                 .body(Body::empty())
@@ -11561,6 +11901,11 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-views", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-views", "user-reviewer", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/recent?spaceId=space-views")
                 .body(Body::empty())
@@ -11596,9 +11941,9 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-views", "user-reviewer")),
+                format!("Bearer {}", common::auth_token("tenant-views", "user-reviewer", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-views", "user-reviewer"))
+            .header("access-token", common::access_token("tenant-views", "user-reviewer", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/shared_with_me?subjectType=user&subjectId=user-reviewer")
                 .body(Body::empty())
@@ -11623,6 +11968,11 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-views", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-views", "user-reviewer", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/favorites?subjectType=user&subjectId=user-reviewer")
                 .body(Body::empty())
@@ -11647,6 +11997,11 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-views", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-views", "user-reviewer", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-active/favorite")
                 .header("content-type", "application/json")
@@ -11673,6 +12028,11 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-views", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-views", "user-reviewer", "appbase"))
                 .method(Method::DELETE)
                 .uri("/app/v3/api/drive/nodes/node-active/favorite?subjectType=user&subjectId=user-reviewer&operatorId=user-reviewer")
                 .body(Body::empty())
@@ -11706,6 +12066,11 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
     let changes_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-views", "user-reviewer", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-views", "user-reviewer", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/changes?spaceId=space-views")
                 .body(Body::empty())
@@ -11772,23 +12137,7 @@ async fn app_drive_standard_views_validate_explicit_space_filter() {
         ] {
             let response = app
                 .clone()
-                .oneshot(
-                    Request::builder()
-                    .header(
-                        "authorization",
-                        format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
-                    )
-                    .header("access-token", common::access_token("tenant-001", "user-001"))
-                    .header(
-                        "authorization",
-                        format!("Bearer {}", common::auth_token("tenant-list-page-size", "user-list-page-size")),
-                    )
-                    .header("access-token", common::access_token("tenant-list-page-size", "user-list-page-size"))
-                        .method(Method::GET)
-                        .uri(uri.as_str())
-                        .body(Body::empty())
-                        .expect("standard view invalid space request should be built"),
-                )
+                .oneshot(common::authed_get_uri(uri.as_str()))
                 .await
                 .expect("standard view invalid space request should be handled");
             assert_eq!(response.status(), StatusCode::NOT_FOUND, "{uri}");
@@ -11925,7 +12274,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let next_recent_token = next_recent_token.expect("recent first page should have nextPageToken");
     let (second_recent, _) = fetch_paged_items(
         app.clone(),
-        &format!("/app/v3/api/drive/recent?pageSize=1&pageToken={next_recent_token}")
+        &format!("/app/v3/api/drive/recent?tenantId=tenant-page&pageSize=1&pageToken={next_recent_token}")
         )
     .await;
     assert_eq!(second_recent[0]["id"].as_str(), Some("node-page-a"));
@@ -12014,6 +12363,11 @@ async fn app_drive_list_routes_reject_page_size_outside_contract() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-list-page-size", "user-list-page-size", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-list-page-size", "user-list-page-size", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces/space-list-page-size/nodes?pageSize=0")
                 .body(Body::empty())
@@ -12554,14 +12908,9 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-copy-space", "user-copy-space")),
+                format!("Bearer {}", common::auth_token("tenant-property", "user-owner", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-copy-space", "user-copy-space"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-trashed-write", "user-trashed-write")),
-            )
-            .header("access-token", common::access_token("tenant-trashed-write", "user-trashed-write"))
+            .header("access-token", common::access_token("tenant-property", "user-owner", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-property/properties/customerId")
                 .header("content-type", "application/json")
@@ -12591,6 +12940,11 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-property", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-property", "user-owner", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-property/properties/orderId")
                 .header("content-type", "application/json")
@@ -12610,6 +12964,11 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-property", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-property", "user-owner", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-property/properties/customerId")
                 .header("content-type", "application/json")
@@ -12665,6 +13024,11 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-property", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-property", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri("/app/v3/api/drive/nodes/node-property/properties/customerId?operatorId=user-owner")
                 .body(Body::empty())
@@ -12761,6 +13125,11 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
         (
             "property",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-write", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-write", "user-owner", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/properties/customerId")
                 .header("content-type", "application/json")
@@ -12774,6 +13143,11 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
         (
             "label",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-write", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-write", "user-owner", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/labels/label-trashed-write")
                 .header("content-type", "application/json")
@@ -12786,6 +13160,11 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
         (
             "favorite",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-write", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-write", "user-owner", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/favorite")
                 .header("content-type", "application/json")
@@ -12800,6 +13179,11 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
         (
             "permission",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-write", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-write", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/permissions")
                 .header("content-type", "application/json")
@@ -12816,6 +13200,11 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
         (
             "share_link",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-write", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-write", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/share_links")
                 .header("content-type", "application/json")
@@ -12830,6 +13219,11 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
         (
             "comment",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-write", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-write", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/comments")
                 .header("content-type", "application/json")
@@ -12983,6 +13377,11 @@ async fn app_drive_metadata_deletes_reject_trashed_nodes_without_side_effects() 
         (
             "property.delete",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-delete", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-delete", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-trashed-delete/properties/customerId?visibility=private&operatorId=user-owner",
@@ -12993,6 +13392,11 @@ async fn app_drive_metadata_deletes_reject_trashed_nodes_without_side_effects() 
         (
             "label.remove",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-delete", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-delete", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-trashed-delete/labels/label-trashed-delete?operatorId=user-owner",
@@ -13003,6 +13407,11 @@ async fn app_drive_metadata_deletes_reject_trashed_nodes_without_side_effects() 
         (
             "favorite.unset",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-delete", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-delete", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-trashed-delete/favorite?subjectType=user&subjectId=user-owner&operatorId=user-owner",
@@ -13204,6 +13613,11 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         (
             "permission.update",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-update", "user-owner", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-trashed-update/permissions/permission-trashed-update")
                 .header("content-type", "application/json")
@@ -13217,6 +13631,11 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         (
             "permission.delete",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-update", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-trashed-update/permissions/permission-trashed-update?operatorId=user-owner",
@@ -13227,6 +13646,11 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         (
             "share_link.update",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-update", "user-owner", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/share_links/share-trashed-update")
                 .header("content-type", "application/json")
@@ -13241,6 +13665,11 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         (
             "share_link.revoke",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-update", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri("/app/v3/api/drive/share_links/share-trashed-update?operatorId=user-owner")
                 .body(Body::empty())
@@ -13249,6 +13678,11 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         (
             "comment.update",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-update", "user-owner", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update")
                 .header("content-type", "application/json")
@@ -13263,6 +13697,11 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         (
             "comment.delete",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-update", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update?operatorId=user-owner",
@@ -13273,6 +13712,11 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         (
             "comment_reply.create",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-update", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update/replies")
                 .header("content-type", "application/json")
@@ -13287,6 +13731,11 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         (
             "comment_reply.update",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-update", "user-owner", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update/replies/reply-trashed-update")
                 .header("content-type", "application/json")
@@ -13300,6 +13749,11 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         (
             "comment_reply.delete",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-update", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update/replies/reply-trashed-update?operatorId=user-owner",
@@ -13310,6 +13764,11 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         (
             "version.restore",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-update", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-trashed-update/versions/version-trashed-restore/restore")
                 .header("content-type", "application/json")
@@ -13322,6 +13781,11 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         (
             "version.delete",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-update", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-update", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-trashed-update/versions/version-trashed-delete-a?operatorId=user-owner",
@@ -13521,6 +13985,11 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-shortcut", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-shortcut", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/shortcuts")
                 .header("content-type", "application/json")
@@ -13543,6 +14012,11 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-shortcut", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-shortcut", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/shortcuts")
                 .header("content-type", "application/json")
@@ -13659,6 +14133,11 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-hierarchy", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-hierarchy", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folders")
                 .header("content-type", "application/json")
@@ -13680,6 +14159,11 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-hierarchy", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-hierarchy", "user-owner", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-child")
                 .header("content-type", "application/json")
@@ -13698,6 +14182,11 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-hierarchy", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-hierarchy", "user-owner", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-child")
                 .header("content-type", "application/json")
@@ -13716,6 +14205,11 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-hierarchy", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-hierarchy", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folder-alpha/move")
                 .header("content-type", "application/json")
@@ -13740,6 +14234,11 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
     let rename_conflict = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-hierarchy", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-hierarchy", "user-owner", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-child")
                 .header("content-type", "application/json")
@@ -13820,6 +14319,11 @@ async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_wi
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-node-mutation-trash", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-node-mutation-trash", "user-owner", "appbase"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-mutation-trashed")
                 .header("content-type", "application/json")
@@ -13838,6 +14342,11 @@ async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_wi
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-node-mutation-trash", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-node-mutation-trash", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-mutation-trashed/move")
                 .header("content-type", "application/json")
@@ -13856,6 +14365,11 @@ async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_wi
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-node-mutation-trash", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-node-mutation-trash", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-mutation-trashed/copy")
                 .header("content-type", "application/json")
@@ -13874,6 +14388,11 @@ async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_wi
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-node-mutation-trash", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-node-mutation-trash", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/shortcuts")
                 .header("content-type", "application/json")
@@ -13999,6 +14518,11 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-git-repository-root", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-git-repository-root", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folders")
                 .header("content-type", "application/json")
@@ -14028,6 +14552,11 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-git-repository-root", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-git-repository-root", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/files")
                 .header("content-type", "application/json")
@@ -14051,6 +14580,11 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-git-repository-root", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-git-repository-root", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/shortcuts")
                 .header("content-type", "application/json")
@@ -14072,6 +14606,11 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-git-repository-root", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-git-repository-root", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/file-repository-alpha/move")
                 .header("content-type", "application/json")
@@ -14088,6 +14627,11 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
     let copy_file_to_git_repository_root = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-git-repository-root", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-git-repository-root", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/file-team-source/copy")
                 .header("content-type", "application/json")
@@ -14163,6 +14707,11 @@ async fn app_drive_copy_shortcut_preserves_target_node_reference() {
     let copy_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-shortcut-copy", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-shortcut-copy", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/shortcut-copy-source/copy")
                 .header("content-type", "application/json")
@@ -14239,6 +14788,11 @@ async fn app_drive_copy_node_rejects_missing_or_deleted_target_space() {
             .clone()
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-copy-space", "user-owner", "appbase")),
+                )
+                .header("access-token", common::access_token("tenant-copy-space", "user-owner", "appbase"))
                     .method(Method::POST)
                     .uri("/app/v3/api/drive/nodes/folder-copy-source/copy")
                     .header("content-type", "application/json")
@@ -14335,6 +14889,11 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-label", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-label", "user-owner", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-label/labels/label-confidential")
                 .header("content-type", "application/json")
@@ -14364,6 +14923,11 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-label", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-label", "user-owner", "appbase"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-label/labels/label-public")
                 .header("content-type", "application/json")
@@ -14415,6 +14979,11 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-label", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-label", "user-owner", "appbase"))
                 .method(Method::DELETE)
                 .uri("/app/v3/api/drive/nodes/node-label/labels/label-confidential?operatorId=user-owner")
                 .body(Body::empty())
@@ -14490,6 +15059,11 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-watch", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-watch", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/changes/watch")
                 .header("content-type", "application/json")
@@ -14537,6 +15111,11 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-watch", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-watch", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-watch/watch")
                 .header("content-type", "application/json")
@@ -14605,6 +15184,11 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-watch", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-watch", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/watch_channels/watch-node-001/stop")
                 .header("content-type", "application/json")
@@ -14707,9 +15291,9 @@ async fn app_dr_drive_watch_channel_create_rejects_past_expiration_before_databa
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-watch-trashed", "user-watch-trashed")),
+                format!("Bearer {}", common::auth_token("tenant-watch-validation", "user-owner", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-watch-trashed", "user-watch-trashed"))
+            .header("access-token", common::access_token("tenant-watch-validation", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/changes/watch")
                 .header("content-type", "application/json")
@@ -14779,6 +15363,11 @@ async fn app_dr_drive_watch_node_rejects_trashed_node_before_creating_channel() 
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-watch-trashed", "user-owner", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-watch-trashed", "user-owner", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-watch-trashed/watch")
                 .header("content-type", "application/json")

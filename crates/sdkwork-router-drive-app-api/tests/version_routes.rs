@@ -28,14 +28,9 @@ async fn version_routes_prefer_logical_node_version_ids() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/nodes/node-001/versions")
                 .body(Body::empty())
@@ -59,6 +54,11 @@ async fn version_routes_prefer_logical_node_version_ids() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::GET)
                 .uri(
                     "/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1",
@@ -85,6 +85,11 @@ async fn version_routes_prefer_logical_node_version_ids() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::DELETE)
                 .uri(
                     "/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1?operatorId=user-001",
@@ -114,6 +119,11 @@ async fn version_routes_prefer_logical_node_version_ids() {
     let restore_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1/restore")
                 .header("content-type", "application/json")

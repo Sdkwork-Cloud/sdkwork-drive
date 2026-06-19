@@ -7,15 +7,15 @@ use sdkwork_drive_security::DriveAuthValidationPolicy;
 use sdkwork_router_drive_app_api::build_router_with_pool_and_iam_policy;
 use sqlx::AnyPool;
 
-pub fn auth_token(tenant: &str, user: &str) -> String {
+pub fn auth_token(tenant: &str, user: &str, app_id: &str) -> String {
     format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;auth_level=password"
+        "tenant_id={tenant};user_id={user};session_id=session-1;app_id={app_id};auth_level=password"
     )
 }
 
-pub fn access_token(tenant: &str, user: &str) -> String {
+pub fn access_token(tenant: &str, user: &str, app_id: &str) -> String {
     format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;environment=prod;deployment_mode=saas"
+        "tenant_id={tenant};user_id={user};session_id=session-1;app_id={app_id};environment=prod;deployment_mode=saas"
     )
 }
 
@@ -64,6 +64,9 @@ pub fn user_from_uri(uri: &str, tenant: &str) -> String {
             if let Some(operator_id) = segment.strip_prefix("operatorId=") {
                 return percent_decode(operator_id);
             }
+            if let Some(user_id) = segment.strip_prefix("userId=") {
+                return percent_decode(user_id);
+            }
         }
     }
     default_user_for_tenant(tenant)
@@ -73,6 +76,11 @@ pub fn auth_context_from_uri(uri: &str) -> (String, String) {
     let tenant = tenant_from_uri(uri).unwrap_or_else(|| "tenant-001".to_string());
     let user = user_from_uri(uri, &tenant);
     (tenant, user)
+}
+
+pub fn authed_get_uri(uri: impl AsRef<str>) -> Request<Body> {
+    let (tenant, user) = auth_context_from_uri(uri.as_ref());
+    authed_get(uri, &tenant, &user, "appbase")
 }
 
 fn percent_decode(value: &str) -> String {
@@ -91,6 +99,7 @@ pub fn authed_request(
     uri: impl AsRef<str>,
     tenant: &str,
     user: &str,
+    app_id: &str,
     body: Body,
 ) -> Request<Body> {
     Request::builder()
@@ -98,21 +107,22 @@ pub fn authed_request(
         .uri(strip_client_tenant_id_from_uri(uri.as_ref()))
         .header(
             "authorization",
-            format!("Bearer {}", auth_token(tenant, user)),
+            format!("Bearer {}", auth_token(tenant, user, app_id)),
         )
-        .header("access-token", access_token(tenant, user))
+        .header("access-token", access_token(tenant, user, app_id))
         .body(body)
         .expect("authed request should be built")
 }
 
-pub fn authed_get(uri: impl AsRef<str>, tenant: &str, user: &str) -> Request<Body> {
-    authed_request(Method::GET, uri, tenant, user, Body::empty())
+pub fn authed_get(uri: impl AsRef<str>, tenant: &str, user: &str, app_id: &str) -> Request<Body> {
+    authed_request(Method::GET, uri, tenant, user, app_id, Body::empty())
 }
 
 pub fn authed_post_json(
     uri: impl AsRef<str>,
     tenant: &str,
     user: &str,
+    app_id: &str,
     body: impl Into<Body>,
 ) -> Request<Body> {
     Request::builder()
@@ -120,9 +130,9 @@ pub fn authed_post_json(
         .uri(strip_client_tenant_id_from_uri(uri.as_ref()))
         .header(
             "authorization",
-            format!("Bearer {}", auth_token(tenant, user)),
+            format!("Bearer {}", auth_token(tenant, user, app_id)),
         )
-        .header("access-token", access_token(tenant, user))
+        .header("access-token", access_token(tenant, user, app_id))
         .header("content-type", "application/json")
         .body(body.into())
         .expect("authed post request should be built")

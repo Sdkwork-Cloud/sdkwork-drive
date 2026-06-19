@@ -15,14 +15,9 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
             Request::builder()
             .header(
                 "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
             )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001"))
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/spaces")
                 .body(Body::empty())
@@ -36,6 +31,11 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .body(Body::empty())
@@ -200,6 +200,11 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
             .clone()
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+                )
+                .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                     .method(method)
                     .uri(uri)
                     .header("content-type", "application/json")
@@ -296,6 +301,11 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
             .clone()
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
+                )
+                .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                     .method(method)
                     .uri(uri)
                     .header("content-type", "application/json")
