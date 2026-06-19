@@ -10,7 +10,7 @@ use sdkwork_drive_workspace_service::application::storage_key_service::{
 };
 use sdkwork_drive_workspace_service::drive_share_token_hash;
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-use sdkwork_router_drive_app_api::build_router_with_pool;
+
 use sqlx::any::AnyPoolOptions;
 use std::io::{Cursor, Write};
 use std::sync::{Arc, Mutex};
@@ -18,6 +18,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tower::util::ServiceExt;
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
+
+mod common;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct CapturedS3Request {
@@ -310,11 +312,10 @@ async fn create_space_route_persists_space_with_special_type() {
         .await
         .expect("sqlite schema should be installed");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let request_body = r#"{
         "id":"space-kb-001",
-        "tenantId":"tenant-001",
-        "ownerSubjectType":"user",
+                "ownerSubjectType":"user",
         "ownerSubjectId":"user-001",
         "displayName":"Knowledge Space",
         "spaceType":"knowledge_base",
@@ -324,6 +325,11 @@ async fn create_space_route_persists_space_with_special_type() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/spaces")
                 .header("content-type", "application/json")
@@ -356,11 +362,10 @@ async fn create_space_route_persists_user_git_repository_space() {
         .await
         .expect("sqlite schema should be installed");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let request_body = r#"{
         "id":"space-git-repository-001",
-        "tenantId":"tenant-001",
-        "ownerSubjectType":"user",
+                "ownerSubjectType":"user",
         "ownerSubjectId":"user-001",
         "displayName":"Git Repositories",
         "spaceType":"git_repository",
@@ -428,12 +433,12 @@ async fn delete_space_route_rejects_user_git_repository_space() {
     .await
     .expect("repository directory should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/app/v3/api/drive/spaces/space-git-repository-delete-guard?tenantId=tenant-git-repository-delete-guard&operatorId=user-owner")
+                .uri("/app/v3/api/drive/spaces/space-git-repository-delete-guard?operatorId=user-owner")
                 .body(Body::empty())
                 .expect("delete git repository space request should be built"),
         )
@@ -554,11 +559,11 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
     .await
     .expect("uploading child node should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
 
     for uri in [
-        "/app/v3/api/drive/spaces/space-list-missing/nodes?tenantId=tenant-list-guard",
-        "/app/v3/api/drive/spaces/space-list-deleted/nodes?tenantId=tenant-list-guard",
+        "/app/v3/api/drive/spaces/space-list-missing/nodes",
+        "/app/v3/api/drive/spaces/space-list-deleted/nodes",
     ] {
         let response = app
             .clone()
@@ -586,7 +591,7 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces/space-list-guard/nodes?tenantId=tenant-list-guard&parentNodeId=folder-list-missing")
+                .uri("/app/v3/api/drive/spaces/space-list-guard/nodes?parentNodeId=folder-list-missing")
                 .body(Body::empty())
                 .expect("list nodes missing parent request should be built"),
         )
@@ -609,7 +614,7 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces/space-list-guard/nodes?tenantId=tenant-list-guard&parentNodeId=file-list-parent")
+                .uri("/app/v3/api/drive/spaces/space-list-guard/nodes?parentNodeId=file-list-parent")
                 .body(Body::empty())
                 .expect("list nodes file parent request should be built"),
         )
@@ -631,7 +636,7 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces/space-list-guard/nodes?tenantId=tenant-list-guard&parentNodeId=folder-list-parent")
+                .uri("/app/v3/api/drive/spaces/space-list-guard/nodes?parentNodeId=folder-list-parent")
                 .body(Body::empty())
                 .expect("list nodes valid parent request should be built"),
         )
@@ -708,18 +713,18 @@ async fn recent_search_and_favorite_routes_hide_uploading_nodes_until_ready() {
     .await
     .expect("favorites should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     for (uri, label) in [
         (
-            "/app/v3/api/drive/recent?tenantId=tenant-visibility&spaceId=space-visibility",
+            "/app/v3/api/drive/recent?spaceId=space-visibility",
             "recent",
         ),
         (
-            "/app/v3/api/drive/search?q=report&tenantId=tenant-visibility&spaceId=space-visibility",
+            "/app/v3/api/drive/search?q=report&spaceId=space-visibility",
             "search",
         ),
         (
-            "/app/v3/api/drive/favorites?tenantId=tenant-visibility&subjectType=user&subjectId=user-owner&spaceId=space-visibility",
+            "/app/v3/api/drive/favorites?subjectType=user&subjectId=user-owner&spaceId=space-visibility",
             "favorites",
         ),
     ] {
@@ -727,6 +732,11 @@ async fn recent_search_and_favorite_routes_hide_uploading_nodes_until_ready() {
             .clone()
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                )
+                .header("access-token", common::access_token("tenant-001", "user-001"))
                     .method(Method::GET)
                     .uri(uri)
                     .body(Body::empty())
@@ -835,12 +845,17 @@ async fn quota_summary_route_counts_active_storage_objects() {
         .expect("storage object should be inserted");
     }
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-quota", "user-quota")),
+            )
+            .header("access-token", common::access_token("tenant-quota", "user-quota"))
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/quotas/summary?tenantId=tenant-quota")
+                .uri("/app/v3/api/drive/quotas/summary")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -922,11 +937,10 @@ async fn create_upload_session_route_is_idempotent() {
     .await
     .expect("storage provider should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let first_body = r#"{
         "sessionId":"upload-session-001",
-        "tenantId":"tenant-001",
-        "spaceId":"space-001",
+                "spaceId":"space-001",
         "nodeId":"node-001",
         "bucket":"bucket-001",
         "objectKey":"objects/node-001/v1.bin",
@@ -936,8 +950,7 @@ async fn create_upload_session_route_is_idempotent() {
     }"#;
     let second_body = r#"{
         "sessionId":"upload-session-002",
-        "tenantId":"tenant-001",
-        "spaceId":"space-001",
+                "spaceId":"space-001",
         "nodeId":"node-001",
         "bucket":"bucket-001",
         "objectKey":"objects/node-001/v1.bin",
@@ -1017,7 +1030,7 @@ async fn app_api_rejects_storage_provider_administration_routes_without_s3_side_
     .await
     .expect("storage provider should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     for (method, uri, body) in [
         (
             Method::POST,
@@ -1042,7 +1055,7 @@ async fn app_api_rejects_storage_provider_administration_routes_without_s3_side_
         (
             Method::PUT,
             "/app/v3/api/drive/storage_provider_bindings/default",
-            r#"{"tenantId":"tenant-app","providerId":"provider-app-admin-boundary","operatorId":"admin-app"}"#,
+            r#"{"providerId":"provider-app-admin-boundary","operatorId":"admin-app"}"#,
         ),
     ] {
         let response = app
@@ -1153,17 +1166,20 @@ async fn create_upload_session_rejects_existing_session_id_before_storage_side_e
     .await
     .expect("existing upload session should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-upload-id-conflict", "user-upload-id-conflict")),
+            )
+            .header("access-token", common::access_token("tenant-upload-id-conflict", "user-upload-id-conflict"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-id-conflict",
-                        "tenantId":"tenant-upload-id-conflict",
                         "spaceId":"space-upload-id-conflict",
                         "nodeId":"node-upload-id-conflict",
                         "idempotencyKey":"idem-new-upload",
@@ -1263,17 +1279,20 @@ async fn create_upload_session_resolves_default_bucket_and_generates_standard_ke
     .await
     .expect("storage provider binding should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-keygen", "user-keygen")),
+            )
+            .header("access-token", common::access_token("tenant-keygen", "user-keygen"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-keygen",
-                        "tenantId":"tenant-keygen",
                         "spaceId":"space-keygen",
                         "nodeId":"node-keygen",
                         "idempotencyKey":"idem-keygen",
@@ -1366,17 +1385,15 @@ async fn create_upload_session_rejects_trashed_node_before_storage_side_effects(
     )
     .await;
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-create-trash",
-                        "tenantId":"tenant-upload-create-trash",
                         "spaceId":"space-upload-create-trash",
                         "nodeId":"node-upload-create-trash",
                         "bucket":"bucket-upload-create-trash",
@@ -1467,17 +1484,20 @@ async fn create_upload_session_rejects_past_expiration_before_storage_side_effec
     )
     .await;
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-upload-create-expired", "user-upload-create-expired")),
+            )
+            .header("access-token", common::access_token("tenant-upload-create-expired", "user-upload-create-expired"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-create-expired",
-                        "tenantId":"tenant-upload-create-expired",
                         "spaceId":"space-upload-create-expired",
                         "nodeId":"node-upload-create-expired",
                         "bucket":"bucket-upload-create-expired",
@@ -1587,17 +1607,20 @@ async fn create_upload_session_rejects_empty_idempotency_key_before_storage_side
     .await
     .expect("storage provider binding should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-upload-empty-idem", "user-upload-empty-idem")),
+            )
+            .header("access-token", common::access_token("tenant-upload-empty-idem", "user-upload-empty-idem"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-empty-idem",
-                        "tenantId":"tenant-upload-empty-idem",
                         "spaceId":"space-upload-empty-idem",
                         "nodeId":"node-upload-empty-idem",
                         "idempotencyKey":"   ",
@@ -1706,18 +1729,21 @@ async fn create_upload_session_normalizes_identifiers_before_idempotency_and_sto
     .await
     .expect("storage provider binding should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let first_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-upload-normalized", "user-upload-normalized")),
+            )
+            .header("access-token", common::access_token("tenant-upload-normalized", "user-upload-normalized"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"  upload-normalized  ",
-                        "tenantId":"tenant-upload-normalized",
                         "spaceId":"space-upload-normalized",
                         "nodeId":"node-upload-normalized",
                         "idempotencyKey":"  idem-upload-normalized  ",
@@ -1748,10 +1774,8 @@ async fn create_upload_session_normalizes_identifiers_before_idempotency_and_sto
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-normalized-retry",
-                        "tenantId":"tenant-upload-normalized",
                         "spaceId":"space-upload-normalized",
                         "nodeId":"node-upload-normalized",
                         "idempotencyKey":"idem-upload-normalized",
@@ -1841,17 +1865,20 @@ async fn create_upload_session_requires_active_object_store_provider() {
     .await
     .expect("node should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-create-no-provider", "user-create-no-provider")),
+            )
+            .header("access-token", common::access_token("tenant-create-no-provider", "user-create-no-provider"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-create-no-provider",
-                        "tenantId":"tenant-create-no-provider",
                         "spaceId":"space-create-no-provider",
                         "nodeId":"node-create-no-provider",
                         "bucket":"bucket-create-no-provider",
@@ -1934,18 +1961,21 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
     .await
     .expect("storage provider should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-s3", "user-s3")),
+            )
+            .header("access-token", common::access_token("tenant-s3", "user-s3"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-s3",
-                        "tenantId":"tenant-s3",
                         "spaceId":"space-s3",
                         "nodeId":"node-s3",
                         "bucket":"bucket-s3",
@@ -1997,9 +2027,7 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-s3/parts/1")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-s3",
+                .body(Body::from(r#"{
                         "requestedTtlSeconds":120
                     }"#,
                 ))
@@ -2024,12 +2052,15 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-s3", "user-s3")),
+            )
+            .header("access-token", common::access_token("tenant-s3", "user-s3"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-s3/complete")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-s3",
+                .body(Body::from(r#"{
                         "contentType":"application/octet-stream",
                         "contentLength":12,
                         "checksumSha256Hex":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -2102,19 +2133,22 @@ async fn uploader_prepare_creates_upload_space_item_and_real_multipart_upload() 
     .await
     .expect("storage provider should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-uploader-app", "user-uploader-app")),
+            )
+            .header("access-token", common::access_token("tenant-uploader-app", "user-uploader-app"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"upload-item-app-001",
                         "taskId":"task-app-001",
-                        "tenantId":"tenant-uploader-app",
                         "organizationId":"org-uploader-app",
                         "userId":"user-uploader-app",
                         "appId":"drive-pc",
@@ -2259,19 +2293,22 @@ async fn uploader_prepare_to_target_space_enforces_writer_permission_and_preserv
     .await
     .expect("target parent folder should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let denied_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-uploader-permission", "user-uploader-permission")),
+            )
+            .header("access-token", common::access_token("tenant-uploader-permission", "user-uploader-permission"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"upload-item-target-denied",
                         "taskId":"task-target-denied",
-                        "tenantId":"tenant-uploader-permission",
                         "userId":"user-no-writer",
                         "appId":"drive-pc",
                         "appResourceType":"desktop-file-browser",
@@ -2326,11 +2363,9 @@ async fn uploader_prepare_to_target_space_enforces_writer_permission_and_preserv
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"upload-item-target-allowed",
                         "taskId":"task-target-allowed",
-                        "tenantId":"tenant-uploader-permission",
                         "organizationId":"org-uploader-permission",
                         "userId":"user-writer",
                         "appId":"drive-pc",
@@ -2456,7 +2491,7 @@ async fn uploader_prepare_anonymous_target_space_requires_public_writer_share_to
     .await
     .expect("target parent folder should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let denied_response = app
         .clone()
         .oneshot(
@@ -2464,11 +2499,9 @@ async fn uploader_prepare_anonymous_target_space_requires_public_writer_share_to
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"upload-item-anon-share-denied",
                         "taskId":"task-anon-share-denied",
-                        "tenantId":"tenant-uploader-anon-share",
                         "anonymousId":"anon-public-uploader",
                         "appId":"drive-public",
                         "appResourceType":"public-form",
@@ -2515,11 +2548,9 @@ async fn uploader_prepare_anonymous_target_space_requires_public_writer_share_to
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"upload-item-anon-share-allowed",
                         "taskId":"task-anon-share-allowed",
-                        "tenantId":"tenant-uploader-anon-share",
                         "anonymousId":"anon-public-uploader",
                         "appId":"drive-public",
                         "appResourceType":"public-form",
@@ -2670,16 +2701,14 @@ async fn uploader_mark_part_uploaded_records_resumable_part_progress() {
     .await
     .expect("upload item should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/uploader/uploads/upload-item-uploader-part/parts/1")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-uploader-part",
+                .body(Body::from(r#"{
                         "uploadSessionId":"session-uploader-part",
                         "offsetBytes":0,
                         "sizeBytes":8,
@@ -2735,7 +2764,7 @@ async fn uploader_upload_session_complete_updates_upload_item_and_sensitive_oper
     .await
     .expect("storage provider should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let prepare_response = app
         .clone()
         .oneshot(
@@ -2743,11 +2772,9 @@ async fn uploader_upload_session_complete_updates_upload_item_and_sensitive_oper
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"upload-item-complete",
                         "taskId":"task-uploader-complete",
-                        "tenantId":"tenant-uploader-complete",
                         "organizationId":"org-uploader-complete",
                         "userId":"user-uploader-complete",
                         "appId":"drive-pc",
@@ -2785,14 +2812,17 @@ async fn uploader_upload_session_complete_updates_upload_item_and_sensitive_oper
     let complete_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-uploader-complete", "user-uploader-complete")),
+            )
+            .header("access-token", common::access_token("tenant-uploader-complete", "user-uploader-complete"))
                 .method(Method::POST)
                 .uri(format!(
                     "/app/v3/api/drive/upload_sessions/{upload_session_id}/complete"
                 ))
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-uploader-complete",
+                .body(Body::from(r#"{
                         "uploadId":"mock-s3-upload-id",
                         "contentType":"application/pdf",
                         "contentLength":12,
@@ -2950,19 +2980,22 @@ async fn uploader_routes_accept_generated_sdk_int64_strings() {
     .await
     .expect("storage provider should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let prepare_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-uploader-string-int", "user-uploader-string-int")),
+            )
+            .header("access-token", common::access_token("tenant-uploader-string-int", "user-uploader-string-int"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/uploader/uploads")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"upload-item-string-int",
                         "taskId":"task-uploader-string-int",
-                        "tenantId":"tenant-uploader-string-int",
                         "userId":"user-uploader-string-int",
                         "appId":"drive-pc",
                         "appResourceType":"desktop-file-browser",
@@ -2998,9 +3031,7 @@ async fn uploader_routes_accept_generated_sdk_int64_strings() {
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/uploader/uploads/upload-item-string-int/parts/1")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-uploader-string-int",
+                .body(Body::from(r#"{
                         "uploadSessionId":"session-upload-item-string-int",
                         "offsetBytes":"0",
                         "sizeBytes":"5",
@@ -3020,9 +3051,7 @@ async fn uploader_routes_accept_generated_sdk_int64_strings() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/session-upload-item-string-int/complete")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-uploader-string-int",
+                .body(Body::from(r#"{
                         "uploadId":"mock-s3-upload-id",
                         "contentType":"text/plain",
                         "contentLength":"5",
@@ -3117,7 +3146,7 @@ async fn create_upload_session_for_existing_file_uses_next_storage_version_in_ob
     .await
     .expect("existing version should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_response = app
         .clone()
         .oneshot(
@@ -3125,10 +3154,8 @@ async fn create_upload_session_for_existing_file_uses_next_storage_version_in_ob
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-version-v2",
-                        "tenantId":"tenant-version-upload",
                         "spaceId":"space-version-upload",
                         "nodeId":"node-version-upload",
                         "bucket":"bucket-version-upload",
@@ -3169,9 +3196,7 @@ async fn create_upload_session_for_existing_file_uses_next_storage_version_in_ob
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-version-v2/complete")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-version-upload",
+                .body(Body::from(r#"{
                         "uploadId":"mock-s3-upload-id",
                         "contentType":"application/octet-stream",
                         "contentLength":16,
@@ -3284,16 +3309,19 @@ async fn presign_upload_part_rejects_ttl_outside_contract_before_object_store_ca
     .await
     .expect("upload session should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-upload-ttl", "user-upload-ttl")),
+            )
+            .header("access-token", common::access_token("tenant-upload-ttl", "user-upload-ttl"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-ttl/parts/1")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-upload-ttl",
+                .body(Body::from(r#"{
                         "requestedTtlSeconds":0
                     }"#,
                 ))
@@ -3370,18 +3398,21 @@ async fn upload_session_presign_rejects_when_persisted_provider_is_disabled() {
     .await
     .expect("original storage provider should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-provider-stickiness", "user-provider-stickiness")),
+            )
+            .header("access-token", common::access_token("tenant-provider-stickiness", "user-provider-stickiness"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-provider-stickiness",
-                        "tenantId":"tenant-provider-stickiness",
                         "spaceId":"space-provider-stickiness",
                         "nodeId":"node-provider-stickiness",
                         "bucket":"bucket-s3",
@@ -3425,9 +3456,7 @@ async fn upload_session_presign_rejects_when_persisted_provider_is_disabled() {
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-provider-stickiness/parts/1")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-provider-stickiness",
+                .body(Body::from(r#"{
                         "requestedTtlSeconds":120
                     }"#,
                 ))
@@ -3535,10 +3564,9 @@ async fn complete_upload_session_allows_only_one_in_flight_completion() {
     .await
     .expect("upload session should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let request_body = r#"{
-        "tenantId":"tenant-complete-race",
-        "uploadId":"mock-s3-upload-id",
+                "uploadId":"mock-s3-upload-id",
         "contentType":"application/octet-stream",
         "contentLength":4,
         "checksumSha256Hex":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -3547,6 +3575,11 @@ async fn complete_upload_session_allows_only_one_in_flight_completion() {
     }"#;
     let first = app.clone().oneshot(
         Request::builder()
+        .header(
+            "authorization",
+            format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+        )
+        .header("access-token", common::access_token("tenant-001", "user-001"))
             .method(Method::POST)
             .uri("/app/v3/api/drive/upload_sessions/upload-complete-race/complete")
             .header("content-type", "application/json")
@@ -3715,16 +3748,19 @@ async fn complete_upload_session_rejects_metadata_conflict_before_object_store_c
     .await
     .expect("conflicting storage object id should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-complete-metadata-conflict", "user-complete-metadata-conflict")),
+            )
+            .header("access-token", common::access_token("tenant-complete-metadata-conflict", "user-complete-metadata-conflict"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-metadata-conflict/complete")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-complete-metadata-conflict",
+                .body(Body::from(r#"{
                         "uploadId":"mock-s3-upload-id",
                         "contentType":"application/octet-stream",
                         "contentLength":4,
@@ -3909,16 +3945,19 @@ async fn complete_upload_session_rejects_storage_version_drift_before_object_sto
     .await
     .expect("upload session should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-complete-version-drift", "user-complete-version-drift")),
+            )
+            .header("access-token", common::access_token("tenant-complete-version-drift", "user-complete-version-drift"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-complete-version-drift/complete")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-complete-version-drift",
+                .body(Body::from(r#"{
                         "uploadId":"mock-s3-upload-id",
                         "contentType":"application/octet-stream",
                         "contentLength":3,
@@ -4022,18 +4061,21 @@ async fn s3_upload_session_abort_calls_object_store_abort() {
     .await
     .expect("storage provider should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-s3-abort", "user-s3-abort")),
+            )
+            .header("access-token", common::access_token("tenant-s3-abort", "user-s3-abort"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-s3-abort",
-                        "tenantId":"tenant-s3-abort",
                         "spaceId":"space-s3-abort",
                         "nodeId":"node-s3-abort",
                         "bucket":"bucket-s3",
@@ -4055,9 +4097,7 @@ async fn s3_upload_session_abort_calls_object_store_abort() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-s3-abort/abort")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-s3-abort",
+                .body(Body::from(r#"{
                         "operatorId":"user-s3"
                     }"#,
                 ))
@@ -4162,18 +4202,21 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
     .await
     .expect("storage provider should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_session_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life")),
+            )
+            .header("access-token", common::access_token("tenant-life", "user-life"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-life",
-                        "tenantId":"tenant-life",
                         "spaceId":"space-life",
                         "nodeId":"node-file",
                         "bucket":"bucket-life",
@@ -4196,9 +4239,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-life/parts/1")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-life",
+                .body(Body::from(r#"{
                         "requestedTtlSeconds":120
                     }"#,
                 ))
@@ -4224,12 +4265,15 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life")),
+            )
+            .header("access-token", common::access_token("tenant-life", "user-life"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-life/complete")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-life",
+                .body(Body::from(r#"{
                         "contentType":"text/plain",
                         "contentLength":12,
                         "checksumSha256Hex":"sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
@@ -4272,7 +4316,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/node-file?tenantId=tenant-life")
+                .uri("/app/v3/api/drive/nodes/node-file")
                 .body(Body::empty())
                 .expect("get node request should be built"),
         )
@@ -4294,7 +4338,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-file/download_url?tenantId=tenant-life&requestedTtlSeconds=120",
+                    "/app/v3/api/drive/nodes/node-file/download_url?requestedTtlSeconds=120",
                 )
                 .body(Body::empty())
                 .expect("node download url request should be built"),
@@ -4317,12 +4361,15 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-life", "user-life")),
+            )
+            .header("access-token", common::access_token("tenant-life", "user-life"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-file/move")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-life",
+                .body(Body::from(r#"{
                         "targetParentNodeId":"folder-destination",
                         "operatorId":"user-life"
                     }"#,
@@ -4347,10 +4394,8 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-file/copy")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"node-file-copy",
-                        "tenantId":"tenant-life",
                         "nodeName":"report-copy.txt",
                         "operatorId":"user-life"
                     }"#,
@@ -4404,7 +4449,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/app/v3/api/drive/nodes/node-file?tenantId=tenant-life&operatorId=user-life")
+                .uri("/app/v3/api/drive/nodes/node-file?operatorId=user-life")
                 .body(Body::empty())
                 .expect("delete node request should be built"),
         )
@@ -4424,7 +4469,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/node-file?tenantId=tenant-life")
+                .uri("/app/v3/api/drive/nodes/node-file")
                 .body(Body::empty())
                 .expect("get deleted node request should be built"),
         )
@@ -4436,7 +4481,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?tenantId=tenant-life&spaceId=space-life")
+                .uri("/app/v3/api/drive/changes?spaceId=space-life")
                 .body(Body::empty())
                 .expect("changes request should be built"),
         )
@@ -4575,13 +4620,18 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
         .expect("storage object should be seeded");
     }
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let delete_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-tree-delete", "user-tree-delete")),
+            )
+            .header("access-token", common::access_token("tenant-tree-delete", "user-tree-delete"))
                 .method(Method::DELETE)
-                .uri("/app/v3/api/drive/nodes/folder-tree-root?tenantId=tenant-tree-delete&operatorId=user-tree-delete")
+                .uri("/app/v3/api/drive/nodes/folder-tree-root?operatorId=user-tree-delete")
                 .body(Body::empty())
                 .expect("delete folder request should be built"),
         )
@@ -4630,7 +4680,7 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/file-tree-child?tenantId=tenant-tree-delete")
+                .uri("/app/v3/api/drive/nodes/file-tree-child")
                 .body(Body::empty())
                 .expect("get deleted child request should be built"),
         )
@@ -4642,7 +4692,7 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/search?tenantId=tenant-tree-delete&spaceId=space-tree-delete&q=child")
+                .uri("/app/v3/api/drive/search?spaceId=space-tree-delete&q=child")
                 .body(Body::empty())
                 .expect("search deleted child request should be built"),
         )
@@ -4725,7 +4775,7 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
         .expect("node should be seeded");
     }
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let trash_response = app
         .clone()
         .oneshot(
@@ -4733,9 +4783,7 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folder-trash-root/trash")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-tree-trash",
+                .body(Body::from(r#"{
                         "operatorId":"user-tree-trash"
                     }"#,
                 ))
@@ -4774,7 +4822,7 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/file-trash-child?tenantId=tenant-tree-trash")
+                .uri("/app/v3/api/drive/nodes/file-trash-child")
                 .body(Body::empty())
                 .expect("get trashed child request should be built"),
         )
@@ -4796,7 +4844,7 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/search?tenantId=tenant-tree-trash&spaceId=space-tree-trash&q=child")
+                .uri("/app/v3/api/drive/search?spaceId=space-tree-trash&q=child")
                 .body(Body::empty())
                 .expect("search trashed child request should be built"),
         )
@@ -4886,7 +4934,7 @@ async fn app_drive_restore_folder_recursively_restores_descendants_and_requires_
         .expect("node should be seeded");
     }
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let blocked_child_response = app
         .clone()
         .oneshot(
@@ -4894,9 +4942,7 @@ async fn app_drive_restore_folder_recursively_restores_descendants_and_requires_
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/trash/file-restore-block-child/restore")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-tree-restore",
+                .body(Body::from(r#"{
                         "operatorId":"user-tree-restore"
                     }"#,
                 ))
@@ -4923,9 +4969,7 @@ async fn app_drive_restore_folder_recursively_restores_descendants_and_requires_
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/trash/folder-restore-root/restore")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-tree-restore",
+                .body(Body::from(r#"{
                         "operatorId":"user-tree-restore"
                     }"#,
                 ))
@@ -5029,16 +5073,14 @@ async fn app_dr_drive_upload_session_abort_marks_session_aborted() {
     .await
     .expect("upload session should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-abort/abort")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-abort",
+                .body(Body::from(r#"{
                         "operatorId":"user-abort"
                     }"#,
                 ))
@@ -5119,16 +5161,14 @@ async fn app_dr_drive_upload_session_abort_rejects_terminal_sessions_without_obj
     .await
     .expect("terminal upload session should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-abort-terminal/abort")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-abort-terminal",
+                .body(Body::from(r#"{
                         "operatorId":"user-abort"
                     }"#,
                 ))
@@ -5206,16 +5246,19 @@ async fn presign_upload_part_requires_active_object_store_provider() {
     .await
     .expect("upload session should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-no-provider", "user-no-provider")),
+            )
+            .header("access-token", common::access_token("tenant-no-provider", "user-no-provider"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-no-provider/parts/1")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-no-provider",
+                .body(Body::from(r#"{
                         "requestedTtlSeconds":120
                     }"#,
                 ))
@@ -5295,16 +5338,19 @@ async fn complete_upload_session_rejects_invalid_multipart_parts() {
     .await
     .expect("upload session should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-invalid-parts", "user-invalid-parts")),
+            )
+            .header("access-token", common::access_token("tenant-invalid-parts", "user-invalid-parts"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-invalid-parts/complete")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-invalid-parts",
+                .body(Body::from(r#"{
                         "contentType":"application/octet-stream",
                         "contentLength":12,
                         "checksumSha256Hex":"sha256:invalid",
@@ -5409,18 +5455,21 @@ async fn upload_session_mutations_reject_trashed_node_before_storage_side_effect
         .expect("upload session should be seeded");
     }
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let mut observed = Vec::<(&'static str, StatusCode)>::new();
     for (name, request) in [
         (
             "presign",
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-upload-trashed", "user-upload-trashed")),
+            )
+            .header("access-token", common::access_token("tenant-upload-trashed", "user-upload-trashed"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/upload_sessions/upload-trashed-presign/parts/1")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-upload-trashed",
+                .body(Body::from(r#"{
                         "requestedTtlSeconds":120
                     }"#,
                 ))
@@ -5432,9 +5481,7 @@ async fn upload_session_mutations_reject_trashed_node_before_storage_side_effect
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-trashed-complete/complete")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-upload-trashed",
+                .body(Body::from(r#"{
                         "contentType":"application/octet-stream",
                         "contentLength":12,
                         "checksumSha256Hex":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -5450,9 +5497,7 @@ async fn upload_session_mutations_reject_trashed_node_before_storage_side_effect
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-trashed-abort/abort")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-upload-trashed",
+                .body(Body::from(r#"{
                         "operatorId":"user-upload"
                     }"#,
                 ))
@@ -5600,16 +5645,19 @@ async fn complete_upload_session_rejects_invalid_object_metadata_before_storage_
     .await
     .expect("upload session should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-invalid-metadata", "user-invalid-metadata")),
+            )
+            .header("access-token", common::access_token("tenant-invalid-metadata", "user-invalid-metadata"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions/upload-invalid-metadata/complete")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-invalid-metadata",
+                .body(Body::from(r#"{
                         "contentType":"application/octet stream",
                         "contentLength":12,
                         "checksumSha256Hex":"sha256:not-hex",
@@ -5715,12 +5763,17 @@ async fn list_spaces_route_returns_tenant_scoped_items() {
     .await
     .expect("seed third space should succeed");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces?tenantId=tenant-001")
+                .uri("/app/v3/api/drive/spaces")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -5823,17 +5876,20 @@ async fn create_download_url_and_resolve_token_redirects_to_signed_source() {
     .await
     .expect("seed storage object should succeed");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-download-ttl", "user-download-ttl")),
+            )
+            .header("access-token", common::access_token("tenant-download-ttl", "user-download-ttl"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-001",
+                .body(Body::from(r#"{
                         "nodeId":"node-001",
                         "requestedTtlSeconds":120
                     }"#,
@@ -5868,8 +5924,8 @@ async fn create_download_url_and_resolve_token_redirects_to_signed_source() {
             Request::builder()
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/download_tokens/{token}?tenantId=tenant-001"
-                ))
+            "/app/v3/api/drive/download_tokens/{token}"
+        ))
                 .body(Body::empty())
                 .expect("resolve request should be built"),
         )
@@ -5946,16 +6002,14 @@ async fn create_download_url_rejects_ttl_outside_contract() {
     .await
     .expect("storage object should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-download-ttl",
+                .body(Body::from(r#"{
                         "nodeId":"node-download-ttl",
                         "requestedTtlSeconds":0
                     }"#,
@@ -6039,17 +6093,20 @@ async fn resolve_download_token_requires_active_object_store_provider() {
     .await
     .expect("storage object should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-download-no-provider", "user-download-no-provider")),
+            )
+            .header("access-token", common::access_token("tenant-download-no-provider", "user-download-no-provider"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-download-no-provider",
+                .body(Body::from(r#"{
                         "nodeId":"node-download-no-provider",
                         "requestedTtlSeconds":120
                     }"#,
@@ -6160,17 +6217,20 @@ async fn resolve_download_token_uses_active_s3_provider_configuration_when_prese
     .await
     .expect("seed storage object should succeed");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-001",
+                .body(Body::from(r#"{
                         "nodeId":"node-001",
                         "requestedTtlSeconds":120
                     }"#,
@@ -6199,8 +6259,8 @@ async fn resolve_download_token_uses_active_s3_provider_configuration_when_prese
             Request::builder()
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/download_tokens/{token}?tenantId=tenant-001"
-                ))
+            "/app/v3/api/drive/download_tokens/{token}"
+        ))
                 .body(Body::empty())
                 .expect("resolve request should be built"),
         )
@@ -6305,7 +6365,7 @@ async fn resolve_download_token_uses_aliyun_oss_provider_kind_with_s3_signer() {
     .await
     .expect("seed storage object should succeed");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .clone()
         .oneshot(
@@ -6313,9 +6373,7 @@ async fn resolve_download_token_uses_aliyun_oss_provider_kind_with_s3_signer() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-001",
+                .body(Body::from(r#"{
                         "nodeId":"node-oss-001",
                         "requestedTtlSeconds":120
                     }"#,
@@ -6344,8 +6402,8 @@ async fn resolve_download_token_uses_aliyun_oss_provider_kind_with_s3_signer() {
             Request::builder()
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/download_tokens/{token}?tenantId=tenant-001"
-                ))
+            "/app/v3/api/drive/download_tokens/{token}"
+        ))
                 .body(Body::empty())
                 .expect("resolve request should be built"),
         )
@@ -6468,7 +6526,7 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
         .await
         .expect("storage object should be seeded");
 
-        let app = build_router_with_pool(pool);
+        let app = common::test_router_with_pool(pool);
         let create_response = app
             .clone()
             .oneshot(
@@ -6478,8 +6536,7 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
                     .header("content-type", "application/json")
                     .body(Body::from(format!(
                         r#"{{
-                            "tenantId":"tenant-cloud-s3",
-                            "nodeId":"{node_id}",
+                                                        "nodeId":"{node_id}",
                             "requestedTtlSeconds":120
                         }}"#
                     )))
@@ -6509,10 +6566,15 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
         let resolve_response = app
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
+                )
+                .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
                     .method(Method::GET)
                     .uri(format!(
-                        "/app/v3/api/drive/download_tokens/{token}?tenantId=tenant-cloud-s3"
-                    ))
+            "/app/v3/api/drive/download_tokens/{token}"
+        ))
                     .body(Body::empty())
                     .expect("resolve request should be built"),
             )
@@ -6555,7 +6617,7 @@ async fn create_download_package_for_multiple_files_writes_zip_archive_and_retur
         .await
         .expect("download package fixture should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .clone()
         .oneshot(
@@ -6563,9 +6625,7 @@ async fn create_download_package_for_multiple_files_writes_zip_archive_and_retur
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-bulk",
+                .body(Body::from(r#"{
                         "nodeIds":["node-file-a","node-file-b"],
                         "packageName":"Selected documents",
                         "requestedTtlSeconds":180,
@@ -6738,16 +6798,19 @@ async fn create_download_package_reads_objects_from_their_bound_provider_when_bu
     .await
     .expect("storage object should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-shared-provider", "user-shared-provider")),
+            )
+            .header("access-token", common::access_token("tenant-shared-provider", "user-shared-provider"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-shared-provider",
+                .body(Body::from(r#"{
                         "nodeIds":["node-shared-bound"],
                         "packageName":"Provider-bound export",
                         "requestedTtlSeconds":180,
@@ -6808,12 +6871,17 @@ async fn list_archive_entries_reads_zip_contents_from_drive_storage() {
         .await
         .expect("archive fixture should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive")),
+            )
+            .header("access-token", common::access_token("tenant-archive", "user-archive"))
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/node-archive/archive_entries?tenantId=tenant-archive")
+                .uri("/app/v3/api/drive/nodes/node-archive/archive_entries")
                 .body(Body::empty())
                 .expect("archive entries request should be built"),
         )
@@ -6866,16 +6934,19 @@ async fn extract_archive_entries_creates_drive_nodes_and_writes_objects_to_defau
         .await
         .expect("archive fixture should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive")),
+            )
+            .header("access-token", common::access_token("tenant-archive", "user-archive"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-archive/archive_entries/extract")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-archive",
+                .body(Body::from(r#"{
                         "entryPaths":["docs/readme.txt"],
                         "operatorId":"user-archive"
                     }"#,
@@ -7016,16 +7087,19 @@ async fn extract_archive_entries_rejects_trashed_source_before_storage_side_effe
     .await
     .expect("archive node should be trashed");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive")),
+            )
+            .header("access-token", common::access_token("tenant-archive", "user-archive"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-archive/archive_entries/extract")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-archive",
+                .body(Body::from(r#"{
                         "entryPaths":["docs/readme.txt"],
                         "operatorId":"user-archive"
                     }"#,
@@ -7127,16 +7201,19 @@ async fn extract_archive_entries_rejects_any_target_conflict_before_partial_side
     .await
     .expect("existing conflicting logo file should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-archive", "user-archive")),
+            )
+            .header("access-token", common::access_token("tenant-archive", "user-archive"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-archive/archive_entries/extract")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-archive",
+                .body(Body::from(r#"{
                         "entryPaths":["docs/readme.txt","images/logo.png"],
                         "operatorId":"user-archive"
                     }"#,
@@ -7234,16 +7311,19 @@ async fn create_download_package_rejects_ttl_outside_contract_before_writing_pac
         .await
         .expect("download package fixture should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
+            )
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-bulk",
+                .body(Body::from(r#"{
                         "nodeIds":["node-file-a","node-file-b"],
                         "packageName":"Invalid TTL",
                         "requestedTtlSeconds":0,
@@ -7323,16 +7403,19 @@ async fn create_download_package_reads_files_from_multiple_storage_buckets() {
     .await
     .expect("file b should move to alternate bucket");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
+            )
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-bulk",
+                .body(Body::from(r#"{
                         "nodeIds":["node-file-a","node-file-b"],
                         "packageName":"Cross bucket export",
                         "operatorId":"user-bulk"
@@ -7389,16 +7472,19 @@ async fn create_download_package_rejects_empty_node_selection() {
         .await
         .expect("sqlite schema should be installed");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
+            )
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-bulk",
+                .body(Body::from(r#"{
                         "nodeIds":[],
                         "operatorId":"user-bulk"
                     }"#,
@@ -7444,16 +7530,14 @@ async fn create_download_package_rejects_trashed_selected_node_before_reading_ob
     .await
     .expect("selected node should be moved to trash");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-bulk",
+                .body(Body::from(r#"{
                         "nodeIds":["node-file-a"],
                         "packageName":"Trashed export",
                         "operatorId":"user-bulk"
@@ -7569,16 +7653,19 @@ async fn create_download_package_rejects_folder_expansion_above_file_limit_befor
         .expect("storage object should be seeded");
     }
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-package-limit", "user-package-limit")),
+            )
+            .header("access-token", common::access_token("tenant-package-limit", "user-package-limit"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-package-limit",
+                .body(Body::from(r#"{
                         "nodeIds":["folder-package-limit"],
                         "packageName":"Too Large",
                         "operatorId":"user-bulk"
@@ -7626,16 +7713,19 @@ async fn create_download_package_expands_selected_folder_descendants() {
         .await
         .expect("download package fixture should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
+            )
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_packages")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-bulk",
+                .body(Body::from(r#"{
                         "nodeIds":["node-folder"],
                         "packageName":"Folder export",
                         "operatorId":"user-bulk"
@@ -7720,12 +7810,17 @@ async fn resolve_download_package_treats_subsecond_remaining_ttl_as_expired() {
     .await
     .expect("download package should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-bulk", "user-bulk")),
+            )
+            .header("access-token", common::access_token("tenant-bulk", "user-bulk"))
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/download_packages/package-subsecond/download_url?tenantId=tenant-bulk")
+                .uri("/app/v3/api/drive/download_packages/package-subsecond/download_url")
                 .body(Body::empty())
                 .expect("resolve package request should be built"),
         )
@@ -7761,7 +7856,7 @@ async fn resolve_expired_download_token_returns_gone() {
         .await
         .expect("sqlite schema should be installed");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let now_epoch_ms = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("system time should be valid")
@@ -7771,10 +7866,15 @@ async fn resolve_expired_download_token_returns_gone() {
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-token-lifecycle", "user-token-lifecycle")),
+            )
+            .header("access-token", common::access_token("tenant-token-lifecycle", "user-token-lifecycle"))
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/download_tokens/{token}?tenantId=tenant-001"
-                ))
+            "/app/v3/api/drive/download_tokens/{token}"
+        ))
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -7848,7 +7948,7 @@ async fn resolve_download_token_rejects_node_after_it_is_moved_to_trash() {
     .await
     .expect("storage object should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_response = app
         .clone()
         .oneshot(
@@ -7856,9 +7956,7 @@ async fn resolve_download_token_rejects_node_after_it_is_moved_to_trash() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-token-lifecycle",
+                .body(Body::from(r#"{
                         "nodeId":"node-token-lifecycle",
                         "requestedTtlSeconds":120
                     }"#,
@@ -7894,10 +7992,15 @@ async fn resolve_download_token_rejects_node_after_it_is_moved_to_trash() {
     let resolve_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/download_tokens/{token}?tenantId=tenant-token-lifecycle"
-                ))
+            "/app/v3/api/drive/download_tokens/{token}"
+        ))
                 .body(Body::empty())
                 .expect("resolve token request should be built"),
         )
@@ -7976,14 +8079,14 @@ async fn resolve_download_token_treats_subsecond_remaining_ttl_as_expired() {
     .expect("storage object should be seeded");
 
     let token = build_download_token("node-token-subsecond", current_epoch_ms() + 500);
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/download_tokens/{token}?tenantId=tenant-token-subsecond"
-                ))
+            "/app/v3/api/drive/download_tokens/{token}"
+        ))
                 .body(Body::empty())
                 .expect("resolve token request should be built"),
         )
@@ -8328,11 +8431,17 @@ async fn fetch_paged_items(
     uri: &str,
     tenant: &str,
     user: &str,
-) -> (Vec<serde_json::Value>, Option<String>) {
+        "tenant-001",
+        "user-001") -> (Vec<serde_json::Value>, Option<String>) {
     let sanitized_uri = common::strip_client_tenant_id_from_uri(uri);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .header(
                     "authorization",
                     format!("Bearer {}", common::auth_token(tenant, user)),
@@ -8369,11 +8478,17 @@ async fn fetch_json(
     uri: &str,
     tenant: &str,
     user: &str,
-) -> serde_json::Value {
+        "tenant-001",
+        "user-001") -> serde_json::Value {
     let sanitized_uri = common::strip_client_tenant_id_from_uri(uri);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .header(
                     "authorization",
                     format!("Bearer {}", common::auth_token(tenant, user)),
@@ -8481,17 +8596,20 @@ async fn create_file_rejects_existing_node_id_before_storage_side_effects() {
     .await
     .expect("existing node should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-file-conflict", "user-file-conflict")),
+            )
+            .header("access-token", common::access_token("tenant-file-conflict", "user-file-conflict"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/files")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"file-conflict",
-                        "tenantId":"tenant-file-conflict",
                         "spaceId":"space-file-conflict",
                         "nodeName":"different.pdf",
                         "operatorId":"user-file",
@@ -8602,17 +8720,20 @@ async fn create_file_rejects_past_expiration_before_storage_side_effects() {
     .await
     .expect("storage provider binding should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-file-expired", "user-file-expired")),
+            )
+            .header("access-token", common::access_token("tenant-file-expired", "user-file-expired"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/files")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"file-expired",
-                        "tenantId":"tenant-file-expired",
                         "spaceId":"space-file-expired",
                         "nodeName":"expired.pdf",
                         "operatorId":"user-file",
@@ -8728,11 +8849,10 @@ async fn create_file_route_is_idempotent_without_repeating_storage_or_changes() 
     .await
     .expect("storage provider binding should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let body = r#"{
         "id":"file-idem",
-        "tenantId":"tenant-file-idem",
-        "spaceId":"space-file-idem",
+                "spaceId":"space-file-idem",
         "nodeName":"idempotent.pdf",
         "operatorId":"user-file-idem",
         "uploadSessionId":"upload-file-idem",
@@ -8744,6 +8864,11 @@ async fn create_file_route_is_idempotent_without_repeating_storage_or_changes() 
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-file-idem", "user-file-idem")),
+            )
+            .header("access-token", common::access_token("tenant-file-idem", "user-file-idem"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/files")
                 .header("content-type", "application/json")
@@ -8874,18 +8999,21 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
     .await
     .expect("storage provider binding should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_file_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-pro", "user-pro")),
+            )
+            .header("access-token", common::access_token("tenant-pro", "user-pro"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/files")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"file-pro",
-                        "tenantId":"tenant-pro",
                         "spaceId":"space-pro",
                         "nodeName":"proposal.pdf",
                         "operatorId":"user-pro",
@@ -8924,7 +9052,7 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/upload_sessions/upload-pro?tenantId=tenant-pro")
+                .uri("/app/v3/api/drive/upload_sessions/upload-pro")
                 .body(Body::empty())
                 .expect("get upload session request should be built"),
         )
@@ -8955,9 +9083,7 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/file-pro/trash")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-pro",
+                .body(Body::from(r#"{
                         "operatorId":"user-pro"
                     }"#,
                 ))
@@ -8974,9 +9100,7 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/trash/empty")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-pro",
+                .body(Body::from(r#"{
                         "spaceId":"space-pro",
                         "operatorId":"user-pro"
                     }"#,
@@ -9010,7 +9134,7 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?tenantId=tenant-pro&spaceId=space-pro")
+                .uri("/app/v3/api/drive/changes?spaceId=space-pro")
                 .body(Body::empty())
                 .expect("changes request should be built"),
         )
@@ -9068,19 +9192,23 @@ async fn empty_trash_rejects_missing_or_deleted_explicit_space_before_deleting_n
     .await
     .expect("trashed node should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     for space_id in ["space-trash-missing", "space-trash-deleted"] {
         let response = app
             .clone()
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-core", "user-core")),
+                )
+                .header("access-token", common::access_token("tenant-core", "user-core"))
                     .method(Method::POST)
                     .uri("/app/v3/api/drive/trash/empty")
                     .header("content-type", "application/json")
                     .body(Body::from(format!(
                         r#"{{
-                            "tenantId":"tenant-trash-filter",
-                            "spaceId":"{space_id}",
+                                                        "spaceId":"{space_id}",
                             "operatorId":"user-trash"
                         }}"#
                     )))
@@ -9137,16 +9265,14 @@ async fn create_folder_assigns_server_id_when_client_id_is_omitted() {
     .await
     .expect("space should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let create_folder_response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folders")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-server-id",
+                .body(Body::from(r#"{
                         "spaceId":"space-server-id",
                         "nodeName":"Server Assigned",
                         "operatorId":"user-server-id"
@@ -9195,7 +9321,7 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
     .await
     .expect("space should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_folder_response = app
         .clone()
         .oneshot(
@@ -9203,10 +9329,8 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folders")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"node-core-folder",
-                        "tenantId":"tenant-core",
                         "spaceId":"space-core",
                         "nodeName":"Project Docs",
                         "operatorId":"user-core"
@@ -9231,7 +9355,7 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces/space-core/nodes?tenantId=tenant-core")
+                .uri("/app/v3/api/drive/spaces/space-core/nodes")
                 .body(Body::empty())
                 .expect("list nodes request should be built"),
         )
@@ -9253,10 +9377,8 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-core-folder/permissions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"perm-core",
-                        "tenantId":"tenant-core",
                         "subjectType":"user",
                         "subjectId":"user-reviewer",
                         "role":"reader",
@@ -9276,10 +9398,8 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-core-folder/permissions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"perm-core-duplicate",
-                        "tenantId":"tenant-core",
                         "subjectType":"user",
                         "subjectId":"user-reviewer",
                         "role":"writer",
@@ -9299,10 +9419,8 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-core-folder/share_links")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"share-core",
-                        "tenantId":"tenant-core",
                         "token":"share-token-core",
                         "role":"reader",
                         "downloadLimit":3,
@@ -9331,7 +9449,7 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/search?tenantId=tenant-core&q=Project")
+                .uri("/app/v3/api/drive/search?q=Project")
                 .body(Body::empty())
                 .expect("search request should be built"),
         )
@@ -9350,7 +9468,7 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?tenantId=tenant-core&spaceId=space-core")
+                .uri("/app/v3/api/drive/changes?spaceId=space-core")
                 .body(Body::empty())
                 .expect("changes request should be built"),
         )
@@ -9406,17 +9524,20 @@ async fn app_dr_drive_node_share_link_create_rejects_negative_download_limit_bef
     .await
     .expect("node should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-share-expired-update", "user-share-expired-update")),
+            )
+            .header("access-token", common::access_token("tenant-share-expired-update", "user-share-expired-update"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-share-validation/share_links")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"share-negative-limit",
-                        "tenantId":"tenant-share-validation",
                         "token":"share-token-negative-limit",
                         "role":"reader",
                         "downloadLimit":-1,
@@ -9477,17 +9598,15 @@ async fn app_dr_drive_node_share_link_create_rejects_past_expiration_before_data
     .await
     .expect("node should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-share-expired-create/share_links")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"share-expired-create",
-                        "tenantId":"tenant-share-expired-create",
                         "token":"share-token-expired-create",
                         "role":"reader",
                         "expiresAtEpochMs":1,
@@ -9561,16 +9680,14 @@ async fn app_dr_drive_node_share_link_update_rejects_past_expiration_before_data
     .await
     .expect("share link should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/share_links/share-expired-update")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-share-expired-update",
+                .body(Body::from(r#"{
                         "expiresAtEpochMs":1,
                         "operatorId":"user-owner"
                     }"#,
@@ -9630,7 +9747,7 @@ async fn app_dr_drive_node_permission_create_rejects_invalid_dictionaries_before
     .await
     .expect("node should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let invalid_subject_response = app
         .clone()
         .oneshot(
@@ -9638,10 +9755,8 @@ async fn app_dr_drive_node_permission_create_rejects_invalid_dictionaries_before
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-permission-validation/permissions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"perm-invalid-subject",
-                        "tenantId":"tenant-permission-validation",
                         "subjectType":"workspace",
                         "subjectId":"workspace-001",
                         "role":"reader",
@@ -9670,10 +9785,8 @@ async fn app_dr_drive_node_permission_create_rejects_invalid_dictionaries_before
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-permission-validation/permissions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"perm-invalid-role",
-                        "tenantId":"tenant-permission-validation",
                         "subjectType":"user",
                         "subjectId":"user-reviewer",
                         "role":"viewer",
@@ -9751,13 +9864,13 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
     .await
     .expect("storage object should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let get_response = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces/space-resource?tenantId=tenant-resource")
+                .uri("/app/v3/api/drive/spaces/space-resource")
                 .body(Body::empty())
                 .expect("get space request should be built"),
         )
@@ -9781,9 +9894,7 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/spaces/space-resource")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-resource",
+                .body(Body::from(r#"{
                         "displayName":"Resource Space Updated",
                         "operatorId":"user-admin"
                     }"#,
@@ -9810,7 +9921,7 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/app/v3/api/drive/spaces/space-resource?tenantId=tenant-resource&operatorId=user-admin")
+                .uri("/app/v3/api/drive/spaces/space-resource?operatorId=user-admin")
                 .body(Body::empty())
                 .expect("delete space request should be built"),
         )
@@ -9836,7 +9947,7 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces?tenantId=tenant-resource")
+                .uri("/app/v3/api/drive/spaces")
                 .body(Body::empty())
                 .expect("list spaces request should be built"),
         )
@@ -9856,7 +9967,7 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces/space-resource?tenantId=tenant-resource")
+                .uri("/app/v3/api/drive/spaces/space-resource")
                 .body(Body::empty())
                 .expect("get deleted space request should be built"),
         )
@@ -9883,7 +9994,7 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?tenantId=tenant-resource&spaceId=space-resource")
+                .uri("/app/v3/api/drive/changes?spaceId=space-resource")
                 .body(Body::empty())
                 .expect("changes request should be built"),
         )
@@ -9990,17 +10101,20 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .expect("storage object version should be seeded");
     }
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let permission_update_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-gov")),
+            )
+            .header("access-token", common::access_token("tenant-gov", "user-gov"))
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-gov/permissions/perm-gov")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-gov",
+                .body(Body::from(r#"{
                         "role":"writer",
                         "operatorId":"user-owner"
                     }"#,
@@ -10024,7 +10138,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/node-gov/permissions/perm-gov?tenantId=tenant-gov")
+                .uri("/app/v3/api/drive/nodes/node-gov/permissions/perm-gov")
                 .body(Body::empty())
                 .expect("permission detail request should be built"),
         )
@@ -10048,7 +10162,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/node-gov/share_links?tenantId=tenant-gov")
+                .uri("/app/v3/api/drive/nodes/node-gov/share_links")
                 .body(Body::empty())
                 .expect("share link list request should be built"),
         )
@@ -10085,9 +10199,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/share_links/share-gov")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-gov",
+                .body(Body::from(r#"{
                         "role":"commenter",
                         "expiresAtEpochMs":null,
                         "downloadLimit":9,
@@ -10123,7 +10235,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/share_links/share-gov?tenantId=tenant-gov")
+                .uri("/app/v3/api/drive/share_links/share-gov")
                 .body(Body::empty())
                 .expect("share link detail request should be built"),
         )
@@ -10152,7 +10264,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/app/v3/api/drive/share_links/share-gov?tenantId=tenant-gov&operatorId=user-owner")
+                .uri("/app/v3/api/drive/share_links/share-gov?operatorId=user-owner")
                 .body(Body::empty())
                 .expect("share link revoke request should be built"),
         )
@@ -10179,7 +10291,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/node-gov/share_links?tenantId=tenant-gov")
+                .uri("/app/v3/api/drive/nodes/node-gov/share_links")
                 .body(Body::empty())
                 .expect("share link list after revoke request should be built"),
         )
@@ -10204,8 +10316,13 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-gov", "user-gov")),
+            )
+            .header("access-token", common::access_token("tenant-gov", "user-gov"))
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/node-gov/versions/version-gov-1?tenantId=tenant-gov")
+                .uri("/app/v3/api/drive/nodes/node-gov/versions/version-gov-1")
                 .body(Body::empty())
                 .expect("version detail request should be built"),
         )
@@ -10227,7 +10344,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-gov/versions/version-gov-1?tenantId=tenant-gov&operatorId=user-owner",
+                    "/app/v3/api/drive/nodes/node-gov/versions/version-gov-1?operatorId=user-owner",
                 )
                 .body(Body::empty())
                 .expect("version delete request should be built"),
@@ -10259,7 +10376,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-gov/versions/version-gov-2?tenantId=tenant-gov&operatorId=user-owner",
+                    "/app/v3/api/drive/nodes/node-gov/versions/version-gov-2?operatorId=user-owner",
                 )
                 .body(Body::empty())
                 .expect("last version delete request should be built"),
@@ -10272,7 +10389,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?tenantId=tenant-gov&spaceId=space-gov")
+                .uri("/app/v3/api/drive/changes?spaceId=space-gov")
                 .body(Body::empty())
                 .expect("changes request should be built"),
         )
@@ -10335,7 +10452,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
     .await
     .expect("node should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     for (id, content) in [
         ("comment-one", "Please review the first section."),
         ("comment-two", "Resolve the open question."),
@@ -10344,14 +10461,18 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             .clone()
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-comments", "user-comments")),
+                )
+                .header("access-token", common::access_token("tenant-comments", "user-comments"))
                     .method(Method::POST)
                     .uri("/app/v3/api/drive/nodes/node-comments/comments")
                     .header("content-type", "application/json")
                     .body(Body::from(format!(
                         r#"{{
                             "id":"{id}",
-                            "tenantId":"tenant-comments",
-                            "content":"{content}",
+                                                        "content":"{content}",
                             "anchor":"$.body[0]",
                             "operatorId":"user-reviewer"
                         }}"#
@@ -10369,7 +10490,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-comments/comments?tenantId=tenant-comments&pageSize=1",
+                    "/app/v3/api/drive/nodes/node-comments/comments?pageSize=1",
                 )
                 .body(Body::empty())
                 .expect("comment list request should be built"),
@@ -10398,8 +10519,8 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             Request::builder()
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/nodes/node-comments/comments?tenantId=tenant-comments&pageSize=1&pageToken={next_page_token}"
-                ))
+            "/app/v3/api/drive/nodes/node-comments/comments?pageSize=1&pageToken={next_page_token}"
+        ))
                 .body(Body::empty())
                 .expect("comment second page request should be built"),
         )
@@ -10424,7 +10545,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one?tenantId=tenant-comments",
+                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one",
                 )
                 .body(Body::empty())
                 .expect("comment detail request should be built"),
@@ -10451,9 +10572,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-comments/comments/comment-one")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-comments",
+                .body(Body::from(r#"{
                         "content":"Reviewed and resolved.",
                         "resolved":true,
                         "operatorId":"user-reviewer"
@@ -10491,8 +10610,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
                     .body(Body::from(format!(
                         r#"{{
                             "id":"{id}",
-                            "tenantId":"tenant-comments",
-                            "content":"{content}",
+                                                        "content":"{content}",
                             "operatorId":"user-collaborator"
                         }}"#
                     )))
@@ -10509,7 +10627,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies?tenantId=tenant-comments&pageSize=1",
+                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies?pageSize=1",
                 )
                 .body(Body::empty())
                 .expect("reply list request should be built"),
@@ -10539,7 +10657,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies/reply-one?tenantId=tenant-comments",
+                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies/reply-one",
                 )
                 .body(Body::empty())
                 .expect("reply detail request should be built"),
@@ -10565,9 +10683,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies/reply-one")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-comments",
+                .body(Body::from(r#"{
                         "content":"I handled this.",
                         "operatorId":"user-collaborator"
                     }"#,
@@ -10595,7 +10711,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies/reply-one?tenantId=tenant-comments&operatorId=user-collaborator",
+                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies/reply-one?operatorId=user-collaborator",
                 )
                 .body(Body::empty())
                 .expect("delete reply request should be built"),
@@ -10617,7 +10733,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies/reply-one?tenantId=tenant-comments",
+                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies/reply-one",
                 )
                 .body(Body::empty())
                 .expect("deleted reply detail request should be built"),
@@ -10632,7 +10748,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one?tenantId=tenant-comments&operatorId=user-reviewer",
+                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one?operatorId=user-reviewer",
                 )
                 .body(Body::empty())
                 .expect("delete comment request should be built"),
@@ -10654,7 +10770,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one?tenantId=tenant-comments",
+                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one",
                 )
                 .body(Body::empty())
                 .expect("deleted comment detail request should be built"),
@@ -10667,7 +10783,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?tenantId=tenant-comments&spaceId=space-comments")
+                .uri("/app/v3/api/drive/changes?spaceId=space-comments")
                 .body(Body::empty())
                 .expect("changes request should be built"),
         )
@@ -10737,14 +10853,19 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
         .expect("change row should be seeded");
     }
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let start_token_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/changes/start_page_token?tenantId=tenant-changes&spaceId=space-changes",
+                    "/app/v3/api/drive/changes/start_page_token?spaceId=space-changes",
                 )
                 .body(Body::empty())
                 .expect("start page token request should be built"),
@@ -10766,7 +10887,7 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/changes?tenantId=tenant-changes&spaceId=space-changes&pageSize=1",
+                    "/app/v3/api/drive/changes?spaceId=space-changes&pageSize=1",
                 )
                 .body(Body::empty())
                 .expect("changes first page request should be built"),
@@ -10794,7 +10915,7 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/changes?tenantId=tenant-changes&spaceId=space-changes&pageSize=2&pageToken=1",
+                    "/app/v3/api/drive/changes?spaceId=space-changes&pageSize=2&pageToken=1",
                 )
                 .body(Body::empty())
                 .expect("changes second page request should be built"),
@@ -10854,17 +10975,22 @@ async fn app_drive_changes_validate_explicit_space_filter() {
     .await
     .expect("deleted space history should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
 
     for uri in [
-        "/app/v3/api/drive/changes?tenantId=tenant-changes-filter&spaceId=space-changes-missing",
-        "/app/v3/api/drive/changes/start_page_token?tenantId=tenant-changes-filter&spaceId=space-changes-missing",
-        "/app/v3/api/drive/changes/start_page_token?tenantId=tenant-changes-filter&spaceId=space-changes-deleted",
+        "/app/v3/api/drive/changes?spaceId=space-changes-missing",
+        "/app/v3/api/drive/changes/start_page_token?spaceId=space-changes-missing",
+        "/app/v3/api/drive/changes/start_page_token?spaceId=space-changes-deleted",
     ] {
         let response = app
             .clone()
             .oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                )
+                .header("access-token", common::access_token("tenant-001", "user-001"))
                     .method(Method::GET)
                     .uri(uri)
                     .body(Body::empty())
@@ -10886,7 +11012,7 @@ async fn app_drive_changes_validate_explicit_space_filter() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?tenantId=tenant-changes-filter&spaceId=space-changes-deleted")
+                .uri("/app/v3/api/drive/changes?spaceId=space-changes-deleted")
                 .body(Body::empty())
                 .expect("deleted changes request should be built"),
         )
@@ -10930,12 +11056,17 @@ async fn app_drive_changes_rejects_page_size_outside_contract() {
     .await
     .expect("space should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-change-page-size", "user-change-page-size")),
+            )
+            .header("access-token", common::access_token("tenant-change-page-size", "user-change-page-size"))
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?tenantId=tenant-change-page-size&spaceId=space-change-page-size&pageSize=0")
+                .uri("/app/v3/api/drive/changes?spaceId=space-change-page-size&pageSize=0")
                 .body(Body::empty())
                 .expect("changes request should be built"),
         )
@@ -10981,7 +11112,7 @@ async fn app_drive_change_feed_allocates_unique_sequences_for_concurrent_writes(
     .await
     .expect("space should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let mut tasks = Vec::new();
     for index in 0..12 {
         let app = app.clone();
@@ -10989,14 +11120,18 @@ async fn app_drive_change_feed_allocates_unique_sequences_for_concurrent_writes(
             let body = format!(
                 r#"{{
                     "id":"folder-change-{index}",
-                    "tenantId":"tenant-change-concurrent",
-                    "spaceId":"space-change-concurrent",
+                                        "spaceId":"space-change-concurrent",
                     "nodeName":"Folder {index}",
                     "operatorId":"user-change"
                 }}"#
             );
             app.oneshot(
                 Request::builder()
+                .header(
+                    "authorization",
+                    format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+                )
+                .header("access-token", common::access_token("tenant-001", "user-001"))
                     .method(Method::POST)
                     .uri("/app/v3/api/drive/nodes/folders")
                     .header("content-type", "application/json")
@@ -11085,13 +11220,18 @@ async fn app_dr_drive_node_path_route_returns_ordered_breadcrumbs() {
         .expect("path node should be seeded");
     }
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let path_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-path", "user-path")),
+            )
+            .header("access-token", common::access_token("tenant-path", "user-path"))
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/node-leaf-file/path?tenantId=tenant-path")
+                .uri("/app/v3/api/drive/nodes/node-leaf-file/path")
                 .body(Body::empty())
                 .expect("node path request should be built"),
         )
@@ -11136,8 +11276,13 @@ async fn app_dr_drive_node_path_route_returns_ordered_breadcrumbs() {
     let missing_path_response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-views", "user-views")),
+            )
+            .header("access-token", common::access_token("tenant-views", "user-views"))
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/missing-node/path?tenantId=tenant-path")
+                .uri("/app/v3/api/drive/nodes/missing-node/path")
                 .body(Body::empty())
                 .expect("missing node path request should be built"),
         )
@@ -11238,14 +11383,14 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
     .await
     .expect("favorite should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
 
     let trash_response = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/trash?tenantId=tenant-views&spaceId=space-views")
+                .uri("/app/v3/api/drive/trash?spaceId=space-views")
                 .body(Body::empty())
                 .expect("trash list request should be built"),
         )
@@ -11269,7 +11414,7 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/recent?tenantId=tenant-views&spaceId=space-views")
+                .uri("/app/v3/api/drive/recent?spaceId=space-views")
                 .body(Body::empty())
                 .expect("recent list request should be built"),
         )
@@ -11301,8 +11446,13 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-views", "user-reviewer")),
+            )
+            .header("access-token", common::access_token("tenant-views", "user-reviewer"))
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/shared_with_me?tenantId=tenant-views&subjectType=user&subjectId=user-reviewer")
+                .uri("/app/v3/api/drive/shared_with_me?subjectType=user&subjectId=user-reviewer")
                 .body(Body::empty())
                 .expect("shared with me request should be built"),
         )
@@ -11326,7 +11476,7 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/favorites?tenantId=tenant-views&subjectType=user&subjectId=user-reviewer")
+                .uri("/app/v3/api/drive/favorites?subjectType=user&subjectId=user-reviewer")
                 .body(Body::empty())
                 .expect("favorites request should be built"),
         )
@@ -11352,9 +11502,7 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-active/favorite")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-views",
+                .body(Body::from(r#"{
                         "subjectType":"user",
                         "subjectId":"user-reviewer",
                         "operatorId":"user-reviewer"
@@ -11378,7 +11526,7 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/app/v3/api/drive/nodes/node-active/favorite?tenantId=tenant-views&subjectType=user&subjectId=user-reviewer&operatorId=user-reviewer")
+                .uri("/app/v3/api/drive/nodes/node-active/favorite?subjectType=user&subjectId=user-reviewer&operatorId=user-reviewer")
                 .body(Body::empty())
                 .expect("unset favorite request should be built"),
         )
@@ -11411,7 +11559,7 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?tenantId=tenant-views&spaceId=space-views")
+                .uri("/app/v3/api/drive/changes?spaceId=space-views")
                 .body(Body::empty())
                 .expect("changes request should be built"),
         )
@@ -11459,25 +11607,30 @@ async fn app_drive_standard_views_validate_explicit_space_filter() {
     .await
     .expect("deleted space should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     for space_id in ["space-views-missing", "space-views-deleted"] {
         for uri in [
-            format!("/app/v3/api/drive/trash?tenantId=tenant-view-filter&spaceId={space_id}"),
-            format!("/app/v3/api/drive/recent?tenantId=tenant-view-filter&spaceId={space_id}"),
+            format!("/app/v3/api/drive/trash?spaceId={space_id}"),
+            format!("/app/v3/api/drive/recent?spaceId={space_id}"),
             format!(
-                "/app/v3/api/drive/search?tenantId=tenant-view-filter&spaceId={space_id}&q=doc"
+                "/app/v3/api/drive/search?spaceId={space_id}&q=doc"
             ),
             format!(
-                "/app/v3/api/drive/shared_with_me?tenantId=tenant-view-filter&subjectType=user&subjectId=user-reviewer&spaceId={space_id}"
+                "/app/v3/api/drive/shared_with_me?subjectType=user&subjectId=user-reviewer&spaceId={space_id}"
             ),
             format!(
-                "/app/v3/api/drive/favorites?tenantId=tenant-view-filter&subjectType=user&subjectId=user-reviewer&spaceId={space_id}"
+                "/app/v3/api/drive/favorites?subjectType=user&subjectId=user-reviewer&spaceId={space_id}"
             ),
         ] {
             let response = app
                 .clone()
                 .oneshot(
                     Request::builder()
+                    .header(
+                        "authorization",
+                        format!("Bearer {}", common::auth_token("tenant-list-page-size", "user-list-page-size")),
+                    )
+                    .header("access-token", common::access_token("tenant-list-page-size", "user-list-page-size"))
                         .method(Method::GET)
                         .uri(uri.as_str())
                         .body(Body::empty())
@@ -11593,41 +11746,46 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
         .expect("version should be seeded");
     }
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let (first_nodes, next_nodes_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/spaces/space-page/nodes?tenantId=tenant-page&pageSize=1",
-    )
+        "/app/v3/api/drive/spaces/space-page/nodes?pageSize=1",
+        "tenant-page",
+        "user-page")
     .await;
     assert_eq!(first_nodes[0]["id"].as_str(), Some("node-page-a"));
     let next_nodes_token = next_nodes_token.expect("nodes first page should have nextPageToken");
     let (second_nodes, _) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/spaces/space-page/nodes?tenantId=tenant-page&pageSize=1&pageToken={next_nodes_token}"
+            "/app/v3/api/drive/spaces/space-page/nodes?pageSize=1&pageToken={next_nodes_token}"
         ),
-    )
+        "tenant-page",
+        "user-page")
     .await;
     assert_eq!(second_nodes[0]["id"].as_str(), Some("node-page-b"));
 
     let (first_recent, next_recent_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/recent?tenantId=tenant-page&pageSize=1",
-    )
+        "/app/v3/api/drive/recent?pageSize=1",
+        "tenant-page",
+        "user-page")
     .await;
     assert_eq!(first_recent[0]["id"].as_str(), Some("node-page-b"));
     let next_recent_token = next_recent_token.expect("recent first page should have nextPageToken");
     let (second_recent, _) = fetch_paged_items(
         app.clone(),
-        &format!("/app/v3/api/drive/recent?tenantId=tenant-page&pageSize=1&pageToken={next_recent_token}"),
-    )
+        &format!("/app/v3/api/drive/recent?pageSize=1&pageToken={next_recent_token}"),
+        "tenant-page",
+        "user-page")
     .await;
     assert_eq!(second_recent[0]["id"].as_str(), Some("node-page-a"));
 
     let (first_permissions, next_permissions_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-page-a/permissions?tenantId=tenant-page&pageSize=1",
-    )
+        "/app/v3/api/drive/nodes/node-page-a/permissions?pageSize=1",
+        "tenant-page",
+        "user-page")
     .await;
     assert_eq!(
         first_permissions[0]["id"].as_str(),
@@ -11638,9 +11796,10 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let (second_permissions, _) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/nodes/node-page-a/permissions?tenantId=tenant-page&pageSize=1&pageToken={next_permissions_token}"
+            "/app/v3/api/drive/nodes/node-page-a/permissions?pageSize=1&pageToken={next_permissions_token}"
         ),
-    )
+        "tenant-page",
+        "user-page")
     .await;
     assert_eq!(
         second_permissions[0]["id"].as_str(),
@@ -11649,8 +11808,9 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
 
     let (first_share_links, next_share_links_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-page-a/share_links?tenantId=tenant-page&pageSize=1",
-    )
+        "/app/v3/api/drive/nodes/node-page-a/share_links?pageSize=1",
+        "tenant-page",
+        "user-page")
     .await;
     assert_eq!(first_share_links[0]["id"].as_str(), Some("share-page-b"));
     let next_share_links_token =
@@ -11658,16 +11818,18 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let (second_share_links, _) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/nodes/node-page-a/share_links?tenantId=tenant-page&pageSize=1&pageToken={next_share_links_token}"
+            "/app/v3/api/drive/nodes/node-page-a/share_links?pageSize=1&pageToken={next_share_links_token}"
         ),
-    )
+        "tenant-page",
+        "user-page")
     .await;
     assert_eq!(second_share_links[0]["id"].as_str(), Some("share-page-a"));
 
     let (first_versions, next_versions_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-page-a/versions?tenantId=tenant-page&pageSize=1",
-    )
+        "/app/v3/api/drive/nodes/node-page-a/versions?pageSize=1",
+        "tenant-page",
+        "user-page")
     .await;
     assert_eq!(first_versions[0]["id"].as_str(), Some("version-page-2"));
     let next_versions_token =
@@ -11675,9 +11837,10 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let (second_versions, _) = fetch_paged_items(
         app,
         &format!(
-            "/app/v3/api/drive/nodes/node-page-a/versions?tenantId=tenant-page&pageSize=1&pageToken={next_versions_token}"
+            "/app/v3/api/drive/nodes/node-page-a/versions?pageSize=1&pageToken={next_versions_token}"
         ),
-    )
+        "tenant-page",
+        "user-page")
     .await;
     assert_eq!(second_versions[0]["id"].as_str(), Some("version-page-1"));
 }
@@ -11704,12 +11867,12 @@ async fn app_drive_list_routes_reject_page_size_outside_contract() {
     .await
     .expect("space should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces/space-list-page-size/nodes?tenantId=tenant-list-page-size&pageSize=0")
+                .uri("/app/v3/api/drive/spaces/space-list-page-size/nodes?pageSize=0")
                 .body(Body::empty())
                 .expect("nodes list request should be built"),
         )
@@ -11822,11 +11985,12 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
         .expect("permission should be seeded");
     }
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?tenantId=tenant-effective-perm&pageSize=2",
-    )
+        "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?pageSize=2",
+        "tenant-effective-perm",
+        "user-effective-perm")
     .await;
 
     assert_eq!(first_items.len(), 2);
@@ -11864,9 +12028,10 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
     let (second_items, final_token) = fetch_paged_items(
         app,
         &format!(
-            "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?tenantId=tenant-effective-perm&pageSize=2&pageToken={next_token}"
+            "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?pageSize=2&pageToken={next_token}"
         ),
-    )
+        "tenant-effective-perm",
+        "user-effective-perm")
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(second_items[0]["id"].as_str(), Some("perm-effective-root"));
@@ -11954,11 +12119,12 @@ async fn app_drive_effective_permissions_prefer_direct_then_nearest_acl_for_same
         .expect("permission should be seeded");
     }
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let (items, next_token) = fetch_paged_items(
         app,
-        "/app/v3/api/drive/nodes/node-override-file/permissions/effective?tenantId=tenant-effective-override",
-    )
+        "/app/v3/api/drive/nodes/node-override-file/permissions/effective",
+        "tenant-effective-override",
+        "user-effective-override")
     .await;
 
     assert_eq!(
@@ -12050,11 +12216,12 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
         .expect("permission should be seeded");
     }
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let direct = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?tenantId=tenant-capability&subjectType=user&subjectId=user-direct-commenter",
-    )
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-direct-commenter",
+        "tenant-capability",
+        "user-direct-commenter")
     .await;
     assert_eq!(direct["role"].as_str(), Some("commenter"));
     assert_eq!(direct["source"].as_str(), Some("permission"));
@@ -12068,8 +12235,9 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
 
     let inherited = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?tenantId=tenant-capability&subjectType=user&subjectId=user-inherited-writer",
-    )
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-inherited-writer",
+        "tenant-capability",
+        "user-inherited-writer")
     .await;
     assert_eq!(inherited["role"].as_str(), Some("writer"));
     assert_eq!(inherited["source"].as_str(), Some("permission"));
@@ -12085,8 +12253,9 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
 
     let owner = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?tenantId=tenant-capability&subjectType=user&subjectId=user-owner",
-    )
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-owner",
+        "tenant-capability",
+        "user-owner")
     .await;
     assert_eq!(owner["role"].as_str(), Some("owner"));
     assert_eq!(owner["source"].as_str(), Some("space_owner"));
@@ -12095,8 +12264,9 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
 
     let missing = fetch_json(
         app,
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?tenantId=tenant-capability&subjectType=user&subjectId=user-missing",
-    )
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-missing",
+        "tenant-capability",
+        "user-missing")
     .await;
     assert_eq!(missing["role"].as_str(), Some("none"));
     assert_eq!(missing["source"].as_str(), Some("none"));
@@ -12169,11 +12339,12 @@ async fn app_dr_drive_node_capabilities_support_trashed_nodes_with_restore_only_
     .await
     .expect("writer permission should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let writer = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?tenantId=tenant-cap-trash&subjectType=user&subjectId=user-writer",
-    )
+        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?subjectType=user&subjectId=user-writer",
+        "tenant-cap-trash",
+        "user-writer")
     .await;
     assert_eq!(writer["role"].as_str(), Some("writer"));
     assert_eq!(writer["source"].as_str(), Some("permission"));
@@ -12196,8 +12367,9 @@ async fn app_dr_drive_node_capabilities_support_trashed_nodes_with_restore_only_
 
     let owner = fetch_json(
         app,
-        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?tenantId=tenant-cap-trash&subjectType=user&subjectId=user-owner",
-    )
+        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?subjectType=user&subjectId=user-owner",
+        "tenant-cap-trash",
+        "user-owner")
     .await;
     assert_eq!(owner["role"].as_str(), Some("owner"));
     assert_eq!(owner["source"].as_str(), Some("space_owner"));
@@ -12241,17 +12413,20 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
     .await
     .expect("node should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let first_set = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-trashed-write", "user-trashed-write")),
+            )
+            .header("access-token", common::access_token("tenant-trashed-write", "user-trashed-write"))
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-property/properties/customerId")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-property",
+                .body(Body::from(r#"{
                         "value":"cust-001",
                         "visibility":"private",
                         "operatorId":"user-owner"
@@ -12280,9 +12455,7 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-property/properties/orderId")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-property",
+                .body(Body::from(r#"{
                         "value":"order-001",
                         "visibility":"app_public",
                         "operatorId":"user-owner"
@@ -12301,9 +12474,7 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-property/properties/customerId")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-property",
+                .body(Body::from(r#"{
                         "value":"cust-002",
                         "visibility":"private",
                         "operatorId":"user-owner"
@@ -12325,8 +12496,9 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
 
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-property/properties?tenantId=tenant-property&pageSize=1",
-    )
+        "/app/v3/api/drive/nodes/node-property/properties?pageSize=1",
+        "tenant-property",
+        "user-property")
     .await;
     assert_eq!(first_items.len(), 1);
     assert_eq!(first_items[0]["propertyKey"].as_str(), Some("customerId"));
@@ -12334,9 +12506,10 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
     let (second_items, final_token) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/nodes/node-property/properties?tenantId=tenant-property&pageSize=1&pageToken={next_token}"
+            "/app/v3/api/drive/nodes/node-property/properties?pageSize=1&pageToken={next_token}"
         ),
-    )
+        "tenant-property",
+        "user-property")
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(second_items[0]["propertyKey"].as_str(), Some("orderId"));
@@ -12344,8 +12517,9 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
 
     let private_only = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-property/properties?tenantId=tenant-property&visibility=private",
-    )
+        "/app/v3/api/drive/nodes/node-property/properties?visibility=private",
+        "tenant-property",
+        "user-property")
     .await
     .0;
     assert_eq!(private_only.len(), 1);
@@ -12356,7 +12530,7 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/app/v3/api/drive/nodes/node-property/properties/customerId?tenantId=tenant-property&operatorId=user-owner")
+                .uri("/app/v3/api/drive/nodes/node-property/properties/customerId?operatorId=user-owner")
                 .body(Body::empty())
                 .expect("delete property request should be built"),
         )
@@ -12373,8 +12547,9 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
 
     let remaining = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-property/properties?tenantId=tenant-property",
-    )
+        "/app/v3/api/drive/nodes/node-property/properties",
+        "tenant-property",
+        "user-property")
     .await
     .0;
     assert_eq!(remaining.len(), 1);
@@ -12382,8 +12557,9 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
 
     let changes = fetch_paged_items(
         app,
-        "/app/v3/api/drive/changes?tenantId=tenant-property&spaceId=space-property",
-    )
+        "/app/v3/api/drive/changes?spaceId=space-property",
+        "tenant-property",
+        "user-property")
     .await
     .0;
     let events = changes
@@ -12445,7 +12621,7 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
     .await
     .expect("label should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let mut observed = Vec::<(&'static str, StatusCode)>::new();
     for (name, request) in [
         (
@@ -12454,9 +12630,7 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/properties/customerId")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-trashed-write",
+                .body(Body::from(r#"{
                         "value":"cust-trashed",
                         "operatorId":"user-owner"
                     }"#,
@@ -12469,9 +12643,7 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/labels/label-trashed-write")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-trashed-write",
+                .body(Body::from(r#"{
                         "operatorId":"user-owner"
                     }"#,
                 ))
@@ -12483,9 +12655,7 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/favorite")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-trashed-write",
+                .body(Body::from(r#"{
                         "subjectType":"user",
                         "subjectId":"user-owner",
                         "operatorId":"user-owner"
@@ -12499,10 +12669,8 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/permissions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"permission-trashed-write",
-                        "tenantId":"tenant-trashed-write",
                         "subjectType":"user",
                         "subjectId":"user-reviewer",
                         "role":"reader",
@@ -12517,10 +12685,8 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/share_links")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"share-trashed-write",
-                        "tenantId":"tenant-trashed-write",
                         "token":"share-trashed-token",
                         "operatorId":"user-owner"
                     }"#,
@@ -12533,10 +12699,8 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-trashed-write/comments")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"comment-trashed-write",
-                        "tenantId":"tenant-trashed-write",
                         "content":"This should not be written.",
                         "operatorId":"user-owner"
                     }"#,
@@ -12679,7 +12843,7 @@ async fn app_drive_metadata_deletes_reject_trashed_nodes_without_side_effects() 
     .await
     .expect("favorite should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let mut observed = Vec::<(&'static str, StatusCode)>::new();
     for (name, request) in [
         (
@@ -12687,7 +12851,7 @@ async fn app_drive_metadata_deletes_reject_trashed_nodes_without_side_effects() 
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-trashed-delete/properties/customerId?tenantId=tenant-trashed-delete&visibility=private&operatorId=user-owner",
+                    "/app/v3/api/drive/nodes/node-trashed-delete/properties/customerId?visibility=private&operatorId=user-owner",
                 )
                 .body(Body::empty())
                 .expect("property delete request should be built"),
@@ -12697,7 +12861,7 @@ async fn app_drive_metadata_deletes_reject_trashed_nodes_without_side_effects() 
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-trashed-delete/labels/label-trashed-delete?tenantId=tenant-trashed-delete&operatorId=user-owner",
+                    "/app/v3/api/drive/nodes/node-trashed-delete/labels/label-trashed-delete?operatorId=user-owner",
                 )
                 .body(Body::empty())
                 .expect("label remove request should be built"),
@@ -12707,7 +12871,7 @@ async fn app_drive_metadata_deletes_reject_trashed_nodes_without_side_effects() 
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-trashed-delete/favorite?tenantId=tenant-trashed-delete&subjectType=user&subjectId=user-owner&operatorId=user-owner",
+                    "/app/v3/api/drive/nodes/node-trashed-delete/favorite?subjectType=user&subjectId=user-owner&operatorId=user-owner",
                 )
                 .body(Body::empty())
                 .expect("favorite unset request should be built"),
@@ -12900,7 +13064,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
         .expect("storage version should be seeded");
     }
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let mut observed = Vec::<(&'static str, StatusCode)>::new();
     for (name, request) in [
         (
@@ -12909,9 +13073,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-trashed-update/permissions/permission-trashed-update")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-trashed-update",
+                .body(Body::from(r#"{
                         "role":"writer",
                         "operatorId":"user-owner"
                     }"#,
@@ -12923,7 +13085,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-trashed-update/permissions/permission-trashed-update?tenantId=tenant-trashed-update&operatorId=user-owner",
+                    "/app/v3/api/drive/nodes/node-trashed-update/permissions/permission-trashed-update?operatorId=user-owner",
                 )
                 .body(Body::empty())
                 .expect("permission delete request should be built"),
@@ -12934,9 +13096,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/share_links/share-trashed-update")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-trashed-update",
+                .body(Body::from(r#"{
                         "role":"commenter",
                         "downloadLimit":9,
                         "operatorId":"user-owner"
@@ -12948,7 +13108,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
             "share_link.revoke",
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/app/v3/api/drive/share_links/share-trashed-update?tenantId=tenant-trashed-update&operatorId=user-owner")
+                .uri("/app/v3/api/drive/share_links/share-trashed-update?operatorId=user-owner")
                 .body(Body::empty())
                 .expect("share link revoke request should be built"),
         ),
@@ -12958,9 +13118,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-trashed-update",
+                .body(Body::from(r#"{
                         "content":"Mutated comment",
                         "resolved":true,
                         "operatorId":"user-owner"
@@ -12973,7 +13131,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update?tenantId=tenant-trashed-update&operatorId=user-owner",
+                    "/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update?operatorId=user-owner",
                 )
                 .body(Body::empty())
                 .expect("comment delete request should be built"),
@@ -12984,10 +13142,8 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update/replies")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"reply-trashed-new",
-                        "tenantId":"tenant-trashed-update",
                         "content":"New reply",
                         "operatorId":"user-owner"
                     }"#,
@@ -13000,9 +13156,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update/replies/reply-trashed-update")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-trashed-update",
+                .body(Body::from(r#"{
                         "content":"Mutated reply",
                         "operatorId":"user-owner"
                     }"#,
@@ -13014,7 +13168,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update/replies/reply-trashed-update?tenantId=tenant-trashed-update&operatorId=user-owner",
+                    "/app/v3/api/drive/nodes/node-trashed-update/comments/comment-trashed-update/replies/reply-trashed-update?operatorId=user-owner",
                 )
                 .body(Body::empty())
                 .expect("comment reply delete request should be built"),
@@ -13025,9 +13179,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-trashed-update/versions/version-trashed-restore/restore")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-trashed-update",
+                .body(Body::from(r#"{
                         "operatorId":"user-owner"
                     }"#,
                 ))
@@ -13038,7 +13190,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-trashed-update/versions/version-trashed-delete-a?tenantId=tenant-trashed-update&operatorId=user-owner",
+                    "/app/v3/api/drive/nodes/node-trashed-update/versions/version-trashed-delete-a?operatorId=user-owner",
                 )
                 .body(Body::empty())
                 .expect("version delete request should be built"),
@@ -13230,7 +13382,7 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
     .await
     .expect("other space target node should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let cross_space_response = app
         .clone()
         .oneshot(
@@ -13238,10 +13390,8 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/shortcuts")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"shortcut-cross-space",
-                        "tenantId":"tenant-shortcut",
                         "spaceId":"space-shortcut",
                         "parentNodeId":"folder-shortcut",
                         "nodeName":"external shortcut",
@@ -13262,10 +13412,8 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/shortcuts")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"shortcut-001",
-                        "tenantId":"tenant-shortcut",
                         "spaceId":"space-shortcut",
                         "parentNodeId":"folder-shortcut",
                         "nodeName":"source shortcut",
@@ -13293,15 +13441,17 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
 
     let detail = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/shortcut-001?tenantId=tenant-shortcut",
-    )
+        "/app/v3/api/drive/nodes/shortcut-001",
+        "tenant-shortcut",
+        "user-shortcut")
     .await;
     assert_eq!(detail["shortcutTargetNodeId"].as_str(), Some("node-target"));
 
     let (listed, _) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/spaces/space-shortcut/nodes?tenantId=tenant-shortcut&parentNodeId=folder-shortcut",
-    )
+        "/app/v3/api/drive/spaces/space-shortcut/nodes?parentNodeId=folder-shortcut",
+        "tenant-shortcut",
+        "user-shortcut")
     .await;
     assert_eq!(listed.len(), 1);
     assert_eq!(listed[0]["id"].as_str(), Some("shortcut-001"));
@@ -13312,8 +13462,9 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
 
     let changes = fetch_paged_items(
         app,
-        "/app/v3/api/drive/changes?tenantId=tenant-shortcut&spaceId=space-shortcut",
-    )
+        "/app/v3/api/drive/changes?spaceId=space-shortcut",
+        "tenant-shortcut",
+        "user-shortcut")
     .await
     .0;
     let events = changes
@@ -13372,7 +13523,7 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
         .expect("node should be seeded");
     }
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_under_file = app
         .clone()
         .oneshot(
@@ -13380,10 +13531,8 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folders")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"folder-under-file",
-                        "tenantId":"tenant-hierarchy",
                         "spaceId":"space-hierarchy",
                         "parentNodeId":"file-parent",
                         "nodeName":"Invalid",
@@ -13403,9 +13552,7 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-child")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-hierarchy",
+                .body(Body::from(r#"{
                         "parentNodeId":"file-parent",
                         "operatorId":"user-owner"
                     }"#,
@@ -13423,9 +13570,7 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-child")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-hierarchy",
+                .body(Body::from(r#"{
                         "parentNodeId":"node-child",
                         "operatorId":"user-owner"
                     }"#,
@@ -13443,9 +13588,7 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folder-alpha/move")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-hierarchy",
+                .body(Body::from(r#"{
                         "targetParentNodeId":"node-grandchild",
                         "operatorId":"user-owner"
                     }"#,
@@ -13469,9 +13612,7 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-child")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-hierarchy",
+                .body(Body::from(r#"{
                         "nodeName":"Existing",
                         "operatorId":"user-owner"
                     }"#,
@@ -13543,7 +13684,7 @@ async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_wi
         .expect("node should be seeded");
     }
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let update_response = app
         .clone()
         .oneshot(
@@ -13551,9 +13692,7 @@ async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_wi
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/nodes/node-mutation-trashed")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-node-mutation-trash",
+                .body(Body::from(r#"{
                         "nodeName":"renamed-while-trashed.pdf",
                         "operatorId":"user-owner"
                     }"#,
@@ -13571,9 +13710,7 @@ async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_wi
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-mutation-trashed/move")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-node-mutation-trash",
+                .body(Body::from(r#"{
                         "targetParentNodeId":"folder-node-mutation-target",
                         "operatorId":"user-owner"
                     }"#,
@@ -13591,10 +13728,8 @@ async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_wi
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-mutation-trashed/copy")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"node-mutation-copy",
-                        "tenantId":"tenant-node-mutation-trash",
                         "operatorId":"user-owner"
                     }"#,
                 ))
@@ -13611,10 +13746,8 @@ async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_wi
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/shortcuts")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"shortcut-to-trashed",
-                        "tenantId":"tenant-node-mutation-trash",
                         "spaceId":"space-node-mutation-trash",
                         "parentNodeId":"folder-node-mutation-target",
                         "nodeName":"Trashed shortcut",
@@ -13730,7 +13863,7 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
         .expect("node should be seeded");
     }
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_repository_directory = app
         .clone()
         .oneshot(
@@ -13738,10 +13871,8 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/folders")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"folder-repository-beta",
-                        "tenantId":"tenant-git-repository-root",
                         "spaceId":"space-git-repository-root",
                         "nodeName":"repository-beta",
                         "operatorId":"user-owner"
@@ -13769,10 +13900,8 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/files")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"file-git-repository-root",
-                        "tenantId":"tenant-git-repository-root",
                         "spaceId":"space-git-repository-root",
                         "nodeName":"root-file.zip",
                         "operatorId":"user-owner",
@@ -13794,10 +13923,8 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/shortcuts")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"shortcut-git-repository-root",
-                        "tenantId":"tenant-git-repository-root",
                         "spaceId":"space-git-repository-root",
                         "nodeName":"root-shortcut",
                         "targetNodeId":"file-repository-alpha",
@@ -13817,9 +13944,7 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/file-repository-alpha/move")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-git-repository-root",
+                .body(Body::from(r#"{
                         "operatorId":"user-owner"
                     }"#,
                 ))
@@ -13835,10 +13960,8 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/file-team-source/copy")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"file-copy-git-repository-root",
-                        "tenantId":"tenant-git-repository-root",
                         "targetSpaceId":"space-git-repository-root",
                         "operatorId":"user-owner"
                     }"#,
@@ -13905,17 +14028,15 @@ async fn app_drive_copy_shortcut_preserves_target_node_reference() {
     .await
     .expect("shortcut node should be seeded");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let copy_response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/shortcut-copy-source/copy")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"shortcut-copy-destination",
-                        "tenantId":"tenant-shortcut-copy",
                         "nodeName":"copied shortcut",
                         "operatorId":"user-owner"
                     }"#,
@@ -13978,7 +14099,7 @@ async fn app_drive_copy_node_rejects_missing_or_deleted_target_space() {
     .await
     .expect("source folder should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     for (copy_id, target_space_id) in [
         ("folder-copy-missing-target", "space-copy-missing"),
         ("folder-copy-deleted-target", "space-copy-deleted"),
@@ -13993,8 +14114,7 @@ async fn app_drive_copy_node_rejects_missing_or_deleted_target_space() {
                     .body(Body::from(format!(
                         r#"{{
                             "id":"{copy_id}",
-                            "tenantId":"tenant-copy-space",
-                            "targetSpaceId":"{target_space_id}",
+                                                        "targetSpaceId":"{target_space_id}",
                             "operatorId":"user-owner"
                         }}"#
                     )))
@@ -14079,7 +14199,7 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
         .expect("label should be seeded");
     }
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let apply_response = app
         .clone()
         .oneshot(
@@ -14087,9 +14207,7 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-label/labels/label-confidential")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-label",
+                .body(Body::from(r#"{
                         "operatorId":"user-owner"
                     }"#,
                 ))
@@ -14118,9 +14236,7 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
                 .method(Method::PUT)
                 .uri("/app/v3/api/drive/nodes/node-label/labels/label-public")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-label",
+                .body(Body::from(r#"{
                         "operatorId":"user-owner"
                     }"#,
                 ))
@@ -14132,8 +14248,9 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
 
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-label/labels?tenantId=tenant-label&pageSize=1",
-    )
+        "/app/v3/api/drive/nodes/node-label/labels?pageSize=1",
+        "tenant-label",
+        "user-label")
     .await;
     assert_eq!(first_items.len(), 1);
     assert_eq!(
@@ -14144,9 +14261,10 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
     let (second_items, final_token) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/nodes/node-label/labels?tenantId=tenant-label&pageSize=1&pageToken={next_token}"
+            "/app/v3/api/drive/nodes/node-label/labels?pageSize=1&pageToken={next_token}"
         ),
-    )
+        "tenant-label",
+        "user-label")
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(
@@ -14157,8 +14275,9 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
 
     let filtered = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-label/labels?tenantId=tenant-label&labelKey=classification.public",
-    )
+        "/app/v3/api/drive/nodes/node-label/labels?labelKey=classification.public",
+        "tenant-label",
+        "user-label")
     .await
     .0;
     assert_eq!(filtered.len(), 1);
@@ -14169,7 +14288,7 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/app/v3/api/drive/nodes/node-label/labels/label-confidential?tenantId=tenant-label&operatorId=user-owner")
+                .uri("/app/v3/api/drive/nodes/node-label/labels/label-confidential?operatorId=user-owner")
                 .body(Body::empty())
                 .expect("remove label request should be built"),
         )
@@ -14186,8 +14305,9 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
 
     let remaining = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-label/labels?tenantId=tenant-label",
-    )
+        "/app/v3/api/drive/nodes/node-label/labels",
+        "tenant-label",
+        "user-label")
     .await
     .0;
     assert_eq!(remaining.len(), 1);
@@ -14195,8 +14315,9 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
 
     let changes = fetch_paged_items(
         app,
-        "/app/v3/api/drive/changes?tenantId=tenant-label&spaceId=space-label",
-    )
+        "/app/v3/api/drive/changes?spaceId=space-label",
+        "tenant-label",
+        "user-label")
     .await
     .0;
     let events = changes
@@ -14238,7 +14359,7 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     .await
     .expect("node should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_changes_response = app
         .clone()
         .oneshot(
@@ -14246,10 +14367,8 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/changes/watch")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"watch-changes-001",
-                        "tenantId":"tenant-watch",
                         "spaceId":"space-watch",
                         "address":"https://hooks.example.com/drive/changes",
                         "token":"notify-secret",
@@ -14295,10 +14414,8 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-watch/watch")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"watch-node-001",
-                        "tenantId":"tenant-watch",
                         "address":"https://hooks.example.com/drive/node",
                         "expirationEpochMs":1800000005000,
                         "operatorId":"user-owner"
@@ -14321,8 +14438,9 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/watch_channels?tenantId=tenant-watch&pageSize=1",
-    )
+        "/app/v3/api/drive/watch_channels?pageSize=1",
+        "tenant-watch",
+        "user-watch")
     .await;
     assert_eq!(first_items.len(), 1);
     assert_eq!(first_items[0]["id"].as_str(), Some("watch-changes-001"));
@@ -14330,9 +14448,10 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     let (second_items, final_token) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/watch_channels?tenantId=tenant-watch&pageSize=1&pageToken={next_token}"
+            "/app/v3/api/drive/watch_channels?pageSize=1&pageToken={next_token}"
         ),
-    )
+        "tenant-watch",
+        "user-watch")
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(second_items[0]["id"].as_str(), Some("watch-node-001"));
@@ -14340,8 +14459,9 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let node_filtered = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/watch_channels?tenantId=tenant-watch&resourceType=node",
-    )
+        "/app/v3/api/drive/watch_channels?resourceType=node",
+        "tenant-watch",
+        "user-watch")
     .await
     .0;
     assert_eq!(node_filtered.len(), 1);
@@ -14349,8 +14469,9 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let get_payload = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/watch_channels/watch-node-001?tenantId=tenant-watch",
-    )
+        "/app/v3/api/drive/watch_channels/watch-node-001",
+        "tenant-watch",
+        "user-watch")
     .await;
     assert_eq!(
         get_payload["address"].as_str(),
@@ -14365,9 +14486,7 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/watch_channels/watch-node-001/stop")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-watch",
+                .body(Body::from(r#"{
                         "operatorId":"user-owner"
                     }"#,
                 ))
@@ -14391,8 +14510,9 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let active_after_stop = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/watch_channels?tenantId=tenant-watch",
-    )
+        "/app/v3/api/drive/watch_channels",
+        "tenant-watch",
+        "user-watch")
     .await
     .0;
     assert_eq!(active_after_stop.len(), 1);
@@ -14403,8 +14523,9 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let stopped_filtered = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/watch_channels?tenantId=tenant-watch&lifecycleStatus=stopped",
-    )
+        "/app/v3/api/drive/watch_channels?lifecycleStatus=stopped",
+        "tenant-watch",
+        "user-watch")
     .await
     .0;
     assert_eq!(stopped_filtered.len(), 1);
@@ -14412,8 +14533,9 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
     let changes = fetch_paged_items(
         app,
-        "/app/v3/api/drive/changes?tenantId=tenant-watch&spaceId=space-watch",
-    )
+        "/app/v3/api/drive/changes?spaceId=space-watch",
+        "tenant-watch",
+        "user-watch")
     .await
     .0;
     let events = changes
@@ -14453,18 +14575,22 @@ async fn app_dr_drive_watch_channel_create_rejects_past_expiration_before_databa
         - 1_000;
     let request_body = serde_json::json!({
         "id": "watch-past-expiration",
-        "tenantId": "tenant-watch-validation",
-        "spaceId": "space-watch-validation",
+                "spaceId": "space-watch-validation",
         "address": "https://hooks.example.com/drive/past",
         "expirationEpochMs": past_expiration_epoch_ms,
         "operatorId": "user-owner"
     })
     .to_string();
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-watch-trashed", "user-watch-trashed")),
+            )
+            .header("access-token", common::access_token("tenant-watch-trashed", "user-watch-trashed"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/changes/watch")
                 .header("content-type", "application/json")
@@ -14530,17 +14656,15 @@ async fn app_dr_drive_watch_node_rejects_trashed_node_before_creating_channel() 
     .await
     .expect("trashed node should be seeded");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-watch-trashed/watch")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"watch-node-trashed",
-                        "tenantId":"tenant-watch-trashed",
                         "address":"https://hooks.example.com/drive/node",
                         "expirationEpochMs":1800000005000,
                         "operatorId":"user-owner"
@@ -14570,3 +14694,4 @@ async fn app_dr_drive_watch_node_rejects_trashed_node_before_creating_channel() 
     .expect("watch channel count should be queryable");
     assert_eq!(watch_count, 0);
 }
+

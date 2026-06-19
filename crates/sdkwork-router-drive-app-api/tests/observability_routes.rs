@@ -8,12 +8,14 @@ use axum::Router;
 use http::{Method, Request, StatusCode};
 use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-use sdkwork_router_drive_app_api::build_router_with_pool;
+
 use sqlx::any::AnyPoolOptions;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower::util::ServiceExt;
 use tracing::subscriber::set_default;
 use tracing_subscriber::fmt::MakeWriter;
+
+mod common;
 
 struct CapturedWriter {
     buffer: Arc<Mutex<Vec<u8>>>,
@@ -140,18 +142,21 @@ async fn app_routes_emit_standardized_observability_events() {
         .await
         .expect("sqlite schema should be installed");
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let create_space_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/spaces")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"space-obs-001",
-                        "tenantId":"tenant-001",
                         "ownerSubjectType":"user",
                         "ownerSubjectId":"user-001",
                         "displayName":"Obs Space",
@@ -206,10 +211,8 @@ async fn app_routes_emit_standardized_observability_events() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/upload_sessions")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "sessionId":"upload-obs-001",
-                        "tenantId":"tenant-001",
                         "spaceId":"space-obs-001",
                         "nodeId":"node-obs-001",
                         "bucket":"bucket-001",
@@ -258,9 +261,7 @@ async fn app_routes_emit_standardized_observability_events() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/download_urls")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-001",
+                .body(Body::from(r#"{
                         "nodeId":"node-obs-001",
                         "requestedTtlSeconds":120
                     }"#,
@@ -288,8 +289,13 @@ async fn app_routes_emit_standardized_observability_events() {
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces?tenantId=tenant-001&ownerSubjectType=user&ownerSubjectId=user-001")
+                .uri("/app/v3/api/drive/spaces?ownerSubjectType=user&ownerSubjectId=user-001")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -305,7 +311,7 @@ async fn app_routes_emit_standardized_observability_events() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces/space-obs-001?tenantId=tenant-001")
+                .uri("/app/v3/api/drive/spaces/space-obs-001")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -323,9 +329,7 @@ async fn app_routes_emit_standardized_observability_events() {
                 .method(Method::PATCH)
                 .uri("/app/v3/api/drive/spaces/space-obs-001")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
-                        "tenantId":"tenant-001",
+                .body(Body::from(r#"{
                         "displayName":"Obs Space Updated",
                         "operatorId":"user-001"
                     }"#,
@@ -345,8 +349,8 @@ async fn app_routes_emit_standardized_observability_events() {
             Request::builder()
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/download_tokens/{token}?tenantId=tenant-001"
-                ))
+            "/app/v3/api/drive/download_tokens/{token}"
+        ))
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -361,7 +365,7 @@ async fn app_routes_emit_standardized_observability_events() {
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/app/v3/api/drive/spaces/space-obs-001?tenantId=tenant-001&operatorId=user-001")
+                .uri("/app/v3/api/drive/spaces/space-obs-001?operatorId=user-001")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -420,7 +424,7 @@ async fn app_route_errors_emit_standardized_observability_events() {
         .await
         .expect("sqlite schema should be installed");
 
-    let app = build_router_with_pool(pool);
+    let app = common::test_router_with_pool(pool);
     let create_space_error_response = app
         .clone()
         .oneshot(
@@ -428,10 +432,8 @@ async fn app_route_errors_emit_standardized_observability_events() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/spaces")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{
+                .body(Body::from(r#"{
                         "id":"space-obs-err-001",
-                        "tenantId":"tenant-001",
                         "ownerSubjectType":"user",
                         "ownerSubjectId":"user-001",
                         "displayName":"Obs Space",
@@ -456,7 +458,7 @@ async fn app_route_errors_emit_standardized_observability_events() {
             Request::builder()
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/download_tokens/{}?tenantId=tenant-001",
+                    "/app/v3/api/drive/download_tokens/{}",
                     build_download_token("node-not-found-001", now_epoch_ms() + 120_000)
                 ))
                 .body(Body::empty())
@@ -505,3 +507,4 @@ fn now_epoch_ms() -> i64 {
         .expect("system time should be valid")
         .as_millis() as i64
 }
+

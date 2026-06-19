@@ -19,29 +19,18 @@ function defaultUserForTenant(tenant) {
 }
 
 function tenantFromUri(uri) {
-  const queryIndex = uri.indexOf('?');
-  if (queryIndex === -1) {
-    return null;
-  }
-  for (const segment of uri.slice(queryIndex + 1).split('&')) {
-    if (segment.startsWith('tenantId=')) {
-      return decodeURIComponent(segment.slice('tenantId='.length));
-    }
-  }
-  return null;
+  const match = uri.match(/[?&]tenantId=([^&"']+)/);
+  return match?.[1] ?? null;
 }
 
 function userFromUri(uri, tenant) {
-  const queryIndex = uri.indexOf('?');
-  if (queryIndex !== -1) {
-    for (const segment of uri.slice(queryIndex + 1).split('&')) {
-      if (segment.startsWith('subjectId=')) {
-        return decodeURIComponent(segment.slice('subjectId='.length));
-      }
-      if (segment.startsWith('operatorId=')) {
-        return decodeURIComponent(segment.slice('operatorId='.length));
-      }
-    }
+  const subjectMatch = uri.match(/[?&]subjectId=([^&"']+)/);
+  if (subjectMatch) {
+    return subjectMatch[1];
+  }
+  const operatorMatch = uri.match(/[?&]operatorId=([^&"']+)/);
+  if (operatorMatch) {
+    return operatorMatch[1];
   }
   return defaultUserForTenant(tenant);
 }
@@ -69,16 +58,11 @@ function tenantFromSqlContext(context) {
 }
 
 function stripTenantIdFromUri(uri) {
-  const queryIndex = uri.indexOf('?');
-  if (queryIndex === -1) {
-    return uri;
-  }
-  const path = uri.slice(0, queryIndex);
-  const filtered = uri
-    .slice(queryIndex + 1)
-    .split('&')
-    .filter((segment) => segment && !segment.startsWith('tenantId='));
-  return filtered.length === 0 ? path : `${path}?${filtered.join('&')}`;
+  return uri
+    .replace(/([?&])tenantId=[^&"']+&/g, '$1')
+    .replace(/([?&])tenantId=[^&"']+$/g, '')
+    .replace(/\?&/g, '?')
+    .replace(/\?$/g, '');
 }
 
 function stripTenantIdFromJson(jsonText) {
@@ -86,6 +70,20 @@ function stripTenantIdFromJson(jsonText) {
     .replace(/"tenantId"\s*:\s*"[^"]*"\s*,\s*/g, '')
     .replace(/,\s*"tenantId"\s*:\s*"[^"]*"/g, '')
     .replace(/"tenantId"\s*:\s*"[^"]*"/g, '');
+}
+
+function authHeaderBlock(indent, tenant, user) {
+  return `${indent}.header(
+${indent}    "authorization",
+${indent}    format!("Bearer {}", common::auth_token("${tenant}", "${user}")),
+${indent})
+${indent}.header("access-token", common::access_token("${tenant}", "${user}"))`;
+}
+
+function stripAuthHeaders(block) {
+  return block
+    .replace(/\n\s*\.header\(\s*\n\s*"authorization",[\s\S]*?\)\s*\n\s*\.header\(\s*\n\s*"access-token",[\s\S]*?\)\s*/g, '\n')
+    .replace(/\n\s*\.header\(\s*"authorization",[\s\S]*?\)\s*\n\s*\.header\(\s*"access-token",[\s\S]*?\)\s*/g, '\n');
 }
 
 function inferAuthPair(context) {
@@ -103,25 +101,69 @@ function inferAuthPair(context) {
   return { tenant, user };
 }
 
-function authHeaderBlock(indent, tenant, user) {
-  return `${indent}.header(
-${indent}    "authorization",
-${indent}    format!("Bearer {}", common::auth_token("${tenant}", "${user}")),
-${indent})
-${indent}.header("access-token", common::access_token("${tenant}", "${user}"))`;
+function findMatchingParen(text, openIndex) {
+  let depth = 0;
+  for (let index = openIndex; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === '(') {
+      depth += 1;
+    } else if (char === ')') {
+      depth -= 1;
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+  return -1;
 }
 
-function stripAuthHeaders(block) {
-  return block
-    .replace(/\n\s*\.header\(\s*\n\s*"authorization",[\s\S]*?\)\s*\n\s*\.header\(\s*\n\s*"access-token",[\s\S]*?\)\s*/g, '\n')
-    .replace(/\n\s*\.header\(\s*"authorization",[\s\S]*?\)\s*\n\s*\.header\(\s*"access-token",[\s\S]*?\)\s*/g, '\n');
+function migrateFetchCalls(source) {
+  const fnNames = ['fetch_json', 'fetch_paged_items'];
+  let result = source;
+  for (const fn of fnNames) {
+    let searchIndex = 0;
+    while (true) {
+      const start = result.indexOf(`${fn}(`, searchIndex);
+      if (start === -1) {
+        break;
+      }
+      const end = findMatchingParen(result, start + fn.length);
+      if (end === -1) {
+        break;
+      }
+      const callText = result.slice(start, end + 1);
+      if (/, "[^"]+", "[^"]+"\s*\)\s*$/.test(callText)) {
+        searchIndex = end + 1;
+        continue;
+      }
+      const inner = callText.slice(fn.length + 1, -1);
+      const uriLiteralMatch = inner.match(/"([^"]+)"/);
+      const formatMatch = inner.match(/&format!\(\s*\n?\s*"([^"]+)"/s);
+      const uriTemplate = uriLiteralMatch?.[1] ?? formatMatch?.[1] ?? '';
+      const tenant = tenantFromUri(uriTemplate) ?? tenantFromSqlContext(result.slice(Math.max(0, start - 4000), start)) ?? 'tenant-001';
+      const user = userFromUri(uriTemplate, tenant);
+      const strippedUriTemplate = stripTenantIdFromUri(uriTemplate);
+      let replacementInner = inner;
+      if (uriLiteralMatch) {
+        replacementInner = inner.replace(`"${uriLiteralMatch[1]}"`, `"${strippedUriTemplate}"`);
+      } else if (formatMatch) {
+        replacementInner = inner.replace(formatMatch[1], stripTenantIdFromUri(formatMatch[1]));
+      }
+      if (!replacementInner.includes('"tenant-page"')) {
+        replacementInner = `${replacementInner.trimEnd()},\n        "${tenant}",\n        "${user}"`;
+      }
+      const replacement = `${fn}(${replacementInner})`;
+      result = `${result.slice(0, start)}${replacement}${result.slice(end + 1)}`;
+      searchIndex = start + replacement.length;
+    }
+  }
+  return result;
 }
 
 function migrateRequestBlocks(source) {
   const lines = source.split('\n');
   let output = '';
   let index = 0;
-  let migrated = 0;
 
   while (index < lines.length) {
     const line = lines[index];
@@ -150,51 +192,23 @@ function migrateRequestBlocks(source) {
     const context = source.split('\n').slice(Math.max(0, blockStartLine - 40), index).join('\n');
     const { tenant, user } = inferAuthPair(`${context}\n${rest}`);
     let cleanedRest = stripAuthHeaders(rest);
-    cleanedRest = cleanedRest.replace(/\.uri\(([^)]+)\)/g, (_, uriExpr) => {
-      if (uriExpr.includes('format!')) {
-        return `.uri(${uriExpr.replace(/\{tenantId=[^}]+\}/g, '').replace(/\?&/g, '?').replace(/&tenantId=[^&"']+/g, '').replace(/\?tenantId=[^&"']+/g, '?')})`;
-      }
-      const literalMatch = uriExpr.match(/^"([^"]*)"/);
-      if (literalMatch) {
-        return `.uri("${stripTenantIdFromUri(literalMatch[1])}")`;
-      }
-      return `.uri(${uriExpr})`;
-    });
+    cleanedRest = cleanedRest.replace(/\.uri\("([^"]*)"\)/g, (_, uri) => `.uri("${stripTenantIdFromUri(uri)}")`);
     cleanedRest = cleanedRest.replace(/Body::from\(\s*r#"(.*?)"#/gs, (full, raw) => {
       if (!raw.includes('tenantId')) {
         return full;
       }
       return `Body::from(r#"${stripTenantIdFromJson(raw)}"#`;
     });
+    cleanedRest = cleanedRest.replace(
+      /format!\(\s*\n?\s*"([^"]*tenantId=[^"]*)"\s*\)/g,
+      (_, template) => `format!(\n            "${stripTenantIdFromUri(template)}"\n        )`,
+    );
 
     const indent = builderLine.match(/^(\s*)/)?.[1] ?? '';
     output += `${authHeaderBlock(indent, tenant, user)}\n${cleanedRest}`;
-    migrated += 1;
   }
 
-  return { text: output.replace(/\n$/, ''), migrated };
-}
-
-function migrateFetchCalls(source) {
-  return source.replace(
-    /fetch_(json|paged_items)\(\s*([^,]+),\s*([^,)]+)\s*\)/g,
-    (full, fn, appArg, uriArg) => {
-      const uriLiteral = uriArg.trim().replace(/^"/, '').replace(/"$/, '');
-      const tenant = tenantFromUri(uriLiteral) ?? 'tenant-001';
-      const user = userFromUri(uriLiteral, tenant);
-      return `fetch_${fn}(${appArg}, ${uriArg}, "${tenant}", "${user}")`;
-    },
-  );
-}
-
-function normalizeUriLiterals(source) {
-  return source.replace(/"([^"]*tenantId=[^"]*)"/g, (_, uri) => stripTenantIdFromUri(uri));
-}
-
-function normalizeJsonTenantFields(source) {
-  return source
-    .replace(/"tenantId"\s*:\s*"[^"]*"\s*,\s*/g, '')
-    .replace(/,\s*"tenantId"\s*:\s*"[^"]*"/g, '');
+  return output.replace(/\n$/, '');
 }
 
 function ensureCommonModule(source) {
@@ -219,9 +233,7 @@ for (const relativeFile of testFiles) {
   );
   source = source.replaceAll('build_router_with_pool(', 'common::test_router_with_pool(');
   source = migrateFetchCalls(source);
-  source = migrateRequestBlocks(source).text;
-  source = normalizeUriLiterals(source);
-  source = normalizeJsonTenantFields(source);
+  source = migrateRequestBlocks(source);
   fs.writeFileSync(absolutePath, `${source}\n`);
   const count = (source.match(/common::auth_token\(/g) ?? []).length;
   process.stdout.write(`${relativeFile}: normalized ${count} authed requests\n`);

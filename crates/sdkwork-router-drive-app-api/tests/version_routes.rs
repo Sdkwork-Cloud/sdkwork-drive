@@ -2,9 +2,11 @@ use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
 use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-use sdkwork_router_drive_app_api::build_router_with_pool;
+
 use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
+
+mod common;
 
 #[tokio::test]
 async fn version_routes_prefer_logical_node_version_ids() {
@@ -19,13 +21,18 @@ async fn version_routes_prefer_logical_node_version_ids() {
         .expect("sqlite schema should be installed");
     seed_file_version(&pool).await;
 
-    let app = build_router_with_pool(pool.clone());
+    let app = common::test_router_with_pool(pool.clone());
     let list_response = app
         .clone()
         .oneshot(
             Request::builder()
+            .header(
+                "authorization",
+                format!("Bearer {}", common::auth_token("tenant-001", "user-001")),
+            )
+            .header("access-token", common::access_token("tenant-001", "user-001"))
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/node-001/versions?tenantId=tenant-001")
+                .uri("/app/v3/api/drive/nodes/node-001/versions")
                 .body(Body::empty())
                 .expect("version list request should be built"),
         )
@@ -49,7 +56,7 @@ async fn version_routes_prefer_logical_node_version_ids() {
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1?tenantId=tenant-001",
+                    "/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1",
                 )
                 .body(Body::empty())
                 .expect("version detail request should be built"),
@@ -75,7 +82,7 @@ async fn version_routes_prefer_logical_node_version_ids() {
             Request::builder()
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1?tenantId=tenant-001&operatorId=user-001",
+                    "/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1?operatorId=user-001",
                 )
                 .body(Body::empty())
                 .expect("version delete request should be built"),
@@ -105,8 +112,7 @@ async fn version_routes_prefer_logical_node_version_ids() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1/restore")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"tenantId":"tenant-001","operatorId":"user-001"}"#,
+                .body(Body::from(r#"{"operatorId":"user-001"}"#,
                 ))
                 .expect("version restore request should be built"),
         )
@@ -222,3 +228,4 @@ async fn seed_file_version(pool: &sqlx::AnyPool) {
         .expect("logical node version should be seeded");
     }
 }
+
