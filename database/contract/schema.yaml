@@ -1,11 +1,103 @@
 schema_version: 1
 kind: sdkwork.database.schema
 module_id: drive
-contract_version: 0.1.0
+contract_version: 1.0.0
 owner_team: drive-platform
 compliance_level: L2
 engines:
   - postgres
-  - sqlite
-table_prefix: drive_
-tables: []
+table_prefix: dr_
+tables:
+  - name: dr_drive_space
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_space_knowledge_profile
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_space_ai_generation_profile
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_space_app_upload_profile
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_space_rtc_profile
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_node
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_node_permission
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_node_share_link
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_node_comment
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_node_comment_reply
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_node_favorite
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_node_property
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_label
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_node_label
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_watch_channel
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_change_cursor
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_change_log
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_upload_session
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_storage_provider
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_storage_provider_binding
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_download_package
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_audit_event
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_maintenance_job
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_storage_object
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_node_version
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_space_version_policy
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_node_version_policy
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_upload_item
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_upload_part
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_file_sensitive_operation
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_domain_outbox
+    lifecycle_status: active
+    owner: drive-platform

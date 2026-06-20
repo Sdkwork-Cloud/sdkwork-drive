@@ -77,6 +77,15 @@ pub async fn connect_any_database_and_install_schema(
     config: &DatabaseConfig,
 ) -> Result<AnyPool, sqlx::Error> {
     let pool = connect_any_database(config).await?;
-    install_any_schema(&pool, config.engine()).await?;
+    match config.engine() {
+        DatabaseEngine::Postgresql => {
+            crate::bootstrap::bootstrap_drive_database_for_config(config)
+                .await
+                .map_err(|error| sqlx::Error::Configuration(error.into()))?;
+        }
+        DatabaseEngine::Sqlite => {
+            install_any_schema(&pool, config.engine()).await?;
+        }
+    }
     Ok(pool)
 }

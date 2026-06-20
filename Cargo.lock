@@ -2789,6 +2789,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "regex"
+version = "1.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1292b7759ae1cb9ec195452d1390a074f0cd8541ab7a5a8c31cd6db45d4a6ba"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-automata",
+ "regex-syntax",
+]
+
+[[package]]
 name = "regex-automata"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3195,6 +3207,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-appbase-database-host"
+version = "0.1.0"
+dependencies = [
+ "dotenvy",
+ "sdkwork-database-lifecycle",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+ "sdkwork-iam-web-adapter",
+ "sqlx",
+ "tracing",
+]
+
+[[package]]
 name = "sdkwork-database-config"
 version = "0.1.0"
 dependencies = [
@@ -3202,6 +3227,34 @@ dependencies = [
  "serde_json",
  "thiserror",
  "toml",
+ "tracing",
+]
+
+[[package]]
+name = "sdkwork-database-history"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "sdkwork-database-config",
+ "sdkwork-database-sqlx",
+ "sha2 0.10.9",
+ "sqlx",
+ "thiserror",
+]
+
+[[package]]
+name = "sdkwork-database-lifecycle"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "sdkwork-database-config",
+ "sdkwork-database-history",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
  "tracing",
 ]
 
@@ -3222,6 +3275,19 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "sdkwork-database-spi"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "regex",
+ "sdkwork-database-config",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "thiserror",
 ]
 
 [[package]]
@@ -3252,6 +3318,17 @@ dependencies = [
  "sdkwork-drive-storage-contract",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "sdkwork-drive-database-host"
+version = "0.1.0"
+dependencies = [
+ "dotenvy",
+ "sdkwork-database-config",
+ "sdkwork-database-lifecycle",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
 ]
 
 [[package]]
@@ -3395,6 +3472,7 @@ dependencies = [
  "sdkwork-database-repository",
  "sdkwork-database-sqlx",
  "sdkwork-drive-config",
+ "sdkwork-drive-database-host",
  "sdkwork-drive-observability",
  "sdkwork-drive-storage-contract",
  "sdkwork-drive-storage-local",
@@ -3540,6 +3618,7 @@ dependencies = [
  "hmac 0.12.1",
  "password-hash",
  "rand_core 0.6.4",
+ "sdkwork-appbase-database-host",
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
  "sdkwork-iam-context-service",
@@ -3737,6 +3816,19 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "serde_yaml"
+version = "0.9.34+deprecated"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
+dependencies = [
+ "indexmap",
+ "itoa",
+ "ryu",
+ "serde",
+ "unsafe-libyaml",
 ]
 
 [[package]]
@@ -4583,6 +4675,12 @@ dependencies = [
  "crypto-common 0.1.7",
  "subtle",
 ]
+
+[[package]]
+name = "unsafe-libyaml"
+version = "0.2.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
 
 [[package]]
 name = "untrusted"

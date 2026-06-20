@@ -46,7 +46,8 @@ Runtime configuration separates lifecycle environment, config profile, build mod
 - `VITE_DRIVE_PC_ENVIRONMENT`: `development`, `test`, `staging`, or `production`.
 - `VITE_DRIVE_PC_CONFIG_PROFILE`: `dev`, `test`, `staging`, or `prod`.
 - `VITE_DRIVE_PC_BUILD_MODE`: build-tool mode, normally `development`, `test`, `staging`, or `production`.
-- `VITE_DRIVE_PC_DEPLOYMENT_MODE`: `web`, `desktop`, `tablet-ipados`, `tablet-android`, `server`, `container`, `saas`, `private`, `local`, or `test`.
+- `VITE_DRIVE_PC_DEPLOYMENT_MODE`: `web`, `desktop`, `tablet-ipados`, `tablet-android`, `server`, `container`, `saas`, `private`, or `test`. Legacy `local` is accepted as a deprecated alias for `desktop` with self-hosted hosting.
+- `VITE_DRIVE_PC_HOSTING`: `self-hosted` or `cloud-hosted`. Self-hosted development topologies use localhost gateway defaults; IAM identity still comes from dual-token JWT claims after login.
 - `VITE_DRIVE_PC_RUNTIME_TARGET`: `browser`, `desktop`, `tablet-ipados`, `tablet-android`, `server`, `container`, or `test-runner`.
 
 SDK base URLs are configured per surface and per dependency:

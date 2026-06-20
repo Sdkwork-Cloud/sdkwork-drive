@@ -62,6 +62,7 @@
     "gateway:matrix:cloud": "node scripts/sdkwork-command.mjs gateway:matrix:cloud",
     "sbom:generate": "node scripts/sdkwork-command.mjs sbom:generate",
     "db:validate": "node ../sdkwork-specs/tools/check-database-framework-standard.mjs --root .",
+    "db:materialize:contract": "node tools/materialize_drive_database_contract.mjs",
     "db:plan": "cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . plan",
     "db:init": "cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . init",
     "db:migrate": "cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . migrate",

@@ -1,0 +1,16 @@
+[package]
+name = "sdkwork-drive-database-host"
+version.workspace = true
+edition.workspace = true
+description = "SDKWork Drive database lifecycle bootstrap."
+
+[lib]
+name = "sdkwork_drive_database_host"
+path = "src/lib.rs"
+
+[dependencies]
+dotenvy = "0.15"
+sdkwork_database_config = { workspace = true }
+sdkwork_database_lifecycle = { workspace = true }
+sdkwork_database_spi = { workspace = true }
+sdkwork_database_sqlx = { workspace = true }

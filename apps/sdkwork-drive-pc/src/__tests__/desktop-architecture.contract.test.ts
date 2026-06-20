@@ -1068,14 +1068,22 @@ describe('desktop architecture contract', () => {
     expect(tauriConfig.build.devUrl).toBe('http://localhost:5183');
   });
 
-  it('keeps localhost API defaults limited to local and test deployment modes', () => {
-    const localConfig = createRuntimeConfig({ VITE_DRIVE_PC_DEPLOYMENT_MODE: 'local' });
-    expect(localConfig.appApiBaseUrl).toBe('http://127.0.0.1:3900');
-    expect(localConfig.adminStorageApiBaseUrl).toBe('http://127.0.0.1:3900');
-    expect(localConfig).not.toHaveProperty('useLocalDemoData');
+  it('keeps localhost API defaults for self-hosted and legacy local deployment aliases', () => {
+    const selfHostedConfig = createRuntimeConfig({ VITE_DRIVE_PC_HOSTING: 'self-hosted' });
+    expect(selfHostedConfig.appApiBaseUrl).toBe('http://127.0.0.1:3900');
+    expect(selfHostedConfig.adminStorageApiBaseUrl).toBe('http://127.0.0.1:3900');
+
+    const legacyLocalConfig = createRuntimeConfig({ VITE_DRIVE_PC_DEPLOYMENT_MODE: 'local' });
+    expect(legacyLocalConfig.deploymentMode).toBe('desktop');
+    expect(legacyLocalConfig.hosting).toBe('self-hosted');
+    expect(legacyLocalConfig.appApiBaseUrl).toBe('http://127.0.0.1:3900');
+    expect(legacyLocalConfig).not.toHaveProperty('useLocalDemoData');
 
     for (const mode of ['desktop', 'private', 'saas', 'web'] satisfies SdkworkDeploymentMode[]) {
-      const config = createRuntimeConfig({ VITE_DRIVE_PC_DEPLOYMENT_MODE: mode });
+      const config = createRuntimeConfig({
+        VITE_DRIVE_PC_DEPLOYMENT_MODE: mode,
+        VITE_DRIVE_PC_HOSTING: 'cloud-hosted',
+      });
       expect(config.appApiBaseUrl, `${mode} should not default to localhost`).not.toMatch(
         /localhost|127\.0\.0\.1/,
       );

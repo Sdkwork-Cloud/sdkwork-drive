@@ -2,6 +2,7 @@
 members = [
     "crates/sdkwork-drive-contract",
     "crates/sdkwork-drive-config",
+    "crates/sdkwork-drive-database-host",
     "crates/sdkwork-drive-http",
     "crates/sdkwork-drive-security",
     "crates/sdkwork-drive-observability",
@@ -54,6 +55,7 @@ aws-types = "1.3"
 # SDKWork workspace members - declared once at workspace root
 sdkwork-drive-contract = { path = "crates/sdkwork-drive-contract" }
 sdkwork-drive-config = { path = "crates/sdkwork-drive-config" }
+sdkwork-drive-database-host = { path = "crates/sdkwork-drive-database-host" }
 sdkwork-drive-http = { path = "crates/sdkwork-drive-http" }
 sdkwork-drive-observability = { path = "crates/sdkwork-drive-observability" }
 sdkwork-drive-security = { path = "crates/sdkwork-drive-security" }
@@ -65,8 +67,14 @@ sdkwork-drive-workspace-service = { path = "crates/sdkwork-drive-workspace-servi
 
 # SDKWork database dependencies
 sdkwork-database-config = { path = "../sdkwork-database/crates/sdkwork-database-config" }
+sdkwork-database-lifecycle = { path = "../sdkwork-database/crates/sdkwork-database-lifecycle" }
+sdkwork-database-spi = { path = "../sdkwork-database/crates/sdkwork-database-spi" }
 sdkwork-database-sqlx = { path = "../sdkwork-database/crates/sdkwork-database-sqlx" }
 sdkwork-database-repository = { path = "../sdkwork-database/crates/sdkwork-database-repository" }
+sdkwork_database_config = { path = "../sdkwork-database/crates/sdkwork-database-config", package = "sdkwork-database-config" }
+sdkwork_database_lifecycle = { path = "../sdkwork-database/crates/sdkwork-database-lifecycle", package = "sdkwork-database-lifecycle" }
+sdkwork_database_spi = { path = "../sdkwork-database/crates/sdkwork-database-spi", package = "sdkwork-database-spi" }
+sdkwork_database_sqlx = { path = "../sdkwork-database/crates/sdkwork-database-sqlx", package = "sdkwork-database-sqlx" }
 sdkwork-id-core = { path = "../sdkwork-id/crates/sdkwork-id-core" }
 
 # SDKWork web framework dependencies

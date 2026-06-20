@@ -394,10 +394,7 @@ function compactSessionPatch<T extends object>(value: T): Partial<T> {
 function toIamDeploymentMode(
   value: DriveRuntimeConfig['deploymentMode'] | string | undefined,
 ): IamDeploymentMode {
-  if (value === 'local') {
-    return 'local';
-  }
-  if (value === 'saas' || value === 'web') {
+  if (value === 'saas' || value === 'web' || value === 'local') {
     return 'saas';
   }
   return 'private';

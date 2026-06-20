@@ -10,7 +10,6 @@ export type SdkworkDeploymentMode =
   | 'container'
   | 'saas'
   | 'private'
-  | 'local'
   | 'test';
 export type SdkworkRuntimeTarget =
   | 'browser'
@@ -119,7 +118,6 @@ const VALID_DEPLOYMENT_MODES: SdkworkDeploymentMode[] = [
   'container',
   'saas',
   'private',
-  'local',
   'test',
 ];
 const VALID_RUNTIME_TARGETS: SdkworkRuntimeTarget[] = [
@@ -197,10 +195,25 @@ function normalizeBuildMode(
   return parseOneOf(nextValue, VALID_BUILD_MODES, environment);
 }
 
+function normalizeDeploymentMode(
+  value: string | undefined,
+  environment: SdkworkEnvironment,
+): SdkworkDeploymentMode {
+  const nextValue = normalized(value);
+  if (nextValue === 'local') {
+    return environment === 'test' ? 'test' : 'desktop';
+  }
+  return parseOneOf(
+    nextValue,
+    VALID_DEPLOYMENT_MODES,
+    environment === 'test' ? 'test' : 'desktop',
+  );
+}
+
 function normalizeHosting(
   value: string | undefined,
-  deploymentMode: SdkworkDeploymentMode,
-  _environment: SdkworkEnvironment,
+  environment: SdkworkEnvironment,
+  legacyLocalDeploymentMode: boolean,
 ): DriveHosting {
   const explicit = normalized(value);
   if (explicit === 'cloud-hosted' || explicit === 'self-hosted') {
@@ -212,58 +225,54 @@ function normalizeHosting(
   if (explicit === 'standalone') {
     return 'self-hosted';
   }
-  if (deploymentMode === 'local' || deploymentMode === 'test') {
+  if (legacyLocalDeploymentMode || environment === 'test') {
     return 'self-hosted';
   }
   return 'cloud-hosted';
 }
 
+function usesLocalGatewayDefaults(hosting: DriveHosting, environment: SdkworkEnvironment): boolean {
+  return hosting === 'self-hosted' || environment === 'test';
+}
+
 function defaultPlatformApiGatewayBaseUrl(
   hosting: DriveHosting,
-  deploymentMode: SdkworkDeploymentMode,
+  environment: SdkworkEnvironment,
 ): string {
-  if (hosting === 'self-hosted') {
+  if (usesLocalGatewayDefaults(hosting, environment)) {
     return LOCAL_API_GATEWAY_BASE_URL;
   }
-  return deploymentMode === 'local' || deploymentMode === 'test'
-    ? LOCAL_API_GATEWAY_BASE_URL
-    : CLOUD_API_GATEWAY_BASE_URL;
+  return CLOUD_API_GATEWAY_BASE_URL;
 }
 
 function defaultApplicationPublicHttpUrl(
   hosting: DriveHosting,
-  deploymentMode: SdkworkDeploymentMode,
+  environment: SdkworkEnvironment,
 ): string {
-  if (hosting === 'self-hosted') {
+  if (usesLocalGatewayDefaults(hosting, environment)) {
     return LOCAL_APP_API_BASE_URL;
   }
-  return deploymentMode === 'local' || deploymentMode === 'test'
-    ? LOCAL_APP_API_BASE_URL
-    : CLOUD_APP_API_BASE_URL.replace('/app/v3/api', '');
+  return CLOUD_APP_API_BASE_URL.replace('/app/v3/api', '');
 }
 
 function defaultAppApiBaseUrl(
   hosting: DriveHosting,
-  deploymentMode: SdkworkDeploymentMode,
+  environment: SdkworkEnvironment,
 ): string {
-  if (hosting === 'self-hosted') {
+  if (usesLocalGatewayDefaults(hosting, environment)) {
     return LOCAL_APP_API_BASE_URL;
   }
-  return deploymentMode === 'local' || deploymentMode === 'test'
-    ? LOCAL_APP_API_BASE_URL
-    : CLOUD_APP_API_BASE_URL;
+  return CLOUD_APP_API_BASE_URL;
 }
 
 function defaultAdminStorageApiBaseUrl(
   hosting: DriveHosting,
-  deploymentMode: SdkworkDeploymentMode,
+  environment: SdkworkEnvironment,
 ): string {
-  if (hosting === 'self-hosted') {
+  if (usesLocalGatewayDefaults(hosting, environment)) {
     return LOCAL_ADMIN_STORAGE_API_BASE_URL;
   }
-  return deploymentMode === 'local' || deploymentMode === 'test'
-    ? LOCAL_ADMIN_STORAGE_API_BASE_URL
-    : CLOUD_ADMIN_STORAGE_API_BASE_URL;
+  return CLOUD_ADMIN_STORAGE_API_BASE_URL;
 }
 
 function normalizeTokenManagerMode(
@@ -278,7 +287,7 @@ function normalizeTokenManagerMode(
 
 function shouldUseDevSameOriginApi(
   env: RuntimeEnv,
-  deploymentMode: SdkworkDeploymentMode,
+  environment: SdkworkEnvironment,
 ): boolean {
   const explicit = normalized(env.VITE_DRIVE_PC_DEV_SAME_ORIGIN_API);
   if (explicit === 'true' || explicit === '1') {
@@ -289,15 +298,15 @@ function shouldUseDevSameOriginApi(
   }
   return Boolean(env.DEV)
     && normalized(env.MODE) === 'development'
-    && (deploymentMode === 'local' || deploymentMode === 'test');
+    && environment === 'development';
 }
 
 function applyDevSameOriginApiBaseUrl(
   env: RuntimeEnv,
-  deploymentMode: SdkworkDeploymentMode,
+  environment: SdkworkEnvironment,
   baseUrl: string,
 ): string {
-  return shouldUseDevSameOriginApi(env, deploymentMode) ? '' : baseUrl;
+  return shouldUseDevSameOriginApi(env, environment) ? '' : baseUrl;
 }
 
 function normalizeTokenStorage(
@@ -322,15 +331,15 @@ function normalizeTokenStorage(
 
 export function createRuntimeConfig(env: RuntimeEnv = {}): DriveRuntimeConfig {
   const environment = normalizeEnvironment(env.VITE_DRIVE_PC_ENVIRONMENT, env);
-  const deploymentMode = parseOneOf(
+  const legacyLocalDeploymentMode = normalized(env.VITE_DRIVE_PC_DEPLOYMENT_MODE) === 'local';
+  const deploymentMode = normalizeDeploymentMode(
     env.VITE_DRIVE_PC_DEPLOYMENT_MODE,
-    VALID_DEPLOYMENT_MODES,
-    environment === 'test' ? 'test' : 'local',
+    environment,
   );
   const hosting = normalizeHosting(
     env.VITE_DRIVE_PC_HOSTING ?? env.VITE_DRIVE_PC_TOPOLOGY,
-    deploymentMode,
     environment,
+    legacyLocalDeploymentMode,
   );
   const runtimeTarget = parseOneOf(
     env.VITE_DRIVE_PC_RUNTIME_TARGET,
@@ -342,7 +351,7 @@ export function createRuntimeConfig(env: RuntimeEnv = {}): DriveRuntimeConfig {
 
   const platformApiGatewayBaseUrl = env.VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL
     || env.VITE_DRIVE_PC_API_GATEWAY_BASE_URL
-    || defaultPlatformApiGatewayBaseUrl(hosting, deploymentMode);
+    || defaultPlatformApiGatewayBaseUrl(hosting, environment);
 
   const appApiBaseUrl =
     env.VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL
@@ -357,19 +366,19 @@ export function createRuntimeConfig(env: RuntimeEnv = {}): DriveRuntimeConfig {
     env.VITE_DRIVE_PC_BACKEND_API_BASE_URL || adminStorageApiBaseUrl;
   const appbaseAppApiBaseUrl = applyDevSameOriginApiBaseUrl(
     env,
-    deploymentMode,
+    environment,
     env.VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL || platformApiGatewayBaseUrl,
   );
 
-  const resolvedAppApiBaseUrl = applyDevSameOriginApiBaseUrl(env, deploymentMode, appApiBaseUrl);
+  const resolvedAppApiBaseUrl = applyDevSameOriginApiBaseUrl(env, environment, appApiBaseUrl);
   const resolvedBackendApiBaseUrl = applyDevSameOriginApiBaseUrl(
     env,
-    deploymentMode,
+    environment,
     backendApiBaseUrl,
   );
   const resolvedAdminStorageApiBaseUrl = applyDevSameOriginApiBaseUrl(
     env,
-    deploymentMode,
+    environment,
     adminStorageApiBaseUrl,
   );
 

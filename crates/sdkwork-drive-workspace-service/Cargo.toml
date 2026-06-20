@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+sdkwork-drive-database-host.workspace = true
 sdkwork-database-config.workspace = true
 sdkwork-database-sqlx.workspace = true
 sdkwork-database-repository.workspace = true

@@ -69,7 +69,7 @@ describe('createDrivePcRuntime', () => {
         context: {
           tenantId: 'tenant-001',
           userId: 'user-001',
-          deploymentMode: 'local',
+          deploymentMode: 'saas',
           authLevel: 'password',
         },
       }),

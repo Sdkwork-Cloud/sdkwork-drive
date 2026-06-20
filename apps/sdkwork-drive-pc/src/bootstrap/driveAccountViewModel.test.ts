@@ -22,8 +22,8 @@ describe('drive account view model', () => {
         userId: 'user-001',
         organizationId: 'org-001',
         appId: 'sdkwork-drive-pc',
-        environment: 'local',
-        deploymentMode: 'local',
+        environment: 'dev',
+        deploymentMode: 'saas',
         authLevel: 'password',
       },
     });
@@ -37,7 +37,7 @@ describe('drive account view model', () => {
       tenantId: 'tenant-001',
       organizationId: 'org-001',
       sessionId: 'session-001',
-      environmentLabel: 'local / local',
+      environmentLabel: 'dev / saas',
       authLevel: 'password',
     });
   });

@@ -2,7 +2,7 @@
   "environment": "development",
   "configProfile": "dev",
   "buildMode": "development",
-  "deploymentMode": "local",
+  "deploymentMode": "desktop",
   "runtimeTarget": "browser",
   "appKey": "sdkwork-drive-pc",
   "appApiBaseUrl": "http://127.0.0.1:18080",
