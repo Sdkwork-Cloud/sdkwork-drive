@@ -1,4 +1,3 @@
-use crate::app_context::inject_drive_request_context;
 use crate::auth::drive_context_projection_guard;
 use crate::config::AdminStorageConfig;
 use crate::handlers::*;
@@ -181,7 +180,6 @@ fn build_router_with_state(state: AdminStorageState, require_iam: bool) -> Route
             get(list_storage_provider_bindings),
         );
 
-    drive_routes = drive_routes.route_layer(middleware::from_fn(inject_drive_request_context));
     if require_iam {
         drive_routes =
             drive_routes.route_layer(middleware::from_fn(drive_context_projection_guard));

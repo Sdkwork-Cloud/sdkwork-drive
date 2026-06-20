@@ -1,4 +1,4 @@
-use crate::app_context::{inject_drive_request_context, DriveRequestContext};
+use crate::app_context::DriveRequestContext;
 use crate::archive::*;
 use crate::archive_storage::read_archive_node_bytes;
 use crate::collaboration_repository::{find_comment, find_comment_reply, find_share_link};
@@ -359,8 +359,6 @@ fn build_router_with_state(state: AppState, require_iam: bool) -> Router {
             "/app/v3/api/assets/{asset_id}/relations/{relation_id}",
             post(asset_method_not_allowed).delete(delete_asset_relation),
         );
-
-    drive_routes = drive_routes.route_layer(middleware::from_fn(inject_drive_request_context));
 
     let forbidden_asset_routes = Router::new()
         .route("/app/v3/api/assets/upload", post(asset_not_found))

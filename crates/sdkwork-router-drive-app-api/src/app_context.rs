@@ -1,13 +1,8 @@
 use crate::error::{problem, ProblemDetail};
 use crate::validators::{normalize_optional_text, require_query_value, validate_subject_type};
-use axum::body::Body;
-use axum::extract::Request;
 use axum::http::StatusCode;
-use axum::middleware::Next;
-use axum::response::Response;
 use axum::Json;
 use sdkwork_drive_security::DriveAppContext;
-use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
 pub(crate) struct DriveRequestContext {
@@ -37,7 +32,12 @@ impl DriveRequestContext {
         if self.from_token {
             Ok(self.tenant_id.clone())
         } else {
-            require_query_value(None, "tenantId")
+            Err(problem(
+                StatusCode::UNAUTHORIZED,
+                "unauthorized",
+                "verified WebRequestContext is required",
+                "sdkwork.auth.missing_request_context",
+            ))
         }
     }
 
@@ -165,36 +165,6 @@ impl DriveRequestContext {
     }
 }
 
-pub(crate) fn drive_request_context_from_query(query: Option<&str>) -> DriveRequestContext {
-    let query = parse_uri_query(query);
-    DriveRequestContext {
-        tenant_id: String::new(),
-        user_id: normalize_optional_text(query.get("userId").cloned()).unwrap_or_default(),
-        app_id: normalize_optional_text(query.get("appId").cloned()),
-        actor_id: normalize_optional_text(query.get("operatorId").cloned())
-            .unwrap_or_else(|| "operator-unset".to_string()),
-        subject_type: normalize_optional_text(query.get("subjectType").cloned())
-            .unwrap_or_else(|| "user".to_string()),
-        subject_id: normalize_optional_text(query.get("subjectId").cloned()).unwrap_or_default(),
-        from_token: false,
-    }
-}
-
-pub(crate) async fn inject_drive_request_context(
-    mut request: Request<Body>,
-    next: Next,
-) -> Result<Response, (StatusCode, Json<ProblemDetail>)> {
-    let context = request
-        .extensions()
-        .get::<DriveAppContext>()
-        .cloned()
-        .map(|app_context| DriveRequestContext::from_app_context(&app_context))
-        .unwrap_or_else(|| drive_request_context_from_query(request.uri().query()));
-
-    request.extensions_mut().insert(context);
-    Ok(next.run(request).await)
-}
-
 fn context_conflict(detail: &str) -> (StatusCode, Json<ProblemDetail>) {
     problem(
         StatusCode::FORBIDDEN,
@@ -202,60 +172,6 @@ fn context_conflict(detail: &str) -> (StatusCode, Json<ProblemDetail>) {
         detail,
         "sdkwork.auth.context_conflict",
     )
-}
-
-fn parse_uri_query(query: Option<&str>) -> BTreeMap<String, String> {
-    let mut values = BTreeMap::new();
-    let Some(query) = query else {
-        return values;
-    };
-    for pair in query.split('&') {
-        if pair.is_empty() {
-            continue;
-        }
-        let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
-        values.insert(percent_decode(key), percent_decode(value));
-    }
-    values
-}
-
-fn percent_decode(value: &str) -> String {
-    let bytes = value.as_bytes();
-    let mut decoded = Vec::with_capacity(bytes.len());
-    let mut index = 0;
-    while index < bytes.len() {
-        match bytes[index] {
-            b'+' => {
-                decoded.push(b' ');
-                index += 1;
-            }
-            b'%' if index + 2 < bytes.len() => {
-                if let (Some(high), Some(low)) =
-                    (hex_value(bytes[index + 1]), hex_value(bytes[index + 2]))
-                {
-                    decoded.push((high << 4) | low);
-                    index += 3;
-                } else {
-                    decoded.push(bytes[index]);
-                    index += 1;
-                }
-            }
-            current => {
-                decoded.push(current);
-                index += 1;
-            }
-        }
-    }
-    String::from_utf8_lossy(&decoded).to_string()
-}
-
-fn hex_value(value: u8) -> Option<u8> {
-    match value {
-        b'0'..=b'9' => Some(value - b'0'),
-        b'a'..=b'f' => Some(value - b'a' + 10),
-        b'A'..=b'F' => Some(value - b'A' + 10),
-        _ => None,
-    }
 }
 
 #[cfg(test)]
@@ -290,7 +206,7 @@ mod tests {
         };
 
         let error = ctx.resolve_tenant_id().expect_err("missing token context");
-        assert_eq!(error.0, StatusCode::BAD_REQUEST);
+        assert_eq!(error.0, StatusCode::UNAUTHORIZED);
     }
 
     #[test]

@@ -10,7 +10,7 @@ use sdkwork_web_core::{
     WebSubjectType,
 };
 
-use crate::app_context::{drive_request_context_from_query, DriveRequestContext};
+use crate::app_context::DriveRequestContext;
 use crate::http_route_manifest::app_route_manifest;
 
 pub fn drive_app_public_path_prefixes() -> Vec<String> {
@@ -22,15 +22,13 @@ struct DriveAppContextInjector;
 
 impl DomainContextInjector for DriveAppContextInjector {
     fn inject(&self, request: &mut http::Request<axum::body::Body>, context: &WebRequestContext) {
-        if let Some(principal) = context.principal.as_ref() {
-            let app_context = drive_app_context_from_web_principal(principal, context);
-            let drive_context = DriveRequestContext::from_app_context(&app_context);
-            request.extensions_mut().insert(app_context);
-            request.extensions_mut().insert(drive_context);
+        let Some(principal) = context.principal.as_ref() else {
             return;
-        }
+        };
 
-        let drive_context = drive_request_context_from_query(request.uri().query());
+        let app_context = drive_app_context_from_web_principal(principal, context);
+        let drive_context = DriveRequestContext::from_app_context(&app_context);
+        request.extensions_mut().insert(app_context);
         request.extensions_mut().insert(drive_context);
     }
 }

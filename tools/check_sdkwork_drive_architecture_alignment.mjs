@@ -163,6 +163,36 @@ for (const relativePath of [
   assertNoClientTenantIdInAppOpenapi(relativePath);
 }
 
+function walkRustTests(relativeRoot, visitor) {
+  const absoluteRoot = path.join(repoRoot, relativeRoot);
+  if (!fs.existsSync(absoluteRoot)) {
+    return;
+  }
+  for (const entry of fs.readdirSync(absoluteRoot, { withFileTypes: true })) {
+    const absolutePath = path.join(absoluteRoot, entry.name);
+    if (entry.isDirectory()) {
+      walkRustTests(path.join(relativeRoot, entry.name).replace(/\\/g, '/'), visitor);
+      continue;
+    }
+    if (!entry.name.endsWith('.rs')) {
+      continue;
+    }
+    visitor(`${relativeRoot}/${entry.name}`.replace(/\\/g, '/'), fs.readFileSync(absolutePath, 'utf8'));
+  }
+}
+
+for (const relativeRoot of [
+  'crates/sdkwork-router-drive-app-api/tests',
+  'crates/sdkwork-router-drive-backend-api/tests',
+]) {
+  walkRustTests(relativeRoot, (relativePath, source) => {
+    assert(
+      !source.includes('tenantId='),
+      `${relativePath} must not send client tenantId query params`,
+    );
+  });
+}
+
 assert(
   fs.existsSync(path.join(repoRoot, 'specs/topology.spec.json')),
   'specs/topology.spec.json must exist per APP_RUNTIME_TOPOLOGY_ADOPTION.md',

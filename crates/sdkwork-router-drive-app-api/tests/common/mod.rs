@@ -26,33 +26,6 @@ pub fn default_user_for_tenant(tenant: &str) -> String {
     "user-001".to_string()
 }
 
-pub fn strip_client_tenant_id_from_uri(uri: &str) -> String {
-    let (path, query) = uri
-        .split_once('?')
-        .map_or((uri, None), |(path, query)| (path, Some(query)));
-    let Some(query) = query else {
-        return path.to_string();
-    };
-    let filtered = query
-        .split('&')
-        .filter(|segment| !segment.is_empty() && !segment.starts_with("tenantId="))
-        .collect::<Vec<_>>()
-        .join("&");
-    if filtered.is_empty() {
-        path.to_string()
-    } else {
-        format!("{path}?{filtered}")
-    }
-}
-
-pub fn tenant_from_uri(uri: &str) -> Option<String> {
-    uri.split_once('?').and_then(|(_, query)| {
-        query
-            .split('&')
-            .find_map(|segment| segment.strip_prefix("tenantId=").map(percent_decode))
-    })
-}
-
 pub fn user_from_uri(uri: &str, tenant: &str) -> String {
     if let Some((_, query)) = uri.split_once('?') {
         for segment in query.split('&') {
@@ -70,15 +43,9 @@ pub fn user_from_uri(uri: &str, tenant: &str) -> String {
     default_user_for_tenant(tenant)
 }
 
-pub fn auth_context_from_uri(uri: &str) -> (String, String) {
-    let tenant = tenant_from_uri(uri).unwrap_or_else(|| "tenant-001".to_string());
-    let user = user_from_uri(uri, &tenant);
-    (tenant, user)
-}
-
-pub fn authed_get_uri(uri: impl AsRef<str>) -> Request<Body> {
-    let (tenant, user) = auth_context_from_uri(uri.as_ref());
-    authed_get(uri, &tenant, &user, "appbase")
+pub fn authed_get_uri(uri: impl AsRef<str>, tenant: &str) -> Request<Body> {
+    let user = user_from_uri(uri.as_ref(), tenant);
+    authed_get(uri, tenant, &user, "appbase")
 }
 
 fn percent_decode(value: &str) -> String {
@@ -102,7 +69,7 @@ pub fn authed_request(
 ) -> Request<Body> {
     Request::builder()
         .method(method)
-        .uri(strip_client_tenant_id_from_uri(uri.as_ref()))
+        .uri(uri.as_ref())
         .header(
             "authorization",
             format!("Bearer {}", auth_token(tenant, user, app_id)),
@@ -125,7 +92,7 @@ pub fn authed_post_json(
 ) -> Request<Body> {
     Request::builder()
         .method(Method::POST)
-        .uri(strip_client_tenant_id_from_uri(uri.as_ref()))
+        .uri(uri.as_ref())
         .header(
             "authorization",
             format!("Bearer {}", auth_token(tenant, user, app_id)),

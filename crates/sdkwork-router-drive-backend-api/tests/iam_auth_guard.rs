@@ -106,7 +106,7 @@ async fn backend_routes_validate_token_derived_app_context() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/quotas?tenantId=tenant-b")
+                .uri("/backend/v3/api/drive/quotas")
                 .header(
                     "authorization",
                     format!("Bearer {}", auth_token("tenant-a", "user-001")),
