@@ -26,7 +26,7 @@ The Rust configuration boundary is `sdkwork-drive-config::DatabaseConfig`. It ac
 
 Configuration precedence is explicit URL, runtime TOML, then structured environment fields. `SDKWORK_DRIVE_DATABASE_URL` remains an explicit operator override and wins over TOML and structured fields.
 
-PostgreSQL TOML supports either `url` or structured fields. Structured PostgreSQL config must provide `host`, `database`, `username`, and one of `password` or `password_file`; `password_file` is resolved relative to the TOML file location. Structured values are percent-encoded before building the PostgreSQL URL so service accounts such as `sdkworkprod@2026++` and secret values containing `/`, `+`, spaces, or `@` remain valid connection strings.
+PostgreSQL TOML supports either `url` or structured fields. Structured PostgreSQL config must provide `host`, `database`, `username`, and one of `password` or `password_file`; `password_file` is resolved relative to the TOML file location. Structured values are percent-encoded before building the PostgreSQL URL so service accounts such as `sdkwork` and secret values containing `/`, `+`, spaces, or `@` remain valid connection strings.
 
 Default pool sizing is engine-specific: PostgreSQL defaults to 10 connections, SQLite defaults to 1 connection. SQLite local mode should not be widened unless the caller has a concrete lock-contention plan.
 

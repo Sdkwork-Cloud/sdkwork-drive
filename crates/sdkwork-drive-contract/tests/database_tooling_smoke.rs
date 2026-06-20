@@ -56,7 +56,8 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
         "pnpm dev:browser:sqlite must delegate through sdkwork-command.mjs, got: {dev_sqlite_script}"
     );
     assert!(
-        dispatcher.contains("'--database', 'sqlite'") && dispatcher.contains("'--deployment-profile', 'standalone'"),
+        dispatcher.contains("'--database', 'sqlite'")
+            && dispatcher.contains("'--deployment-profile', 'standalone'"),
         "sdkwork-command.mjs must dispatch dev:browser:sqlite with SQLite and standalone profile"
     );
 
@@ -100,7 +101,8 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
         "pnpm build must delegate through sdkwork-command.mjs, got: {drive_build}"
     );
     assert!(
-        dispatcher.contains("drive-build.mjs") && dispatcher.contains("'--deployment-profile', 'cloud'"),
+        dispatcher.contains("drive-build.mjs")
+            && dispatcher.contains("'--deployment-profile', 'cloud'"),
         "sdkwork-command.mjs must dispatch build to drive-build.mjs with cloud deployment profile"
     );
 }

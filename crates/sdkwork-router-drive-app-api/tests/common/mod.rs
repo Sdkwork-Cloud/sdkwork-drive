@@ -47,11 +47,9 @@ pub fn strip_client_tenant_id_from_uri(uri: &str) -> String {
 
 pub fn tenant_from_uri(uri: &str) -> Option<String> {
     uri.split_once('?').and_then(|(_, query)| {
-        query.split('&').find_map(|segment| {
-            segment
-                .strip_prefix("tenantId=")
-                .map(percent_decode)
-        })
+        query
+            .split('&')
+            .find_map(|segment| segment.strip_prefix("tenantId=").map(percent_decode))
     })
 }
 
