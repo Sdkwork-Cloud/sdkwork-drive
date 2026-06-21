@@ -13,7 +13,7 @@ use sdkwork_drive_storage_contract::{
     ReadObjectRangeResponse,
 };
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+use sdkwork_utils_rust::sha256_hash;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -117,9 +117,7 @@ impl LocalDriveObjectStore {
     }
 
     fn calculate_sha256_hex(body: &[u8]) -> String {
-        let mut hasher = Sha256::new();
-        hasher.update(body);
-        format!("{:x}", hasher.finalize())
+        sha256_hash(body)
     }
 
     fn now_epoch_ms() -> i64 {

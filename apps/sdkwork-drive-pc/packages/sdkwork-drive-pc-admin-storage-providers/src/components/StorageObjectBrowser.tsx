@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import type { StorageProviderAdminService } from '../services/storageProviderAdminService';
 import type { StorageProviderObjectView, StorageProviderView } from '../types/storageProviderAdminTypes';
+import { formatBytes } from '../utils/providerKindConfig';
 
 interface StorageObjectBrowserProps {
   provider: StorageProviderView;
@@ -15,13 +16,7 @@ export function StorageObjectBrowser({ provider, service }: StorageObjectBrowser
   const [pageToken, setPageToken] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
-  const formatSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-  };
+  const formatSize = formatBytes;
 
   const loadObjects = useCallback(async (prefix: string, token?: string) => {
     setLoading(true);

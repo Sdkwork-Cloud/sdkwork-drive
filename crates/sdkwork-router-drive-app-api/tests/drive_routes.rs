@@ -1,4 +1,4 @@
-use axum::body::Body;
+use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
 use sdkwork_router_drive_app_api::build_router;
 use tower::util::ServiceExt;
@@ -269,9 +269,6 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
         ),
         (Method::GET, "/app/v3/api/generations/assets"),
         (Method::POST, "/app/v3/api/generations/assets"),
-        (Method::POST, "/app/v3/api/assets/upload"),
-        (Method::POST, "/app/v3/api/assets/presign"),
-        (Method::POST, "/app/v3/api/assets/upload_sessions"),
     ] {
         let response = app
             .clone()
@@ -301,5 +298,57 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
             StatusCode::NOT_FOUND,
             "{uri} must not be exposed by the app api"
         );
+    }
+}
+
+#[tokio::test]
+async fn app_assets_routes_return_not_implemented_problem_detail() {
+    let app = build_router();
+
+    for (method, uri) in [
+        (Method::GET, "/app/v3/api/assets"),
+        (Method::POST, "/app/v3/api/assets"),
+        (Method::GET, "/app/v3/api/assets/asset-001"),
+        (Method::PATCH, "/app/v3/api/assets/asset-001"),
+        (Method::POST, "/app/v3/api/assets/upload"),
+        (Method::POST, "/app/v3/api/assets/presign"),
+        (Method::POST, "/app/v3/api/assets/upload_sessions"),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .header(
+                        "authorization",
+                        format!(
+                            "Bearer {}",
+                            common::auth_token("tenant-001", "user-001", "appbase")
+                        ),
+                    )
+                    .header(
+                        "access-token",
+                        common::access_token("tenant-001", "user-001", "appbase"),
+                    )
+                    .method(method)
+                    .uri(uri)
+                    .header("content-type", "application/json")
+                    .body(Body::from("{}"))
+                    .expect("request should be built"),
+            )
+            .await
+            .unwrap_or_else(|error| panic!("{uri} should be handled: {error}"));
+        assert_eq!(
+            response.status(),
+            StatusCode::NOT_IMPLEMENTED,
+            "{uri} must return not implemented until assets are owned by Drive"
+        );
+        let payload: serde_json::Value = serde_json::from_slice(
+            &to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("assets response should be read"),
+        )
+        .expect("assets response should be valid json");
+        assert_eq!(payload["code"].as_str(), Some("drive.not_implemented"));
+        assert_eq!(payload["status"].as_i64(), Some(501));
     }
 }

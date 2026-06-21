@@ -1,6 +1,7 @@
 #![allow(clippy::result_large_err)]
 
 mod app_context;
+mod acl;
 mod archive;
 mod archive_storage;
 mod asset_handlers;

@@ -141,6 +141,7 @@ function dispatch(args) {
       if (existsSync(pcDir)) {
         runShell("pnpm test", pcDir);
       }
+      runShell("pnpm test:drive-integration", repoRoot);
       break;
     }
     case "check": {

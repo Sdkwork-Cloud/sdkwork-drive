@@ -42,7 +42,7 @@ fn default_test_app_context() -> DriveAppContext {
         deployment_mode: Some("saas".to_string()),
         auth_level: Some("password".to_string()),
         data_scope: Vec::new(),
-        permission_scope: Vec::new(),
+        permission_scope: vec![sdkwork_drive_security::DRIVE_STORAGE_ADMIN_PERMISSION.to_string()],
         actor_id: "user-001".to_string(),
         actor_kind: "user".to_string(),
         device_id: None,

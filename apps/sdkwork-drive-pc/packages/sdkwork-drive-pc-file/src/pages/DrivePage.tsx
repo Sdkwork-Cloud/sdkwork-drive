@@ -1,14 +1,13 @@
+import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
 import React, { useRef, useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { FileSidebar } from '../components/FileSidebar';
 import { FileBrowser } from '../components/FileBrowser';
 import {
   cancelTransferJob,
-  applyDownloadGrantToJob,
   applyTransferFailure,
   buildNativeUploadJobFingerprint,
   createRetryFilesForDownloadJob,
-  resolveTransferOpenUrl,
   type DownloadJob,
 } from 'sdkwork-drive-pc-types';
 import { CreateSharedSpaceModal } from '../components/CreateSharedSpaceModal';
@@ -16,6 +15,7 @@ import {
   loadPersistedTransferJobs,
   NativeLocalUploadFile,
   persistTransferJobs,
+  runManagedDownloadTransfer,
   useDriveRuntime,
   type DriveFileService,
   type DriveStorageSummary,
@@ -64,16 +64,7 @@ function formatExpectedSize(totalSize: number | undefined): string {
   if (size <= 0) {
     return 'unknown size';
   }
-  if (size < 1024) {
-    return `${size} B`;
-  }
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} KB`;
-  }
-  if (size < 1024 * 1024 * 1024) {
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-  }
-  return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  return formatDriveBytes(size);
 }
 
 type ParsedUploadFingerprint = {
@@ -607,17 +598,20 @@ export function DrivePage({
         if (downloadAbortControllersRef.current.get(job.id) !== downloadController) {
           return;
         }
-        setDownloadJobs(prev =>
-          prev.map(item =>
-            item.id === job.id ? applyDownloadGrantToJob(item, download) : item,
-          ),
-        );
-        if (download.downloadUrl) {
-          const openUrl = resolveTransferOpenUrl(download);
-          if (openUrl) {
-            void onOpenExternal?.(openUrl);
-          }
-        }
+        return runManagedDownloadTransfer({
+          job,
+          grant: download,
+          signal: downloadController.signal,
+          onJobUpdate: (updater) => {
+            setDownloadJobs((prev) =>
+              prev.map((item) => (item.id === job.id ? updater(item) : item)),
+            );
+          },
+          onOpenExternal: onOpenExternal,
+          saveDownload: host.isNativeHost
+            ? (fileName, blob) => host.saveDownloadFile(fileName, blob)
+            : undefined,
+        });
       })
       .catch((err) => {
         if (isDrivePageAbortError(err)) {

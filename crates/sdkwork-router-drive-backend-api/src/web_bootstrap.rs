@@ -1,19 +1,41 @@
 use std::sync::Arc;
 
 use axum::Router;
-use sdkwork_drive_security::DriveAppContext;
+use sdkwork_drive_security::{can_access_drive_admin_storage, DriveAppContext};
 use sdkwork_iam_web_adapter::IamDatabaseWebRequestContextResolver;
 use sdkwork_web_axum::{with_web_request_context, WebFrameworkLayer};
 use sdkwork_web_core::{
-    DefaultWebRequestContextResolver, DomainContextInjector, WebAuthLevel, WebDeploymentMode,
-    WebEnvironment, WebRequestContext, WebRequestContextProfile, WebRequestPrincipal,
-    WebSubjectType,
+    AuthorizationPolicy, DefaultWebRequestContextResolver, DomainContextInjector, WebAuthLevel,
+    WebDeploymentMode, WebEnvironment, WebFrameworkError, WebRequestContext,
+    WebRequestContextProfile, WebRequestPrincipal, WebSubjectType,
 };
 
 use crate::http_route_manifest::backend_route_manifest;
 
 pub fn drive_backend_public_path_prefixes() -> Vec<String> {
     vec!["/healthz".to_owned(), "/metrics".to_owned()]
+}
+
+#[derive(Clone, Default)]
+struct DriveBackendAuthorizationPolicy;
+
+impl AuthorizationPolicy for DriveBackendAuthorizationPolicy {
+    fn authorize(
+        &self,
+        ctx: &WebRequestContext,
+        _operation_id: Option<&str>,
+    ) -> Result<(), WebFrameworkError> {
+        let principal = ctx.principal.as_ref().ok_or_else(|| {
+            WebFrameworkError::missing_credentials("authenticated principal is required")
+        })?;
+        let app_context = drive_app_context_from_web_principal(principal, ctx);
+        if can_access_drive_admin_storage(&app_context) {
+            return Ok(());
+        }
+        Err(WebFrameworkError::forbidden(
+            "Drive storage admin permission is required",
+        ))
+    }
 }
 
 #[derive(Clone, Default)]
@@ -104,6 +126,7 @@ where
             ..WebRequestContextProfile::default()
         })
         .with_route_manifest(route_manifest)
+        .with_authorization_policy(Arc::new(DriveBackendAuthorizationPolicy))
         .with_domain_injector(Arc::new(DriveBackendContextInjector))
 }
 

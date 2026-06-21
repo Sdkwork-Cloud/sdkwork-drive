@@ -8,6 +8,7 @@ use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::infrastructure::sql::upload_query_columns::{
     DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS, DRIVE_UPLOAD_PART_SELECT_COLUMNS,
 };
+use crate::ports::permission_store::DrivePermissionStore;
 use crate::ports::uploader_store::{
     CompleteDriveStoredUpload, DriveUploaderNodeRecord, DriveUploaderSpaceRecord,
     DriveUploaderStore, NewDriveUploadItem, NewDriveUploadPart, NewDriveUploaderNode,
@@ -116,26 +117,35 @@ impl DriveUploaderStore for SqlUploaderStore {
         subject_type: &str,
         subject_id: &str,
     ) -> Result<bool, DriveServiceError> {
-        let count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(1)
-             FROM dr_drive_node_permission
-             WHERE tenant_id=$1
-               AND node_id=$2
-               AND subject_type=$3
-               AND subject_id=$4
-               AND role IN ('writer', 'owner')
-               AND lifecycle_status='active'",
+        use crate::infrastructure::sql::permission_store::SqlDrivePermissionStore;
+        use crate::ports::permission_store::ResolveEffectiveNodeAccessCommand;
+
+        let node_row = sqlx::query(
+            "SELECT space_id FROM dr_drive_node \
+             WHERE tenant_id=$1 AND id=$2 AND lifecycle_status='active'",
         )
         .bind(tenant_id)
         .bind(node_id)
-        .bind(subject_type)
-        .bind(subject_id)
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
         .map_err(|error| {
-            DriveServiceError::Internal(format!("check uploader writer permission failed: {error}"))
+            DriveServiceError::Internal(format!("read uploader node space failed: {error}"))
         })?;
-        Ok(count > 0)
+        let Some(node_row) = node_row else {
+            return Ok(false);
+        };
+        let space_id: String = node_row.get("space_id");
+        let permission_store = SqlDrivePermissionStore::new(self.pool.clone());
+        let access = permission_store
+            .resolve_effective_node_access(ResolveEffectiveNodeAccessCommand {
+                tenant_id: tenant_id.to_string(),
+                space_id,
+                node_id: node_id.to_string(),
+                subject_type: subject_type.to_string(),
+                subject_id: subject_id.to_string(),
+            })
+            .await?;
+        Ok(access.allows_role("writer"))
     }
 
     async fn has_writer_share_token(

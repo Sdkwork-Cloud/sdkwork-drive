@@ -1,4 +1,5 @@
 pub mod audit;
+pub mod permission_role;
 pub mod maintenance;
 pub mod maintenance_job;
 pub mod node;

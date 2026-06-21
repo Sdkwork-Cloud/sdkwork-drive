@@ -165,6 +165,7 @@ function createDesktopHost(
     }),
     readLocalUploadRange: async () => new ArrayBuffer(0),
     checksumLocalUploadFile: async () => 'sha256:0',
+    saveDownloadFile: async () => true,
   };
 }
 

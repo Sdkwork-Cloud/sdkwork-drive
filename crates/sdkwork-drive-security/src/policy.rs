@@ -32,6 +32,16 @@ impl Default for DriveAuthValidationPolicy {
 }
 
 impl DriveAuthValidationPolicy {
+    fn is_production_runtime_profile() -> bool {
+        std::env::var("SDKWORK_DRIVE_RUNTIME_PROFILE")
+            .ok()
+            .map(|value| {
+                let value = value.trim().to_ascii_lowercase();
+                value == "production" || value == "prod"
+            })
+            .unwrap_or(false)
+    }
+
     pub fn allow_unsigned_for_development() -> Self {
         Self {
             allow_inline_claim_tokens: true,
@@ -61,7 +71,15 @@ impl DriveAuthValidationPolicy {
         let jwt_jwks_keys = crate::jwks::load_jwt_jwks_from_env();
 
         if jwt_hmac_secrets.is_empty() && jwt_jwks_keys.is_empty() {
-            Self::allow_unsigned_for_development()
+            if Self::is_production_runtime_profile() {
+                Self {
+                    allow_inline_claim_tokens: false,
+                    jwt_hmac_secrets: BTreeMap::new(),
+                    jwt_jwks_keys: BTreeMap::new(),
+                }
+            } else {
+                Self::allow_unsigned_for_development()
+            }
         } else {
             Self {
                 allow_inline_claim_tokens: false,

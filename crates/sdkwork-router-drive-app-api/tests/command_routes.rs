@@ -7277,12 +7277,12 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
                         "authorization",
                         format!(
                             "Bearer {}",
-                            common::auth_token("tenant-cloud-s3", "admin-cloud-s3", "appbase")
+                            common::auth_token("tenant-cloud-s3", "user-cloud-s3", "appbase")
                         ),
                     )
                     .header(
                         "access-token",
-                        common::access_token("tenant-cloud-s3", "admin-cloud-s3", "appbase"),
+                        common::access_token("tenant-cloud-s3", "user-cloud-s3", "appbase"),
                     )
                     .method(Method::POST)
                     .uri("/app/v3/api/drive/download_urls")
@@ -7323,12 +7323,12 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
                         "authorization",
                         format!(
                             "Bearer {}",
-                            common::auth_token("tenant-cloud-s3", "admin-cloud-s3", "appbase")
+                            common::auth_token("tenant-cloud-s3", "user-cloud-s3", "appbase")
                         ),
                     )
                     .header(
                         "access-token",
-                        common::access_token("tenant-cloud-s3", "admin-cloud-s3", "appbase"),
+                        common::access_token("tenant-cloud-s3", "user-cloud-s3", "appbase"),
                     )
                     .method(Method::GET)
                     .uri(format!("/app/v3/api/drive/download_tokens/{token}"))
@@ -9335,14 +9335,15 @@ fn hex_encode(value: &str) -> String {
         .collect()
 }
 
-async fn fetch_paged_items(
+async fn fetch_paged_items_as(
     app: axum::Router,
     uri: &str,
     tenant: &str,
+    user: &str,
 ) -> (Vec<serde_json::Value>, Option<String>) {
-    let user = common::user_from_uri(uri, tenant);
     let response = app
-        .oneshot(common::authed_get(uri, tenant, &user, "appbase"))
+        .clone()
+        .oneshot(common::authed_get(uri, tenant, user, "appbase"))
         .await
         .expect("paged request should be handled");
     assert_eq!(response.status(), StatusCode::OK, "{uri} should return OK");
@@ -9360,10 +9361,23 @@ async fn fetch_paged_items(
     (items, next_page_token)
 }
 
-async fn fetch_json(app: axum::Router, uri: &str, tenant: &str) -> serde_json::Value {
+async fn fetch_paged_items(
+    app: axum::Router,
+    uri: &str,
+    tenant: &str,
+) -> (Vec<serde_json::Value>, Option<String>) {
     let user = common::user_from_uri(uri, tenant);
+    fetch_paged_items_as(app, uri, tenant, &user).await
+}
+
+async fn fetch_json_as(
+    app: axum::Router,
+    uri: &str,
+    tenant: &str,
+    user: &str,
+) -> serde_json::Value {
     let response = app
-        .oneshot(common::authed_get(uri, tenant, &user, "appbase"))
+        .oneshot(common::authed_get(uri, tenant, user, "appbase"))
         .await
         .expect("json request should be handled");
     assert_eq!(response.status(), StatusCode::OK, "{uri} should return OK");
@@ -9373,6 +9387,11 @@ async fn fetch_json(app: axum::Router, uri: &str, tenant: &str) -> serde_json::V
             .expect("json response should be read"),
     )
     .expect("json response should be valid")
+}
+
+async fn fetch_json(app: axum::Router, uri: &str, tenant: &str) -> serde_json::Value {
+    let user = common::user_from_uri(uri, tenant);
+    fetch_json_as(app, uri, tenant, &user).await
 }
 
 async fn assert_git_repository_root_directory_error(response: Response) {
@@ -11152,12 +11171,12 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
                     "authorization",
                     format!(
                         "Bearer {}",
-                        common::auth_token("tenant-resource", "user-admin", "appbase")
+                        common::auth_token("tenant-resource", "user-owner", "appbase")
                     ),
                 )
                 .header(
                     "access-token",
-                    common::access_token("tenant-resource", "user-admin", "appbase"),
+                    common::access_token("tenant-resource", "user-owner", "appbase"),
                 )
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/changes?spaceId=space-resource")
@@ -11731,6 +11750,31 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
     .await
     .expect("node should be seeded");
 
+    sqlx::query(
+        "INSERT INTO dr_drive_node_permission (
+            id, tenant_id, node_id, subject_type, subject_id, role,
+            inherited, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'perm-comments-reviewer', 'tenant-comments', 'node-comments', 'user', 'user-reviewer',
+            'writer', 0, 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("reviewer permission should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node_permission (
+            id, tenant_id, node_id, subject_type, subject_id, role,
+            inherited, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'perm-comments-collaborator', 'tenant-comments', 'node-comments', 'user', 'user-collaborator',
+            'writer', 0, 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("collaborator permission should be seeded");
+
     let app = common::test_router_with_pool(pool.clone());
     for (id, content) in [
         ("comment-one", "Please review the first section."),
@@ -12183,12 +12227,12 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
                     "authorization",
                     format!(
                         "Bearer {}",
-                        common::auth_token("tenant-comments", "user-reviewer", "appbase")
+                        common::auth_token("tenant-comments", "user-owner", "appbase")
                     ),
                 )
                 .header(
                     "access-token",
-                    common::access_token("tenant-comments", "user-reviewer", "appbase"),
+                    common::access_token("tenant-comments", "user-owner", "appbase"),
                 )
                 .method(Method::GET)
                 .uri("/app/v3/api/drive/changes?spaceId=space-comments")
@@ -12866,6 +12910,42 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
     .await
     .expect("permission should be seeded");
     sqlx::query(
+        "INSERT INTO dr_drive_node_permission (
+            id, tenant_id, node_id, subject_type, subject_id, role,
+            inherited, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'perm-trashed', 'tenant-views', 'node-trashed', 'user', 'user-reviewer',
+            'reader', 0, 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("trashed permission should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node_permission (
+            id, tenant_id, node_id, subject_type, subject_id, role,
+            inherited, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'perm-favorite', 'tenant-views', 'node-favorite', 'user', 'user-reviewer',
+            'reader', 0, 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("favorite permission should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node_permission (
+            id, tenant_id, node_id, subject_type, subject_id, role,
+            inherited, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'perm-active', 'tenant-views', 'node-active', 'user', 'user-reviewer',
+            'reader', 0, 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("active permission should be seeded");
+    sqlx::query(
         "INSERT INTO dr_drive_node_favorite (
             id, tenant_id, node_id, subject_type, subject_id,
             lifecycle_status, version, created_by, updated_by
@@ -12988,10 +13068,20 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             .expect("shared response should be read"),
     )
     .expect("shared response should be valid json");
-    assert_eq!(shared_payload["items"].as_array().unwrap().len(), 1);
+    assert_eq!(shared_payload["items"].as_array().unwrap().len(), 3);
+    let shared_ids = shared_payload["items"]
+        .as_array()
+        .expect("shared items should be an array")
+        .iter()
+        .map(|item| item["id"].as_str().unwrap_or_default().to_string())
+        .collect::<Vec<_>>();
     assert_eq!(
-        shared_payload["items"][0]["id"].as_str(),
-        Some("node-shared")
+        shared_ids,
+        vec![
+            "node-favorite".to_string(),
+            "node-shared".to_string(),
+            "node-active".to_string()
+        ]
     );
 
     let favorites_response = app
@@ -13552,10 +13642,11 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
     }
 
     let app = common::test_router_with_pool(pool);
-    let (first_items, next_token) = fetch_paged_items(
+    let (first_items, next_token) = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?pageSize=2",
         "tenant-effective-perm",
+        "user-owner",
     )
     .await;
 
@@ -13591,12 +13682,13 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
     );
 
     let next_token = next_token.expect("effective permissions first page should have token");
-    let (second_items, final_token) = fetch_paged_items(
+    let (second_items, final_token) = fetch_paged_items_as(
         app,
         &format!(
             "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?pageSize=2&pageToken={next_token}"
         ),
-    "tenant-effective-perm",
+        "tenant-effective-perm",
+        "user-owner",
     )
     .await;
     assert_eq!(second_items.len(), 1);
@@ -13686,10 +13778,11 @@ async fn app_drive_effective_permissions_prefer_direct_then_nearest_acl_for_same
     }
 
     let app = common::test_router_with_pool(pool);
-    let (items, next_token) = fetch_paged_items(
+    let (items, next_token) = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/nodes/node-override-file/permissions/effective",
         "tenant-effective-override",
+        "user-owner",
     )
     .await;
 
@@ -14091,31 +14184,34 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
     assert_eq!(update_payload["propertyValue"].as_str(), Some("cust-002"));
     assert_eq!(update_payload["version"].as_i64(), Some(2));
 
-    let (first_items, next_token) = fetch_paged_items(
+    let (first_items, next_token) = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/nodes/node-property/properties?pageSize=1",
         "tenant-property",
+        "user-owner",
     )
     .await;
     assert_eq!(first_items.len(), 1);
     assert_eq!(first_items[0]["propertyKey"].as_str(), Some("customerId"));
     let next_token = next_token.expect("node properties should expose next page token");
-    let (second_items, final_token) = fetch_paged_items(
+    let (second_items, final_token) = fetch_paged_items_as(
         app.clone(),
         &format!(
             "/app/v3/api/drive/nodes/node-property/properties?pageSize=1&pageToken={next_token}"
         ),
         "tenant-property",
+        "user-owner",
     )
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(second_items[0]["propertyKey"].as_str(), Some("orderId"));
     assert!(final_token.is_none());
 
-    let private_only = fetch_paged_items(
+    let private_only = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/nodes/node-property/properties?visibility=private",
         "tenant-property",
+        "user-owner",
     )
     .await
     .0;
@@ -14147,20 +14243,22 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
     .expect("delete property response should be valid json");
     assert_eq!(delete_payload["deleted"].as_bool(), Some(true));
 
-    let remaining = fetch_paged_items(
+    let remaining = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/nodes/node-property/properties",
         "tenant-property",
+        "user-owner",
     )
     .await
     .0;
     assert_eq!(remaining.len(), 1);
     assert_eq!(remaining[0]["propertyKey"].as_str(), Some("orderId"));
 
-    let changes = fetch_paged_items(
+    let changes = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/changes?spaceId=space-property",
         "tenant-property",
+        "user-owner",
     )
     .await
     .0;
@@ -15207,18 +15305,20 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
         Some("node-target")
     );
 
-    let detail = fetch_json(
+    let detail = fetch_json_as(
         app.clone(),
         "/app/v3/api/drive/nodes/shortcut-001",
         "tenant-shortcut",
+        "user-owner",
     )
     .await;
     assert_eq!(detail["shortcutTargetNodeId"].as_str(), Some("node-target"));
 
-    let (listed, _) = fetch_paged_items(
+    let (listed, _) = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/spaces/space-shortcut/nodes?parentNodeId=folder-shortcut",
         "tenant-shortcut",
+        "user-owner",
     )
     .await;
     assert_eq!(listed.len(), 1);
@@ -15228,10 +15328,11 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
         Some("node-target")
     );
 
-    let changes = fetch_paged_items(
+    let changes = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/changes?spaceId=space-shortcut",
         "tenant-shortcut",
+        "user-owner",
     )
     .await
     .0;
@@ -16229,10 +16330,11 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
         .expect("apply second label request should be handled");
     assert_eq!(apply_second.status(), StatusCode::OK);
 
-    let (first_items, next_token) = fetch_paged_items(
+    let (first_items, next_token) = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/nodes/node-label/labels?pageSize=1",
         "tenant-label",
+        "user-owner",
     )
     .await;
     assert_eq!(first_items.len(), 1);
@@ -16241,10 +16343,11 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
         Some("classification.confidential")
     );
     let next_token = next_token.expect("node label list should expose next page token");
-    let (second_items, final_token) = fetch_paged_items(
+    let (second_items, final_token) = fetch_paged_items_as(
         app.clone(),
         &format!("/app/v3/api/drive/nodes/node-label/labels?pageSize=1&pageToken={next_token}"),
         "tenant-label",
+        "user-owner",
     )
     .await;
     assert_eq!(second_items.len(), 1);
@@ -16254,10 +16357,11 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
     );
     assert!(final_token.is_none());
 
-    let filtered = fetch_paged_items(
+    let filtered = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/nodes/node-label/labels?labelKey=classification.public",
         "tenant-label",
+        "user-owner",
     )
     .await
     .0;
@@ -16289,20 +16393,22 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
     .expect("remove label response should be valid json");
     assert_eq!(remove_payload["removed"].as_bool(), Some(true));
 
-    let remaining = fetch_paged_items(
+    let remaining = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/nodes/node-label/labels",
         "tenant-label",
+        "user-owner",
     )
     .await
     .0;
     assert_eq!(remaining.len(), 1);
     assert_eq!(remaining[0]["labelId"].as_str(), Some("label-public"));
 
-    let changes = fetch_paged_items(
+    let changes = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/changes?spaceId=space-label",
         "tenant-label",
+        "user-owner",
     )
     .await
     .0;
@@ -16446,39 +16552,43 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     assert_eq!(node_payload["resourceId"].as_str(), Some("node-watch"));
     assert_eq!(node_payload["nodeId"].as_str(), Some("node-watch"));
 
-    let (first_items, next_token) = fetch_paged_items(
+    let (first_items, next_token) = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/watch_channels?pageSize=1",
         "tenant-watch",
+        "user-owner",
     )
     .await;
     assert_eq!(first_items.len(), 1);
     assert_eq!(first_items[0]["id"].as_str(), Some("watch-changes-001"));
     let next_token = next_token.expect("watch channel list should expose next page token");
-    let (second_items, final_token) = fetch_paged_items(
+    let (second_items, final_token) = fetch_paged_items_as(
         app.clone(),
         &format!("/app/v3/api/drive/watch_channels?pageSize=1&pageToken={next_token}"),
         "tenant-watch",
+        "user-owner",
     )
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(second_items[0]["id"].as_str(), Some("watch-node-001"));
     assert!(final_token.is_none());
 
-    let node_filtered = fetch_paged_items(
+    let node_filtered = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/watch_channels?resourceType=node",
         "tenant-watch",
+        "user-owner",
     )
     .await
     .0;
     assert_eq!(node_filtered.len(), 1);
     assert_eq!(node_filtered[0]["id"].as_str(), Some("watch-node-001"));
 
-    let get_payload = fetch_json(
+    let get_payload = fetch_json_as(
         app.clone(),
         "/app/v3/api/drive/watch_channels/watch-node-001",
         "tenant-watch",
+        "user-owner",
     )
     .await;
     assert_eq!(
@@ -16528,10 +16638,11 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     );
     assert_eq!(stop_payload["channel"]["version"].as_i64(), Some(2));
 
-    let active_after_stop = fetch_paged_items(
+    let active_after_stop = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/watch_channels",
         "tenant-watch",
+        "user-owner",
     )
     .await
     .0;
@@ -16541,20 +16652,22 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
         Some("watch-changes-001")
     );
 
-    let stopped_filtered = fetch_paged_items(
+    let stopped_filtered = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/watch_channels?lifecycleStatus=stopped",
         "tenant-watch",
+        "user-owner",
     )
     .await
     .0;
     assert_eq!(stopped_filtered.len(), 1);
     assert_eq!(stopped_filtered[0]["id"].as_str(), Some("watch-node-001"));
 
-    let changes = fetch_paged_items(
+    let changes = fetch_paged_items_as(
         app.clone(),
         "/app/v3/api/drive/changes?spaceId=space-watch",
         "tenant-watch",
+        "user-owner",
     )
     .await
     .0;
@@ -16731,4 +16844,1402 @@ async fn app_dr_drive_watch_node_rejects_trashed_node_before_creating_channel() 
     .await
     .expect("watch channel count should be queryable");
     assert_eq!(watch_count, 0);
+}
+
+#[tokio::test]
+async fn app_drive_share_link_routes_enforce_acl_roles() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'space-share-acl', 'tenant-share-acl', 'user', 'user-owner', 'personal',
+            'Share ACL', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'node-share-acl', 'tenant-share-acl', 'space-share-acl', NULL, 'folder', 'Shared Folder',
+            'empty', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("node should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node_share_link (
+            id, tenant_id, node_id, token_hash, role, expires_at_epoch_ms,
+            download_limit, download_count, lifecycle_status, version,
+            created_by, updated_by
+        ) VALUES (
+            'share-acl-existing', 'tenant-share-acl', 'node-share-acl', ?1, 'reader',
+            1800000000000, NULL, 0, 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .bind(drive_share_token_hash("share-acl-token"))
+    .execute(&pool)
+    .await
+    .expect("share link should be seeded");
+
+    let app = common::test_router_with_pool(pool.clone());
+    for (method, uri) in [
+        (
+            Method::GET,
+            "/app/v3/api/drive/nodes/node-share-acl/share_links",
+        ),
+        (
+            Method::GET,
+            "/app/v3/api/drive/share_links/share-acl-existing",
+        ),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .header(
+                        "authorization",
+                        format!(
+                            "Bearer {}",
+                            common::auth_token("tenant-share-acl", "user-outsider", "appbase")
+                        ),
+                    )
+                    .header(
+                        "access-token",
+                        common::access_token("tenant-share-acl", "user-outsider", "appbase"),
+                    )
+                    .method(method.clone())
+                    .uri(uri)
+                    .body(Body::empty())
+                    .expect("denied share link request should be built"),
+            )
+            .await
+            .expect("denied share link request should be handled");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN, "{uri}");
+        let payload: serde_json::Value = serde_json::from_slice(
+            &to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("denied share link response should be read"),
+        )
+        .expect("denied share link response should be valid json");
+        assert_eq!(payload["code"].as_str(), Some("drive.permission_denied"));
+    }
+
+    let create_denied_before_reader = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-share-acl", "user-outsider", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-share-acl", "user-outsider", "appbase"),
+                )
+                .method(Method::POST)
+                .uri("/app/v3/api/drive/nodes/node-share-acl/share_links")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "id":"share-denied-create",
+                        "token":"new-share-token",
+                        "role":"reader",
+                        "operatorId":"user-outsider"
+                    }"#,
+                ))
+                .expect("denied share link create request should be built"),
+        )
+        .await
+        .expect("denied share link create request should be handled");
+    assert_eq!(
+        create_denied_before_reader.status(),
+        StatusCode::FORBIDDEN
+    );
+
+    sqlx::query(
+        "INSERT INTO dr_drive_node_permission (
+            id, tenant_id, node_id, subject_type, subject_id, role,
+            inherited, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'perm-share-reader', 'tenant-share-acl', 'node-share-acl', 'user', 'user-outsider',
+            'reader', 0, 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("reader permission should be seeded");
+
+    let list_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-share-acl", "user-outsider", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-share-acl", "user-outsider", "appbase"),
+                )
+                .method(Method::GET)
+                .uri("/app/v3/api/drive/nodes/node-share-acl/share_links")
+                .body(Body::empty())
+                .expect("allowed share link list request should be built"),
+        )
+        .await
+        .expect("allowed share link list request should be handled");
+    assert_eq!(list_response.status(), StatusCode::OK);
+    let list_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(list_response.into_body(), usize::MAX)
+            .await
+            .expect("allowed share link list response should be read"),
+    )
+    .expect("allowed share link list response should be valid json");
+    let ids = list_payload["items"]
+        .as_array()
+        .expect("share links should be an array")
+        .iter()
+        .filter_map(|item| item["id"].as_str())
+        .collect::<Vec<_>>();
+    assert!(ids.contains(&"share-acl-existing"));
+
+    let create_denied = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-share-acl", "user-outsider", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-share-acl", "user-outsider", "appbase"),
+                )
+                .method(Method::POST)
+                .uri("/app/v3/api/drive/nodes/node-share-acl/share_links")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "id":"share-reader-cannot-create",
+                        "token":"reader-cannot-create",
+                        "role":"reader",
+                        "operatorId":"user-outsider"
+                    }"#,
+                ))
+                .expect("reader create share link request should be built"),
+        )
+        .await
+        .expect("reader create share link request should be handled");
+    assert_eq!(create_denied.status(), StatusCode::FORBIDDEN);
+
+    let create_allowed = app
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-share-acl", "user-owner", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-share-acl", "user-owner", "appbase"),
+                )
+                .method(Method::POST)
+                .uri("/app/v3/api/drive/nodes/node-share-acl/share_links")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "id":"share-owner-created",
+                        "token":"owner-created-share",
+                        "role":"reader",
+                        "operatorId":"user-owner"
+                    }"#,
+                ))
+                .expect("owner create share link request should be built"),
+        )
+        .await
+        .expect("owner create share link request should be handled");
+    assert_eq!(create_allowed.status(), StatusCode::CREATED);
+}
+
+#[tokio::test]
+async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_results() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'space-search-acl', 'tenant-search-acl', 'user', 'user-owner', 'personal',
+            'Search ACL', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+
+    for (id, name) in [
+        ("node-search-hidden", "secret-hidden.txt"),
+        ("node-search-visible-a", "secret-visible-a.txt"),
+        ("node-search-visible-b", "secret-visible-b.txt"),
+    ] {
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
+                id, tenant_id, space_id, parent_node_id, node_type, node_name,
+                content_state, lifecycle_status, version, created_by, updated_by
+            ) VALUES (
+                ?1, 'tenant-search-acl', 'space-search-acl', NULL, 'file', ?2,
+                'ready', 'active', 1, 'user-owner', 'user-owner'
+            )",
+        )
+        .bind(id)
+        .bind(name)
+        .execute(&pool)
+        .await
+        .expect("search node should be seeded");
+    }
+
+    for node_id in ["node-search-visible-a", "node-search-visible-b"] {
+        sqlx::query(
+            "INSERT INTO dr_drive_node_permission (
+                id, tenant_id, node_id, subject_type, subject_id, role,
+                inherited, lifecycle_status, version, created_by, updated_by
+            ) VALUES (
+                ?1, 'tenant-search-acl', ?2, 'user', 'user-reviewer', 'reader',
+                0, 'active', 1, 'user-owner', 'user-owner'
+            )",
+        )
+        .bind(format!("perm-{node_id}"))
+        .bind(node_id)
+        .execute(&pool)
+        .await
+        .expect("reader permission should be seeded");
+    }
+
+    let app = common::test_router_with_pool(pool);
+    let first_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-search-acl", "user-reviewer", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-search-acl", "user-reviewer", "appbase"),
+                )
+                .method(Method::GET)
+                .uri("/app/v3/api/drive/search?spaceId=space-search-acl&q=secret&pageSize=1")
+                .body(Body::empty())
+                .expect("search first page request should be built"),
+        )
+        .await
+        .expect("search first page request should be handled");
+    assert_eq!(first_response.status(), StatusCode::OK);
+    let first_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(first_response.into_body(), usize::MAX)
+            .await
+            .expect("search first page response should be read"),
+    )
+    .expect("search first page response should be valid json");
+    let first_items = first_payload["items"]
+        .as_array()
+        .expect("search items should be an array");
+    assert_eq!(first_items.len(), 1);
+    let first_id = first_items[0]["id"]
+        .as_str()
+        .expect("search item id should be present");
+    assert!(
+        first_id == "node-search-visible-a" || first_id == "node-search-visible-b",
+        "search must only return ACL-visible nodes"
+    );
+    assert!(
+        first_id != "node-search-hidden",
+        "search must not leak nodes without reader access"
+    );
+    let next_page_token = first_payload["nextPageToken"]
+        .as_str()
+        .expect("search first page should expose nextPageToken when more visible rows exist");
+
+    let second_response = app
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-search-acl", "user-reviewer", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-search-acl", "user-reviewer", "appbase"),
+                )
+                .method(Method::GET)
+                .uri(format!(
+                    "/app/v3/api/drive/search?spaceId=space-search-acl&q=secret&pageSize=1&pageToken={next_page_token}"
+                ))
+                .body(Body::empty())
+                .expect("search second page request should be built"),
+        )
+        .await
+        .expect("search second page request should be handled");
+    assert_eq!(second_response.status(), StatusCode::OK);
+    let second_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(second_response.into_body(), usize::MAX)
+            .await
+            .expect("search second page response should be read"),
+    )
+    .expect("search second page response should be valid json");
+    let second_items = second_payload["items"]
+        .as_array()
+        .expect("second search items should be an array");
+    assert_eq!(second_items.len(), 1);
+    let second_id = second_items[0]["id"]
+        .as_str()
+        .expect("second search item id should be present");
+    assert_ne!(second_id, first_id);
+    assert!(
+        second_id == "node-search-visible-a" || second_id == "node-search-visible-b",
+        "second search page must remain ACL-filtered"
+    );
+    assert!(second_payload["nextPageToken"].is_null());
+}
+
+#[tokio::test]
+async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_results() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'space-list-acl', 'tenant-list-acl', 'user', 'user-owner', 'personal',
+            'List ACL', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'folder-list-acl-anchor', 'tenant-list-acl', 'space-list-acl',
+            NULL, 'folder', 'Root', 'ready', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("root folder anchor should be seeded");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_node_permission (
+            id, tenant_id, node_id, subject_type, subject_id, role,
+            inherited, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'perm-folder-list-acl-anchor', 'tenant-list-acl', 'folder-list-acl-anchor',
+            'user', 'user-reviewer', 'reader', 0, 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("anchor reader permission should be seeded");
+
+    for (id, name) in [
+        ("node-list-hidden", "secret-hidden.txt"),
+        ("node-list-visible-a", "secret-visible-a.txt"),
+        ("node-list-visible-b", "secret-visible-b.txt"),
+    ] {
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
+                id, tenant_id, space_id, parent_node_id, node_type, node_name,
+                content_state, lifecycle_status, version, created_by, updated_by
+            ) VALUES (
+                ?1, 'tenant-list-acl', 'space-list-acl', NULL, 'file', ?2,
+                'ready', 'active', 1, 'user-owner', 'user-owner'
+            )",
+        )
+        .bind(id)
+        .bind(name)
+        .execute(&pool)
+        .await
+        .expect("list node should be seeded");
+    }
+
+    for node_id in ["node-list-visible-a", "node-list-visible-b"] {
+        sqlx::query(
+            "INSERT INTO dr_drive_node_permission (
+                id, tenant_id, node_id, subject_type, subject_id, role,
+                inherited, lifecycle_status, version, created_by, updated_by
+            ) VALUES (
+                ?1, 'tenant-list-acl', ?2, 'user', 'user-reviewer', 'reader',
+                0, 'active', 1, 'user-owner', 'user-owner'
+            )",
+        )
+        .bind(format!("perm-{node_id}"))
+        .bind(node_id)
+        .execute(&pool)
+        .await
+        .expect("reader permission should be seeded");
+    }
+
+    let app = common::test_router_with_pool(pool);
+    let first_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-list-acl", "user-reviewer", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-list-acl", "user-reviewer", "appbase"),
+                )
+                .method(Method::GET)
+                .uri("/app/v3/api/drive/spaces/space-list-acl/nodes?pageSize=10")
+                .body(Body::empty())
+                .expect("list request should be built"),
+        )
+        .await
+        .expect("list request should be handled");
+    assert_eq!(first_response.status(), StatusCode::OK);
+    let first_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(first_response.into_body(), usize::MAX)
+            .await
+            .expect("list response should be read"),
+    )
+    .expect("list response should be valid json");
+    let first_items = first_payload["items"]
+        .as_array()
+        .expect("list items should be an array");
+    let listed_ids = first_items
+        .iter()
+        .filter_map(|item| item["id"].as_str())
+        .collect::<Vec<_>>();
+    assert!(
+        !listed_ids.iter().any(|id| *id == "node-list-hidden"),
+        "list must not leak nodes without reader access"
+    );
+    assert!(listed_ids.iter().any(|id| *id == "node-list-visible-a"));
+    assert!(listed_ids.iter().any(|id| *id == "node-list-visible-b"));
+    assert!(listed_ids.iter().any(|id| *id == "folder-list-acl-anchor"));
+    assert!(first_payload["nextPageToken"].is_null());
+
+    let paged_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-list-acl", "user-reviewer", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-list-acl", "user-reviewer", "appbase"),
+                )
+                .method(Method::GET)
+                .uri("/app/v3/api/drive/spaces/space-list-acl/nodes?pageSize=1")
+                .body(Body::empty())
+                .expect("list first page request should be built"),
+        )
+        .await
+        .expect("list first page request should be handled");
+    assert_eq!(paged_response.status(), StatusCode::OK);
+    let paged_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(paged_response.into_body(), usize::MAX)
+            .await
+            .expect("list first page response should be read"),
+    )
+    .expect("list first page response should be valid json");
+    let paged_items = paged_payload["items"]
+        .as_array()
+        .expect("paged list items should be an array");
+    assert_eq!(paged_items.len(), 1);
+    let first_id = paged_items[0]["id"]
+        .as_str()
+        .expect("list item id should be present");
+    assert_ne!(first_id, "node-list-hidden");
+    let next_page_token = paged_payload["nextPageToken"]
+        .as_str()
+        .expect("list first page should expose nextPageToken when more visible rows exist");
+
+    let second_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-list-acl", "user-reviewer", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-list-acl", "user-reviewer", "appbase"),
+                )
+                .method(Method::GET)
+                .uri(format!(
+                    "/app/v3/api/drive/spaces/space-list-acl/nodes?pageSize=1&pageToken={next_page_token}"
+                ))
+                .body(Body::empty())
+                .expect("list second page request should be built"),
+        )
+        .await
+        .expect("list second page request should be handled");
+    assert_eq!(second_response.status(), StatusCode::OK);
+    let second_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(second_response.into_body(), usize::MAX)
+            .await
+            .expect("list second page response should be read"),
+    )
+    .expect("list second page response should be valid json");
+    let second_items = second_payload["items"]
+        .as_array()
+        .expect("second list items should be an array");
+    assert_eq!(second_items.len(), 1);
+    let second_id = second_items[0]["id"]
+        .as_str()
+        .expect("second list item id should be present");
+    assert_ne!(second_id, first_id);
+    assert_ne!(second_id, "node-list-hidden");
+}
+
+#[tokio::test]
+async fn uploader_mark_part_uploaded_requires_writer_acl() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'space-uploader-part-deny', 'tenant-uploader-part-deny', 'user',
+            'user-owner', 'personal', 'Upload Deny', 'active', 1,
+            'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'node-uploader-part-deny', 'tenant-uploader-part-deny', 'space-uploader-part-deny',
+            NULL, 'file', 'deny.bin', 'uploading', 'active', 1,
+            'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("node should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_storage_provider (
+            id, provider_kind, name, endpoint_url, region, bucket, path_style,
+            strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
+            status, version, created_by, updated_by
+        ) VALUES (
+            'provider-uploader-part-deny', 's3_compatible', 'Uploader S3',
+            'https://s3.example.com', 'us-east-1', 'bucket-s3', 1, 1,
+            'plain:test-access-key:test-secret-key', 'AES256', 'STANDARD',
+            'active', 1, 'admin-uploader', 'admin-uploader'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("storage provider should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_upload_session (
+            id, tenant_id, space_id, node_id, bucket, object_key,
+            idempotency_key, storage_provider_id, storage_upload_id, state,
+            expires_at_epoch_ms, version, created_by, updated_by
+        ) VALUES (
+            'session-uploader-part-deny', 'tenant-uploader-part-deny', 'space-uploader-part-deny',
+            'node-uploader-part-deny', 'bucket-s3', 'objects/deny.bin',
+            'idem-uploader-part-deny', 'provider-uploader-part-deny', 'storage-upload-deny',
+            'uploading', 1800000000000, 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("upload session should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_upload_item (
+            id, task_id, tenant_id, organization_id, user_id, actor_type, actor_id,
+            app_id, app_resource_type, app_resource_id, upload_profile_code,
+            file_fingerprint, space_id, node_id, upload_session_id,
+            storage_provider_id, storage_upload_id, original_file_name, file_extension,
+            content_type, content_type_group, detected_content_type, content_length,
+            checksum_sha256_hex, chunk_size_bytes, total_parts, uploaded_parts_count,
+            uploaded_bytes, status, retention_mode, retention_expires_at_epoch_ms,
+            cleanup_action, hard_delete_after_epoch_ms, cleanup_status,
+            post_process_status, created_by, updated_by
+        ) VALUES (
+            'upload-item-uploader-part-deny', 'task-uploader-part-deny',
+            'tenant-uploader-part-deny', NULL, 'user-owner', 'user',
+            'user-owner', 'drive-pc', 'desktop-file-browser',
+            'root', 'generic', 'fp-uploader-part-deny', 'space-uploader-part-deny',
+            'node-uploader-part-deny', 'session-uploader-part-deny',
+            'provider-uploader-part-deny', 'storage-upload-deny', 'deny.bin',
+            'bin', 'application/octet-stream', 'binary',
+            'application/octet-stream', 12, NULL, 8, 2, 0, 0,
+            'uploading', 'long_term', NULL, NULL, NULL, 'active',
+            'not_required', 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("upload item should be seeded");
+
+    let app = common::test_router_with_pool(pool);
+    let denied_response = app
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token(
+                            "tenant-uploader-part-deny",
+                            "user-no-access",
+                            "appbase",
+                        )
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token(
+                        "tenant-uploader-part-deny",
+                        "user-no-access",
+                        "appbase",
+                    ),
+                )
+                .method(Method::PUT)
+                .uri("/app/v3/api/drive/uploader/uploads/upload-item-uploader-part-deny/parts/1")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "uploadSessionId":"session-uploader-part-deny",
+                        "offsetBytes":0,
+                        "sizeBytes":8,
+                        "etag":"etag-part-deny",
+                        "checksumSha256Hex":"sha256:3333333333333333333333333333333333333333333333333333333333333333",
+                        "uploadedAtEpochMs":1700000000000
+                    }"#,
+                ))
+                .expect("denied mark part request should be built"),
+        )
+        .await
+        .expect("denied mark part request should be handled");
+    assert_eq!(denied_response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn app_drive_comment_routes_enforce_acl_roles() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'space-comment-acl', 'tenant-comment-acl', 'user', 'user-owner', 'personal',
+            'Comment ACL', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'node-comment-acl', 'tenant-comment-acl', 'space-comment-acl', NULL, 'file', 'notes.txt',
+            'ready', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("node should be seeded");
+
+    let app = common::test_router_with_pool(pool.clone());
+    for (method, uri, body) in [
+        (
+            Method::GET,
+            "/app/v3/api/drive/nodes/node-comment-acl/comments",
+            None,
+        ),
+        (
+            Method::POST,
+            "/app/v3/api/drive/nodes/node-comment-acl/comments",
+            Some(
+                r#"{
+                    "id":"comment-denied",
+                    "content":"Should be denied",
+                    "operatorId":"user-outsider"
+                }"#,
+            ),
+        ),
+    ] {
+        let request = match body {
+            Some(payload) => Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-comment-acl", "user-outsider", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-comment-acl", "user-outsider", "appbase"),
+                )
+                .method(method.clone())
+                .uri(uri)
+                .header("content-type", "application/json")
+                .body(Body::from(payload))
+                .expect("denied comment request should be built"),
+            None => Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-comment-acl", "user-outsider", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-comment-acl", "user-outsider", "appbase"),
+                )
+                .method(method.clone())
+                .uri(uri)
+                .body(Body::empty())
+                .expect("denied comment request should be built"),
+        };
+        let response = app
+            .clone()
+            .oneshot(request)
+            .await
+            .expect("denied comment request should be handled");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN, "{uri}");
+    }
+
+    sqlx::query(
+        "INSERT INTO dr_drive_node_permission (
+            id, tenant_id, node_id, subject_type, subject_id, role,
+            inherited, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'perm-comment-reader', 'tenant-comment-acl', 'node-comment-acl', 'user', 'user-outsider',
+            'reader', 0, 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("reader permission should be seeded");
+
+    let list_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-comment-acl", "user-outsider", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-comment-acl", "user-outsider", "appbase"),
+                )
+                .method(Method::GET)
+                .uri("/app/v3/api/drive/nodes/node-comment-acl/comments")
+                .body(Body::empty())
+                .expect("reader comment list request should be built"),
+        )
+        .await
+        .expect("reader comment list request should be handled");
+    assert_eq!(list_response.status(), StatusCode::OK);
+
+    let create_denied = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-comment-acl", "user-outsider", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-comment-acl", "user-outsider", "appbase"),
+                )
+                .method(Method::POST)
+                .uri("/app/v3/api/drive/nodes/node-comment-acl/comments")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "id":"comment-reader-denied",
+                        "content":"Reader cannot create",
+                        "operatorId":"user-outsider"
+                    }"#,
+                ))
+                .expect("reader create comment request should be built"),
+        )
+        .await
+        .expect("reader create comment request should be handled");
+    assert_eq!(create_denied.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn app_drive_legacy_download_url_route_enforces_reader_acl() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'space-download-acl', 'tenant-download-acl', 'user', 'user-owner', 'personal',
+            'Download ACL', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'node-download-acl', 'tenant-download-acl', 'space-download-acl', NULL, 'file', 'secret.bin',
+            'ready', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("node should be seeded");
+
+    let app = common::test_router_with_pool(pool);
+    let denied_response = app
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-download-acl", "user-outsider", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-download-acl", "user-outsider", "appbase"),
+                )
+                .method(Method::POST)
+                .uri("/app/v3/api/drive/download_urls")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "nodeId":"node-download-acl",
+                        "requestedTtlSeconds":120
+                    }"#,
+                ))
+                .expect("denied download url request should be built"),
+        )
+        .await
+        .expect("denied download url request should be handled");
+    assert_eq!(denied_response.status(), StatusCode::FORBIDDEN);
+    let payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(denied_response.into_body(), usize::MAX)
+            .await
+            .expect("denied download url response should be read"),
+    )
+    .expect("denied download url response should be valid json");
+    assert_eq!(payload["code"].as_str(), Some("drive.permission_denied"));
+}
+
+#[tokio::test]
+async fn app_drive_changes_require_space_id() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    let app = common::test_router_with_pool(pool);
+    for uri in [
+        "/app/v3/api/drive/changes",
+        "/app/v3/api/drive/changes/start_page_token",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .header(
+                        "authorization",
+                        format!(
+                            "Bearer {}",
+                            common::auth_token("tenant-changes-required", "user-owner", "appbase")
+                        ),
+                    )
+                    .header(
+                        "access-token",
+                        common::access_token(
+                            "tenant-changes-required",
+                            "user-owner",
+                            "appbase",
+                        ),
+                    )
+                    .method(Method::GET)
+                    .uri(uri)
+                    .body(Body::empty())
+                    .expect("changes missing space request should be built"),
+            )
+            .await
+            .expect("changes missing space request should be handled");
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST, "{uri}");
+        let payload: serde_json::Value = serde_json::from_slice(
+            &to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("changes missing space response should be read"),
+        )
+        .expect("changes missing space response should be valid json");
+        assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+        assert_eq!(payload["detail"].as_str(), Some("spaceId is required"));
+    }
+}
+
+#[tokio::test]
+async fn app_drive_change_feed_skips_nodes_without_reader_acl_and_paginates_visible_results() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'space-change-acl', 'tenant-change-acl', 'user', 'user-owner', 'personal',
+            'Change ACL', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'folder-change-root', 'tenant-change-acl', 'space-change-acl', NULL, 'folder', 'Root',
+            'empty', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("change feed root folder should be seeded");
+    for (node_id, seq, event_type) in [
+        ("node-change-hidden", 1_i64, "node.created"),
+        ("node-change-visible-a", 2_i64, "node.updated"),
+        ("node-change-visible-b", 3_i64, "node.updated"),
+    ] {
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
+                id, tenant_id, space_id, parent_node_id, node_type, node_name,
+                content_state, lifecycle_status, version, created_by, updated_by
+            ) VALUES (
+                ?1, 'tenant-change-acl', 'space-change-acl', NULL, 'file', ?1,
+                'ready', 'active', 1, 'user-owner', 'user-owner'
+            )",
+        )
+        .bind(node_id)
+        .execute(&pool)
+        .await
+        .expect("change node should be seeded");
+        sqlx::query(
+            "INSERT INTO dr_drive_change_log (
+                id, tenant_id, space_id, node_id, sequence_no, event_type, actor_id
+            ) VALUES (
+                ?1, 'tenant-change-acl', 'space-change-acl', ?2, ?3, ?4, 'user-owner'
+            )",
+        )
+        .bind(format!("change-{seq}"))
+        .bind(node_id)
+        .bind(seq)
+        .bind(event_type)
+        .execute(&pool)
+        .await
+        .expect("change log row should be seeded");
+    }
+    sqlx::query(
+        "INSERT INTO dr_drive_change_log (
+            id, tenant_id, space_id, node_id, sequence_no, event_type, actor_id
+        ) VALUES (
+            'change-space-level', 'tenant-change-acl', 'space-change-acl', NULL, 4, 'space.updated', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("space-level change should be seeded");
+
+    for node_id in ["node-change-visible-a", "node-change-visible-b"] {
+        sqlx::query(
+            "INSERT INTO dr_drive_node_permission (
+                id, tenant_id, node_id, subject_type, subject_id, role,
+                inherited, lifecycle_status, version, created_by, updated_by
+            ) VALUES (
+                ?1, 'tenant-change-acl', ?2, 'user', 'user-reviewer', 'reader',
+                0, 'active', 1, 'user-owner', 'user-owner'
+            )",
+        )
+        .bind(format!("perm-{node_id}"))
+        .bind(node_id)
+        .execute(&pool)
+        .await
+        .expect("reader permission should be seeded");
+    }
+    sqlx::query(
+        "INSERT INTO dr_drive_node_permission (
+            id, tenant_id, node_id, subject_type, subject_id, role,
+            inherited, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'perm-change-feed-reader', 'tenant-change-acl', 'folder-change-root', 'user', 'user-reviewer', 'reader',
+            0, 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("change feed reader permission should be seeded");
+
+    let app = common::test_router_with_pool(pool);
+    let denied = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-change-acl", "user-outsider", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-change-acl", "user-outsider", "appbase"),
+                )
+                .method(Method::GET)
+                .uri("/app/v3/api/drive/changes?spaceId=space-change-acl")
+                .body(Body::empty())
+                .expect("denied change feed request should be built"),
+        )
+        .await
+        .expect("denied change feed request should be handled");
+    assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+
+    let first_page = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-change-acl", "user-reviewer", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-change-acl", "user-reviewer", "appbase"),
+                )
+                .method(Method::GET)
+                .uri("/app/v3/api/drive/changes?spaceId=space-change-acl&pageSize=1")
+                .body(Body::empty())
+                .expect("change feed first page request should be built"),
+        )
+        .await
+        .expect("change feed first page request should be handled");
+    assert_eq!(first_page.status(), StatusCode::OK);
+    let first_page_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(first_page.into_body(), usize::MAX)
+            .await
+            .expect("change feed first page response should be read"),
+    )
+    .expect("change feed first page response should be valid json");
+    assert_eq!(
+        first_page_payload["items"][0]["nodeId"].as_str(),
+        Some("node-change-visible-a")
+    );
+    let next_page_token = first_page_payload["nextPageToken"]
+        .as_str()
+        .expect("change feed should expose nextPageToken");
+
+    let second_page = app
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-change-acl", "user-reviewer", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-change-acl", "user-reviewer", "appbase"),
+                )
+                .method(Method::GET)
+                .uri(format!(
+                    "/app/v3/api/drive/changes?spaceId=space-change-acl&pageSize=1&pageToken={next_page_token}"
+                ))
+                .body(Body::empty())
+                .expect("change feed second page request should be built"),
+        )
+        .await
+        .expect("change feed second page request should be handled");
+    assert_eq!(second_page.status(), StatusCode::OK);
+    let second_page_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(second_page.into_body(), usize::MAX)
+            .await
+            .expect("change feed second page response should be read"),
+    )
+    .expect("change feed second page response should be valid json");
+    let visible_node_ids = second_page_payload["items"]
+        .as_array()
+        .expect("change feed items should be array")
+        .iter()
+        .filter_map(|item| item["nodeId"].as_str())
+        .collect::<Vec<_>>();
+    assert!(visible_node_ids.contains(&"node-change-visible-b"));
+    assert!(!visible_node_ids.contains(&"node-change-hidden"));
+}
+
+#[tokio::test]
+async fn app_drive_standard_views_hide_nodes_without_reader_acl() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'space-view-acl', 'tenant-view-acl', 'user', 'user-owner', 'personal',
+            'View ACL', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+    for (id, lifecycle_status) in [("node-recent-hidden", "active"), ("node-trash-hidden", "trashed")] {
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
+                id, tenant_id, space_id, parent_node_id, node_type, node_name,
+                content_state, lifecycle_status, version, created_by, updated_by
+            ) VALUES (?1, 'tenant-view-acl', 'space-view-acl', NULL, 'file', ?1, 'ready', ?2, 1, 'user-owner', 'user-owner')",
+        )
+        .bind(id)
+        .bind(lifecycle_status)
+        .execute(&pool)
+        .await
+        .expect("node should be seeded");
+    }
+
+    let app = common::test_router_with_pool(pool);
+    for uri in [
+        "/app/v3/api/drive/recent?spaceId=space-view-acl",
+        "/app/v3/api/drive/trash?spaceId=space-view-acl",
+        "/app/v3/api/drive/search?spaceId=space-view-acl&q=hidden",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .header(
+                        "authorization",
+                        format!(
+                            "Bearer {}",
+                            common::auth_token("tenant-view-acl", "user-outsider", "appbase")
+                        ),
+                    )
+                    .header(
+                        "access-token",
+                        common::access_token("tenant-view-acl", "user-outsider", "appbase"),
+                    )
+                    .method(Method::GET)
+                    .uri(uri)
+                    .body(Body::empty())
+                    .expect("denied view request should be built"),
+            )
+            .await
+            .expect("denied view request should be handled");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN, "{uri}");
+    }
+
+    let shared_hidden = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-view-acl", "user-outsider", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-view-acl", "user-outsider", "appbase"),
+                )
+                .method(Method::GET)
+                .uri("/app/v3/api/drive/shared_with_me?spaceId=space-view-acl&subjectType=user&subjectId=user-outsider")
+                .body(Body::empty())
+                .expect("denied shared view request should be built"),
+        )
+        .await
+        .expect("denied shared view request should be handled");
+    assert_eq!(shared_hidden.status(), StatusCode::OK);
+    let shared_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(shared_hidden.into_body(), usize::MAX)
+            .await
+            .expect("shared body should be read"),
+    )
+    .expect("shared payload should parse");
+    assert_eq!(shared_payload["items"].as_array().unwrap().len(), 0);
+
+    let favorite_denied = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-view-acl", "user-outsider", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-view-acl", "user-outsider", "appbase"),
+                )
+                .method(Method::PUT)
+                .uri("/app/v3/api/drive/nodes/node-recent-hidden/favorite")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "subjectType":"user",
+                        "subjectId":"user-outsider",
+                        "operatorId":"user-outsider"
+                    }"#,
+                ))
+                .expect("denied favorite request should be built"),
+        )
+        .await
+        .expect("denied favorite request should be handled");
+    assert_eq!(favorite_denied.status(), StatusCode::FORBIDDEN);
 }

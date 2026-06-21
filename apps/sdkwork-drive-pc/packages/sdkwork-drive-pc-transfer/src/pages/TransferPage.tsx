@@ -19,7 +19,7 @@ import {
   RefreshCcw,
   ExternalLink
 } from 'lucide-react';
-import { useTranslation } from 'sdkwork-drive-pc-commons';
+import { formatDriveBytes, useTranslation } from 'sdkwork-drive-pc-commons';
 import {
   canCancelTransferJob,
   canPauseTransferJob,
@@ -54,13 +54,7 @@ export function TransferPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
 
-  // Format bytes helper
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
-  };
+  const formatSize = formatDriveBytes;
 
   const handleCancel = (id: string) => {
     onCancelJob(id);

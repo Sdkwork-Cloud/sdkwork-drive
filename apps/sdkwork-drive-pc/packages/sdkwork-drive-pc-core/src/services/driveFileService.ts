@@ -115,6 +115,29 @@ export interface DriveEmptyTrashOptions extends DriveFileWriteOptions {
   spaceId?: string;
 }
 
+export type DriveShareLinkRole = 'reader' | 'commenter' | 'writer';
+
+export interface DriveShareLink {
+  id: string;
+  nodeId: string;
+  role: DriveShareLinkRole;
+  expiresAtEpochMs?: number;
+  downloadLimit?: number;
+  downloadCount: number;
+  lifecycleStatus: string;
+  version: number;
+}
+
+export interface DriveShareLinkWithToken extends DriveShareLink {
+  token: string;
+}
+
+export interface DriveCreateShareLinkOptions extends DriveFileWriteOptions {
+  role?: DriveShareLinkRole;
+  expiresAtEpochMs?: number;
+  downloadLimit?: number;
+}
+
 export interface DriveFileService {
   getAllWorkspaceFiles(options?: DriveFileReadOptions): Promise<DriveFile[]>;
   getFolderPath(folderId: string, options?: DriveFileReadOptions): Promise<DriveFile[]>;
@@ -149,6 +172,12 @@ export interface DriveFileService {
   permanentlyDeleteFile(id: string, options?: DriveFileWriteOptions): Promise<void>;
   restoreFile(id: string, options?: DriveFileWriteOptions): Promise<void>;
   emptyTrash(options?: DriveEmptyTrashOptions): Promise<number>;
+  listShareLinks(nodeId: string, options?: DriveFileReadOptions): Promise<DriveShareLink[]>;
+  createShareLink(
+    nodeId: string,
+    options?: DriveCreateShareLinkOptions,
+  ): Promise<DriveShareLinkWithToken>;
+  revokeShareLink(shareLinkId: string, options?: DriveFileWriteOptions): Promise<boolean>;
   toggleStar(id: string, options?: DriveFileWriteOptions): Promise<boolean>;
   uploadFile(
     file: DriveUploaderBlobLike,
@@ -392,6 +421,28 @@ function makeId(prefix: string): string {
 
   fallbackIdCounter += 1;
   return `${prefix}-${Date.now().toString(36)}-${fallbackIdCounter.toString(36)}`;
+}
+
+function makeShareToken(): string {
+  return randomHex(32) || `${Date.now().toString(36)}-${makeId('share')}`;
+}
+
+function mapShareLink(record: unknown): DriveShareLink {
+  const source = isRecord(record) ? record : {};
+  const role = stringField(source, 'role');
+  const normalizedRole: DriveShareLinkRole =
+    role === 'writer' || role === 'commenter' ? role : 'reader';
+  return {
+    id: stringField(source, 'id') || makeId('share-link'),
+    nodeId: stringField(source, 'nodeId', 'node_id') || '',
+    role: normalizedRole,
+    expiresAtEpochMs: numberField(source, 'expiresAtEpochMs', 'expires_at_epoch_ms'),
+    downloadLimit: numberField(source, 'downloadLimit', 'download_limit'),
+    downloadCount: numberField(source, 'downloadCount', 'download_count') ?? 0,
+    lifecycleStatus:
+      stringField(source, 'lifecycleStatus', 'lifecycle_status') || 'active',
+    version: numberField(source, 'version') ?? 1,
+  };
 }
 
 function driveUploaderFingerprint(fileName: string, contentType: string, contentLength: number): string {
@@ -1685,6 +1736,44 @@ function createSdkBackedDriveFileService(
         'deletedCount',
         'deleted_count',
       );
+    },
+    async listShareLinks(nodeId, options) {
+      const response = await sdkRequest<unknown>({
+        operationId: 'shareLinks.list',
+        signal: options?.signal,
+        pathParams: { nodeId },
+        query: {},
+      });
+      return extractItems(response).map((item) => mapShareLink(item));
+    },
+    async createShareLink(nodeId, options = {}) {
+      const token = makeShareToken();
+      const body: JsonRecord = {
+        id: makeId('share-link'),
+        token,
+        role: options.role || 'reader',
+      };
+      assignDefined(body, 'expiresAtEpochMs', options.expiresAtEpochMs);
+      assignDefined(body, 'downloadLimit', options.downloadLimit);
+      const response = await sdkRequest<unknown>({
+        operationId: 'shareLinks.create',
+        signal: options?.signal,
+        pathParams: { nodeId },
+        body,
+      });
+      return {
+        ...mapShareLink(response),
+        token,
+      };
+    },
+    async revokeShareLink(shareLinkId, options) {
+      const response = await sdkRequest<unknown>({
+        operationId: 'shareLinks.revoke',
+        signal: options?.signal,
+        pathParams: { shareLinkId },
+        query: {},
+      });
+      return booleanField(isRecord(response) ? response : {}, 'revoked') ?? false;
     },
     async toggleStar(id, options) {
       const identity = resolveIdentity(getSession);

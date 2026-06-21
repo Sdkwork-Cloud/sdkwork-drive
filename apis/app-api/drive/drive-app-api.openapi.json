@@ -22,7 +22,7 @@
           {
             "name": "spaceId",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -151,7 +151,7 @@
           {
             "name": "spaceId",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string"
             }

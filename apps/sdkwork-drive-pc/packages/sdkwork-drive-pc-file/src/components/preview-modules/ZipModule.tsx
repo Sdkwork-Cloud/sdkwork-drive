@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Archive, ExternalLink, Info } from 'lucide-react';
+import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
 import type { DriveArchiveEntry, DriveFileService } from 'sdkwork-drive-pc-core';
 
@@ -92,12 +93,7 @@ export function ZipModule({
     return { fileCount, folderCount, totalBytes };
   }, [entries]);
 
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-  };
+  const formatSize = formatDriveBytes;
 
   const handleExtract = async () => {
     extractionAbortControllerRef.current?.abort();

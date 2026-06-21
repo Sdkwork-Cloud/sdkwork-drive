@@ -14,6 +14,8 @@ const steps = [
   ['check', [pnpmCommand(), ['check']]],
   ['api:check', [pnpmCommand(), ['api:check']]],
   ['test:app-openapi-context', [pnpmCommand(), ['test:app-openapi-context']]],
+  ['test:app-sdk-smoke', [pnpmCommand(), ['test:app-sdk-smoke']]],
+  ['test:drive-integration', [pnpmCommand(), ['test:drive-integration']]],
   ['sdk:check', [pnpmCommand(), ['sdk:check']]],
 ];
 

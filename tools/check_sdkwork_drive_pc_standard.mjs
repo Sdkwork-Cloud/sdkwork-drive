@@ -379,7 +379,33 @@ for (const requiredIgnore of [
   }
 }
 
+function assertNoLocalByteFormatters() {
+  const allowedPaths = new Set([
+    'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons/src/utils/formatDriveBytes.ts',
+  ]);
+  const localByteFormatterPattern = /if\s*\([^)]*<\s*1024\s*\*\s*1024/;
+  for (const file of listTextFiles(appRoot)) {
+    const relativePath = path.relative(repoRoot, file).replaceAll(path.sep, '/');
+    if (!relativePath.endsWith('.ts') && !relativePath.endsWith('.tsx')) {
+      continue;
+    }
+    if (relativePath.endsWith('.test.ts') || relativePath.endsWith('.test.tsx')) {
+      continue;
+    }
+    if (allowedPaths.has(relativePath)) {
+      continue;
+    }
+    const source = readFileSync(file, 'utf8');
+    if (localByteFormatterPattern.test(source)) {
+      fail(
+        `${relativePath} must use formatDriveBytes from sdkwork-drive-pc-commons instead of local byte formatting`,
+      );
+    }
+  }
+}
+
 assertNoOldTokens();
+assertNoLocalByteFormatters();
 assertStandardRuntimeConfig();
 assertNoSdkTransportBypass();
 assertStandardIamRuntime();

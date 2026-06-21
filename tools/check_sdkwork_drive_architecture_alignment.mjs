@@ -130,6 +130,26 @@ assert(
   appApiCargo.includes('sdkwork-utils-rust.workspace = true'),
   'sdkwork-router-drive-app-api must depend on sdkwork-utils-rust',
 );
+assert(
+  !appApiCargo.includes('sha2.workspace = true'),
+  'sdkwork-router-drive-app-api must use sdkwork-utils-rust instead of direct sha2',
+);
+
+const storageLocalCargo = readText('crates/sdkwork-drive-storage-local/Cargo.toml');
+assert(
+  storageLocalCargo.includes('sdkwork-utils-rust.workspace = true'),
+  'sdkwork-drive-storage-local must depend on sdkwork-utils-rust',
+);
+assert(
+  !storageLocalCargo.includes('sha2.workspace = true'),
+  'sdkwork-drive-storage-local must use sdkwork-utils-rust instead of direct sha2',
+);
+
+const workspaceServiceCargo = readText('crates/sdkwork-drive-workspace-service/Cargo.toml');
+assert(
+  workspaceServiceCargo.includes('sdkwork-utils-rust.workspace = true'),
+  'sdkwork-drive-workspace-service must depend on sdkwork-utils-rust',
+);
 
 const workflow = JSON.parse(readText('sdkwork.workflow.json'));
 const dependencyIds = new Set((workflow.dependencies || []).map((dependency) => dependency.id));

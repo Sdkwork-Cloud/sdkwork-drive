@@ -104,7 +104,7 @@ describe('drive transfer job helpers', () => {
       expiresAtEpochMs: 1_800_000_000_000,
       totalSize: 8192,
       downloadedSize: 0,
-      progress: 100,
+      progress: 0,
       status: 'ready',
       speed: 'Ready',
       timeRemaining: 'Available',
@@ -132,7 +132,7 @@ describe('drive transfer job helpers', () => {
       fileId: 'package-001',
       totalSize: 4096,
       downloadedSize: 0,
-      progress: 100,
+      progress: 0,
       downloadUrl: 'https://drive.example.test/download/package-001',
       status: 'ready',
     });

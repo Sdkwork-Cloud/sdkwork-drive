@@ -13,8 +13,8 @@ async-trait.workspace = true
 sdkwork-drive-config.workspace = true
 sdkwork-drive-observability.workspace = true
 sdkwork-drive-storage-contract.workspace = true
+sdkwork-utils-rust.workspace = true
 sqlx.workspace = true
-sha2.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 serde = { workspace = true }

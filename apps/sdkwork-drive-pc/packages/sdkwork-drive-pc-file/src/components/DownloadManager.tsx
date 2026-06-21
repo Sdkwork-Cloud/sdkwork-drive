@@ -12,7 +12,7 @@ import {
   File,
   Loader2,
 } from 'lucide-react';
-import { useTranslation } from 'sdkwork-drive-pc-commons';
+import { formatDriveBytes, useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DownloadJob } from 'sdkwork-drive-pc-types';
 import {
   canCancelTransferJob,
@@ -59,13 +59,7 @@ export function DownloadManager({
   const finishedCount = completedCount + readyCount;
   const totalCount = jobs.length;
 
-  // Helper format sizes
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
-  };
+  const formatSize = formatDriveBytes;
 
   // Status visual configurations
   const getStatusBadge = (status: DownloadJob['status']) => {

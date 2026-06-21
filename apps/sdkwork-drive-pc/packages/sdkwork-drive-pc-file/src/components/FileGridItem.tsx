@@ -7,7 +7,10 @@ import {
   Edit2, 
   Trash, 
   Trash2, 
-  RefreshCcw 
+  RefreshCcw,
+  Link2,
+  FolderInput,
+  Copy,
 } from 'lucide-react';
 import { useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
@@ -25,6 +28,9 @@ interface FileGridItemProps {
   onRename: (e: React.MouseEvent, file: DriveFile) => void;
   onTrashAction: (e: React.MouseEvent, file: DriveFile) => void;
   onPermanentDelete: (e: React.MouseEvent, file: DriveFile) => void;
+  onShare?: (file: DriveFile) => void;
+  onMove?: (file: DriveFile) => void;
+  onCopy?: (file: DriveFile) => void;
   onDrillDown: (folderId: string) => void;
   formatDate: (dateString: string) => string;
   formatSize: (bytes?: number) => string;
@@ -48,6 +54,9 @@ export function FileGridItem({
   onRename,
   onTrashAction,
   onPermanentDelete,
+  onShare,
+  onMove,
+  onCopy,
   onDrillDown,
   formatDate,
   formatSize,
@@ -197,6 +206,42 @@ export function FileGridItem({
                   >
                      <Star size={14} className={`shrink-0 ${isItemStarred ? 'text-amber-500 fill-amber-500' : 'text-gray-400'}`}/> {isItemStarred ? t('fileBrowser.unstarResource') : t('fileBrowser.starResource')}
                   </button>
+
+                  {onShare ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onShare(file);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2 text-[13px] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                    >
+                      <Link2 size={14} className="text-gray-400 shrink-0" /> {t('fileBrowser.shareLink')}
+                    </button>
+                  ) : null}
+
+                  {onMove ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onMove(file);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2 text-[13px] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                    >
+                      <FolderInput size={14} className="text-gray-400 shrink-0" /> {t('fileBrowser.move')}
+                    </button>
+                  ) : null}
+
+                  {onCopy ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCopy(file);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2 text-[13px] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                    >
+                      <Copy size={14} className="text-gray-400 shrink-0" /> {t('fileBrowser.copy')}
+                    </button>
+                  ) : null}
 
                   <div className="h-px bg-gray-100 dark:bg-neutral-800 my-1 mx-2" />
                 </>

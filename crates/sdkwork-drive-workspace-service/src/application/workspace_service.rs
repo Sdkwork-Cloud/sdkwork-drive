@@ -109,12 +109,14 @@ pub struct DriveWorkspaceChildrenPage {
 #[derive(Debug, Clone)]
 pub struct SqlDriveWorkspaceService {
     service: DriveWorkspaceService<SqlDriveWorkspaceStore>,
+    pool: AnyPool,
 }
 
 impl SqlDriveWorkspaceService {
     pub fn new(pool: AnyPool) -> Self {
         Self {
-            service: DriveWorkspaceService::new(SqlDriveWorkspaceStore::new(pool)),
+            service: DriveWorkspaceService::new(SqlDriveWorkspaceStore::new(pool.clone())),
+            pool,
         }
     }
 
@@ -144,6 +146,20 @@ impl SqlDriveWorkspaceService {
         command: ListDriveWorkspaceChildrenCommand,
     ) -> Result<DriveWorkspaceChildrenPage, DriveServiceError> {
         self.service.list_children(command).await
+    }
+
+    pub async fn find_latest_active_storage_object_by_node(
+        &self,
+        tenant_id: &str,
+        node_id: &str,
+    ) -> Result<Option<crate::ports::storage_object_store::DriveStorageObject>, DriveServiceError>
+    {
+        use crate::infrastructure::sql::storage_object_store::SqlStorageObjectStore;
+        use crate::ports::storage_object_store::DriveStorageObjectStore;
+
+        SqlStorageObjectStore::new(self.pool.clone())
+            .find_latest_active_by_node(tenant_id, node_id)
+            .await
     }
 }
 

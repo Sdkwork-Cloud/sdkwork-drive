@@ -13,7 +13,7 @@ import {
   Star,
   X,
 } from 'lucide-react';
-import { useTranslation } from 'sdkwork-drive-pc-commons';
+import { formatDriveBytes, useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
 import type { DriveFileService } from 'sdkwork-drive-pc-core';
 
@@ -229,13 +229,7 @@ export function FileDetailModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, files, file.id, hasNext, hasPrev]);
 
-  const formatSize = (bytes?: number) => {
-    if (!bytes) return '--';
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
-  };
+  const formatSize = formatDriveBytes;
 
   const formatDate = (dateString: string) => {
     try {

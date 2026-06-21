@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Clock, Star, Share2, Trash2, Cloud, HardDrive, ChevronRight, ChevronDown, Book, Plus, Folder, Activity } from 'lucide-react';
+import { formatDriveBytes, useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DriveSection } from '../pages/DrivePage';
-import { useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DriveStorageSummary, KnowledgeBaseSpace, SharedSpace } from 'sdkwork-drive-pc-core';
 import { useDriveRuntime } from 'sdkwork-drive-pc-core';
 import { SPACE_ICONS } from './CreateSharedSpaceModal';
@@ -33,8 +33,10 @@ export function FileSidebar({
     runtime.config.runtimeTarget === 'desktop' || runtime.host.isNativeHost;
   const [isKbExpanded, setIsKbExpanded] = useState(false);
   
-  const storageUsedLabel = storageSummary ? formatStorageSize(storageSummary.usedBytes) : '--';
-  const storageTotalLabel = storageSummary?.totalBytes ? formatStorageSize(storageSummary.totalBytes) : '--';
+  const storageUsedLabel = storageSummary ? formatDriveBytes(storageSummary.usedBytes) : '--';
+  const storageTotalLabel = storageSummary?.totalBytes
+    ? formatDriveBytes(storageSummary.totalBytes)
+    : '--';
   const storageUsagePercent = Math.min(100, Math.max(0, storageSummary?.usagePercent ?? 0));
 
   return (
@@ -147,21 +149,6 @@ export function FileSidebar({
       </div>
     </div>
   );
-}
-
-function formatStorageSize(bytes: number): string {
-  const value = Number.isFinite(bytes) && bytes > 0 ? bytes : 0;
-  if (value < 1024) return `${value} B`;
-  if (value < 1024 * 1024) return `${trimStorageNumber(value / 1024)} KB`;
-  if (value < 1024 * 1024 * 1024) return `${trimStorageNumber(value / (1024 * 1024))} MB`;
-  if (value < 1024 * 1024 * 1024 * 1024) {
-    return `${trimStorageNumber(value / (1024 * 1024 * 1024))} GB`;
-  }
-  return `${trimStorageNumber(value / (1024 * 1024 * 1024 * 1024))} TB`;
-}
-
-function trimStorageNumber(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 function UsersShare({ size }: { size: number }) {

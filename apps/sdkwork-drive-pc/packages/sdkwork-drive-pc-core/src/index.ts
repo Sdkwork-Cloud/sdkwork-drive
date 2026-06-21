@@ -10,3 +10,4 @@ export * from './services/driveFileService';
 export * from './session/sessionStore';
 export * from './session/sessionTokenManager';
 export * from './transfer/transferJobStore';
+export * from './transfer/downloadTransfer';

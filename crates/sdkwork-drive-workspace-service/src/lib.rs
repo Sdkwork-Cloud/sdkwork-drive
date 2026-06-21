@@ -13,24 +13,10 @@ pub mod uploader {
     pub use crate::domain::uploader::{DriveUploadItem, DriveUploadPart};
 }
 
-use sha2::{Digest, Sha256};
+use sdkwork_utils_rust::sha256_hash;
 
 pub fn drive_share_token_hash(token: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(token.trim().as_bytes());
-    let digest = hasher.finalize();
-    let mut token_hash = String::with_capacity("sha256:".len() + 64);
-    token_hash.push_str("sha256:");
-    for byte in digest {
-        push_hex_byte(&mut token_hash, byte);
-    }
-    token_hash
-}
-
-fn push_hex_byte(output: &mut String, byte: u8) {
-    const HEX: &[u8; 16] = b"0123456789abcdef";
-    output.push(char::from(HEX[usize::from(byte >> 4)]));
-    output.push(char::from(HEX[usize::from(byte & 0x0f)]));
+    format!("sha256:{}", sha256_hash(token.trim().as_bytes()))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

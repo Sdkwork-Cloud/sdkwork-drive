@@ -3,9 +3,10 @@ use sqlx::{AnyPool, Row};
 use uuid::Uuid;
 
 use crate::ports::permission_store::{
-    CheckDriveNodePermissionCommand, DriveNodePermissionCheck, DriveNodePermissionGrant,
-    DriveNodePermissionList, DrivePermissionStore, GrantDriveNodePermissionCommand,
-    ListDriveNodePermissionsCommand, RevokeDriveNodePermissionCommand,
+    CheckDriveNodePermissionCommand, DriveEffectiveNodeAccess, DriveNodePermissionCheck,
+    DriveNodePermissionGrant, DriveNodePermissionList, DrivePermissionStore,
+    GrantDriveNodePermissionCommand, ListDriveNodePermissionsCommand,
+    ResolveEffectiveNodeAccessCommand, RevokeDriveNodePermissionCommand,
 };
 use crate::DriveServiceError;
 
@@ -41,6 +42,44 @@ impl SqlDrivePermissionStore {
         })?;
 
         Ok(row.map(|row| (row.get("id"), row.get("role"))))
+    }
+
+    async fn collect_node_path_ids(
+        &self,
+        tenant_id: &str,
+        node_id: &str,
+    ) -> Result<Vec<String>, DriveServiceError> {
+        let mut path = Vec::new();
+        let mut current = Some(node_id.to_string());
+        let mut depth = 0usize;
+        while let Some(id) = current {
+            depth += 1;
+            if depth > 256 {
+                return Err(DriveServiceError::Internal(
+                    "node path exceeded maximum depth".to_string(),
+                ));
+            }
+            let row = sqlx::query(
+                "SELECT id, parent_node_id FROM dr_drive_node \
+                 WHERE tenant_id = $1 AND id = $2 AND lifecycle_status != 'deleted'",
+            )
+            .bind(tenant_id)
+            .bind(&id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!("read dr_drive_node path failed: {error}"))
+            })?;
+            let Some(row) = row else {
+                return Err(DriveServiceError::NotFound(format!(
+                    "drive node {node_id} not found or inactive"
+                )));
+            };
+            let parent_node_id: Option<String> = row.get("parent_node_id");
+            path.push(id);
+            current = parent_node_id;
+        }
+        Ok(path)
     }
 }
 
@@ -79,7 +118,22 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
         .await
         .map_err(|error| DriveServiceError::Internal(format!("read dr_drive_node failed: {error}")))?;
 
-        node_id.ok_or_else(|| {
+        if let Some(node_id) = node_id {
+            return Ok(node_id);
+        }
+
+        let fallback_node_id = sqlx::query_scalar::<_, String>(
+            "SELECT id FROM dr_drive_node \
+             WHERE tenant_id = $1 AND space_id = $2 AND parent_node_id IS NULL AND lifecycle_status = 'active' \
+             ORDER BY created_at ASC, id ASC LIMIT 1",
+        )
+        .bind(tenant_id)
+        .bind(space_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|error| DriveServiceError::Internal(format!("read dr_drive_node failed: {error}")))?;
+
+        fallback_node_id.ok_or_else(|| {
             DriveServiceError::NotFound(format!(
                 "no root folder node found for drive space {space_id}"
             ))
@@ -262,7 +316,7 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
 
         Ok(match role {
             Some(role) => DriveNodePermissionCheck {
-                allowed: role_satisfies(&role, &command.required_role),
+                allowed: crate::domain::permission_role::drive_role_satisfies(&role, &command.required_role),
                 effective_role: Some(role),
             },
             None => DriveNodePermissionCheck {
@@ -271,20 +325,85 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
             },
         })
     }
-}
 
-fn role_satisfies(effective: &str, required: &str) -> bool {
-    let rank = match effective {
-        "reader" | "commenter" => 1,
-        "writer" => 2,
-        "owner" => 3,
-        _ => 0,
-    };
-    let needed = match required {
-        "reader" => 1,
-        "writer" => 2,
-        "owner" => 3,
-        _ => 0,
-    };
-    rank >= needed
+    async fn resolve_effective_node_access(
+        &self,
+        command: ResolveEffectiveNodeAccessCommand,
+    ) -> Result<DriveEffectiveNodeAccess, DriveServiceError> {
+        if self
+            .is_space_owner(
+                &command.tenant_id,
+                &command.space_id,
+                &command.subject_type,
+                &command.subject_id,
+            )
+            .await?
+        {
+            return Ok(DriveEffectiveNodeAccess {
+                role: "owner".to_string(),
+                source: "space_owner".to_string(),
+                permission_id: None,
+                inherited: false,
+                inherited_from_node_id: None,
+            });
+        }
+
+        let path_ids = self
+            .collect_node_path_ids(&command.tenant_id, &command.node_id)
+            .await?;
+        for path_node_id in path_ids.iter() {
+            if let Some((permission_id, role)) = self
+                .find_permission(
+                    &command.tenant_id,
+                    path_node_id,
+                    &command.subject_type,
+                    &command.subject_id,
+                )
+                .await?
+            {
+                let inherited = path_node_id != &command.node_id;
+                return Ok(DriveEffectiveNodeAccess {
+                    role,
+                    source: "permission".to_string(),
+                    permission_id: Some(permission_id),
+                    inherited,
+                    inherited_from_node_id: inherited.then(|| path_node_id.clone()),
+                });
+            }
+        }
+
+        Ok(DriveEffectiveNodeAccess {
+            role: "none".to_string(),
+            source: "none".to_string(),
+            permission_id: None,
+            inherited: false,
+            inherited_from_node_id: None,
+        })
+    }
+
+    async fn is_space_owner(
+        &self,
+        tenant_id: &str,
+        space_id: &str,
+        subject_type: &str,
+        subject_id: &str,
+    ) -> Result<bool, DriveServiceError> {
+        let row = sqlx::query(
+            "SELECT owner_subject_type, owner_subject_id \
+             FROM dr_drive_space \
+             WHERE tenant_id = $1 AND id = $2 AND lifecycle_status = 'active'",
+        )
+        .bind(tenant_id)
+        .bind(space_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("read dr_drive_space owner failed: {error}"))
+        })?;
+        Ok(row.is_some_and(|row| {
+            let owner_subject_type: String = row.get("owner_subject_type");
+            let owner_subject_id: String = row.get("owner_subject_id");
+            owner_subject_type == subject_type && owner_subject_id == subject_id
+        }))
+    }
 }

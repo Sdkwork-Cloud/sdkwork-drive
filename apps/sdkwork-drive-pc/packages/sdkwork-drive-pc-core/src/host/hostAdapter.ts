@@ -14,6 +14,7 @@ export interface HostAdapter {
   describeLocalUploadFile(path: string): Promise<NativeLocalUploadDescriptor>;
   readLocalUploadRange(path: string, offsetBytes: number, lengthBytes: number): Promise<ArrayBuffer>;
   checksumLocalUploadFile(path: string): Promise<string>;
+  saveDownloadFile(fileName: string, blob: Blob): Promise<boolean>;
 }
 
 interface TauriGlobal {
@@ -131,6 +132,20 @@ export function createHostAdapter(): HostAdapter {
         request: { path },
       });
       return response.checksumSha256Hex;
+    },
+    async saveDownloadFile(fileName, blob) {
+      const tauri = getTauriGlobal();
+      if (!tauri?.core?.invoke) {
+        throw new Error('Native download save is only available in the desktop app.');
+      }
+      const bytes = Array.from(new Uint8Array(await blob.arrayBuffer()));
+      const response = await tauri.core.invoke<{ saved: boolean }>('local_download_save', {
+        request: {
+          fileName,
+          bytes,
+        },
+      });
+      return response.saved;
     },
   };
 }

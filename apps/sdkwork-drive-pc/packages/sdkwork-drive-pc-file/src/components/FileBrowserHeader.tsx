@@ -7,6 +7,7 @@ import {
   MapPin,
   Plus,
   Search,
+  Trash2,
   X,
 } from "lucide-react";
 import { useTranslation } from "sdkwork-drive-pc-commons";
@@ -23,8 +24,10 @@ export interface FileBrowserHeaderProps {
   sectionTitle: string;
   canCreateFolder: boolean;
   canUpload: boolean;
+  canEmptyTrash?: boolean;
   onCreateFolder: () => void;
   onUpload: () => void;
+  onEmptyTrash?: () => void;
   currentFolderId: string | null;
   breadcrumbFiles: DriveFile[];
   onNavigateFolder: (folderId: string | null) => void;
@@ -42,8 +45,10 @@ export function FileBrowserHeader({
   sectionTitle,
   canCreateFolder,
   canUpload,
+  canEmptyTrash = false,
   onCreateFolder,
   onUpload,
+  onEmptyTrash,
   currentFolderId,
   breadcrumbFiles,
   onNavigateFolder,
@@ -86,8 +91,19 @@ export function FileBrowserHeader({
           ) : null}
         </div>
 
-        {(canCreateFolder || canUpload) && (
+        {(canCreateFolder || canUpload || canEmptyTrash) && (
           <div className="sdkwork-drive-file-header__actions" role="group">
+            {canEmptyTrash && onEmptyTrash && (
+              <button
+                type="button"
+                onClick={onEmptyTrash}
+                className="sdkwork-drive-file-header__btn sdkwork-drive-file-header__btn--secondary"
+                title={t("fileBrowser.emptyTrash")}
+              >
+                <Trash2 size={15} strokeWidth={2.25} />
+                <span className="hidden md:inline">{t("fileBrowser.emptyTrash")}</span>
+              </button>
+            )}
             {canCreateFolder && (
               <button
                 type="button"

@@ -10,7 +10,6 @@ import {
   ArrowDown,
 } from "lucide-react";
 import {
-  applyDownloadGrantToJob,
   applyTransferFailure,
   applyUploadCompletionToJob,
   applyUploadProgressToJob,
@@ -20,18 +19,17 @@ import {
   createUploadJobForFile,
   createUploadJobForNativeFile,
   isCompletedTransferStatus,
-  resolveTransferOpenUrl,
   decodeLocalFilesystemId,
   type DriveFile,
 } from "sdkwork-drive-pc-types";
 import type { DriveFileService } from "sdkwork-drive-pc-core";
-import { NativeLocalUploadFile, useDriveRuntime } from "sdkwork-drive-pc-core";
+import { NativeLocalUploadFile, runManagedDownloadTransfer, useDriveRuntime } from "sdkwork-drive-pc-core";
 import type { DriveSection } from "../pages/DrivePage";
 import { DownloadManager, type DownloadJob } from "./DownloadManager";
 import { FileBrowserHeader } from "./FileBrowserHeader";
 import { FileDetailModal } from "./FileDetailModal";
-import { Info, Star, Download, Trash2, CheckSquare } from "lucide-react";
-import { useTranslation } from "sdkwork-drive-pc-commons";
+import { Info, Star, Download, Trash2, CheckSquare, Copy, FolderInput } from "lucide-react";
+import { formatDriveBytes, useTranslation } from "sdkwork-drive-pc-commons";
 import { createLatestRequestGuard } from "./fileBrowserLoadGuard";
 import {
   FILE_LIST_COL_ACTIONS_CLASS,
@@ -44,6 +42,8 @@ import { formatDriveFileTypeLabel, getDriveFileTypeSortKey } from "../utils/file
 import { FolderModal } from "./FolderModal";
 import { FileRowItem } from "./FileRowItem";
 import { FileGridItem } from "./FileGridItem";
+import { ShareLinkModal } from "./ShareLinkModal";
+import { MoveCopyModal, type MoveCopyMode } from "./MoveCopyModal";
 
 function isDriveUploadAbortError(err: unknown): boolean {
   if (err instanceof DOMException && err.name === "AbortError") {
@@ -482,19 +482,20 @@ export function FileBrowser({
         signal: downloadController.signal,
       })
       .then((downloadPackage) => {
-        setDownloadJobs((prev) =>
-          prev.map((job) =>
-            job.id === newJob.id
-              ? applyDownloadGrantToJob(job, downloadPackage)
-              : job,
-          ),
-        );
-        if (downloadPackage.downloadUrl) {
-          const openUrl = resolveTransferOpenUrl(downloadPackage);
-          if (openUrl) {
-            void onOpenDownload?.(openUrl);
-          }
-        }
+        return runManagedDownloadTransfer({
+          job: newJob,
+          grant: downloadPackage,
+          signal: downloadController.signal,
+          onJobUpdate: (updater) => {
+            setDownloadJobs((prev) =>
+              prev.map((item) => (item.id === newJob.id ? updater(item) : item)),
+            );
+          },
+          onOpenExternal: onOpenDownload,
+          saveDownload: host.isNativeHost
+            ? (fileName, blob) => host.saveDownloadFile(fileName, blob)
+            : undefined,
+        });
       })
       .catch((err) => {
         if (isDriveDownloadAbortError(err)) {
@@ -518,6 +519,10 @@ export function FileBrowser({
 
   // Modal Dialog visibility states
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
+  const [shareFile, setShareFile] = useState<DriveFile | null>(null);
+  const [moveCopyMode, setMoveCopyMode] = useState<MoveCopyMode | null>(null);
+  const [moveCopyFiles, setMoveCopyFiles] = useState<DriveFile[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const queueUploadJobs = (
@@ -599,6 +604,118 @@ export function FileBrowser({
     });
   };
 
+  const openMoveCopyModal = (mode: MoveCopyMode, targets: DriveFile[]) => {
+    if (targets.length === 0) {
+      return;
+    }
+    setMoveCopyMode(mode);
+    setMoveCopyFiles(targets);
+  };
+
+  const handleBatchMove = () => {
+    const selectedFilesObj = files.filter((file) => selectedFileIds.includes(file.id));
+    openMoveCopyModal("move", selectedFilesObj);
+  };
+
+  const handleBatchCopy = () => {
+    const selectedFilesObj = files.filter((file) => selectedFileIds.includes(file.id));
+    openMoveCopyModal("copy", selectedFilesObj);
+  };
+
+  const handleShareFile = (file: DriveFile) => {
+    setShareFile(file);
+    setActiveMenuId(null);
+  };
+
+  const handleMoveFile = (file: DriveFile) => {
+    openMoveCopyModal("move", [file]);
+    setActiveMenuId(null);
+  };
+
+  const handleCopyFile = (file: DriveFile) => {
+    openMoveCopyModal("copy", [file]);
+    setActiveMenuId(null);
+  };
+
+  const handleEmptyTrash = () => {
+    if (activeSection !== "trash") {
+      return;
+    }
+    if (!window.confirm(t("fileBrowser.emptyTrashConfirm"))) {
+      return;
+    }
+
+    const emptyTrashController = createFileWriteAbortController("empty-trash");
+    fileService
+      .emptyTrash({ signal: emptyTrashController.signal })
+      .then((deletedCount) => {
+        triggerToast(
+          t("fileBrowser.emptyTrashCompleted", { count: deletedCount }),
+          "success",
+        );
+        setSelectedFileIds([]);
+        loadFiles();
+      })
+      .catch((err: unknown) => {
+        triggerToast(
+          err instanceof Error ? err.message : t("fileBrowser.emptyTrashFailed"),
+          "err",
+        );
+      })
+      .finally(() => {
+        releaseFileWriteAbortController("empty-trash", emptyTrashController);
+      });
+  };
+
+  const queueSelectedFilesForUpload = (selectedFiles: File[]) => {
+    if (selectedFiles.length === 0) {
+      return;
+    }
+    if (!canUploadDriveFileToSection(activeSection)) {
+      triggerToast("This Drive view does not support uploads.", "err");
+      return;
+    }
+
+    queueUploadJobs(
+      selectedFiles.map((file) => ({
+        source: file,
+        job: createUploadJobForFile(file, {
+          uploadSection: activeSection,
+          uploadParentId: currentFolderId ?? null,
+          uploadBlob: file,
+        }),
+      })),
+      selectedFiles.length === 1
+        ? t("fileBrowser.toastFileAdded", { name: selectedFiles[0].name })
+        : `Added ${selectedFiles.length} files to active upload transfers`,
+    );
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    if (!canUploadToActiveSection) {
+      return;
+    }
+    event.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent) => {
+    if (event.currentTarget.contains(event.relatedTarget as Node)) {
+      return;
+    }
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    if (!canUploadToActiveSection) {
+      return;
+    }
+    const droppedFiles = Array.from(event.dataTransfer.files);
+    queueSelectedFilesForUpload(droppedFiles);
+  };
+
   const handleUploadClick = async () => {
     if (!canUploadDriveFileToSection(activeSection)) {
       triggerToast("This Drive view does not support uploads.", "err");
@@ -637,26 +754,7 @@ export function FileBrowser({
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
-    if (selectedFiles.length === 0) return;
-    if (!canUploadDriveFileToSection(activeSection)) {
-      triggerToast("This Drive view does not support uploads.", "err");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    queueUploadJobs(
-      selectedFiles.map((file) => ({
-        source: file,
-        job: createUploadJobForFile(file, {
-          uploadSection: activeSection,
-          uploadParentId: currentFolderId ?? null,
-          uploadBlob: file,
-        }),
-      })),
-      selectedFiles.length === 1
-        ? t("fileBrowser.toastFileAdded", { name: selectedFiles[0].name })
-        : `Added ${selectedFiles.length} files to active upload transfers`,
-    );
+    queueSelectedFilesForUpload(selectedFiles);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -830,14 +928,7 @@ export function FileBrowser({
   }, []);
 
   // Format bytes helper
-  const formatSize = (bytes?: number) => {
-    if (!bytes) return "--";
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    if (bytes < 1024 * 1024 * 1024)
-      return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
-  };
+  const formatSize = formatDriveBytes;
 
   // Format date helper
   const formatDate = (dateString: string) => {
@@ -1203,20 +1294,20 @@ export function FileBrowser({
         });
     prepareDownload
       .then((download) => {
-        const downloadPackage = download as Awaited<ReturnType<DriveFileService["createDownloadPackage"]>>;
-        setDownloadJobs((prev) =>
-          prev.map((job) =>
-            job.id === newJob.id
-              ? applyDownloadGrantToJob(job, downloadPackage)
-              : job,
-          ),
-        );
-        if (downloadPackage.downloadUrl) {
-          const openUrl = resolveTransferOpenUrl(downloadPackage);
-          if (openUrl) {
-            void onOpenDownload?.(openUrl);
-          }
-        }
+        return runManagedDownloadTransfer({
+          job: newJob,
+          grant: download,
+          signal: downloadController.signal,
+          onJobUpdate: (updater) => {
+            setDownloadJobs((prev) =>
+              prev.map((item) => (item.id === newJob.id ? updater(item) : item)),
+            );
+          },
+          onOpenExternal: onOpenDownload,
+          saveDownload: host.isNativeHost
+            ? (fileName, blob) => host.saveDownloadFile(fileName, blob)
+            : undefined,
+        });
       })
       .catch((err) => {
         if (isDriveDownloadAbortError(err)) {
@@ -1276,6 +1367,8 @@ export function FileBrowser({
         sectionTitle={getSectionLocalizedTitle(activeSection)}
         canCreateFolder={canCreateFolderInActiveSection}
         canUpload={canUploadToActiveSection}
+        canEmptyTrash={activeSection === "trash" && files.length > 0}
+        onEmptyTrash={handleEmptyTrash}
         onCreateFolder={() => {
           setIsCreatingFolderInline(true);
           setInlineFolderName("");
@@ -1296,7 +1389,19 @@ export function FileBrowser({
       />
 
       {/* Main Files Work Area */}
-      <div className="flex-1 overflow-hidden flex flex-col w-full relative">
+      <div
+        className="relative flex w-full flex-1 flex-col overflow-hidden"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {isDragOver && canUploadToActiveSection ? (
+          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center border-2 border-dashed border-blue-500 bg-blue-500/10 backdrop-blur-[1px]">
+            <p className="rounded-lg bg-white/90 px-4 py-2 text-sm font-semibold text-blue-700 shadow-lg dark:bg-[#1a1a1a]/90 dark:text-blue-300">
+              {t("fileBrowser.dragDropText")}
+            </p>
+          </div>
+        ) : null}
         {/* Connection Failure Error Panel */}
         {errorState ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#fafafa] dark:bg-[#121212] transition-colors select-none">
@@ -1528,6 +1633,9 @@ export function FileBrowser({
                       onRename={handleRenameClick}
                       onTrashAction={handleTrashAction}
                       onPermanentDelete={handlePermanentDelete}
+                      onShare={handleShareFile}
+                      onMove={handleMoveFile}
+                      onCopy={handleCopyFile}
                       onDrillDown={setCurrentFolderId}
                       formatDate={formatDate}
                       formatSize={formatSize}
@@ -1556,6 +1664,9 @@ export function FileBrowser({
                       onRename={handleRenameClick}
                       onTrashAction={handleTrashAction}
                       onPermanentDelete={handlePermanentDelete}
+                      onShare={handleShareFile}
+                      onMove={handleMoveFile}
+                      onCopy={handleCopyFile}
                       onDrillDown={setCurrentFolderId}
                       formatDate={formatDate}
                       formatSize={formatSize}
@@ -1689,6 +1800,20 @@ export function FileBrowser({
                   Toggle Star
                 </button>
                 <button
+                  onClick={handleBatchMove}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-200 hover:text-blue-400 hover:bg-neutral-800 border border-neutral-800 transition-all cursor-pointer"
+                >
+                  <FolderInput size={14} />
+                  {t("fileBrowser.move")}
+                </button>
+                <button
+                  onClick={handleBatchCopy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-200 hover:text-blue-400 hover:bg-neutral-800 border border-neutral-800 transition-all cursor-pointer"
+                >
+                  <Copy size={14} />
+                  {t("fileBrowser.copy")}
+                </button>
+                <button
                   onClick={handleBatchDownload}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-200 hover:text-blue-400 hover:bg-neutral-800 border border-neutral-800 transition-all cursor-pointer"
                 >
@@ -1725,6 +1850,31 @@ export function FileBrowser({
         isOpen={isNewFolderOpen}
         onClose={() => setIsNewFolderOpen(false)}
         onSubmit={handleCreateFolderSubmit}
+      />
+
+      <ShareLinkModal
+        isOpen={shareFile !== null}
+        file={shareFile}
+        fileService={fileService}
+        onClose={() => setShareFile(null)}
+        onToast={triggerToast}
+      />
+
+      <MoveCopyModal
+        isOpen={moveCopyMode !== null && moveCopyFiles.length > 0}
+        mode={moveCopyMode || "move"}
+        files={moveCopyFiles}
+        activeSection={activeSection}
+        fileService={fileService}
+        onClose={() => {
+          setMoveCopyMode(null);
+          setMoveCopyFiles([]);
+        }}
+        onCompleted={() => {
+          setSelectedFileIds([]);
+          loadFiles();
+        }}
+        onToast={triggerToast}
       />
 
       {/* Property details panel */}

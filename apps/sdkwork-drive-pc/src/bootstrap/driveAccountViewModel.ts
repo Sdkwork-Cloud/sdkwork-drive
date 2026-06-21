@@ -1,4 +1,4 @@
-import { formatBytes } from '@sdkwork/utils';
+import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
 import type {
   DriveStorageSummary,
   SessionSnapshot,
@@ -31,9 +31,9 @@ export function createDriveAccountViewModel(
   const displayName = session.user?.displayName?.trim() || 'SDKWork Drive User';
   const environment = session.context?.environment?.trim();
   const deploymentMode = session.context?.deploymentMode?.trim();
-  const storageUsedLabel = storageSummary ? formatBytes(storageSummary.usedBytes) : undefined;
+  const storageUsedLabel = storageSummary ? formatDriveBytes(storageSummary.usedBytes) : undefined;
   const storageTotalLabel = storageSummary?.totalBytes
-    ? formatBytes(storageSummary.totalBytes)
+    ? formatDriveBytes(storageSummary.totalBytes)
     : undefined;
 
   const account: DriveAccountViewModel = {

@@ -1,3 +1,4 @@
+use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::archive::{
     sanitize_archive_path_segment, sanitize_relative_archive_path, unique_archive_path,
@@ -33,7 +34,7 @@ use sdkwork_drive_storage_contract::{
 use sdkwork_drive_storage_s3::S3DriveObjectStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
 use sdkwork_drive_workspace_service::ports::storage_object_store::SignedDownloadPayload;
-use sha2::{Digest, Sha256};
+use crate::hashing::{sha256_raw_hex_separated, tenant_shard_prefix};
 use sqlx::AnyPool;
 use sqlx::Row;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -71,6 +72,13 @@ pub(crate) async fn create_download_package(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id)?;
     let requested_node_ids = normalize_download_package_node_ids(payload.node_ids)?;
+    acl::ensure_node_ids_role(
+        &state.pool,
+        &ctx,
+        &requested_node_ids,
+        "reader",
+    )
+    .await?;
     let package_name = normalize_package_name(payload.package_name);
     let requested_ttl_seconds = validate_requested_ttl_seconds(
         payload.requested_ttl_seconds,
@@ -187,6 +195,12 @@ pub(crate) async fn resolve_download_package_url(
 ) -> Result<Json<DownloadPackageResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let package = find_download_package_record(&state.pool, &tenant_id, &package_id).await?;
+    let node_ids = package
+        .items
+        .iter()
+        .map(|item| item.node_id.clone())
+        .collect::<Vec<_>>();
+    acl::ensure_node_ids_role(&state.pool, &ctx, &node_ids, "reader").await?;
     if package.state != "ready" {
         return Err(problem(
             StatusCode::CONFLICT,
@@ -798,22 +812,15 @@ fn build_download_package_response(
 }
 
 fn build_download_package_id(tenant_id: &str, node_ids: &[String]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(tenant_id.trim().as_bytes());
-    hasher.update([0]);
-    for node_id in node_ids {
-        hasher.update(node_id.trim().as_bytes());
-        hasher.update([0]);
-    }
-    hasher.update(current_epoch_ms().to_string().as_bytes());
-    let digest = format!("{:x}", hasher.finalize());
+    let epoch = current_epoch_ms().to_string();
+    let mut parts: Vec<&[u8]> = vec![tenant_id.trim().as_bytes()];
+    parts.extend(node_ids.iter().map(|node_id| node_id.trim().as_bytes()));
+    parts.push(epoch.as_bytes());
+    let digest = sha256_raw_hex_separated(&parts);
     format!("pkg-{}", &digest[..32])
 }
 
 fn build_download_package_object_key(tenant_id: &str, package_id: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(tenant_id.trim().as_bytes());
-    let tenant_digest = hasher.finalize();
-    let tenant_shard = format!("{:02x}", tenant_digest[0]);
+    let tenant_shard = tenant_shard_prefix(tenant_id);
     format!("sdkwork-drive/v1/t/{tenant_shard}/tenants/{tenant_id}/download-packages/{package_id}/archive.zip")
 }

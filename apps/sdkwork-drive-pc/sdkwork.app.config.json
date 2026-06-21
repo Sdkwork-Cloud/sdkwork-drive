@@ -27,7 +27,8 @@
     "grantMode": "current",
     "platform": "WEB",
     "appId": "sdkwork-drive-pc",
-    "organizationId": null
+    "tenantId": "100001",
+    "organizationId": "0"
   },
   "runtime": {
     "family": "desktop",

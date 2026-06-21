@@ -1,4 +1,4 @@
-use sha2::{Digest, Sha256};
+use sdkwork_utils_rust::sha256_hash;
 
 pub struct BuildStorageObjectKeyCommand<'a> {
     pub tenant_id: &'a str,
@@ -41,8 +41,6 @@ fn require_part<'a>(name: &str, value: &'a str) -> Result<&'a str, String> {
 }
 
 fn shard_prefix(value: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(value.as_bytes());
-    let digest = hasher.finalize();
-    format!("{:02x}", digest[0])
+    let digest = sha256_hash(value.as_bytes());
+    digest[..2].to_string()
 }

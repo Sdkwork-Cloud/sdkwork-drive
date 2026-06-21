@@ -58,6 +58,30 @@ pub struct CheckDriveNodePermissionCommand {
     pub required_role: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResolveEffectiveNodeAccessCommand {
+    pub tenant_id: String,
+    pub space_id: String,
+    pub node_id: String,
+    pub subject_type: String,
+    pub subject_id: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DriveEffectiveNodeAccess {
+    pub role: String,
+    pub source: String,
+    pub permission_id: Option<String>,
+    pub inherited: bool,
+    pub inherited_from_node_id: Option<String>,
+}
+
+impl DriveEffectiveNodeAccess {
+    pub fn allows_role(&self, required_role: &str) -> bool {
+        crate::domain::permission_role::drive_role_satisfies(&self.role, required_role)
+    }
+}
+
 #[async_trait]
 pub trait DrivePermissionStore: Send + Sync {
     async fn resolve_space_permission_anchor_node(
@@ -85,4 +109,17 @@ pub trait DrivePermissionStore: Send + Sync {
         &self,
         command: CheckDriveNodePermissionCommand,
     ) -> Result<DriveNodePermissionCheck, DriveServiceError>;
+
+    async fn resolve_effective_node_access(
+        &self,
+        command: ResolveEffectiveNodeAccessCommand,
+    ) -> Result<DriveEffectiveNodeAccess, DriveServiceError>;
+
+    async fn is_space_owner(
+        &self,
+        tenant_id: &str,
+        space_id: &str,
+        subject_type: &str,
+        subject_id: &str,
+    ) -> Result<bool, DriveServiceError>;
 }

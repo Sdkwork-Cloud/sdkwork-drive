@@ -6,6 +6,7 @@ import downloadManager from './downloadManager';
 import previewModules from './previewModules';
 import transfer from './transfer';
 import storageProviders from './storageProviders';
+import sharedSpace from './sharedSpace';
 
 export default {
   commons,
@@ -16,4 +17,5 @@ export default {
   previewModules,
   transfer,
   storageProviders,
+  sharedSpace,
 };

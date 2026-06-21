@@ -942,6 +942,9 @@ describe('desktop architecture contract', () => {
     expect(transferPage).toContain("job.status === 'ready'");
     expect(transferPage).toContain("t('downloadManager.ready')");
     expect(transferSource).toContain('applyDownloadGrantToJob');
+    expect(transferSource).toContain('applyDownloadProgressToJob');
+    expect(transferSource).toContain('applyDownloadCompletionToJob');
+    expect(transferSource).toContain('runManagedDownloadTransfer');
     expect(transferSource).toContain('applyUploadCompletionToJob');
     expect(transferSource).toContain('canCancelTransferJob');
     expect(transferSource).toContain('canPauseTransferJob');

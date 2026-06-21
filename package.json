@@ -24,6 +24,8 @@
     "typecheck": "pnpm --filter sdkwork-drive-pc typecheck",
     "test:pc": "pnpm --filter sdkwork-drive-pc test",
     "test:app-openapi-context": "node --test scripts/dev/sdkwork-drive-app-openapi-context.test.mjs",
+    "test:app-sdk-smoke": "node --test sdks/sdkwork-drive-app-sdk/tests/sdk-family-smoke.test.mjs",
+    "test:drive-integration": "node --test tests/integration/drive-alignment.integration.test.mjs",
     "check:architecture-alignment": "node tools/check_sdkwork_drive_architecture_alignment.mjs",
     "check:dependency-management": "node tools/check_sdkwork_drive_dependency_management.mjs",
     "check:app-sdk-consumers": "node tools/check_drive_app_sdk_consumer_integration.mjs",

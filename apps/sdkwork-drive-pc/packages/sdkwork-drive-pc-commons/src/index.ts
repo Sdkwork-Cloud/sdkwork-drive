@@ -4,3 +4,4 @@ export * from './components/SettingsModal';
 export * from './components/LanguageProvider';
 export * from './components/UserProfileModal';
 export * from './components/preferenceStorage';
+export * from './utils/formatDriveBytes';

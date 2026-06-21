@@ -148,6 +148,9 @@ importers:
       '@sdkwork/runtime-bootstrap':
         specifier: workspace:*
         version: link:../../../common/foundation/sdkwork-runtime-bootstrap
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
       lucide-react:
         specifier: 'catalog:'
         version: 0.546.0(react@19.2.4)
@@ -445,9 +448,6 @@ importers:
       '@sdkwork/ui-pc-react':
         specifier: workspace:*
         version: link:../../../sdkwork-ui/sdkwork-ui-pc-react
-      '@sdkwork/utils-typescript':
-        specifier: workspace:*
-        version: link:../../../sdkwork-utils/packages/sdkwork-utils-typescript
       lucide-react:
         specifier: 'catalog:'
         version: 0.546.0(react@19.2.4)
@@ -527,18 +527,24 @@ importers:
       '@sdkwork/drive-admin-storage-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-drive-admin-storage-sdk/sdkwork-drive-admin-storage-sdk-typescript
-      '@sdkwork/utils-typescript':
+      '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
       sdkwork-drive-pc-admin-core:
         specifier: workspace:*
         version: link:../sdkwork-drive-pc-admin-core
+      sdkwork-drive-pc-commons:
+        specifier: workspace:*
+        version: link:../sdkwork-drive-pc-commons
       sdkwork-drive-pc-core:
         specifier: workspace:*
         version: link:../sdkwork-drive-pc-core
 
   apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons:
     dependencies:
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
       lucide-react:
         specifier: ^0.546.0
         version: 0.546.0(react@19.2.4)

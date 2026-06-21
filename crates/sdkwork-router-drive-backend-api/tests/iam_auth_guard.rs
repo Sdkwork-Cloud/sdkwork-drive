@@ -16,7 +16,7 @@ fn auth_token(tenant: &str, user: &str) -> String {
 
 fn access_token(tenant: &str, user: &str) -> String {
     format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;environment=prod;deployment_mode=saas"
+        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;environment=prod;deployment_mode=saas;permission_scope=drive.storage.admin"
     )
 }
 

@@ -1,4 +1,4 @@
-use crate::dto::{ChangeResponse, PageRequest};
+use crate::dto::PageRequest;
 use crate::error::{problem, ProblemDetail};
 use crate::time::current_epoch_ms;
 use axum::http::StatusCode;
@@ -119,18 +119,6 @@ pub(crate) fn parse_change_page_request(
         ));
     }
     Ok(PageRequest { limit, offset })
-}
-
-pub(crate) fn next_change_page_token(
-    items: &mut Vec<ChangeResponse>,
-    page: PageRequest,
-) -> Option<String> {
-    if items.len() as i64 > page.limit {
-        items.pop();
-        items.last().map(|item| item.sequence_no.to_string())
-    } else {
-        None
-    }
 }
 
 pub(crate) fn validate_permission_role(

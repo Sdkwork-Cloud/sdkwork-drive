@@ -1,4 +1,5 @@
 import type { StorageProviderHealthStatus, StorageProviderKind } from '../types/storageProviderAdminTypes';
+import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
 
 export interface ProviderRegion {
   value: string;
@@ -503,7 +504,7 @@ export const HEALTH_STATUS_CONFIG: Record<StorageProviderHealthStatus, {
   },
   healthy: {
     label: 'Healthy',
-    icon: '�?,
+    icon: '\u2713',
     dotClass: 'bg-emerald-500',
     bgClass: 'bg-emerald-50 dark:bg-emerald-950/30',
     textClass: 'text-emerald-700 dark:text-emerald-300',
@@ -517,19 +518,15 @@ export const HEALTH_STATUS_CONFIG: Record<StorageProviderHealthStatus, {
   },
   unreachable: {
     label: 'Unreachable',
-    icon: '�?,
+    icon: '\u2717',
     dotClass: 'bg-red-500',
     bgClass: 'bg-red-50 dark:bg-red-950/30',
     textClass: 'text-red-700 dark:text-red-300',
   },
 };
 
-import { formatBytes as formatBytesUtil } from '@sdkwork/utils';
-
 export function formatBytes(bytes?: number): string {
-  if (bytes === undefined || bytes === null) return '--';
-  if (bytes === 0) return '0 B';
-  return formatBytesUtil(bytes);
+  return formatDriveBytes(bytes);
 }
 
 export function formatRelativeTime(epochMs?: number): string {

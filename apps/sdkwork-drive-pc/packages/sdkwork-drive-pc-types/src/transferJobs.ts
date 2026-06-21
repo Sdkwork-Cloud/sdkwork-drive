@@ -254,10 +254,59 @@ export function applyDownloadGrantToJob(job: DownloadJob, grant: DownloadGrantLi
     expiresAtEpochMs: grant.expiresAtEpochMs || job.expiresAtEpochMs,
     totalSize: grantedSize,
     downloadedSize: 0,
-    progress: 100,
+    progress: 0,
     status: 'ready',
     speed: 'Ready',
     timeRemaining: 'Available',
+    errorMessage: undefined,
+  };
+}
+
+export function applyDownloadProgressToJob(
+  job: DownloadJob,
+  downloadedBytes: number,
+  totalBytes: number,
+): DownloadJob {
+  if (job.status === 'cancelled') {
+    return job;
+  }
+
+  const safeTotal = totalBytes > 0 ? totalBytes : job.totalSize;
+  const safeDownloaded =
+    safeTotal > 0
+      ? Math.max(0, Math.min(downloadedBytes, safeTotal))
+      : Math.max(0, downloadedBytes);
+  const progress =
+    safeTotal > 0 ? Math.min(100, Math.round((safeDownloaded / safeTotal) * 100)) : 0;
+  return {
+    ...job,
+    totalSize: safeTotal > 0 ? safeTotal : job.totalSize,
+    downloadedSize: safeDownloaded,
+    progress,
+    status: 'downloading',
+    speed: 'Downloading...',
+    timeRemaining: progress >= 100 ? 'Finishing...' : 'Calculating...',
+    errorMessage: undefined,
+  };
+}
+
+export function applyDownloadCompletionToJob(
+  job: DownloadJob,
+  actualSizeBytes?: number,
+): DownloadJob {
+  if (job.status === 'cancelled') {
+    return job;
+  }
+
+  const totalSize = actualSizeBytes && actualSizeBytes > 0 ? actualSizeBytes : job.totalSize;
+  return {
+    ...job,
+    totalSize,
+    downloadedSize: totalSize,
+    progress: 100,
+    status: 'completed',
+    speed: '--',
+    timeRemaining: '',
     errorMessage: undefined,
   };
 }

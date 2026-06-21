@@ -21,7 +21,6 @@ sdkwork-web-core.workspace = true
 sdkwork-utils-rust.workspace = true
 sdkwork-iam-web-adapter.workspace = true
 chrono = "0.4"
-sha2.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 tower.workspace = true

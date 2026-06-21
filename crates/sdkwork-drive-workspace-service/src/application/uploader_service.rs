@@ -8,7 +8,7 @@ use crate::ports::uploader_store::{
 };
 use crate::{drive_share_token_hash, DriveServiceError};
 use sdkwork_drive_storage_contract::{DriveObjectLocator, DriveObjectStore, PutObjectRequest};
-use sha2::{Digest, Sha256};
+use sdkwork_utils_rust::sha256_hash;
 use std::collections::{BTreeMap, HashSet};
 
 #[derive(Debug, Clone)]
@@ -655,9 +655,7 @@ fn upload_object_metadata(item: &DriveUploadItem) -> BTreeMap<String, String> {
 }
 
 fn sha256_checksum(body: &[u8]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(body);
-    format!("sha256:{:x}", hasher.finalize())
+    format!("sha256:{}", sha256_hash(body))
 }
 
 fn strip_checksum_prefix(value: &str) -> &str {

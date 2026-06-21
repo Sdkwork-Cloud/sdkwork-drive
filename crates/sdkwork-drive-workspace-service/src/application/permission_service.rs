@@ -5,8 +5,9 @@ use crate::ports::permission_store::DrivePermissionStore;
 use crate::DriveServiceError;
 
 pub use crate::ports::permission_store::{
-    CheckDriveNodePermissionCommand, DriveNodePermissionCheck, DriveNodePermissionGrant,
-    DriveNodePermissionList, GrantDriveNodePermissionCommand, ListDriveNodePermissionsCommand,
+    CheckDriveNodePermissionCommand, DriveEffectiveNodeAccess, DriveNodePermissionCheck,
+    DriveNodePermissionGrant, DriveNodePermissionList, GrantDriveNodePermissionCommand,
+    ListDriveNodePermissionsCommand, ResolveEffectiveNodeAccessCommand,
     RevokeDriveNodePermissionCommand,
 };
 
@@ -58,5 +59,24 @@ impl SqlDrivePermissionService {
         command: CheckDriveNodePermissionCommand,
     ) -> Result<DriveNodePermissionCheck, DriveServiceError> {
         self.store.check_node_permission(command).await
+    }
+
+    pub async fn resolve_effective_node_access(
+        &self,
+        command: ResolveEffectiveNodeAccessCommand,
+    ) -> Result<DriveEffectiveNodeAccess, DriveServiceError> {
+        self.store.resolve_effective_node_access(command).await
+    }
+
+    pub async fn is_space_owner(
+        &self,
+        tenant_id: &str,
+        space_id: &str,
+        subject_type: &str,
+        subject_id: &str,
+    ) -> Result<bool, DriveServiceError> {
+        self.store
+            .is_space_owner(tenant_id, space_id, subject_type, subject_id)
+            .await
     }
 }
