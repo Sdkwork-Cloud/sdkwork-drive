@@ -11,9 +11,9 @@ SDKWork Drive follows the same database split used by `sdkwork-claw-router`:
 
 Root package scripts define the local development modes:
 
-- `pnpm dev:server:postgres` loads `.env.postgres` and resolves PostgreSQL configuration.
-- `pnpm dev:server:sqlite` passes `sqlite://target/dev/sdkwork-drive.sqlite`.
-- `pnpm topology:plan:server:*` renders the same launch plan without starting services.
+- `pnpm dev --database postgres` resolves PostgreSQL configuration.
+- `pnpm dev:browser:sqlite` passes `sqlite://target/dev/sdkwork-drive.sqlite`.
+- `pnpm topology:plan` renders the same launch plan without starting services.
 
 Both PostgreSQL and SQLite modes start the same API service set: app API on `127.0.0.1:18080`, backend API on `127.0.0.1:18081`, open API on `127.0.0.1:18082`, and admin storage API on `127.0.0.1:18083`.
 

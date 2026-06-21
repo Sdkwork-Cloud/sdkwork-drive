@@ -1,16 +1,6 @@
 export type SdkworkEnvironment = 'development' | 'test' | 'staging' | 'production';
 export type SdkworkConfigProfile = 'dev' | 'test' | 'staging' | 'prod';
 export type SdkworkBuildMode = 'development' | 'test' | 'staging' | 'production';
-export type SdkworkDeploymentMode =
-  | 'web'
-  | 'desktop'
-  | 'tablet-ipados'
-  | 'tablet-android'
-  | 'server'
-  | 'container'
-  | 'saas'
-  | 'private'
-  | 'test';
 export type SdkworkRuntimeTarget =
   | 'browser'
   | 'desktop'
@@ -47,14 +37,15 @@ export interface SdkworkAuthRuntimeConfig {
   refreshEnabled: boolean;
 }
 
-export type DriveHosting = 'self-hosted' | 'cloud-hosted';
+export type DriveDeploymentProfile = 'standalone' | 'cloud';
 
 export interface DriveRuntimeConfig {
-  hosting: DriveHosting;
+  deploymentProfile: DriveDeploymentProfile;
+  /** Legacy runtime target alias retained for CONFIG_SPEC compatibility. */
+  deploymentMode: SdkworkRuntimeTarget;
   environment: SdkworkEnvironment;
   configProfile: SdkworkConfigProfile;
   buildMode: SdkworkBuildMode;
-  deploymentMode: SdkworkDeploymentMode;
   runtimeTarget: SdkworkRuntimeTarget;
   appKey: 'sdkwork-drive-pc';
   appApiBaseUrl: string;
@@ -65,16 +56,21 @@ export interface DriveRuntimeConfig {
 }
 
 export interface RuntimeEnv {
+  VITE_DRIVE_PC_DEPLOYMENT_PROFILE?: string;
+  /** @deprecated use VITE_DRIVE_PC_DEPLOYMENT_PROFILE */
   VITE_DRIVE_PC_HOSTING?: string;
+  /** @deprecated use VITE_DRIVE_PC_DEPLOYMENT_PROFILE */
   VITE_DRIVE_PC_TOPOLOGY?: string;
   VITE_DRIVE_PC_APPLICATION_PUBLIC_HTTP_URL?: string;
   VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL?: string;
+  /** @deprecated use VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL */
+  VITE_DRIVE_PC_API_GATEWAY_BASE_URL?: string;
   VITE_DRIVE_PC_ENVIRONMENT?: string;
   VITE_DRIVE_PC_CONFIG_PROFILE?: string;
   VITE_DRIVE_PC_BUILD_MODE?: string;
+  /** @deprecated use VITE_DRIVE_PC_RUNTIME_TARGET */
   VITE_DRIVE_PC_DEPLOYMENT_MODE?: string;
   VITE_DRIVE_PC_RUNTIME_TARGET?: string;
-  VITE_DRIVE_PC_API_GATEWAY_BASE_URL?: string;
   VITE_DRIVE_PC_APP_API_BASE_URL?: string;
   VITE_DRIVE_PC_BACKEND_API_BASE_URL?: string;
   VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL?: string;
@@ -108,17 +104,6 @@ const VALID_BUILD_MODES: SdkworkBuildMode[] = [
   'test',
   'staging',
   'production',
-];
-const VALID_DEPLOYMENT_MODES: SdkworkDeploymentMode[] = [
-  'web',
-  'desktop',
-  'tablet-ipados',
-  'tablet-android',
-  'server',
-  'container',
-  'saas',
-  'private',
-  'test',
 ];
 const VALID_RUNTIME_TARGETS: SdkworkRuntimeTarget[] = [
   'browser',
@@ -195,81 +180,70 @@ function normalizeBuildMode(
   return parseOneOf(nextValue, VALID_BUILD_MODES, environment);
 }
 
-function normalizeDeploymentMode(
-  value: string | undefined,
-  environment: SdkworkEnvironment,
-): SdkworkDeploymentMode {
-  const nextValue = normalized(value);
-  if (nextValue === 'local') {
-    return environment === 'test' ? 'test' : 'desktop';
-  }
-  return parseOneOf(
-    nextValue,
-    VALID_DEPLOYMENT_MODES,
-    environment === 'test' ? 'test' : 'desktop',
-  );
-}
-
-function normalizeHosting(
+function normalizeDeploymentProfile(
   value: string | undefined,
   environment: SdkworkEnvironment,
   legacyLocalDeploymentMode: boolean,
-): DriveHosting {
+): DriveDeploymentProfile {
   const explicit = normalized(value);
-  if (explicit === 'cloud-hosted' || explicit === 'self-hosted') {
+  if (explicit === 'standalone' || explicit === 'cloud') {
     return explicit;
   }
-  if (explicit === 'cloud') {
-    return 'cloud-hosted';
+  // Backward compatibility: accept retired self-hosted/cloud-hosted values
+  if (explicit === 'self-hosted') {
+    return 'standalone';
   }
-  if (explicit === 'standalone') {
-    return 'self-hosted';
+  if (explicit === 'cloud-hosted') {
+    return 'cloud';
   }
   if (legacyLocalDeploymentMode || environment === 'test') {
-    return 'self-hosted';
+    return 'standalone';
   }
-  return 'cloud-hosted';
+  return 'cloud';
 }
 
-function usesLocalGatewayDefaults(hosting: DriveHosting, environment: SdkworkEnvironment): boolean {
-  return hosting === 'self-hosted' || environment === 'test';
+function usesLocalGatewayDefaults(
+  deploymentProfile: DriveDeploymentProfile,
+  environment: SdkworkEnvironment,
+): boolean {
+  return deploymentProfile === 'standalone' || environment === 'test';
 }
 
 function defaultPlatformApiGatewayBaseUrl(
-  hosting: DriveHosting,
+  deploymentProfile: DriveDeploymentProfile,
   environment: SdkworkEnvironment,
 ): string {
-  if (usesLocalGatewayDefaults(hosting, environment)) {
+  if (usesLocalGatewayDefaults(deploymentProfile, environment)) {
     return LOCAL_API_GATEWAY_BASE_URL;
   }
   return CLOUD_API_GATEWAY_BASE_URL;
 }
 
 function defaultApplicationPublicHttpUrl(
-  hosting: DriveHosting,
+  deploymentProfile: DriveDeploymentProfile,
   environment: SdkworkEnvironment,
 ): string {
-  if (usesLocalGatewayDefaults(hosting, environment)) {
+  if (usesLocalGatewayDefaults(deploymentProfile, environment)) {
     return LOCAL_APP_API_BASE_URL;
   }
   return CLOUD_APP_API_BASE_URL.replace('/app/v3/api', '');
 }
 
 function defaultAppApiBaseUrl(
-  hosting: DriveHosting,
+  deploymentProfile: DriveDeploymentProfile,
   environment: SdkworkEnvironment,
 ): string {
-  if (usesLocalGatewayDefaults(hosting, environment)) {
+  if (usesLocalGatewayDefaults(deploymentProfile, environment)) {
     return LOCAL_APP_API_BASE_URL;
   }
   return CLOUD_APP_API_BASE_URL;
 }
 
 function defaultAdminStorageApiBaseUrl(
-  hosting: DriveHosting,
+  deploymentProfile: DriveDeploymentProfile,
   environment: SdkworkEnvironment,
 ): string {
-  if (usesLocalGatewayDefaults(hosting, environment)) {
+  if (usesLocalGatewayDefaults(deploymentProfile, environment)) {
     return LOCAL_ADMIN_STORAGE_API_BASE_URL;
   }
   return CLOUD_ADMIN_STORAGE_API_BASE_URL;
@@ -332,26 +306,28 @@ function normalizeTokenStorage(
 export function createRuntimeConfig(env: RuntimeEnv = {}): DriveRuntimeConfig {
   const environment = normalizeEnvironment(env.VITE_DRIVE_PC_ENVIRONMENT, env);
   const legacyLocalDeploymentMode = normalized(env.VITE_DRIVE_PC_DEPLOYMENT_MODE) === 'local';
-  const deploymentMode = normalizeDeploymentMode(
-    env.VITE_DRIVE_PC_DEPLOYMENT_MODE,
-    environment,
-  );
-  const hosting = normalizeHosting(
-    env.VITE_DRIVE_PC_HOSTING ?? env.VITE_DRIVE_PC_TOPOLOGY,
+  const deploymentProfile = normalizeDeploymentProfile(
+    env.VITE_DRIVE_PC_DEPLOYMENT_PROFILE
+      ?? env.VITE_DRIVE_PC_HOSTING
+      ?? env.VITE_DRIVE_PC_TOPOLOGY,
     environment,
     legacyLocalDeploymentMode,
   );
   const runtimeTarget = parseOneOf(
     env.VITE_DRIVE_PC_RUNTIME_TARGET,
     VALID_RUNTIME_TARGETS,
-    environment === 'test' ? 'test-runner' : 'browser',
+    legacyLocalDeploymentMode
+      ? 'desktop'
+      : environment === 'test'
+        ? 'test-runner'
+        : 'browser',
   );
   const configProfile = normalizeProfile(env.VITE_DRIVE_PC_CONFIG_PROFILE, environment);
   const buildMode = normalizeBuildMode(env.VITE_DRIVE_PC_BUILD_MODE, env, environment);
 
   const platformApiGatewayBaseUrl = env.VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL
     || env.VITE_DRIVE_PC_API_GATEWAY_BASE_URL
-    || defaultPlatformApiGatewayBaseUrl(hosting, environment);
+    || defaultPlatformApiGatewayBaseUrl(deploymentProfile, environment);
 
   const appApiBaseUrl =
     env.VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL
@@ -383,11 +359,11 @@ export function createRuntimeConfig(env: RuntimeEnv = {}): DriveRuntimeConfig {
   );
 
   return {
-    hosting,
+    deploymentProfile,
+    deploymentMode: runtimeTarget,
     environment,
     configProfile,
     buildMode,
-    deploymentMode,
     runtimeTarget,
     appKey: APP_KEY,
     appApiBaseUrl: resolvedAppApiBaseUrl,

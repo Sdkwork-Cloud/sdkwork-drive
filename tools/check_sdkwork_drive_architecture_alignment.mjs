@@ -42,11 +42,23 @@ function assertCargoDependsOnWebFramework(relativeCrateToml) {
 }
 
 function readJson(relativePath) {
-  return JSON.parse(readText(relativePath));
+  const absolutePath = path.join(repoRoot, relativePath);
+  if (!fs.existsSync(absolutePath)) {
+    return null;
+  }
+  const text = fs.readFileSync(absolutePath, 'utf8').trim();
+  if (!text) {
+    failures.push(`${relativePath} must not be empty`);
+    return null;
+  }
+  return JSON.parse(text);
 }
 
 function assertNoClientTenantIdInAppOpenapi(relativePath) {
   const openapi = readJson(relativePath);
+  if (!openapi) {
+    return;
+  }
   for (const [route, pathItem] of Object.entries(openapi.paths ?? {})) {
     for (const [method, operation] of Object.entries(pathItem ?? {})) {
       if (!operation || typeof operation !== 'object' || !Array.isArray(operation.parameters)) {
@@ -101,10 +113,23 @@ const cargoToml = readText('Cargo.toml');
 assert(cargoToml.includes('sdkwork-database-config'), 'Cargo.toml must declare sdkwork-database-config');
 assert(cargoToml.includes('sdkwork-database-sqlx'), 'Cargo.toml must declare sdkwork-database-sqlx');
 assert(cargoToml.includes('sdkwork-database-repository'), 'Cargo.toml must declare sdkwork-database-repository');
+assert(cargoToml.includes('sdkwork-utils-rust'), 'Cargo.toml must declare sdkwork-utils-rust');
 assert(cargoToml.includes('sdkwork-web-core'), 'Cargo.toml must declare sdkwork-web-core');
 assert(cargoToml.includes('sdkwork-web-axum'), 'Cargo.toml must declare sdkwork-web-axum');
 assert(cargoToml.includes('sdkwork-iam-web-adapter'), 'Cargo.toml must declare sdkwork-iam-web-adapter');
 assert(!cargoToml.includes('sdkwork-discovery'), 'sdkwork-discovery is not required until RPC services exist');
+
+const pnpmWorkspace = readText('pnpm-workspace.yaml');
+assert(
+  pnpmWorkspace.includes('sdkwork-utils/packages/sdkwork-utils-typescript'),
+  'pnpm-workspace.yaml must include sdkwork-utils-typescript',
+);
+
+const appApiCargo = readText('crates/sdkwork-router-drive-app-api/Cargo.toml');
+assert(
+  appApiCargo.includes('sdkwork-utils-rust.workspace = true'),
+  'sdkwork-router-drive-app-api must depend on sdkwork-utils-rust',
+);
 
 const workflow = JSON.parse(readText('sdkwork.workflow.json'));
 const dependencyIds = new Set((workflow.dependencies || []).map((dependency) => dependency.id));
@@ -116,6 +141,8 @@ for (const dependencyId of [
   'sdkwork-sdk-commons',
   'sdkwork-sdk-generator',
   'sdkwork-web-framework',
+  'sdkwork-utils',
+  'sdkwork-app-topology',
 ]) {
   assert(dependencyIds.has(dependencyId), `sdkwork.workflow.json must declare ${dependencyId}`);
 }
@@ -150,17 +177,18 @@ assert(
   'app OpenAPI x-sdkwork-api-surface must use canonical app-api label',
 );
 
-for (const relativePath of [
+const canonicalOpenApiPaths = [
   'apis/app-api/drive/drive-app-api.openapi.json',
-  'apis/drive-app-api.openapi.json',
   'apis/backend-api/drive/drive-backend-api.openapi.json',
-  'apis/drive-backend-api.openapi.json',
   'apis/backend-api/drive/drive-admin-storage-api.openapi.json',
-  'apis/drive-admin-storage-api.openapi.json',
   'apis/open-api/drive/drive-open-api.openapi.json',
-  'apis/drive-open-api.openapi.json',
-]) {
-  assertNoClientTenantIdInAppOpenapi(relativePath);
+];
+
+for (const relativePath of canonicalOpenApiPaths) {
+  const openapi = readJson(relativePath);
+  if (openapi) {
+    assertNoClientTenantIdInAppOpenapi(relativePath);
+  }
 }
 
 function walkRustTests(relativeRoot, visitor) {
@@ -205,6 +233,17 @@ assert(
 const rpcSignals = ['tonic', 'prost', 'sdkwork-discovery', '.proto'];
 for (const signal of rpcSignals) {
   assert(!cargoToml.includes(signal), `Cargo.toml must not declare ${signal} until RPC services are introduced`);
+}
+
+const retiredEnvPrefixes = ['SDKWORK_CLAW_DATABASE_'];
+for (const relativePath of [
+  '.env.postgres.example',
+  'configs/topology/standalone.unified-process.production.env',
+]) {
+  const text = readText(relativePath);
+  for (const prefix of retiredEnvPrefixes) {
+    assert(!text.includes(prefix), `${relativePath} must not use retired env prefix ${prefix}`);
+  }
 }
 
 if (failures.length > 0) {

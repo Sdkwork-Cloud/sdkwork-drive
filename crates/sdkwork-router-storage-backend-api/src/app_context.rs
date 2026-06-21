@@ -13,6 +13,7 @@ pub(crate) struct DriveRequestContext {
     pub(crate) subject_type: String,
     pub(crate) subject_id: String,
     from_token: bool,
+    test_mode: bool,
 }
 
 impl DriveRequestContext {
@@ -23,11 +24,12 @@ impl DriveRequestContext {
             subject_type: app_context.actor_kind.clone(),
             subject_id: app_context.user_id.clone(),
             from_token: true,
+            test_mode: false,
         }
     }
 
     pub(crate) fn resolve_tenant_id(&self) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
-        if self.from_token {
+        if self.test_mode || self.from_token {
             Ok(self.tenant_id.clone())
         } else {
             Err(map_service_error(DriveServiceError::Validation(
@@ -42,7 +44,7 @@ impl DriveRequestContext {
     ) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
         match normalize_optional_text(requested) {
             Some(value) => self.ensure_actor_match(&value).map(|_| value),
-            None if self.from_token => Ok(self.actor_id.clone()),
+            None if self.test_mode || self.from_token => Ok(self.actor_id.clone()),
             None => Err(map_service_error(DriveServiceError::Validation(
                 "operatorId is required".to_string(),
             ))),
@@ -50,7 +52,7 @@ impl DriveRequestContext {
     }
 
     fn ensure_actor_match(&self, value: &str) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-        if !self.from_token || value == self.actor_id {
+        if self.test_mode || !self.from_token || value == self.actor_id {
             return Ok(());
         }
         Err(context_conflict(
@@ -66,4 +68,28 @@ fn context_conflict(detail: &str) -> (StatusCode, Json<ProblemDetail>) {
         detail,
         "sdkwork.auth.context_conflict",
     )
+}
+
+/// Test-only default tenant context for routers built with `require_iam = false`.
+pub(crate) fn default_test_drive_request_context() -> DriveRequestContext {
+    DriveRequestContext {
+        tenant_id: "tenant-storage".to_string(),
+        actor_id: "admin-storage".to_string(),
+        subject_type: "user".to_string(),
+        subject_id: "admin-storage".to_string(),
+        from_token: false,
+        test_mode: true,
+    }
+}
+
+/// Test-only tenant context with a custom tenant id for routers built with `require_iam = false`.
+pub(crate) fn test_drive_request_context_with_tenant(tenant_id: String) -> DriveRequestContext {
+    DriveRequestContext {
+        tenant_id,
+        actor_id: "admin-storage".to_string(),
+        subject_type: "user".to_string(),
+        subject_id: "admin-storage".to_string(),
+        from_token: false,
+        test_mode: true,
+    }
 }

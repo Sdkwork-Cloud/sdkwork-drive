@@ -151,7 +151,7 @@ pub async fn build_router_with_database_config(
 }
 
 fn build_router_with_state(state: AppState, require_iam: bool) -> Router {
-    let mut drive_routes = Router::new()
+    let drive_routes = Router::new()
         .route(
             "/app/v3/api/drive/spaces",
             get(list_spaces).post(create_space),

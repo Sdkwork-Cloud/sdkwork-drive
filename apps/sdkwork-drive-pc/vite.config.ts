@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
     ?? path.resolve(workspaceDependencyRoot('sdkwork-ui'), 'sdkwork-ui-pc-react');
   const appApiProxyTarget =
     process.env.SDKWORK_DRIVE_DEV_APP_API_PROXY_TARGET
-    || env.VITE_DRIVE_PC_API_GATEWAY_BASE_URL
+    || env.VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL
     || env.VITE_DRIVE_PC_APP_API_BASE_URL
     || DEFAULT_APP_API_PROXY_TARGET;
   const adminApiProxyTarget =
@@ -27,7 +27,10 @@ export default defineConfig(({ mode }) => {
     || DEFAULT_ADMIN_API_PROXY_TARGET;
 
   return {
-    plugins: [react(), tailwindcss()],
+    define: {
+      'process.env.SDKWORK_ACCESS_TOKEN': JSON.stringify(env.SDKWORK_ACCESS_TOKEN ?? ''),
+    },
+            plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

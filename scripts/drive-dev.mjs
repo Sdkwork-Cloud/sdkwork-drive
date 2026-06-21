@@ -48,16 +48,6 @@ const SDKWORK_API_GATEWAY_BASE_URL_ENV_KEYS = [
   'SDKWORK_DRIVE_API_GATEWAY_BASE_URL',
 ];
 
-function deploymentProfileToHosting(deploymentProfile) {
-  if (deploymentProfile === 'standalone') {
-    return 'self-hosted';
-  }
-  if (deploymentProfile === 'cloud') {
-    return 'cloud-hosted';
-  }
-  throw new Error('--deployment-profile must be standalone or cloud');
-}
-
 function pnpmCommand() {
   return process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 }
@@ -100,8 +90,8 @@ function normalizeGatewayBind(value, label = 'SDKWORK_API_GATEWAY_BIND') {
 }
 
 function resolveSdkworkApiGatewayBind(env = process.env) {
-  const hosting = normalizeText(env.SDKWORK_DRIVE_HOSTING) || 'self-hosted';
-  return resolveGatewayBind(env, hosting);
+  const deploymentProfile = normalizeText(env.SDKWORK_DRIVE_DEPLOYMENT_PROFILE) || 'standalone';
+  return resolveGatewayBind(env, deploymentProfile);
 }
 
 function resolveSdkworkApiGatewayBaseUrl(env = process.env) {
@@ -256,8 +246,8 @@ async function resolveDevApiBaseUrls(env, gatewayWillStart) {
   const explicitAppApiBaseUrl = resolveExplicitViteAppApiBaseUrl(env);
   if (explicitAppApiBaseUrl) {
     const apiGatewayBaseUrl = normalizeUpstreamBaseUrl(
-      env.VITE_DRIVE_PC_API_GATEWAY_BASE_URL,
-      'VITE_DRIVE_PC_API_GATEWAY_BASE_URL',
+      env.VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL,
+      'VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL',
     ) || explicitAppApiBaseUrl;
     return {
       appApiBaseUrl: explicitAppApiBaseUrl,
@@ -377,7 +367,6 @@ function parseArgs(argv) {
     database: undefined,
     devEnvFile: null,
     deploymentProfile: 'standalone',
-    hosting: 'self-hosted',
     serviceLayout: 'unified-process',
     dryRun: false,
     help: false,
@@ -433,7 +422,6 @@ function parseArgs(argv) {
         throw new Error('--deployment-profile requires a value (standalone or cloud)');
       }
       settings.deploymentProfile = value;
-      settings.hosting = deploymentProfileToHosting(value);
       index += 1;
       continue;
     }
@@ -542,8 +530,8 @@ function createCloudGatewayProcess({ env, gatewayWillStart }) {
   };
 }
 
-function createManagedGatewayProcess({ env, gatewayWillStart, hosting }) {
-  if (hosting === 'cloud-hosted') {
+function createManagedGatewayProcess({ env, gatewayWillStart, deploymentProfile }) {
+  if (deploymentProfile === 'cloud') {
     return createCloudGatewayProcess({ env, gatewayWillStart });
   }
 
@@ -742,13 +730,13 @@ async function main() {
     const postgresEnvFile = '.env.postgres';
     const envFile = settings.devEnvFile
       || (databaseProfile === 'postgres' ? postgresEnvFile : undefined);
-    const profileId = resolveDevProfileId(settings.hosting, settings.serviceLayout);
+    const profileId = resolveDevProfileId(settings.deploymentProfile, settings.serviceLayout);
     const profileEnv = loadProfile(profileId);
     const postgresEnv = loadEnvFile(postgresEnvFile);
     const fileEnv = loadEnvFile(envFile);
     const baseEnv = mergeRuntimeEnv(process.env, profileEnv, postgresEnv, fileEnv, {
-      SDKWORK_DRIVE_HOSTING: settings.hosting,
-      VITE_DRIVE_PC_HOSTING: settings.hosting,
+      SDKWORK_DRIVE_DEPLOYMENT_PROFILE: settings.deploymentProfile,
+      VITE_DRIVE_PC_DEPLOYMENT_PROFILE: settings.deploymentProfile,
       SDKWORK_DRIVE_PROFILE_ID: profileId,
     });
 
@@ -763,7 +751,7 @@ async function main() {
     const gatewayProcess = createManagedGatewayProcess({
       env: baseEnv,
       gatewayWillStart,
-      hosting: settings.hosting,
+      deploymentProfile: settings.deploymentProfile,
     });
     const iamDevEnv = resolveIamDevEnv(baseEnv, repoRoot);
     const iamDatabaseTarget = describeIamDatabaseTarget(iamDevEnv);
@@ -773,7 +761,7 @@ async function main() {
         VITE_DRIVE_PC_DEV_SAME_ORIGIN_API: 'true',
         SDKWORK_DRIVE_DEV_APP_API_PROXY_TARGET: apiGatewayBaseUrl,
         SDKWORK_DRIVE_DEV_ADMIN_API_PROXY_TARGET: adminStorageApiBaseUrl,
-        VITE_DRIVE_PC_API_GATEWAY_BASE_URL: apiGatewayBaseUrl,
+        VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL: apiGatewayBaseUrl,
         VITE_DRIVE_PC_APP_API_BASE_URL: appApiBaseUrl,
         VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL: apiGatewayBaseUrl,
         VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL: appApiBaseUrl,

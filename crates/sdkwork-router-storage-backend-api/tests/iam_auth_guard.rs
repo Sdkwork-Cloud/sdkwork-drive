@@ -1,6 +1,8 @@
 use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
+use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_security::DriveAuthValidationPolicy;
+use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_router_storage_backend_api::{build_router, build_router_with_pool_and_iam_policy};
 use serde_json::Value;
 use sqlx::any::AnyPoolOptions;
@@ -109,7 +111,7 @@ async fn admin_storage_production_routes_require_valid_dual_tokens() {
 
 #[tokio::test]
 async fn admin_storage_routes_validate_token_derived_app_context() {
-    let app = admin_storage_router_allowing_unsigned_context();
+    let app = admin_storage_router_allowing_unsigned_context().await;
 
     let tenant_conflict = app
         .clone()
@@ -121,7 +123,7 @@ async fn admin_storage_routes_validate_token_derived_app_context() {
                     "authorization",
                     format!("Bearer {}", admin_auth_token("tenant-a", "admin-001")),
                 )
-                .header("access-token", admin_access_token("tenant-a", "admin-001"))
+                .header("access-token", admin_access_token("tenant-b", "admin-001"))
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -200,12 +202,16 @@ async fn admin_storage_routes_validate_token_derived_app_context() {
     assert_ne!(allowed.status(), StatusCode::FORBIDDEN);
 }
 
-fn admin_storage_router_allowing_unsigned_context() -> axum::Router {
+async fn admin_storage_router_allowing_unsigned_context() -> axum::Router {
     sqlx::any::install_default_drivers();
     let pool = AnyPoolOptions::new()
         .max_connections(1)
-        .connect_lazy("sqlite::memory:")
+        .connect("sqlite::memory:")
+        .await
         .expect("create in-memory sqlite pool");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
     build_router_with_pool_and_iam_policy(
         pool,
         DriveAuthValidationPolicy::allow_unsigned_for_development(),

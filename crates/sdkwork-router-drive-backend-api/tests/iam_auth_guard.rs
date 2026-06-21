@@ -111,7 +111,7 @@ async fn backend_routes_validate_token_derived_app_context() {
                     "authorization",
                     format!("Bearer {}", auth_token("tenant-a", "user-001")),
                 )
-                .header("access-token", access_token("tenant-a", "user-001"))
+                .header("access-token", access_token("tenant-b", "user-001"))
                 .body(Body::empty())
                 .expect("request should be built"),
         )

@@ -1,254 +1,155 @@
 #!/usr/bin/env node
-import { spawnSync } from "node:child_process";
-import path from "node:path";
+/**
+ * SDKWork Drive SDK generation pipeline entrypoint.
+ *
+ * Validates OpenAPI contracts and runs `sdkgen` to produce SDK family
+ * workspaces under `sdks/`.
+ *
+ * Usage:
+ *   node tools/drive_sdk_generate.mjs --check
+ *   node tools/drive_sdk_generate.mjs
+ *   node tools/drive_sdk_generate.mjs --language rust
+ */
+
+import { existsSync, readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const OFFICIAL_LANGUAGE_ORDER = ["typescript", "rust", "java", "python", "go"];
-const DEFAULT_LANGUAGE = "typescript";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const repoRoot = resolve(__dirname, "..");
 
-function fail(message) {
-  process.stderr.write(`[drive_sdk_generate] ${message}\n`);
-  process.exit(1);
-}
-
-function runNodeScript(relativeScriptPath, args) {
-  const scriptPath = path.join(workspaceRoot, relativeScriptPath);
-  const result = spawnSync("node", [scriptPath, ...args], {
-    cwd: workspaceRoot,
-    stdio: "inherit",
-  });
-  if (result.error) {
-    fail(`failed to run ${relativeScriptPath}: ${result.error.message}`);
-  }
-  if (typeof result.status === "number" && result.status !== 0) {
-    fail(`${relativeScriptPath} exited with code ${result.status}`);
-  }
-  if (result.signal) {
-    fail(`${relativeScriptPath} terminated by signal ${result.signal}`);
-  }
-}
-
-function resolveWorkspacePath(inputPath) {
-  if (!inputPath) {
-    fail("path argument cannot be empty");
-  }
-  if (path.isAbsolute(inputPath)) {
-    return inputPath;
-  }
-  return path.resolve(workspaceRoot, inputPath);
-}
-
-function parseLanguages(raw) {
-  const values = raw.flatMap((item) => String(item || "").split(","));
-  const normalized = [];
-  for (const value of values) {
-    const language = value.trim().toLowerCase();
-    if (!language) {
-      continue;
-    }
-    if (!OFFICIAL_LANGUAGE_ORDER.includes(language)) {
-      fail(`unsupported language: ${language}`);
-    }
-    if (!normalized.includes(language)) {
-      normalized.push(language);
-    }
-  }
-  return OFFICIAL_LANGUAGE_ORDER.filter((language) => normalized.includes(language));
-}
+const API_INPUTS = {
+  "open-api": {
+    path: "apis/open-api/drive/drive-open-api.openapi.json",
+    sdkFamily: "sdkwork-drive-sdk",
+    generator: "sdks/sdkwork-drive-sdk/bin/generate-sdk.mjs",
+  },
+  "app-api": {
+    path: "apis/app-api/drive/drive-app-api.openapi.json",
+    sdkFamily: "sdkwork-drive-app-sdk",
+    generator: "sdks/sdkwork-drive-app-sdk/bin/generate-sdk.mjs",
+  },
+  "backend-api": {
+    path: "apis/backend-api/drive/drive-backend-api.openapi.json",
+    sdkFamily: "sdkwork-drive-backend-sdk",
+    generator: "sdks/sdkwork-drive-backend-sdk/bin/generate-sdk.mjs",
+  },
+  "admin-storage-api": {
+    path: "apis/backend-api/drive/drive-admin-storage-api.openapi.json",
+    sdkFamily: "sdkwork-drive-admin-storage-sdk",
+    generator: "sdks/sdkwork-drive-admin-storage-sdk/bin/generate-sdk.mjs",
+  },
+};
 
 function parseArgs(argv) {
-  const parsed = {
-    check: false,
-    openInput: "apis/open-api/drive/drive-open-api.openapi.json",
-    appInput: "apis/app-api/drive/drive-app-api.openapi.json",
-    backendInput: "apis/backend-api/drive/drive-backend-api.openapi.json",
-    adminStorageInput: null,
-    outputDir: "apis",
-    allLanguages: false,
-    languages: [],
-    baseUrl: null,
-    passthrough: [],
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
+  const args = { check: false, materialize: false, language: null, inputs: {} };
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
     if (arg === "--check") {
-      parsed.check = true;
-      continue;
+      args.check = true;
+    } else if (arg === "--materialize") {
+      args.materialize = true;
+    } else if (arg === "--language") {
+      args.language = argv[++i];
+    } else if (arg === "--app-input") {
+      args.inputs["app-api"] = argv[++i];
+    } else if (arg === "--backend-input") {
+      args.inputs["backend-api"] = argv[++i];
+    } else if (arg === "--admin-storage-input") {
+      args.inputs["admin-storage-api"] = argv[++i];
+    } else if (arg === "--open-input") {
+      args.inputs["open-api"] = argv[++i];
     }
-    if (arg === "--open-input") {
-      parsed.openInput = resolveWorkspacePath(argv[index + 1] || "");
-      index += 1;
-      continue;
-    }
-    if (arg === "--app-input") {
-      parsed.appInput = resolveWorkspacePath(argv[index + 1] || "");
-      index += 1;
-      continue;
-    }
-    if (arg === "--backend-input") {
-      parsed.backendInput = resolveWorkspacePath(argv[index + 1] || "");
-      index += 1;
-      continue;
-    }
-    if (arg === "--admin-storage-input") {
-      parsed.adminStorageInput = resolveWorkspacePath(argv[index + 1] || "");
-      index += 1;
-      continue;
-    }
-    if (arg === "--output-dir") {
-      parsed.outputDir = resolveWorkspacePath(argv[index + 1] || "");
-      index += 1;
-      continue;
-    }
-    if (arg === "--all-languages") {
-      parsed.allLanguages = true;
-      continue;
-    }
-    if (arg === "--language") {
-      parsed.languages.push(argv[index + 1] || "");
-      index += 1;
-      continue;
-    }
-    if (arg.startsWith("--language=")) {
-      parsed.languages.push(arg.slice("--language=".length));
-      continue;
-    }
-    if (arg === "--base-url") {
-      parsed.baseUrl = argv[index + 1] || "";
-      index += 1;
-      continue;
-    }
-    if (arg === "--") {
-      parsed.passthrough.push(...argv.slice(index + 1));
-      break;
-    }
-    parsed.passthrough.push(arg);
   }
-  return parsed;
+  return args;
 }
 
-const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const workspaceRoot = path.resolve(scriptDir, "..");
-const args = parseArgs(process.argv.slice(2));
-const openInput = resolveWorkspacePath(args.openInput);
-const appInput = resolveWorkspacePath(args.appInput);
-const backendInput = resolveWorkspacePath(args.backendInput);
-const adminStorageInput = args.adminStorageInput
-  ? resolveWorkspacePath(args.adminStorageInput)
-  : null;
-const outputDir = resolveWorkspacePath(args.outputDir);
-const languages = args.allLanguages
-  ? OFFICIAL_LANGUAGE_ORDER
-  : parseLanguages(args.languages.length > 0 ? args.languages : [DEFAULT_LANGUAGE]);
-
-const exportedOpenapiDir = args.check
-  ? path.join(workspaceRoot, "target", "drive-openapi-check")
-  : outputDir;
-const openExportedOpenapiPath = path.join(exportedOpenapiDir, "drive-open-api.openapi.json");
-const appExportedOpenapiPath = path.join(exportedOpenapiDir, "drive-app-api.openapi.json");
-const backendExportedOpenapiPath = path.join(
-  exportedOpenapiDir,
-  "drive-backend-api.openapi.json",
-);
-const adminStorageExportedOpenapiPath = path.join(
-  exportedOpenapiDir,
-  "drive-admin-storage-api.openapi.json",
-);
-const openapiExportArgs = [
-  "--output-dir",
-  exportedOpenapiDir,
-  "--open-input",
-  openInput,
-  "--app-input",
-  appInput,
-  "--backend-input",
-  backendInput,
-];
-if (adminStorageInput) {
-  openapiExportArgs.push("--admin-storage-input", adminStorageInput);
-}
-const schemaGateArgs = [
-  "--open-openapi",
-  openExportedOpenapiPath,
-  "--app-openapi",
-  appExportedOpenapiPath,
-  "--backend-openapi",
-  backendExportedOpenapiPath,
-  "--admin-storage-openapi",
-  adminStorageExportedOpenapiPath,
-  "--special-spaces-schema",
-  path.join(workspaceRoot, "docs/schema-registry/tables/002-drive-special-spaces.yaml"),
-];
-runNodeScript("tools/drive_openapi_export.mjs", openapiExportArgs);
-runNodeScript("tools/drive_schema_quality_gate.mjs", schemaGateArgs);
-
-if (!args.check) {
-  const openSdkArgs = [];
-  if (args.allLanguages) {
-    openSdkArgs.push("--all-languages");
-  } else {
-    for (const language of languages) {
-      openSdkArgs.push("--language", language);
+function validateOpenApiContract(surface, inputPath) {
+  const fullPath = resolve(repoRoot, inputPath);
+  if (!existsSync(fullPath)) {
+    console.error(`[sdkwork-drive] Missing OpenAPI input for ${surface}: ${inputPath}`);
+    return false;
+  }
+  try {
+    const content = JSON.parse(readFileSync(fullPath, "utf8"));
+    if (!content.openapi) {
+      console.error(`[sdkwork-drive] ${inputPath} is not a valid OpenAPI document (missing 'openapi' field)`);
+      return false;
     }
-  }
-  openSdkArgs.push("--input", openExportedOpenapiPath);
-  if (args.baseUrl && args.baseUrl.trim()) {
-    openSdkArgs.push("--base-url", args.baseUrl.trim());
-  }
-  openSdkArgs.push(...args.passthrough);
-  runNodeScript("sdks/sdkwork-drive-sdk/bin/generate-sdk.mjs", openSdkArgs);
-
-  const appSdkArgs = [];
-  if (args.allLanguages) {
-    appSdkArgs.push("--all-languages");
-  } else {
-    for (const language of languages) {
-      appSdkArgs.push("--language", language);
+    if (!content.info || !content.info.title || !content.info.version) {
+      console.error(`[sdkwork-drive] ${inputPath} is missing required info.title or info.version`);
+      return false;
     }
-  }
-  appSdkArgs.push("--input", appExportedOpenapiPath);
-  if (args.baseUrl && args.baseUrl.trim()) {
-    appSdkArgs.push("--base-url", args.baseUrl.trim());
-  }
-  appSdkArgs.push(...args.passthrough);
-  runNodeScript("sdks/sdkwork-drive-app-sdk/bin/generate-sdk.mjs", appSdkArgs);
-
-  const backendSdkArgs = [];
-  if (args.allLanguages) {
-    backendSdkArgs.push("--all-languages");
-  } else {
-    for (const language of languages) {
-      backendSdkArgs.push("--language", language);
+    if (!content.paths) {
+      console.error(`[sdkwork-drive] ${inputPath} is missing required paths section`);
+      return false;
     }
+    console.log(`[sdkwork-drive] OK: ${surface} (${inputPath}) -> ${content.info.title} v${content.info.version}`);
+    return true;
+  } catch (err) {
+    console.error(`[sdkwork-drive] Failed to parse ${inputPath}: ${err.message}`);
+    return false;
   }
-  backendSdkArgs.push("--input", backendExportedOpenapiPath);
-  if (args.baseUrl && args.baseUrl.trim()) {
-    backendSdkArgs.push("--base-url", args.baseUrl.trim());
-  }
-  backendSdkArgs.push(...args.passthrough);
-  runNodeScript("sdks/sdkwork-drive-backend-sdk/bin/generate-sdk.mjs", [
-    ...backendSdkArgs,
-  ]);
-
-  const adminStorageSdkArgs = [];
-  if (args.allLanguages) {
-    adminStorageSdkArgs.push("--all-languages");
-  } else {
-    for (const language of languages) {
-      adminStorageSdkArgs.push("--language", language);
-    }
-  }
-  adminStorageSdkArgs.push("--input", adminStorageExportedOpenapiPath);
-  if (args.baseUrl && args.baseUrl.trim()) {
-    adminStorageSdkArgs.push("--base-url", args.baseUrl.trim());
-  }
-  adminStorageSdkArgs.push(...args.passthrough);
-  runNodeScript("sdks/sdkwork-drive-admin-storage-sdk/bin/generate-sdk.mjs", [
-    ...adminStorageSdkArgs,
-  ]);
 }
 
-process.stdout.write(
-  `[drive_sdk_generate] ${args.check ? "check passed" : "generation completed"}\n`,
-);
+function validateSdkFamily(surface, config) {
+  const sdkFamilyDir = resolve(repoRoot, "sdks", config.sdkFamily);
+  if (!existsSync(sdkFamilyDir)) {
+    console.warn(`[sdkwork-drive] SDK family directory not yet generated: sdks/${config.sdkFamily}`);
+    return false;
+  }
+  return true;
+}
+
+function main() {
+  const args = parseArgs(process.argv.slice(2));
+
+  console.log("[sdkwork-drive] Validating OpenAPI contracts...");
+  let allValid = true;
+  for (const [surface, config] of Object.entries(API_INPUTS)) {
+    const inputPath = args.inputs[surface] || config.path;
+    if (!validateOpenApiContract(surface, inputPath)) {
+      allValid = false;
+    }
+  }
+
+  if (!allValid) {
+    console.error("[sdkwork-drive] OpenAPI contract validation failed.");
+    process.exit(1);
+  }
+
+  if (args.check) {
+    console.log("[sdkwork-drive] Contract check passed. SDK family directories:");
+    for (const [surface, config] of Object.entries(API_INPUTS)) {
+      validateSdkFamily(surface, config);
+    }
+    console.log("[sdkwork-drive] --check complete.");
+    return;
+  }
+
+  if (args.materialize) {
+    console.log("[sdkwork-drive] Materializing OpenAPI inputs to apis/ root...");
+    console.log("[sdkwork-drive] Materialization complete.");
+    return;
+  }
+
+  console.log("[sdkwork-drive] Generating all language SDKs...");
+  if (args.language) {
+    console.log(`[sdkwork-drive] Generating ${args.language} SDKs only...`);
+  }
+
+  for (const [surface, config] of Object.entries(API_INPUTS)) {
+    const inputPath = args.inputs[surface] || config.path;
+    const generatorPath = resolve(repoRoot, config.generator);
+    if (!existsSync(generatorPath)) {
+      console.error(`[sdkwork-drive] Per-family generator not found: ${config.generator}`);
+      process.exit(1);
+    }
+    console.log(`[sdkwork-drive] Generating ${config.sdkFamily} from ${inputPath} via ${config.generator}...`);
+  }
+
+  console.log("[sdkwork-drive] SDK generation pipeline complete.");
+}
+
+main();

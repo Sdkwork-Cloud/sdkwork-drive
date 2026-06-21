@@ -226,7 +226,7 @@ export default function App() {
                 onClose={() => setIsSettingsOpen(false)}
                 account={account}
                 onSignOut={handleSignOut}
-                runtimeMode={runtime.config.deploymentMode}
+                runtimeMode={runtime.config.runtimeTarget}
                 appApiBaseUrl={runtime.config.appApiBaseUrl}
               />
             </div>

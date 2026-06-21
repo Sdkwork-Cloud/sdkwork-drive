@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
-import { createRuntimeConfig, type SdkworkDeploymentMode } from 'sdkwork-drive-pc-core';
+import { createRuntimeConfig, type DriveDeploymentProfile } from 'sdkwork-drive-pc-core';
 
 const appRoot = path.resolve(__dirname, '..', '..');
 const coreRoot = path.join(appRoot, 'packages', 'sdkwork-drive-pc-core');
@@ -787,10 +787,9 @@ describe('desktop architecture contract', () => {
     expect(adminSpec.contracts.sdkDependencies).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          workspace: 'sdkwork-drive-admin-storage-sdk',
-          packageByLanguage: expect.objectContaining({
-            typescript: '@sdkwork/drive-admin-storage-sdk',
-          }),
+          sdkFamily: '@sdkwork/drive-admin-storage-sdk',
+          surface: 'backend-api',
+          consumedThrough: 'sdkwork-drive-pc-admin-core',
         }),
       ]),
     );
@@ -1051,46 +1050,48 @@ describe('desktop architecture contract', () => {
 
     expect(rootPackageJson.scripts.dev).toBe('pnpm dev:browser');
     expect(rootPackageJson.scripts['dev:browser']).toBe(
-      'pnpm dev:browser:postgres:unified-process:standalone',
+      'node scripts/sdkwork-command.mjs dev --runtime-target browser --database postgres --service-layout unified-process --deployment-profile standalone',
     );
     expect(rootPackageJson.scripts['dev:pc']).toBeUndefined();
     expect(rootPackageJson.scripts['dev:desktop']).toBe(
       'pnpm dev:desktop:postgres:unified-process:standalone',
     );
     expect(rootPackageJson.scripts['dev:desktop:postgres:unified-process:standalone']).toBe(
-      'node scripts/sdkwork-command.mjs dev:desktop:postgres:unified-process:standalone',
+      'node scripts/sdkwork-command.mjs dev --runtime-target desktop --database postgres --service-layout unified-process --deployment-profile standalone',
     );
-    expect(rootPackageJson.scripts.build).toBe('node scripts/sdkwork-command.mjs build');
-    expect(rootPackageJson.scripts['dev:server']).toBe(
-      'node scripts/run-drive-api-server.mjs server --dev-env-file .env.postgres',
+    expect(rootPackageJson.scripts['dev:desktop:sqlite']).toBe(
+      'node scripts/sdkwork-command.mjs dev --runtime-target desktop --database sqlite --service-layout unified-process --deployment-profile standalone',
     );
+    expect(rootPackageJson.scripts.build).toBe(
+      'node scripts/sdkwork-command.mjs build --deployment-profile cloud',
+    );
+    expect(rootPackageJson.scripts['dev:server']).toBeUndefined();
     expect(appPackageJson.scripts.dev).toBe('vite');
     expect(tauriConfig.build.devUrl).toBe('http://localhost:5183');
   });
 
-  it('keeps localhost API defaults for self-hosted and legacy local deployment aliases', () => {
-    const selfHostedConfig = createRuntimeConfig({ VITE_DRIVE_PC_HOSTING: 'self-hosted' });
-    expect(selfHostedConfig.appApiBaseUrl).toBe('http://127.0.0.1:3900');
-    expect(selfHostedConfig.adminStorageApiBaseUrl).toBe('http://127.0.0.1:3900');
+  it('keeps localhost API defaults for standalone and legacy local deployment aliases', () => {
+    const standaloneConfig = createRuntimeConfig({ VITE_DRIVE_PC_DEPLOYMENT_PROFILE: 'standalone' });
+    expect(standaloneConfig.appApiBaseUrl).toBe('http://127.0.0.1:3900');
+    expect(standaloneConfig.adminStorageApiBaseUrl).toBe('http://127.0.0.1:3900');
 
     const legacyLocalConfig = createRuntimeConfig({ VITE_DRIVE_PC_DEPLOYMENT_MODE: 'local' });
-    expect(legacyLocalConfig.deploymentMode).toBe('desktop');
-    expect(legacyLocalConfig.hosting).toBe('self-hosted');
+    expect(legacyLocalConfig.runtimeTarget).toBe('desktop');
+    expect(legacyLocalConfig.deploymentProfile).toBe('standalone');
     expect(legacyLocalConfig.appApiBaseUrl).toBe('http://127.0.0.1:3900');
     expect(legacyLocalConfig).not.toHaveProperty('useLocalDemoData');
 
-    for (const mode of ['desktop', 'private', 'saas', 'web'] satisfies SdkworkDeploymentMode[]) {
+    for (const profile of ['cloud'] satisfies DriveDeploymentProfile[]) {
       const config = createRuntimeConfig({
-        VITE_DRIVE_PC_DEPLOYMENT_MODE: mode,
-        VITE_DRIVE_PC_HOSTING: 'cloud-hosted',
+        VITE_DRIVE_PC_DEPLOYMENT_PROFILE: profile,
       });
-      expect(config.appApiBaseUrl, `${mode} should not default to localhost`).not.toMatch(
+      expect(config.appApiBaseUrl, `${profile} should not default to localhost`).not.toMatch(
         /localhost|127\.0\.0\.1/,
       );
-      expect(config.adminStorageApiBaseUrl, `${mode} admin storage should not default to localhost`).not.toMatch(
+      expect(config.adminStorageApiBaseUrl, `${profile} admin storage should not default to localhost`).not.toMatch(
         /localhost|127\.0\.0\.1/,
       );
-      expect(config, `${mode} should not expose local demo data switches`).not.toHaveProperty(
+      expect(config, `${profile} should not expose local demo data switches`).not.toHaveProperty(
         'useLocalDemoData',
       );
     }

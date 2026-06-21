@@ -1,186 +1,225 @@
 #!/usr/bin/env node
+/**
+ * SDKWork Drive standard command dispatcher.
+ *
+ * Parses standard SDKWork command names and maps them to product implementation
+ * scripts. Follows ../sdkwork-specs/PNPM_SCRIPT_SPEC.md section 9.
+ *
+ * Fails fast on unknown standard commands and retired axis values.
+ */
 
-import { spawn } from 'node:child_process';
-import fs from 'node:fs';
-import path from 'node:path';
-import process from 'node:process';
-import { fileURLToPath } from 'node:url';
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const REPO_ROOT = path.resolve(__dirname, '..');
+const __dirname = dirname(__filename);
+const repoRoot = resolve(__dirname, "..");
 
-function pnpmCommand() {
-  return process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
-}
-
-function cargoCommand() {
-  return process.platform === 'win32' ? 'cargo.exe' : 'cargo';
-}
-
-function nodeCommand() {
-  return process.execPath;
-}
-
-function command(commandName, args, options = {}) {
-  return {
-    commandName,
-    args,
-    cwd: options.cwd || REPO_ROOT,
-    env: options.env || process.env,
-  };
-}
-
-function nodeScript(scriptPath, args = []) {
-  return command(nodeCommand(), [scriptPath, ...args]);
-}
-
-function pnpm(args, options = {}) {
-  return command(pnpmCommand(), args, options);
-}
-
-function cargo(args) {
-  return command(cargoCommand(), args);
-}
-
-const COMMANDS = new Map([
-  ['dev', pnpm(['dev:browser'])],
-  ['dev:browser', pnpm(['dev:browser:postgres:unified-process:standalone'])],
-  ['dev:browser:postgres', pnpm(['dev:browser:postgres:unified-process:standalone'])],
-  ['dev:browser:sqlite', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'sqlite', '--service-layout', 'unified-process', '--deployment-profile', 'standalone'])],
-  ['dev:browser:postgres:unified-process:standalone', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'postgres', '--service-layout', 'unified-process', '--deployment-profile', 'standalone'])],
-  ['dev:browser:postgres:split-services:cloud', nodeScript('scripts/drive-dev.mjs', ['--target', 'browser', '--database', 'postgres', '--service-layout', 'split-services', '--deployment-profile', 'cloud'])],
-  ['dev:desktop', pnpm(['dev:desktop:postgres:unified-process:standalone'])],
-  ['dev:desktop:postgres', pnpm(['dev:desktop:postgres:unified-process:standalone'])],
-  ['dev:desktop:postgres:unified-process:standalone', nodeScript('scripts/drive-dev.mjs', ['--target', 'desktop', '--database', 'postgres', '--service-layout', 'unified-process', '--deployment-profile', 'standalone'])],
-  ['dev:desktop:sqlite', nodeScript('scripts/drive-dev.mjs', ['--target', 'desktop', '--database', 'sqlite', '--service-layout', 'unified-process', '--deployment-profile', 'standalone'])],
-  ['dev:desktop:postgres:split-services:cloud', nodeScript('scripts/drive-dev.mjs', ['--target', 'desktop', '--database', 'postgres', '--service-layout', 'split-services', '--deployment-profile', 'cloud'])],
-  ['dev:server', nodeScript('scripts/run-drive-api-server.mjs', ['server', '--dev-env-file', '.env.postgres'])],
-  ['dev:server:postgres', nodeScript('scripts/run-drive-api-server.mjs', ['server', '--dev-env-file', '.env.postgres'])],
-  ['dev:server:sqlite', nodeScript('scripts/run-drive-api-server.mjs', ['server', '--', '--database-url', 'sqlite://target/dev/sdkwork-drive.sqlite'])],
-
-  ['build', nodeScript('scripts/drive-build.mjs', ['--deployment-profile', 'cloud'])],
-  ['build:cloud', nodeScript('scripts/drive-build.mjs', ['--deployment-profile', 'cloud'])],
-  ['build:standalone', nodeScript('scripts/drive-build.mjs', ['--deployment-profile', 'standalone'])],
-  ['build:desktop', nodeScript('scripts/drive-build.mjs', ['--deployment-profile', 'standalone'])],
-  ['build:debug', nodeScript('scripts/drive-build.mjs', ['--deployment-profile', 'cloud', '--debug'])],
-
-  ['start', nodeScript('scripts/run-drive-api-server.mjs', ['server', '--dev-env-file', '.env.postgres'])],
-  ['test', cargo(['test', '--workspace'])],
-  ['test:pc', pnpm(['--dir', 'apps/sdkwork-drive-pc', 'test'])],
-  ['typecheck', pnpm(['--dir', 'apps/sdkwork-drive-pc', 'typecheck'])],
-  ['typecheck:pc', pnpm(['--dir', 'apps/sdkwork-drive-pc', 'typecheck'])],
-  ['lint', cargo(['clippy', '--workspace', '--tests', '--', '-D', 'warnings'])],
-  ['format', cargo(['fmt', '--all'])],
-  ['format:rust', cargo(['fmt', '--all'])],
-  ['format:check', cargo(['fmt', '--all', '--', '--check'])],
-  ['format:rust:check', cargo(['fmt', '--all', '--', '--check'])],
-
-  ['check', nodeScript('tools/check_sdkwork_drive_dependency_management.mjs')],
-  ['check:dependency-management', nodeScript('tools/check_sdkwork_drive_dependency_management.mjs')],
-  ['check:app-sdk-consumers', nodeScript('tools/check_drive_app_sdk_consumer_integration.mjs')],
-  ['check:pc-standard', nodeScript('tools/check_sdkwork_drive_pc_standard.mjs')],
-  ['check:package-standard', nodeScript('tools/check_sdkwork_drive_package_standard.mjs')],
-  ['check:architecture-alignment', nodeScript('tools/check_sdkwork_drive_architecture_alignment.mjs')],
-  ['check:pnpm-script-standard', nodeScript('../sdkwork-specs/tools/check-pnpm-script-standard.mjs', ['--root', '.', '--product-prefix', 'drive'])],
-  ['check:agent-workflow-standard', nodeScript('../sdkwork-specs/tools/check-agent-workflow-standard.mjs', ['--root', '.'])],
-
-  ['topology:plan:server', nodeScript('scripts/run-drive-api-server.mjs', ['plan'])],
-  ['topology:plan:server:postgres', nodeScript('scripts/run-drive-api-server.mjs', ['plan', '--dev-env-file', '.env.postgres'])],
-  ['topology:plan:server:sqlite', nodeScript('scripts/run-drive-api-server.mjs', ['plan', '--', '--database-url', 'sqlite://target/dev/sdkwork-drive.sqlite'])],
-
-  ['gateway:run:standalone', nodeScript('scripts/gateway-standalone-run.mjs', ['--environment', 'development'])],
-  ['gateway:run:standalone:prod', nodeScript('scripts/gateway-standalone-run.mjs', ['--environment', 'production', '--release'])],
-  ['gateway:plan:standalone', nodeScript('scripts/gateway-standalone-run.mjs', ['--environment', 'development', '--dry-run'])],
-  ['gateway:build:standalone', cargo(['build', '--release', '-p', 'sdkwork-drive-standalone-gateway', '--bin', 'sdkwork-drive-standalone-gateway'])],
-  ['gateway:package:standalone', nodeScript('scripts/gateway-standalone-pack.mjs', ['package'])],
-  ['gateway:validate:standalone', nodeScript('scripts/gateway-standalone-pack.mjs', ['validate'])],
-  ['gateway:package:cloud', nodeScript('scripts/gateway-cloud-bundle.mjs', ['bundle'])],
-  ['gateway:validate:cloud', nodeScript('scripts/gateway-cloud-bundle.mjs', ['validate'])],
-  ['gateway:matrix', nodeScript('scripts/print-gateway-package-matrix.mjs', ['--profile', 'all'])],
-  ['gateway:matrix:standalone', nodeScript('scripts/print-gateway-package-matrix.mjs', ['--profile', 'application-public-ingress'])],
-  ['gateway:matrix:cloud', nodeScript('scripts/print-gateway-package-matrix.mjs', ['--profile', 'platform-config-bundle'])],
-
-  ['sbom:generate', nodeScript('tools/generate_release_sbom.mjs')],
+const ALLOWED_DATABASES = new Set(["postgres", "sqlite"]);
+const ALLOWED_SERVICE_LAYOUTS = new Set(["unified-process", "split-services"]);
+const ALLOWED_DEPLOYMENT_PROFILES = new Set(["standalone", "cloud"]);
+const ALLOWED_RUNTIME_TARGETS = new Set([
+  "browser", "desktop", "server", "container",
+  "tablet-ipados", "tablet-android",
+  "capacitor-ios", "capacitor-android",
+  "flutter-ios", "flutter-android",
+  "android-native", "ios-native", "harmony-native",
+  "mini-program", "test-runner",
 ]);
 
-function assertInsideRepo(targetPath) {
-  const resolved = path.resolve(REPO_ROOT, targetPath);
-  const relative = path.relative(REPO_ROOT, resolved);
-  if (relative.startsWith('..') || path.isAbsolute(relative)) {
-    throw new Error(`refusing to clean outside repository root: ${resolved}`);
-  }
-  return resolved;
-}
+const RETIRED_VALUES = new Set([
+  "self-hosted", "cloud-hosted", "hosting",
+  "web", "mobile", "native", "docker",
+]);
 
-function cleanWorkspace() {
-  const targets = [
-    'apps/sdkwork-drive-pc/dist',
-    'target/dev',
-  ];
-  const packagesRoot = path.join(REPO_ROOT, 'apps', 'sdkwork-drive-pc', 'packages');
-  if (fs.existsSync(packagesRoot)) {
-    for (const entry of fs.readdirSync(packagesRoot, { withFileTypes: true })) {
-      if (entry.isDirectory()) {
-        targets.push(path.join('apps', 'sdkwork-drive-pc', 'packages', entry.name, 'dist'));
-      }
+function parseArgs(argv) {
+  const args = { command: null, flags: {} };
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg.startsWith("--")) {
+      const key = arg.slice(2);
+      const value = argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[++i] : true;
+      args.flags[key] = value;
+    } else if (!args.command) {
+      args.command = arg;
     }
   }
-
-  for (const target of targets) {
-    const resolved = assertInsideRepo(target);
-    fs.rmSync(resolved, { recursive: true, force: true });
-    console.log(`[sdkwork-drive] removed ${path.relative(REPO_ROOT, resolved)}`);
-  }
+  return args;
 }
 
-function printHelp() {
-  console.log(`Usage: node scripts/sdkwork-command.mjs <standard-command> [-- extra args]
+function validateAxisValues(flags) {
+  const { database, "service-layout": serviceLayout, "deployment-profile": deploymentProfile, "runtime-target": runtimeTarget } = flags;
 
-Examples:
-  pnpm dev
-  pnpm dev:desktop
-  pnpm dev:server:postgres
-  pnpm build:standalone
-  pnpm gateway:package:cloud
-  pnpm check:pnpm-script-standard
-  pnpm check:agent-workflow-standard
-`);
-}
-
-function run(entry, extraArgs) {
-  const child = spawn(entry.commandName, [...entry.args, ...extraArgs], {
-    cwd: entry.cwd,
-    env: entry.env,
-    stdio: 'inherit',
-    windowsHide: process.platform === 'win32',
-  });
-  child.on('exit', (code) => {
-    process.exitCode = code ?? 1;
-  });
-}
-
-function main() {
-  const [commandName, ...extraArgs] = process.argv.slice(2);
-  if (!commandName || commandName === '--help' || commandName === '-h') {
-    printHelp();
-    process.exit(commandName ? 0 : 1);
-  }
-  if (commandName === 'clean') {
-    cleanWorkspace();
-    return;
-  }
-  if (commandName === 'verify') {
-    run(nodeScript('scripts/sdkwork-verify.mjs'), extraArgs);
-    return;
-  }
-  const entry = COMMANDS.get(commandName);
-  if (!entry) {
-    console.error(`[sdkwork-drive] unknown standard command: ${commandName}`);
-    console.error('[sdkwork-drive] run with --help to see examples');
+  if (database && !ALLOWED_DATABASES.has(database)) {
+    console.error(`[sdkwork-drive] Invalid database: ${database}. Allowed: ${[...ALLOWED_DATABASES].join(", ")}`);
     process.exit(1);
   }
-  run(entry, extraArgs);
+  if (serviceLayout && !ALLOWED_SERVICE_LAYOUTS.has(serviceLayout)) {
+    console.error(`[sdkwork-drive] Invalid service-layout: ${serviceLayout}. Allowed: ${[...ALLOWED_SERVICE_LAYOUTS].join(", ")}`);
+    process.exit(1);
+  }
+  if (deploymentProfile && !ALLOWED_DEPLOYMENT_PROFILES.has(deploymentProfile)) {
+    console.error(`[sdkwork-drive] Invalid deployment-profile: ${deploymentProfile}. Allowed: ${[...ALLOWED_DEPLOYMENT_PROFILES].join(", ")}`);
+    process.exit(1);
+  }
+  if (runtimeTarget && !ALLOWED_RUNTIME_TARGETS.has(runtimeTarget)) {
+    console.error(`[sdkwork-drive] Invalid runtime-target: ${runtimeTarget}. Allowed: ${[...ALLOWED_RUNTIME_TARGETS].join(", ")}`);
+    process.exit(1);
+  }
+
+  for (const [key, value] of Object.entries(flags)) {
+    if (typeof value === "string" && RETIRED_VALUES.has(value)) {
+      console.error(`[sdkwork-drive] Retired value '${value}' for --${key}. Use standard axis values only.`);
+      process.exit(1);
+    }
+  }
 }
 
-main();
+function runNodeScript(scriptRelativePath, scriptArgs, cwd = repoRoot) {
+  const scriptPath = resolve(repoRoot, scriptRelativePath);
+  const result = spawnSync("node", [scriptPath, ...scriptArgs], {
+    cwd,
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
+  }
+}
+
+function runShell(command, cwd = repoRoot, env = process.env) {
+  const result = spawnSync(command, {
+    cwd,
+    env,
+    shell: true,
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
+  }
+}
+
+function dispatch(args) {
+  const { command, flags } = args;
+  if (!command) {
+    console.error("[sdkwork-drive] No command provided. Usage: node scripts/sdkwork-command.mjs <command> [flags]");
+    process.exit(1);
+  }
+
+  validateAxisValues(flags);
+
+  const runtimeTarget = flags["runtime-target"] || "browser";
+  const database = flags.database || "postgres";
+  const serviceLayout = flags["service-layout"] || "unified-process";
+  const deploymentProfile = flags["deployment-profile"] || "standalone";
+
+  switch (command) {
+    case "dev": {
+      // Dispatch to drive-dev.mjs with standard axis values.
+      // Default dev args: ['--database', 'postgres', '--deployment-profile', 'standalone']
+      // SQLite dev args: ['--database', 'sqlite', '--deployment-profile', 'standalone']
+      const devArgs = [
+        "--target", runtimeTarget,
+        "--database", database,
+        "--service-layout", serviceLayout,
+        "--deployment-profile", deploymentProfile,
+      ];
+      runNodeScript("scripts/drive-dev.mjs", devArgs);
+      break;
+    }
+    case "build": {
+      // Dispatch to drive-build.mjs with cloud deployment profile by default.
+      // Default build args: ['--deployment-profile', 'cloud']
+      const buildProfile = deploymentProfile === "standalone" ? "standalone" : "cloud";
+      runNodeScript("scripts/drive-build.mjs", ["--deployment-profile", buildProfile]);
+      break;
+    }
+    case "test": {
+      runShell("cargo test --workspace");
+      const pcDir = resolve(repoRoot, "apps/sdkwork-drive-pc");
+      if (existsSync(pcDir)) {
+        runShell("pnpm test", pcDir);
+      }
+      break;
+    }
+    case "check": {
+      runShell("cargo check --workspace");
+      const pcDir = resolve(repoRoot, "apps/sdkwork-drive-pc");
+      if (existsSync(pcDir)) {
+        runShell("pnpm typecheck", pcDir);
+      }
+      break;
+    }
+    case "verify": {
+      runNodeScript("scripts/sdkwork-verify.mjs", []);
+      break;
+    }
+    case "clean": {
+      runShell("cargo clean");
+      const pcDir = resolve(repoRoot, "apps/sdkwork-drive-pc");
+      if (existsSync(pcDir)) {
+        runShell("pnpm clean || true", pcDir);
+      }
+      break;
+    }
+    case "db:plan":
+    case "db:init":
+    case "db:migrate":
+    case "db:seed":
+    case "db:status":
+    case "db:validate":
+    case "db:bootstrap":
+    case "db:drift":
+    case "db:drift:check": {
+      const dbFlag = database === "sqlite" ? "--sqlite" : "";
+      runShell(`cargo run -p sdkwork-drive-install-worker -- ${command.replace("db:", "--db-")}${dbFlag ? " " + dbFlag : ""}`);
+      break;
+    }
+    case "gateway:run":
+    case "gateway:plan":
+    case "gateway:build":
+    case "gateway:validate":
+    case "gateway:matrix": {
+      const profileFlag = deploymentProfile ? ` --${deploymentProfile}` : "";
+      runShell(`cargo run -p sdkwork-drive-standalone-gateway -- ${command.replace("gateway:", "--gateway-")}${profileFlag}`);
+      break;
+    }
+    case "gateway:package:standalone": {
+      // Dispatch to gateway-standalone-pack.mjs for standalone server packaging.
+      runNodeScript("scripts/gateway-standalone-pack.mjs", []);
+      break;
+    }
+    case "gateway:package:cloud": {
+      // Dispatch to gateway-cloud-bundle.mjs for cloud server packaging.
+      runNodeScript("scripts/gateway-cloud-bundle.mjs", []);
+      break;
+    }
+    case "topology:plan":
+    case "topology:validate": {
+      console.log(`[sdkwork-drive] topology ${command} for ${deploymentProfile}/${serviceLayout}/${database}`);
+      break;
+    }
+    case "release:plan":
+    case "release:build":
+    case "release:package":
+    case "release:validate": {
+      console.log(`[sdkwork-drive] release ${command} - delegate to GitHub Actions workflow`);
+      break;
+    }
+    case "deploy:plan":
+    case "deploy:apply":
+    case "deploy:rollback":
+    case "deploy:validate": {
+      console.log(`[sdkwork-drive] deploy ${command} - delegate to GitHub Actions workflow`);
+      break;
+    }
+    default:
+      console.error(`[sdkwork-drive] Unknown command: ${command}`);
+      console.error("Allowed commands: dev, build, test, check, verify, clean, db:*, gateway:*, topology:*, release:*, deploy:*");
+      process.exit(1);
+  }
+}
+
+const args = parseArgs(process.argv.slice(2));
+dispatch(args);

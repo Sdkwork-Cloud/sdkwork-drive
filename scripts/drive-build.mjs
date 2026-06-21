@@ -76,12 +76,12 @@ function main() {
     process.exit(0);
   }
 
-  const hosting = settings.deploymentProfile === 'standalone' ? 'self-hosted' : 'cloud-hosted';
-  const profileId = resolveBuildProfileId(hosting);
+  const deploymentProfile = settings.deploymentProfile;
+  const profileId = resolveBuildProfileId(deploymentProfile);
   const profileEnv = loadProfile(profileId);
   const buildEnv = mergeRuntimeEnv(process.env, profileEnv, {
-    SDKWORK_DRIVE_HOSTING: hosting,
-    VITE_DRIVE_PC_HOSTING: hosting,
+    SDKWORK_DRIVE_DEPLOYMENT_PROFILE: deploymentProfile,
+    VITE_DRIVE_PC_DEPLOYMENT_PROFILE: deploymentProfile,
     SDKWORK_DRIVE_PROFILE_ID: profileId,
   });
   const buildScript = settings.debug ? 'build:desktop:local' : 'build:desktop';

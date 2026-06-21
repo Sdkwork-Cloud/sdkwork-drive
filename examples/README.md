@@ -1,7 +1,25 @@
 # Drive Examples
 
-`examples/` is reserved for runnable examples, integration samples, SDK/API
-usage examples, and sample configs that are safe to publish.
+`examples/` is reserved for runnable examples and SDK/API usage samples for
+SDKWork Drive. It is the examples boundary governed by
+`../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md`.
 
-Examples must use generated SDK clients or approved composed wrappers when they
-call SDKWork APIs.
+## Allowed Content
+
+- Runnable example applications demonstrating Drive SDK usage.
+- API usage samples and integration patterns.
+- Reference implementations for common workflows.
+
+## Forbidden Content
+
+- Production source code (belongs in `crates/`, `apps/`, or `sdks/`).
+- Runtime state, databases, logs, or caches.
+
+## Related Specs
+
+- `../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md`
+- `../sdkwork-specs/DOCUMENTATION_SPEC.md`
+
+## Verification
+
+- `pnpm verify` (repository-wide verification)

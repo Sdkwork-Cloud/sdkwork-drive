@@ -5,7 +5,7 @@ use crate::state::AdminStorageState;
 use crate::web_bootstrap::wrap_router_with_web_framework;
 use axum::middleware;
 use axum::routing::{get, post};
-use axum::Router;
+use axum::{Extension, Router};
 use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_security::DriveAuthValidationPolicy;
 use sdkwork_drive_workspace_service::infrastructure::sql::connect_any_database_and_install_schema;
@@ -54,6 +54,16 @@ pub fn build_router_with_pool_without_iam(pool: AnyPool) -> Router {
     build_router_with_state(
         AdminStorageState::new(pool, AdminStorageConfig::default()),
         false,
+    )
+}
+
+pub fn build_router_with_pool_without_iam_and_test_tenant(
+    pool: AnyPool,
+    tenant_id: impl Into<String>,
+) -> Router {
+    build_router_with_state_and_test_tenant(
+        AdminStorageState::new(pool, AdminStorageConfig::default()),
+        tenant_id.into(),
     )
 }
 
@@ -116,6 +126,32 @@ fn admin_storage_config_error(error: String) -> Box<dyn std::error::Error + Send
 }
 
 fn build_router_with_state(state: AdminStorageState, require_iam: bool) -> Router {
+    if require_iam {
+        build_router_inner(state, true, None)
+    } else {
+        build_router_inner(
+            state,
+            false,
+            Some(crate::app_context::default_test_drive_request_context()),
+        )
+    }
+}
+
+fn build_router_with_state_and_test_tenant(state: AdminStorageState, tenant_id: String) -> Router {
+    build_router_inner(
+        state,
+        false,
+        Some(crate::app_context::test_drive_request_context_with_tenant(
+            tenant_id,
+        )),
+    )
+}
+
+fn build_router_inner(
+    state: AdminStorageState,
+    require_iam: bool,
+    test_context: Option<crate::app_context::DriveRequestContext>,
+) -> Router {
     let mut drive_routes = Router::new()
         .route(
             "/admin/v3/api/drive/storage/providers",
@@ -199,6 +235,8 @@ fn build_router_with_state(state: AdminStorageState, require_iam: bool) -> Route
             sdkwork_web_core::DefaultWebRequestContextResolver::default(),
             router,
         );
+    } else if let Some(ctx) = test_context {
+        router = router.layer(Extension(ctx));
     }
 
     router

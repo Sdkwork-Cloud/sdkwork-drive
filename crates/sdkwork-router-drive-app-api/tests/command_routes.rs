@@ -9338,32 +9338,14 @@ fn hex_encode(value: &str) -> String {
 async fn fetch_paged_items(
     app: axum::Router,
     uri: &str,
+    tenant: &str,
 ) -> (Vec<serde_json::Value>, Option<String>) {
-    let (tenant, user) = common::auth_context_from_uri(uri);
-    let sanitized_uri = common::strip_client_tenant_id_from_uri(uri);
+    let user = common::user_from_uri(uri, tenant);
     let response = app
-        .oneshot(
-            Request::builder()
-                .header(
-                    "authorization",
-                    format!("Bearer {}", common::auth_token(&tenant, &user, "appbase")),
-                )
-                .header(
-                    "access-token",
-                    common::access_token(&tenant, &user, "appbase"),
-                )
-                .method(Method::GET)
-                .uri(sanitized_uri.as_str())
-                .body(Body::empty())
-                .expect("paged request should be built"),
-        )
+        .oneshot(common::authed_get(uri, tenant, &user, "appbase"))
         .await
         .expect("paged request should be handled");
-    assert_eq!(
-        response.status(),
-        StatusCode::OK,
-        "{sanitized_uri} should return OK"
-    );
+    assert_eq!(response.status(), StatusCode::OK, "{uri} should return OK");
     let payload: serde_json::Value = serde_json::from_slice(
         &to_bytes(response.into_body(), usize::MAX)
             .await
@@ -9378,32 +9360,13 @@ async fn fetch_paged_items(
     (items, next_page_token)
 }
 
-async fn fetch_json(app: axum::Router, uri: &str) -> serde_json::Value {
-    let (tenant, user) = common::auth_context_from_uri(uri);
-    let sanitized_uri = common::strip_client_tenant_id_from_uri(uri);
+async fn fetch_json(app: axum::Router, uri: &str, tenant: &str) -> serde_json::Value {
+    let user = common::user_from_uri(uri, tenant);
     let response = app
-        .oneshot(
-            Request::builder()
-                .header(
-                    "authorization",
-                    format!("Bearer {}", common::auth_token(&tenant, &user, "appbase")),
-                )
-                .header(
-                    "access-token",
-                    common::access_token(&tenant, &user, "appbase"),
-                )
-                .method(Method::GET)
-                .uri(sanitized_uri.as_str())
-                .body(Body::empty())
-                .expect("json request should be built"),
-        )
+        .oneshot(common::authed_get(uri, tenant, &user, "appbase"))
         .await
         .expect("json request should be handled");
-    assert_eq!(
-        response.status(),
-        StatusCode::OK,
-        "{sanitized_uri} should return OK"
-    );
+    assert_eq!(response.status(), StatusCode::OK, "{uri} should return OK");
     serde_json::from_slice(
         &to_bytes(response.into_body(), usize::MAX)
             .await
@@ -13338,6 +13301,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let (first_nodes, next_nodes_token) = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/spaces/space-page/nodes?pageSize=1",
+        "tenant-page",
     )
     .await;
     assert_eq!(first_nodes[0]["id"].as_str(), Some("node-page-a"));
@@ -13346,28 +13310,32 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
         app.clone(),
         &format!(
             "/app/v3/api/drive/spaces/space-page/nodes?pageSize=1&pageToken={next_nodes_token}"
-        )
-        )
+        ),
+        "tenant-page",
+    )
     .await;
     assert_eq!(second_nodes[0]["id"].as_str(), Some("node-page-b"));
 
     let (first_recent, next_recent_token) = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/recent?pageSize=1",
+        "tenant-page",
     )
     .await;
     assert_eq!(first_recent[0]["id"].as_str(), Some("node-page-b"));
     let next_recent_token = next_recent_token.expect("recent first page should have nextPageToken");
     let (second_recent, _) = fetch_paged_items(
         app.clone(),
-        &format!("/app/v3/api/drive/recent?pageSize=1&pageToken={next_recent_token}")
-        )
+        &format!("/app/v3/api/drive/recent?pageSize=1&pageToken={next_recent_token}"),
+        "tenant-page",
+    )
     .await;
     assert_eq!(second_recent[0]["id"].as_str(), Some("node-page-a"));
 
     let (first_permissions, next_permissions_token) = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/nodes/node-page-a/permissions?pageSize=1",
+        "tenant-page",
     )
     .await;
     assert_eq!(
@@ -13380,8 +13348,9 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
         app.clone(),
         &format!(
             "/app/v3/api/drive/nodes/node-page-a/permissions?pageSize=1&pageToken={next_permissions_token}"
-        )
-        )
+        ),
+    "tenant-page",
+    )
     .await;
     assert_eq!(
         second_permissions[0]["id"].as_str(),
@@ -13391,6 +13360,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let (first_share_links, next_share_links_token) = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/nodes/node-page-a/share_links?pageSize=1",
+        "tenant-page",
     )
     .await;
     assert_eq!(first_share_links[0]["id"].as_str(), Some("share-page-b"));
@@ -13400,14 +13370,16 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
         app.clone(),
         &format!(
             "/app/v3/api/drive/nodes/node-page-a/share_links?pageSize=1&pageToken={next_share_links_token}"
-        )
-        )
+        ),
+    "tenant-page",
+    )
     .await;
     assert_eq!(second_share_links[0]["id"].as_str(), Some("share-page-a"));
 
     let (first_versions, next_versions_token) = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/nodes/node-page-a/versions?pageSize=1",
+        "tenant-page",
     )
     .await;
     assert_eq!(first_versions[0]["id"].as_str(), Some("version-page-2"));
@@ -13417,8 +13389,9 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
         app,
         &format!(
             "/app/v3/api/drive/nodes/node-page-a/versions?pageSize=1&pageToken={next_versions_token}"
-        )
-        )
+        ),
+    "tenant-page",
+    )
     .await;
     assert_eq!(second_versions[0]["id"].as_str(), Some("version-page-1"));
 }
@@ -13581,8 +13554,9 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
     let app = common::test_router_with_pool(pool);
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?pageSize=2"
-        )
+        "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?pageSize=2",
+        "tenant-effective-perm",
+    )
     .await;
 
     assert_eq!(first_items.len(), 2);
@@ -13621,8 +13595,9 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
         app,
         &format!(
             "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?pageSize=2&pageToken={next_token}"
-        )
-        )
+        ),
+    "tenant-effective-perm",
+    )
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(second_items[0]["id"].as_str(), Some("perm-effective-root"));
@@ -13712,9 +13687,10 @@ async fn app_drive_effective_permissions_prefer_direct_then_nearest_acl_for_same
 
     let app = common::test_router_with_pool(pool);
     let (items, next_token) = fetch_paged_items(
-        app,
-        "/app/v3/api/drive/nodes/node-override-file/permissions/effective"
-        )
+        app.clone(),
+        "/app/v3/api/drive/nodes/node-override-file/permissions/effective",
+        "tenant-effective-override",
+    )
     .await;
 
     assert_eq!(
@@ -13809,7 +13785,8 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
     let app = common::test_router_with_pool(pool);
     let direct = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-direct-commenter"
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-direct-commenter",
+        "tenant-capability",
         )
     .await;
     assert_eq!(direct["role"].as_str(), Some("commenter"));
@@ -13824,7 +13801,8 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
 
     let inherited = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-inherited-writer"
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-inherited-writer",
+        "tenant-capability",
         )
     .await;
     assert_eq!(inherited["role"].as_str(), Some("writer"));
@@ -13841,8 +13819,9 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
 
     let owner = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-owner"
-        )
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-owner",
+        "tenant-capability",
+    )
     .await;
     assert_eq!(owner["role"].as_str(), Some("owner"));
     assert_eq!(owner["source"].as_str(), Some("space_owner"));
@@ -13850,8 +13829,9 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
     assert_eq!(owner["canDelete"].as_bool(), Some(true));
 
     let missing = fetch_json(
-        app,
-        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-missing"
+        app.clone(),
+        "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-missing",
+        "tenant-capability",
         )
     .await;
     assert_eq!(missing["role"].as_str(), Some("none"));
@@ -13928,7 +13908,8 @@ async fn app_dr_drive_node_capabilities_support_trashed_nodes_with_restore_only_
     let app = common::test_router_with_pool(pool);
     let writer = fetch_json(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?subjectType=user&subjectId=user-writer"
+        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?subjectType=user&subjectId=user-writer",
+        "tenant-cap-trash",
         )
     .await;
     assert_eq!(writer["role"].as_str(), Some("writer"));
@@ -13951,9 +13932,10 @@ async fn app_dr_drive_node_capabilities_support_trashed_nodes_with_restore_only_
     }
 
     let owner = fetch_json(
-        app,
-        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?subjectType=user&subjectId=user-owner"
-        )
+        app.clone(),
+        "/app/v3/api/drive/nodes/node-cap-trash/capabilities?subjectType=user&subjectId=user-owner",
+        "tenant-cap-trash",
+    )
     .await;
     assert_eq!(owner["role"].as_str(), Some("owner"));
     assert_eq!(owner["source"].as_str(), Some("space_owner"));
@@ -14112,6 +14094,7 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/nodes/node-property/properties?pageSize=1",
+        "tenant-property",
     )
     .await;
     assert_eq!(first_items.len(), 1);
@@ -14121,8 +14104,9 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
         app.clone(),
         &format!(
             "/app/v3/api/drive/nodes/node-property/properties?pageSize=1&pageToken={next_token}"
-        )
-        )
+        ),
+        "tenant-property",
+    )
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(second_items[0]["propertyKey"].as_str(), Some("orderId"));
@@ -14130,8 +14114,9 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
 
     let private_only = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-property/properties?visibility=private"
-        )
+        "/app/v3/api/drive/nodes/node-property/properties?visibility=private",
+        "tenant-property",
+    )
     .await
     .0;
     assert_eq!(private_only.len(), 1);
@@ -14165,6 +14150,7 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
     let remaining = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/nodes/node-property/properties",
+        "tenant-property",
     )
     .await
     .0;
@@ -14172,8 +14158,9 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
     assert_eq!(remaining[0]["propertyKey"].as_str(), Some("orderId"));
 
     let changes = fetch_paged_items(
-        app,
+        app.clone(),
         "/app/v3/api/drive/changes?spaceId=space-property",
+        "tenant-property",
     )
     .await
     .0;
@@ -15223,14 +15210,16 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
     let detail = fetch_json(
         app.clone(),
         "/app/v3/api/drive/nodes/shortcut-001",
+        "tenant-shortcut",
     )
     .await;
     assert_eq!(detail["shortcutTargetNodeId"].as_str(), Some("node-target"));
 
     let (listed, _) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/spaces/space-shortcut/nodes?parentNodeId=folder-shortcut"
-        )
+        "/app/v3/api/drive/spaces/space-shortcut/nodes?parentNodeId=folder-shortcut",
+        "tenant-shortcut",
+    )
     .await;
     assert_eq!(listed.len(), 1);
     assert_eq!(listed[0]["id"].as_str(), Some("shortcut-001"));
@@ -15240,8 +15229,9 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
     );
 
     let changes = fetch_paged_items(
-        app,
+        app.clone(),
         "/app/v3/api/drive/changes?spaceId=space-shortcut",
+        "tenant-shortcut",
     )
     .await
     .0;
@@ -16242,6 +16232,7 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/nodes/node-label/labels?pageSize=1",
+        "tenant-label",
     )
     .await;
     assert_eq!(first_items.len(), 1);
@@ -16252,10 +16243,9 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
     let next_token = next_token.expect("node label list should expose next page token");
     let (second_items, final_token) = fetch_paged_items(
         app.clone(),
-        &format!(
-            "/app/v3/api/drive/nodes/node-label/labels?pageSize=1&pageToken={next_token}"
-        )
-        )
+        &format!("/app/v3/api/drive/nodes/node-label/labels?pageSize=1&pageToken={next_token}"),
+        "tenant-label",
+    )
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(
@@ -16266,8 +16256,9 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
 
     let filtered = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-label/labels?labelKey=classification.public"
-        )
+        "/app/v3/api/drive/nodes/node-label/labels?labelKey=classification.public",
+        "tenant-label",
+    )
     .await
     .0;
     assert_eq!(filtered.len(), 1);
@@ -16301,6 +16292,7 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
     let remaining = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/nodes/node-label/labels",
+        "tenant-label",
     )
     .await
     .0;
@@ -16308,8 +16300,9 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
     assert_eq!(remaining[0]["labelId"].as_str(), Some("label-public"));
 
     let changes = fetch_paged_items(
-        app,
+        app.clone(),
         "/app/v3/api/drive/changes?spaceId=space-label",
+        "tenant-label",
     )
     .await
     .0;
@@ -16456,6 +16449,7 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     let (first_items, next_token) = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/watch_channels?pageSize=1",
+        "tenant-watch",
     )
     .await;
     assert_eq!(first_items.len(), 1);
@@ -16463,10 +16457,9 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     let next_token = next_token.expect("watch channel list should expose next page token");
     let (second_items, final_token) = fetch_paged_items(
         app.clone(),
-        &format!(
-            "/app/v3/api/drive/watch_channels?pageSize=1&pageToken={next_token}"
-        )
-        )
+        &format!("/app/v3/api/drive/watch_channels?pageSize=1&pageToken={next_token}"),
+        "tenant-watch",
+    )
     .await;
     assert_eq!(second_items.len(), 1);
     assert_eq!(second_items[0]["id"].as_str(), Some("watch-node-001"));
@@ -16475,6 +16468,7 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     let node_filtered = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/watch_channels?resourceType=node",
+        "tenant-watch",
     )
     .await
     .0;
@@ -16484,6 +16478,7 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     let get_payload = fetch_json(
         app.clone(),
         "/app/v3/api/drive/watch_channels/watch-node-001",
+        "tenant-watch",
     )
     .await;
     assert_eq!(
@@ -16536,6 +16531,7 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     let active_after_stop = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/watch_channels",
+        "tenant-watch",
     )
     .await
     .0;
@@ -16548,6 +16544,7 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     let stopped_filtered = fetch_paged_items(
         app.clone(),
         "/app/v3/api/drive/watch_channels?lifecycleStatus=stopped",
+        "tenant-watch",
     )
     .await
     .0;
@@ -16555,8 +16552,9 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     assert_eq!(stopped_filtered[0]["id"].as_str(), Some("watch-node-001"));
 
     let changes = fetch_paged_items(
-        app,
+        app.clone(),
         "/app/v3/api/drive/changes?spaceId=space-watch",
+        "tenant-watch",
     )
     .await
     .0;

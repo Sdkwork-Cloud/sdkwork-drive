@@ -1,68 +1,110 @@
 {
+  "$schema": "../sdkwork-github-workflow/schemas/sdkwork-workflow.schema.json",
   "schemaVersion": "2026-06-06.sdkwork.workflow.v1",
   "app": {
     "id": "sdkwork-drive",
     "name": "SDKWork Drive",
     "repository": "Sdkwork-Cloud/sdkwork-drive",
     "sourcePath": ".",
-    "configPath": "sdkwork.app.config.json"
+    "configPath": "apps/sdkwork-drive-pc/sdkwork.app.config.json"
   },
   "release": {
     "artifactPrefix": "sdkwork-drive",
     "defaultVersion": "0.1.0",
+    "channels": ["DEV", "INTERNAL", "STABLE"],
     "changelog": {
-      "source": "auto",
+      "source": "app-manifest",
       "maxCommitSubjects": 50
     }
   },
+  "targets": [
+    {
+      "id": "web-universal-cloud-browser-other",
+      "platform": "web",
+      "architecture": "universal",
+      "deploymentProfile": "cloud",
+      "runtimeTarget": "browser",
+      "profile": "browser",
+      "formats": ["other"],
+      "runner": "ubuntu-latest",
+      "outputGlobs": ["apps/sdkwork-drive-pc/dist/**"]
+    },
+    {
+      "id": "linux-x64-standalone-server-tar-gz",
+      "platform": "linux",
+      "architecture": "x64",
+      "deploymentProfile": "standalone",
+      "runtimeTarget": "server",
+      "profile": "server",
+      "formats": ["tar.gz"],
+      "runner": "ubuntu-latest",
+      "outputGlobs": ["target/release/sdkwork-drive-standalone-gateway"]
+    },
+    {
+      "id": "container-x64-cloud-container-oci",
+      "platform": "container",
+      "architecture": "x64",
+      "deploymentProfile": "cloud",
+      "runtimeTarget": "container",
+      "profile": "container",
+      "formats": ["oci"],
+      "runner": "ubuntu-latest",
+      "outputGlobs": ["deployments/container/sdkwork-drive-image.tar"]
+    }
+  ],
   "dependencies": [
     {
       "id": "sdkwork-appbase",
       "repository": "Sdkwork-Cloud/sdkwork-appbase",
-      "ref": "b74a1413d387c803b524df96dc150fb02ce8c25f",
       "refInput": "SDKWORK_APPBASE_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
       "id": "sdkwork-ui",
       "repository": "Sdkwork-Cloud/sdkwork-ui",
-      "ref": "e2dea9c788f93c3a59d25c1791c7bb8c0ad0bb38",
       "refInput": "SDKWORK_UI_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
       "id": "sdkwork-sdk-commons",
       "repository": "Sdkwork-Cloud/sdkwork-sdk-commons",
-      "ref": "c9adc5a02fed0d9ce70ab719e5d2155ed40676da",
       "refInput": "SDKWORK_SDK_COMMONS_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
       "id": "sdkwork-sdk-generator",
       "repository": "Sdkwork-Cloud/sdkwork-sdk-generator",
-      "ref": "0b0e984ffbdec49a28c2da3edebcdddab4087e62",
       "refInput": "SDKWORK_SDK_GENERATOR_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
       "id": "sdkwork-database",
       "repository": "Sdkwork-Cloud/sdkwork-database",
-      "ref": "main",
       "refInput": "SDKWORK_DATABASE_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
       "id": "sdkwork-id",
       "repository": "Sdkwork-Cloud/sdkwork-id",
-      "ref": "main",
       "refInput": "SDKWORK_ID_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
       "id": "sdkwork-web-framework",
       "repository": "Sdkwork-Cloud/sdkwork-web-framework",
-      "ref": "main",
       "refInput": "SDKWORK_WEB_FRAMEWORK_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-utils",
+      "repository": "Sdkwork-Cloud/sdkwork-utils",
+      "refInput": "SDKWORK_UTILS_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-app-topology",
+      "repository": "Sdkwork-Cloud/sdkwork-app-topology",
+      "refInput": "SDKWORK_APP_TOPOLOGY_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     }
   ],
@@ -74,187 +116,78 @@
   "lifecycle": {
     "install": [
       {
-        "name": "Install workspace dependencies",
-        "shell": "pwsh",
-        "run": "pnpm install --no-frozen-lockfile"
+        "name": "Install dependencies",
+        "shell": "bash",
+        "run": "pnpm install --frozen-lockfile"
+      },
+      {
+        "name": "Install Rust toolchain",
+        "shell": "bash",
+        "run": "rustup show active-toolchain || rustup toolchain install"
       }
     ],
     "build": [
       {
-        "name": "Run SDKWork Drive contract checks",
-        "shell": "pwsh",
-        "run": "pnpm run verify"
-      }
-    ],
-    "package": [
-      {
-        "name": "Package gateway server archive",
-        "shell": "pwsh",
-        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_VARIANT) {\n  'gateway' { pnpm gateway:package:standalone }\n  'config-bundle' { pnpm gateway:package:cloud }\n  default { Write-Host \"Skipping gateway archive for profile $($env:SDKWORK_PACKAGE_VARIANT)\" }\n}"
+        "name": "Build Rust workspace",
+        "shell": "bash",
+        "run": "cargo build --release"
       },
       {
-        "name": "Write package evidence manifest",
-        "shell": "pwsh",
-        "run": "$ErrorActionPreference = \"Stop\"\nNew-Item -ItemType Directory -Force -Path \"artifacts/release\" | Out-Null\n$manifest = [ordered]@{\n  appId = $env:SDKWORK_APP_ID\n  packageId = $env:SDKWORK_PACKAGE_ID\n  packageVersion = $env:SDKWORK_PACKAGE_VERSION\n  targetId = $env:SDKWORK_PACKAGE_TARGET_ID\n  dependencyWorkspace = \"..\"\n  sbomPath = \"artifacts/release/sbom.sdkwork-drive.json\"\n}\n$manifest | ConvertTo-Json -Depth 5 | Set-Content -Path \"artifacts/release/sdkwork-drive-$env:SDKWORK_PACKAGE_ID.json\" -Encoding utf8"
+        "name": "Build PC app",
+        "shell": "bash",
+        "workingDirectory": "apps/sdkwork-drive-pc",
+        "run": "pnpm build"
       }
     ],
-    "sbom": [
+    "test": [
       {
-        "name": "Write Drive package SBOM evidence",
-        "shell": "pwsh",
-        "run": "$ErrorActionPreference = \"Stop\"\nNew-Item -ItemType Directory -Force -Path \"artifacts/release\" | Out-Null\nnode tools/generate_release_sbom.mjs artifacts/release/sbom.sdkwork-drive.json"
+        "name": "Run Rust tests",
+        "shell": "bash",
+        "run": "cargo test --workspace"
+      },
+      {
+        "name": "Run PC app tests",
+        "shell": "bash",
+        "workingDirectory": "apps/sdkwork-drive-pc",
+        "run": "pnpm test"
       }
     ],
     "validate": [
       {
-        "name": "Validate gateway server archive",
-        "shell": "pwsh",
-        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_VARIANT) {\n  'gateway' { pnpm gateway:validate:standalone }\n  'config-bundle' { pnpm gateway:validate:cloud }\n  default { Write-Host \"Skipping gateway archive validation for profile $($env:SDKWORK_PACKAGE_VARIANT)\" }\n}"
+        "name": "Validate SDK contracts",
+        "shell": "bash",
+        "run": "node tools/drive_sdk_generate.mjs --check"
       },
       {
-        "name": "Validate package evidence",
-        "shell": "pwsh",
-        "run": "$ErrorActionPreference = \"Stop\"\nif (-not (Test-Path \"artifacts/release/sdkwork-drive-$env:SDKWORK_PACKAGE_ID.json\")) {\n  throw \"Missing package evidence manifest for $env:SDKWORK_PACKAGE_ID\"\n}\nif (-not (Test-Path \"artifacts/release/sbom.sdkwork-drive.json\")) {\n  throw \"Missing SBOM artifact at artifacts/release/sbom.sdkwork-drive.json\"\n}"
+        "name": "Validate architecture alignment",
+        "shell": "bash",
+        "run": "node tools/check_sdkwork_drive_architecture_alignment.mjs"
+      },
+      {
+        "name": "Validate dependency management",
+        "shell": "bash",
+        "run": "node tools/check_sdkwork_drive_dependency_management.mjs"
+      },
+      {
+        "name": "Validate pnpm script standard",
+        "shell": "bash",
+        "run": "pnpm check:pnpm-script-standard"
+      },
+      {
+        "name": "Validate agent workflow standard",
+        "shell": "bash",
+        "run": "pnpm check:agent-workflow-standard"
       }
     ]
   },
-  "targets": [
-    {
-      "id": "linux-x64-standalone-server-tar-gz",
-      "profile": "server",
-      "platform": "linux",
-      "architecture": "x64",
-      "formats": [
-        "tar.gz"
-      ],
-      "runner": "ubuntu-24.04",
-      "outputGlobs": [
-        "artifacts/release/**/*"
-      ],
-      "deploymentProfile": "standalone",
-      "runtimeTarget": "server"
-    },
-    {
-      "id": "linux-x64-standalone-server-gateway-tar-gz",
-      "profile": "server",
-      "platform": "linux",
-      "architecture": "x64",
-      "formats": [
-        "tar.gz"
-      ],
-      "runner": "ubuntu-24.04",
-      "outputGlobs": [
-        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-linux-x64-standalone-gateway.tar.gz"
-      ],
-      "deploymentProfile": "standalone",
-      "runtimeTarget": "server",
-      "variant": "gateway"
-    },
-    {
-      "id": "linux-arm64-standalone-server-gateway-tar-gz",
-      "profile": "server",
-      "platform": "linux",
-      "architecture": "arm64",
-      "formats": [
-        "tar.gz"
-      ],
-      "runner": "ubuntu-24.04",
-      "outputGlobs": [
-        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-linux-arm64-standalone-gateway.tar.gz"
-      ],
-      "deploymentProfile": "standalone",
-      "runtimeTarget": "server",
-      "variant": "gateway"
-    },
-    {
-      "id": "windows-x64-standalone-server-gateway-tar-gz",
-      "profile": "server",
-      "platform": "windows",
-      "architecture": "x64",
-      "formats": [
-        "tar.gz"
-      ],
-      "runner": "windows-latest",
-      "outputGlobs": [
-        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-windows-x64-standalone-gateway.tar.gz"
-      ],
-      "deploymentProfile": "standalone",
-      "runtimeTarget": "server",
-      "variant": "gateway"
-    },
-    {
-      "id": "windows-arm64-standalone-server-gateway-tar-gz",
-      "profile": "server",
-      "platform": "windows",
-      "architecture": "arm64",
-      "formats": [
-        "tar.gz"
-      ],
-      "runner": "windows-latest",
-      "outputGlobs": [
-        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-windows-arm64-standalone-gateway.tar.gz"
-      ],
-      "deploymentProfile": "standalone",
-      "runtimeTarget": "server",
-      "variant": "gateway"
-    },
-    {
-      "id": "macos-x64-standalone-server-gateway-tar-gz",
-      "profile": "server",
-      "platform": "macos",
-      "architecture": "x64",
-      "formats": [
-        "tar.gz"
-      ],
-      "runner": "macos-14",
-      "outputGlobs": [
-        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-macos-x64-standalone-gateway.tar.gz"
-      ],
-      "deploymentProfile": "standalone",
-      "runtimeTarget": "server",
-      "variant": "gateway"
-    },
-    {
-      "id": "macos-arm64-standalone-server-gateway-tar-gz",
-      "profile": "server",
-      "platform": "macos",
-      "architecture": "arm64",
-      "formats": [
-        "tar.gz"
-      ],
-      "runner": "macos-14",
-      "outputGlobs": [
-        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-macos-arm64-standalone-gateway.tar.gz"
-      ],
-      "deploymentProfile": "standalone",
-      "runtimeTarget": "server",
-      "variant": "gateway"
-    },
-    {
-      "id": "container-noarch-cloud-container-config-bundle-tar-gz",
-      "profile": "container",
-      "platform": "container",
-      "architecture": "noarch",
-      "formats": [
-        "tar.gz"
-      ],
-      "runner": "ubuntu-24.04",
-      "outputGlobs": [
-        "dist/config-bundle/sdkwork-drive-api-gateway-config-*.tar.gz"
-      ],
-      "deploymentProfile": "cloud",
-      "runtimeTarget": "container",
-      "variant": "config-bundle"
-    }
-  ],
   "security": {
-    "artifactAttestations": true,
+    "signingRequired": false,
     "sbomRequired": true,
-    "signingRequired": false
+    "artifactAttestations": true
   },
   "publish": {
+    "githubRelease": true,
     "workflowArtifact": true,
-    "githubRelease": false,
     "retentionDays": 30
   }
 }

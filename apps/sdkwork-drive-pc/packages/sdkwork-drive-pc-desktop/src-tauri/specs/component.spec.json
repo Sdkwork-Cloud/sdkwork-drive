@@ -6,7 +6,7 @@
     "displayName": "Sdkwork Drive Pc Desktop",
     "version": "0.1.0",
     "type": "tauri-host",
-    "root": "sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-desktop/src-tauri",
+    "root": ".",
     "domain": "drive",
     "capability": "pc-desktop",
     "languages": [

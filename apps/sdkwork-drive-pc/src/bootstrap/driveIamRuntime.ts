@@ -73,7 +73,7 @@ export function createDriveIamRuntime({
   const composition = createSdkworkAppbasePcAuthRuntime({
     app: {
       appId: config.appKey,
-      deploymentMode: toIamDeploymentMode(config.deploymentMode),
+      deploymentMode: toIamDeploymentMode(config.deploymentProfile),
       environment: toIamEnvironment(config.environment),
       platform: 'pc',
     },
@@ -392,9 +392,9 @@ function compactSessionPatch<T extends object>(value: T): Partial<T> {
 }
 
 function toIamDeploymentMode(
-  value: DriveRuntimeConfig['deploymentMode'] | string | undefined,
+  value: DriveRuntimeConfig['deploymentProfile'] | string | undefined,
 ): IamDeploymentMode {
-  if (value === 'saas' || value === 'web' || value === 'local') {
+  if (value === 'cloud' || value === 'saas') {
     return 'saas';
   }
   return 'private';

@@ -9,7 +9,8 @@ use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_router_storage_backend_api::{
     build_router_with_database_config_and_admin_storage_config,
     build_router_with_pool_config_without_iam, build_router_with_pool_without_iam,
-    AdminStorageConfig, DriveAdminStorageObjectStoreAdapter,
+    build_router_with_pool_without_iam_and_test_tenant, AdminStorageConfig,
+    DriveAdminStorageObjectStoreAdapter,
 };
 use sqlx::any::AnyPoolOptions;
 use std::sync::{Arc, Mutex};
@@ -360,7 +361,8 @@ async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
     .await
     .expect("space should be seeded");
 
-    let app = build_router_with_pool_without_iam(pool.clone());
+    let app =
+        build_router_with_pool_without_iam_and_test_tenant(pool.clone(), "tenant-provider-delete");
     let create_provider = app
         .clone()
         .oneshot(
@@ -1503,7 +1505,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
     .await
     .expect("space should be seeded");
 
-    let app = build_router_with_pool_without_iam(pool.clone());
+    let app = build_router_with_pool_without_iam_and_test_tenant(pool.clone(), "tenant-audit");
     let create_response = app
         .clone()
         .oneshot(

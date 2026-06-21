@@ -134,8 +134,8 @@ function assertPackageSpec(packageDir) {
   if (componentSpec.component?.name !== packageDir) {
     fail(`${packageDir}/specs/component.spec.json component.name must be ${packageDir}`);
   }
-  if (!componentSpec.component?.root?.endsWith(`/packages/${packageDir}`)) {
-    fail(`${packageDir}/specs/component.spec.json component.root must end with /packages/${packageDir}`);
+  if (componentSpec.component?.root !== '.') {
+    fail(`${packageDir}/specs/component.spec.json component.root must be "." per COMPONENT_SPEC.md`);
   }
   if (!Array.isArray(componentSpec.contracts?.sdkDependencies)) {
     fail(`${packageDir}/specs/component.spec.json must declare contracts.sdkDependencies`);

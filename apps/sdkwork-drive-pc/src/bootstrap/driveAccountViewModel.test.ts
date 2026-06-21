@@ -61,7 +61,7 @@ describe('drive account view model', () => {
       },
     );
 
-    expect(account.storageUsedLabel).toBe('4 GB');
+    expect(account.storageUsedLabel).toBe('4.0 GB');
     expect(account.storageTotalLabel).toBeUndefined();
     expect(account.storageUsagePercent).toBeUndefined();
     expect(account.storageObjectCount).toBe(12);

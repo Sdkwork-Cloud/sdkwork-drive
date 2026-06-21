@@ -11,7 +11,7 @@ import type { DriveRuntimeConfig } from 'sdkwork-drive-pc-core';
 
 const config: DriveRuntimeConfig = createRuntimeConfig({
   VITE_DRIVE_PC_ENVIRONMENT: 'test',
-  VITE_DRIVE_PC_DEPLOYMENT_MODE: 'private',
+  VITE_DRIVE_PC_DEPLOYMENT_PROFILE: 'standalone',
   VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL: 'https://drive.example.test',
   VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL:
     'https://drive-admin-storage.example.test',
@@ -35,6 +35,18 @@ function createIamDirectoryClient() {
     users: {
       current: {
         retrieve: vi.fn(),
+        update: vi.fn(),
+        emailBindings: {
+          create: vi.fn(),
+          delete: vi.fn(),
+        },
+        phoneBindings: {
+          create: vi.fn(),
+          delete: vi.fn(),
+        },
+        password: {
+          update: vi.fn(),
+        },
       },
     },
   };
@@ -102,7 +114,7 @@ describe('drive IAM runtime bridge', () => {
     const runtime = createDriveIamRuntime({
       config: createRuntimeConfig({
         VITE_DRIVE_PC_ENVIRONMENT: 'test',
-        VITE_DRIVE_PC_DEPLOYMENT_MODE: 'private',
+        VITE_DRIVE_PC_DEPLOYMENT_PROFILE: 'standalone',
         VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL: 'https://drive.example.test',
         VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL: 'https://appbase.example.test/app/v3/api',
       }),
@@ -275,6 +287,7 @@ describe('drive IAM runtime bridge', () => {
           iam: {
             runtime: { retrieve: vi.fn() },
             verificationPolicy: { retrieve: vi.fn() },
+            accountBindingPolicy: { retrieve: vi.fn() },
           },
         },
       },
@@ -386,6 +399,7 @@ describe('drive IAM runtime bridge', () => {
           iam: {
             runtime: { retrieve: vi.fn() },
             verificationPolicy: { retrieve: vi.fn() },
+            accountBindingPolicy: { retrieve: vi.fn() },
           },
         },
       },

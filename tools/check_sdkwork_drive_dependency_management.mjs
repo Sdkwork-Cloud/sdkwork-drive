@@ -12,6 +12,8 @@ const expectedDependencyIds = [
   'sdkwork-sdk-commons',
   'sdkwork-sdk-generator',
   'sdkwork-web-framework',
+  'sdkwork-utils',
+  'sdkwork-app-topology',
 ];
 const sourceDependencyFiles = [
   'package.json',
@@ -68,7 +70,8 @@ function assertNoRetiredDependencyModel(relativePath) {
 
 function assertSiblingDependencyPathsAreKnown(relativePath) {
   const text = readText(relativePath);
-  const matches = [...text.matchAll(/(?:\.\.\/|\.{2}\\)+(sdkwork-(?!specs|drive-)[A-Za-z0-9-]*)/g)];
+  const sanitized = text.replace(/\$schema"\s*:\s*"[^"]+"/g, '"$schema":"__schema__"');
+  const matches = [...sanitized.matchAll(/(?:\.\.\/|\.{2}\\)+(sdkwork-(?!specs|drive-)[A-Za-z0-9-]*)/g)];
   for (const match of matches) {
     assert(
       expectedDependencyIds.includes(match[1]),

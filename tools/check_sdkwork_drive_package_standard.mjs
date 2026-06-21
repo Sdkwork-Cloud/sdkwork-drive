@@ -143,10 +143,9 @@ function assertComponentSpecs() {
       return;
     }
 
-    const resolvedRoot = path.resolve(repoRoot, '..', componentRoot);
     const specRoot = path.resolve(path.dirname(absolutePath), '..');
-    if (resolvedRoot !== specRoot) {
-      fail(`${relative} component.root ${componentRoot} does not resolve to its package root`);
+    if (componentRoot !== '.') {
+      fail(`${relative} component.root must be "." per COMPONENT_SPEC.md (found ${componentRoot})`);
     }
 
     const packageJsonPath = path.join(specRoot, 'package.json');

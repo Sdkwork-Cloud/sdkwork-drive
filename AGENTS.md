@@ -72,7 +72,7 @@ Language-specific specs are on-demand; do not load Rust, Java, TypeScript, and f
 
 ## Code Style Rules
 
-Read `../sdkwork-specs/CODE_STYLE_SPEC.md` and `../sdkwork-specs/NAMING_SPEC.md` before code changes. Keep edits inside the owning module, package, crate, app root, or standard tool. Generated SDK transport output is changed only through source contracts, generator inputs, or approved composed facades.
+Read `../sdkwork-specs/CODE_STYLE_SPEC.md` and `../sdkwork-specs/NAMING_SPEC.md` before code changes. Use `sdkwork-utils-rust` and `@sdkwork/utils` for shared utility helpers instead of duplicating string, bytes, datetime, validation, id, or crypto logic locally. Generated SDK transport output is changed only through source contracts, generator inputs, or approved composed facades.
 
 ## Build, Test, and Verification
 

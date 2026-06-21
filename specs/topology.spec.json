@@ -1,15 +1,15 @@
-﻿{
+{
     "schemaVersion":  2,
     "kind":  "sdkwork.app.topology",
     "appId":  "sdkwork-drive",
     "archetype":  "application-http-gateway",
     "profileRoot":  "configs/topology",
-    "profilePattern":  "{hosting}.{serviceLayout}.{environment}.env",
+    "profilePattern":  "{deploymentProfile}.{serviceLayout}.{environment}.env",
     "vocabulary":  {
-                       "hosting":  {
+                       "deploymentProfile":  {
                                        "allowed":  [
-                                                       "self-hosted",
-                                                       "cloud-hosted"
+                                                       "standalone",
+                                                       "cloud"
                                                    ]
                                    },
                        "serviceLayout":  {
@@ -26,24 +26,24 @@
                                        }
                    },
     "defaults":  {
-                     "developmentProfileId":  "self-hosted.unified-process.development",
-                     "productionProfileId":  "cloud-hosted.split-services.production",
-                     "desktopBuildProfileId":  "cloud-hosted.split-services.production",
+                     "developmentProfileId":  "standalone.unified-process.development",
+                     "productionProfileId":  "cloud.split-services.production",
+                     "desktopBuildProfileId":  "cloud.split-services.production",
                      "gatewayBind":  "127.0.0.1:3900"
                  },
     "profileFiles":  {
-                         "self-hosted.unified-process.development":  "configs/topology/self-hosted.unified-process.development.env",
-                         "self-hosted.split-services.development":  "configs/topology/self-hosted.split-services.development.env",
-                         "self-hosted.unified-process.production":  "configs/topology/self-hosted.unified-process.production.env",
-                         "cloud-hosted.split-services.development":  "configs/topology/cloud-hosted.split-services.development.env",
-                         "cloud-hosted.split-services.production":  "configs/topology/cloud-hosted.split-services.production.env"
+                         "standalone.unified-process.development":  "configs/topology/standalone.unified-process.development.env",
+                         "standalone.split-services.development":  "configs/topology/standalone.split-services.development.env",
+                         "standalone.unified-process.production":  "configs/topology/standalone.unified-process.production.env",
+                         "cloud.split-services.development":  "configs/topology/cloud.split-services.development.env",
+                         "cloud.split-services.production":  "configs/topology/cloud.split-services.production.env"
                      },
     "envKeys":  {
-                    "hosting":  "SDKWORK_DRIVE_HOSTING",
+                    "deploymentProfile":  "SDKWORK_DRIVE_DEPLOYMENT_PROFILE",
                     "serviceLayout":  "SDKWORK_DRIVE_SERVICE_LAYOUT",
                     "environment":  "SDKWORK_DRIVE_ENVIRONMENT",
                     "profileId":  "SDKWORK_DRIVE_PROFILE_ID",
-                    "clientHosting":  "VITE_DRIVE_PC_HOSTING",
+                    "clientDeploymentProfile":  "VITE_DRIVE_PC_DEPLOYMENT_PROFILE",
                     "gatewayAutostart":  "SDKWORK_DRIVE_PLATFORM_API_GATEWAY_AUTOSTART",
                     "standaloneGatewayBind":  "SDKWORK_DRIVE_APPLICATION_PUBLIC_INGRESS_BIND",
                     "standaloneGatewayConfig":  "SDKWORK_DRIVE_STANDALONE_GATEWAY_CONFIG",
@@ -101,7 +101,7 @@
                    },
     "orchestration":  {
                           "profiles":  {
-                                           "self-hosted.unified-process.development":  {
+                                           "standalone.unified-process.development":  {
                                                                                            "processes":  [
                                                                                                              {
                                                                                                                  "id":  "application.public-ingress",
@@ -119,7 +119,7 @@
                                                                                                                   "application.public-ingress"
                                                                                                               ]
                                                                                        },
-                                           "self-hosted.split-services.development":  {
+                                           "standalone.split-services.development":  {
                                                                                           "processes":  [
                                                                                                             {
                                                                                                                 "id":  "application.public-ingress",
@@ -137,7 +137,7 @@
                                                                                                                  "application.public-ingress"
                                                                                                              ]
                                                                                       },
-                                           "cloud-hosted.split-services.development":  {
+                                           "cloud.split-services.development":  {
                                                                                            "processes":  [
                                                                                                              {
                                                                                                                  "id":  "platform.api-gateway",
@@ -263,25 +263,37 @@
                 },
     "retired":  {
                     "vocabulary":  {
-                                       "topology":  [
-                                                        "standalone",
-                                                        "cloud"
+                                       "hosting":  [
+                                                        "self-hosted",
+                                                        "cloud-hosted"
                                                     ],
-                                       "profile":  [
-                                                       "development",
-                                                       "production"
+                                       "deploymentMode":  [
+                                                       "web",
+                                                       "desktop",
+                                                       "tablet-ipados",
+                                                       "tablet-android",
+                                                       "server",
+                                                       "container",
+                                                       "saas",
+                                                       "private",
+                                                       "local",
+                                                       "test"
                                                    ]
                                    },
                     "envKeys":  [
+                                    "SDKWORK_DRIVE_HOSTING",
                                     "SDKWORK_DRIVE_TOPOLOGY",
+                                    "VITE_DRIVE_PC_HOSTING",
                                     "VITE_DRIVE_PC_TOPOLOGY",
+                                    "VITE_DRIVE_PC_DEPLOYMENT_MODE",
                                     "VITE_DRIVE_PC_API_GATEWAY_BASE_URL"
                                 ],
                     "profileIds":  [
-                                       "standalone.development",
-                                       "standalone.production",
-                                       "cloud.development",
-                                       "cloud.production"
+                                       "self-hosted.unified-process.development",
+                                       "self-hosted.split-services.development",
+                                       "self-hosted.unified-process.production",
+                                       "cloud-hosted.split-services.development",
+                                       "cloud-hosted.split-services.production"
                                    ],
                     "packagingProfiles":  [
                                               "standalone",
@@ -291,6 +303,7 @@
                                       "specs/drive-topology.spec.json"
                                   ],
                     "cliFlags":  [
+                                     "--hosting",
                                      "--topology"
                                  ]
                 }

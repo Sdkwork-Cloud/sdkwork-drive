@@ -3544,6 +3544,7 @@ dependencies = [
  "sdkwork-drive-storage-s3",
  "sdkwork-drive-workspace-service",
  "sdkwork-iam-web-adapter",
+ "sdkwork-utils-rust",
  "sdkwork-web-axum",
  "sdkwork-web-core",
  "serde",
@@ -3661,6 +3662,21 @@ dependencies = [
  "tower",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "sdkwork-utils-rust"
+version = "0.10.0"
+dependencies = [
+ "base64",
+ "chrono",
+ "hmac 0.12.1",
+ "rand 0.8.6",
+ "regex",
+ "serde_json",
+ "sha2 0.10.9",
+ "urlencoding",
+ "uuid",
 ]
 
 [[package]]

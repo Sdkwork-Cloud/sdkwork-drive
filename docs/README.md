@@ -1,10 +1,34 @@
-# Documentation
+# Drive Documentation
 
-`docs/` contains repository/application documentation, architecture notes, runbooks, and design notes for `sdkwork-drive`.
+`docs/` contains architecture notes, runbooks, and standards docs for
+SDKWork Drive. It is the documentation boundary governed by
+`../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md` and
+`../sdkwork-specs/DOCUMENTATION_SPEC.md`.
 
-Current layout:
+## Current Documentation
 
-- `drive-sdk-integration-standard.md`: Drive SDK integration standard.
-- `drive-iam-integration-standard.md`: Drive IAM integration standard.
-- `storage-s3-architecture.md`: S3 storage architecture.
-- `schema-registry/`: Database schema registry.
+- `database-architecture.md`: Drive database policy and runtime boundaries.
+- `drive-iam-integration-standard.md`: Drive IAM integration boundaries.
+- `drive-sdk-integration-standard.md`: Drive SDK family naming and app
+  integration rules.
+
+## Allowed Content
+
+- Architecture decision records and notes.
+- Operational runbooks.
+- Standards documentation and integration guides.
+- Module READMEs for reusable capabilities.
+
+## Forbidden Content
+
+- Generated API documentation (generated from OpenAPI contracts).
+- Runtime state, databases, logs, or caches.
+
+## Related Specs
+
+- `../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md`
+- `../sdkwork-specs/DOCUMENTATION_SPEC.md`
+
+## Verification
+
+- `pnpm verify` (repository-wide verification)

@@ -9,7 +9,7 @@ import { createDriveAdminStorageSdkClient } from './driveAdminStorageSdkClient';
 
 const config: DriveRuntimeConfig = createRuntimeConfig({
   VITE_DRIVE_PC_ENVIRONMENT: 'test',
-  VITE_DRIVE_PC_DEPLOYMENT_MODE: 'private',
+  VITE_DRIVE_PC_DEPLOYMENT_PROFILE: 'standalone',
   VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL: 'https://drive.example.test',
   VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL:
     'https://drive-admin-storage.example.test',

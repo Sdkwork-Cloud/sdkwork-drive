@@ -1,24 +1,29 @@
 # Drive Deployments
 
-`deployments/` contains deployment descriptors, local topology examples,
-packaging handoff files, and deployable infrastructure examples for
-`sdkwork-drive`.
+`deployments/` contains deployment descriptors and topology examples for
+SDKWork Drive. It is the deployment boundary governed by
+`../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md` and
+`../sdkwork-specs/DEPLOYMENT_SPEC.md`.
 
-Current descriptors:
+## Allowed Content
 
-- `docker-compose.minio-test.yml`: local MinIO topology for Drive S3-compatible
-  storage tests.
-- `kubernetes/drive-services.yaml`: production-oriented Kubernetes deployments and
-  services for Drive app API, backend API, open API, admin storage API, and install
-  worker.
-- `systemd/sdkwork-drive-app-api.service`: systemd unit for the Drive app API.
-- `systemd/sdkwork-drive-backend-api.service`: systemd unit for the Drive backend API.
-- `systemd/sdkwork-drive-open-api.service`: systemd unit for the Drive open API.
-- `systemd/sdkwork-drive-admin-storage-api.service`: systemd unit for admin storage API.
-- `systemd/sdkwork-drive-standalone-gateway.service`: systemd unit for the Drive
-  standalone gateway (embedded IAM + Drive API proxy loop).
-- `systemd/sdkwork-drive-install-worker.service`: systemd unit for background
-  maintenance and domain outbox dispatch.
+- Dockerfile and container build descriptors.
+- Kubernetes manifests and Helm charts.
+- Terraform or infrastructure-as-code examples.
+- Deployment topology examples.
 
-Deployment files must not include production secrets, private keys, live tokens,
-or developer-local credentials.
+## Forbidden Content
+
+- Runtime config templates (those live in `configs/`).
+- Secrets, credentials, or environment-specific overrides.
+- Runtime state, databases, logs, or caches.
+
+## Related Specs
+
+- `../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md`
+- `../sdkwork-specs/DEPLOYMENT_SPEC.md`
+- `../sdkwork-specs/APP_RUNTIME_TOPOLOGY_SPEC.md`
+
+## Verification
+
+- `pnpm deploy:validate` (validate deployment descriptors)

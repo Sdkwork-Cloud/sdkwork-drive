@@ -1,3 +1,4 @@
+import { formatBytes } from '@sdkwork/utils';
 import type {
   DriveStorageSummary,
   SessionSnapshot,
@@ -115,19 +116,4 @@ function buildInitials(displayName: string, fallbackId: string): string {
   }
 
   return fallbackId.charAt(0).toUpperCase() || 'S';
-}
-
-function formatBytes(bytes: number): string {
-  const normalized = Number.isFinite(bytes) && bytes > 0 ? bytes : 0;
-  if (normalized < 1024) return `${normalized} B`;
-  if (normalized < 1024 * 1024) return `${trimNumber(normalized / 1024)} KB`;
-  if (normalized < 1024 * 1024 * 1024) return `${trimNumber(normalized / (1024 * 1024))} MB`;
-  if (normalized < 1024 * 1024 * 1024 * 1024) {
-    return `${trimNumber(normalized / (1024 * 1024 * 1024))} GB`;
-  }
-  return `${trimNumber(normalized / (1024 * 1024 * 1024 * 1024))} TB`;
-}
-
-function trimNumber(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }

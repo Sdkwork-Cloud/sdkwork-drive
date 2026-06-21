@@ -20,12 +20,13 @@ This repository is a SDKWork standard project root governed by
 - `apis/` contains Drive-owned API contract sources and materialized OpenAPI inputs.
 - `apps/` contains runnable Drive application roots such as the PC/Tauri app.
 - `crates/` contains Rust service crates, route crates, workers, host/server crates, and reusable Rust libraries.
+- `database/` contains database lifecycle assets: schema registry, DDL baselines, migrations, drift policy, seeds, and fixtures.
 - `sdks/` contains SDK family workspaces and generated SDK output.
 - `jobs/` is reserved for independently packaged Drive workers and scheduled jobs.
 - `tools/` contains deterministic developer, validation, and generation tools.
 - `plugins/` is reserved for Drive application/runtime plugin source.
 - `examples/` is reserved for runnable examples and SDK/API usage samples.
-- `configs/` contains safe checked-in config templates.
+- `configs/` contains safe checked-in config templates and topology profiles.
 - `deployments/` contains deployment descriptors.
 - `scripts/` contains thin command entrypoints.
 - `docs/` contains architecture notes, runbooks, and standards docs.
@@ -40,10 +41,9 @@ generated language workspaces, and generated transport output live under
 ## Database Development Modes
 
 ```bash
-pnpm dev:server:postgres          # PostgreSQL profile through .env.postgres
-pnpm dev:server:sqlite            # SQLite local database at target/dev/sdkwork-drive.sqlite
-pnpm topology:plan:server:postgres
-pnpm topology:plan:server:sqlite
+pnpm dev --database postgres          # PostgreSQL profile (default)
+pnpm dev:browser:sqlite               # SQLite local database at target/dev/sdkwork-drive.sqlite
+pnpm topology:plan                    # Render the local launch plan without starting services
 ```
 
 Database policy and current runtime boundaries are documented in

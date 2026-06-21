@@ -1,7 +1,5 @@
-export * from './pages/StorageProvidersAdminPage';
-export * from './pages/StorageBindingsAdminPage';
-export * from './routes/storageProviderAdminRoutes';
-export * from './routes/storageBindingsAdminRoutes';
-export * from './services/storageProviderAdminService';
-export * from './types/storageProviderAdminTypes';
-export * from './components/StorageProviderDetailDrawer';
+export { STORAGE_PROVIDER_ADMIN_CAPABILITY } from './capability';
+export type { StorageProviderAdminService } from './services/storageProviderAdminService';
+export { createStorageProviderAdminService } from './services/storageProviderAdminService';
+export { StorageProvidersAdminPage } from './pages/StorageProvidersAdminPage';
+export { StorageBindingsAdminPage } from './pages/StorageBindingsAdminPage';

@@ -18,12 +18,12 @@ export const SPEC_PATH = path.join(REPO_ROOT, 'specs/topology.spec.json');
 const spec = loadTopologySpec(SPEC_PATH);
 const runtime = createTopologyRuntime(spec, REPO_ROOT);
 
-export const VALID_HOSTING = runtime.hostingValues;
+export const VALID_DEPLOYMENT_PROFILES = runtime.deploymentProfileValues;
 export const VALID_SERVICE_LAYOUTS = runtime.serviceLayoutValues;
 export const VALID_ENVIRONMENTS = runtime.environmentValues;
 export const DEFAULT_DEV_PROFILE_ID = runtime.defaults.developmentProfileId;
 export const DEFAULT_BUILD_PROFILE_ID = runtime.defaults.desktopBuildProfileId;
-export const DEFAULT_SELF_HOSTED_BUILD_PROFILE_ID = 'self-hosted.unified-process.production';
+export const DEFAULT_STANDALONE_BUILD_PROFILE_ID = 'standalone.unified-process.production';
 export const DEFAULT_GATEWAY_BIND = runtime.defaults.gatewayBind;
 export const POSTGRES_REACHABILITY_TIMEOUT_MS = 2000;
 
@@ -37,18 +37,18 @@ export const APPLICATION_PUBLIC_INGRESS_PACKAGE_TARGETS = runtime.listPackageTar
 export const PLATFORM_CONFIG_BUNDLE_TARGET = runtime.findPackageTarget('platform-config-bundle-tar-gz');
 export const DRIVE_CLOUD_GATEWAY_CONFIGS = spec.packaging?.cloudConfigFiles ?? [];
 
-export function resolveDevProfileId(hosting, serviceLayout) {
-  runtime.assertHosting(hosting);
+export function resolveDevProfileId(deploymentProfile, serviceLayout) {
+  runtime.assertDeploymentProfile(deploymentProfile);
   const resolvedServiceLayout = serviceLayout
-    || (hosting === 'self-hosted' ? 'unified-process' : 'split-services');
+    || (deploymentProfile === 'standalone' ? 'unified-process' : 'split-services');
   runtime.assertServiceLayout(resolvedServiceLayout);
-  return buildProfileId(hosting, resolvedServiceLayout, 'development');
+  return buildProfileId(deploymentProfile, resolvedServiceLayout, 'development');
 }
 
-export function resolveBuildProfileId(hosting) {
-  runtime.assertHosting(hosting);
-  if (hosting === 'self-hosted') {
-    return DEFAULT_SELF_HOSTED_BUILD_PROFILE_ID;
+export function resolveBuildProfileId(deploymentProfile) {
+  runtime.assertDeploymentProfile(deploymentProfile);
+  if (deploymentProfile === 'standalone') {
+    return DEFAULT_STANDALONE_BUILD_PROFILE_ID;
   }
   return DEFAULT_BUILD_PROFILE_ID;
 }
@@ -57,7 +57,7 @@ export const loadEnvFile = runtime.loadEnvFile;
 export const loadProfile = runtime.loadProfile;
 export const applyProfileEnv = runtime.applyProfileEnv;
 export const mergeRuntimeEnv = runtime.mergeRuntimeEnv;
-export const assertHosting = runtime.assertHosting;
+export const assertDeploymentProfile = runtime.assertDeploymentProfile;
 export const assertProfileId = runtime.assertProfileId;
 export const profilePath = runtime.profilePath;
 export const shouldAutostartGateway = runtime.shouldAutostartGateway;
