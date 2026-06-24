@@ -44,9 +44,12 @@ struct DriveBackendContextInjector;
 impl DomainContextInjector for DriveBackendContextInjector {
     fn inject(&self, request: &mut http::Request<axum::body::Body>, context: &WebRequestContext) {
         if let Some(principal) = context.principal.as_ref() {
-            request
-                .extensions_mut()
-                .insert(drive_app_context_from_web_principal(principal, context));
+            let mut app_context = drive_app_context_from_web_principal(principal, context);
+            sdkwork_drive_http::web_app_context::apply_trace_id_from_transport(
+                request.headers(),
+                &mut app_context,
+            );
+            request.extensions_mut().insert(app_context);
         }
     }
 }
@@ -93,7 +96,7 @@ pub fn drive_app_context_from_web_principal(
         actor_kind,
         device_id: None,
         request_id: context.request_id.0.clone(),
-        trace_id: context.request_id.0.clone(),
+        trace_id: String::new(),
     }
 }
 

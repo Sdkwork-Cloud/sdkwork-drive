@@ -1,4 +1,5 @@
 use crate::audit::record_storage_provider_audit;
+use sdkwork_drive_contract::drive::domain_events::admin_audit;
 use crate::dto::{
     CopyProviderObjectRequest, ListProviderObjectsQuery, OperatorQuery, ProviderObjectListResponse,
     ProviderObjectMutationResponse, ProviderObjectResponse,
@@ -112,7 +113,7 @@ pub(crate) async fn delete_storage_provider_object(
         .map_err(map_object_store_route_error)?;
     record_storage_provider_audit(
         &state,
-        "storage_provider.object_deleted",
+        admin_audit::storage_provider::OBJECT_DELETED,
         &provider_id,
         &operator_id,
     )
@@ -160,7 +161,7 @@ pub(crate) async fn copy_storage_provider_object(
         .map_err(map_object_store_route_error)?;
     record_storage_provider_audit(
         &state,
-        "storage_provider.object_copied",
+        admin_audit::storage_provider::OBJECT_COPIED,
         &provider_id,
         &operator_id,
     )

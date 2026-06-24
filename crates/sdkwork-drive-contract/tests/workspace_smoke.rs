@@ -264,7 +264,7 @@ fn s3_architecture_document_defines_plugin_and_admin_storage_boundaries() {
         "SDKWORK_DRIVE_ADMIN_STORAGE_OBJECT_STORE_ADAPTER",
         "Bucket administration remains on the AWS SDK S3 adapter",
         "crates/sdkwork-router-storage-backend-api",
-        "/admin/v3/api/drive/storage/providers",
+        "/backend/v3/api/drive/storage/providers",
         "Volcengine TOS",
         "sdkwork-router-storage-backend-api",
     ] {
@@ -374,7 +374,7 @@ fn admin_storage_iam_runtime_boundary_is_documented() {
     for required in [
         "App, backend, and admin-storage Drive routes must validate the same dual-token contract:",
         "Clients must not send AppContext projection headers",
-        "Admin-storage `/healthz` is public; `/admin/v3/api/drive/storage/*` is protected.",
+        "Admin-storage `/healthz` is public; `/backend/v3/api/drive/storage/*` is protected.",
     ] {
         assert!(
             iam_standard.contains(required),
@@ -384,7 +384,7 @@ fn admin_storage_iam_runtime_boundary_is_documented() {
 
     let s3_architecture = read("docs/storage-s3-architecture.md");
     for required in [
-        "Admin-storage runtime routes under `/admin/v3/api/drive/storage/*` require the same dual-token contract as app and backend APIs.",
+        "Admin-storage runtime routes under `/backend/v3/api/drive/storage/*` require the same dual-token contract as app and backend APIs.",
         "projection headers are forbidden",
         "`/healthz` is the only public admin-storage runtime route.",
     ] {
@@ -482,7 +482,7 @@ fn production_gateway_template_declares_all_drive_split_services() {
     root.pop();
 
     let config =
-        std::fs::read_to_string(root.join("configs/sdkwork-api-gateway.drive.production.toml"))
+        std::fs::read_to_string(root.join("configs/sdkwork-api-cloud-gateway.drive.production.toml"))
             .expect("production gateway template should exist");
 
     for required in [

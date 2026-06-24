@@ -5,7 +5,6 @@ import type { AuditEventPage, CopyProviderObjectRequest, CreateStorageProviderRe
 
 
 export interface DriveDownloadPackagesListParams {
-  tenantId?: string;
   state?: 'creating' | 'ready' | 'failed' | 'expired';
   page?: number;
   pageSize?: number;
@@ -21,7 +20,6 @@ export class DriveDownloadPackagesApi {
 
 async list(params?: DriveDownloadPackagesListParams): Promise<DownloadPackagePage> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params?.tenantId, style: 'form', explode: true, allowReserved: false },
       { name: 'state', value: params?.state, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
@@ -179,7 +177,6 @@ async test(providerId: string, body: TestStorageProviderRequest): Promise<TestSt
 }
 
 export interface DriveStorageProviderBindingsDefaultGetParams {
-  tenantId: string;
   spaceId?: string;
   spaceType?: 'personal' | 'team' | 'knowledge_base' | 'ai_generated' | 'git_repository' | 'deployment' | 'app_upload' | 'im' | 'rtc' | 'notary';
 }
@@ -192,11 +189,10 @@ export class DriveStorageProviderBindingsDefaultApi {
   }
 
 
-async get(params: DriveStorageProviderBindingsDefaultGetParams): Promise<StorageProviderBinding> {
+async get(params?: DriveStorageProviderBindingsDefaultGetParams): Promise<StorageProviderBinding> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-      { name: 'spaceId', value: params.spaceId, style: 'form', explode: true, allowReserved: false },
-      { name: 'spaceType', value: params.spaceType, style: 'form', explode: true, allowReserved: false },
+      { name: 'spaceId', value: params?.spaceId, style: 'form', explode: true, allowReserved: false },
+      { name: 'spaceType', value: params?.spaceType, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<StorageProviderBinding>(appendQueryString(backendApiPath(`/drive/storage_provider_bindings/default`), query));
   }
@@ -218,7 +214,6 @@ export class DriveStorageProviderBindingsApi {
 }
 
 export interface DriveSpacesAdminListParams {
-  tenantId: string;
   ownerSubjectType?: string;
   ownerSubjectId?: string;
 }
@@ -231,11 +226,10 @@ export class DriveSpacesAdminApi {
   }
 
 
-async list(params: DriveSpacesAdminListParams): Promise<ListSpacesResponse> {
+async list(params?: DriveSpacesAdminListParams): Promise<ListSpacesResponse> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-      { name: 'ownerSubjectType', value: params.ownerSubjectType, style: 'form', explode: true, allowReserved: false },
-      { name: 'ownerSubjectId', value: params.ownerSubjectId, style: 'form', explode: true, allowReserved: false },
+      { name: 'ownerSubjectType', value: params?.ownerSubjectType, style: 'form', explode: true, allowReserved: false },
+      { name: 'ownerSubjectId', value: params?.ownerSubjectId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<ListSpacesResponse>(appendQueryString(backendApiPath(`/drive/spaces`), query));
   }
@@ -252,10 +246,6 @@ export class DriveSpacesApi {
 
 }
 
-export interface DriveQuotasSummaryParams {
-  tenantId: string;
-}
-
 export class DriveQuotasApi {
   private client: HttpClient;
 
@@ -264,11 +254,34 @@ export class DriveQuotasApi {
   }
 
 
-async summary(params: DriveQuotasSummaryParams): Promise<QuotaSummary> {
-    const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.get<QuotaSummary>(appendQueryString(backendApiPath(`/drive/quotas`), query));
+async summary(): Promise<QuotaSummary> {
+    return this.client.get<QuotaSummary>(backendApiPath(`/drive/quotas`));
+  }
+}
+
+export class DriveMaintenanceAbandonedUploadTaskSweepApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+async start(body: SweepUploadSessionsRequest): Promise<SweepResponse> {
+    return this.client.post<SweepResponse>(backendApiPath(`/drive/maintenance/abandoned_upload_task_sweep`), body, undefined, undefined, 'application/json');
+  }
+}
+
+export class DriveMaintenanceExpiredUploadContentSweepApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+async start(body: SweepUploadSessionsRequest): Promise<SweepResponse> {
+    return this.client.post<SweepResponse>(backendApiPath(`/drive/maintenance/expired_upload_content_sweep`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -299,7 +312,7 @@ async start(body: SweepObjectStoreRequest): Promise<SweepResponse> {
 }
 
 export interface DriveMaintenanceJobsListParams {
-  jobType?: 'object_sweep' | 'upload_session_sweep';
+  jobType?: 'object_sweep' | 'upload_session_sweep' | 'expired_upload_content_sweep' | 'abandoned_upload_task_sweep';
   status?: 'completed' | 'failed';
   operatorId?: string;
   page?: number;
@@ -331,18 +344,21 @@ export class DriveMaintenanceApi {
   public readonly jobs: DriveMaintenanceJobsApi;
   public readonly objectSweep: DriveMaintenanceObjectSweepApi;
   public readonly uploadSessionSweep: DriveMaintenanceUploadSessionSweepApi;
+  public readonly expiredUploadContentSweep: DriveMaintenanceExpiredUploadContentSweepApi;
+  public readonly abandonedUploadTaskSweep: DriveMaintenanceAbandonedUploadTaskSweepApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.jobs = new DriveMaintenanceJobsApi(client);
     this.objectSweep = new DriveMaintenanceObjectSweepApi(client);
     this.uploadSessionSweep = new DriveMaintenanceUploadSessionSweepApi(client);
+    this.expiredUploadContentSweep = new DriveMaintenanceExpiredUploadContentSweepApi(client);
+    this.abandonedUploadTaskSweep = new DriveMaintenanceAbandonedUploadTaskSweepApi(client);
   }
 
 }
 
 export interface DriveAuditEventsListParams {
-  tenantId?: string;
   action?: string;
   resourceType?: string;
   resourceId?: string;
@@ -362,7 +378,6 @@ export class DriveAuditEventsApi {
 
 async list(params?: DriveAuditEventsListParams): Promise<AuditEventPage> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params?.tenantId, style: 'form', explode: true, allowReserved: false },
       { name: 'action', value: params?.action, style: 'form', explode: true, allowReserved: false },
       { name: 'resourceType', value: params?.resourceType, style: 'form', explode: true, allowReserved: false },
       { name: 'resourceId', value: params?.resourceId, style: 'form', explode: true, allowReserved: false },

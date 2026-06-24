@@ -8,7 +8,7 @@ public class ListStorageProvidersResponse {
     public List<StorageProvider> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<StorageProvider> items) {
         this.items = items;
     }

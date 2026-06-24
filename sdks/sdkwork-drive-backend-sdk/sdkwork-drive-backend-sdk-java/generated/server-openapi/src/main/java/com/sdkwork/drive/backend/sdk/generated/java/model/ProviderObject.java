@@ -15,7 +15,7 @@ public class ProviderObject {
     public String getProviderId() {
         return this.providerId;
     }
-    
+
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
@@ -23,7 +23,7 @@ public class ProviderObject {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -31,7 +31,7 @@ public class ProviderObject {
     public String getObjectKey() {
         return this.objectKey;
     }
-    
+
     public void setObjectKey(String objectKey) {
         this.objectKey = objectKey;
     }
@@ -39,7 +39,7 @@ public class ProviderObject {
     public Integer getContentLength() {
         return this.contentLength;
     }
-    
+
     public void setContentLength(Integer contentLength) {
         this.contentLength = contentLength;
     }
@@ -47,7 +47,7 @@ public class ProviderObject {
     public String getContentType() {
         return this.contentType;
     }
-    
+
     public void setContentType(String contentType) {
         this.contentType = contentType;
     }
@@ -55,7 +55,7 @@ public class ProviderObject {
     public String getEtag() {
         return this.etag;
     }
-    
+
     public void setEtag(String etag) {
         this.etag = etag;
     }
@@ -63,7 +63,7 @@ public class ProviderObject {
     public String getVersionId() {
         return this.versionId;
     }
-    
+
     public void setVersionId(String versionId) {
         this.versionId = versionId;
     }
@@ -71,7 +71,7 @@ public class ProviderObject {
     public String getStorageClass() {
         return this.storageClass;
     }
-    
+
     public void setStorageClass(String storageClass) {
         this.storageClass = storageClass;
     }
@@ -79,7 +79,7 @@ public class ProviderObject {
     public Integer getLastModifiedEpochMs() {
         return this.lastModifiedEpochMs;
     }
-    
+
     public void setLastModifiedEpochMs(Integer lastModifiedEpochMs) {
         this.lastModifiedEpochMs = lastModifiedEpochMs;
     }

@@ -149,6 +149,24 @@ pub(crate) fn validate_share_link_role(
     ))
 }
 
+pub(crate) fn validate_share_link_token(
+    token: &str,
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    if let Err(error) = sdkwork_drive_workspace_service::validate_share_link_token(token) {
+        let message = match error {
+            sdkwork_drive_workspace_service::DriveServiceError::Validation(message) => message,
+            _ => "share link token is invalid".to_string(),
+        };
+        return Err(problem(
+            StatusCode::BAD_REQUEST,
+            "validation failed",
+            &message,
+            "drive.validation.failed",
+        ));
+    }
+    Ok(())
+}
+
 pub(crate) fn validate_optional_non_negative_i64(
     value: Option<i64>,
     field_name: &str,
@@ -436,16 +454,14 @@ pub(crate) fn validate_watch_channel_id(
 pub(crate) fn validate_watch_channel_address(
     address: &str,
 ) -> Result<&str, (StatusCode, Json<ProblemDetail>)> {
-    let trimmed = address.trim();
-    if trimmed.len() > 2048 || !trimmed.starts_with("https://") {
-        return Err(problem(
+    crate::webhook_url::validate_webhook_https_url(address).map_err(|detail| {
+        problem(
             StatusCode::BAD_REQUEST,
             "validation failed",
-            "address must be an https webhook URL",
+            detail,
             "drive.validation.failed",
-        ));
-    }
-    Ok(trimmed)
+        )
+    })
 }
 
 pub(crate) fn validate_watch_channel_type(

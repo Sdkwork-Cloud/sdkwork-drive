@@ -47,6 +47,7 @@ pub enum UploadContentPolicyMode {
     Disabled,
     Audit,
     Enforce,
+    Quarantine,
 }
 
 impl UploadContentPolicyMode {
@@ -58,7 +59,8 @@ impl UploadContentPolicyMode {
             .unwrap_or_default();
         match raw.as_str() {
             "disabled" | "off" | "none" => Self::Disabled,
-            "enforce" | "block" | "quarantine" => Self::Enforce,
+            "quarantine" => Self::Quarantine,
+            "enforce" | "block" => Self::Enforce,
             _ if is_production_runtime_profile() => Self::Enforce,
             _ => Self::Audit,
         }

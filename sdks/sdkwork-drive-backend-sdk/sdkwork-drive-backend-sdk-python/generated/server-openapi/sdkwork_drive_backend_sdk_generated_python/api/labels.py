@@ -191,10 +191,9 @@ class LabelsApi:
         self._client = client
 
 
-    def list(self, tenant_id: str, lifecycle_status: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> LabelListResponse:
+    def list(self, lifecycle_status: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> LabelListResponse:
         """List Drive label definitions"""
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'lifecycleStatus', 'value': lifecycle_status, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -205,21 +204,17 @@ class LabelsApi:
         """Create a Drive label definition"""
         return self._client.post(f"/backend/v3/api/drive/labels", json=body)
 
-    def retrieve(self, label_id: str, tenant_id: str) -> DriveLabel:
+    def retrieve(self, label_id: str) -> DriveLabel:
         """Get a Drive label definition"""
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/backend/v3/api/drive/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}", query))
+        return self._client.get(f"/backend/v3/api/drive/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}")
 
     def update(self, label_id: str, body: UpdateLabelRequest) -> DriveLabel:
         """Update a Drive label definition"""
         return self._client.patch(f"/backend/v3/api/drive/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def delete(self, label_id: str, tenant_id: str, operator_id: str) -> DeleteLabelResponse:
+    def delete(self, label_id: str, operator_id: str) -> DeleteLabelResponse:
         """Delete a Drive label definition"""
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.delete(_append_query_string(f"/backend/v3/api/drive/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}", query))

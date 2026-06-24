@@ -124,6 +124,10 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
             Method::DELETE,
             "/app/v3/api/drive/share_links/share-link-001",
         ),
+        (
+            Method::POST,
+            "/app/v3/api/drive/share_links/share-link-token/claim",
+        ),
         (Method::GET, "/app/v3/api/drive/search?q=report"),
         (Method::GET, "/app/v3/api/drive/changes"),
         (Method::GET, "/app/v3/api/drive/upload_sessions/session-001"),
@@ -302,14 +306,10 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
 }
 
 #[tokio::test]
-async fn app_assets_routes_return_not_implemented_problem_detail() {
+async fn app_forbidden_asset_upload_routes_return_not_implemented_problem_detail() {
     let app = build_router();
 
     for (method, uri) in [
-        (Method::GET, "/app/v3/api/assets"),
-        (Method::POST, "/app/v3/api/assets"),
-        (Method::GET, "/app/v3/api/assets/asset-001"),
-        (Method::PATCH, "/app/v3/api/assets/asset-001"),
         (Method::POST, "/app/v3/api/assets/upload"),
         (Method::POST, "/app/v3/api/assets/presign"),
         (Method::POST, "/app/v3/api/assets/upload_sessions"),
@@ -340,7 +340,7 @@ async fn app_assets_routes_return_not_implemented_problem_detail() {
         assert_eq!(
             response.status(),
             StatusCode::NOT_IMPLEMENTED,
-            "{uri} must return not implemented until assets are owned by Drive"
+            "{uri} must remain forbidden until legacy upload routes are removed"
         );
         let payload: serde_json::Value = serde_json::from_slice(
             &to_bytes(response.into_body(), usize::MAX)

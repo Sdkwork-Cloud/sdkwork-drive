@@ -207,4 +207,11 @@ pub trait DriveUploaderStore: Send + Sync {
         &self,
         completion: &CompleteDriveStoredUpload,
     ) -> Result<DriveUploadItem, DriveServiceError>;
+
+    async fn quarantine_blocked_upload_content(
+        &self,
+        tenant_id: &str,
+        upload_item_id: &str,
+        operator_id: &str,
+    ) -> Result<(), DriveServiceError>;
 }

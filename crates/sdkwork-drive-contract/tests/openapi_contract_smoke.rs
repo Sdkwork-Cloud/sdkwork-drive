@@ -51,6 +51,8 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(app.contains("/app/v3/api/drive/nodes/{nodeId}/copy"));
     assert!(app.contains("/app/v3/api/drive/nodes/{nodeId}/trash"));
     assert!(app.contains("/app/v3/api/drive/nodes/{nodeId}/download_url"));
+    assert!(app.contains("/app/v3/api/drive/nodes/{nodeId}/download_grants"));
+    assert!(app.contains("\"operationId\": \"downloadGrants.create\""));
     assert!(app.contains("/app/v3/api/drive/trash/{nodeId}/restore"));
     assert!(app.contains("/app/v3/api/drive/trash"));
     assert!(app.contains("/app/v3/api/drive/trash/empty"));
@@ -103,6 +105,9 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(app.contains("\"operationId\": \"nodes.copy\""));
     assert!(app.contains("\"operationId\": \"nodes.delete\""));
     assert!(app.contains("\"operationId\": \"nodes.downloadUrls.create\""));
+    assert!(app.contains("\"incompletePage\""));
+    assert!(app.contains("\"drive\",\n              \"external_url\""));
+    assert!(app.contains("\"uri\""));
     assert!(app.contains("\"operationId\": \"trash.move\""));
     assert!(app.contains("\"operationId\": \"trash.restore\""));
     assert!(app.contains("\"operationId\": \"trash.list\""));
@@ -152,15 +157,15 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(backend.contains("/backend/v3/api/drive/storage_providers"));
     assert!(backend.contains("\"title\": \"SDKWork Drive Backend API\""));
     assert!(admin_storage.contains("\"title\": \"SDKWork Drive Admin Storage API\""));
-    assert!(admin_storage.contains("/admin/v3/api/drive/storage/providers"));
-    assert!(admin_storage.contains("/admin/v3/api/drive/storage/providers/{providerId}"));
-    assert!(admin_storage.contains("/admin/v3/api/drive/storage/providers/{providerId}/bucket"));
-    assert!(admin_storage.contains("/admin/v3/api/drive/storage/providers/{providerId}/buckets"));
-    assert!(admin_storage.contains("/admin/v3/api/drive/storage/providers/{providerId}/objects"));
+    assert!(admin_storage.contains("/backend/v3/api/drive/storage/providers"));
+    assert!(admin_storage.contains("/backend/v3/api/drive/storage/providers/{providerId}"));
+    assert!(admin_storage.contains("/backend/v3/api/drive/storage/providers/{providerId}/bucket"));
+    assert!(admin_storage.contains("/backend/v3/api/drive/storage/providers/{providerId}/buckets"));
+    assert!(admin_storage.contains("/backend/v3/api/drive/storage/providers/{providerId}/objects"));
     assert!(admin_storage
-        .contains("/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}"));
-    assert!(admin_storage.contains("/admin/v3/api/drive/storage/bindings"));
-    assert!(admin_storage.contains("/admin/v3/api/drive/storage/bindings/default"));
+        .contains("/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}"));
+    assert!(admin_storage.contains("/backend/v3/api/drive/storage/bindings"));
+    assert!(admin_storage.contains("/backend/v3/api/drive/storage/bindings/default"));
     assert!(admin_storage.contains("\"operationId\": \"storageProviders.buckets.list\""));
     assert!(admin_storage.contains("\"operationId\": \"storageProviderBindings.list\""));
     assert!(admin_storage.contains("\"operationId\": \"storageProviderBindings.default.delete\""));
@@ -259,6 +264,10 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(backend.contains("\"operationId\": \"maintenance.objectSweep.start\""));
     assert!(backend.contains("/backend/v3/api/drive/maintenance/upload_session_sweep"));
     assert!(backend.contains("\"operationId\": \"maintenance.uploadSessionSweep.start\""));
+    assert!(backend.contains("/backend/v3/api/drive/maintenance/expired_upload_content_sweep"));
+    assert!(backend.contains("\"operationId\": \"maintenance.expiredUploadContentSweep.start\""));
+    assert!(backend.contains("/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep"));
+    assert!(backend.contains("\"operationId\": \"maintenance.abandonedUploadTaskSweep.start\""));
     assert!(backend.contains("/backend/v3/api/drive/maintenance/jobs"));
     assert!(backend.contains("\"operationId\": \"maintenance.jobs.list\""));
     assert!(backend.contains("/backend/v3/api/drive/download_packages"));
@@ -280,7 +289,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_dual_token_security_contract(&backend_json, "backend openapi");
     let admin_storage_json: Value =
         serde_json::from_str(&admin_storage).expect("admin storage openapi must be valid json");
-    assert_all_paths_start_with(&admin_storage_json, "/admin/v3/api/drive/storage/");
+    assert_all_paths_start_with(&admin_storage_json, "/backend/v3/api/drive/storage/");
     assert_dual_token_security_contract(&admin_storage_json, "admin storage openapi");
     assert_eq!(
         admin_storage_json
@@ -312,6 +321,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_schema_property_exists(&app_json, "FavoriteNodeResponse", "favorited");
     assert_schema_property_absent(&app_json, "DriveShareLink", "token");
     assert_schema_property_absent(&app_json, "DriveShareLink", "tokenHash");
+    assert_schema_property_exists(&app_json, "CreateShareLinkResponse", "token");
     assert_schema_property_exists(&app_json, "MoveNodeRequest", "targetParentNodeId");
     assert_schema_property_exists(&app_json, "NodeListResponse", "nextPageToken");
     assert_schema_property_exists(&app_json, "VersionListResponse", "nextPageToken");
@@ -515,7 +525,12 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_enum_values(
         properties,
         "jobType",
-        &["object_sweep", "upload_session_sweep"],
+        &[
+            "object_sweep",
+            "upload_session_sweep",
+            "expired_upload_content_sweep",
+            "abandoned_upload_task_sweep",
+        ],
     );
     assert_enum_values(properties, "status", &["completed", "failed"]);
     assert_query_parameter_enum(
@@ -523,7 +538,12 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         "/backend/v3/api/drive/maintenance/jobs",
         "get",
         "jobType",
-        &["object_sweep", "upload_session_sweep"],
+        &[
+            "object_sweep",
+            "upload_session_sweep",
+            "expired_upload_content_sweep",
+            "abandoned_upload_task_sweep",
+        ],
     );
     assert_query_parameter_enum(
         &backend_json,
@@ -961,18 +981,18 @@ fn admin_storage_mutation_operations_require_operator_id_contract() {
 
     for (path_key, method) in [
         (
-            "/admin/v3/api/drive/storage/providers/{providerId}/bucket",
+            "/backend/v3/api/drive/storage/providers/{providerId}/bucket",
             "put",
         ),
         (
-            "/admin/v3/api/drive/storage/providers/{providerId}/bucket",
+            "/backend/v3/api/drive/storage/providers/{providerId}/bucket",
             "delete",
         ),
         (
-            "/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
+            "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
             "delete",
         ),
-        ("/admin/v3/api/drive/storage/bindings/default", "delete"),
+        ("/backend/v3/api/drive/storage/bindings/default", "delete"),
     ] {
         assert_query_parameter_exists(&admin_json, path_key, method, "operatorId");
     }

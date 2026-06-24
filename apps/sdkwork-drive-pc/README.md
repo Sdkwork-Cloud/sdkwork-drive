@@ -60,7 +60,7 @@ SDK base URLs are configured per surface and per dependency:
 Local defaults use `http://127.0.0.1:18080` for Drive app-api and
 `http://127.0.0.1:18083` for Drive admin storage. Release-safe defaults use
 `https://drive.sdkwork.com/app/v3/api` and
-`https://drive.sdkwork.com/admin/v3/api`; private deployments override the
+`https://drive.sdkwork.com/backend/v3/api`; private deployments override the
 specific `VITE_DRIVE_PC_*_BASE_URL` value they need.
 
 The file service calls `sdkwork-drive-pc-core` `DriveFileService` in every

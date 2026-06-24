@@ -46,6 +46,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "labels.update",
     ),
     HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep",
+        "drive",
+        "maintenance.abandonedUploadTaskSweep.start",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/backend/v3/api/drive/maintenance/expired_upload_content_sweep",
+        "drive",
+        "maintenance.expiredUploadContentSweep.start",
+    ),
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/backend/v3/api/drive/maintenance/jobs",
         "drive",

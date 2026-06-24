@@ -1,4 +1,4 @@
-export const CUSTOM_API_PREFIX = '/admin/v3/api';
+export const CUSTOM_API_PREFIX = '/backend/v3/api';
 
 export function customApiPath(path: string): string {
   if (!path) {

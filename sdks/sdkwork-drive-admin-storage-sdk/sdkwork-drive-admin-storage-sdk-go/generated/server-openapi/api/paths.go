@@ -2,7 +2,7 @@ package api
 
 import "strings"
 
-const CUSTOM_API_PREFIX = "/admin/v3/api"
+const CUSTOM_API_PREFIX = "/backend/v3/api"
 
 func CustomApiPath(path string) string {
     if path == "" {

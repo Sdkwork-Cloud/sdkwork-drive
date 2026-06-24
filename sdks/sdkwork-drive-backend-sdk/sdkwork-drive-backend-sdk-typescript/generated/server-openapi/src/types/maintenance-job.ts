@@ -1,6 +1,6 @@
 export interface MaintenanceJob {
   id: string;
-  jobType: 'object_sweep' | 'upload_session_sweep';
+  jobType: 'object_sweep' | 'upload_session_sweep' | 'expired_upload_content_sweep' | 'abandoned_upload_task_sweep';
   status: 'completed' | 'failed';
   dryRun: boolean;
   scannedCount: string;

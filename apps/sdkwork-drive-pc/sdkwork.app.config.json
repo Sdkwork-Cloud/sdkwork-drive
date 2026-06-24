@@ -44,7 +44,8 @@
     "defaultPlatform": "WEB",
     "defaultArchitecture": "x64",
     "supportedDeploymentProfiles": [
-      "cloud"
+      "cloud",
+      "standalone"
     ],
     "defaultDeploymentProfile": "cloud"
   },
@@ -60,13 +61,19 @@
         "width": 1024,
         "height": 1024,
         "format": "PNG",
-        "fileSizeBytes": 524288,
+        "fileSizeBytes": 5337,
         "alphaChannel": false,
         "sortOrder": 0,
         "enabled": true,
         "metadata": {
           "assetOwner": "sdkwork-drive",
-          "source": "drive-media-governed"
+          "source": "drive-media-governed",
+          "generatedPlaceholder": true,
+          "catalogMediaDeferred": true,
+          "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/icon-1024.png",
+          "stagedChecksumAlgorithm": "SHA-256",
+          "stagedChecksum": "c1e82f5f8e535e870d64fab14b8df9c60d890f3232758bf36cec724e4eba91a1",
+          "catalogMediaStagedAt": "2026-06-24T07:56:39.445Z"
         }
       },
       "platform": []
@@ -84,13 +91,19 @@
         "width": 1920,
         "height": 1080,
         "format": "PNG",
-        "fileSizeBytes": 1048576,
+        "fileSizeBytes": 8565,
         "alphaChannel": false,
         "caption": "SDKWork Drive PC file workspace.",
         "sortOrder": 0,
         "enabled": true,
         "metadata": {
-          "altText": "SDKWork Drive PC file browser and transfer workspace."
+          "altText": "SDKWork Drive PC file browser and transfer workspace.",
+          "generatedPlaceholder": true,
+          "catalogMediaDeferred": true,
+          "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/desktop_windows-screenshot.png",
+          "stagedChecksumAlgorithm": "SHA-256",
+          "stagedChecksum": "878e85a25e9358068b35e81add3f4ea2e2ca31a891864183f6548de317634c78",
+          "catalogMediaStagedAt": "2026-06-24T07:56:39.445Z"
         }
       }
     ],
@@ -105,13 +118,19 @@
         "width": 1600,
         "height": 900,
         "format": "PNG",
-        "fileSizeBytes": 786432,
+        "fileSizeBytes": 6400,
         "alphaChannel": false,
         "caption": "SDKWork Drive PC preview.",
         "sortOrder": 0,
         "enabled": true,
         "metadata": {
-          "altText": "SDKWork Drive PC preview cover."
+          "altText": "SDKWork Drive PC preview cover.",
+          "generatedPlaceholder": true,
+          "catalogMediaDeferred": true,
+          "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/preview-cover.png",
+          "stagedChecksumAlgorithm": "SHA-256",
+          "stagedChecksum": "1727302af4e20b3ee22e5ee569a7113fda90aebc70cc9153fe2f0b8183d5d499",
+          "catalogMediaStagedAt": "2026-06-24T07:56:39.445Z"
         }
       }
     ],
@@ -121,7 +140,7 @@
     }
   },
   "publish": {
-    "status": "ACTIVE",
+    "status": "DRAFT",
     "installSkill": {
       "name": "sdkwork-skills-app"
     },

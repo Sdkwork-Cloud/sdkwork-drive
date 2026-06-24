@@ -54,6 +54,7 @@ OPERATIONS = {
     "search.query": {"method": "GET", "path": "/app/v3/api/drive/search"},
     "sharedWithMe.list": {"method": "GET", "path": "/app/v3/api/drive/shared_with_me"},
     "shareLinks.create": {"method": "POST", "path": "/app/v3/api/drive/nodes/{nodeId}/share_links"},
+    "shareLinks.claim": {"method": "POST", "path": "/app/v3/api/drive/share_links/{token}/claim"},
     "shareLinks.get": {"method": "GET", "path": "/app/v3/api/drive/share_links/{shareLinkId}"},
     "shareLinks.list": {"method": "GET", "path": "/app/v3/api/drive/nodes/{nodeId}/share_links"},
     "shareLinks.revoke": {"method": "DELETE", "path": "/app/v3/api/drive/share_links/{shareLinkId}"},

@@ -6,12 +6,13 @@
     "version": "0.1.0",
     "language": "rust",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-sdk-generated-rust"
   },
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -35,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "37d4f481ee220f9129bf991922fa9f7d2169efb9a2fb5f69f6fa2d23de56117b"
+      "sha256": "2aaf5080cd6ddda75a4542f569b50d2a8b2206d08aefbc5a65c10a2aaf0114da"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -47,7 +48,7 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "c2c7f3ff6a96d644c1753c12c14321217e0b9f52de84aa7f1bde49063105d173"
+      "sha256": "b02e5f3506e1b57f2dde189f1dc611ffa26148369b549f96d4b45414c651620a"
     },
     {
       "path": "src/api/mod.rs",
@@ -63,7 +64,7 @@
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "89e1aaa0c9c7b09a9e27e90618f0a03b63757a0bc735b2a1b5094e4a35935a66"
+      "sha256": "62e95c2d96eafa824b501e9279b52c67bae8172d54ba10b474cdd73443402d37"
     },
     {
       "path": "src/http/mod.rs",
@@ -71,7 +72,7 @@
     },
     {
       "path": "src/lib.rs",
-      "sha256": "8926f62a64e3914767ebc3f55026ebbba4d0888fa390f2ca65b0c2952a2c2c7e"
+      "sha256": "015a6abfc4c3393df8f0e721cda37311295c0440ac8eb91d3145ae162d58b194"
     },
     {
       "path": "src/models/common.rs",
@@ -79,11 +80,11 @@
     },
     {
       "path": "src/models/create_open_download_url_request.rs",
-      "sha256": "a874ee20a580ad0a784cae4839ab04eb8b0b159108d62590b9dae944949603a6"
+      "sha256": "04a493075c5f61e17c51c0d7d6115d00cb4df7d3ae9069f71846031fd7dbda9c"
     },
     {
       "path": "src/models/drive_open_share_link.rs",
-      "sha256": "01539c84c71878fcdb62eb14ef2f99d6acb47a046837df3f57f737df2d5e7073"
+      "sha256": "55b94973805dfbaa71fe51b8ddb9c29726b21ddd5102e7c1064087a939061843"
     },
     {
       "path": "src/models/mod.rs",

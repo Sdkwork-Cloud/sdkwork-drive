@@ -185,6 +185,23 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
             });
         }
 
+        let node_exists = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(1) FROM dr_drive_node WHERE tenant_id = $1 AND id = $2 AND lifecycle_status != 'deleted'",
+        )
+        .bind(&command.tenant_id)
+        .bind(&command.node_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("verify dr_drive_node for permission grant failed: {error}"))
+        })?;
+        if node_exists == 0 {
+            return Err(DriveServiceError::NotFound(format!(
+                "node {} not found for tenant {}",
+                command.node_id, command.tenant_id
+            )));
+        }
+
         let id = Uuid::new_v4().to_string();
         sqlx::query(
             "INSERT INTO dr_drive_node_permission \
@@ -316,7 +333,10 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
 
         Ok(match role {
             Some(role) => DriveNodePermissionCheck {
-                allowed: crate::domain::permission_role::drive_role_satisfies(&role, &command.required_role),
+                allowed: crate::domain::permission_role::drive_role_satisfies(
+                    &role,
+                    &command.required_role,
+                ),
                 effective_role: Some(role),
             },
             None => DriveNodePermissionCheck {

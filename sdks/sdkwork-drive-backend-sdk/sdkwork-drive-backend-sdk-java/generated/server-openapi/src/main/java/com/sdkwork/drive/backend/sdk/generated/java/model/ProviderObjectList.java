@@ -12,7 +12,7 @@ public class ProviderObjectList {
     public String getProviderId() {
         return this.providerId;
     }
-    
+
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
@@ -20,7 +20,7 @@ public class ProviderObjectList {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -28,7 +28,7 @@ public class ProviderObjectList {
     public String getPrefix() {
         return this.prefix;
     }
-    
+
     public void setPrefix(String prefix) {
         this.prefix = prefix;
     }
@@ -36,7 +36,7 @@ public class ProviderObjectList {
     public List<ProviderObject> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<ProviderObject> items) {
         this.items = items;
     }
@@ -44,7 +44,7 @@ public class ProviderObjectList {
     public String getNextPageToken() {
         return this.nextPageToken;
     }
-    
+
     public void setNextPageToken(String nextPageToken) {
         this.nextPageToken = nextPageToken;
     }

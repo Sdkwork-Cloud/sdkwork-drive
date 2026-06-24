@@ -17,9 +17,9 @@ func NewDriveApi(client *sdkhttp.Client) *DriveApi {
     return &DriveApi{client: client}
 }
 
-func (a *DriveApi) ChangesList(spaceId *string, cursor *int, pageSize *int, pageToken *string) (sdktypes.ChangeListResponse, error) {
+func (a *DriveApi) ChangesList(spaceId string, cursor *int, pageSize *int, pageToken *string) (sdktypes.ChangeListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "spaceId", Value: func() interface{} { if spaceId == nil { return nil }; return *spaceId }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "spaceId", Value: spaceId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageToken", Value: func() interface{} { if pageToken == nil { return nil }; return *pageToken }(), Style: "form", Explode: true, AllowReserved: false},
@@ -32,9 +32,9 @@ func (a *DriveApi) ChangesList(spaceId *string, cursor *int, pageSize *int, page
     return decodeResult[sdktypes.ChangeListResponse](raw)
 }
 
-func (a *DriveApi) ChangesStartPageTokenGet(spaceId *string) (sdktypes.StartPageTokenResponse, error) {
+func (a *DriveApi) ChangesStartPageTokenGet(spaceId string) (sdktypes.StartPageTokenResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "spaceId", Value: func() interface{} { if spaceId == nil { return nil }; return *spaceId }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "spaceId", Value: spaceId, Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath("/drive/changes/start_page_token"), query), nil, nil)
     if err != nil {
@@ -240,6 +240,15 @@ func (a *DriveApi) NodesDownloadUrlsCreate(nodeId string, requestedTtlSeconds *i
     return decodeResult[sdktypes.CreateDownloadUrlResponse](raw)
 }
 
+func (a *DriveApi) DownloadGrantsCreate(nodeId string, body *sdktypes.CreateDownloadGrantRequest) (sdktypes.CreateDownloadUrlResponse, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/drive/nodes/%s/download_grants", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.CreateDownloadUrlResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.CreateDownloadUrlResponse](raw)
+}
+
 func (a *DriveApi) FavoritesSet(nodeId string, body sdktypes.FavoriteNodeRequest) (sdktypes.FavoriteNodeResponse, error) {
     raw, err := a.client.Put(AppApiPath(fmt.Sprintf("/drive/nodes/%s/favorite", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
@@ -338,13 +347,13 @@ func (a *DriveApi) PermissionsEffectiveList(nodeId string, pageSize *int, pageTo
     return decodeResult[sdktypes.EffectivePermissionListResponse](raw)
 }
 
-func (a *DriveApi) ShareLinksCreate(nodeId string, body sdktypes.CreateShareLinkRequest) (sdktypes.DriveShareLink, error) {
+func (a *DriveApi) ShareLinksCreate(nodeId string, body sdktypes.CreateShareLinkRequest) (sdktypes.CreateShareLinkResponse, error) {
     raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/drive/nodes/%s/share_links", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.DriveShareLink
+        var zero sdktypes.CreateShareLinkResponse
         return zero, err
     }
-    return decodeResult[sdktypes.DriveShareLink](raw)
+    return decodeResult[sdktypes.CreateShareLinkResponse](raw)
 }
 
 func (a *DriveApi) ShareLinksList(nodeId string, pageSize *int, pageToken *string) (sdktypes.ShareLinkListResponse, error) {
@@ -454,6 +463,15 @@ func (a *DriveApi) SearchQuery(q *string, spaceId *string, pageSize *int, pageTo
         return zero, err
     }
     return decodeResult[sdktypes.NodeListResponse](raw)
+}
+
+func (a *DriveApi) ShareLinksClaim(token string) (sdktypes.ClaimShareLinkResponse, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/drive/share_links/%s/claim", SerializePathParameter(token, PathParameterSpec{Name: "token", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.ClaimShareLinkResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.ClaimShareLinkResponse](raw)
 }
 
 func (a *DriveApi) ShareLinksRevoke(shareLinkId string) (sdktypes.ShareLinksRevokeResponse, error) {

@@ -5,18 +5,55 @@ use axum::Router;
 use http::{Method, Request};
 use sdkwork_drive_security::DriveAuthValidationPolicy;
 use sdkwork_router_drive_app_api::build_router_with_pool_and_iam_policy;
+use sdkwork_web_core::{access_token_jwt, auth_token_jwt, encode_unsigned_test_jwt};
+use serde_json::json;
 use sqlx::AnyPool;
 
+const DEFAULT_SESSION_ID: &str = "session-1";
+
 pub fn auth_token(tenant: &str, user: &str, app_id: &str) -> String {
-    format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id={app_id};auth_level=password"
-    )
+    auth_token_jwt(tenant, user, DEFAULT_SESSION_ID, app_id)
 }
 
 pub fn access_token(tenant: &str, user: &str, app_id: &str) -> String {
-    format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id={app_id};environment=prod;deployment_mode=saas"
-    )
+    access_token_jwt(tenant, user, DEFAULT_SESSION_ID, app_id)
+}
+
+pub fn auth_token_for_organization(
+    tenant: &str,
+    user: &str,
+    organization_id: &str,
+    app_id: &str,
+) -> String {
+    encode_unsigned_test_jwt(json!({
+        "token_type": "auth",
+        "tenant_id": tenant,
+        "user_id": user,
+        "organization_id": organization_id,
+        "session_id": DEFAULT_SESSION_ID,
+        "app_id": app_id,
+        "auth_level": "password",
+        "login_scope": "ORGANIZATION",
+    }))
+}
+
+pub fn access_token_for_organization(
+    tenant: &str,
+    user: &str,
+    organization_id: &str,
+    app_id: &str,
+) -> String {
+    encode_unsigned_test_jwt(json!({
+        "token_type": "access",
+        "tenant_id": tenant,
+        "user_id": user,
+        "organization_id": organization_id,
+        "session_id": DEFAULT_SESSION_ID,
+        "app_id": app_id,
+        "environment": "prod",
+        "deployment_mode": "saas",
+        "login_scope": "ORGANIZATION",
+    }))
 }
 
 pub fn default_user_for_tenant(tenant: &str) -> String {

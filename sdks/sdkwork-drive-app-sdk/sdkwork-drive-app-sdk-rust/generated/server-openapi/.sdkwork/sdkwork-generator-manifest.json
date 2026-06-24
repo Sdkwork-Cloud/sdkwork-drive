@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "67f707bea9c864d2a4dffec149bd74760de0ec90105daa1cf81588a981f50b21"
+      "sha256": "f34486c78cdb80c38c53dd85a79c09e3fe2f44934c9fb97c525b40a1adf00e9e"
     },
     {
       "path": "src/api/mod.rs",
@@ -96,7 +96,7 @@
     },
     {
       "path": "src/models/apply_node_label_request.rs",
-      "sha256": "82e9b6398562ea3a48d1da387d5139ebb41cdcb4fbc08620222765addda06ab6"
+      "sha256": "42aff2ae9a02727da7d65e8191d7ff516c76f75717e8a0d791a9188de29e3f15"
     },
     {
       "path": "src/models/archive_entry_list_response.rs",
@@ -141,6 +141,10 @@
     {
       "path": "src/models/change.rs",
       "sha256": "dd133c5e4b771f56102d18e8f6c0904c4f3cdda83fdf470ce3064491b5a18e07"
+    },
+    {
+      "path": "src/models/claim_share_link_response.rs",
+      "sha256": "40a70a1bc21e9b7aa484a51a4c034a61828d2cfef15f6b7d27f05c080e21abc5"
     },
     {
       "path": "src/models/comment_list_response.rs",
@@ -199,6 +203,10 @@
       "sha256": "c7d4f3528b0bfbc65f33348234a9d17a6d61063586fb4f4f3c6762401c0060a8"
     },
     {
+      "path": "src/models/create_download_grant_request.rs",
+      "sha256": "a7d28f5508a75fecd38777ff92766e1215cf857f3dfbafe27fea8ab0d694bb5b"
+    },
+    {
       "path": "src/models/create_download_package_request.rs",
       "sha256": "90689fa6024b15c5ffc60f69b4cb7f9dfcc080597ba3a5a711965cba1b1b16d5"
     },
@@ -228,7 +236,11 @@
     },
     {
       "path": "src/models/create_share_link_request.rs",
-      "sha256": "804a404854ae2203e37c14955457cfbeec99381ebb3910fafb16ddd71b910c30"
+      "sha256": "ae225e4e731eb2a7dc000c9e533ac7330e89fcaac9273718c5894eb4166e8fc1"
+    },
+    {
+      "path": "src/models/create_share_link_response.rs",
+      "sha256": "59b58567ae88357f55d800c13632f48592bdee16b5ba7cba70dcdf3ec2cade9f"
     },
     {
       "path": "src/models/create_shortcut_request.rs",
@@ -296,7 +308,7 @@
     },
     {
       "path": "src/models/drive_node.rs",
-      "sha256": "6632fc0483c81f7bff029cd117361cb82c262f0dfc2ac9da446b282ca27b10fb"
+      "sha256": "2e3634d628b43169828b41764664d022c7330b765728339aec2edae6db1441fc"
     },
     {
       "path": "src/models/drive_permission.rs",
@@ -304,7 +316,7 @@
     },
     {
       "path": "src/models/drive_share_link.rs",
-      "sha256": "40e75b8e261335e0986ac8ea1fcd9a8308f83c50b65f40a277989588b9f2f2c0"
+      "sha256": "9406f26b54eb15b12b968c6cde413eeae305cfe93cd32543fd0c6333c12a18a5"
     },
     {
       "path": "src/models/drive_space.rs",
@@ -348,7 +360,7 @@
     },
     {
       "path": "src/models/favorite_node_request.rs",
-      "sha256": "fb5a866c0cd73cfdeeb709dce55155f998e8d85c08bde0c0b373c1c83a8cd1bb"
+      "sha256": "f56fa5aae95c175b0b69c1d36b725894aa440a15bdc702c5fe4561fb8067ed63"
     },
     {
       "path": "src/models/favorite_node_response.rs",
@@ -372,11 +384,11 @@
     },
     {
       "path": "src/models/media_resource.rs",
-      "sha256": "2283eb5686969e6f534e803ecf80b346f150c2bf7e1a1bc7c6edad79dfbc6b50"
+      "sha256": "83621e06acdbe82208e2f3cc5ca5d171d7c748a1dacf487aff8c6c76e7207ed0"
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "9703891bb732936c10fb66bbba1df29ef58b1e8a1ad0656764228bc4b9a33843"
+      "sha256": "6f043de67cdc7f4f2e9ff42ed1248d8c0b95a170160ac2666184897909a9a231"
     },
     {
       "path": "src/models/move_node_request.rs",
@@ -388,7 +400,7 @@
     },
     {
       "path": "src/models/node_command_request.rs",
-      "sha256": "5e83c46b19c09db82c031eb6839b9bbe993d0cabab2bdef22d34fcfe1376bbd9"
+      "sha256": "ffdc5cf3b5cdd11761b6900f27d495832bd464a78dac3191b3755eb4bb875a70"
     },
     {
       "path": "src/models/node_label_list_response.rs",
@@ -400,7 +412,7 @@
     },
     {
       "path": "src/models/node_list_response.rs",
-      "sha256": "bc34218f88d1f948ad07c48b4482fccd503dded7b7207a388b5d1cffe7f95161"
+      "sha256": "6fc49747a6f6713bdf9c0ed31a4fca7b67044e1005108957f30159f3839480cb"
     },
     {
       "path": "src/models/node_path_response.rs",
@@ -440,7 +452,7 @@
     },
     {
       "path": "src/models/quota_summary.rs",
-      "sha256": "18b6845bd793870dda3a10cf79f29a61b7af779c2563568d27122319eadfb241"
+      "sha256": "dd9c5a29a27a103bba099d17a4182e3fdf69196c5c5d9c29228e18937d9a9ffa"
     },
     {
       "path": "src/models/remove_node_label_response.rs",
@@ -464,7 +476,7 @@
     },
     {
       "path": "src/models/stop_watch_channel_request.rs",
-      "sha256": "c3ed2b8852601a22c4d798c328b416b8687ced0a21937a309fc71b054fdf62c5"
+      "sha256": "8b6e92ebf0adde4e8d51656cb5e422b2a8d5d8a8e7a796e71f6725a5617f2cb9"
     },
     {
       "path": "src/models/stop_watch_channel_response.rs",

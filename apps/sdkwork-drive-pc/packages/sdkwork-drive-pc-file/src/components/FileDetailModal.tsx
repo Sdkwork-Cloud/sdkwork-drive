@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { formatDriveBytes, useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
-import type { DriveFileService } from 'sdkwork-drive-pc-core';
+import { isDriveAbortError, type DriveFileService } from 'sdkwork-drive-pc-core';
 
 const AudioModule = React.lazy(() => import('./preview-modules/AudioModule').then((module) => ({ default: module.AudioModule })));
 const ImageModule = React.lazy(() => import('./preview-modules/ImageModule').then((module) => ({ default: module.ImageModule })));
@@ -40,30 +40,21 @@ interface FileDetailModalProps {
 }
 
 const CUSTOMIZE_COLORS = [
-  { name: 'amber', bg: 'bg-amber-500', label: 'Warm Orange' },
-  { name: 'rose', bg: 'bg-rose-500', label: 'Soft Pink' },
-  { name: 'blue', bg: 'bg-blue-500', label: 'Classic Blue' },
-  { name: 'emerald', bg: 'bg-emerald-500', label: 'Mint Green' },
-  { name: 'violet', bg: 'bg-violet-500', label: 'Neon Purple' },
-  { name: 'red', bg: 'bg-red-500', label: 'Google Red' },
-  { name: 'gray', bg: 'bg-gray-500', label: 'Slate Gray' },
-];
-
-function isDrivePreviewAbortError(err: unknown): boolean {
-  if (err instanceof DOMException && err.name === 'AbortError') {
-    return true;
-  }
-  if (err instanceof Error) {
-    return err.name === 'AbortError' || /\babort(?:ed)?\b/i.test(err.message);
-  }
-  return false;
-}
+  { name: 'amber', bg: 'bg-amber-500', labelKey: 'colorWarmOrange' },
+  { name: 'rose', bg: 'bg-rose-500', labelKey: 'colorSoftPink' },
+  { name: 'blue', bg: 'bg-blue-500', labelKey: 'colorClassicBlue' },
+  { name: 'emerald', bg: 'bg-emerald-500', labelKey: 'colorMintGreen' },
+  { name: 'violet', bg: 'bg-violet-500', labelKey: 'colorNeonPurple' },
+  { name: 'red', bg: 'bg-red-500', labelKey: 'colorGoogleRed' },
+  { name: 'gray', bg: 'bg-gray-500', labelKey: 'colorSlateGray' },
+] as const;
 
 function PreviewModuleFallback() {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-[240px] w-full max-w-3xl flex-col items-center justify-center gap-3 rounded-2xl border border-neutral-800/80 bg-[#131315] text-center shadow-2xl">
       <div className="h-6 w-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
-      <p className="text-xs font-semibold text-neutral-400">Loading Drive preview module...</p>
+      <p className="text-xs font-semibold text-neutral-400">{t('fileDetail.previewLoadingModule')}</p>
     </div>
   );
 }
@@ -123,17 +114,17 @@ export function FileDetailModal({
         if (!active) return;
         const sourceUrl = grant.signedSourceUrl || grant.downloadUrl;
         if (!sourceUrl) {
-          setPreviewGrantError('Drive App SDK did not return a preview download URL.');
+          setPreviewGrantError(t('fileDetail.previewUrlMissing'));
           return;
         }
         setPreviewSourceUrl(sourceUrl);
       })
       .catch((err: any) => {
-        if (isDrivePreviewAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (active) {
-          setPreviewGrantError(err?.message || 'Failed to prepare Drive preview URL.');
+          setPreviewGrantError(err?.message || t('fileDetail.previewUrlFailed'));
         }
       })
       .finally(() => {
@@ -179,14 +170,14 @@ export function FileDetailModal({
       await fileService.renameFile(file.id, trimmed, {
         signal: headerRenameAbortController.signal,
       });
-      triggerFeedback('Filename successfully updated.', 'success');
+      triggerFeedback(t('fileDetail.renameSuccess'), 'success');
       setIsHeaderRenameEditing(false);
       onRefreshFolderContent?.();
     } catch (err: any) {
-      if (isDrivePreviewAbortError(err)) {
+      if (isDriveAbortError(err)) {
         return;
       }
-      triggerFeedback(err?.message || 'Rename failed', 'error');
+      triggerFeedback(err?.message || t('fileDetail.renameFailed'), 'error');
     } finally {
       if (headerRenameAbortControllerRef.current === headerRenameAbortController) {
         headerRenameAbortControllerRef.current = null;
@@ -279,13 +270,13 @@ export function FileDetailModal({
           </div>
           <div>
             <h4 className="text-[17px] font-bold text-gray-100">{file.name}</h4>
-            <p className="text-xs text-neutral-500 mt-1">Folder metadata is loaded from the Drive App SDK.</p>
+            <p className="text-xs text-neutral-500 mt-1">{t('fileDetail.folderMetadataHint')}</p>
           </div>
 
           {onSetColor && !isTrashSection && (
             <div className="bg-[#181818]/80 border border-neutral-800/80 p-5 rounded-2xl shadow-lg text-left">
               <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-3 font-mono">
-                Folder Display Color Label
+                {t('fileDetail.folderDisplayColorLabel')}
               </span>
               <div className="grid grid-cols-7 gap-2.5">
                 {CUSTOMIZE_COLORS.map((color) => (
@@ -293,7 +284,7 @@ export function FileDetailModal({
                     key={color.name}
                     onClick={() => onSetColor(file.id, color.name)}
                     className={`w-8 h-8 rounded-full ${color.bg} relative flex items-center justify-center transition-all duration-150 hover:scale-110 active:scale-95 cursor-pointer shadow-md`}
-                    title={color.label}
+                    title={t(`fileDetail.${color.labelKey}`)}
                   >
                     {file.color === color.name && <Check size={14} className="text-white stroke-[3.5]" />}
                   </button>
@@ -393,7 +384,7 @@ export function FileDetailModal({
       <div className="h-16 border-b border-neutral-900/80 bg-neutral-950/90 backdrop-blur-md flex items-center justify-between px-6 shrink-0 select-none">
         <div className="flex items-center gap-3.5 min-w-0">
           <span className="text-[11px] font-bold px-2.5 py-1 rounded bg-[#252525] text-blue-400 font-mono tracking-widest border border-blue-500/10">
-            {file.type === 'folder' ? 'FOLDER' : fileExt}
+            {file.type === 'folder' ? t('fileDetail.folderBadge').toUpperCase() : fileExt}
           </span>
           <div className="min-w-0">
             {isHeaderRenameEditing ? (
@@ -412,7 +403,7 @@ export function FileDetailModal({
             ) : (
               <h3
                 className="text-[14.5px] font-bold text-gray-100 truncate flex items-center gap-2 cursor-pointer hover:text-blue-400 transition-colors"
-                title="Double click to rename filename inline"
+                title={t('fileDetail.renameInlineTitle')}
                 onDoubleClick={() => {
                   if (!isTrashSection) {
                     setIsHeaderRenameEditing(true);
@@ -424,7 +415,10 @@ export function FileDetailModal({
               </h3>
             )}
             <p className="text-[11px] text-neutral-500 truncate mt-0.5">
-              Owner: {file.ownerId} - Last synchronized: {formatDate(file.updatedAt).split(',')[0]}
+              {t('fileDetail.ownerLastSync', {
+                owner: file.ownerId,
+                date: formatDate(file.updatedAt).split(',')[0],
+              })}
             </p>
           </div>
         </div>
@@ -446,7 +440,7 @@ export function FileDetailModal({
               <button
                 onClick={() => onToggleStar(file.id, file.name)}
                 className={`p-2 rounded-lg hover:bg-[#2c2c2c] transition-colors cursor-pointer ${file.isStarred ? 'text-amber-400' : 'text-neutral-500 hover:text-neutral-200'}`}
-                title="Star / Unstar"
+                title={t('fileDetail.starToggleTitle')}
               >
                 <Star size={17} className={file.isStarred ? 'fill-current' : ''} />
               </button>
@@ -458,7 +452,7 @@ export function FileDetailModal({
                     setIsHeaderRenameEditing(true);
                   }}
                   className="p-2 text-neutral-500 hover:text-neutral-200 hover:bg-[#2c2c2c] rounded-lg transition-colors cursor-pointer"
-                  title="Rename file name inline"
+                  title={t('fileDetail.renameButtonTitle')}
                 >
                   <Edit2 size={16} />
                 </button>
@@ -467,7 +461,7 @@ export function FileDetailModal({
               <button
                 onClick={() => onDownload(file)}
                 className="p-2 text-neutral-500 hover:text-neutral-200 hover:bg-[#2c2c2c] rounded-lg transition-colors cursor-pointer"
-                title="Download local"
+                title={t('fileDetail.downloadLocalTitle')}
               >
                 <Download size={16} />
               </button>
@@ -479,7 +473,7 @@ export function FileDetailModal({
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className={`p-2 rounded-lg hover:bg-[#2c2c2c] transition-colors cursor-pointer ${sidebarOpen ? 'text-blue-400 bg-[#252525]/50' : 'text-neutral-500 hover:text-neutral-200'}`}
-            title="Toggle properties sidebar panel"
+            title={t('fileDetail.togglePropertiesTitle')}
           >
             <Info size={18} />
           </button>
@@ -487,10 +481,10 @@ export function FileDetailModal({
           <button
             onClick={onClose}
             className="p-1.5 bg-[#252525] hover:bg-rose-500/15 hover:text-rose-400 text-neutral-300 rounded-lg cursor-pointer transition-all border border-transparent hover:border-rose-500/30 flex items-center gap-1.5 px-3 text-xs font-semibold"
-            title="Close Preview (Esc)"
+            title={t('fileDetail.closePreviewTitle')}
           >
             <X size={15} />
-            <span>{t('fileBrowser.cancel') || 'Close'}</span>
+            <span>{t('fileDetail.close')}</span>
           </button>
         </div>
       </div>
@@ -501,7 +495,7 @@ export function FileDetailModal({
             <button
               onClick={handlePrev}
               className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2.5 rounded-full bg-black/60 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white transition-all cursor-pointer opacity-40 hover:opacity-100 shadow-xl"
-              title="Previous file (Arrow-Left)"
+              title={t('fileDetail.previousFileTitle')}
             >
               <ChevronLeft size={22} className="stroke-[2.5]" />
             </button>
@@ -511,7 +505,7 @@ export function FileDetailModal({
             <button
               onClick={handleNext}
               className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2.5 rounded-full bg-black/60 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white transition-all cursor-pointer opacity-40 hover:opacity-100 shadow-xl"
-              title="Next file (Arrow-Right)"
+              title={t('fileDetail.nextFileTitle')}
             >
               <ChevronRight size={22} className="stroke-[2.5]" />
             </button>
@@ -525,12 +519,15 @@ export function FileDetailModal({
 
           <div className="h-12 border-t border-neutral-900 px-6 shrink-0 bg-[#161616] flex items-center justify-between text-xs font-mono text-neutral-400 select-none">
             <span className="flex items-center gap-1.5 uppercase font-bold text-[10px] tracking-wider text-neutral-500">
-              <HardDrive size={13} className="text-blue-500" /> FILE SYSTEM LOCATION: {file.parentId ? `Subdirectory (Node ID: ${file.parentId})` : 'Root Directory / (Drive Home)'}
+              <HardDrive size={13} className="text-blue-500" /> {t('fileDetail.fileSystemLocation')}:{' '}
+              {file.parentId
+                ? t('fileDetail.subdirectoryNode', { nodeId: file.parentId })
+                : t('fileDetail.rootDirectory')}
             </span>
 
             {files && files.length > 0 && (
               <span className="text-neutral-500 font-bold">
-                File {currentIndex + 1} / {files.length} Visible
+                {t('fileDetail.fileCounter', { current: currentIndex + 1, total: files.length })}
               </span>
             )}
           </div>
@@ -543,13 +540,13 @@ export function FileDetailModal({
                 onClick={() => setActiveTab('preview')}
                 className={`flex-1 pb-2 border-b-2 text-center transition-all cursor-pointer ${activeTab === 'preview' ? 'border-blue-500 text-blue-400 font-bold' : 'border-transparent hover:text-neutral-300'}`}
               >
-                Resource Meta
+                {t('fileDetail.resourceMetaTab')}
               </button>
               <button
                 onClick={() => setActiveTab('info')}
                 className={`flex-1 pb-2 border-b-2 text-center transition-all cursor-pointer ${activeTab === 'info' ? 'border-blue-500 text-blue-400 font-bold' : 'border-transparent hover:text-neutral-300'}`}
               >
-                File Activity Tracker
+                {t('fileDetail.activityTab')}
               </button>
             </div>
 
@@ -562,7 +559,9 @@ export function FileDetailModal({
 
                 <div>
                   <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-1">{t('previewModules.typeClassification')}</label>
-                  <span className="font-medium text-neutral-400 capitalize">{file.type === 'folder' ? 'Workspace Folder Node' : 'Digital Workspace Document'}</span>
+                  <span className="font-medium text-neutral-400 capitalize">
+                    {file.type === 'folder' ? t('fileDetail.workspaceFolderNode') : t('fileDetail.digitalWorkspaceDocument')}
+                  </span>
                 </div>
 
                 {file.type !== 'folder' && (
@@ -580,7 +579,9 @@ export function FileDetailModal({
 
                 <div>
                   <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-1">{t('previewModules.systemPhysicalPath')}</label>
-                  <span className="text-neutral-400 break-all select-text font-mono text-[11px] block leading-normal">/Cloud/Drive/Catalog/{file.parentId || 'Home_Node'}</span>
+                  <span className="text-neutral-400 break-all select-text font-mono text-[11px] block leading-normal">
+                    /Cloud/Drive/Catalog/{file.parentId || t('fileDetail.catalogHomeNode')}
+                  </span>
                 </div>
 
                 <div>

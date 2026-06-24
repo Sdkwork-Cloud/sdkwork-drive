@@ -17,6 +17,44 @@ const config: DriveRuntimeConfig = createRuntimeConfig({
     'https://drive-admin-storage.example.test',
 });
 
+function createTestJwt(payload: Record<string, unknown>): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  return `${header}.${body}.signature`;
+}
+
+const TEST_AUTH_TOKEN = createTestJwt({ sub: 'user-001', typ: 'auth', token_version: 1 });
+const TEST_ACCESS_TOKEN = createTestJwt({ sub: 'user-001', typ: 'access', token_version: 1 });
+const TEST_REFRESH_TOKEN = 'refresh-token';
+
+function createOAuthClient() {
+  return {
+    deviceAuthorizations: {
+      create: vi.fn(),
+      retrieve: vi.fn(),
+      passwordCompletions: { create: vi.fn() },
+      scans: { create: vi.fn() },
+      sessionExchanges: { create: vi.fn() },
+    },
+    accountLinks: {
+      delete: vi.fn(),
+      list: vi.fn(),
+    },
+    authorizationUrls: { create: vi.fn() },
+    callbacks: {
+      handleGet: vi.fn(),
+      handlePost: vi.fn(),
+    },
+    grants: {
+      delete: vi.fn(),
+      list: vi.fn(),
+    },
+    miniProgramSessions: { create: vi.fn() },
+    providers: { list: vi.fn() },
+    sessions: { create: vi.fn() },
+  };
+}
+
 function createIamDirectoryClient() {
   return {
     departmentAssignments: { list: vi.fn() },
@@ -218,9 +256,9 @@ describe('drive IAM runtime bridge', () => {
   it('lets tests inject a generated app SDK client while preserving the IAM adapter contract', async () => {
     const session = createSessionStore();
     const sessionsCreate = vi.fn(async () => ({
-      accessToken: 'access-token',
-      authToken: 'auth-token',
-      refreshToken: 'refresh-token',
+      accessToken: TEST_ACCESS_TOKEN,
+      authToken: TEST_AUTH_TOKEN,
+      refreshToken: TEST_REFRESH_TOKEN,
       context: {
         appId: 'sdkwork-drive-pc',
         authLevel: 'password',
@@ -256,33 +294,11 @@ describe('drive IAM runtime bridge', () => {
             refresh: vi.fn(),
             organizationSelection: { create: vi.fn() },
             tenantSelection: { create: vi.fn() },
+            loginContextSelection: { create: vi.fn() },
           },
         },
         iam: createIamDirectoryClient(),
-        oauth: {
-          deviceAuthorizations: {
-            create: vi.fn(),
-            retrieve: vi.fn(),
-            passwordCompletions: { create: vi.fn() },
-            scans: { create: vi.fn() },
-          },
-          accountLinks: {
-            delete: vi.fn(),
-            list: vi.fn(),
-          },
-          authorizationUrls: { create: vi.fn() },
-          callbacks: {
-            handleGet: vi.fn(),
-            handlePost: vi.fn(),
-          },
-          grants: {
-            delete: vi.fn(),
-            list: vi.fn(),
-          },
-          miniProgramSessions: { create: vi.fn() },
-          providers: { list: vi.fn() },
-          sessions: { create: vi.fn() },
-        },
+        oauth: createOAuthClient(),
         system: {
           iam: {
             runtime: { retrieve: vi.fn() },
@@ -305,8 +321,8 @@ describe('drive IAM runtime bridge', () => {
       password: 'secret',
     });
     expect(session.getSnapshot()).toMatchObject({
-      authToken: 'auth-token',
-      accessToken: 'access-token',
+      authToken: TEST_AUTH_TOKEN,
+      accessToken: TEST_ACCESS_TOKEN,
       context: {
         tenantId: 'tenant-001',
         userId: 'user-001',
@@ -332,8 +348,8 @@ describe('drive IAM runtime bridge', () => {
   it('hydrates Drive AppContext from current session when login only returns tokens', async () => {
     const session = createSessionStore();
     const sessionsCurrentRetrieve = vi.fn(async () => ({
-      accessToken: 'access-token',
-      authToken: 'auth-token',
+      accessToken: TEST_ACCESS_TOKEN,
+      authToken: TEST_AUTH_TOKEN,
       context: {
         appId: 'sdkwork-drive-pc',
         authLevel: 'password',
@@ -356,9 +372,9 @@ describe('drive IAM runtime bridge', () => {
           registrations: { create: vi.fn() },
           sessions: {
             create: vi.fn(async () => ({
-              accessToken: 'access-token',
-              authToken: 'auth-token',
-              refreshToken: 'refresh-token',
+              accessToken: TEST_ACCESS_TOKEN,
+              authToken: TEST_AUTH_TOKEN,
+              refreshToken: TEST_REFRESH_TOKEN,
             })),
             current: {
               delete: vi.fn(),
@@ -368,33 +384,11 @@ describe('drive IAM runtime bridge', () => {
             refresh: vi.fn(),
             organizationSelection: { create: vi.fn() },
             tenantSelection: { create: vi.fn() },
+            loginContextSelection: { create: vi.fn() },
           },
         },
         iam: createIamDirectoryClient(),
-        oauth: {
-          deviceAuthorizations: {
-            create: vi.fn(),
-            retrieve: vi.fn(),
-            passwordCompletions: { create: vi.fn() },
-            scans: { create: vi.fn() },
-          },
-          accountLinks: {
-            delete: vi.fn(),
-            list: vi.fn(),
-          },
-          authorizationUrls: { create: vi.fn() },
-          callbacks: {
-            handleGet: vi.fn(),
-            handlePost: vi.fn(),
-          },
-          grants: {
-            delete: vi.fn(),
-            list: vi.fn(),
-          },
-          miniProgramSessions: { create: vi.fn() },
-          providers: { list: vi.fn() },
-          sessions: { create: vi.fn() },
-        },
+        oauth: createOAuthClient(),
         system: {
           iam: {
             runtime: { retrieve: vi.fn() },

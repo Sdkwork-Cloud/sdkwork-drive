@@ -7,5 +7,6 @@ export interface DriveOpenShareLink {
   expiresAtEpochMs?: string;
   downloadLimit?: string;
   downloadCount: string;
+  accessCodeRequired?: boolean;
   node: OpenNode;
 }

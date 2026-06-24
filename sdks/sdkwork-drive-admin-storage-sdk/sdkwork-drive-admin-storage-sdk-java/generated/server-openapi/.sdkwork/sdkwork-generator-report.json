@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": false,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "40751ef245da38cac815e93f7723a5684120c8eb0b0280504e3ddfd248716f75",
+  "changeFingerprint": "7eefa9af13faa7b42a89754fbf4e6d2cae4f9bb96874e6cdfcc10fc0cf4ba274",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [],
@@ -47,6 +47,7 @@
     "version": "0.1.0",
     "language": "java",
     "sdkType": "custom",
+    "protocol": "http",
     "outputPath": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-java\\generated\\server-openapi",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-java"
   },
@@ -63,12 +64,13 @@
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
+    "controlPlaneEnabled": true,
     "writtenFiles": 0,
     "skippedScaffoldFiles": 1,
     "skippedUnchangedGeneratedFiles": 36,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "40751ef245da38cac815e93f7723a5684120c8eb0b0280504e3ddfd248716f75",
+    "changeFingerprint": "7eefa9af13faa7b42a89754fbf4e6d2cae4f9bb96874e6cdfcc10fc0cf4ba274",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [],

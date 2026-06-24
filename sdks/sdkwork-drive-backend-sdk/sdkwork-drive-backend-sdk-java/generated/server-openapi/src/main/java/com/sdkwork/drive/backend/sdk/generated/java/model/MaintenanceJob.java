@@ -19,7 +19,7 @@ public class MaintenanceJob {
     public Integer getId() {
         return this.id;
     }
-    
+
     public void setId(Integer id) {
         this.id = id;
     }
@@ -27,7 +27,7 @@ public class MaintenanceJob {
     public String getJobType() {
         return this.jobType;
     }
-    
+
     public void setJobType(String jobType) {
         this.jobType = jobType;
     }
@@ -35,7 +35,7 @@ public class MaintenanceJob {
     public String getStatus() {
         return this.status;
     }
-    
+
     public void setStatus(String status) {
         this.status = status;
     }
@@ -43,7 +43,7 @@ public class MaintenanceJob {
     public Boolean getDryRun() {
         return this.dryRun;
     }
-    
+
     public void setDryRun(Boolean dryRun) {
         this.dryRun = dryRun;
     }
@@ -51,7 +51,7 @@ public class MaintenanceJob {
     public Integer getScannedCount() {
         return this.scannedCount;
     }
-    
+
     public void setScannedCount(Integer scannedCount) {
         this.scannedCount = scannedCount;
     }
@@ -59,7 +59,7 @@ public class MaintenanceJob {
     public Integer getAffectedCount() {
         return this.affectedCount;
     }
-    
+
     public void setAffectedCount(Integer affectedCount) {
         this.affectedCount = affectedCount;
     }
@@ -67,7 +67,7 @@ public class MaintenanceJob {
     public String getOperatorId() {
         return this.operatorId;
     }
-    
+
     public void setOperatorId(String operatorId) {
         this.operatorId = operatorId;
     }
@@ -75,7 +75,7 @@ public class MaintenanceJob {
     public String getRequestId() {
         return this.requestId;
     }
-    
+
     public void setRequestId(String requestId) {
         this.requestId = requestId;
     }
@@ -83,7 +83,7 @@ public class MaintenanceJob {
     public String getTraceId() {
         return this.traceId;
     }
-    
+
     public void setTraceId(String traceId) {
         this.traceId = traceId;
     }
@@ -91,7 +91,7 @@ public class MaintenanceJob {
     public String getErrorMessage() {
         return this.errorMessage;
     }
-    
+
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
     }
@@ -99,7 +99,7 @@ public class MaintenanceJob {
     public String getStartedAt() {
         return this.startedAt;
     }
-    
+
     public void setStartedAt(String startedAt) {
         this.startedAt = startedAt;
     }
@@ -107,7 +107,7 @@ public class MaintenanceJob {
     public String getFinishedAt() {
         return this.finishedAt;
     }
-    
+
     public void setFinishedAt(String finishedAt) {
         this.finishedAt = finishedAt;
     }
@@ -115,7 +115,7 @@ public class MaintenanceJob {
     public String getCreatedAt() {
         return this.createdAt;
     }
-    
+
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }

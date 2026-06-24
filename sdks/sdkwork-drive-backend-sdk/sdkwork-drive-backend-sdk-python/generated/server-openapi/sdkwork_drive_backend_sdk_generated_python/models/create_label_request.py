@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class CreateLabelRequest:
     id: str
-    tenant_id: str
     label_key: str
     display_name: str
     operator_id: str

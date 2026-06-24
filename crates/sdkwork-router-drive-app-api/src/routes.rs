@@ -1,20 +1,24 @@
 use crate::acl;
+use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
 use crate::archive::*;
 use crate::archive_storage::read_archive_node_bytes;
-use crate::collaboration_repository::{find_comment, find_comment_reply, find_share_link};
+use crate::collaboration_repository::{
+    enforce_share_link_download_limit_for_subject, find_active_share_link_by_token_for_tenant,
+    find_comment, find_comment_reply, find_share_link,
+};
 use crate::constants::*;
 use crate::dto::*;
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, map_download_token_error,
     map_object_store_route_error, map_service_error, not_found_problem, problem,
-    service_error_kind, unique_node_insert_conflict_target, ProblemDetail,
+    service_error_kind, status_error_kind, unique_node_insert_conflict_target, ProblemDetail,
 };
 use crate::handlers::*;
 use crate::hashing::{sha256_hex, sha256_raw_hex, sha256_raw_hex_separated};
 use crate::ids::next_drive_id;
 use crate::mappers::*;
-use crate::metadata_repository::{find_label, find_node_label, find_node_property};
+use crate::metadata_repository::{find_label, find_node_label, find_node_property, present_drive_node, present_node_list};
 use crate::node_repository::{collect_node_subtree, find_active_node, find_node};
 use crate::object_store::{
     build_download_service, build_s3_object_store_for_provider,
@@ -41,6 +45,8 @@ use axum::routing::{get, post, put};
 use axum::Extension;
 use axum::{Json, Router};
 use sdkwork_drive_config::DatabaseConfig;
+use sdkwork_drive_config::TenantQuotaPolicy;
+use sdkwork_drive_contract::drive::domain_events as drive_events;
 use sdkwork_drive_observability::{elapsed_ms, error_kinds, events, has_value, start_timer};
 use sdkwork_drive_security::DriveAuthValidationPolicy;
 use sdkwork_drive_storage_contract::{
@@ -48,8 +54,9 @@ use sdkwork_drive_storage_contract::{
     CreateMultipartUploadRequest, DriveObjectLocator, DriveObjectStore, PutObjectRequest,
 };
 use sdkwork_drive_workspace_service::application::download_service::{
-    CreateDownloadUrlCommand, ResolveDownloadTokenCommand,
+    parse_download_token_for_tenant, CreateDownloadUrlCommand, ResolveDownloadTokenCommand,
 };
+use sdkwork_drive_workspace_service::application::permission_service::SqlDrivePermissionService;
 use sdkwork_drive_workspace_service::application::quota_enforcement::ensure_tenant_can_allocate_bytes;
 use sdkwork_drive_workspace_service::application::quota_service::{
     DriveQuotaService, GetTenantQuotaSummaryCommand,
@@ -63,28 +70,37 @@ use sdkwork_drive_workspace_service::application::storage_key_service::{
 use sdkwork_drive_workspace_service::application::upload_service::{
     CreateUploadSessionCommand, DriveUploadService,
 };
-use sdkwork_drive_workspace_service::application::uploader_service::{
+use sdkwork_drive_uploader_service::service::{
     DriveUploaderService, MarkUploaderPartUploadedCommand, UploaderTarget,
 };
 use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
 use sdkwork_drive_workspace_service::domain::upload::DriveUploadSessionState;
 use sdkwork_drive_workspace_service::domain::uploader::{content_type_group_for, DriveUploadItem};
 use sdkwork_drive_workspace_service::drive_share_token_hash;
+use sdkwork_drive_workspace_service::{
+    drive_share_access_code_hash, validate_share_link_access_code,
+};
+use sdkwork_drive_workspace_service::generate_share_link_token;
+use sdkwork_drive_workspace_service::infrastructure::change_recorder::{
+    self, RecordDriveChangeCommand,
+};
 use sdkwork_drive_workspace_service::infrastructure::outbox_dispatch::spawn_pending_outbox_dispatch;
 use sdkwork_drive_workspace_service::infrastructure::sql::connect_any_database_and_install_schema;
-use sdkwork_drive_workspace_service::infrastructure::sql::next_drive_runtime_id;
 use sdkwork_drive_workspace_service::infrastructure::sql::node_head_metadata::{
-    apply_file_node_head_snapshot_in_transaction,
-    file_extension_from_name, FileNodeHeadSnapshot,
+    apply_file_node_head_snapshot_in_transaction, file_extension_from_name, FileNodeHeadSnapshot,
 };
 use sdkwork_drive_workspace_service::infrastructure::sql::quota_store::SqlQuotaStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::upload_query_columns::DRIVE_UPLOAD_ITEM_SELECT_COLUMNS;
 use sdkwork_drive_workspace_service::infrastructure::sql::upload_session_store::SqlUploadSessionStore;
-use sdkwork_drive_workspace_service::infrastructure::sql::uploader_store::SqlUploaderStore;
+use sdkwork_drive_uploader_service::service::SqlUploaderStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::{
     NODE_API_SELECT_COLUMNS, NODE_API_SELECT_JOIN_COLUMNS,
 };
+use sdkwork_drive_workspace_service::ports::permission_store::{
+    GrantDriveNodePermissionCommand, ResolveEffectiveNodeAccessCommand,
+};
+use sdkwork_drive_workspace_service::DriveServiceError;
 use serde_json::json;
 use sqlx::any::AnyPoolOptions;
 use sqlx::AnyConnection;
@@ -102,10 +118,7 @@ pub fn build_router() -> Router {
 }
 
 pub fn build_router_with_pool(pool: AnyPool) -> Router {
-    build_router_with_pool_and_iam_policy(
-        pool,
-        DriveAuthValidationPolicy::allow_unsigned_for_development(),
-    )
+    build_router_with_pool_and_iam_policy(pool, DriveAuthValidationPolicy::default())
 }
 
 pub fn build_router_with_pool_and_iam(pool: AnyPool) -> Router {
@@ -195,6 +208,10 @@ fn build_router_with_state(state: AppState, require_iam: bool) -> Router {
             get(create_node_download_url),
         )
         .route(
+            "/app/v3/api/drive/nodes/{node_id}/download_grants",
+            post(create_node_download_grant),
+        )
+        .route(
             "/app/v3/api/drive/nodes/{node_id}/capabilities",
             get(get_node_capabilities),
         )
@@ -276,6 +293,10 @@ fn build_router_with_state(state: AppState, require_iam: bool) -> Router {
         .route(
             "/app/v3/api/drive/nodes/{node_id}/share_links",
             get(list_share_links).post(create_share_link),
+        )
+        .route(
+            "/app/v3/api/drive/share_links/{token}/claim",
+            post(claim_share_link),
         )
         .route(
             "/app/v3/api/drive/share_links/{share_link_id}",
@@ -363,8 +384,14 @@ fn build_router_with_state(state: AppState, require_iam: bool) -> Router {
         );
 
     let forbidden_asset_routes = Router::new()
-        .route("/app/v3/api/assets/upload", post(asset_upload_not_implemented))
-        .route("/app/v3/api/assets/presign", post(asset_upload_not_implemented))
+        .route(
+            "/app/v3/api/assets/upload",
+            post(asset_upload_not_implemented),
+        )
+        .route(
+            "/app/v3/api/assets/presign",
+            post(asset_upload_not_implemented),
+        )
         .route(
             "/app/v3/api/assets/upload_sessions",
             post(asset_upload_not_implemented),
@@ -372,9 +399,16 @@ fn build_router_with_state(state: AppState, require_iam: bool) -> Router {
 
     let mut router = Router::new()
         .route("/healthz", get(health))
+        .route("/readyz", get(ready))
         .route("/metrics", get(metrics))
-        .merge(drive_routes)
-        .merge(forbidden_asset_routes)
+        .merge(
+            drive_routes
+                .merge(forbidden_asset_routes)
+                .route_layer(middleware::from_fn(crate::rate_limit::app_api_rate_limit)),
+        )
+        .layer(middleware::from_fn(
+            sdkwork_drive_http::problem_correlation::problem_correlation_middleware,
+        ))
         .layer(middleware::from_fn(
             sdkwork_drive_http::metrics::record_request_metrics,
         ))
@@ -417,13 +451,28 @@ async fn list_spaces(
     let listed = service
         .list_spaces(
             sdkwork_drive_workspace_service::application::space_service::ListSpacesCommand {
-                tenant_id,
+                tenant_id: tenant_id.clone(),
                 owner_subject_type: query.owner_subject_type,
                 owner_subject_id: query.owner_subject_id,
             },
         )
         .await
         .map_err(map_service_error)?;
+    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let mut accessible = Vec::new();
+    for space in listed {
+        if acl::space_is_accessible_to_subject(
+            &state.pool,
+            &tenant_id,
+            &space.id,
+            &subject_type,
+            &subject_id,
+        )
+        .await?
+        {
+            accessible.push(space);
+        }
+    }
     let latency_ms = elapsed_ms(started);
     sdkwork_drive_observability::observe_route!(
         event = events::APP_SPACES_LIST,
@@ -431,11 +480,11 @@ async fn list_spaces(
         latency_ms = latency_ms,
         filter_has_owner_subject_type = filter_has_owner_subject_type,
         filter_has_owner_subject_id = filter_has_owner_subject_id,
-        returned_items = listed.len() as u64
+        returned_items = accessible.len() as u64
     );
 
     Ok(Json(ListSpacesResponse {
-        items: listed.into_iter().map(map_space_response).collect(),
+        items: accessible.into_iter().map(map_space_response).collect(),
     }))
 }
 
@@ -466,7 +515,19 @@ async fn create_space(
 
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
     let tenant_id = ctx.resolve_tenant_id()?;
+    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    ensure_create_space_owner_matches_caller(
+        &space_type,
+        payload.id.trim(),
+        &subject_type,
+        &subject_id,
+        payload.owner_subject_type.trim(),
+        payload.owner_subject_id.trim(),
+        ctx.organization_id.as_deref(),
+    )?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let tenant_id_for_bootstrap = tenant_id.clone();
+    let operator_id_for_bootstrap = operator_id.clone();
     let created_result = service
         .create_space(CreateSpaceCommand {
             id: payload.id,
@@ -503,6 +564,27 @@ async fn create_space(
         version = created.version
     );
 
+    record_change(
+        &state.pool,
+        &created.tenant_id,
+        &created.id,
+        None,
+        drive_events::space::CREATED,
+        &operator_id_for_bootstrap,
+    )
+    .await?;
+
+    if created.space_type == DriveSpaceType::Team {
+        bootstrap_team_space_creator_access(
+            &state.pool,
+            &tenant_id_for_bootstrap,
+            &created.id,
+            &operator_id_for_bootstrap,
+            &created.display_name,
+        )
+        .await?;
+    }
+
     Ok((StatusCode::CREATED, Json(map_space_response(created))))
 }
 
@@ -525,6 +607,17 @@ async fn get_space(
             return Err(error);
         }
     };
+    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
+    acl::ensure_subject_space_scoped_reader(
+        &state.pool,
+        &tenant_id,
+        &space_id,
+        None,
+        &subject_type,
+        &subject_id,
+    )
+    .await?;
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
     let found = match service
         .get_space(GetSpaceCommand {
@@ -580,6 +673,8 @@ async fn update_space(
         }
     };
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
+    acl::ensure_parent_writer(&state.pool, &ctx, &space_id, None).await?;
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
     let updated = match service
         .update_space(UpdateSpaceCommand {
@@ -610,7 +705,7 @@ async fn update_space(
         &tenant_id,
         &space_id,
         None,
-        "space.updated",
+        drive_events::space::UPDATED,
         &operator_id,
     )
     .await?;
@@ -648,6 +743,8 @@ async fn delete_space(
         }
     };
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
+    acl::ensure_space_owner(&state.pool, &ctx, &space_id).await?;
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
     let deleted = match service
         .delete_space(DeleteSpaceCommand {
@@ -676,7 +773,7 @@ async fn delete_space(
         &tenant_id,
         &space_id,
         None,
-        "space.deleted",
+        drive_events::space::DELETED,
         &operator_id,
     )
     .await?;
@@ -773,7 +870,7 @@ async fn create_upload_session(
             storage_provider_id: storage_target.provider_id,
             storage_upload_id: Some(created_storage_upload.upload_id),
             idempotency_key: idempotency_key.to_string(),
-            operator_id,
+            operator_id: operator_id.clone(),
             expires_at_epoch_ms: payload.expires_at_epoch_ms,
         })
         .await;
@@ -790,15 +887,25 @@ async fn create_upload_session(
         }
     };
     let latency_ms = elapsed_ms(started);
-    let state = upload_session_state_as_str(&created.state);
+    let session_state = upload_session_state_as_str(&created.state);
     sdkwork_drive_observability::observe_route!(
         event = events::APP_UPLOAD_SESSIONS_CREATE,
         result = "ok",
         latency_ms = latency_ms,
-        state = state,
+        state = session_state,
         expires_at_epoch_ms = created.expires_at_epoch_ms,
         version = created.version
     );
+
+    record_change(
+        &state.pool,
+        &created.tenant_id,
+        &created.space_id,
+        Some(&created.node_id),
+        drive_events::upload_session::CREATED,
+        &operator_id,
+    )
+    .await?;
 
     Ok((
         StatusCode::CREATED,
@@ -812,7 +919,7 @@ async fn create_upload_session(
             idempotency_key: created.idempotency_key,
             storage_provider_id: created.storage_provider_id,
             storage_upload_id: created.storage_upload_id,
-            state: state.to_string(),
+            state: session_state.to_string(),
             expires_at_epoch_ms: created.expires_at_epoch_ms,
             version: created.version,
         }),
@@ -843,10 +950,11 @@ async fn prepare_uploader_upload(
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<PrepareUploaderUploadRequest>,
 ) -> Result<(StatusCode, Json<PrepareUploaderUploadResponse>), (StatusCode, Json<ProblemDetail>)> {
+    let started = start_timer();
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
 
-    let command = prepare_uploader_command(payload, &ctx, tenant_id, operator_id)?;
+    let command = prepare_uploader_command(payload, &ctx, tenant_id, operator_id.clone())?;
     if let UploaderTarget::Space {
         space_id,
         parent_node_id,
@@ -854,13 +962,8 @@ async fn prepare_uploader_upload(
     } = &command.target
     {
         if share_token.is_none() {
-            acl::ensure_parent_writer(
-                &state.pool,
-                &ctx,
-                space_id,
-                parent_node_id.as_deref(),
-            )
-            .await?;
+            acl::ensure_parent_writer(&state.pool, &ctx, space_id, parent_node_id.as_deref())
+                .await?;
         }
     }
     ensure_tenant_can_allocate_bytes(
@@ -925,6 +1028,24 @@ async fn prepare_uploader_upload(
             .await?
             .ok_or_else(|| internal_problem("uploader upload item was not found after prepare"))?;
 
+    record_change(
+        &state.pool,
+        &upload_item.tenant_id,
+        &upload_item.space_id,
+        Some(&upload_item.node_id),
+        drive_events::uploader::UPLOAD_PREPARED,
+        &operator_id,
+    )
+    .await?;
+
+    sdkwork_drive_observability::observe_route!(
+        event = events::APP_UPLOADER_UPLOADS_PREPARE,
+        result = "ok",
+        latency_ms = elapsed_ms(started),
+        upload_item_id = upload_item.id.as_str(),
+        space_id = upload_item.space_id.as_str()
+    );
+
     Ok((
         StatusCode::CREATED,
         Json(PrepareUploaderUploadResponse {
@@ -940,6 +1061,7 @@ async fn mark_uploader_part_uploaded(
     Path((upload_item_id, part_no)): Path<(String, i64)>,
     Json(payload): Json<MarkUploaderPartUploadedRequest>,
 ) -> Result<Json<UploaderUploadPartResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let started = start_timer();
     let tenant_id = ctx.resolve_tenant_id()?;
     let upload_item = find_uploader_upload_item(&state.pool, &tenant_id, &upload_item_id)
         .await?
@@ -972,6 +1094,14 @@ async fn mark_uploader_part_uploaded(
         })
         .await
         .map_err(map_service_error)?;
+    sdkwork_drive_observability::metrics::record_uploader_part_uploaded();
+    sdkwork_drive_observability::observe_route!(
+        event = events::APP_UPLOADER_PART_MARK_UPLOADED,
+        result = "ok",
+        latency_ms = elapsed_ms(started),
+        upload_item_id = upload_item.id.as_str(),
+        part_no = part_no
+    );
     Ok(Json(UploaderUploadPartResponse::from(part)))
 }
 
@@ -992,62 +1122,114 @@ async fn list_nodes(
         parent_node_id.as_deref(),
     )
     .await?;
-    acl::ensure_list_parent_reader(
-        &state.pool,
-        &ctx,
-        &space_id,
-        parent_node_id.as_deref(),
-    )
-    .await?;
+    acl::ensure_list_parent_reader(&state.pool, &ctx, &space_id, parent_node_id.as_deref()).await?;
     let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
 
     let pool = state.pool.clone();
     let tenant_id_for_fetch = tenant_id.clone();
     let space_id_for_fetch = space_id.clone();
     let parent_node_id_for_fetch = parent_node_id.clone();
-    let (items, next_page_token) = acl::paginate_reader_visible_items(
+    let subject_type_for_fetch = subject_type.clone();
+    let subject_id_for_fetch = subject_id.clone();
+    let is_space_owner = acl::is_subject_space_owner(
         &state.pool,
         &tenant_id,
+        &space_id,
         &subject_type,
         &subject_id,
-        page,
-        move |scan_offset, batch_limit| {
-            let pool = pool.clone();
-            let tenant_id = tenant_id_for_fetch.clone();
-            let space_id = space_id_for_fetch.clone();
-            let parent_node_id = parent_node_id_for_fetch.clone();
-            async move {
-                let rows = sqlx::query(&format!(
-                    "SELECT {NODE_API_SELECT_COLUMNS}
-                     FROM dr_drive_node
-                     WHERE tenant_id=$1
-                       AND space_id=$2
-                       AND lifecycle_status='active'
-                       AND content_state='ready'
-                       AND ((parent_node_id IS NULL AND $3 IS NULL) OR parent_node_id = $3)
-                     ORDER BY node_type ASC, node_name ASC
-                     LIMIT $4 OFFSET $5",
-                ))
-                .bind(&tenant_id)
-                .bind(&space_id)
-                .bind(parent_node_id.as_deref())
-                .bind(batch_limit as i64)
-                .bind(scan_offset)
-                .fetch_all(&pool)
-                .await
-                .map_err(internal_sql_error("list dr_drive_node failed"))?;
-                Ok(rows)
-            }
-        },
-        map_node_row,
-        |item| (item.space_id.clone(), item.id.clone()),
     )
     .await?;
+    let reader_acl_predicate =
+        acl_sql::reader_inherited_permission_exists_sql("dr_drive_node", "$4", "$5");
 
-    Ok(Json(NodeListResponse {
-        items,
-        next_page_token,
-    }))
+    let (items, next_page_token, incomplete_page) = if is_space_owner {
+        let (items, next_page_token) = acl::paginate_offset_limited_items(
+            page,
+            move |scan_offset, batch_limit| {
+                let pool = pool.clone();
+                let tenant_id = tenant_id_for_fetch.clone();
+                let space_id = space_id_for_fetch.clone();
+                let parent_node_id = parent_node_id_for_fetch.clone();
+                async move {
+                    let rows = sqlx::query(&format!(
+                        "SELECT {NODE_API_SELECT_COLUMNS}
+                         FROM dr_drive_node
+                         WHERE tenant_id=$1
+                           AND space_id=$2
+                           AND lifecycle_status='active'
+                           AND content_state='ready'
+                           AND ((parent_node_id IS NULL AND $3 IS NULL) OR parent_node_id = $3)
+                         ORDER BY node_type ASC, node_name ASC
+                         LIMIT $4 OFFSET $5",
+                    ))
+                    .bind(&tenant_id)
+                    .bind(&space_id)
+                    .bind(parent_node_id.as_deref())
+                    .bind(batch_limit as i64)
+                    .bind(scan_offset)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(internal_sql_error("list dr_drive_node failed"))?;
+                    Ok(rows)
+                }
+            },
+            map_node_row,
+        )
+        .await?;
+        (items, next_page_token, false)
+    } else {
+        let (items, next_page_token) = acl::paginate_offset_limited_items(
+            page,
+            move |scan_offset, batch_limit| {
+                let pool = pool.clone();
+                let tenant_id = tenant_id_for_fetch.clone();
+                let space_id = space_id_for_fetch.clone();
+                let parent_node_id = parent_node_id_for_fetch.clone();
+                let subject_type = subject_type_for_fetch.clone();
+                let subject_id = subject_id_for_fetch.clone();
+                let reader_acl_predicate = reader_acl_predicate.clone();
+                async move {
+                    let rows = sqlx::query(&format!(
+                        "SELECT {NODE_API_SELECT_COLUMNS}
+                         FROM dr_drive_node
+                         WHERE tenant_id=$1
+                           AND space_id=$2
+                           AND lifecycle_status='active'
+                           AND content_state='ready'
+                           AND ((parent_node_id IS NULL AND $3 IS NULL) OR parent_node_id = $3)
+                           AND ({reader_acl_predicate})
+                         ORDER BY node_type ASC, node_name ASC
+                         LIMIT $6 OFFSET $7",
+                    ))
+                    .bind(&tenant_id)
+                    .bind(&space_id)
+                    .bind(parent_node_id.as_deref())
+                    .bind(&subject_type)
+                    .bind(&subject_id)
+                    .bind(batch_limit as i64)
+                    .bind(scan_offset)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(internal_sql_error("list dr_drive_node failed"))?;
+                    Ok(rows)
+                }
+            },
+            map_node_row,
+        )
+        .await?;
+        (items, next_page_token, false)
+    };
+
+    Ok(Json(
+        present_node_list(
+            &state.pool,
+            &tenant_id,
+            items,
+            next_page_token,
+            incomplete_page,
+        )
+        .await?,
+    ))
 }
 
 async fn create_folder(
@@ -1080,7 +1262,8 @@ async fn create_folder(
         .map(str::trim)
         .filter(|value| !value.is_empty());
     if let Some(parent_id) = parent_acl_node_id {
-        acl::ensure_ctx_node_role(&state.pool, &ctx, &payload.space_id, parent_id, "writer").await?;
+        acl::ensure_ctx_node_role(&state.pool, &ctx, &payload.space_id, parent_id, "writer")
+            .await?;
     } else {
         acl::ensure_parent_writer(&state.pool, &ctx, &payload.space_id, None).await?;
     }
@@ -1102,7 +1285,7 @@ async fn create_folder(
         Some(client_id) => {
             if let Ok(existing) = find_node(&state.pool, &tenant_id, client_id).await {
                 if folder_create_request_matches(&existing, &payload, node_name) {
-                    return Ok((StatusCode::CREATED, Json(existing)));
+                    return Ok((StatusCode::CREATED, Json(present_drive_node(&state.pool, &tenant_id, existing).await?)));
                 }
                 return Err(problem(
                     StatusCode::CONFLICT,
@@ -1158,12 +1341,12 @@ async fn create_folder(
         &tenant_id,
         &payload.space_id,
         Some(&node_id),
-        "node.folder_created",
+        drive_events::node::CREATED,
         &operator_id,
     )
     .await?;
 
-    let node = find_node(&state.pool, &tenant_id, &node_id).await?;
+    let node = present_drive_node(&state.pool, &tenant_id, find_node(&state.pool, &tenant_id, &node_id).await?).await?;
     Ok((StatusCode::CREATED, Json(node)))
 }
 
@@ -1239,7 +1422,8 @@ async fn create_file(
         .map(str::trim)
         .filter(|value| !value.is_empty())
     {
-        acl::ensure_ctx_node_role(&state.pool, &ctx, &payload.space_id, parent_id, "writer").await?;
+        acl::ensure_ctx_node_role(&state.pool, &ctx, &payload.space_id, parent_id, "writer")
+            .await?;
     } else {
         acl::ensure_parent_writer(&state.pool, &ctx, &payload.space_id, None).await?;
     }
@@ -1323,13 +1507,18 @@ async fn create_file(
         &tenant_id,
         &payload.space_id,
         Some(payload.id.trim()),
-        "node.file_created",
+        drive_events::node::CREATED,
         operator_id.as_str(),
     )
     .await?;
 
     let upload_session_state = upload_session_state_as_str(&created.state).to_string();
-    let node = find_node(&state.pool, &tenant_id, payload.id.trim()).await?;
+    let node = present_drive_node(
+        &state.pool,
+        &tenant_id,
+        find_node(&state.pool, &tenant_id, payload.id.trim()).await?,
+    )
+    .await?;
     Ok((
         StatusCode::CREATED,
         Json(CreateFileResponse {
@@ -1411,14 +1600,7 @@ async fn create_shortcut(
             "drive.validation.failed",
         ));
     }
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &target.space_id,
-        &target.id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &target.space_id, &target.id, "reader").await?;
     ensure_no_live_name_conflict(
         &state.pool,
         &tenant_id,
@@ -1462,14 +1644,21 @@ async fn create_shortcut(
         &tenant_id,
         &payload.space_id,
         Some(payload.id.trim()),
-        "node.shortcut.created",
+        drive_events::node::CREATED,
         operator_id.as_str(),
     )
     .await?;
 
     Ok((
         StatusCode::CREATED,
-        Json(find_node(&state.pool, &tenant_id, payload.id.trim()).await?),
+        Json(
+            present_drive_node(
+                &state.pool,
+                &tenant_id,
+                find_node(&state.pool, &tenant_id, payload.id.trim()).await?,
+            )
+            .await?,
+        ),
     ))
 }
 
@@ -1480,15 +1669,8 @@ async fn get_node(
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
-    Ok(Json(node))
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
+    Ok(Json(present_drive_node(&state.pool, &tenant_id, node).await?))
 }
 
 async fn get_node_path(
@@ -1498,14 +1680,7 @@ async fn get_node_path(
 ) -> Result<Json<NodePathResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let items = resolve_node_path(&state.pool, &tenant_id, &node_id).await?;
     let path_segments = items
         .iter()
@@ -1604,20 +1779,7 @@ async fn get_node_capabilities(
         }
     }
 
-    Ok(Json(build_node_capabilities_response(
-        NodeCapabilitiesInput {
-            tenant_id,
-            node_id,
-            subject_type,
-            subject_id,
-            role: "none".to_string(),
-            source: "none".to_string(),
-            permission_id: None,
-            inherited: false,
-            inherited_from_node_id: None,
-            node_lifecycle_status: &node.lifecycle_status,
-        },
-    )))
+    Err(not_found_problem("node not found"))
 }
 
 async fn list_archive_entries(
@@ -1627,14 +1789,7 @@ async fn list_archive_entries(
 ) -> Result<Json<ArchiveEntryListResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let archive_bytes = read_archive_node_bytes(&state, &tenant_id, &node_id).await?;
     let items = read_archive_entry_list(&archive_bytes)?;
     Ok(Json(ArchiveEntryListResponse { items }))
@@ -1649,14 +1804,7 @@ async fn extract_archive_entries(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let source_node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &source_node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &source_node.space_id, &node_id, "reader").await?;
     validate_archive_source_node(&source_node)?;
     let target_parent_node_id =
         normalize_optional_text(payload.target_parent_node_id).or(source_node.parent_node_id);
@@ -1735,14 +1883,7 @@ async fn list_node_properties(
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let visibility = match normalize_optional_text(query.visibility) {
         Some(value) => Some(validate_node_property_visibility(&value)?.to_string()),
         None => None,
@@ -1812,14 +1953,7 @@ async fn set_node_property(
     let property_value = require_non_empty_text(payload.value, "value")?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let property_id = build_node_property_id(&tenant_id, &node_id, &property_key, &visibility);
 
     sqlx::query(
@@ -1850,7 +1984,7 @@ async fn set_node_property(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "property.set",
+        drive_events::node_property::SET,
         &operator_id,
     )
     .await?;
@@ -1883,14 +2017,7 @@ async fn delete_node_property(
     .to_string();
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let affected = sqlx::query(
         "UPDATE dr_drive_node_property
          SET lifecycle_status='deleted',
@@ -1919,7 +2046,7 @@ async fn delete_node_property(
             &tenant_id,
             &node.space_id,
             Some(&node_id),
-            "property.deleted",
+            drive_events::node_property::DELETED,
             &operator_id,
         )
         .await?;
@@ -1939,14 +2066,7 @@ async fn list_node_labels(
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let label_key = match normalize_optional_text(query.label_key) {
         Some(label_key) => Some(validate_label_key(&label_key)?.to_string()),
         None => None,
@@ -2021,14 +2141,7 @@ async fn apply_node_label(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     find_label(&state.pool, &tenant_id, &label_id).await?;
     let node_label_id = build_node_label_id(&tenant_id, &node_id, &label_id);
 
@@ -2056,7 +2169,7 @@ async fn apply_node_label(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "label.applied",
+        drive_events::node_label::APPLIED,
         &operator_id,
     )
     .await?;
@@ -2074,14 +2187,7 @@ async fn remove_node_label(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let affected = sqlx::query(
         "UPDATE dr_drive_node_label
          SET lifecycle_status='deleted',
@@ -2107,7 +2213,7 @@ async fn remove_node_label(
             &tenant_id,
             &node.space_id,
             Some(&node_id),
-            "label.removed",
+            drive_events::node_label::REMOVED,
             &operator_id,
         )
         .await?;
@@ -2126,14 +2232,7 @@ async fn update_node(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let current = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &current.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &current.space_id, &node_id, "writer").await?;
     let next_name = payload
         .node_name
         .map(|value| value.trim().to_string())
@@ -2208,12 +2307,12 @@ async fn update_node(
         &tenant_id,
         &current.space_id,
         Some(&node_id),
-        "node.updated",
+        drive_events::node::UPDATED,
         &operator_id,
     )
     .await?;
 
-    Ok(Json(find_node(&state.pool, &tenant_id, &node_id).await?))
+    Ok(Json(present_drive_node(&state.pool, &tenant_id, find_node(&state.pool, &tenant_id, &node_id).await?).await?))
 }
 
 async fn move_node(
@@ -2225,14 +2324,7 @@ async fn move_node(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let current = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &current.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &current.space_id, &node_id, "writer").await?;
     let target_parent = normalize_optional_text(payload.target_parent_node_id);
 
     if target_parent.as_deref() == Some(node_id.as_str()) {
@@ -2305,11 +2397,11 @@ async fn move_node(
         &tenant_id,
         &current.space_id,
         Some(&node_id),
-        "node.moved",
+        drive_events::node::MOVED,
         &operator_id,
     )
     .await?;
-    Ok(Json(find_node(&state.pool, &tenant_id, &node_id).await?))
+    Ok(Json(present_drive_node(&state.pool, &tenant_id, find_node(&state.pool, &tenant_id, &node_id).await?).await?))
 }
 
 async fn copy_node(
@@ -2330,14 +2422,7 @@ async fn copy_node(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let source = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &source.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &source.space_id, &node_id, "reader").await?;
     let target_space_id = payload
         .target_space_id
         .map(|value| value.trim().to_string())
@@ -2429,14 +2514,21 @@ async fn copy_node(
         &tenant_id,
         &target_space_id,
         Some(payload.id.trim()),
-        "node.copied",
+        drive_events::node::COPIED,
         &operator_id,
     )
     .await?;
 
     Ok((
         StatusCode::CREATED,
-        Json(find_node(&state.pool, &tenant_id, payload.id.trim()).await?),
+        Json(
+            present_drive_node(
+                &state.pool,
+                &tenant_id,
+                find_node(&state.pool, &tenant_id, payload.id.trim()).await?,
+            )
+            .await?,
+        ),
     ))
 }
 
@@ -2449,14 +2541,7 @@ async fn delete_node(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let nodes_to_delete = collect_node_subtree(&state.pool, &tenant_id, &node).await?;
     let mut deleted_count = 0_u64;
 
@@ -2495,7 +2580,7 @@ async fn delete_node(
                 &tenant_id,
                 &node_to_delete.space_id,
                 Some(&node_to_delete.id),
-                "node.deleted",
+                drive_events::node::DELETED,
                 &operator_id,
             )
             .await?;
@@ -2506,6 +2591,62 @@ async fn delete_node(
     }))
 }
 
+async fn create_node_download_grant(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Path(node_id): Path<String>,
+    Json(payload): Json<CreateDownloadGrantRequest>,
+) -> Result<(StatusCode, Json<CreateDownloadUrlResponse>), (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
+    enforce_share_link_download_limit_for_subject(
+        &state.pool,
+        &tenant_id,
+        &node.space_id,
+        &node_id,
+        &ctx.subject_type,
+        &ctx.subject_id,
+    )
+    .await?;
+    let requested_ttl_seconds = validate_requested_ttl_seconds(
+        payload.requested_ttl_seconds,
+        120,
+        30,
+        300,
+        "requestedTtlSeconds",
+    )?;
+    let operator_id = ctx.resolve_operator_id(None)?;
+    let service = build_download_service(&state);
+    let result = service
+        .create_download_url(CreateDownloadUrlCommand {
+            tenant_id: tenant_id.clone(),
+            node_id: node_id.clone(),
+            requested_ttl_seconds,
+            request_base_url: state.download_public_base_url.clone(),
+        })
+        .await
+        .map_err(map_service_error)?;
+    record_change(
+        &state.pool,
+        &tenant_id,
+        &node.space_id,
+        Some(&node_id),
+        drive_events::download_grant::CREATED,
+        &operator_id,
+    )
+    .await?;
+    Ok((
+        StatusCode::CREATED,
+        Json(CreateDownloadUrlResponse {
+            download_url: result.download_url,
+            signed_source_url: result.signed_source_url,
+            expires_at_epoch_ms: result.expires_at_epoch_ms,
+            method: result.method,
+        }),
+    ))
+}
+
 async fn create_node_download_url(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
@@ -2514,12 +2655,14 @@ async fn create_node_download_url(
 ) -> Result<Json<CreateDownloadUrlResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
+    enforce_share_link_download_limit_for_subject(
         &state.pool,
-        &ctx,
+        &tenant_id,
         &node.space_id,
         &node_id,
-        "reader",
+        &ctx.subject_type,
+        &ctx.subject_id,
     )
     .await?;
     let requested_ttl_seconds = validate_requested_ttl_seconds(
@@ -2553,7 +2696,7 @@ async fn trash_node(
     Path(node_id): Path<String>,
     Json(payload): Json<NodeCommandRequest>,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    set_node_lifecycle(state, &ctx, node_id, payload, "trashed", "node.trashed").await
+    set_node_lifecycle(state, &ctx, node_id, payload, "trashed", drive_events::node::TRASHED).await
 }
 
 async fn restore_trashed_node(
@@ -2562,7 +2705,7 @@ async fn restore_trashed_node(
     Path(node_id): Path<String>,
     Json(payload): Json<NodeCommandRequest>,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    set_node_lifecycle(state, &ctx, node_id, payload, "active", "node.restored").await
+    set_node_lifecycle(state, &ctx, node_id, payload, "active", drive_events::node::RESTORED).await
 }
 
 async fn list_trashed_nodes(
@@ -2577,55 +2720,221 @@ async fn list_trashed_nodes(
     let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
     if let Some(space_id) = space_id.as_deref() {
         validate_space_exists(&state.pool, &tenant_id, space_id).await?;
-        acl::ensure_list_parent_reader(
-            &state.pool,
-            &ctx,
-            space_id,
-            parent_node_id.as_deref(),
-        )
-        .await?;
+        acl::ensure_list_parent_reader(&state.pool, &ctx, space_id, parent_node_id.as_deref())
+            .await?;
     }
     if let Some(parent_node_id) = parent_node_id.as_deref() {
         let node = find_node(&state.pool, &tenant_id, parent_node_id).await?;
-        acl::ensure_ctx_node_role(
-            &state.pool,
-            &ctx,
-            &node.space_id,
-            parent_node_id,
-            "reader",
-        )
-        .await?;
+        acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, parent_node_id, "reader")
+            .await?;
     }
     let pool = state.pool.clone();
     let tenant_id_for_fetch = tenant_id.clone();
     let space_id_for_fetch = space_id.clone();
     let parent_node_id_for_fetch = parent_node_id.clone();
-    let (items, next_page_token) = acl::paginate_reader_visible_items(
-        &state.pool,
-        &tenant_id,
-        &subject_type,
-        &subject_id,
-        page,
-        move |scan_offset, batch_limit| {
-            let pool = pool.clone();
-            let tenant_id = tenant_id_for_fetch.clone();
-            let space_id = space_id_for_fetch.clone();
-            let parent_node_id = parent_node_id_for_fetch.clone();
-            async move {
-                let rows = if let Some(space_id) = space_id.as_deref() {
-                    if let Some(parent_node_id) = parent_node_id.as_deref() {
-                        sqlx::query(&format!(
+    let subject_type_for_fetch = subject_type.clone();
+    let subject_id_for_fetch = subject_id.clone();
+
+    let (items, next_page_token, incomplete_page) = if let Some(space_id) = space_id.clone() {
+        let is_space_owner = acl::is_subject_space_owner(
+            &state.pool,
+            &tenant_id,
+            &space_id,
+            &subject_type,
+            &subject_id,
+        )
+        .await?;
+        let reader_acl_predicate = acl_sql::reader_inherited_permission_exists_sql(
+            "dr_drive_node",
+            if parent_node_id.is_some() { "$4" } else { "$3" },
+            if parent_node_id.is_some() { "$5" } else { "$4" },
+        );
+        let (items, next_page_token) = if is_space_owner {
+            acl::paginate_offset_limited_items(
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let space_id = space_id.clone();
+                    let parent_node_id = parent_node_id_for_fetch.clone();
+                    async move {
+                        let rows = if let Some(parent_node_id) = parent_node_id.as_deref() {
+                            sqlx::query(&format!(
+                                "SELECT {NODE_API_SELECT_COLUMNS}
+                                 FROM dr_drive_node
+                                 WHERE tenant_id=$1
+                                   AND space_id=$2
+                                   AND lifecycle_status='trashed'
+                                   AND parent_node_id=$3
+                                 ORDER BY updated_at DESC, id ASC
+                                 LIMIT $4 OFFSET $5",
+                            ))
+                            .bind(&tenant_id)
+                            .bind(&space_id)
+                            .bind(parent_node_id)
+                            .bind(batch_limit as i64)
+                            .bind(scan_offset)
+                            .fetch_all(&pool)
+                            .await
+                        } else {
+                            sqlx::query(&format!(
+                                "SELECT {NODE_API_SELECT_COLUMNS}
+                                 FROM dr_drive_node
+                                 WHERE tenant_id=$1
+                                   AND space_id=$2
+                                   AND lifecycle_status='trashed'
+                                 ORDER BY updated_at DESC, id ASC
+                                 LIMIT $3 OFFSET $4",
+                            ))
+                            .bind(&tenant_id)
+                            .bind(&space_id)
+                            .bind(batch_limit as i64)
+                            .bind(scan_offset)
+                            .fetch_all(&pool)
+                            .await
+                        }
+                        .map_err(internal_sql_error("list trashed dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+            )
+            .await?
+        } else if let Some(parent_node_id) = parent_node_id_for_fetch.clone() {
+            acl::paginate_offset_limited_items(
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let space_id = space_id.clone();
+                    let parent_node_id = parent_node_id.clone();
+                    let subject_type = subject_type_for_fetch.clone();
+                    let subject_id = subject_id_for_fetch.clone();
+                    let reader_acl_predicate = reader_acl_predicate.clone();
+                    async move {
+                        let rows = sqlx::query(&format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                              FROM dr_drive_node
                              WHERE tenant_id=$1
                                AND space_id=$2
                                AND lifecycle_status='trashed'
                                AND parent_node_id=$3
+                               AND ({reader_acl_predicate})
                              ORDER BY updated_at DESC, id ASC
-                             LIMIT $4 OFFSET $5",
+                             LIMIT $6 OFFSET $7",
                         ))
                         .bind(&tenant_id)
-                        .bind(space_id)
+                        .bind(&space_id)
+                        .bind(parent_node_id)
+                        .bind(&subject_type)
+                        .bind(&subject_id)
+                        .bind(batch_limit as i64)
+                        .bind(scan_offset)
+                        .fetch_all(&pool)
+                        .await
+                        .map_err(internal_sql_error("list trashed dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+            )
+            .await?
+        } else {
+            acl::paginate_offset_limited_items(
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let space_id = space_id.clone();
+                    let subject_type = subject_type_for_fetch.clone();
+                    let subject_id = subject_id_for_fetch.clone();
+                    let reader_acl_predicate = reader_acl_predicate.clone();
+                    async move {
+                        let rows = sqlx::query(&format!(
+                            "SELECT {NODE_API_SELECT_COLUMNS}
+                             FROM dr_drive_node
+                             WHERE tenant_id=$1
+                               AND space_id=$2
+                               AND lifecycle_status='trashed'
+                               AND ({reader_acl_predicate})
+                             ORDER BY updated_at DESC, id ASC
+                             LIMIT $5 OFFSET $6",
+                        ))
+                        .bind(&tenant_id)
+                        .bind(&space_id)
+                        .bind(&subject_type)
+                        .bind(&subject_id)
+                        .bind(batch_limit as i64)
+                        .bind(scan_offset)
+                        .fetch_all(&pool)
+                        .await
+                        .map_err(internal_sql_error("list trashed dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+            )
+            .await?
+        };
+        (items, next_page_token, false)
+    } else {
+        acl::paginate_reader_visible_items(
+            &state.pool,
+            &tenant_id,
+            &subject_type,
+            &subject_id,
+            page,
+            move |scan_offset, batch_limit| {
+                let pool = pool.clone();
+                let tenant_id = tenant_id_for_fetch.clone();
+                let space_id = space_id_for_fetch.clone();
+                let parent_node_id = parent_node_id_for_fetch.clone();
+                async move {
+                    let rows = if let Some(space_id) = space_id.as_deref() {
+                        if let Some(parent_node_id) = parent_node_id.as_deref() {
+                            sqlx::query(&format!(
+                                "SELECT {NODE_API_SELECT_COLUMNS}
+                                 FROM dr_drive_node
+                                 WHERE tenant_id=$1
+                                   AND space_id=$2
+                                   AND lifecycle_status='trashed'
+                                   AND parent_node_id=$3
+                                 ORDER BY updated_at DESC, id ASC
+                                 LIMIT $4 OFFSET $5",
+                            ))
+                            .bind(&tenant_id)
+                            .bind(space_id)
+                            .bind(parent_node_id)
+                            .bind(batch_limit as i64)
+                            .bind(scan_offset)
+                            .fetch_all(&pool)
+                            .await
+                        } else {
+                            sqlx::query(&format!(
+                                "SELECT {NODE_API_SELECT_COLUMNS}
+                                 FROM dr_drive_node
+                                 WHERE tenant_id=$1 AND space_id=$2 AND lifecycle_status='trashed'
+                                 ORDER BY updated_at DESC, id ASC
+                                 LIMIT $3 OFFSET $4",
+                            ))
+                            .bind(&tenant_id)
+                            .bind(space_id)
+                            .bind(batch_limit as i64)
+                            .bind(scan_offset)
+                            .fetch_all(&pool)
+                            .await
+                        }
+                    } else if let Some(parent_node_id) = parent_node_id.as_deref() {
+                        sqlx::query(&format!(
+                            "SELECT {NODE_API_SELECT_COLUMNS}
+                             FROM dr_drive_node
+                             WHERE tenant_id=$1
+                               AND lifecycle_status='trashed'
+                               AND parent_node_id=$2
+                             ORDER BY updated_at DESC, id ASC
+                             LIMIT $3 OFFSET $4",
+                        ))
+                        .bind(&tenant_id)
                         .bind(parent_node_id)
                         .bind(batch_limit as i64)
                         .bind(scan_offset)
@@ -2635,60 +2944,36 @@ async fn list_trashed_nodes(
                         sqlx::query(&format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                              FROM dr_drive_node
-                             WHERE tenant_id=$1 AND space_id=$2 AND lifecycle_status='trashed'
+                             WHERE tenant_id=$1 AND lifecycle_status='trashed'
                              ORDER BY updated_at DESC, id ASC
-                             LIMIT $3 OFFSET $4",
+                             LIMIT $2 OFFSET $3",
                         ))
                         .bind(&tenant_id)
-                        .bind(space_id)
                         .bind(batch_limit as i64)
                         .bind(scan_offset)
                         .fetch_all(&pool)
                         .await
                     }
-                } else if let Some(parent_node_id) = parent_node_id.as_deref() {
-                    sqlx::query(&format!(
-                        "SELECT {NODE_API_SELECT_COLUMNS}
-                         FROM dr_drive_node
-                         WHERE tenant_id=$1
-                           AND lifecycle_status='trashed'
-                           AND parent_node_id=$2
-                         ORDER BY updated_at DESC, id ASC
-                         LIMIT $3 OFFSET $4",
-                    ))
-                    .bind(&tenant_id)
-                    .bind(parent_node_id)
-                    .bind(batch_limit as i64)
-                    .bind(scan_offset)
-                    .fetch_all(&pool)
-                    .await
-                } else {
-                    sqlx::query(&format!(
-                        "SELECT {NODE_API_SELECT_COLUMNS}
-                         FROM dr_drive_node
-                         WHERE tenant_id=$1 AND lifecycle_status='trashed'
-                         ORDER BY updated_at DESC, id ASC
-                         LIMIT $2 OFFSET $3",
-                    ))
-                    .bind(&tenant_id)
-                    .bind(batch_limit as i64)
-                    .bind(scan_offset)
-                    .fetch_all(&pool)
-                    .await
+                    .map_err(internal_sql_error("list trashed dr_drive_node failed"))?;
+                    Ok(rows)
                 }
-                .map_err(internal_sql_error("list trashed dr_drive_node failed"))?;
-                Ok(rows)
-            }
-        },
-        map_node_row,
-        |item| (item.space_id.clone(), item.id.clone()),
-    )
-    .await?;
+            },
+            map_node_row,
+            |item| (item.space_id.clone(), item.id.clone()),
+        )
+        .await?
+    };
 
-    Ok(Json(NodeListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(Json(
+        present_node_list(
+            &state.pool,
+            &tenant_id,
+            items,
+            next_page_token,
+            incomplete_page,
+        )
+        .await?,
+    ))
 }
 
 async fn list_recent_nodes(
@@ -2706,37 +2991,102 @@ async fn list_recent_nodes(
     }
     let pool = state.pool.clone();
     let tenant_id_for_fetch = tenant_id.clone();
-    let space_id_for_fetch = space_id.clone();
-    let (items, next_page_token) = acl::paginate_reader_visible_items(
-        &state.pool,
-        &tenant_id,
-        &subject_type,
-        &subject_id,
-        page,
-        move |scan_offset, batch_limit| {
-            let pool = pool.clone();
-            let tenant_id = tenant_id_for_fetch.clone();
-            let space_id = space_id_for_fetch.clone();
-            async move {
-                let rows = if let Some(space_id) = space_id.as_deref() {
-                    sqlx::query(&format!(
-                        "SELECT {NODE_API_SELECT_COLUMNS}
-                         FROM dr_drive_node
-                         WHERE tenant_id=$1
-                           AND space_id=$2
-                           AND lifecycle_status='active'
-                           AND content_state='ready'
-                         ORDER BY updated_at DESC, id ASC
-                         LIMIT $3 OFFSET $4",
-                    ))
-                    .bind(&tenant_id)
-                    .bind(space_id)
-                    .bind(batch_limit as i64)
-                    .bind(scan_offset)
-                    .fetch_all(&pool)
-                    .await
-                } else {
-                    sqlx::query(&format!(
+    let subject_type_for_fetch = subject_type.clone();
+    let subject_id_for_fetch = subject_id.clone();
+
+    let (items, next_page_token, incomplete_page) = if let Some(space_id) = space_id.clone() {
+        let is_space_owner = acl::is_subject_space_owner(
+            &state.pool,
+            &tenant_id,
+            &space_id,
+            &subject_type,
+            &subject_id,
+        )
+        .await?;
+        let reader_acl_predicate =
+            acl_sql::reader_inherited_permission_exists_sql("dr_drive_node", "$3", "$4");
+        let (items, next_page_token) = if is_space_owner {
+            acl::paginate_offset_limited_items(
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let space_id = space_id.clone();
+                    async move {
+                        let rows = sqlx::query(&format!(
+                            "SELECT {NODE_API_SELECT_COLUMNS}
+                             FROM dr_drive_node
+                             WHERE tenant_id=$1
+                               AND space_id=$2
+                               AND lifecycle_status='active'
+                               AND content_state='ready'
+                             ORDER BY updated_at DESC, id ASC
+                             LIMIT $3 OFFSET $4",
+                        ))
+                        .bind(&tenant_id)
+                        .bind(&space_id)
+                        .bind(batch_limit as i64)
+                        .bind(scan_offset)
+                        .fetch_all(&pool)
+                        .await
+                        .map_err(internal_sql_error("list recent dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+            )
+            .await?
+        } else {
+            acl::paginate_offset_limited_items(
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let space_id = space_id.clone();
+                    let subject_type = subject_type_for_fetch.clone();
+                    let subject_id = subject_id_for_fetch.clone();
+                    let reader_acl_predicate = reader_acl_predicate.clone();
+                    async move {
+                        let rows = sqlx::query(&format!(
+                            "SELECT {NODE_API_SELECT_COLUMNS}
+                             FROM dr_drive_node
+                             WHERE tenant_id=$1
+                               AND space_id=$2
+                               AND lifecycle_status='active'
+                               AND content_state='ready'
+                               AND ({reader_acl_predicate})
+                             ORDER BY updated_at DESC, id ASC
+                             LIMIT $5 OFFSET $6",
+                        ))
+                        .bind(&tenant_id)
+                        .bind(&space_id)
+                        .bind(&subject_type)
+                        .bind(&subject_id)
+                        .bind(batch_limit as i64)
+                        .bind(scan_offset)
+                        .fetch_all(&pool)
+                        .await
+                        .map_err(internal_sql_error("list recent dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+            )
+            .await?
+        };
+        (items, next_page_token, false)
+    } else {
+        acl::paginate_reader_visible_items(
+            &state.pool,
+            &tenant_id,
+            &subject_type,
+            &subject_id,
+            page,
+            move |scan_offset, batch_limit| {
+                let pool = pool.clone();
+                let tenant_id = tenant_id_for_fetch.clone();
+                async move {
+                    let rows = sqlx::query(&format!(
                         "SELECT {NODE_API_SELECT_COLUMNS}
                          FROM dr_drive_node
                          WHERE tenant_id=$1
@@ -2750,20 +3100,26 @@ async fn list_recent_nodes(
                     .bind(scan_offset)
                     .fetch_all(&pool)
                     .await
+                    .map_err(internal_sql_error("list recent dr_drive_node failed"))?;
+                    Ok(rows)
                 }
-                .map_err(internal_sql_error("list recent dr_drive_node failed"))?;
-                Ok(rows)
-            }
-        },
-        map_node_row,
-        |item| (item.space_id.clone(), item.id.clone()),
-    )
-    .await?;
+            },
+            map_node_row,
+            |item| (item.space_id.clone(), item.id.clone()),
+        )
+        .await?
+    };
 
-    Ok(Json(NodeListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(Json(
+        present_node_list(
+            &state.pool,
+            &tenant_id,
+            items,
+            next_page_token,
+            incomplete_page,
+        )
+        .await?,
+    ))
 }
 
 async fn list_shared_with_me(
@@ -2777,109 +3133,120 @@ async fn list_shared_with_me(
     let space_id = normalize_optional_text(query.space_id);
     if let Some(space_id) = space_id.as_deref() {
         validate_space_exists(&state.pool, &tenant_id, space_id).await?;
+        acl::ensure_subject_space_scoped_reader(
+            &state.pool,
+            &tenant_id,
+            space_id,
+            None,
+            &subject_type,
+            &subject_id,
+        )
+        .await?;
     }
     let pool = state.pool.clone();
     let tenant_id_for_fetch = tenant_id.clone();
-    let space_id_for_fetch = space_id.clone();
     let subject_type_for_fetch = subject_type.clone();
     let subject_id_for_fetch = subject_id.clone();
-    let (items, next_page_token) = acl::paginate_reader_visible_items(
-        &state.pool,
-        &tenant_id,
-        &subject_type,
-        &subject_id,
-        page,
-        move |scan_offset, batch_limit| {
-            let pool = pool.clone();
-            let tenant_id = tenant_id_for_fetch.clone();
-            let space_id = space_id_for_fetch.clone();
-            let subject_type = subject_type_for_fetch.clone();
-            let subject_id = subject_id_for_fetch.clone();
-            async move {
-                let rows = if let Some(space_id) = space_id.as_deref() {
-                    sqlx::query(&format!(
+    let now_epoch_ms = current_epoch_ms();
+
+    if let Some(space_id) = space_id.clone() {
+        if acl::is_subject_space_owner(
+            &state.pool,
+            &tenant_id,
+            &space_id,
+            &subject_type,
+            &subject_id,
+        )
+        .await?
+        {
+            return Ok(Json(
+                present_node_list(&state.pool, &tenant_id, Vec::new(), None, false).await?,
+            ));
+        }
+    }
+
+    let shared_with_me_predicate_for_space =
+        acl_sql::shared_with_me_visible_sql("n", "$3", "$4", "$5");
+    let shared_with_me_predicate_for_tenant =
+        acl_sql::shared_with_me_visible_sql("n", "$2", "$3", "$4");
+    let (items, next_page_token) = if let Some(space_id) = space_id.clone() {
+        acl::paginate_offset_limited_items(
+            page,
+            move |scan_offset, batch_limit| {
+                let pool = pool.clone();
+                let tenant_id = tenant_id_for_fetch.clone();
+                let space_id = space_id.clone();
+                let subject_type = subject_type_for_fetch.clone();
+                let subject_id = subject_id_for_fetch.clone();
+                let shared_with_me_predicate = shared_with_me_predicate_for_space.clone();
+                async move {
+                    let rows = sqlx::query(&format!(
                         "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
                          FROM dr_drive_node n
                          WHERE n.tenant_id=$1
                            AND n.space_id=$2
                            AND n.lifecycle_status='active'
                            AND n.content_state='ready'
-                           AND EXISTS (
-                               SELECT 1
-                               FROM dr_drive_node_permission p
-                               WHERE p.tenant_id=n.tenant_id
-                                 AND p.node_id=n.id
-                                 AND p.lifecycle_status='active'
-                                 AND p.subject_type=$3
-                                 AND p.subject_id=$4
-                           )
-                           AND NOT EXISTS (
-                               SELECT 1
-                               FROM dr_drive_space s
-                               WHERE s.tenant_id=n.tenant_id
-                                 AND s.id=n.space_id
-                                 AND s.owner_subject_type=$3
-                                 AND s.owner_subject_id=$4
-                           )
+                           AND {shared_with_me_predicate}
                          ORDER BY n.updated_at DESC, n.id ASC
-                         LIMIT $5 OFFSET $6",
+                         LIMIT $6 OFFSET $7",
                     ))
                     .bind(&tenant_id)
-                    .bind(space_id)
+                    .bind(&space_id)
                     .bind(&subject_type)
                     .bind(&subject_id)
+                    .bind(now_epoch_ms)
                     .bind(batch_limit as i64)
                     .bind(scan_offset)
                     .fetch_all(&pool)
                     .await
-                } else {
-                    sqlx::query(&format!(
+                    .map_err(internal_sql_error("list shared dr_drive_node failed"))?;
+                    Ok(rows)
+                }
+            },
+            map_node_row,
+        )
+        .await?
+    } else {
+        acl::paginate_offset_limited_items(
+            page,
+            move |scan_offset, batch_limit| {
+                let pool = pool.clone();
+                let tenant_id = tenant_id_for_fetch.clone();
+                let subject_type = subject_type_for_fetch.clone();
+                let subject_id = subject_id_for_fetch.clone();
+                let shared_with_me_predicate = shared_with_me_predicate_for_tenant.clone();
+                async move {
+                    let rows = sqlx::query(&format!(
                         "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
                          FROM dr_drive_node n
                          WHERE n.tenant_id=$1
                            AND n.lifecycle_status='active'
                            AND n.content_state='ready'
-                           AND EXISTS (
-                               SELECT 1
-                               FROM dr_drive_node_permission p
-                               WHERE p.tenant_id=n.tenant_id
-                                 AND p.node_id=n.id
-                                 AND p.lifecycle_status='active'
-                                 AND p.subject_type=$2
-                                 AND p.subject_id=$3
-                           )
-                           AND NOT EXISTS (
-                               SELECT 1
-                               FROM dr_drive_space s
-                               WHERE s.tenant_id=n.tenant_id
-                                 AND s.id=n.space_id
-                                 AND s.owner_subject_type=$2
-                                 AND s.owner_subject_id=$3
-                           )
+                           AND {shared_with_me_predicate}
                          ORDER BY n.updated_at DESC, n.id ASC
-                         LIMIT $4 OFFSET $5",
+                         LIMIT $5 OFFSET $6",
                     ))
                     .bind(&tenant_id)
                     .bind(&subject_type)
                     .bind(&subject_id)
+                    .bind(now_epoch_ms)
                     .bind(batch_limit as i64)
                     .bind(scan_offset)
                     .fetch_all(&pool)
                     .await
+                    .map_err(internal_sql_error("list shared dr_drive_node failed"))?;
+                    Ok(rows)
                 }
-                .map_err(internal_sql_error("list shared dr_drive_node failed"))?;
-                Ok(rows)
-            }
-        },
-        map_node_row,
-        |item| (item.space_id.clone(), item.id.clone()),
-    )
-    .await?;
+            },
+            map_node_row,
+        )
+        .await?
+    };
 
-    Ok(Json(NodeListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(Json(
+        present_node_list(&state.pool, &tenant_id, items, next_page_token, false).await?,
+    ))
 }
 
 async fn list_favorite_nodes(
@@ -2893,52 +3260,131 @@ async fn list_favorite_nodes(
     let space_id = normalize_optional_text(query.space_id);
     if let Some(space_id) = space_id.as_deref() {
         validate_space_exists(&state.pool, &tenant_id, space_id).await?;
+        acl::ensure_subject_space_scoped_reader(
+            &state.pool,
+            &tenant_id,
+            space_id,
+            None,
+            &subject_type,
+            &subject_id,
+        )
+        .await?;
     }
     let pool = state.pool.clone();
     let tenant_id_for_fetch = tenant_id.clone();
-    let space_id_for_fetch = space_id.clone();
     let subject_type_for_fetch = subject_type.clone();
     let subject_id_for_fetch = subject_id.clone();
-    let (items, next_page_token) = acl::paginate_reader_visible_items(
-        &state.pool,
-        &tenant_id,
-        &subject_type,
-        &subject_id,
-        page,
-        move |scan_offset, batch_limit| {
-            let pool = pool.clone();
-            let tenant_id = tenant_id_for_fetch.clone();
-            let space_id = space_id_for_fetch.clone();
-            let subject_type = subject_type_for_fetch.clone();
-            let subject_id = subject_id_for_fetch.clone();
-            async move {
-                let rows = if let Some(space_id) = space_id.as_deref() {
-                    sqlx::query(&format!(
-                        "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
-                         FROM dr_drive_node_favorite f
-                         INNER JOIN dr_drive_node n
-                            ON n.tenant_id=f.tenant_id
-                           AND n.id=f.node_id
-                           AND n.lifecycle_status='active'
-                           AND n.content_state='ready'
-                         WHERE f.tenant_id=$1
-                           AND n.space_id=$2
-                           AND f.subject_type=$3
-                           AND f.subject_id=$4
-                           AND f.lifecycle_status='active'
-                         ORDER BY f.updated_at DESC, n.id ASC
-                         LIMIT $5 OFFSET $6",
-                    ))
-                    .bind(&tenant_id)
-                    .bind(space_id)
-                    .bind(&subject_type)
-                    .bind(&subject_id)
-                    .bind(batch_limit as i64)
-                    .bind(scan_offset)
-                    .fetch_all(&pool)
-                    .await
-                } else {
-                    sqlx::query(&format!(
+
+    let (items, next_page_token, incomplete_page) = if let Some(space_id) = space_id.clone() {
+        let is_space_owner = acl::is_subject_space_owner(
+            &state.pool,
+            &tenant_id,
+            &space_id,
+            &subject_type,
+            &subject_id,
+        )
+        .await?;
+        let reader_acl_predicate = acl_sql::reader_inherited_permission_exists_sql("n", "$3", "$4");
+        let (items, next_page_token) = if is_space_owner {
+            acl::paginate_offset_limited_items(
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let space_id = space_id.clone();
+                    let subject_type = subject_type_for_fetch.clone();
+                    let subject_id = subject_id_for_fetch.clone();
+                    async move {
+                        let rows = sqlx::query(&format!(
+                            "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
+                             FROM dr_drive_node_favorite f
+                             INNER JOIN dr_drive_node n
+                                ON n.tenant_id=f.tenant_id
+                               AND n.id=f.node_id
+                               AND n.lifecycle_status='active'
+                               AND n.content_state='ready'
+                             WHERE f.tenant_id=$1
+                               AND n.space_id=$2
+                               AND f.subject_type=$3
+                               AND f.subject_id=$4
+                               AND f.lifecycle_status='active'
+                             ORDER BY f.updated_at DESC, n.id ASC
+                             LIMIT $5 OFFSET $6",
+                        ))
+                        .bind(&tenant_id)
+                        .bind(&space_id)
+                        .bind(&subject_type)
+                        .bind(&subject_id)
+                        .bind(batch_limit as i64)
+                        .bind(scan_offset)
+                        .fetch_all(&pool)
+                        .await
+                        .map_err(internal_sql_error("list favorite dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+            )
+            .await?
+        } else {
+            acl::paginate_offset_limited_items(
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let space_id = space_id.clone();
+                    let subject_type = subject_type_for_fetch.clone();
+                    let subject_id = subject_id_for_fetch.clone();
+                    let reader_acl_predicate = reader_acl_predicate.clone();
+                    async move {
+                        let rows = sqlx::query(&format!(
+                            "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
+                             FROM dr_drive_node_favorite f
+                             INNER JOIN dr_drive_node n
+                                ON n.tenant_id=f.tenant_id
+                               AND n.id=f.node_id
+                               AND n.lifecycle_status='active'
+                               AND n.content_state='ready'
+                             WHERE f.tenant_id=$1
+                               AND n.space_id=$2
+                               AND f.subject_type=$3
+                               AND f.subject_id=$4
+                               AND f.lifecycle_status='active'
+                               AND ({reader_acl_predicate})
+                             ORDER BY f.updated_at DESC, n.id ASC
+                             LIMIT $5 OFFSET $6",
+                        ))
+                        .bind(&tenant_id)
+                        .bind(&space_id)
+                        .bind(&subject_type)
+                        .bind(&subject_id)
+                        .bind(batch_limit as i64)
+                        .bind(scan_offset)
+                        .fetch_all(&pool)
+                        .await
+                        .map_err(internal_sql_error("list favorite dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+            )
+            .await?
+        };
+        (items, next_page_token, false)
+    } else {
+        acl::paginate_reader_visible_items(
+            &state.pool,
+            &tenant_id,
+            &subject_type,
+            &subject_id,
+            page,
+            move |scan_offset, batch_limit| {
+                let pool = pool.clone();
+                let tenant_id = tenant_id_for_fetch.clone();
+                let subject_type = subject_type_for_fetch.clone();
+                let subject_id = subject_id_for_fetch.clone();
+                async move {
+                    let rows = sqlx::query(&format!(
                         "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
                          FROM dr_drive_node_favorite f
                          INNER JOIN dr_drive_node n
@@ -2960,20 +3406,26 @@ async fn list_favorite_nodes(
                     .bind(scan_offset)
                     .fetch_all(&pool)
                     .await
+                    .map_err(internal_sql_error("list favorite dr_drive_node failed"))?;
+                    Ok(rows)
                 }
-                .map_err(internal_sql_error("list favorite dr_drive_node failed"))?;
-                Ok(rows)
-            }
-        },
-        map_node_row,
-        |item| (item.space_id.clone(), item.id.clone()),
-    )
-    .await?;
+            },
+            map_node_row,
+            |item| (item.space_id.clone(), item.id.clone()),
+        )
+        .await?
+    };
 
-    Ok(Json(NodeListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(Json(
+        present_node_list(
+            &state.pool,
+            &tenant_id,
+            items,
+            next_page_token,
+            incomplete_page,
+        )
+        .await?,
+    ))
 }
 
 async fn get_quota_summary(
@@ -2991,6 +3443,7 @@ async fn get_quota_summary(
         tenant_id: summary.tenant_id,
         used_bytes: summary.total_bytes,
         object_count: summary.object_count,
+        quota_bytes: TenantQuotaPolicy::from_env().max_bytes,
     }))
 }
 
@@ -3006,14 +3459,7 @@ async fn set_favorite(
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     validate_subject_type(&subject_type)?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let favorite_id = build_favorite_id(&tenant_id, &subject_type, &subject_id, &node_id);
     sqlx::query(
         "INSERT INTO dr_drive_node_favorite (
@@ -3040,7 +3486,7 @@ async fn set_favorite(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "favorite.created",
+        drive_events::favorite::CREATED,
         &operator_id,
     )
     .await?;
@@ -3058,14 +3504,7 @@ async fn unset_favorite(
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     validate_subject_type(&subject_type)?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let affected = sqlx::query(
         "UPDATE dr_drive_node_favorite
          SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
@@ -3090,7 +3529,7 @@ async fn unset_favorite(
             &tenant_id,
             &node.space_id,
             Some(&node_id),
-            "favorite.deleted",
+            drive_events::favorite::DELETED,
             &operator_id,
         )
         .await?;
@@ -3138,15 +3577,9 @@ async fn empty_trash(
     for row in &trashed_rows {
         let node_id: String = row.get("id");
         let space_id_value: String = row.get("space_id");
-        if acl::ensure_ctx_node_role(
-            &state.pool,
-            &ctx,
-            &space_id_value,
-            &node_id,
-            "writer",
-        )
-        .await
-        .is_err()
+        if acl::ensure_ctx_node_role(&state.pool, &ctx, &space_id_value, &node_id, "writer")
+            .await
+            .is_err()
         {
             continue;
         }
@@ -3186,15 +3619,13 @@ async fn empty_trash(
             &tenant_id,
             &space_id_value,
             None,
-            "trash.emptied",
+            drive_events::trash::EMPTIED,
             &operator_id,
         )
         .await?;
     }
 
-    Ok(Json(EmptyTrashResponse {
-        deleted_count,
-    }))
+    Ok(Json(EmptyTrashResponse { deleted_count }))
 }
 
 async fn list_versions(
@@ -3206,14 +3637,7 @@ async fn list_versions(
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let logical_version_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
          FROM dr_drive_node_version
@@ -3279,14 +3703,7 @@ async fn get_version(
 ) -> Result<Json<FileVersionResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let logical_row = sqlx::query(
         "SELECT id, tenant_id, node_id, version_no, storage_object_id, content_type, content_length,
                 checksum_sha256_hex, lifecycle_status, created_at
@@ -3331,14 +3748,7 @@ async fn restore_version(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let logical_row = sqlx::query(
         "SELECT storage_object_id
          FROM dr_drive_node_version
@@ -3391,11 +3801,14 @@ async fn restore_version(
             &tenant_id,
             &node.space_id,
             Some(&node_id),
-            "version.restored",
+            drive_events::file_version::RESTORED,
             &operator_id,
         )
         .await?;
-        return Ok(Json(node));
+        return Ok(Json(
+            present_drive_node(&state.pool, &tenant_id, find_node(&state.pool, &tenant_id, &node_id).await?)
+                .await?,
+        ));
     }
     let affected = sqlx::query(
         "UPDATE dr_drive_storage_object
@@ -3420,11 +3833,14 @@ async fn restore_version(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "version.restored",
+        drive_events::file_version::RESTORED,
         &operator_id,
     )
     .await?;
-    Ok(Json(node))
+    Ok(Json(
+        present_drive_node(&state.pool, &tenant_id, find_node(&state.pool, &tenant_id, &node_id).await?)
+            .await?,
+    ))
 }
 
 async fn delete_version(
@@ -3436,14 +3852,7 @@ async fn delete_version(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let logical_row = sqlx::query(
         "SELECT lifecycle_status, storage_object_id
          FROM dr_drive_node_version
@@ -3515,7 +3924,7 @@ async fn delete_version(
                 &tenant_id,
                 &node.space_id,
                 Some(&node_id),
-                "version.deleted",
+                drive_events::file_version::DELETED,
                 &operator_id,
             )
             .await?;
@@ -3587,7 +3996,7 @@ async fn delete_version(
             &tenant_id,
             &node.space_id,
             Some(&node_id),
-            "version.deleted",
+            drive_events::file_version::DELETED,
             &operator_id,
         )
         .await?;
@@ -3606,14 +4015,7 @@ async fn list_permissions(
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "owner",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
     let rows = sqlx::query(
         "SELECT id, tenant_id, node_id, subject_type, subject_id, role, inherited, lifecycle_status, version
          FROM dr_drive_node_permission
@@ -3644,14 +4046,7 @@ async fn get_permission(
 ) -> Result<Json<PermissionResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "owner",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
     let row = sqlx::query(
         "SELECT id, tenant_id, node_id, subject_type, subject_id, role, inherited, lifecycle_status, version
          FROM dr_drive_node_permission
@@ -3678,14 +4073,7 @@ async fn list_effective_permissions(
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "owner",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
     let node_path = resolve_node_path(&state.pool, &tenant_id, &node_id).await?;
     let mut items = Vec::<EffectivePermissionResponse>::new();
     let mut seen_principals = std::collections::BTreeSet::<(String, String)>::new();
@@ -3754,14 +4142,7 @@ async fn create_permission(
     validate_subject_type(&payload.subject_type)?;
     validate_permission_role(&payload.role)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "owner",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
     sqlx::query(
         "INSERT INTO dr_drive_node_permission (
             id, tenant_id, node_id, subject_type, subject_id, role,
@@ -3794,7 +4175,7 @@ async fn create_permission(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "permission.created",
+        drive_events::permission::CREATED,
         &operator_id,
     )
     .await?;
@@ -3822,14 +4203,7 @@ async fn update_permission(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "owner",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
     let current_row = sqlx::query(
         "SELECT id, tenant_id, node_id, subject_type, subject_id, role, inherited, lifecycle_status, version
          FROM dr_drive_node_permission
@@ -3874,7 +4248,7 @@ async fn update_permission(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "permission.updated",
+        drive_events::permission::UPDATED,
         &operator_id,
     )
     .await?;
@@ -3903,14 +4277,7 @@ async fn delete_permission(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "owner",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
     let affected = sqlx::query(
         "UPDATE dr_drive_node_permission
          SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
@@ -3930,7 +4297,7 @@ async fn delete_permission(
             &tenant_id,
             &node.space_id,
             Some(&node_id),
-            "permission.deleted",
+            drive_events::permission::DELETED,
             &operator_id,
         )
         .await?;
@@ -3950,7 +4317,7 @@ async fn list_share_links(
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let rows = sqlx::query(
         "SELECT id, tenant_id, node_id, role, expires_at_epoch_ms, download_limit,
-                download_count, lifecycle_status, version
+                download_count, access_code_hash, lifecycle_status, version
          FROM dr_drive_node_share_link
          WHERE tenant_id=$1 AND node_id=$2 AND lifecycle_status='active'
          ORDER BY created_at DESC
@@ -3996,13 +4363,22 @@ async fn create_share_link(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CreateShareLinkRequest>,
-) -> Result<(StatusCode, Json<ShareLinkResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<(StatusCode, Json<CreateShareLinkResponse>), (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
 
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
-    let token_hash = drive_share_token_hash(&payload.token);
+    let token = {
+        let trimmed = payload.token.trim();
+        if trimmed.is_empty() {
+            generate_share_link_token()
+        } else {
+            validate_share_link_token(trimmed)?;
+            trimmed.to_string()
+        }
+    };
+    let token_hash = drive_share_token_hash(&token);
     let role = payload
         .role
         .map(|value| value.trim().to_string())
@@ -4011,16 +4387,29 @@ async fn create_share_link(
     validate_share_link_role(&role)?;
     validate_optional_future_epoch_ms(payload.expires_at_epoch_ms, "expiresAtEpochMs")?;
     validate_optional_non_negative_i64(payload.download_limit, "downloadLimit")?;
+    let access_code_plain = payload
+        .access_code
+        .as_ref()
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+        .map(str::to_string);
+    if let Some(access_code) = access_code_plain.as_deref() {
+        validate_share_link_access_code(access_code).map_err(map_service_error)?;
+    }
+    let access_code_hash = access_code_plain
+        .as_deref()
+        .map(drive_share_access_code_hash);
     sqlx::query(
         "INSERT INTO dr_drive_node_share_link (
-            id, tenant_id, node_id, token_hash, role, expires_at_epoch_ms, download_limit,
+            id, tenant_id, node_id, token_hash, access_code_hash, role, expires_at_epoch_ms, download_limit,
             download_count, lifecycle_status, version, created_by, updated_by
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 'active', 1, $8, $8)",
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, 'active', 1, $9, $9)",
     )
     .bind(&payload.id)
     .bind(&tenant_id)
     .bind(&node_id)
     .bind(token_hash)
+    .bind(access_code_hash)
     .bind(role)
     .bind(payload.expires_at_epoch_ms)
     .bind(payload.download_limit)
@@ -4044,14 +4433,14 @@ async fn create_share_link(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "share_link.created",
+        drive_events::share_link::CREATED,
         &operator_id,
     )
     .await?;
 
     let row = sqlx::query(
         "SELECT id, tenant_id, node_id, role, expires_at_epoch_ms, download_limit,
-                download_count, lifecycle_status, version
+                download_count, access_code_hash, lifecycle_status, version
          FROM dr_drive_node_share_link
          WHERE tenant_id=$1 AND id=$2",
     )
@@ -4060,7 +4449,15 @@ async fn create_share_link(
     .fetch_one(&state.pool)
     .await
     .map_err(internal_sql_error("read dr_drive_node_share_link failed"))?;
-    Ok((StatusCode::CREATED, Json(map_share_link_row(&row))))
+    let response = map_share_link_row(&row);
+    Ok((
+        StatusCode::CREATED,
+        Json(CreateShareLinkResponse {
+            link: response,
+            token,
+            access_code: access_code_plain,
+        }),
+    ))
 }
 
 async fn update_share_link(
@@ -4073,14 +4470,7 @@ async fn update_share_link(
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let current = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
     let node = find_active_node(&state.pool, &tenant_id, &current.node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &current.node_id,
-        "owner",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &current.node_id, "owner").await?;
     let role = payload
         .role
         .map(|value| value.trim().to_string())
@@ -4117,7 +4507,7 @@ async fn update_share_link(
         &tenant_id,
         &node.space_id,
         Some(&current.node_id),
-        "share_link.updated",
+        drive_events::share_link::UPDATED,
         &operator_id,
     )
     .await?;
@@ -4136,14 +4526,7 @@ async fn revoke_share_link(
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let current = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
     let node = find_active_node(&state.pool, &tenant_id, &current.node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &current.node_id,
-        "owner",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &current.node_id, "owner").await?;
     let affected = sqlx::query(
         "UPDATE dr_drive_node_share_link
          SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
@@ -4162,12 +4545,76 @@ async fn revoke_share_link(
             &tenant_id,
             &node.space_id,
             Some(&current.node_id),
-            "share_link.revoked",
+            drive_events::share_link::REVOKED,
             &operator_id,
         )
         .await?;
     }
     Ok(Json(json!({ "revoked": affected > 0 })))
+}
+
+async fn claim_share_link(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Path(token): Path<String>,
+) -> Result<(StatusCode, Json<ClaimShareLinkResponse>), (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    validate_subject_type(&subject_type)?;
+    let share_link =
+        find_active_share_link_by_token_for_tenant(&state.pool, &tenant_id, &token).await?;
+    validate_share_link_role(&share_link.role)?;
+    let node = find_active_node(&state.pool, &tenant_id, &share_link.node_id).await?;
+    let claim_role = share_link_claim_grant_role(&share_link.role);
+    let permission_service = SqlDrivePermissionService::new(state.pool.clone());
+    let before_access = permission_service
+        .resolve_effective_node_access(ResolveEffectiveNodeAccessCommand {
+            tenant_id: tenant_id.clone(),
+            space_id: node.space_id.clone(),
+            node_id: share_link.node_id.clone(),
+            subject_type: subject_type.clone(),
+            subject_id: subject_id.clone(),
+        })
+        .await
+        .map_err(map_service_error)?;
+    let already_claimed = before_access.allows_role(claim_role);
+    let grant = permission_service
+        .grant_node_permission(GrantDriveNodePermissionCommand {
+            tenant_id: tenant_id.clone(),
+            node_id: share_link.node_id.clone(),
+            subject_type: subject_type.clone(),
+            subject_id: subject_id.clone(),
+            role: claim_role.to_string(),
+            operator_id: share_link.created_by.clone(),
+        })
+        .await
+        .map_err(map_service_error)?;
+    if !already_claimed {
+        record_change(
+            &state.pool,
+            &tenant_id,
+            &node.space_id,
+            Some(&share_link.node_id),
+            drive_events::share_link::CLAIMED,
+            &subject_id,
+        )
+        .await?;
+    }
+    Ok((
+        if already_claimed {
+            StatusCode::OK
+        } else {
+            StatusCode::CREATED
+        },
+        Json(ClaimShareLinkResponse {
+            share_link_id: share_link.id,
+            node_id: share_link.node_id,
+            space_id: node.space_id,
+            role: claim_role.to_string(),
+            permission_id: grant.id,
+            already_claimed,
+        }),
+    ))
 }
 
 async fn list_comments(
@@ -4179,14 +4626,7 @@ async fn list_comments(
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let rows = sqlx::query(
         "SELECT id, tenant_id, node_id, content, anchor, resolved, lifecycle_status,
                 version, created_by, updated_by, created_at, updated_at
@@ -4221,14 +4661,7 @@ async fn get_comment(
 ) -> Result<Json<CommentResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let comment = find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
     Ok(Json(CommentResponse::from(comment)))
 }
@@ -4245,14 +4678,7 @@ async fn create_comment(
     let comment_id = require_non_empty_text(payload.id, "id")?;
     let content = require_non_empty_text(payload.content, "content")?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "commenter",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "commenter").await?;
     let anchor = normalize_optional_text(payload.anchor);
 
     sqlx::query(
@@ -4276,7 +4702,7 @@ async fn create_comment(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "comment.created",
+        drive_events::comment::CREATED,
         &operator_id,
     )
     .await?;
@@ -4292,20 +4718,9 @@ async fn update_comment(
     Json(payload): Json<UpdateCommentRequest>,
 ) -> Result<Json<CommentResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = payload
-        .operator_id
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let current = find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
     let content = match payload.content {
         Some(value) => require_non_empty_text(value, "content")?,
@@ -4343,7 +4758,7 @@ async fn update_comment(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "comment.updated",
+        drive_events::comment::UPDATED,
         &operator_id,
     )
     .await?;
@@ -4359,20 +4774,9 @@ async fn delete_comment(
     Query(query): Query<NodeMutationQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = query
-        .operator_id
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let affected = sqlx::query(
         "UPDATE dr_drive_node_comment
          SET lifecycle_status='deleted', updated_by=$1,
@@ -4408,7 +4812,7 @@ async fn delete_comment(
             &tenant_id,
             &node.space_id,
             Some(&node_id),
-            "comment.deleted",
+            drive_events::comment::DELETED,
             &operator_id,
         )
         .await?;
@@ -4425,14 +4829,7 @@ async fn list_comment_replies(
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
     let rows = sqlx::query(
         "SELECT id, tenant_id, node_id, comment_id, content, lifecycle_status,
@@ -4471,14 +4868,7 @@ async fn get_comment_reply(
 ) -> Result<Json<CommentReplyResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
     let reply =
         find_comment_reply(&state.pool, &tenant_id, &node_id, &comment_id, &reply_id).await?;
@@ -4497,14 +4887,7 @@ async fn create_comment_reply(
     let reply_id = require_non_empty_text(payload.id, "id")?;
     let content = require_non_empty_text(payload.content, "content")?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "commenter",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "commenter").await?;
     find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
 
     sqlx::query(
@@ -4529,7 +4912,7 @@ async fn create_comment_reply(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "comment_reply.created",
+        drive_events::comment_reply::CREATED,
         &operator_id,
     )
     .await?;
@@ -4545,20 +4928,9 @@ async fn update_comment_reply(
     Json(payload): Json<UpdateCommentReplyRequest>,
 ) -> Result<Json<CommentReplyResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = payload
-        .operator_id
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
     let current =
         find_comment_reply(&state.pool, &tenant_id, &node_id, &comment_id, &reply_id).await?;
@@ -4590,7 +4962,7 @@ async fn update_comment_reply(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "comment_reply.updated",
+        drive_events::comment_reply::UPDATED,
         &operator_id,
     )
     .await?;
@@ -4606,20 +4978,9 @@ async fn delete_comment_reply(
     Query(query): Query<NodeMutationQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = query
-        .operator_id
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "operator-unset".to_string());
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
     let affected = sqlx::query(
         "UPDATE dr_drive_node_comment_reply
@@ -4642,7 +5003,7 @@ async fn delete_comment_reply(
             &tenant_id,
             &node.space_id,
             Some(&node_id),
-            "comment_reply.deleted",
+            drive_events::comment_reply::DELETED,
             &operator_id,
         )
         .await?;
@@ -4669,40 +5030,111 @@ async fn search_nodes(
     let tenant_id_for_fetch = tenant_id.clone();
     let space_id_for_fetch = space_id.clone();
     let needle_for_fetch = needle.clone();
-    let (items, next_page_token) = acl::paginate_reader_visible_items(
-        &state.pool,
-        &tenant_id,
-        &subject_type,
-        &subject_id,
-        page,
-        move |scan_offset, batch_limit| {
-            let pool = pool.clone();
-            let tenant_id = tenant_id_for_fetch.clone();
-            let space_id = space_id_for_fetch.clone();
-            let needle = needle_for_fetch.clone();
-            async move {
-                let rows = if let Some(space_id) = space_id.as_deref() {
-                    sqlx::query(&format!(
-                        "SELECT {NODE_API_SELECT_COLUMNS}
-                         FROM dr_drive_node
-                         WHERE tenant_id=$1
-                           AND space_id=$2
-                           AND node_name LIKE $3
-                           AND lifecycle_status='active'
-                           AND content_state='ready'
-                         ORDER BY updated_at DESC, id ASC
-                         LIMIT $4 OFFSET $5",
-                    ))
-                    .bind(&tenant_id)
-                    .bind(space_id)
-                    .bind(&needle)
-                    .bind(batch_limit as i64)
-                    .bind(scan_offset)
-                    .fetch_all(&pool)
-                    .await
-                } else {
-                    sqlx::query(&format!(
-                        "SELECT {NODE_API_SELECT_COLUMNS}
+    let subject_type_for_fetch = subject_type.clone();
+    let subject_id_for_fetch = subject_id.clone();
+
+    let (items, next_page_token, incomplete_page) =
+        if let Some(space_id) = space_id_for_fetch.clone() {
+            let is_space_owner = acl::is_subject_space_owner(
+                &state.pool,
+                &tenant_id,
+                &space_id,
+                &subject_type,
+                &subject_id,
+            )
+            .await?;
+            let reader_acl_predicate =
+                acl_sql::reader_inherited_permission_exists_sql("dr_drive_node", "$4", "$5");
+            let (items, next_page_token) = if is_space_owner {
+                acl::paginate_offset_limited_items(
+                    page,
+                    move |scan_offset, batch_limit| {
+                        let pool = pool.clone();
+                        let tenant_id = tenant_id_for_fetch.clone();
+                        let space_id = space_id.clone();
+                        let needle = needle_for_fetch.clone();
+                        async move {
+                            let rows = sqlx::query(&format!(
+                                "SELECT {NODE_API_SELECT_COLUMNS}
+                             FROM dr_drive_node
+                             WHERE tenant_id=$1
+                               AND space_id=$2
+                               AND node_name LIKE $3
+                               AND lifecycle_status='active'
+                               AND content_state='ready'
+                             ORDER BY updated_at DESC, id ASC
+                             LIMIT $4 OFFSET $5",
+                            ))
+                            .bind(&tenant_id)
+                            .bind(&space_id)
+                            .bind(&needle)
+                            .bind(batch_limit as i64)
+                            .bind(scan_offset)
+                            .fetch_all(&pool)
+                            .await
+                            .map_err(internal_sql_error("search dr_drive_node failed"))?;
+                            Ok(rows)
+                        }
+                    },
+                    map_node_row,
+                )
+                .await?
+            } else {
+                acl::paginate_offset_limited_items(
+                    page,
+                    move |scan_offset, batch_limit| {
+                        let pool = pool.clone();
+                        let tenant_id = tenant_id_for_fetch.clone();
+                        let space_id = space_id.clone();
+                        let needle = needle_for_fetch.clone();
+                        let subject_type = subject_type_for_fetch.clone();
+                        let subject_id = subject_id_for_fetch.clone();
+                        let reader_acl_predicate = reader_acl_predicate.clone();
+                        async move {
+                            let rows = sqlx::query(&format!(
+                                "SELECT {NODE_API_SELECT_COLUMNS}
+                             FROM dr_drive_node
+                             WHERE tenant_id=$1
+                               AND space_id=$2
+                               AND node_name LIKE $3
+                               AND lifecycle_status='active'
+                               AND content_state='ready'
+                               AND ({reader_acl_predicate})
+                             ORDER BY updated_at DESC, id ASC
+                             LIMIT $6 OFFSET $7",
+                            ))
+                            .bind(&tenant_id)
+                            .bind(&space_id)
+                            .bind(&needle)
+                            .bind(&subject_type)
+                            .bind(&subject_id)
+                            .bind(batch_limit as i64)
+                            .bind(scan_offset)
+                            .fetch_all(&pool)
+                            .await
+                            .map_err(internal_sql_error("search dr_drive_node failed"))?;
+                            Ok(rows)
+                        }
+                    },
+                    map_node_row,
+                )
+                .await?
+            };
+            (items, next_page_token, false)
+        } else {
+            acl::paginate_reader_visible_items(
+                &state.pool,
+                &tenant_id,
+                &subject_type,
+                &subject_id,
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let needle = needle_for_fetch.clone();
+                    async move {
+                        let rows = sqlx::query(&format!(
+                            "SELECT {NODE_API_SELECT_COLUMNS}
                          FROM dr_drive_node
                          WHERE tenant_id=$1
                            AND node_name LIKE $2
@@ -4710,27 +5142,33 @@ async fn search_nodes(
                            AND content_state='ready'
                          ORDER BY updated_at DESC, id ASC
                          LIMIT $3 OFFSET $4",
-                    ))
-                    .bind(&tenant_id)
-                    .bind(&needle)
-                    .bind(batch_limit as i64)
-                    .bind(scan_offset)
-                    .fetch_all(&pool)
-                    .await
-                }
-                .map_err(internal_sql_error("search dr_drive_node failed"))?;
-                Ok(rows)
-            }
-        },
-        map_node_row,
-        |item| (item.space_id.clone(), item.id.clone()),
-    )
-    .await?;
+                        ))
+                        .bind(&tenant_id)
+                        .bind(&needle)
+                        .bind(batch_limit as i64)
+                        .bind(scan_offset)
+                        .fetch_all(&pool)
+                        .await
+                        .map_err(internal_sql_error("search dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+                |item| (item.space_id.clone(), item.id.clone()),
+            )
+            .await?
+        };
 
-    Ok(Json(NodeListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(Json(
+        present_node_list(
+            &state.pool,
+            &tenant_id,
+            items,
+            next_page_token,
+            incomplete_page,
+        )
+        .await?,
+    ))
 }
 
 async fn list_changes(
@@ -4744,17 +5182,22 @@ async fn list_changes(
     validate_space_exists_for_change_history(&state.pool, &tenant_id, &space_id).await?;
     acl::ensure_space_change_feed_reader(&state.pool, &ctx, &space_id).await?;
     let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
-    let pool = state.pool.clone();
-    let tenant_id_for_fetch = tenant_id.clone();
-    let space_id_for_fetch = space_id.clone();
-    let (items, next_page_token) = acl::paginate_reader_visible_changes(
+    let is_space_owner = acl::is_subject_space_owner(
         &state.pool,
         &tenant_id,
         &space_id,
         &subject_type,
         &subject_id,
-        page,
-        move |scan_cursor, batch_limit| {
+    )
+    .await?;
+    let reader_acl_predicate = acl_sql::reader_inherited_permission_exists_sql("n", "$4", "$5");
+    let pool = state.pool.clone();
+    let tenant_id_for_fetch = tenant_id.clone();
+    let space_id_for_fetch = space_id.clone();
+    let subject_type_for_fetch = subject_type.clone();
+    let subject_id_for_fetch = subject_id.clone();
+    let (items, next_page_token) = if is_space_owner {
+        acl::paginate_cursor_limited_changes(page, move |scan_cursor, batch_limit| {
             let pool = pool.clone();
             let tenant_id = tenant_id_for_fetch.clone();
             let space_id = space_id_for_fetch.clone();
@@ -4774,9 +5217,43 @@ async fn list_changes(
                 .await
                 .map_err(internal_sql_error("list dr_drive_change_log failed"))
             }
-        },
-    )
-    .await?;
+        })
+        .await?
+    } else {
+        acl::paginate_cursor_limited_changes(page, move |scan_cursor, batch_limit| {
+            let pool = pool.clone();
+            let tenant_id = tenant_id_for_fetch.clone();
+            let space_id = space_id_for_fetch.clone();
+            let subject_type = subject_type_for_fetch.clone();
+            let subject_id = subject_id_for_fetch.clone();
+            let reader_acl_predicate = reader_acl_predicate.clone();
+            async move {
+                sqlx::query(&format!(
+                    "SELECT cl.sequence_no, cl.tenant_id, cl.space_id, cl.node_id, cl.event_type, cl.actor_id, cl.created_at
+                     FROM dr_drive_change_log cl
+                     LEFT JOIN dr_drive_node n
+                       ON n.tenant_id = cl.tenant_id
+                      AND n.id = cl.node_id
+                     WHERE cl.tenant_id=$1
+                       AND cl.space_id=$2
+                       AND cl.sequence_no > $3
+                       AND (cl.node_id IS NULL OR ({reader_acl_predicate}))
+                     ORDER BY cl.sequence_no ASC
+                     LIMIT $6",
+                ))
+                .bind(&tenant_id)
+                .bind(&space_id)
+                .bind(scan_cursor)
+                .bind(&subject_type)
+                .bind(&subject_id)
+                .bind(batch_limit as i64)
+                .fetch_all(&pool)
+                .await
+                .map_err(internal_sql_error("list dr_drive_change_log failed"))
+            }
+        })
+        .await?
+    };
     let next_cursor = items.last().map(|item| item.sequence_no);
     Ok(Json(ChangeListResponse {
         items,
@@ -4842,7 +5319,7 @@ async fn watch_changes(
         &tenant_id,
         &space_id,
         None,
-        "watch_channel.created",
+        drive_events::watch_channel::CREATED,
         &operator_id,
     )
     .await?;
@@ -4860,14 +5337,7 @@ async fn watch_node(
 ) -> Result<(StatusCode, Json<DriveWatchChannelResponse>), (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        &ctx,
-        &node.space_id,
-        &node_id,
-        "reader",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let channel_id = validate_watch_channel_id(&payload.id)?.to_string();
     let address = validate_watch_channel_address(&payload.address)?.to_string();
@@ -4900,7 +5370,7 @@ async fn watch_node(
         &tenant_id,
         &node.space_id,
         Some(&node_id),
-        "watch_channel.created",
+        drive_events::watch_channel::CREATED,
         &operator_id,
     )
     .await?;
@@ -5065,7 +5535,7 @@ async fn stop_watch_channel(
             &tenant_id,
             space_id,
             current.node_id.as_deref(),
-            "watch_channel.stopped",
+            drive_events::watch_channel::STOPPED,
             &operator_id,
         )
         .await?;
@@ -5130,6 +5600,7 @@ async fn presign_upload_part(
         "requestedTtlSeconds",
     )?;
     let expires_at_epoch_ms = current_epoch_ms() + i64::from(requested_ttl_seconds) * 1000;
+    let operator_id = ctx.resolve_operator_id(None)?;
     let signed = AppDownloadSigner::new(state.pool.clone())
         .sign_upload_part(UploadPartSignCommand {
             storage_provider_id: upload_session.storage_provider_id.clone(),
@@ -5147,7 +5618,7 @@ async fn presign_upload_part(
         &tenant_id,
         &upload_session_id,
         "uploading",
-        "operator-unset",
+        &operator_id,
     )
     .await?;
 
@@ -5359,7 +5830,11 @@ async fn complete_upload_session(
             &tenant_id,
             &node.space_id,
             Some(&upload_session.node_id),
-            "upload.completed",
+            if uploader_upload_item.is_some() {
+                drive_events::uploader::UPLOAD_COMPLETED
+            } else {
+                drive_events::upload_session::COMPLETED
+            },
             &operator_id,
         )
         .await?;
@@ -5423,7 +5898,7 @@ async fn abort_upload_session(
         &tenant_id,
         &node.space_id,
         Some(&upload_session.node_id),
-        "upload.aborted",
+        drive_events::upload_session::ABORTED,
         &operator_id,
     )
     .await?;
@@ -5453,6 +5928,15 @@ async fn create_download_url(
         &node.space_id,
         &payload.node_id,
         "reader",
+    )
+    .await?;
+    enforce_share_link_download_limit_for_subject(
+        &state.pool,
+        &tenant_id,
+        &node.space_id,
+        &payload.node_id,
+        &ctx.subject_type,
+        &ctx.subject_id,
     )
     .await?;
     let result_value = service
@@ -5504,6 +5988,57 @@ async fn resolve_download_token(
 ) -> Result<Response, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
     let tenant_id = ctx.resolve_tenant_id()?;
+    let parsed = match parse_download_token_for_tenant(token.trim(), &tenant_id) {
+        Ok(parsed) => parsed,
+        Err(error) => {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_DOWNLOAD_TOKENS_RESOLVE,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = service_error_kind(&error),
+                method = "GET"
+            );
+            return Err(map_download_token_error(error));
+        }
+    };
+    if parsed.expires_at_epoch_ms <= current_epoch_ms() {
+        sdkwork_drive_observability::observe_route!(
+            event = events::APP_DOWNLOAD_TOKENS_RESOLVE,
+            result = "err",
+            latency_ms = elapsed_ms(started),
+            error_kind = error_kinds::NOT_FOUND,
+            method = "GET"
+        );
+        return Err(map_download_token_error(DriveServiceError::NotFound(
+            "download token has expired".to_string(),
+        )));
+    }
+    let node = match find_active_node(&state.pool, &tenant_id, &parsed.node_id).await {
+        Ok(node) => node,
+        Err((status, problem)) => {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_DOWNLOAD_TOKENS_RESOLVE,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = status_error_kind(status),
+                method = "GET"
+            );
+            return Err((status, problem));
+        }
+    };
+    if let Err(error) =
+        acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &parsed.node_id, "reader")
+            .await
+    {
+        sdkwork_drive_observability::observe_route!(
+            event = events::APP_DOWNLOAD_TOKENS_RESOLVE,
+            result = "err",
+            latency_ms = elapsed_ms(started),
+            error_kind = status_error_kind(error.0),
+            method = "GET"
+        );
+        return Err(error);
+    }
     let service = build_download_service(&state);
     let result_value = service
         .resolve_download_token(ResolveDownloadTokenCommand { tenant_id, token })
@@ -5697,7 +6232,7 @@ async fn ensure_archive_parent_folders(
             tenant_id,
             space_id,
             Some(&folder_id),
-            "archive.folder.created",
+            drive_events::archive::FOLDER_CREATED,
             operator_id,
         )
         .await?;
@@ -5887,7 +6422,7 @@ async fn create_extracted_archive_file(
         tenant_id,
         space_id,
         Some(&node_id),
-        "archive.entry.extracted",
+        drive_events::archive::ENTRY_EXTRACTED,
         operator_id,
     )
     .await?;
@@ -7427,14 +7962,7 @@ async fn set_node_lifecycle(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
-    acl::ensure_ctx_node_role(
-        &state.pool,
-        ctx,
-        &node.space_id,
-        &node_id,
-        "writer",
-    )
-    .await?;
+    acl::ensure_ctx_node_role(&state.pool, ctx, &node.space_id, &node_id, "writer").await?;
     let nodes_to_update = collect_node_subtree(&state.pool, &tenant_id, &node).await?;
     if lifecycle_status == "active" {
         ensure_restorable_subtree(&state.pool, &tenant_id, &nodes_to_update).await?;
@@ -7470,7 +7998,7 @@ async fn set_node_lifecycle(
     if updated_count == 0 {
         return Err(not_found_problem("node not found"));
     }
-    Ok(Json(find_node(&state.pool, &tenant_id, &node_id).await?))
+    Ok(Json(present_drive_node(&state.pool, &tenant_id, find_node(&state.pool, &tenant_id, &node_id).await?).await?))
 }
 
 async fn insert_watch_channel(
@@ -7520,73 +8048,18 @@ async fn record_change(
     event_type: &str,
     actor_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-    let cursor_id = format!("cursor:{tenant_id}:{space_id}");
-    let next_sequence: i64 = sqlx::query_scalar(
-        "INSERT INTO dr_drive_change_cursor (
-            id, tenant_id, space_id, last_sequence_no
-         ) VALUES ($1, $2, $3, 1)
-         ON CONFLICT(tenant_id, space_id) DO UPDATE SET
-            last_sequence_no=dr_drive_change_cursor.last_sequence_no + 1,
-            updated_at=CURRENT_TIMESTAMP
-         RETURNING last_sequence_no",
+    change_recorder::record_drive_change(
+        pool,
+        RecordDriveChangeCommand {
+            tenant_id,
+            space_id,
+            node_id,
+            event_type,
+            actor_id,
+        },
     )
-    .bind(&cursor_id)
-    .bind(tenant_id)
-    .bind(space_id)
-    .fetch_one(pool)
     .await
-    .map_err(internal_sql_error(
-        "allocate dr_drive_change_log sequence failed",
-    ))?;
-
-    let change_log_id = next_drive_runtime_id("drive change log").map_err(map_service_error)?;
-    sqlx::query(
-        "INSERT INTO dr_drive_change_log (
-            id, tenant_id, space_id, node_id, sequence_no, event_type, actor_id
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-    )
-    .bind(change_log_id)
-    .bind(tenant_id)
-    .bind(space_id)
-    .bind(node_id)
-    .bind(next_sequence)
-    .bind(event_type)
-    .bind(actor_id)
-    .execute(pool)
-    .await
-    .map_err(internal_sql_error("insert dr_drive_change_log failed"))?;
-
-    let outbox_id = next_drive_runtime_id("domain outbox").map_err(map_service_error)?;
-    let payload_json = json!({
-        "tenantId": tenant_id,
-        "spaceId": space_id,
-        "nodeId": node_id,
-        "eventType": event_type,
-        "sequenceNo": next_sequence,
-        "actorId": actor_id,
-        "resourceType": "changes",
-    })
-    .to_string();
-    sqlx::query(
-        "INSERT INTO dr_drive_domain_outbox (
-            id, tenant_id, space_id, node_id, event_type, actor_id,
-            sequence_no, payload_json, delivery_status
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')",
-    )
-    .bind(outbox_id)
-    .bind(tenant_id)
-    .bind(space_id)
-    .bind(node_id)
-    .bind(event_type)
-    .bind(actor_id)
-    .bind(next_sequence)
-    .bind(payload_json)
-    .execute(pool)
-    .await
-    .map_err(internal_sql_error("insert dr_drive_domain_outbox failed"))?;
-    sdkwork_drive_observability::metrics::record_outbox_pending();
-    spawn_pending_outbox_dispatch(pool.clone());
-    Ok(())
+    .map_err(map_service_error)
 }
 
 async fn record_change_on_connection(
@@ -7597,71 +8070,18 @@ async fn record_change_on_connection(
     event_type: &str,
     actor_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-    let cursor_id = format!("cursor:{tenant_id}:{space_id}");
-    let next_sequence: i64 = sqlx::query_scalar(
-        "INSERT INTO dr_drive_change_cursor (
-            id, tenant_id, space_id, last_sequence_no
-         ) VALUES ($1, $2, $3, 1)
-         ON CONFLICT(tenant_id, space_id) DO UPDATE SET
-            last_sequence_no=dr_drive_change_cursor.last_sequence_no + 1,
-            updated_at=CURRENT_TIMESTAMP
-         RETURNING last_sequence_no",
+    change_recorder::record_drive_change_on_connection(
+        connection,
+        RecordDriveChangeCommand {
+            tenant_id,
+            space_id,
+            node_id,
+            event_type,
+            actor_id,
+        },
     )
-    .bind(&cursor_id)
-    .bind(tenant_id)
-    .bind(space_id)
-    .fetch_one(&mut *connection)
     .await
-    .map_err(internal_sql_error(
-        "allocate dr_drive_change_log sequence failed",
-    ))?;
-
-    let change_log_id = next_drive_runtime_id("drive change log").map_err(map_service_error)?;
-    sqlx::query(
-        "INSERT INTO dr_drive_change_log (
-            id, tenant_id, space_id, node_id, sequence_no, event_type, actor_id
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-    )
-    .bind(change_log_id)
-    .bind(tenant_id)
-    .bind(space_id)
-    .bind(node_id)
-    .bind(next_sequence)
-    .bind(event_type)
-    .bind(actor_id)
-    .execute(&mut *connection)
-    .await
-    .map_err(internal_sql_error("insert dr_drive_change_log failed"))?;
-
-    let outbox_id = next_drive_runtime_id("domain outbox").map_err(map_service_error)?;
-    let payload_json = json!({
-        "tenantId": tenant_id,
-        "spaceId": space_id,
-        "nodeId": node_id,
-        "eventType": event_type,
-        "sequenceNo": next_sequence,
-        "actorId": actor_id,
-        "resourceType": "changes",
-    })
-    .to_string();
-    sqlx::query(
-        "INSERT INTO dr_drive_domain_outbox (
-            id, tenant_id, space_id, node_id, event_type, actor_id,
-            sequence_no, payload_json, delivery_status
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')",
-    )
-    .bind(outbox_id)
-    .bind(tenant_id)
-    .bind(space_id)
-    .bind(node_id)
-    .bind(event_type)
-    .bind(actor_id)
-    .bind(next_sequence)
-    .bind(payload_json)
-    .execute(&mut *connection)
-    .await
-    .map_err(internal_sql_error("insert dr_drive_domain_outbox failed"))?;
-    Ok(())
+    .map_err(map_service_error)
 }
 
 fn upload_session_state_as_str(state: &DriveUploadSessionState) -> &'static str {
@@ -7673,4 +8093,138 @@ fn upload_session_state_as_str(state: &DriveUploadSessionState) -> &'static str 
         DriveUploadSessionState::Aborted => "aborted",
         DriveUploadSessionState::Expired => "expired",
     }
+}
+
+fn ensure_create_space_owner_matches_caller(
+    space_type: &DriveSpaceType,
+    space_id: &str,
+    subject_type: &str,
+    subject_id: &str,
+    owner_subject_type: &str,
+    owner_subject_id: &str,
+    organization_id: Option<&str>,
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    let owner_must_match_caller = matches!(
+        space_type,
+        DriveSpaceType::Personal | DriveSpaceType::GitRepository | DriveSpaceType::Rtc
+    );
+    if owner_must_match_caller
+        && (subject_type != owner_subject_type || subject_id != owner_subject_id)
+    {
+        return Err(acl::permission_denied_problem());
+    }
+
+    if *space_type == DriveSpaceType::Team {
+        let organization_id = organization_id
+            .map(str::trim)
+            .filter(|value| !value.is_empty() && *value != "0")
+            .ok_or_else(acl::permission_denied_problem)?;
+        match owner_subject_type {
+            "group" => {
+                if owner_subject_id != space_id.trim() {
+                    return Err(acl::permission_denied_problem());
+                }
+                if !space_id.starts_with(&format!("{organization_id}:"))
+                    && !space_id.starts_with(&format!("{organization_id}-"))
+                {
+                    return Err(acl::permission_denied_problem());
+                }
+            }
+            "organization" => {
+                if owner_subject_id != organization_id {
+                    return Err(acl::permission_denied_problem());
+                }
+            }
+            _ => {
+                return Err(problem(
+                    StatusCode::BAD_REQUEST,
+                    "validation failed",
+                    "team spaces must bind ownerSubjectType to group or organization",
+                    "drive.validation.space_owner_invalid",
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn share_link_claim_grant_role(link_role: &str) -> &'static str {
+    match link_role {
+        "commenter" => "commenter",
+        "writer" => "writer",
+        _ => "reader",
+    }
+}
+
+async fn bootstrap_team_space_creator_access(
+    pool: &AnyPool,
+    tenant_id: &str,
+    space_id: &str,
+    creator_user_id: &str,
+    display_name: &str,
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    let existing_root: Option<String> = sqlx::query_scalar(
+        "SELECT id FROM dr_drive_node \
+         WHERE tenant_id = $1 AND space_id = $2 AND parent_node_id IS NULL AND lifecycle_status = 'active' \
+         ORDER BY created_at ASC, id ASC LIMIT 1",
+    )
+    .bind(tenant_id)
+    .bind(space_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(internal_sql_error("read team space root folder failed"))?;
+
+    let root_folder_id = if let Some(root_folder_id) = existing_root {
+        root_folder_id
+    } else {
+        let root_folder_id = next_drive_id("folder");
+        let root_name = display_name.trim();
+        let root_name = if root_name.is_empty() {
+            "Shared space"
+        } else {
+            root_name
+        };
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
+                id, tenant_id, space_id, parent_node_id, node_type, node_name,
+                content_state, lifecycle_status, version, created_by, updated_by
+             ) VALUES ($1, $2, $3, NULL, 'folder', $4, 'ready', 'active', 1, $5, $5)",
+        )
+        .bind(&root_folder_id)
+        .bind(tenant_id)
+        .bind(space_id)
+        .bind(root_name)
+        .bind(creator_user_id)
+        .execute(pool)
+        .await
+        .map_err(|error| {
+            internal_problem(format!("insert team space root folder failed: {error}"))
+        })?;
+        record_change(
+            pool,
+            tenant_id,
+            space_id,
+            Some(&root_folder_id),
+            drive_events::node::CREATED,
+            creator_user_id,
+        )
+        .await?;
+        root_folder_id
+    };
+
+    let permission_service = SqlDrivePermissionService::new(pool.clone());
+    permission_service
+        .grant_node_permission(GrantDriveNodePermissionCommand {
+            tenant_id: tenant_id.to_string(),
+            node_id: root_folder_id,
+            subject_type: "user".to_string(),
+            subject_id: creator_user_id.to_string(),
+            role: "owner".to_string(),
+            operator_id: creator_user_id.to_string(),
+        })
+        .await
+        .map_err(map_service_error)?;
+
+    Ok(())
 }

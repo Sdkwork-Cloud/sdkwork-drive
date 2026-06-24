@@ -34,6 +34,9 @@
       "sdkwork-drive-pc-core": [
         "./packages/sdkwork-drive-pc-core/src"
       ],
+      "sdkwork-drive-pc-drive": [
+        "./packages/sdkwork-drive-pc-drive/src"
+      ],
       "sdkwork-drive-pc-admin-core": [
         "./packages/sdkwork-drive-pc-admin-core/src"
       ],
@@ -106,11 +109,20 @@
       "@sdkwork/sdk-common": [
         "../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/src/index.ts"
       ],
+      "@sdkwork/utils": [
+        "../../../sdkwork-utils/packages/sdkwork-utils-typescript/dist/index.d.ts"
+      ],
       "@sdkwork/ui-pc-react": [
         "../../../sdkwork-ui/sdkwork-ui-pc-react/src/index.ts"
       ]
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "packages/**/src-tauri/target/**",
+    "packages/**/src-tauri/target-test-migrate/**"
+  ]
 }

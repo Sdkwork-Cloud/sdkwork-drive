@@ -13,13 +13,12 @@ public class CreateStorageProviderRequest {
     private String serverSideEncryptionMode;
     private String defaultStorageClass;
     private String status;
-    private String operatorId;
     private Boolean strictTls;
 
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -27,7 +26,7 @@ public class CreateStorageProviderRequest {
     public String getProviderKind() {
         return this.providerKind;
     }
-    
+
     public void setProviderKind(String providerKind) {
         this.providerKind = providerKind;
     }
@@ -35,7 +34,7 @@ public class CreateStorageProviderRequest {
     public String getName() {
         return this.name;
     }
-    
+
     public void setName(String name) {
         this.name = name;
     }
@@ -43,7 +42,7 @@ public class CreateStorageProviderRequest {
     public String getEndpointUrl() {
         return this.endpointUrl;
     }
-    
+
     public void setEndpointUrl(String endpointUrl) {
         this.endpointUrl = endpointUrl;
     }
@@ -51,7 +50,7 @@ public class CreateStorageProviderRequest {
     public String getRegion() {
         return this.region;
     }
-    
+
     public void setRegion(String region) {
         this.region = region;
     }
@@ -59,7 +58,7 @@ public class CreateStorageProviderRequest {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -67,7 +66,7 @@ public class CreateStorageProviderRequest {
     public Boolean getPathStyle() {
         return this.pathStyle;
     }
-    
+
     public void setPathStyle(Boolean pathStyle) {
         this.pathStyle = pathStyle;
     }
@@ -75,7 +74,7 @@ public class CreateStorageProviderRequest {
     public String getCredentialRef() {
         return this.credentialRef;
     }
-    
+
     public void setCredentialRef(String credentialRef) {
         this.credentialRef = credentialRef;
     }
@@ -83,7 +82,7 @@ public class CreateStorageProviderRequest {
     public String getServerSideEncryptionMode() {
         return this.serverSideEncryptionMode;
     }
-    
+
     public void setServerSideEncryptionMode(String serverSideEncryptionMode) {
         this.serverSideEncryptionMode = serverSideEncryptionMode;
     }
@@ -91,7 +90,7 @@ public class CreateStorageProviderRequest {
     public String getDefaultStorageClass() {
         return this.defaultStorageClass;
     }
-    
+
     public void setDefaultStorageClass(String defaultStorageClass) {
         this.defaultStorageClass = defaultStorageClass;
     }
@@ -99,23 +98,15 @@ public class CreateStorageProviderRequest {
     public String getStatus() {
         return this.status;
     }
-    
+
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public String getOperatorId() {
-        return this.operatorId;
-    }
-    
-    public void setOperatorId(String operatorId) {
-        this.operatorId = operatorId;
     }
 
     public Boolean getStrictTls() {
         return this.strictTls;
     }
-    
+
     public void setStrictTls(Boolean strictTls) {
         this.strictTls = strictTls;
     }

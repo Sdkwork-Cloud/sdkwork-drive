@@ -21,6 +21,9 @@ const authoredPackageRoots = [
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file',
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-transfer',
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-types',
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-drive',
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-core',
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-storage-providers',
 ];
 
 function fail(message) {

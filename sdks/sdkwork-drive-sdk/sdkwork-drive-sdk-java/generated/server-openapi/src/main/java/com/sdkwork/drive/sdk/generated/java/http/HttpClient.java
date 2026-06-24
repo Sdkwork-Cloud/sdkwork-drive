@@ -16,8 +16,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class HttpClient {
-    private static final String API_KEY_HEADER = "Authorization";
-    private static final boolean API_KEY_USE_BEARER = true;
+    private static final String API_KEY_HEADER = "X-Api-Key";
+    private static final boolean API_KEY_USE_BEARER = false;
 
     private final OkHttpClient client;
     private final ObjectMapper mapper;
@@ -87,7 +87,11 @@ public class HttpClient {
     }
 
     private Request.Builder applyHeaders(Request.Builder builder, Map<String, String> requestHeaders) {
-        Map<String, String> mergedHeaders = new HashMap<>(headers);
+        return applyHeaders(builder, requestHeaders, false);
+    }
+
+    private Request.Builder applyHeaders(Request.Builder builder, Map<String, String> requestHeaders, boolean skipAuth) {
+        Map<String, String> mergedHeaders = skipAuth ? new HashMap<>() : new HashMap<>(headers);
         if (requestHeaders != null) {
             for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
                 if (entry.getKey() != null && entry.getValue() != null) {
@@ -256,8 +260,20 @@ public class HttpClient {
         Map<String, String> requestHeaders,
         String contentType
     ) throws Exception {
+        return request(method, path, body, params, requestHeaders, contentType, false);
+    }
+
+    public Object request(
+        String method,
+        String path,
+        Object body,
+        Map<String, Object> params,
+        Map<String, String> requestHeaders,
+        String contentType,
+        boolean skipAuth
+    ) throws Exception {
         RequestBody requestBody = body == null ? null : createRequestBody(body, contentType);
-        Request request = applyHeaders(new Request.Builder(), requestHeaders)
+        Request request = applyHeaders(new Request.Builder(), requestHeaders, skipAuth)
             .url(buildUrl(path, params))
             .method(method, requestBody)
             .build();
@@ -273,8 +289,21 @@ public class HttpClient {
         String contentType,
         TypeReference<T> typeReference
     ) throws Exception {
+        return stream(method, path, body, params, requestHeaders, contentType, typeReference, false);
+    }
+
+    public <T> Iterable<T> stream(
+        String method,
+        String path,
+        Object body,
+        Map<String, Object> params,
+        Map<String, String> requestHeaders,
+        String contentType,
+        TypeReference<T> typeReference,
+        boolean skipAuth
+    ) throws Exception {
         RequestBody requestBody = body == null ? null : createRequestBody(body, contentType);
-        Request request = applyHeaders(new Request.Builder(), requestHeaders)
+        Request request = applyHeaders(new Request.Builder(), requestHeaders, skipAuth)
             .url(buildUrl(path, params))
             .addHeader("Accept", "text/event-stream")
             .method(method, requestBody)

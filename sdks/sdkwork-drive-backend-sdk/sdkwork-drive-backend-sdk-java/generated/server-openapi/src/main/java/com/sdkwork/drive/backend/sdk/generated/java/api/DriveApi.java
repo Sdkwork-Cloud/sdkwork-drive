@@ -8,14 +8,13 @@ import java.util.Map;
 
 public class DriveApi {
     private final HttpClient client;
-    
+
     public DriveApi(HttpClient client) {
         this.client = client;
     }
 
-    public AuditEventPage auditEventsList(String tenantId, String action, String resourceType, String resourceId, String requestId, String traceId, Integer page, Integer pageSize) throws Exception {
+    public AuditEventPage auditEventsList(String action, String resourceType, String resourceId, String requestId, String traceId, Integer page, Integer pageSize) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
             new QueryParameterSpec("action", action, "form", true, false, null),
             new QueryParameterSpec("resourceType", resourceType, "form", true, false, null),
             new QueryParameterSpec("resourceId", resourceId, "form", true, false, null),
@@ -50,17 +49,23 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<SweepResponse>() {});
     }
 
-    public QuotaSummary quotasSummary(String tenantId) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null)
-        ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/quotas"), query));
+    public SweepResponse maintenanceExpiredUploadContentSweepStart(SweepUploadSessionsRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/drive/maintenance/expired_upload_content_sweep"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<SweepResponse>() {});
+    }
+
+    public SweepResponse maintenanceAbandonedUploadTaskSweepStart(SweepUploadSessionsRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.backendPath("/drive/maintenance/abandoned_upload_task_sweep"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<SweepResponse>() {});
+    }
+
+    public QuotaSummary quotasSummary() throws Exception {
+        Object raw = client.get(ApiPaths.backendPath("/drive/quotas"));
         return client.convertValue(raw, new TypeReference<QuotaSummary>() {});
     }
 
-    public ListSpacesResponse spacesAdminList(String tenantId, String ownerSubjectType, String ownerSubjectId) throws Exception {
+    public ListSpacesResponse spacesAdminList(String ownerSubjectType, String ownerSubjectId) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
             new QueryParameterSpec("ownerSubjectType", ownerSubjectType, "form", true, false, null),
             new QueryParameterSpec("ownerSubjectId", ownerSubjectId, "form", true, false, null)
         ));
@@ -68,10 +73,10 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<ListSpacesResponse>() {});
     }
 
-    public StorageProviderBinding storageProviderBindingsDefaultGet(String tenantId, String spaceId) throws Exception {
+    public StorageProviderBinding storageProviderBindingsDefaultGet(String spaceId, String spaceType) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
-            new QueryParameterSpec("spaceId", spaceId, "form", true, false, null)
+            new QueryParameterSpec("spaceId", spaceId, "form", true, false, null),
+            new QueryParameterSpec("spaceType", spaceType, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/storage_provider_bindings/default"), query));
         return client.convertValue(raw, new TypeReference<StorageProviderBinding>() {});
@@ -179,9 +184,8 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<ProviderObjectMutation>() {});
     }
 
-    public DownloadPackagePage downloadPackagesList(String tenantId, String state, Integer page, Integer pageSize) throws Exception {
+    public DownloadPackagePage downloadPackagesList(String state, Integer page, Integer pageSize) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
             new QueryParameterSpec("state", state, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null),
             new QueryParameterSpec("pageSize", pageSize, "form", true, false, null)

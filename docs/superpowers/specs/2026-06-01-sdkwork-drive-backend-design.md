@@ -116,7 +116,7 @@ sdkwork-drive/
     sdkwork-router-drive-backend-api/
     sdkwork-router-drive-open-api/
     sdkwork-router-storage-backend-api/
-    sdkwork-drive-gateway/
+    sdkwork-drive-standalone-gateway/
     sdkwork-drive-install-worker/
   sdks/
     sdkwork-drive-app-sdk/

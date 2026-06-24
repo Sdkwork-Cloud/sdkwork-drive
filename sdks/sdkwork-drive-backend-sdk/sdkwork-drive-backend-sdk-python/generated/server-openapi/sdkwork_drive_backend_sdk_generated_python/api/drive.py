@@ -205,9 +205,8 @@ class DriveAuditEventsApi:
         self._client = client
 
 
-    def list(self, tenant_id: Optional[str] = None, action: Optional[str] = None, resource_type: Optional[str] = None, resource_id: Optional[str] = None, request_id: Optional[str] = None, trace_id: Optional[str] = None, page: Optional[int] = None, page_size: Optional[int] = None) -> AuditEventPage:
+    def list(self, action: Optional[str] = None, resource_type: Optional[str] = None, resource_id: Optional[str] = None, request_id: Optional[str] = None, trace_id: Optional[str] = None, page: Optional[int] = None, page_size: Optional[int] = None) -> AuditEventPage:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'action', 'value': action, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'resourceType', 'value': resource_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'resourceId', 'value': resource_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -226,6 +225,8 @@ class DriveMaintenanceApi:
         self.jobs = DriveMaintenanceJobsApi(client)
         self.object_sweep = DriveMaintenanceObjectSweepApi(client)
         self.upload_session_sweep = DriveMaintenanceUploadSessionSweepApi(client)
+        self.expired_upload_content_sweep = DriveMaintenanceExpiredUploadContentSweepApi(client)
+        self.abandoned_upload_task_sweep = DriveMaintenanceAbandonedUploadTaskSweepApi(client)
 
 
 class DriveMaintenanceJobsApi:
@@ -265,6 +266,26 @@ class DriveMaintenanceUploadSessionSweepApi:
     def start(self, body: SweepUploadSessionsRequest) -> SweepResponse:
         return self._client.post(f"/backend/v3/api/drive/maintenance/upload_session_sweep", json=body)
 
+class DriveMaintenanceExpiredUploadContentSweepApi:
+    """drive drive.maintenance.expired_upload_content_sweep API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def start(self, body: SweepUploadSessionsRequest) -> SweepResponse:
+        return self._client.post(f"/backend/v3/api/drive/maintenance/expired_upload_content_sweep", json=body)
+
+class DriveMaintenanceAbandonedUploadTaskSweepApi:
+    """drive drive.maintenance.abandoned_upload_task_sweep API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def start(self, body: SweepUploadSessionsRequest) -> SweepResponse:
+        return self._client.post(f"/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep", json=body)
+
 class DriveQuotasApi:
     """drive drive.quotas API client."""
 
@@ -272,11 +293,8 @@ class DriveQuotasApi:
         self._client = client
 
 
-    def summary(self, tenant_id: str) -> QuotaSummary:
-        query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.get(_append_query_string(f"/backend/v3/api/drive/quotas", query))
+    def summary(self) -> QuotaSummary:
+        return self._client.get(f"/backend/v3/api/drive/quotas")
 
 class DriveSpacesApi:
     """drive drive.spaces API client."""
@@ -293,9 +311,8 @@ class DriveSpacesAdminApi:
         self._client = client
 
 
-    def list(self, tenant_id: str, owner_subject_type: Optional[str] = None, owner_subject_id: Optional[str] = None) -> ListSpacesResponse:
+    def list(self, owner_subject_type: Optional[str] = None, owner_subject_id: Optional[str] = None) -> ListSpacesResponse:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'ownerSubjectType', 'value': owner_subject_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'ownerSubjectId', 'value': owner_subject_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
@@ -316,10 +333,10 @@ class DriveStorageProviderBindingsDefaultApi:
         self._client = client
 
 
-    def get(self, tenant_id: str, space_id: Optional[str] = None) -> StorageProviderBinding:
+    def get(self, space_id: Optional[str] = None, space_type: Optional[str] = None) -> StorageProviderBinding:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'spaceType', 'value': space_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/backend/v3/api/drive/storage_provider_bindings/default", query))
 
@@ -435,9 +452,8 @@ class DriveDownloadPackagesApi:
         self._client = client
 
 
-    def list(self, tenant_id: Optional[str] = None, state: Optional[str] = None, page: Optional[int] = None, page_size: Optional[int] = None) -> DownloadPackagePage:
+    def list(self, state: Optional[str] = None, page: Optional[int] = None, page_size: Optional[int] = None) -> DownloadPackagePage:
         query = build_query_string([
-            {'name': 'tenantId', 'value': tenant_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'state', 'value': state, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},

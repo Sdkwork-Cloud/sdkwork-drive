@@ -63,6 +63,7 @@ var Operations = map[string]Operation{
 	"search.query": {Method: "GET", Path: "/app/v3/api/drive/search"},
 	"sharedWithMe.list": {Method: "GET", Path: "/app/v3/api/drive/shared_with_me"},
 	"shareLinks.create": {Method: "POST", Path: "/app/v3/api/drive/nodes/{nodeId}/share_links"},
+	"shareLinks.claim": {Method: "POST", Path: "/app/v3/api/drive/share_links/{token}/claim"},
 	"shareLinks.get": {Method: "GET", Path: "/app/v3/api/drive/share_links/{shareLinkId}"},
 	"shareLinks.list": {Method: "GET", Path: "/app/v3/api/drive/nodes/{nodeId}/share_links"},
 	"shareLinks.revoke": {Method: "DELETE", Path: "/app/v3/api/drive/share_links/{shareLinkId}"},

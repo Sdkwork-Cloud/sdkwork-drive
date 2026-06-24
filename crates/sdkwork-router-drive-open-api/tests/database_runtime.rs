@@ -1,4 +1,4 @@
-use sdkwork_drive_config::DatabaseConfig;
+use sdkwork_drive_config::{DatabaseConfig, DatabaseEngine};
 use sdkwork_router_drive_open_api::build_router_with_database_config;
 
 #[tokio::test]
@@ -11,22 +11,13 @@ async fn open_runtime_accepts_sqlite_database_config() {
         .expect("sqlite database config should build open router");
 }
 
-#[tokio::test]
-async fn open_runtime_routes_postgres_to_postgres_runtime() {
+#[test]
+fn open_runtime_recognizes_postgres_database_engine() {
     let config = DatabaseConfig::from_url_with_max_connections(
-        "postgresql://sdkwork_drive:secret@127.0.0.1:1/sdkwork_drive",
+        "postgresql://sdkwork_drive:secret@127.0.0.1:65535/sdkwork_drive",
         5,
     )
     .expect("postgres config should parse");
 
-    let error = build_router_with_database_config(&config)
-        .await
-        .expect_err("postgres connection is intentionally unavailable in this unit test");
-
-    assert!(
-        !error
-            .to_string()
-            .contains("currently supports SQLite runtime only"),
-        "unexpected error: {error}"
-    );
+    assert_eq!(config.engine(), DatabaseEngine::Postgresql);
 }

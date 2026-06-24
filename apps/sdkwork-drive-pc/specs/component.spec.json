@@ -138,7 +138,7 @@
         "role": "drive-admin-storage-capability",
         "required": true,
         "dependencyMode": "consumer-sdk",
-        "apiPrefix": "/admin/v3/api",
+        "apiPrefix": "/backend/v3/api",
         "apiAuthority": "sdkwork-drive.admin.storage",
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
@@ -152,6 +152,29 @@
   "verification": {
     "commands": [
       "pnpm typecheck"
+    ]
+  },
+  "uploadAttribution": {
+    "appId": "sdkwork-drive-pc",
+    "profiles": [
+      {
+        "code": "default",
+        "appResourceType": "desktop-file-browser",
+        "scene": "drive_pc_file_upload",
+        "source": {
+          "browser": "pc_local_file",
+          "desktop": "pc_native_file"
+        }
+      },
+      {
+        "code": "text",
+        "appResourceType": "desktop-file-editor",
+        "scene": "drive_pc_text_editor_save",
+        "source": {
+          "browser": "pc_local_file",
+          "desktop": "pc_native_file"
+        }
+      }
     ]
   }
 }

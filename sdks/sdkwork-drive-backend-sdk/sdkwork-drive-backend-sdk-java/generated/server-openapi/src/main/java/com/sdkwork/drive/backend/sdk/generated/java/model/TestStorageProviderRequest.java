@@ -7,7 +7,7 @@ public class TestStorageProviderRequest {
     public String getOperatorId() {
         return this.operatorId;
     }
-    
+
     public void setOperatorId(String operatorId) {
         this.operatorId = operatorId;
     }

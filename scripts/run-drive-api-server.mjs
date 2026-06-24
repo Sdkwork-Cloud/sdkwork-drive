@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 const WORKSPACE_ROOT = path.resolve(__dirname, '..');
 
 // Gateway configuration
-const GATEWAY_WORKSPACE = path.resolve(WORKSPACE_ROOT, '..', 'sdkwork-api-gateway');
+const GATEWAY_WORKSPACE = path.resolve(WORKSPACE_ROOT, '..', 'sdkwork-api-cloud-gateway');
 const GATEWAY_DEFAULT_URL = 'http://127.0.0.1:3900';
 const GATEWAY_HEALTH_PATH = '/healthz';
 const GATEWAY_CHECK_TIMEOUT_MS = 2000;
@@ -23,7 +23,7 @@ const GATEWAY_STARTUP_WAIT_MS = 3000;
 const GATEWAY_MAX_STARTUP_ATTEMPTS = 30;
 
 /**
- * Check if sdkwork-api-gateway is already running by hitting the health endpoint.
+ * Check if sdkwork-api-cloud-gateway is already running by hitting the health endpoint.
  * @param {string} gatewayUrl - The gateway base URL
  * @param {number} timeoutMs - Timeout for the health check request
  * @returns {Promise<boolean>} - True if gateway is healthy, false otherwise
@@ -62,34 +62,34 @@ function checkGatewayHealth(gatewayUrl, timeoutMs) {
 }
 
 /**
- * Start sdkwork-api-gateway as a background process.
+ * Start sdkwork-api-cloud-gateway as a background process.
  * @param {object} env - Environment variables to pass to the gateway
  * @returns {Promise<object>} - The spawned child process
  */
 function startGatewayProcess(env) {
   const gatewayPackageJsonPath = path.join(GATEWAY_WORKSPACE, 'package.json');
   if (!existsSync(gatewayPackageJsonPath)) {
-    throw new Error(`sdkwork-api-gateway workspace not found at ${GATEWAY_WORKSPACE}`);
+    throw new Error(`sdkwork-api-cloud-gateway workspace not found at ${GATEWAY_WORKSPACE}`);
   }
 
   const gatewayConfigExample = path.join(
     WORKSPACE_ROOT,
     'configs',
-    'sdkwork-api-gateway.drive.development.toml',
+    'sdkwork-api-cloud-gateway.drive.development.toml',
   );
 
   const args = [
     'run',
     '-p',
-    'sdkwork-api-gateway-api-server',
+    'sdkwork-api-cloud-gateway-api-server',
     '--bin',
-    'sdkwork-api-gateway',
+    'sdkwork-api-cloud-gateway',
     '--',
     '--config',
     gatewayConfigExample,
   ];
 
-  console.log('[sdkwork-drive] starting sdkwork-api-gateway...');
+  console.log('[sdkwork-drive] starting sdkwork-api-cloud-gateway...');
 
   const child = spawn(cargoCommand(), args, {
     cwd: GATEWAY_WORKSPACE,
@@ -109,12 +109,12 @@ function startGatewayProcess(env) {
  * @returns {Promise<boolean>} - True if gateway became healthy, false otherwise
  */
 async function waitForGatewayHealthy(gatewayUrl, maxAttempts, waitMs) {
-  console.log(`[sdkwork-drive] waiting for sdkwork-api-gateway at ${gatewayUrl}...`);
+  console.log(`[sdkwork-drive] waiting for sdkwork-api-cloud-gateway at ${gatewayUrl}...`);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const healthy = await checkGatewayHealth(gatewayUrl, GATEWAY_CHECK_TIMEOUT_MS);
     if (healthy) {
-      console.log(`[sdkwork-drive] sdkwork-api-gateway is healthy (attempt ${attempt})`);
+      console.log(`[sdkwork-drive] sdkwork-api-cloud-gateway is healthy (attempt ${attempt})`);
       return true;
     }
 
@@ -125,22 +125,22 @@ async function waitForGatewayHealthy(gatewayUrl, maxAttempts, waitMs) {
     }
   }
 
-  console.error(`[sdkwork-drive] sdkwork-api-gateway did not become healthy after ${maxAttempts} attempts`);
+  console.error(`[sdkwork-drive] sdkwork-api-cloud-gateway did not become healthy after ${maxAttempts} attempts`);
   return false;
 }
 
 /**
- * Ensure sdkwork-api-gateway is running before starting Drive API processes.
+ * Ensure sdkwork-api-cloud-gateway is running before starting Drive API processes.
  * @param {object} env - Environment variables
  * @returns {Promise<object|null>} - The gateway child process if started, null if already running
  */
 async function ensureGatewayRunning(env) {
-  const gatewayUrl = env.SDKWORK_API_GATEWAY_URL || GATEWAY_DEFAULT_URL;
+  const gatewayUrl = env.SDKWORK_API_CLOUD_GATEWAY_URL || GATEWAY_DEFAULT_URL;
 
   // Check if gateway is already running
   const alreadyRunning = await checkGatewayHealth(gatewayUrl, GATEWAY_CHECK_TIMEOUT_MS);
   if (alreadyRunning) {
-    console.log(`[sdkwork-drive] sdkwork-api-gateway already running at ${gatewayUrl}`);
+    console.log(`[sdkwork-drive] sdkwork-api-cloud-gateway already running at ${gatewayUrl}`);
     return null;
   }
 
@@ -156,7 +156,7 @@ async function ensureGatewayRunning(env) {
 
   if (!healthy) {
     gatewayProcess.kill();
-    throw new Error('sdkwork-api-gateway failed to start');
+    throw new Error('sdkwork-api-cloud-gateway failed to start');
   }
 
   return gatewayProcess;
@@ -493,9 +493,9 @@ Database policy:
   pnpm dev:sqlite   uses sqlite://target/dev/sdkwork-drive.sqlite
 
 Gateway policy:
-  The script checks if sdkwork-api-gateway is already running at http://127.0.0.1:3900.
+  The script checks if sdkwork-api-cloud-gateway is already running at http://127.0.0.1:3900.
   If not, it starts the gateway automatically before starting Drive API processes.
-  Set SDKWORK_API_GATEWAY_URL to override the gateway URL.
+  Set SDKWORK_API_CLOUD_GATEWAY_URL to override the gateway URL.
 `);
 }
 
@@ -516,7 +516,7 @@ async function main() {
         // Handle gateway process exit
         gatewayProcess.on('exit', (code) => {
           if (code !== 0 && code !== null) {
-            console.error(`[sdkwork-drive] sdkwork-api-gateway exited with code ${code}`);
+            console.error(`[sdkwork-drive] sdkwork-api-cloud-gateway exited with code ${code}`);
           }
         });
       }

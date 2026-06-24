@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 @dataclass
 class UpdateStorageProviderRequest:
-    operator_id: str
     name: Optional[str] = None
     endpoint_url: Optional[str] = None
     region: Optional[str] = None

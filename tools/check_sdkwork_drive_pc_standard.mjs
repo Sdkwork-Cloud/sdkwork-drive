@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,9 +11,12 @@ const expectedPackageDirs = [
   'sdkwork-drive-pc-commons',
   'sdkwork-drive-pc-core',
   'sdkwork-drive-pc-desktop',
+  'sdkwork-drive-pc-drive',
   'sdkwork-drive-pc-file',
   'sdkwork-drive-pc-transfer',
   'sdkwork-drive-pc-types',
+  'sdkwork-drive-pc-admin-core',
+  'sdkwork-drive-pc-admin-storage-providers',
 ];
 
 const oldPackageTokens = [
@@ -139,6 +143,68 @@ function assertPackageSpec(packageDir) {
   }
   if (!Array.isArray(componentSpec.contracts?.sdkDependencies)) {
     fail(`${packageDir}/specs/component.spec.json must declare contracts.sdkDependencies`);
+  }
+}
+
+function assertNoNestedAppLockfiles() {
+  const nestedLock = path.join(appRoot, 'pnpm-lock.yaml');
+  if (existsSync(nestedLock)) {
+    fail('apps/sdkwork-drive-pc must not maintain pnpm-lock.yaml; use the repository root workspace lockfile');
+  }
+}
+
+const forbiddenTrackedArtifactPrefixes = [
+  'apps/sdkwork-drive-pc/pnpm-lock.yaml',
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-desktop/src-tauri/target-test-migrate/',
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-desktop/src-tauri/target/',
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-desktop/src-tauri/gen/',
+];
+
+function assertNoTrackedBuildArtifacts() {
+  let trackedFiles = [];
+  try {
+    trackedFiles = execSync('git ls-files', { cwd: repoRoot, encoding: 'utf8' })
+      .trim()
+      .split('\n')
+      .filter(Boolean);
+  } catch {
+    fail('unable to inspect git index for tracked build artifacts');
+    return;
+  }
+
+  for (const file of trackedFiles) {
+    for (const prefix of forbiddenTrackedArtifactPrefixes) {
+      const normalizedPrefix = prefix.endsWith('/') ? prefix : `${prefix}`;
+      if (file === normalizedPrefix.replace(/\/$/, '') || file.startsWith(normalizedPrefix)) {
+        fail(`git must not track build artifact ${file}`);
+      }
+    }
+  }
+}
+
+function assertDevAppBuildCommands() {
+  const manifestPath = path.join(appRoot, 'sdkwork.app.config.json');
+  if (!existsSync(manifestPath)) {
+    fail('apps/sdkwork-drive-pc/sdkwork.app.config.json is required for devApp build alignment');
+    return;
+  }
+
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const appPackage = JSON.parse(readFileSync(path.join(appRoot, 'package.json'), 'utf8'));
+  const availableScripts = new Set(Object.keys(appPackage.scripts ?? {}));
+  const targets = manifest.devApp?.build?.targets ?? [];
+
+  for (const target of targets) {
+    const command = target?.command;
+    if (typeof command !== 'string' || command.length === 0) {
+      continue;
+    }
+    const scriptName = command.startsWith('pnpm ') ? command.slice('pnpm '.length).split(/\s+/)[0] : null;
+    if (scriptName && !availableScripts.has(scriptName)) {
+      fail(
+        `apps/sdkwork-drive-pc/sdkwork.app.config.json devApp target ${target.id ?? 'unknown'} references missing script ${scriptName}`,
+      );
+    }
   }
 }
 
@@ -404,6 +470,9 @@ function assertNoLocalByteFormatters() {
   }
 }
 
+assertNoNestedAppLockfiles();
+assertNoTrackedBuildArtifacts();
+assertDevAppBuildCommands();
 assertNoOldTokens();
 assertNoLocalByteFormatters();
 assertStandardRuntimeConfig();

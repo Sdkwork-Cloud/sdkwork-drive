@@ -27,10 +27,7 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-const params = {
-  status: 'status',
-};
-const result = await client.drive.storageProviders.list(params);
+const result = await client.drive.quotas.summary();
 ```
 
 ## Authentication
@@ -65,11 +62,8 @@ const client = new SdkworkBackendClient({
 ### drive
 
 ```typescript
-// GET /backend/v3/api/drive/storage_providers
-const params = {
-  status: 'status',
-};
-const result = await client.drive.storageProviders.list(params);
+// GET /backend/v3/api/drive/quotas
+const result = await client.drive.quotas.summary();
 ```
 
 ### labels
@@ -77,9 +71,8 @@ const result = await client.drive.storageProviders.list(params);
 ```typescript
 // List Drive label definitions
 const params = {
-  tenantId: 'tenantId',
   lifecycleStatus: 'active',
-  pageSize: 3,
+  pageSize: 2,
   pageToken: 'pageToken',
 };
 const result = await client.labels.list(params);
@@ -91,10 +84,7 @@ const result = await client.labels.list(params);
 import { SdkworkBackendClient, NetworkError, TimeoutError, AuthenticationError } from 'sdkwork-drive-backend-sdk-generated-typescript';
 
 try {
-  const params = {
-    status: 'status',
-  };
-  const result = await client.drive.storageProviders.list(params);
+  const result = await client.drive.quotas.summary();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

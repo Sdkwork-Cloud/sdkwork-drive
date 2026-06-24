@@ -24,6 +24,15 @@ pub(crate) fn share_link_expired_problem() -> (StatusCode, Json<ProblemDetail>) 
     )
 }
 
+pub(crate) fn share_link_access_code_problem() -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::FORBIDDEN,
+        "access code required",
+        "share link access code is missing or invalid",
+        "drive.share_link.access_code_invalid",
+    )
+}
+
 pub(crate) fn internal_sql_error(
     prefix: &'static str,
 ) -> impl Fn(sqlx::Error) -> (StatusCode, Json<ProblemDetail>) {
@@ -75,6 +84,7 @@ pub(crate) fn problem(
     detail: impl Into<String>,
     code: &str,
 ) -> (StatusCode, Json<ProblemDetail>) {
+    let ids = sdkwork_drive_http::problem_correlation::current_problem_correlation();
     (
         status,
         Json(ProblemDetail {
@@ -83,8 +93,8 @@ pub(crate) fn problem(
             status: status.as_u16(),
             detail: detail.into(),
             code: code.to_string(),
-            trace_id: "trace-unset".to_string(),
-            request_id: "request-unset".to_string(),
+            trace_id: ids.trace_id,
+            request_id: ids.request_id,
         }),
     )
 }

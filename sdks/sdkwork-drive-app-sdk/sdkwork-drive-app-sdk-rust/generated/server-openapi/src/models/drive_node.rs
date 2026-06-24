@@ -66,4 +66,9 @@ pub struct DriveNode {
     #[serde(rename = "contentLength")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content_length: Option<i64>,
+
+    /// Optional UI folder color from node property ui.folderColor.
+    #[serde(rename = "folderColor")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub folder_color: Option<String>,
 }

@@ -10,7 +10,7 @@ public class ProviderObjectMutation {
     public String getProviderId() {
         return this.providerId;
     }
-    
+
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
@@ -18,7 +18,7 @@ public class ProviderObjectMutation {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -26,7 +26,7 @@ public class ProviderObjectMutation {
     public String getObjectKey() {
         return this.objectKey;
     }
-    
+
     public void setObjectKey(String objectKey) {
         this.objectKey = objectKey;
     }
@@ -34,7 +34,7 @@ public class ProviderObjectMutation {
     public Boolean getChanged() {
         return this.changed;
     }
-    
+
     public void setChanged(Boolean changed) {
         this.changed = changed;
     }

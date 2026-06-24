@@ -11,34 +11,61 @@ pub struct UploadContentPolicyContext {
     pub checksum_sha256_hex: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UploadContentPolicyDecision {
+    Allow,
+    Block,
+    Quarantine,
+}
+
 /// MIME/extension upload policy hook. This is not an antivirus integration.
-pub async fn enforce_upload_content_policy(
+pub fn evaluate_upload_content_policy(
     context: &UploadContentPolicyContext,
-) -> Result<(), DriveServiceError> {
+) -> UploadContentPolicyDecision {
     let mode = UploadContentPolicyMode::from_env();
     if mode == UploadContentPolicyMode::Disabled {
-        return Ok(());
+        return UploadContentPolicyDecision::Allow;
     }
 
     metrics::record_content_scan_pending();
     if !is_blocked_upload_content_type(&context.content_type) {
-        return Ok(());
+        return UploadContentPolicyDecision::Allow;
     }
 
-    if mode == UploadContentPolicyMode::Enforce {
-        return Err(DriveServiceError::Validation(format!(
-            "upload blocked by content policy for content type {}",
-            context.content_type
-        )));
+    match mode {
+        UploadContentPolicyMode::Disabled => UploadContentPolicyDecision::Allow,
+        UploadContentPolicyMode::Audit => {
+            tracing::warn!(
+                target: "sdkwork.drive",
+                event = "drive.upload_content_policy.blocked_type_audit",
+                tenant_id = %context.tenant_id,
+                upload_item_id = %context.upload_item_id,
+                content_type = %context.content_type,
+                "upload content type matched blocked MIME policy in audit mode"
+            );
+            UploadContentPolicyDecision::Allow
+        }
+        UploadContentPolicyMode::Enforce => UploadContentPolicyDecision::Block,
+        UploadContentPolicyMode::Quarantine => UploadContentPolicyDecision::Quarantine,
     }
+}
 
-    tracing::warn!(
-        target: "sdkwork.drive",
-        event = "drive.upload_content_policy.blocked_type_audit",
-        tenant_id = %context.tenant_id,
-        upload_item_id = %context.upload_item_id,
-        content_type = %context.content_type,
-        "upload content type matched blocked MIME policy in audit mode"
-    );
-    Ok(())
+pub async fn enforce_upload_content_policy(
+    context: &UploadContentPolicyContext,
+) -> Result<(), DriveServiceError> {
+    match evaluate_upload_content_policy(context) {
+        UploadContentPolicyDecision::Allow => Ok(()),
+        UploadContentPolicyDecision::Block => {
+            Err(DriveServiceError::Validation(format!(
+                "upload blocked by content policy for content type {}",
+                context.content_type
+            )))
+        }
+        UploadContentPolicyDecision::Quarantine => {
+            Err(DriveServiceError::Validation(format!(
+                "upload quarantined by content policy for content type {}",
+                context.content_type
+            )))
+        }
+    }
 }

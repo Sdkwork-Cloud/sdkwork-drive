@@ -6,9 +6,10 @@
     "version": "0.1.0",
     "language": "python",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-sdk-generated-python"
   },
-  "changeFingerprint": "8cb820038ab34f3b047059308fe3d5250ed8e04cb4a771fd577d13d96a002d0c",
+  "changeFingerprint": "5ea4e37eb7f567fbc111c08a6d07ad6b73590fa3d9f035614f12977fd785f5f4",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [],

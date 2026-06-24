@@ -6,18 +6,29 @@ use sqlx::AnyPool;
 pub struct AdminStorageState {
     pub(crate) pool: AnyPool,
     pub(crate) config: AdminStorageConfig,
+    /// Retained for test harness contracts; HTTP auth is enforced by sdkwork-web-core.
+    #[allow(dead_code)]
+    pub(crate) auth_policy: DriveAuthValidationPolicy,
 }
 
 impl AdminStorageState {
     pub(crate) fn new(pool: AnyPool, config: AdminStorageConfig) -> Self {
-        Self { pool, config }
+        Self {
+            pool,
+            config,
+            auth_policy: DriveAuthValidationPolicy::default(),
+        }
     }
 
     pub(crate) fn with_auth_policy(
         pool: AnyPool,
         config: AdminStorageConfig,
-        _auth_policy: DriveAuthValidationPolicy,
+        auth_policy: DriveAuthValidationPolicy,
     ) -> Self {
-        Self::new(pool, config)
+        Self {
+            pool,
+            config,
+            auth_policy,
+        }
     }
 }

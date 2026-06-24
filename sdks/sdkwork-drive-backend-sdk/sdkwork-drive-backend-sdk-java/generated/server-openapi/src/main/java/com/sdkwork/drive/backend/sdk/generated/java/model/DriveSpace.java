@@ -14,7 +14,7 @@ public class DriveSpace {
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -22,7 +22,7 @@ public class DriveSpace {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -30,7 +30,7 @@ public class DriveSpace {
     public String getOwnerSubjectType() {
         return this.ownerSubjectType;
     }
-    
+
     public void setOwnerSubjectType(String ownerSubjectType) {
         this.ownerSubjectType = ownerSubjectType;
     }
@@ -38,7 +38,7 @@ public class DriveSpace {
     public String getOwnerSubjectId() {
         return this.ownerSubjectId;
     }
-    
+
     public void setOwnerSubjectId(String ownerSubjectId) {
         this.ownerSubjectId = ownerSubjectId;
     }
@@ -46,7 +46,7 @@ public class DriveSpace {
     public String getDisplayName() {
         return this.displayName;
     }
-    
+
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
@@ -54,7 +54,7 @@ public class DriveSpace {
     public String getSpaceType() {
         return this.spaceType;
     }
-    
+
     public void setSpaceType(String spaceType) {
         this.spaceType = spaceType;
     }
@@ -62,7 +62,7 @@ public class DriveSpace {
     public String getLifecycleStatus() {
         return this.lifecycleStatus;
     }
-    
+
     public void setLifecycleStatus(String lifecycleStatus) {
         this.lifecycleStatus = lifecycleStatus;
     }
@@ -70,7 +70,7 @@ public class DriveSpace {
     public Integer getVersion() {
         return this.version;
     }
-    
+
     public void setVersion(Integer version) {
         this.version = version;
     }

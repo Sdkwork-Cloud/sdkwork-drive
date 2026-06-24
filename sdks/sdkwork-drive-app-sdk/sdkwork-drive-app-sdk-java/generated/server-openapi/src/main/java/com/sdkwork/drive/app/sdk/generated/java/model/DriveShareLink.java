@@ -9,6 +9,7 @@ public class DriveShareLink {
     private Integer expiresAtEpochMs;
     private Integer downloadLimit;
     private Integer downloadCount;
+    private Boolean accessCodeRequired;
     private String lifecycleStatus;
     private Integer version;
 
@@ -66,6 +67,14 @@ public class DriveShareLink {
 
     public void setDownloadCount(Integer downloadCount) {
         this.downloadCount = downloadCount;
+    }
+
+    public Boolean getAccessCodeRequired() {
+        return this.accessCodeRequired;
+    }
+
+    public void setAccessCodeRequired(Boolean accessCodeRequired) {
+        this.accessCodeRequired = accessCodeRequired;
     }
 
     public String getLifecycleStatus() {

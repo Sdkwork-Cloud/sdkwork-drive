@@ -21,6 +21,8 @@ export const operations = {
   "labels.get": { method: "GET", path: "/backend/v3/api/drive/labels/{labelId}" },
   "labels.list": { method: "GET", path: "/backend/v3/api/drive/labels" },
   "labels.update": { method: "PATCH", path: "/backend/v3/api/drive/labels/{labelId}" },
+  "maintenance.abandonedUploadTaskSweep.start": { method: "POST", path: "/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep" },
+  "maintenance.expiredUploadContentSweep.start": { method: "POST", path: "/backend/v3/api/drive/maintenance/expired_upload_content_sweep" },
   "maintenance.jobs.list": { method: "GET", path: "/backend/v3/api/drive/maintenance/jobs" },
   "maintenance.objectSweep.start": { method: "POST", path: "/backend/v3/api/drive/maintenance/object_sweep" },
   "maintenance.uploadSessionSweep.start": { method: "POST", path: "/backend/v3/api/drive/maintenance/upload_session_sweep" },

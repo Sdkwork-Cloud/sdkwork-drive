@@ -1,7 +1,8 @@
 use crate::domain::maintenance::DriveSweepResult;
 use crate::ports::maintenance_store::{
     DriveMaintenanceStore, ListMaintenanceJobsQuery, MaintenanceJobPage, NewDriveMaintenanceJob,
-    SweepDeletedObjectsQuery, SweepExpiredUploadContentQuery, SweepExpiredUploadSessionsQuery,
+    SweepAbandonedUploadTasksQuery, SweepDeletedObjectsQuery, SweepExpiredUploadContentQuery,
+    SweepExpiredUploadSessionsQuery,
 };
 use crate::DriveServiceError;
 
@@ -26,6 +27,16 @@ pub struct SweepUploadSessionsCommand {
 
 #[derive(Debug, Clone)]
 pub struct SweepExpiredUploadContentCommand {
+    pub now_epoch_ms: i64,
+    pub dry_run: bool,
+    pub limit: Option<i64>,
+    pub operator_id: String,
+    pub request_id: Option<String>,
+    pub trace_id: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SweepAbandonedUploadTasksCommand {
     pub now_epoch_ms: i64,
     pub dry_run: bool,
     pub limit: Option<i64>,
@@ -215,6 +226,65 @@ where
                 self.store
                     .insert_maintenance_job(&NewDriveMaintenanceJob {
                         job_type: "expired_upload_content_sweep".to_string(),
+                        status: "failed".to_string(),
+                        dry_run: command.dry_run,
+                        scanned_count: 0,
+                        affected_count: 0,
+                        operator_id,
+                        request_id,
+                        trace_id,
+                        error_message: Some(error_message),
+                    })
+                    .await?;
+                Err(error)
+            }
+        }
+    }
+
+    pub async fn sweep_abandoned_upload_tasks(
+        &self,
+        command: SweepAbandonedUploadTasksCommand,
+    ) -> Result<DriveSweepResult, DriveServiceError> {
+        let operator_id = normalize_required_operator_id(command.operator_id)?;
+        let request_id = normalize_optional_identifier("request_id", command.request_id, 64)?;
+        let trace_id = normalize_optional_identifier("trace_id", command.trace_id, 128)?;
+        if command.now_epoch_ms <= 0 {
+            return Err(DriveServiceError::Validation(
+                "now_epoch_ms must be greater than 0".to_string(),
+            ));
+        }
+        let limit = normalize_limit(command.limit)?;
+        let result = self
+            .store
+            .sweep_abandoned_upload_tasks(&SweepAbandonedUploadTasksQuery {
+                now_epoch_ms: command.now_epoch_ms,
+                dry_run: command.dry_run,
+                limit,
+                operator_id: operator_id.clone(),
+            })
+            .await;
+        match result {
+            Ok(result) => {
+                self.store
+                    .insert_maintenance_job(&NewDriveMaintenanceJob {
+                        job_type: "abandoned_upload_task_sweep".to_string(),
+                        status: "completed".to_string(),
+                        dry_run: result.dry_run,
+                        scanned_count: result.scanned_count,
+                        affected_count: result.affected_count,
+                        operator_id,
+                        request_id,
+                        trace_id,
+                        error_message: None,
+                    })
+                    .await?;
+                Ok(result)
+            }
+            Err(error) => {
+                let error_message = format!("{error:?}");
+                self.store
+                    .insert_maintenance_job(&NewDriveMaintenanceJob {
+                        job_type: "abandoned_upload_task_sweep".to_string(),
                         status: "failed".to_string(),
                         dry_run: command.dry_run,
                         scanned_count: 0,

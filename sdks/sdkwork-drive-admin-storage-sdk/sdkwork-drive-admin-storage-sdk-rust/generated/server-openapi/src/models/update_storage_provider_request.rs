@@ -35,9 +35,6 @@ pub struct UpdateStorageProviderRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 
-    #[serde(rename = "operatorId")]
-    pub operator_id: String,
-
     /// Provider-level TLS policy. HTTPS endpoints default to true, private HTTP endpoints default to false, and true requires an HTTPS endpoint.
     #[serde(rename = "strictTls")]
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -1,23 +1,19 @@
 import React, { useState } from 'react';
-import { 
-  Download, 
-  CheckCircle2, 
-  X, 
-  Pause, 
-  Play, 
-  RotateCcw, 
+import {
+  Download,
+  CheckCircle2,
+  X,
+  RotateCcw,
   ChevronDown,
   ChevronUp,
   FolderOpen,
   File,
   Loader2,
 } from 'lucide-react';
-import { formatDriveBytes, useTranslation } from 'sdkwork-drive-pc-commons';
+import { formatDriveBytes, formatTransferJobProgressDetail, formatTransferJobSpeedLabel, formatTransferJobTimeRemainingLabel, useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DownloadJob } from 'sdkwork-drive-pc-types';
 import {
   canCancelTransferJob,
-  canPauseTransferJob,
-  canResumeTransferJob,
   isActiveTransferStatus,
   resolveTransferOpenUrl,
 } from 'sdkwork-drive-pc-types';
@@ -26,8 +22,6 @@ export type { DownloadJob };
 
 interface DownloadManagerProps {
   jobs: DownloadJob[];
-  onPauseJob?: (id: string) => void;
-  onResumeJob?: (id: string) => void;
   onCancelJob: (id: string) => void;
   onClearJobs: () => void;
   onDismissPanel: () => void;
@@ -37,13 +31,11 @@ interface DownloadManagerProps {
 
 export function DownloadManager({
   jobs,
-  onPauseJob,
-  onResumeJob,
   onCancelJob,
   onClearJobs,
   onDismissPanel,
   onRetryJob,
-  onOpenDownload
+  onOpenDownload,
 }: DownloadManagerProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const { t } = useTranslation();
@@ -158,8 +150,6 @@ export function DownloadManager({
           {jobs.map((job) => {
             const isWorking = isActiveTransferStatus(job.status);
             const canCancel = canCancelTransferJob(job);
-            const canPause = canPauseTransferJob(job);
-            const canResume = canResumeTransferJob(job);
             
             return (
               <div key={job.id} className="p-3.5 space-y-2 group transition-colors hover:bg-gray-50/40 dark:hover:bg-[#222]/20 animate-in fade-in duration-200">
@@ -198,46 +188,25 @@ export function DownloadManager({
                           }
                         }}
                         className="p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 cursor-pointer"
-                        title="Open Download"
+                        title={t('transfer.openDownload')}
                       >
                         <Download size={12} />
                       </button>
                     )}
-                    {/* Pause/Resume buttons */}
-                    {canPause && (
-                      <button 
-                        onClick={() => onPauseJob?.(job.id)}
-                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#282828] rounded text-gray-500 hover:text-gray-700 dark:text-gray-400 cursor-pointer"
-                        title="Pause Transfer"
-                      >
-                        <Pause size={12} />
-                      </button>
-                    )}
-                    {canResume && (
-                      <button 
-                        onClick={() => onResumeJob?.(job.id)}
-                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#282828] rounded text-blue-500 hover:text-blue-600 cursor-pointer"
-                        title="Resume Transfer"
-                      >
-                        <Play size={12} className="fill-current" />
-                      </button>
-                    )}
-                    {/* Retry button */}
                     {(job.status === 'failed' || job.status === 'cancelled') && (
                       <button 
                         onClick={() => onRetryJob(job)}
                         className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#282828] rounded text-blue-500 hover:text-blue-600 cursor-pointer"
-                        title={job.type === 'upload' ? 'Retry Upload' : 'Retry Download'}
+                        title={job.type === 'upload' ? t('transfer.retryUpload') : t('transfer.retryDownload')}
                       >
                         <RotateCcw size={12} />
                       </button>
                     )}
-                    {/* Cancel button */}
                     {canCancel && (
                       <button 
                         onClick={() => onCancelJob(job.id)}
                         className="p-1.5 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/20 rounded text-gray-400 cursor-pointer"
-                        title="Cancel Transfer"
+                        title={t('transfer.cancelTransfer')}
                       >
                         <X size={12} />
                       </button>
@@ -257,9 +226,9 @@ export function DownloadManager({
                     <div className="flex items-center justify-between text-[9px] text-gray-400 font-mono">
                       <span>{formatSize(job.downloadedSize)} of {formatSize(job.totalSize)}</span>
                       <div className="flex items-center gap-1">
-                        <span>{job.speed}</span>
+                        <span>{formatTransferJobSpeedLabel(job.speed, t)}</span>
                         <span>-</span>
-                        <span>{job.timeRemaining}</span>
+                        <span>{formatTransferJobTimeRemainingLabel(job.timeRemaining, t)}</span>
                       </div>
                     </div>
                   </div>

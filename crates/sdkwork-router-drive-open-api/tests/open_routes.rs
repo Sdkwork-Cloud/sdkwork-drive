@@ -1106,6 +1106,133 @@ async fn open_share_link_download_treats_subsecond_remaining_share_ttl_as_expire
     assert_eq!(download_count, 0);
 }
 
+#[tokio::test]
+async fn open_share_link_requires_valid_access_code_when_configured() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES ('space-open-access-code', 'tenant-open-access-code', 'user', 'user-open-access-code', 'personal', 'Open', 'active', 1, 'user-open-access-code', 'user-open-access-code')",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES ('node-open-access-code', 'tenant-open-access-code', 'space-open-access-code', NULL, 'file', 'protected.pdf', 'ready', 'active', 1, 'user-open-access-code', 'user-open-access-code')",
+    )
+    .execute(&pool)
+    .await
+    .expect("node should be seeded");
+
+    let token = "share-token-open-access-code-123456789012345678901234567890";
+    let token_hash = drive_share_token_hash(token);
+    let access_code_hash = sdkwork_drive_workspace_service::drive_share_access_code_hash("9876");
+    sqlx::query(
+        "INSERT INTO dr_drive_node_share_link (
+            id, tenant_id, node_id, token_hash, access_code_hash, role, expires_at_epoch_ms,
+            download_limit, download_count, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'share-open-access-code', 'tenant-open-access-code', 'node-open-access-code',
+            ?1, ?2, 'reader', 4102444800000, NULL, 0, 'active', 1, 'user-open-access-code',
+            'user-open-access-code'
+        )",
+    )
+    .bind(&token_hash)
+    .bind(&access_code_hash)
+    .execute(&pool)
+    .await
+    .expect("share link should be seeded");
+
+    let app = build_router_with_pool(pool.clone());
+    let denied = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/open/v3/api/drive/share_links/{token}"))
+                .body(Body::empty())
+                .expect("request should be built"),
+        )
+        .await
+        .expect("resolve request should be handled");
+    assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+
+    let allowed = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!(
+                    "/open/v3/api/drive/share_links/{token}?accessCode=9876"
+                ))
+                .body(Body::empty())
+                .expect("request should be built"),
+        )
+        .await
+        .expect("resolve request should be handled");
+    assert_eq!(allowed.status(), StatusCode::OK);
+    let payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(allowed.into_body(), usize::MAX)
+            .await
+            .expect("response body should be read"),
+    )
+    .expect("response json should be valid");
+    assert_eq!(payload["accessCodeRequired"], true);
+}
+
+#[tokio::test]
+async fn open_metrics_endpoint_exposes_http_histogram_and_counters() {
+    let app = build_router_with_pool(
+        AnyPoolOptions::new()
+            .max_connections(1)
+            .connect_lazy("sqlite::memory:")
+            .expect("sqlite in-memory pool should be created"),
+    );
+
+    let health = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/healthz")
+                .body(Body::empty())
+                .expect("health request should be built"),
+        )
+        .await
+        .expect("health request should be handled");
+    assert_eq!(health.status(), StatusCode::OK);
+
+    let metrics_response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/metrics")
+                .body(Body::empty())
+                .expect("metrics request should be built"),
+        )
+        .await
+        .expect("metrics request should be handled");
+    assert_eq!(metrics_response.status(), StatusCode::OK);
+    let body = to_bytes(metrics_response.into_body(), usize::MAX)
+        .await
+        .expect("metrics body should be read");
+    let rendered = String::from_utf8(body.to_vec()).expect("metrics body should be utf8");
+    assert!(rendered.contains("drive_http_request_duration_seconds_bucket"));
+    assert!(rendered.contains("drive_http_requests_total"));
+}
+
 struct StorageProviderFixture<'a> {
     provider_id: &'a str,
     provider_kind: &'a str,

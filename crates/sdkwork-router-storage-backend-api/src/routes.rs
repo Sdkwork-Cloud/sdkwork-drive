@@ -4,7 +4,7 @@ use crate::handlers::*;
 use crate::state::AdminStorageState;
 use crate::web_bootstrap::wrap_router_with_web_framework;
 use axum::middleware;
-use axum::routing::{get, post};
+use axum::routing::get;
 use axum::{Extension, Router};
 use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_security::DriveAuthValidationPolicy;
@@ -152,73 +152,15 @@ fn build_router_inner(
     require_iam: bool,
     test_context: Option<crate::app_context::DriveRequestContext>,
 ) -> Router {
-    let mut drive_routes = Router::new()
-        .route(
-            "/admin/v3/api/drive/storage/providers",
-            get(list_storage_providers).post(create_storage_provider),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/providers/{provider_id}",
-            get(get_storage_provider)
-                .patch(update_storage_provider)
-                .delete(delete_storage_provider),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/providers/{provider_id}/capabilities",
-            get(get_storage_provider_capabilities),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/providers/{provider_id}/test",
-            post(test_storage_provider),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/providers/{provider_id}/activate",
-            post(activate_storage_provider),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/providers/{provider_id}/deactivate",
-            post(deactivate_storage_provider),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/providers/{provider_id}/credentials/rotate",
-            post(rotate_storage_provider_credentials),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/providers/{provider_id}/bucket",
-            get(head_storage_provider_bucket)
-                .put(create_storage_provider_bucket)
-                .delete(delete_storage_provider_bucket),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/providers/{provider_id}/buckets",
-            get(list_storage_provider_buckets),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/providers/{provider_id}/objects",
-            get(list_storage_provider_objects),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/providers/{provider_id}/objects/copy",
-            post(copy_storage_provider_object),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/providers/{provider_id}/objects/{*object_key}",
-            get(head_storage_provider_object).delete(delete_storage_provider_object),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/bindings/default",
-            get(get_default_storage_provider_binding)
-                .put(set_default_storage_provider_binding)
-                .delete(delete_default_storage_provider_binding),
-        )
-        .route(
-            "/admin/v3/api/drive/storage/bindings",
-            get(list_storage_provider_bindings),
-        );
+    let mut drive_routes = crate::route_paths::storage_drive_routes("/admin/v3/api")
+        .merge(crate::route_paths::storage_drive_routes("/backend/v3/api"));
 
     if require_iam {
-        drive_routes =
-            drive_routes.route_layer(middleware::from_fn(drive_context_projection_guard));
+        drive_routes = drive_routes
+            .route_layer(middleware::from_fn(
+                sdkwork_drive_http::problem_correlation::problem_correlation_middleware,
+            ))
+            .route_layer(middleware::from_fn(drive_context_projection_guard));
     }
 
     let mut router = Router::new()

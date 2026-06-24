@@ -104,7 +104,29 @@ impl DriveAuthValidationPolicy {
     }
 
     pub fn requires_signed_jwt(&self) -> bool {
-        !self.jwt_hmac_secrets.is_empty() || self.has_jwks()
+        !self.jwt_hmac_secrets.is_empty()
+            || self.has_jwks()
+            || Self::is_production_runtime_profile()
+    }
+
+    pub fn ensure_production_ready(&self) -> Result<(), String> {
+        if !Self::is_production_runtime_profile() {
+            return Ok(());
+        }
+        if self.allow_inline_claim_tokens {
+            return Err(
+                "production runtime cannot allow inline claim tokens; configure JWT HMAC or JWKS"
+                    .to_string(),
+            );
+        }
+        if self.jwt_hmac_secrets.is_empty() && self.jwt_jwks_keys.is_empty() {
+            return Err(
+                "production runtime requires SDKWORK_DRIVE_JWT_HMAC_SECRET, \
+                 SDKWORK_DRIVE_JWT_HMAC_SECRETS_JSON, or SDKWORK_DRIVE_JWT_JWKS_URL"
+                    .to_string(),
+            );
+        }
+        Ok(())
     }
 
     pub fn resolve_jwt_hmac_secret(&self, kid: Option<&str>) -> Option<&str> {
@@ -135,6 +157,60 @@ impl DriveAuthValidationPolicy {
 mod tests {
     use super::*;
     use crate::jwks::parse_jwt_jwks_json;
+    use std::sync::{Mutex, MutexGuard};
+
+    static ENV_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    fn lock_env_tests() -> MutexGuard<'static, ()> {
+        ENV_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    struct EnvVarRestore {
+        key: &'static str,
+        previous: Option<String>,
+    }
+
+    impl EnvVarRestore {
+        fn set(key: &'static str, value: &str) -> Self {
+            let previous = std::env::var(key).ok();
+            std::env::set_var(key, value);
+            Self { key, previous }
+        }
+
+        fn remove(key: &'static str) -> Self {
+            let previous = std::env::var(key).ok();
+            std::env::remove_var(key);
+            Self { key, previous }
+        }
+    }
+
+    impl Drop for EnvVarRestore {
+        fn drop(&mut self) {
+            match &self.previous {
+                Some(value) => std::env::set_var(self.key, value),
+                None => std::env::remove_var(self.key),
+            }
+        }
+    }
+
+    #[test]
+    fn production_auth_policy_requires_signing_material() {
+        let _guard = lock_env_tests();
+        let _profile = EnvVarRestore::set("SDKWORK_DRIVE_RUNTIME_PROFILE", "production");
+        let _hmac = EnvVarRestore::remove("SDKWORK_DRIVE_JWT_HMAC_SECRET");
+        let _hmac_json = EnvVarRestore::remove("SDKWORK_DRIVE_JWT_HMAC_SECRETS_JSON");
+        let _jwks_json = EnvVarRestore::remove("SDKWORK_DRIVE_JWT_JWKS_JSON");
+
+        let policy = DriveAuthValidationPolicy::from_env();
+        assert!(policy.requires_signed_jwt());
+        assert!(!policy.allow_inline_claim_tokens);
+        let error = policy
+            .ensure_production_ready()
+            .expect_err("production without secrets must fail readiness");
+        assert!(error.contains("production runtime requires"));
+    }
 
     #[test]
     fn resolves_kid_specific_secret_before_default() {

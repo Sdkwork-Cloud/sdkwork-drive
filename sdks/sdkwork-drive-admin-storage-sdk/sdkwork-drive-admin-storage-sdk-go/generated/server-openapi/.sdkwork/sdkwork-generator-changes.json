@@ -6,9 +6,10 @@
     "version": "0.1.0",
     "language": "go",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-go"
   },
-  "changeFingerprint": "377124395c8f6be36d7ec8eb15a56d9b863dd353361f073beb18950369e0ada1",
+  "changeFingerprint": "8eb029f422647363ed3f609c29a70ec428642ffe395e4e8a3bf23618def9dd8a",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [],

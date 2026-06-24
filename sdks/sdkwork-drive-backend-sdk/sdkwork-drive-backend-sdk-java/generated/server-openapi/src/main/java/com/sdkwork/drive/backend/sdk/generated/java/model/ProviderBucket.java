@@ -9,7 +9,7 @@ public class ProviderBucket {
     public String getProviderId() {
         return this.providerId;
     }
-    
+
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
@@ -17,7 +17,7 @@ public class ProviderBucket {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -25,7 +25,7 @@ public class ProviderBucket {
     public Boolean getExists() {
         return this.exists;
     }
-    
+
     public void setExists(Boolean exists) {
         this.exists = exists;
     }

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::ProviderBucketListItem;
+use crate::models::{ProviderBucketListItem};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct ProviderBucketList {

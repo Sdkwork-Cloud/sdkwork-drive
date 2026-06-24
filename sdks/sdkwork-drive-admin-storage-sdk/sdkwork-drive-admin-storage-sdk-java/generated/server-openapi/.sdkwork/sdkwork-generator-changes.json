@@ -6,9 +6,10 @@
     "version": "0.1.0",
     "language": "java",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-java"
   },
-  "changeFingerprint": "40751ef245da38cac815e93f7723a5684120c8eb0b0280504e3ddfd248716f75",
+  "changeFingerprint": "7eefa9af13faa7b42a89754fbf4e6d2cae4f9bb96874e6cdfcc10fc0cf4ba274",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [],

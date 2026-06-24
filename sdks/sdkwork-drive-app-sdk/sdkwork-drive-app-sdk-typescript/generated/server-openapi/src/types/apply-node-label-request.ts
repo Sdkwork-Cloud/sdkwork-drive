@@ -1,1 +1,3 @@
-export interface ApplyNodeLabelRequest {}
+export interface ApplyNodeLabelRequest {
+  operatorId?: string;
+}

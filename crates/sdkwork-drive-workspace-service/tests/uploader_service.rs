@@ -1191,6 +1191,117 @@ async fn upload_bytes_writes_object_and_completes_ai_generated_upload() {
     assert_eq!(space_type, "ai_generated");
 }
 
+#[tokio::test]
+async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operation_and_aborts_session(
+) {
+    std::env::set_var("SDKWORK_DRIVE_CONTENT_SCAN_MODE", "quarantine");
+    let pool = create_pool().await;
+    let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
+    let prepared = service
+        .prepare_upload(PrepareUploaderUploadCommand {
+            id: "upload-item-quarantine".to_string(),
+            task_id: "task-quarantine".to_string(),
+            tenant_id: "tenant-quarantine".to_string(),
+            organization_id: Some("org-quarantine".to_string()),
+            actor: UploaderActor::User {
+                user_id: "user-quarantine".to_string(),
+            },
+            app_id: "drive-pc".to_string(),
+            app_resource_type: "desktop-file-browser".to_string(),
+            app_resource_id: "root".to_string(),
+            scene: Some("user_document_upload".to_string()),
+            source: Some("pc_local_file".to_string()),
+            upload_profile_code: "generic".to_string(),
+            file_fingerprint: "fp-quarantine".to_string(),
+            original_file_name: "malware.exe".to_string(),
+            content_type: "application/x-msdownload".to_string(),
+            content_length: 128,
+            chunk_size_bytes: 64,
+            target: UploaderTarget::AutoUploadSpace {
+                parent_node_id: None,
+            },
+            retention: UploaderRetention::LongTerm,
+            operator_id: "user-quarantine".to_string(),
+            now_epoch_ms: 1_800_000_000_000,
+        })
+        .await
+        .expect("quarantine upload should be prepared");
+
+    let upload_session_id = prepared
+        .upload_session_id
+        .clone()
+        .expect("prepare should create upload session");
+
+    let error = service
+        .complete_stored_upload(CompleteStoredUploaderUploadCommand {
+            tenant_id: "tenant-quarantine".to_string(),
+            upload_item_id: prepared.id.clone(),
+            upload_session_id: upload_session_id.clone(),
+            content_type: "application/x-msdownload".to_string(),
+            content_length: 128,
+            checksum_sha256_hex:
+                "sha256:0000000000000000000000000000000000000000000000000000000000000000".to_string(),
+            uploaded_parts_count: 2,
+            operator_id: "user-quarantine".to_string(),
+        })
+        .await
+        .expect_err("blocked executable should be quarantined");
+    assert!(matches!(error, DriveServiceError::Validation(message) if message.contains("quarantined")));
+
+    let node_lifecycle: String = sqlx::query_scalar(
+        "SELECT lifecycle_status FROM dr_drive_node WHERE tenant_id=?1 AND id=?2",
+    )
+    .bind(&prepared.tenant_id)
+    .bind(&prepared.node_id)
+    .fetch_one(&pool)
+    .await
+    .expect("quarantined node should exist");
+    assert_eq!(node_lifecycle, "trashed");
+
+    let upload_item_status: (String, String) = sqlx::query_as(
+        "SELECT status, cleanup_status FROM dr_drive_upload_item WHERE id=?1",
+    )
+    .bind(&prepared.id)
+    .fetch_one(&pool)
+    .await
+    .expect("quarantined upload item should exist");
+    assert_eq!(upload_item_status, ("failed".to_string(), "failed".to_string()));
+
+    let session_state: String = sqlx::query_scalar(
+        "SELECT state FROM dr_drive_upload_session WHERE id=?1",
+    )
+    .bind(&upload_session_id)
+    .fetch_one(&pool)
+    .await
+    .expect("quarantined upload session should exist");
+    assert_eq!(session_state, "aborted");
+
+    let sensitive_operation: (String, String) = sqlx::query_as(
+        "SELECT operation_type, operation_reason
+         FROM dr_drive_file_sensitive_operation
+         WHERE upload_item_id=?1",
+    )
+    .bind(&prepared.id)
+    .fetch_one(&pool)
+    .await
+    .expect("quarantine sensitive operation should be recorded");
+    assert_eq!(
+        sensitive_operation,
+        ("soft_delete".to_string(), "system".to_string())
+    );
+
+    let outbox_event: String = sqlx::query_scalar(
+        "SELECT event_type FROM dr_drive_domain_outbox WHERE tenant_id=?1 ORDER BY created_at DESC LIMIT 1",
+    )
+    .bind(&prepared.tenant_id)
+    .fetch_one(&pool)
+    .await
+    .expect("quarantine outbox event should exist");
+    assert_eq!(outbox_event, "drive.object.quarantined");
+
+    std::env::remove_var("SDKWORK_DRIVE_CONTENT_SCAN_MODE");
+}
+
 async fn create_pool() -> sqlx::AnyPool {
     sqlx::any::install_default_drivers();
     let pool = AnyPoolOptions::new()

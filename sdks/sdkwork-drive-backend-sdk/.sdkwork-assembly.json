@@ -3,10 +3,10 @@
   "title": "SDKWork Drive Backend API SDK",
   "apiVersion": "0.1.0",
   "openapiVersion": "3.1.2",
-  "authoritySpec": "../../apis/drive-backend-api.openapi.json",
-  "generationInputSpec": "../../apis/drive-backend-api.openapi.json",
+  "authoritySpec": "../../apis/backend-api/drive/drive-backend-api.openapi.json",
+  "generationInputSpec": "../../apis/backend-api/drive/drive-backend-api.openapi.json",
   "derivedSpecs": {
-    "default": "../../apis/drive-backend-api.openapi.json"
+    "default": "../../apis/backend-api/drive/drive-backend-api.openapi.json"
   },
   "apiAuthority": "sdkwork-drive.backend",
   "discoverySurface": {

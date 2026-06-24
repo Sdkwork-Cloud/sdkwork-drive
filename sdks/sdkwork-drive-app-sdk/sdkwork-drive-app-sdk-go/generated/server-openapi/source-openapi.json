@@ -22,7 +22,7 @@
           {
             "name": "spaceId",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -136,7 +136,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/changes/start_page_token": {
@@ -149,7 +151,7 @@
           {
             "name": "spaceId",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -234,7 +236,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/download_tokens/{token}": {
@@ -325,7 +329,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/download_urls": {
@@ -408,7 +414,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/favorites": {
@@ -525,7 +533,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/quotas/summary": {
@@ -584,7 +594,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}": {
@@ -692,7 +704,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "get": {
         "tags": [
@@ -773,7 +787,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "delete": {
         "tags": [
@@ -854,7 +870,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/capabilities": {
@@ -937,7 +955,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/comments": {
@@ -1054,7 +1074,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "post": {
         "tags": [
@@ -1160,7 +1182,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}": {
@@ -1266,7 +1290,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "patch": {
         "tags": [
@@ -1380,7 +1406,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "delete": {
         "tags": [
@@ -1484,7 +1512,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}/replies": {
@@ -1609,7 +1639,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "post": {
         "tags": [
@@ -1723,7 +1755,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}/replies/{replyId}": {
@@ -1837,7 +1871,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "patch": {
         "tags": [
@@ -1959,7 +1995,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "delete": {
         "tags": [
@@ -2071,7 +2109,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/copy": {
@@ -2179,7 +2219,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/download_url": {
@@ -2272,7 +2314,104 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
+      }
+    },
+    "/app/v3/api/drive/nodes/{nodeId}/download_grants": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "downloadGrants.create",
+        "parameters": [
+          {
+            "name": "nodeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDownloadGrantRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDownloadUrlResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/favorite": {
@@ -2380,7 +2519,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "delete": {
         "tags": [
@@ -2476,7 +2617,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/labels": {
@@ -2610,7 +2753,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/labels/{labelId}": {
@@ -2733,7 +2878,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "delete": {
         "tags": [
@@ -2844,7 +2991,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/move": {
@@ -2952,7 +3101,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/path": {
@@ -3050,7 +3201,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/permissions": {
@@ -3167,7 +3320,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "post": {
         "tags": [
@@ -3273,7 +3428,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/permissions/{permissionId}": {
@@ -3379,7 +3536,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "patch": {
         "tags": [
@@ -3493,7 +3652,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "get": {
         "tags": [
@@ -3597,7 +3758,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/permissions/effective": {
@@ -3714,7 +3877,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/properties": {
@@ -3837,7 +4002,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/properties/{propertyKey}": {
@@ -3947,7 +4114,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "delete": {
         "tags": [
@@ -4059,7 +4228,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/share_links": {
@@ -4094,7 +4265,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveShareLink"
+                  "$ref": "#/components/schemas/CreateShareLinkResponse"
                 }
               }
             }
@@ -4167,7 +4338,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "get": {
         "tags": [
@@ -4282,7 +4455,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/trash": {
@@ -4390,7 +4565,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/versions": {
@@ -4507,7 +4684,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/versions/{versionId}": {
@@ -4613,7 +4792,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "get": {
         "tags": [
@@ -4717,7 +4898,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/versions/{versionId}/restore": {
@@ -4833,7 +5016,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/files": {
@@ -4931,7 +5116,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/folders": {
@@ -5029,7 +5216,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/shortcuts": {
@@ -5128,7 +5317,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/recent": {
@@ -5245,7 +5436,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/search": {
@@ -5370,7 +5563,134 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
+      }
+    },
+    "/app/v3/api/drive/share_links/{token}/claim": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "shareLinks.claim",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimShareLinkResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimShareLinkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/share_links/{shareLinkId}": {
@@ -5468,7 +5788,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "patch": {
         "tags": [
@@ -5574,7 +5896,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "get": {
         "tags": [
@@ -5670,7 +5994,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/shared_with_me": {
@@ -5787,7 +6113,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/spaces": {
@@ -5863,7 +6191,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "post": {
         "tags": [
@@ -5944,7 +6274,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/spaces/{spaceId}": {
@@ -6027,7 +6359,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "patch": {
         "tags": [
@@ -6133,7 +6467,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "delete": {
         "tags": [
@@ -6229,7 +6565,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/spaces/{spaceId}/nodes": {
@@ -6354,7 +6692,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/trash": {
@@ -6479,7 +6819,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/trash/{nodeId}/restore": {
@@ -6587,7 +6929,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/trash/empty": {
@@ -6685,7 +7029,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/upload_sessions": {
@@ -6768,7 +7114,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/upload_sessions/{uploadSessionId}": {
@@ -6866,7 +7214,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/upload_sessions/{uploadSessionId}/abort": {
@@ -6974,7 +7324,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/upload_sessions/{uploadSessionId}/complete": {
@@ -7082,7 +7434,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/upload_sessions/{uploadSessionId}/parts/{partNo}": {
@@ -7200,7 +7554,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/changes/watch": {
@@ -7299,7 +7655,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/watch": {
@@ -7411,7 +7769,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/watch_channels": {
@@ -7549,7 +7909,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/watch_channels/{channelId}": {
@@ -7651,7 +8013,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/watch_channels/{channelId}/stop": {
@@ -7763,7 +8127,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/download_packages": {
@@ -7876,7 +8242,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/download_packages/{packageId}/download_url": {
@@ -7991,7 +8359,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/archive_entries": {
@@ -8089,7 +8459,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/nodes/{nodeId}/archive_entries/extract": {
@@ -8197,7 +8569,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/uploader/uploads": {
@@ -8295,7 +8669,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/drive/uploader/uploads/{uploadItemId}/parts/{partNo}": {
@@ -8414,7 +8790,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/assets": {
@@ -8564,7 +8942,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "post": {
         "tags": [
@@ -8677,7 +9057,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/assets/{assetId}": {
@@ -8791,7 +9173,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "patch": {
         "tags": [
@@ -8913,7 +9297,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/assets/{assetId}/archive": {
@@ -9037,7 +9423,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/assets/{assetId}/restore": {
@@ -9161,7 +9549,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/assets/collections": {
@@ -9286,7 +9676,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       },
       "post": {
         "tags": [
@@ -9399,7 +9791,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/assets/collections/{collectionId}/items": {
@@ -9523,7 +9917,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/assets/collections/{collectionId}/items/{itemId}": {
@@ -9645,7 +10041,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/assets/{assetId}/relations": {
@@ -9769,7 +10167,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     },
     "/app/v3/api/assets/{assetId}/relations/{relationId}": {
@@ -9891,7 +10291,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app"
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
       }
     }
   },
@@ -9899,8 +10301,14 @@
     "schemas": {
       "ApplyNodeLabelRequest": {
         "type": "object",
-        "required": [],
-        "properties": {},
+        "properties": {
+          "operatorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
+          }
+        },
         "additionalProperties": false
       },
       "Change": {
@@ -10097,6 +10505,17 @@
           }
         }
       },
+      "CreateDownloadGrantRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "requestedTtlSeconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 300
+          }
+        }
+      },
       "CreateDownloadUrlRequest": {
         "type": "object",
         "required": [
@@ -10243,15 +10662,15 @@
       "CreateShareLinkRequest": {
         "type": "object",
         "required": [
-          "id",
-          "token"
+          "id"
         ],
         "properties": {
           "id": {
             "type": "string"
           },
           "token": {
-            "type": "string"
+            "type": "string",
+            "description": "Optional client-supplied token. When omitted, the server generates a high-entropy token and returns it once in the create response."
           },
           "role": {
             "type": "string",
@@ -10270,6 +10689,12 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
+          },
+          "accessCode": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 64,
+            "description": "Optional extraction code required by recipients before resolving or downloading the shared link."
           }
         }
       },
@@ -10732,6 +11157,10 @@
             "type": "integer",
             "format": "int64",
             "description": "Byte size of the latest active file version."
+          },
+          "folderColor": {
+            "type": "string",
+            "description": "Optional UI folder color from node property ui.folderColor."
           }
         }
       },
@@ -10834,6 +11263,37 @@
           }
         }
       },
+      "ClaimShareLinkResponse": {
+        "type": "object",
+        "required": [
+          "shareLinkId",
+          "nodeId",
+          "spaceId",
+          "role",
+          "permissionId",
+          "alreadyClaimed"
+        ],
+        "properties": {
+          "shareLinkId": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "spaceId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "permissionId": {
+            "type": "string"
+          },
+          "alreadyClaimed": {
+            "type": "boolean"
+          }
+        }
+      },
       "DriveShareLink": {
         "type": "object",
         "required": [
@@ -10872,12 +11332,76 @@
             "format": "int64",
             "minimum": 0
           },
+          "accessCodeRequired": {
+            "type": "boolean"
+          },
           "lifecycleStatus": {
             "type": "string"
           },
           "version": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "CreateShareLinkResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "nodeId",
+          "role",
+          "downloadCount",
+          "lifecycleStatus",
+          "version",
+          "token"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "expiresAtEpochMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "downloadLimit": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "downloadCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "accessCodeRequired": {
+            "type": "boolean"
+          },
+          "lifecycleStatus": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "token": {
+            "type": "string",
+            "description": "Raw share token returned only once when the share link is created."
+          },
+          "accessCode": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 64,
+            "description": "Extraction code returned only once when configured at create time."
           }
         }
       },
@@ -11112,8 +11636,20 @@
       },
       "FavoriteNodeRequest": {
         "type": "object",
-        "required": [],
-        "properties": {}
+        "properties": {
+          "subjectType": {
+            "type": "string"
+          },
+          "subjectId": {
+            "type": "string"
+          },
+          "operatorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
+          }
+        }
       },
       "FavoriteNodeResponse": {
         "type": "object",
@@ -11317,8 +11853,14 @@
       },
       "NodeCommandRequest": {
         "type": "object",
-        "required": [],
-        "properties": {}
+        "properties": {
+          "operatorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
+          }
+        }
       },
       "NodeLabel": {
         "type": "object",
@@ -11400,6 +11942,10 @@
           },
           "nextPageToken": {
             "type": "string"
+          },
+          "incompletePage": {
+            "type": "boolean",
+            "description": "True when ACL pagination scan budget was exhausted before the requested page could be filled."
           }
         }
       },
@@ -11579,6 +12125,12 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
+          },
+          "quotaBytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Configured tenant storage quota cap from SDKWORK_DRIVE_TENANT_QUOTA_MAX_BYTES when set."
           }
         }
       },
@@ -11869,8 +12421,14 @@
       },
       "StopWatchChannelRequest": {
         "type": "object",
-        "required": [],
-        "properties": {},
+        "properties": {
+          "operatorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
+          }
+        },
         "additionalProperties": false
       },
       "DriveWatchChannel": {
@@ -12685,14 +13243,71 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "mediaResourceId": {
+          "id": {
             "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video",
+              "audio",
+              "document",
+              "archive",
+              "file",
+              "folder",
+              "generated",
+              "other"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "drive",
+              "external_url",
+              "data_url",
+              "provider_asset",
+              "generated"
+            ]
+          },
+          "uri": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "string"
+          },
+          "checksum": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "algorithm": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          },
+          "url": {
+            "type": "string"
+          },
+          "mediaResourceId": {
+            "type": "string",
+            "description": "Legacy alias for id."
           },
           "mediaType": {
-            "type": "string"
+            "type": "string",
+            "description": "Legacy alias for kind."
           },
           "contentType": {
-            "type": "string"
+            "type": "string",
+            "description": "Legacy alias for mimeType."
           },
           "width": {
             "type": "integer",
@@ -12706,12 +13321,9 @@
             "type": "integer",
             "format": "int64"
           },
-          "sizeBytes": {
-            "type": "integer",
-            "format": "int64"
-          },
           "checksumSha256": {
-            "type": "string"
+            "type": "string",
+            "description": "Legacy checksum field."
           },
           "metadata": {
             "type": "object",

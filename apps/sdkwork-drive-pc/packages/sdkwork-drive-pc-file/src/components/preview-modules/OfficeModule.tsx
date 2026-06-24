@@ -1,5 +1,6 @@
 import React from 'react';
 import { ExternalLink, FileText, Info, Presentation, Table2 } from 'lucide-react';
+import { useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
 
 interface OfficeModuleProps {
@@ -17,8 +18,13 @@ export function OfficeModule({
   loading,
   kind,
 }: OfficeModuleProps) {
+  const { t } = useTranslation();
   const Icon = kind === 'spreadsheet' ? Table2 : kind === 'presentation' ? Presentation : FileText;
-  const kindLabel = kind === 'spreadsheet' ? 'Spreadsheet' : kind === 'presentation' ? 'Presentation' : 'Document';
+  const kindLabel = kind === 'spreadsheet'
+    ? t('previewModules.officeKindSpreadsheet')
+    : kind === 'presentation'
+      ? t('previewModules.officeKindPresentation')
+      : t('previewModules.officeKindDocument');
 
   return (
     <div className="w-full max-w-3xl bg-[#131315] border border-neutral-800/80 rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-250">
@@ -28,7 +34,7 @@ export function OfficeModule({
           <span className="truncate">{file.name}</span>
         </div>
         <div className="text-[10px] uppercase font-mono tracking-widest text-neutral-600 font-black">
-          Drive {kindLabel}
+          {t('previewModules.officeDriveKind', { kind: kindLabel })}
         </div>
       </div>
 
@@ -36,12 +42,12 @@ export function OfficeModule({
         {loading ? (
           <>
             <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-xs text-neutral-400">Preparing Drive preview grant...</p>
+            <p className="text-xs text-neutral-400">{t('previewModules.previewGrantPreparing')}</p>
           </>
         ) : previewError || !previewUrl ? (
           <>
             <Info size={22} className="text-rose-400" />
-            <p className="text-xs text-neutral-400 max-w-md">{previewError || 'Drive preview URL is unavailable.'}</p>
+            <p className="text-xs text-neutral-400 max-w-md">{previewError || t('previewModules.mediaPreviewUnavailable')}</p>
           </>
         ) : (
           <>
@@ -49,9 +55,9 @@ export function OfficeModule({
               <Icon size={30} />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-neutral-100">{kindLabel} ready from Drive</h4>
+              <h4 className="text-sm font-bold text-neutral-100">{t('previewModules.officeReadyTitle', { kind: kindLabel })}</h4>
               <p className="text-xs text-neutral-500 leading-relaxed mt-2 max-w-md">
-                Drive App SDK prepared a short-lived download grant for opening this file with your configured workspace viewer.
+                {t('previewModules.officeReadyDesc')}
               </p>
             </div>
             <a
@@ -61,7 +67,7 @@ export function OfficeModule({
               className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
             >
               <ExternalLink size={13} />
-              Open File
+              {t('previewModules.officeOpenFile')}
             </a>
           </>
         )}

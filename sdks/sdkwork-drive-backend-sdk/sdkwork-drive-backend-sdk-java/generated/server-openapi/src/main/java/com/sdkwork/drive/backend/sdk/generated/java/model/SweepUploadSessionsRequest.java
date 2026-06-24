@@ -12,7 +12,7 @@ public class SweepUploadSessionsRequest {
     public Integer getNowEpochMs() {
         return this.nowEpochMs;
     }
-    
+
     public void setNowEpochMs(Integer nowEpochMs) {
         this.nowEpochMs = nowEpochMs;
     }
@@ -20,7 +20,7 @@ public class SweepUploadSessionsRequest {
     public Boolean getDryRun() {
         return this.dryRun;
     }
-    
+
     public void setDryRun(Boolean dryRun) {
         this.dryRun = dryRun;
     }
@@ -28,7 +28,7 @@ public class SweepUploadSessionsRequest {
     public Integer getLimit() {
         return this.limit;
     }
-    
+
     public void setLimit(Integer limit) {
         this.limit = limit;
     }
@@ -36,7 +36,7 @@ public class SweepUploadSessionsRequest {
     public String getOperatorId() {
         return this.operatorId;
     }
-    
+
     public void setOperatorId(String operatorId) {
         this.operatorId = operatorId;
     }
@@ -44,7 +44,7 @@ public class SweepUploadSessionsRequest {
     public String getRequestId() {
         return this.requestId;
     }
-    
+
     public void setRequestId(String requestId) {
         this.requestId = requestId;
     }
@@ -52,7 +52,7 @@ public class SweepUploadSessionsRequest {
     public String getTraceId() {
         return this.traceId;
     }
-    
+
     public void setTraceId(String traceId) {
         this.traceId = traceId;
     }

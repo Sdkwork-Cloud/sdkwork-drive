@@ -18,7 +18,7 @@ host application
   -> passes session provider and Drive services into Drive module
 
 Drive embeddable packages
-  -> @sdkwork/drive-pc-core
+  -> sdkwork-drive-pc-core
   -> @sdkwork/drive-file
   -> @sdkwork/drive-transfer
   -> @sdkwork/drive-commons
@@ -33,10 +33,10 @@ Drive standalone shell
 
 Rules:
 
-- `@sdkwork/drive-pc-core` owns Drive runtime contracts, session snapshot shape,
+- `sdkwork-drive-pc-core` owns Drive runtime contracts, session snapshot shape,
   generated Drive App SDK access, auth gate helpers, host adapter, and service
   facade creation.
-- `@sdkwork/drive-pc-core` must not depend on `@sdkwork/auth-pc-react` or
+- `sdkwork-drive-pc-core` must not depend on `@sdkwork/auth-pc-react` or
   `@sdkwork/appbase-pc-react`.
 - Drive feature packages must not depend on appbase IAM packages, create auth
   routes, call raw auth HTTP APIs, or manually build IAM tokens.
@@ -59,7 +59,7 @@ App, backend, and admin-storage Drive routes must validate the same dual-token c
 tenant, user, actor, and scope context from verified token claims. Clients must not send AppContext projection headers such as `x-sdkwork-tenant-id`, `x-sdkwork-user-id`,
 `x-sdkwork-actor-id`, or `x-sdkwork-actor-kind`.
 
-Admin-storage `/healthz` is public; `/admin/v3/api/drive/storage/*` is protected. Dedicated admin SDKs must declare the same security contract in OpenAPI and must not bypass the shared Drive security crate with handwritten token parsing.
+Admin-storage `/healthz` is public; `/backend/v3/api/drive/storage/*` is protected. Dedicated admin SDKs must declare the same security contract in OpenAPI and must not bypass the shared Drive security crate with handwritten token parsing.
 
 ### Standalone Mode
 
@@ -124,7 +124,7 @@ Required behavior:
 - Generated Drive SDK output must remain generated-only. Missing auth or session
   capability must be fixed in `sdkwork-appbase` app SDK/OpenAPI inputs, not
   inside Drive feature packages.
-- Appbase IAM packages belong only to application shells. `@sdkwork/drive-pc-core`
+- Appbase IAM packages belong only to application shells. `sdkwork-drive-pc-core`
   may expose an opaque `auth.iamRuntime` slot on `DriveRuntime`, but it must not
   import appbase IAM React/runtime packages.
 

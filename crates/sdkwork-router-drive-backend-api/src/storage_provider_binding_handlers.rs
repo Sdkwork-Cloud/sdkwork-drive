@@ -1,4 +1,5 @@
 use crate::audit::record_audit_event;
+use sdkwork_drive_contract::drive::domain_events::admin_audit;
 use crate::dto::{
     DefaultStorageProviderBindingQuery, SetDefaultStorageProviderBindingRequest,
     StorageProviderBindingResponse,
@@ -123,12 +124,12 @@ pub(crate) async fn set_default_storage_provider_binding(
     };
     record_audit_event(
         &state,
-        "storage_provider_binding.default_set",
+        admin_audit::storage_provider_binding::DEFAULT_SET,
         "storage_provider_binding",
         audit_resource_id,
         payload.operator_id.trim(),
-        Some("request-unset".to_string()),
-        Some("trace-unset".to_string()),
+        None,
+        None,
     )
     .await?;
     Ok(Json(binding))

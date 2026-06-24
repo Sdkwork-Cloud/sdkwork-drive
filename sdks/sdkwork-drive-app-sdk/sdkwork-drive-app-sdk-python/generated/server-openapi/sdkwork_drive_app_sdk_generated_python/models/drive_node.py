@@ -22,3 +22,4 @@ class DriveNode:
     content_type: Optional[str] = None
     content_type_group: Optional[str] = None
     content_length: Optional[int] = None
+    folder_color: Optional[str] = None

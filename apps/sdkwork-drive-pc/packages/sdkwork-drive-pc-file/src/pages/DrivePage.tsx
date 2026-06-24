@@ -1,4 +1,11 @@
-import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
+import {
+  formatDriveBytes,
+  useTranslation,
+  TRANSFER_SPEED_UPLOADING,
+  TRANSFER_TIME_CALCULATING,
+  TRANSFER_TIME_FINALIZING,
+  TRANSFER_TIME_WAITING_BACKEND,
+} from 'sdkwork-drive-pc-commons';
 import React, { useRef, useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { FileSidebar } from '../components/FileSidebar';
@@ -12,10 +19,12 @@ import {
 } from 'sdkwork-drive-pc-types';
 import { CreateSharedSpaceModal } from '../components/CreateSharedSpaceModal';
 import {
+  isDriveAbortError,
   loadPersistedTransferJobs,
   NativeLocalUploadFile,
   persistTransferJobs,
   runManagedDownloadTransfer,
+  createHostDownloadStreamAdapter,
   useDriveRuntime,
   type DriveFileService,
   type DriveStorageSummary,
@@ -36,16 +45,8 @@ interface DrivePageProps {
   onOpenExternal?: (url: string) => Promise<void> | void;
   onOpenStorageSettings?: () => void;
   onSectionChange?: (section: DriveSection) => void;
-}
-
-function isDrivePageAbortError(err: unknown): boolean {
-  if (err instanceof DOMException && err.name === 'AbortError') {
-    return true;
-  }
-  if (err instanceof Error) {
-    return err.name === 'AbortError' || /\babort(?:ed)?\b/i.test(err.message);
-  }
-  return false;
+  shareClaimToken?: string;
+  onShareClaimDismiss?: () => void;
 }
 
 export function isRetryUploadFileCompatible(job: DownloadJob, selected: File): boolean {
@@ -106,12 +107,22 @@ function formatExpectedModifiedTime(epochMs: number | undefined): string {
   return new Date(value).toISOString().replace('T', ' ').slice(0, 19) + 'Z';
 }
 
-export function buildUploadRetryMismatchMessage(job: DownloadJob): string {
+export function getUploadRetryMismatchContext(job: DownloadJob): {
+  expectedName: string;
+  expectedSize: string;
+  expectedModified: string;
+} {
   const parsedFingerprint = parseUploadFingerprint(job.uploadFileFingerprint);
-  const expectedName = parsedFingerprint?.fileName || job.fileName || 'unknown file';
-  const expectedSize = formatExpectedSize(parsedFingerprint?.size ?? job.totalSize);
-  const expectedModified = formatExpectedModifiedTime(parsedFingerprint?.lastModifiedEpochMs);
-  return `Selected file does not match this upload task. Expected "${expectedName}" (${expectedSize}, modified ${expectedModified}).`;
+  return {
+    expectedName: parsedFingerprint?.fileName || job.fileName || 'unknown file',
+    expectedSize: formatExpectedSize(parsedFingerprint?.size ?? job.totalSize),
+    expectedModified: formatExpectedModifiedTime(parsedFingerprint?.lastModifiedEpochMs),
+  };
+}
+
+export function buildUploadRetryMismatchMessage(job: DownloadJob): string {
+  const context = getUploadRetryMismatchContext(job);
+  return `Selected file does not match this upload task. Expected "${context.expectedName}" (${context.expectedSize}, modified ${context.expectedModified}).`;
 }
 
 export function DrivePage({
@@ -121,8 +132,17 @@ export function DrivePage({
   onOpenExternal,
   onOpenStorageSettings,
   onSectionChange,
+  shareClaimToken,
+  onShareClaimDismiss,
 }: DrivePageProps) {
+  const { t } = useTranslation();
   const { host } = useDriveRuntime();
+  const hostDownloadStream = createHostDownloadStreamAdapter(host);
+  const shareClaimAttemptRef = useRef<string | null>(null);
+  const shareClaimDeclinedRef = useRef<string | null>(null);
+  const shareClaimAbortControllerRef = useRef<AbortController | null>(null);
+  const [pendingShareClaimToken, setPendingShareClaimToken] = useState<string | null>(null);
+  const [shareClaimInFlight, setShareClaimInFlight] = useState(false);
   const [localActiveSection, setLocalActiveSection] = useState<DriveSection>('my-storage');
   const activeSection = propActiveSection !== undefined ? propActiveSection : localActiveSection;
   const setActiveSection = onSectionChange !== undefined ? onSectionChange : setLocalActiveSection;
@@ -151,6 +171,77 @@ export function DrivePage({
   }, [toast]);
 
   useEffect(() => {
+    const token = shareClaimToken?.trim();
+    if (!token) {
+      setPendingShareClaimToken(null);
+      return;
+    }
+    if (shareClaimAttemptRef.current === token || shareClaimDeclinedRef.current === token) {
+      return;
+    }
+    setPendingShareClaimToken(token);
+  }, [shareClaimToken]);
+
+  const handleAcceptShareClaim = () => {
+    const token = pendingShareClaimToken?.trim();
+    if (!token || shareClaimInFlight) {
+      return;
+    }
+    shareClaimAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    shareClaimAbortControllerRef.current = controller;
+    shareClaimAttemptRef.current = token;
+    setShareClaimInFlight(true);
+    setPendingShareClaimToken(null);
+    fileService
+      .claimShareLink(token, { signal: controller.signal })
+      .then((result) => {
+        if (!isMountedRef.current) {
+          return;
+        }
+        setActiveSection('shared');
+        triggerToast(
+          result.alreadyClaimed
+            ? t('fileBrowser.shareLinkAlreadyClaimed')
+            : t('fileBrowser.shareLinkClaimSuccess'),
+          'success',
+        );
+      })
+      .catch((error: unknown) => {
+        if (isDriveAbortError(error)) {
+          return;
+        }
+        shareClaimAttemptRef.current = null;
+        if (!isMountedRef.current) {
+          return;
+        }
+        triggerToast(
+          error instanceof Error ? error.message : t('fileBrowser.shareLinkClaimFailed'),
+          'err',
+        );
+      })
+      .finally(() => {
+        if (shareClaimAbortControllerRef.current === controller) {
+          shareClaimAbortControllerRef.current = null;
+        }
+        if (isMountedRef.current) {
+          setShareClaimInFlight(false);
+        }
+      });
+  };
+
+  const handleDeclineShareClaim = () => {
+    const token = pendingShareClaimToken?.trim();
+    if (token) {
+      shareClaimDeclinedRef.current = token;
+    }
+    shareClaimAbortControllerRef.current?.abort();
+    shareClaimAbortControllerRef.current = null;
+    setPendingShareClaimToken(null);
+    onShareClaimDismiss?.();
+  };
+
+  useEffect(() => {
     const timer = window.setTimeout(() => {
       persistTransferJobs(downloadJobs);
     }, 500);
@@ -165,6 +256,7 @@ export function DrivePage({
       createSpaceAbortControllerRef.current?.abort();
       deleteSpaceAbortControllerRef.current?.abort();
       knowledgeBaseSpaceListAbortControllerRef.current?.abort();
+      shareClaimAbortControllerRef.current?.abort();
       uploadAbortControllersRef.current.forEach((controller) => controller.abort());
       downloadAbortControllersRef.current.forEach((controller) => controller.abort());
       uploadAbortControllersRef.current.clear();
@@ -188,7 +280,7 @@ export function DrivePage({
         }
       })
       .catch((err) => {
-        if (isDrivePageAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (active) {
@@ -225,7 +317,7 @@ export function DrivePage({
         }
       })
       .catch((err) => {
-        if (isDrivePageAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (active) {
@@ -261,17 +353,17 @@ export function DrivePage({
         setSharedSpaces(fileService.getSharedSpaces());
         setIsCreateSpaceOpen(false);
         setActiveSection(newSpace.id);
-        triggerToast(`Created shared space "${newSpace.name}"`);
+        triggerToast(t('sharedSpace.createSuccess', { name: newSpace.name }));
       })
       .catch((err) => {
-        if (isDrivePageAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (!isMountedRef.current || createSpaceAbortControllerRef.current !== createSpaceAbortController) {
           return;
         }
         setSharedSpaces(fileService.getSharedSpaces());
-        triggerToast(err?.message || 'Failed to create shared space', 'err');
+        triggerToast(err?.message || t('sharedSpace.createFailed'), 'err');
       })
       .finally(() => {
         if (createSpaceAbortControllerRef.current === createSpaceAbortController) {
@@ -296,17 +388,17 @@ export function DrivePage({
         if (activeSection === id) {
           setActiveSection('my-storage');
         }
-        triggerToast('Deleted shared space');
+        triggerToast(t('sharedSpace.deleteSuccess'));
       })
       .catch((err) => {
-        if (isDrivePageAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (!isMountedRef.current || deleteSpaceAbortControllerRef.current !== deleteSpaceAbortController) {
           return;
         }
         setSharedSpaces(fileService.getSharedSpaces());
-        triggerToast(err?.message || 'Failed to delete shared space', 'err');
+        triggerToast(err?.message || t('sharedSpace.deleteFailed'), 'err');
       })
       .finally(() => {
         if (deleteSpaceAbortControllerRef.current === deleteSpaceAbortController) {
@@ -358,7 +450,7 @@ export function DrivePage({
             item.id === job.id
               ? applyTransferFailure(
                   item,
-                  'Cannot resume upload: upload destination is unavailable.',
+                  t('transfer.uploadDestinationUnavailable'),
                 )
               : item,
           ),
@@ -392,8 +484,8 @@ export function DrivePage({
                   status: 'uploading',
                   progress: 0,
                   downloadedSize: 0,
-                  speed: 'Uploading...',
-                  timeRemaining: 'Waiting for backend confirmation',
+                  speed: TRANSFER_SPEED_UPLOADING,
+                  timeRemaining: TRANSFER_TIME_WAITING_BACKEND,
                   errorMessage: undefined,
                   uploadBlob: metadata.uploadBlob,
                 }
@@ -420,8 +512,8 @@ export function DrivePage({
                           ? Math.min(100, Math.max(0, Math.round((uploadedBytes / totalBytes) * 100)))
                           : item.progress,
                       status: 'uploading',
-                      speed: 'Uploading...',
-                      timeRemaining: uploadedBytes >= totalBytes ? 'Finalizing...' : 'Calculating...',
+                      speed: TRANSFER_SPEED_UPLOADING,
+                      timeRemaining: uploadedBytes >= totalBytes ? TRANSFER_TIME_FINALIZING : TRANSFER_TIME_CALCULATING,
                     }
                   : item,
               ),
@@ -454,7 +546,7 @@ export function DrivePage({
             );
           })
           .catch((err) => {
-            if (isDrivePageAbortError(err)) {
+            if (isDriveAbortError(err)) {
               return;
             }
             if (uploadAbortControllersRef.current.get(job.id) !== uploadController) {
@@ -463,7 +555,7 @@ export function DrivePage({
             setDownloadJobs(prev =>
               prev.map(item =>
                 item.id === job.id
-                  ? applyTransferFailure(item, err?.message || 'Failed to retry upload')
+                  ? applyTransferFailure(item, err?.message || t('transfer.retryUploadFailed'))
                   : item,
               ),
             );
@@ -483,7 +575,7 @@ export function DrivePage({
               setDownloadJobs(prev =>
                 prev.map(item =>
                   item.id === job.id
-                    ? applyTransferFailure(item, buildUploadRetryMismatchMessage(item))
+                    ? applyTransferFailure(item, t('transfer.uploadRetryMismatch', getUploadRetryMismatchContext(item)))
                     : item,
                 ),
               );
@@ -505,7 +597,7 @@ export function DrivePage({
                       item,
                       err instanceof Error
                         ? err.message
-                        : 'Cannot resume upload: the original local file is unavailable.',
+                        : t('transfer.uploadLocalFileUnavailable'),
                     )
                   : item,
               ),
@@ -525,7 +617,7 @@ export function DrivePage({
                 item.id === job.id
                   ? applyTransferFailure(
                       item,
-                      'Retry upload cancelled: local file was not selected.',
+                      t('transfer.retryUploadCancelledNoFile'),
                     )
                   : item,
               ),
@@ -538,7 +630,7 @@ export function DrivePage({
                 item.id === job.id
                   ? applyTransferFailure(
                       item,
-                      buildUploadRetryMismatchMessage(item),
+                      t('transfer.uploadRetryMismatch', getUploadRetryMismatchContext(item)),
                     )
                   : item,
               ),
@@ -608,13 +700,11 @@ export function DrivePage({
             );
           },
           onOpenExternal: onOpenExternal,
-          saveDownload: host.isNativeHost
-            ? (fileName, blob) => host.saveDownloadFile(fileName, blob)
-            : undefined,
+          saveDownloadStream: hostDownloadStream,
         });
       })
       .catch((err) => {
-        if (isDrivePageAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (downloadAbortControllersRef.current.get(job.id) !== downloadController) {
@@ -623,7 +713,7 @@ export function DrivePage({
         setDownloadJobs(prev =>
           prev.map(item =>
             item.id === job.id
-              ? applyTransferFailure(item, err?.message || 'Failed to retry transfer')
+              ? applyTransferFailure(item, err?.message || t('transfer.retryTransferFailed'))
               : item,
           ),
         );
@@ -635,6 +725,29 @@ export function DrivePage({
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 h-full w-full overflow-hidden bg-white dark:bg-[#111]">
+      {pendingShareClaimToken && (
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 flex max-w-lg flex-col gap-3 px-4 py-3 rounded-lg shadow-xl border text-sm animate-in fade-in slide-in-from-top-4 duration-300 bg-white dark:bg-[#252525] border-blue-100 dark:border-blue-900/40 text-gray-900 dark:text-gray-100">
+          <p>{t('fileBrowser.shareLinkClaimPrompt')}</p>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              className="px-3 py-1.5 rounded-md text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800"
+              onClick={handleDeclineShareClaim}
+              disabled={shareClaimInFlight}
+            >
+              {t('fileBrowser.shareLinkClaimDecline')}
+            </button>
+            <button
+              type="button"
+              className="px-3 py-1.5 rounded-md text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+              onClick={handleAcceptShareClaim}
+              disabled={shareClaimInFlight}
+            >
+              {shareClaimInFlight ? t('fileBrowser.shareLinkClaimAccepting') : t('fileBrowser.shareLinkClaimAccept')}
+            </button>
+          </div>
+        </div>
+      )}
       {toast && (
         <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3 rounded-lg shadow-xl border text-sm animate-in fade-in slide-in-from-top-4 duration-300 bg-white dark:bg-[#252525] border-gray-100 dark:border-neutral-800 text-gray-900 dark:text-gray-100">
           {toast.type === 'success' ? (
@@ -692,9 +805,10 @@ export function DrivePage({
 }
 
 function DriveTransferFallback() {
+  const { t } = useTranslation();
   return (
     <div
-      aria-label="Loading transfer center"
+      aria-label={t('transfer.loadingTransferCenter')}
       className="flex h-full min-h-0 min-w-0 flex-1 items-center justify-center bg-white dark:bg-[#151515]"
     >
       <div className="h-6 w-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />

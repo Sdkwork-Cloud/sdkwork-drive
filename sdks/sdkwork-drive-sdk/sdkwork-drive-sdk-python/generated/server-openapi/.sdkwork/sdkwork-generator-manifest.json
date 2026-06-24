@@ -6,12 +6,13 @@
     "version": "0.1.0",
     "language": "python",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-sdk-generated-python"
   },
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -39,7 +40,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "7db10e916b393ce1186e6d3bec9edad0cb331c1f1a22258dd2cd9b90481804de"
+      "sha256": "5d74fa75c2776e66848153860d59987d2f79c66b75e4efaee10c47f3b91f4500"
     },
     {
       "path": "requirements.txt",
@@ -55,7 +56,7 @@
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/api/drive.py",
-      "sha256": "c27903be34835879129e75efd1806240c244244b800a9e4d742e9f878bbdb35a"
+      "sha256": "c9bb41d6cd44cb6b4ebd719755c4e4d3820fe2b5997a388cd719d20530961b0b"
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/client.py",
@@ -63,7 +64,7 @@
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/http_client.py",
-      "sha256": "2f2d56fa537b032e1eee8825f89944b6ff78d919e5a1c684d21325cfcc7bc398"
+      "sha256": "5f864d3ce933a4d56363d3eec67ae7cf477a9e20fee85c6b842407dea199b8db"
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/models/__init__.py",
@@ -71,11 +72,11 @@
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/models/create_open_download_url_request.py",
-      "sha256": "50d7f1e951442a7b2fe33dbf2aff21de32f124b4946633d16ec2e569f6c449e3"
+      "sha256": "e5ae959af016dfff81c9c3167febe6e0d1baebbf51d9a334226664f9555f51b5"
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/models/drive_open_share_link.py",
-      "sha256": "efbcbb86b7fce9b3834492b6271b0f9bdeac75eced980ac140605501b0bf6a1d"
+      "sha256": "abfc22352bf4028e5f128fd2fdea4f55b7c5df4366139e5117100905dfdce368"
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/models/open_download_url_response.py",

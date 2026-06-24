@@ -7,6 +7,7 @@ public class CreateShareLinkRequest {
     private String role;
     private Integer expiresAtEpochMs;
     private Integer downloadLimit;
+    private String accessCode;
 
     public String getId() {
         return this.id;
@@ -46,5 +47,13 @@ public class CreateShareLinkRequest {
 
     public void setDownloadLimit(Integer downloadLimit) {
         this.downloadLimit = downloadLimit;
+    }
+
+    public String getAccessCode() {
+        return this.accessCode;
+    }
+
+    public void setAccessCode(String accessCode) {
+        this.accessCode = accessCode;
     }
 }

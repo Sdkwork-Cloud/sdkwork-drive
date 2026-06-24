@@ -12,6 +12,7 @@ members = [
     "crates/sdkwork-drive-storage-s3",
     "crates/sdkwork-drive-test-support",
     "crates/sdkwork-drive-workspace-service",
+    "crates/sdkwork-drive-uploader-service",
     "crates/sdkwork-router-drive-open-api",
     "crates/sdkwork-router-drive-app-api",
     "crates/sdkwork-router-storage-backend-api",
@@ -42,7 +43,7 @@ tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
 toml = "0.8"
 tower = { version = "0.5", features = ["util"] }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["fmt"] }
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter", "registry"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 zip = { version = "8.6.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
@@ -65,6 +66,7 @@ sdkwork-drive-storage-opendal = { path = "crates/sdkwork-drive-storage-opendal" 
 sdkwork-drive-storage-s3 = { path = "crates/sdkwork-drive-storage-s3" }
 sdkwork-drive-test-support = { path = "crates/sdkwork-drive-test-support" }
 sdkwork-drive-workspace-service = { path = "crates/sdkwork-drive-workspace-service" }
+sdkwork-drive-uploader-service = { path = "crates/sdkwork-drive-uploader-service" }
 sdkwork-drive-install-worker = { path = "crates/sdkwork-drive-install-worker" }
 sdkwork-drive-standalone-gateway = { path = "crates/sdkwork-drive-standalone-gateway" }
 sdkwork-router-drive-open-api = { path = "crates/sdkwork-router-drive-open-api" }

@@ -10,3 +10,4 @@ if TYPE_CHECKING:
 class NodeListResponse:
     items: List[DriveNode]
     next_page_token: Optional[str] = None
+    incomplete_page: Optional[bool] = None

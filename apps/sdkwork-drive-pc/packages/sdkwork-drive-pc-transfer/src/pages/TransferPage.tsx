@@ -19,7 +19,7 @@ import {
   RefreshCcw,
   ExternalLink
 } from 'lucide-react';
-import { formatDriveBytes, useTranslation } from 'sdkwork-drive-pc-commons';
+import { formatDriveBytes, formatTransferJobProgressDetail, useTranslation } from 'sdkwork-drive-pc-commons';
 import {
   canCancelTransferJob,
   canPauseTransferJob,
@@ -416,7 +416,7 @@ export function TransferPage({
                       <div className="flex items-center justify-between text-xs font-mono select-none text-gray-400">
                         <span className="font-bold">{job.progress}%</span>
                         <span className="text-[10px] text-gray-400 font-medium">
-                          {job.status === 'downloading' ? `${job.speed} - ${job.timeRemaining}` : job.status === 'uploading' ? `${job.speed} - ${job.timeRemaining}` : job.status === 'ready' ? t('downloadManager.ready') : job.status === 'paused' ? t('transfer.paused') : '--'}
+                          {formatTransferJobProgressDetail(job, t)}
                         </span>
                       </div>
                       
@@ -479,7 +479,7 @@ export function TransferPage({
                           <button
                             onClick={() => handleOpenDownload(job)}
                             className="p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-emerald-600 rounded transition-colors cursor-pointer"
-                            title="Open download"
+                            title={t('transfer.openDownload')}
                           >
                             <ExternalLink size={14} />
                           </button>

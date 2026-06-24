@@ -11,7 +11,7 @@ public class MaintenanceJobPage {
     public List<MaintenanceJob> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<MaintenanceJob> items) {
         this.items = items;
     }
@@ -19,7 +19,7 @@ public class MaintenanceJobPage {
     public Integer getPage() {
         return this.page;
     }
-    
+
     public void setPage(Integer page) {
         this.page = page;
     }
@@ -27,7 +27,7 @@ public class MaintenanceJobPage {
     public Integer getPageSize() {
         return this.pageSize;
     }
-    
+
     public void setPageSize(Integer pageSize) {
         this.pageSize = pageSize;
     }
@@ -35,7 +35,7 @@ public class MaintenanceJobPage {
     public Integer getTotal() {
         return this.total;
     }
-    
+
     public void setTotal(Integer total) {
         this.total = total;
     }

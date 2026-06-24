@@ -7,4 +7,5 @@ type CreateShareLinkRequest struct {
 	Role string `json:"role"`
 	ExpiresAtEpochMs int `json:"expiresAtEpochMs"`
 	DownloadLimit int `json:"downloadLimit"`
+	AccessCode string `json:"accessCode"`
 }

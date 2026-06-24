@@ -2,14 +2,14 @@
   "workspace": "sdkwork-drive-admin-storage-sdk",
   "sdkOwner": "sdkwork-drive",
   "apiAuthority": "sdkwork-drive.admin.storage",
-  "authoritySpec": "../../apis/drive-admin-storage-api.openapi.json",
-  "generationInputSpec": "../../apis/drive-admin-storage-api.openapi.json",
+  "authoritySpec": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json",
+  "generationInputSpec": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json",
   "derivedSpecs": {
-    "default": "../../apis/drive-admin-storage-api.openapi.json"
+    "default": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json"
   },
   "discoverySurface": {
     "sdkTarget": "custom",
-    "apiPrefix": "/admin/v3/api",
+    "apiPrefix": "/backend/v3/api",
     "generatedProtocols": [
       "http-openapi"
     ],

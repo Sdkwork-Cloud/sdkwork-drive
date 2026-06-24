@@ -142,6 +142,10 @@ function dispatch(args) {
         runShell("pnpm test", pcDir);
       }
       runShell("pnpm test:drive-integration", repoRoot);
+      runShell("pnpm test:global-assets-contract", repoRoot);
+      runShell("pnpm test:drive-share-link-integration", repoRoot);
+      runShell("pnpm test:drive-e2e", repoRoot);
+      runShell("pnpm test:e2e", repoRoot);
       break;
     }
     case "check": {
@@ -201,18 +205,39 @@ function dispatch(args) {
       console.log(`[sdkwork-drive] topology ${command} for ${deploymentProfile}/${serviceLayout}/${database}`);
       break;
     }
-    case "release:plan":
-    case "release:build":
-    case "release:package":
+    case "release:plan": {
+      runNodeScript("scripts/print-gateway-package-matrix.mjs");
+      break;
+    }
+    case "release:build": {
+      runNodeScript("scripts/drive-build.mjs");
+      runShell("cargo build --release -p sdkwork-drive-standalone-gateway");
+      break;
+    }
+    case "release:package": {
+      runNodeScript("scripts/release-web-bundle.mjs");
+      if (process.platform === 'win32') {
+        runNodeScript("scripts/release-desktop-bundle.mjs");
+      }
+      runNodeScript("scripts/release-catalog-media.mjs");
+      runNodeScript("tools/materialize_catalog_media_evidence.mjs");
+      runNodeScript("scripts/gateway-standalone-pack.mjs", ["package", "--skip-build"]);
+      runNodeScript("tools/materialize_release_manifest_evidence.mjs");
+      runNodeScript("tools/generate_release_sbom.mjs");
+      runNodeScript("tools/check_sdkwork_drive_release_readiness.mjs");
+      runNodeScript("tools/verify_release_evidence.mjs");
+      break;
+    }
     case "release:validate": {
-      console.log(`[sdkwork-drive] release ${command} - delegate to GitHub Actions workflow`);
+      runNodeScript("tools/check_sdkwork_drive_release_readiness.mjs");
+      runNodeScript("tools/verify_release_evidence.mjs");
       break;
     }
     case "deploy:plan":
     case "deploy:apply":
     case "deploy:rollback":
     case "deploy:validate": {
-      console.log(`[sdkwork-drive] deploy ${command} - delegate to GitHub Actions workflow`);
+      runNodeScript("tools/check_drive_deployments.mjs", []);
       break;
     }
     default:

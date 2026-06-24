@@ -5,7 +5,7 @@ use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    sdkwork_drive_observability::init_tracing("sdkwork-drive-install-worker");
 
     let args: Vec<String> = std::env::args().collect();
     let database_config =

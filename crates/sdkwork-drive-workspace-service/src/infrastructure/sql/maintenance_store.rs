@@ -5,12 +5,15 @@ use sqlx::Row;
 
 use crate::domain::maintenance::DriveSweepResult;
 use crate::domain::maintenance_job::DriveMaintenanceJob;
+use crate::infrastructure::change_recorder::{record_drive_change, RecordDriveChangeCommand};
 use crate::infrastructure::sql::runtime_id::next_drive_runtime_id;
 use crate::ports::maintenance_store::{
     DriveMaintenanceStore, ListMaintenanceJobsQuery, MaintenanceJobPage, NewDriveMaintenanceJob,
-    SweepDeletedObjectsQuery, SweepExpiredUploadContentQuery, SweepExpiredUploadSessionsQuery,
+    SweepAbandonedUploadTasksQuery, SweepDeletedObjectsQuery, SweepExpiredUploadContentQuery,
+    SweepExpiredUploadSessionsQuery,
 };
 use crate::DriveServiceError;
+use sdkwork_drive_contract::drive::domain_events as drive_events;
 
 #[derive(Debug, Clone)]
 pub struct SqlMaintenanceStore {
@@ -342,9 +345,80 @@ impl DriveMaintenanceStore for SqlMaintenanceStore {
             })?;
 
             if node_rows > 0 {
+                let space_id: String = row.get("space_id");
+                record_drive_change(
+                    &self.pool,
+                    RecordDriveChangeCommand {
+                        tenant_id: &tenant_id,
+                        space_id: &space_id,
+                        node_id: Some(&node_id),
+                        event_type: drive_events::uploader::CONTENT_EXPIRED,
+                        actor_id: &query.operator_id,
+                    },
+                )
+                .await?;
                 affected_count += 1;
             }
         }
+
+        Ok(DriveSweepResult {
+            scanned_count,
+            affected_count,
+            dry_run: query.dry_run,
+        })
+    }
+
+    async fn sweep_abandoned_upload_tasks(
+        &self,
+        query: &SweepAbandonedUploadTasksQuery,
+    ) -> Result<DriveSweepResult, DriveServiceError> {
+        let total: i64 = sqlx::query_scalar(
+            "SELECT COUNT(1)
+             FROM dr_drive_upload_item ui
+             INNER JOIN dr_drive_upload_session us ON us.id = ui.upload_session_id
+             WHERE ui.status IN ('prepared', 'uploading', 'paused', 'completing')
+               AND (us.state = 'expired' OR us.expires_at_epoch_ms < $1)",
+        )
+        .bind(query.now_epoch_ms)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!(
+                "count abandoned dr_drive_upload_item failed: {error}"
+            ))
+        })?;
+        let scanned_count = total.min(query.limit);
+
+        let affected_count = if query.dry_run || scanned_count == 0 {
+            0
+        } else {
+            sqlx::query(
+                "UPDATE dr_drive_upload_item
+                 SET status='failed',
+                     updated_by=$3,
+                     updated_at=CURRENT_TIMESTAMP
+                 WHERE id IN (
+                     SELECT ui.id
+                     FROM dr_drive_upload_item ui
+                     INNER JOIN dr_drive_upload_session us ON us.id = ui.upload_session_id
+                     WHERE ui.status IN ('prepared', 'uploading', 'paused', 'completing')
+                       AND (us.state = 'expired' OR us.expires_at_epoch_ms < $1)
+                     ORDER BY us.expires_at_epoch_ms ASC, ui.id ASC
+                     LIMIT $2
+                 )",
+            )
+            .bind(query.now_epoch_ms)
+            .bind(query.limit)
+            .bind(&query.operator_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "update abandoned dr_drive_upload_item failed: {error}"
+                ))
+            })?
+            .rows_affected() as i64
+        };
 
         Ok(DriveSweepResult {
             scanned_count,

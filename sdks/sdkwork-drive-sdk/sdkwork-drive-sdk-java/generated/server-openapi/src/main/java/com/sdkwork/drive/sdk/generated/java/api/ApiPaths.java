@@ -2,7 +2,7 @@ package com.sdkwork.drive.sdk.generated.java.api;
 
 public class ApiPaths {
     public static final String API_PREFIX = "/open/v3/api";
-    
+
     public static String customPath(String path) {
         if (path == null || path.isEmpty()) {
             return API_PREFIX;

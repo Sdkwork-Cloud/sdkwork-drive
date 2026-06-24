@@ -69,7 +69,10 @@ async fn inherited_folder_writer_allows_child_upload_permission_check() {
 
     assert!(child_access.allows_role("writer"));
     assert!(child_access.inherited);
-    assert_eq!(child_access.inherited_from_node_id.as_deref(), Some("folder-1"));
+    assert_eq!(
+        child_access.inherited_from_node_id.as_deref(),
+        Some("folder-1")
+    );
 }
 
 #[tokio::test]

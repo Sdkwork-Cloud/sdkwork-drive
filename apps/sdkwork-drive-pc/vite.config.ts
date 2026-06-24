@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
     path.resolve(repoRoot, '..', dependencyId);
   const appbaseRoot = process.env.SDKWORK_APPBASE_ROOT ?? workspaceDependencyRoot('sdkwork-appbase');
   const sdkCommonsRoot = process.env.SDKWORK_SDK_COMMONS_ROOT ?? workspaceDependencyRoot('sdkwork-sdk-commons');
+  const utilsRoot = process.env.SDKWORK_UTILS_ROOT ?? workspaceDependencyRoot('sdkwork-utils');
   const uiRoot = process.env.SDKWORK_UI_PC_REACT_ROOT
     ?? path.resolve(workspaceDependencyRoot('sdkwork-ui'), 'sdkwork-ui-pc-react');
   const appApiProxyTarget =
@@ -39,6 +40,7 @@ export default defineConfig(({ mode }) => {
         'sdkwork-drive-pc-file': path.resolve(__dirname, 'packages/sdkwork-drive-pc-file/src'),
         'sdkwork-drive-pc-transfer': path.resolve(__dirname, 'packages/sdkwork-drive-pc-transfer/src'),
         'sdkwork-drive-pc-core': path.resolve(__dirname, 'packages/sdkwork-drive-pc-core/src'),
+        'sdkwork-drive-pc-drive': path.resolve(__dirname, 'packages/sdkwork-drive-pc-drive/src'),
         'sdkwork-drive-pc-admin-core': path.resolve(__dirname, 'packages/sdkwork-drive-pc-admin-core/src'),
         'sdkwork-drive-pc-admin-storage-providers': path.resolve(
           __dirname,
@@ -112,6 +114,10 @@ export default defineConfig(({ mode }) => {
           sdkCommonsRoot,
           'sdkwork-sdk-common-typescript/src/index.ts',
         ),
+        '@sdkwork/utils': path.resolve(
+          utilsRoot,
+          'packages/sdkwork-utils-typescript/dist/index.js',
+        ),
         '@sdkwork/ui-pc-react': path.resolve(uiRoot, 'src/index.ts'),
         react: path.resolve(__dirname, 'node_modules/react'),
         'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
@@ -131,6 +137,10 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
         '/admin/v3/api': {
+          target: adminApiProxyTarget,
+          changeOrigin: true,
+        },
+        '/backend/v3/api': {
           target: adminApiProxyTarget,
           changeOrigin: true,
         },

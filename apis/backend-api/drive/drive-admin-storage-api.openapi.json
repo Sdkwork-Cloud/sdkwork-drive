@@ -19,7 +19,7 @@
     }
   ],
   "paths": {
-    "/admin/v3/api/drive/storage/bindings/default": {
+    "/backend/v3/api/drive/storage/bindings/default": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -309,7 +309,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers": {
+    "/backend/v3/api/drive/storage/providers": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -447,7 +447,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}": {
+    "/backend/v3/api/drive/storage/providers/{providerId}": {
       "patch": {
         "tags": [
           "storageAdmin"
@@ -723,7 +723,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/activate": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/activate": {
       "post": {
         "tags": [
           "storageAdmin"
@@ -833,7 +833,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/capabilities": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/capabilities": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -933,7 +933,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/credentials/rotate": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/credentials/rotate": {
       "post": {
         "tags": [
           "storageAdmin"
@@ -1043,7 +1043,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/deactivate": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/deactivate": {
       "post": {
         "tags": [
           "storageAdmin"
@@ -1153,7 +1153,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/test": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/test": {
       "post": {
         "tags": [
           "storageAdmin"
@@ -1248,7 +1248,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/bucket": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/bucket": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -1566,7 +1566,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/objects": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/objects": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -1700,7 +1700,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -1935,7 +1935,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/objects/copy": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/objects/copy": {
       "post": {
         "tags": [
           "storageAdmin"
@@ -2045,7 +2045,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/buckets": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/buckets": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -2128,7 +2128,7 @@
         "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/bindings": {
+    "/backend/v3/api/drive/storage/bindings": {
       "get": {
         "tags": [
           "storageAdmin"

@@ -6,9 +6,10 @@
     "version": "0.1.0",
     "language": "python",
     "sdkType": "backend",
+    "protocol": "http",
     "packageName": "sdkwork-drive-backend-sdk-generated-python"
   },
-  "changeFingerprint": "2f43a69a120551dbd80b8d2954e280513b018f289c6a1e053384753e423384d1",
+  "changeFingerprint": "231d642a71be25595fce1525fea26901043f9052a8b0d2b74d2c6646447d7b21",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [],

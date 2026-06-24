@@ -1,15 +1,16 @@
 use crate::dto::{OpenNodeResponse, OpenShareLinkResponse};
-use crate::error::{internal_sql_error, problem, ProblemDetail};
+use crate::error::{internal_sql_error, problem, share_link_access_code_problem, ProblemDetail};
 use crate::time::now_epoch_ms;
 use axum::http::StatusCode;
 use axum::Json;
-use sdkwork_drive_workspace_service::drive_share_token_hash;
+use sdkwork_drive_workspace_service::{drive_share_token_hash, share_link_access_code_matches};
 use sqlx::any::AnyRow;
 use sqlx::{AnyPool, Row};
 
 pub(crate) async fn find_active_share_link(
     pool: &AnyPool,
     token: &str,
+    access_code: Option<&str>,
 ) -> Result<AnyRow, (StatusCode, Json<ProblemDetail>)> {
     let token_hash = drive_share_token_hash(token);
     let row = sqlx::query(
@@ -20,6 +21,7 @@ pub(crate) async fn find_active_share_link(
             sl.expires_at_epoch_ms,
             sl.download_limit,
             sl.download_count,
+            sl.access_code_hash,
             n.id AS node_id,
             n.tenant_id AS node_tenant_id,
             n.space_id,
@@ -69,6 +71,11 @@ pub(crate) async fn find_active_share_link(
                 "drive.share_link.expired",
             ));
         }
+    }
+
+    let access_code_hash: Option<String> = row.try_get("access_code_hash").ok().flatten();
+    if !share_link_access_code_matches(access_code_hash.as_deref(), access_code) {
+        return Err(share_link_access_code_problem());
     }
 
     Ok(row)
@@ -191,6 +198,12 @@ pub(crate) fn map_share_link_row(row: &AnyRow) -> OpenShareLinkResponse {
         expires_at_epoch_ms: row.get("expires_at_epoch_ms"),
         download_limit: row.get("download_limit"),
         download_count: row.get("download_count"),
+        access_code_required: row
+            .try_get::<Option<String>, _>("access_code_hash")
+            .ok()
+            .flatten()
+            .map(|value| !value.trim().is_empty())
+            .unwrap_or(false),
         node: OpenNodeResponse {
             id: row.get("node_id"),
             tenant_id: row.get("node_tenant_id"),

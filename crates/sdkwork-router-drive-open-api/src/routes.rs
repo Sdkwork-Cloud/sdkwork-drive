@@ -56,6 +56,9 @@ fn build_router_with_state(state: OpenState) -> Router {
         .route("/metrics", get(metrics))
         .merge(share_routes)
         .layer(middleware::from_fn(
+            sdkwork_drive_http::problem_correlation::problem_correlation_middleware,
+        ))
+        .layer(middleware::from_fn(
             sdkwork_drive_http::metrics::record_request_metrics,
         ))
         .with_state(state);

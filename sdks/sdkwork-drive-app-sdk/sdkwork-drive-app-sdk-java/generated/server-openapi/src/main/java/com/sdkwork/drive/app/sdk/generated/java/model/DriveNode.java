@@ -19,6 +19,7 @@ public class DriveNode {
     private String contentType;
     private String contentTypeGroup;
     private Integer contentLength;
+    private String folderColor;
 
     public String getId() {
         return this.id;
@@ -154,5 +155,13 @@ public class DriveNode {
 
     public void setContentLength(Integer contentLength) {
         this.contentLength = contentLength;
+    }
+
+    public String getFolderColor() {
+        return this.folderColor;
+    }
+
+    public void setFolderColor(String folderColor) {
+        this.folderColor = folderColor;
     }
 }

@@ -15,6 +15,10 @@ export interface HostAdapter {
   readLocalUploadRange(path: string, offsetBytes: number, lengthBytes: number): Promise<ArrayBuffer>;
   checksumLocalUploadFile(path: string): Promise<string>;
   saveDownloadFile(fileName: string, blob: Blob): Promise<boolean>;
+  beginDownloadSave(fileName: string): Promise<string | null>;
+  writeDownloadChunk(sessionId: string, chunk: Uint8Array): Promise<void>;
+  finishDownloadSave(sessionId: string): Promise<boolean>;
+  abortDownloadSave(sessionId: string): Promise<void>;
 }
 
 interface TauriGlobal {
@@ -42,6 +46,10 @@ function assertSafeExternalUrl(url: string): void {
 
 function unsupportedNativeUploadOperation(operation: string): never {
   throw new Error(`Native upload ${operation} is only available in the desktop app.`);
+}
+
+function unsupportedNativeDownloadOperation(operation: string): never {
+  throw new Error(`Native download ${operation} is only available in the desktop app.`);
 }
 
 export function createHostAdapter(): HostAdapter {
@@ -146,6 +154,47 @@ export function createHostAdapter(): HostAdapter {
         },
       });
       return response.saved;
+    },
+    async beginDownloadSave(fileName) {
+      const tauri = getTauriGlobal();
+      if (!tauri?.core?.invoke) {
+        unsupportedNativeDownloadOperation('begin');
+      }
+      const response = await tauri.core.invoke<{ sessionId: string; saved: boolean }>('local_download_begin', {
+        request: { fileName },
+      });
+      return response.saved ? response.sessionId : null;
+    },
+    async writeDownloadChunk(sessionId, chunk) {
+      const tauri = getTauriGlobal();
+      if (!tauri?.core?.invoke) {
+        unsupportedNativeDownloadOperation('write');
+      }
+      await tauri.core.invoke('local_download_write_chunk', {
+        request: {
+          sessionId,
+          bytes: Array.from(chunk),
+        },
+      });
+    },
+    async finishDownloadSave(sessionId) {
+      const tauri = getTauriGlobal();
+      if (!tauri?.core?.invoke) {
+        unsupportedNativeDownloadOperation('finish');
+      }
+      const response = await tauri.core.invoke<{ saved: boolean }>('local_download_finish', {
+        request: { sessionId },
+      });
+      return response.saved;
+    },
+    async abortDownloadSave(sessionId) {
+      const tauri = getTauriGlobal();
+      if (!tauri?.core?.invoke) {
+        unsupportedNativeDownloadOperation('abort');
+      }
+      await tauri.core.invoke('local_download_abort', {
+        request: { sessionId },
+      });
     },
   };
 }

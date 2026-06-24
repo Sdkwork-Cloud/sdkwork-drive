@@ -8,7 +8,7 @@ public class TestStorageProviderResponse {
     public String getProviderId() {
         return this.providerId;
     }
-    
+
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
@@ -16,7 +16,7 @@ public class TestStorageProviderResponse {
     public Boolean getReachable() {
         return this.reachable;
     }
-    
+
     public void setReachable(Boolean reachable) {
         this.reachable = reachable;
     }

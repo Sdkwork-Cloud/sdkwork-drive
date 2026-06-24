@@ -24,6 +24,10 @@ pub struct DriveShareLink {
     #[serde(rename = "downloadCount")]
     pub download_count: i64,
 
+    #[serde(rename = "accessCodeRequired")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub access_code_required: Option<bool>,
+
     #[serde(rename = "lifecycleStatus")]
     pub lifecycle_status: String,
 

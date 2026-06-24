@@ -150,6 +150,14 @@ fn build_router_with_state(state: BackendState, require_iam: bool) -> Router {
             post(sweep_upload_sessions),
         )
         .route(
+            "/backend/v3/api/drive/maintenance/expired_upload_content_sweep",
+            post(sweep_expired_upload_content),
+        )
+        .route(
+            "/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep",
+            post(sweep_abandoned_upload_tasks),
+        )
+        .route(
             "/backend/v3/api/drive/maintenance/jobs",
             get(list_maintenance_jobs),
         )
@@ -161,8 +169,11 @@ fn build_router_with_state(state: BackendState, require_iam: bool) -> Router {
         .route("/backend/v3/api/drive/quotas", get(list_quotas));
 
     if require_iam {
-        drive_routes =
-            drive_routes.route_layer(middleware::from_fn(drive_context_projection_guard));
+        drive_routes = drive_routes
+            .route_layer(middleware::from_fn(
+                sdkwork_drive_http::problem_correlation::problem_correlation_middleware,
+            ))
+            .route_layer(middleware::from_fn(drive_context_projection_guard));
     }
 
     let mut router = Router::new()

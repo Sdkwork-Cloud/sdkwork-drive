@@ -96,6 +96,7 @@ async fn backend_router_exposes_storage_provider_and_quota_routes() {
     }
 
     let maintenance_response = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
@@ -109,4 +110,25 @@ async fn backend_router_exposes_storage_provider_and_quota_routes() {
         .await
         .expect("maintenance request should be handled");
     assert_ne!(maintenance_response.status(), StatusCode::NOT_FOUND);
+
+    for uri in [
+        "/backend/v3/api/drive/maintenance/expired_upload_content_sweep",
+        "/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri(uri)
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        r#"{"nowEpochMs":1800000000000,"dryRun":true,"limit":1,"operatorId":"admin-ops"}"#,
+                    ))
+                    .expect("request should be built"),
+            )
+            .await
+            .unwrap_or_else(|error| panic!("{uri} should be handled: {error}"));
+        assert_ne!(response.status(), StatusCode::NOT_FOUND, "{uri} must be routed");
+    }
 }

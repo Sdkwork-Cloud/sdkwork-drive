@@ -1,3 +1,1 @@
-export interface TestStorageProviderRequest {
-  operatorId: string;
-}
+export type TestStorageProviderRequest = Record<string, unknown>;

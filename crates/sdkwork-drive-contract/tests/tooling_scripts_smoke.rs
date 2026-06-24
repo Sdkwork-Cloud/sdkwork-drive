@@ -320,7 +320,7 @@ fn generated_drive_sdks_use_canonical_family_names_and_sdkgen_manifests() {
             "sdkwork-drive-admin-storage-sdk",
             "custom",
             "sdkwork-drive-admin-storage-v3",
-            "/admin/v3/api",
+            "/backend/v3/api",
         ),
     ];
     let languages = ["typescript", "rust", "java", "python", "go"];

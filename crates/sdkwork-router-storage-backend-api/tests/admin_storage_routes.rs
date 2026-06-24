@@ -132,7 +132,7 @@ async fn admin_storage_provider_routes_mask_credentials_and_report_capabilities(
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers")
+                .uri("/backend/v3/api/drive/storage/providers")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -171,7 +171,7 @@ async fn admin_storage_provider_routes_mask_credentials_and_report_capabilities(
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/providers/provider-tencent-cos")
+                .uri("/backend/v3/api/drive/storage/providers/provider-tencent-cos")
                 .body(Body::empty())
                 .expect("get provider request should be built"),
         )
@@ -192,7 +192,7 @@ async fn admin_storage_provider_routes_mask_credentials_and_report_capabilities(
         .oneshot(
             Request::builder()
                 .method(Method::PATCH)
-                .uri("/admin/v3/api/drive/storage/providers/provider-tencent-cos")
+                .uri("/backend/v3/api/drive/storage/providers/provider-tencent-cos")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -218,7 +218,7 @@ async fn admin_storage_provider_routes_mask_credentials_and_report_capabilities(
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/providers/provider-tencent-cos/capabilities")
+                .uri("/backend/v3/api/drive/storage/providers/provider-tencent-cos/capabilities")
                 .body(Body::empty())
                 .expect("capabilities request should be built"),
         )
@@ -267,7 +267,7 @@ async fn admin_storage_default_binding_can_mount_provider_to_tenant_or_space() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers")
+                .uri("/backend/v3/api/drive/storage/providers")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -292,7 +292,7 @@ async fn admin_storage_default_binding_can_mount_provider_to_tenant_or_space() {
         .oneshot(
             Request::builder()
                 .method(Method::PUT)
-                .uri("/admin/v3/api/drive/storage/bindings/default")
+                .uri("/backend/v3/api/drive/storage/bindings/default")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -327,7 +327,9 @@ async fn admin_storage_default_binding_can_mount_provider_to_tenant_or_space() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings/default?spaceId=space-git-repositories")
+                .uri(
+                    "/backend/v3/api/drive/storage/bindings/default?spaceId=space-git-repositories",
+                )
                 .body(Body::empty())
                 .expect("get binding request should be built"),
         )
@@ -368,7 +370,7 @@ async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers")
+                .uri("/backend/v3/api/drive/storage/providers")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -393,7 +395,7 @@ async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
         .oneshot(
             Request::builder()
                 .method(Method::PUT)
-                .uri("/admin/v3/api/drive/storage/bindings/default")
+                .uri("/backend/v3/api/drive/storage/bindings/default")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -413,7 +415,7 @@ async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
         .oneshot(
             Request::builder()
                 .method(Method::PATCH)
-                .uri("/admin/v3/api/drive/storage/providers/provider-bound-delete")
+                .uri("/backend/v3/api/drive/storage/providers/provider-bound-delete")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -442,7 +444,7 @@ async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
         .oneshot(
             Request::builder()
                 .method(Method::PATCH)
-                .uri("/admin/v3/api/drive/storage/providers/provider-bound-delete")
+                .uri("/backend/v3/api/drive/storage/providers/provider-bound-delete")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -470,7 +472,7 @@ async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/providers/provider-bound-delete?operatorId=admin-storage")
+                .uri("/backend/v3/api/drive/storage/providers/provider-bound-delete?operatorId=admin-storage")
                 .body(Body::empty())
                 .expect("delete provider request should be built"),
         )
@@ -515,7 +517,7 @@ async fn admin_storage_activate_rejects_deleted_provider() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers")
+                .uri("/backend/v3/api/drive/storage/providers")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -540,7 +542,7 @@ async fn admin_storage_activate_rejects_deleted_provider() {
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/providers/provider-deleted-terminal?operatorId=admin-storage")
+                .uri("/backend/v3/api/drive/storage/providers/provider-deleted-terminal?operatorId=admin-storage")
                 .body(Body::empty())
                 .expect("delete provider request should be built"),
     )
@@ -553,7 +555,7 @@ async fn admin_storage_activate_rejects_deleted_provider() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers/provider-deleted-terminal/credentials/rotate")
+                .uri("/backend/v3/api/drive/storage/providers/provider-deleted-terminal/credentials/rotate")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -581,7 +583,7 @@ async fn admin_storage_activate_rejects_deleted_provider() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers/provider-deleted-terminal/activate")
+                .uri("/backend/v3/api/drive/storage/providers/provider-deleted-terminal/activate")
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"operatorId":"admin-storage"}"#))
                 .expect("activate deleted provider request should be built"),
@@ -640,7 +642,7 @@ async fn admin_storage_binding_rejects_invalid_storage_root_prefix() {
         .oneshot(
             Request::builder()
                 .method(Method::PUT)
-                .uri("/admin/v3/api/drive/storage/bindings/default")
+                .uri("/backend/v3/api/drive/storage/bindings/default")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -752,7 +754,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings")
+                .uri("/backend/v3/api/drive/storage/bindings")
                 .body(Body::empty())
                 .expect("list bindings request should be built"),
         )
@@ -780,7 +782,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings?providerId=provider-space-default")
+                .uri("/backend/v3/api/drive/storage/bindings?providerId=provider-space-default")
                 .body(Body::empty())
                 .expect("filtered bindings request should be built"),
         )
@@ -804,7 +806,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/bindings/default?spaceId=space-admin-a&operatorId=admin-unbind")
+                .uri("/backend/v3/api/drive/storage/bindings/default?spaceId=space-admin-a&operatorId=admin-unbind")
                 .body(Body::empty())
                 .expect("delete binding request should be built"),
         )
@@ -823,7 +825,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings/default?spaceId=space-admin-a")
+                .uri("/backend/v3/api/drive/storage/bindings/default?spaceId=space-admin-a")
                 .body(Body::empty())
                 .expect("get deleted binding request should be built"),
         )
@@ -843,7 +845,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
     .expect("binding audit events should be queryable");
     assert_eq!(
         binding_actions,
-        vec!["storage_provider_binding.default_deleted"]
+        vec!["drive.storage_provider_binding.default_deleted"]
     );
 }
 
@@ -880,7 +882,7 @@ async fn admin_storage_provider_bucket_routes_list_account_buckets() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/providers/provider-bucket-list-s3/buckets")
+                .uri("/backend/v3/api/drive/storage/providers/provider-bucket-list-s3/buckets")
                 .body(Body::empty())
                 .expect("bucket list request should be built"),
         )
@@ -956,7 +958,7 @@ async fn admin_storage_bucket_and_object_routes_use_configured_s3_store() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/providers/provider-admin-s3/bucket")
+                .uri("/backend/v3/api/drive/storage/providers/provider-admin-s3/bucket")
                 .body(Body::empty())
                 .expect("bucket request should be built"),
         )
@@ -969,7 +971,7 @@ async fn admin_storage_bucket_and_object_routes_use_configured_s3_store() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/providers/provider-admin-s3/objects?prefix=objects/&pageSize=100")
+                .uri("/backend/v3/api/drive/storage/providers/provider-admin-s3/objects?prefix=objects/&pageSize=100")
                 .body(Body::empty())
                 .expect("object list request should be built"),
         )
@@ -990,7 +992,7 @@ async fn admin_storage_bucket_and_object_routes_use_configured_s3_store() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/providers/provider-admin-s3/objects/objects/file-a.bin")
+                .uri("/backend/v3/api/drive/storage/providers/provider-admin-s3/objects/objects/file-a.bin")
                 .body(Body::empty())
                 .expect("object head request should be built"),
         )
@@ -1002,7 +1004,7 @@ async fn admin_storage_bucket_and_object_routes_use_configured_s3_store() {
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/providers/provider-admin-s3/objects/objects/file-a.bin?operatorId=admin-storage")
+                .uri("/backend/v3/api/drive/storage/providers/provider-admin-s3/objects/objects/file-a.bin?operatorId=admin-storage")
                 .body(Body::empty())
                 .expect("object delete request should be built"),
         )
@@ -1071,7 +1073,7 @@ async fn admin_storage_object_routes_reject_leading_slash_object_keys_before_cal
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/providers/provider-admin-object-key/objects/%2Fleading-slash")
+                .uri("/backend/v3/api/drive/storage/providers/provider-admin-object-key/objects/%2Fleading-slash")
                 .body(Body::empty())
                 .expect("object head request should be built"),
         )
@@ -1121,7 +1123,7 @@ async fn admin_storage_copy_object_rejects_invalid_destination_bucket_before_cal
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers/provider-copy-bucket-validation/objects/copy")
+                .uri("/backend/v3/api/drive/storage/providers/provider-copy-bucket-validation/objects/copy")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -1198,7 +1200,7 @@ async fn admin_storage_opendal_plugin_adapter_is_default_disabled_without_featur
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/providers/provider-admin-opendal-disabled/objects?prefix=objects/&pageSize=10")
+                .uri("/backend/v3/api/drive/storage/providers/provider-admin-opendal-disabled/objects?prefix=objects/&pageSize=10")
                 .body(Body::empty())
                 .expect("object list request should be built"),
         )
@@ -1266,7 +1268,7 @@ async fn admin_storage_bucket_admin_uses_full_s3_adapter_even_when_object_plugin
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/providers/provider-admin-bucket-plugin-selected/buckets")
+                .uri("/backend/v3/api/drive/storage/providers/provider-admin-bucket-plugin-selected/buckets")
                 .body(Body::empty())
                 .expect("bucket list request should be built"),
         )
@@ -1397,7 +1399,7 @@ async fn admin_storage_provider_test_route_checks_configured_s3_bucket() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers/provider-test-s3/test")
+                .uri("/backend/v3/api/drive/storage/providers/provider-test-s3/test")
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"operatorId":"admin-storage"}"#))
                 .expect("test provider request should be built"),
@@ -1458,7 +1460,7 @@ async fn admin_storage_provider_test_route_checks_disabled_s3_provider_bucket() 
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers/provider-test-disabled-s3/test")
+                .uri("/backend/v3/api/drive/storage/providers/provider-test-disabled-s3/test")
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"operatorId":"admin-storage"}"#))
                 .expect("test provider request should be built"),
@@ -1511,7 +1513,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers")
+                .uri("/backend/v3/api/drive/storage/providers")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -1538,7 +1540,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         .oneshot(
             Request::builder()
                 .method(Method::PATCH)
-                .uri("/admin/v3/api/drive/storage/providers/provider-audit-s3")
+                .uri("/backend/v3/api/drive/storage/providers/provider-audit-s3")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -1558,7 +1560,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers/provider-audit-s3/test")
+                .uri("/backend/v3/api/drive/storage/providers/provider-audit-s3/test")
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"operatorId":"admin-test"}"#))
                 .expect("test provider request should be built"),
@@ -1572,7 +1574,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers/provider-audit-s3/activate")
+                .uri("/backend/v3/api/drive/storage/providers/provider-audit-s3/activate")
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"operatorId":"admin-activate"}"#))
                 .expect("activate provider request should be built"),
@@ -1586,7 +1588,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers/provider-audit-s3/credentials/rotate")
+                .uri("/backend/v3/api/drive/storage/providers/provider-audit-s3/credentials/rotate")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -1605,7 +1607,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         .oneshot(
             Request::builder()
                 .method(Method::PUT)
-                .uri("/admin/v3/api/drive/storage/bindings/default")
+                .uri("/backend/v3/api/drive/storage/bindings/default")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -1625,7 +1627,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/bindings/default?spaceId=space-audit&operatorId=admin-unbind")
+                .uri("/backend/v3/api/drive/storage/bindings/default?spaceId=space-audit&operatorId=admin-unbind")
                 .body(Body::empty())
                 .expect("delete default binding request should be built"),
         )
@@ -1637,7 +1639,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/providers/provider-audit-s3?operatorId=admin-delete")
+                .uri("/backend/v3/api/drive/storage/providers/provider-audit-s3?operatorId=admin-delete")
                 .body(Body::empty())
                 .expect("delete provider request should be built"),
         )
@@ -1658,12 +1660,12 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
     assert_eq!(
         provider_actions,
         vec![
-            "storage_provider.created",
-            "storage_provider.updated",
-            "storage_provider.tested",
-            "storage_provider.activated",
-            "storage_provider.credentials_rotated",
-            "storage_provider.deleted"
+            "drive.storage_provider.created",
+            "drive.storage_provider.updated",
+            "drive.storage_provider.tested",
+            "drive.storage_provider.activated",
+            "drive.storage_provider.credentials_rotated",
+            "drive.storage_provider.deleted"
         ]
     );
 
@@ -1680,8 +1682,8 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
     assert_eq!(
         binding_actions,
         vec![
-            "storage_provider_binding.default_set",
-            "storage_provider_binding.default_deleted"
+            "drive.storage_provider_binding.default_set",
+            "drive.storage_provider_binding.default_deleted"
         ]
     );
 }
@@ -1720,7 +1722,7 @@ async fn admin_storage_bucket_and_object_mutations_require_operator_id_and_audit
         .oneshot(
             Request::builder()
                 .method(Method::PUT)
-                .uri("/admin/v3/api/drive/storage/providers/provider-mutation-s3/bucket")
+                .uri("/backend/v3/api/drive/storage/providers/provider-mutation-s3/bucket")
                 .body(Body::empty())
                 .expect("bucket create request without operator should be built"),
         )
@@ -1733,7 +1735,7 @@ async fn admin_storage_bucket_and_object_mutations_require_operator_id_and_audit
         .oneshot(
             Request::builder()
                 .method(Method::PUT)
-                .uri("/admin/v3/api/drive/storage/providers/provider-mutation-s3/bucket?operatorId=admin-bucket-create")
+                .uri("/backend/v3/api/drive/storage/providers/provider-mutation-s3/bucket?operatorId=admin-bucket-create")
                 .body(Body::empty())
                 .expect("bucket create request should be built"),
         )
@@ -1746,7 +1748,7 @@ async fn admin_storage_bucket_and_object_mutations_require_operator_id_and_audit
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/providers/provider-mutation-s3/objects/objects/file-a.bin")
+                .uri("/backend/v3/api/drive/storage/providers/provider-mutation-s3/objects/objects/file-a.bin")
                 .body(Body::empty())
                 .expect("object delete request without operator should be built"),
         )
@@ -1762,7 +1764,7 @@ async fn admin_storage_bucket_and_object_mutations_require_operator_id_and_audit
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/providers/provider-mutation-s3/objects/objects/file-a.bin?operatorId=admin-object-delete")
+                .uri("/backend/v3/api/drive/storage/providers/provider-mutation-s3/objects/objects/file-a.bin?operatorId=admin-object-delete")
                 .body(Body::empty())
                 .expect("object delete request should be built"),
         )
@@ -1775,7 +1777,7 @@ async fn admin_storage_bucket_and_object_mutations_require_operator_id_and_audit
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers/provider-mutation-s3/objects/copy")
+                .uri("/backend/v3/api/drive/storage/providers/provider-mutation-s3/objects/copy")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -1794,7 +1796,7 @@ async fn admin_storage_bucket_and_object_mutations_require_operator_id_and_audit
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers/provider-mutation-s3/objects/copy")
+                .uri("/backend/v3/api/drive/storage/providers/provider-mutation-s3/objects/copy")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
@@ -1813,7 +1815,7 @@ async fn admin_storage_bucket_and_object_mutations_require_operator_id_and_audit
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/admin/v3/api/drive/storage/providers/provider-mutation-s3/bucket?operatorId=admin-bucket-delete")
+                .uri("/backend/v3/api/drive/storage/providers/provider-mutation-s3/bucket?operatorId=admin-bucket-delete")
                 .body(Body::empty())
                 .expect("bucket delete request should be built"),
         )
@@ -1835,21 +1837,54 @@ async fn admin_storage_bucket_and_object_mutations_require_operator_id_and_audit
         audit_rows,
         vec![
             (
-                "storage_provider.bucket_created".to_string(),
+                "drive.storage_provider.bucket_created".to_string(),
                 "admin-bucket-create".to_string()
             ),
             (
-                "storage_provider.object_deleted".to_string(),
+                "drive.storage_provider.object_deleted".to_string(),
                 "admin-object-delete".to_string()
             ),
             (
-                "storage_provider.object_copied".to_string(),
+                "drive.storage_provider.object_copied".to_string(),
                 "admin-object-copy".to_string()
             ),
             (
-                "storage_provider.bucket_deleted".to_string(),
+                "drive.storage_provider.bucket_deleted".to_string(),
                 "admin-bucket-delete".to_string()
             )
         ]
     );
+}
+
+#[tokio::test]
+async fn admin_storage_legacy_admin_prefix_remains_compatible() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    let app = build_router_with_pool_without_iam(pool);
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/admin/v3/api/drive/storage/providers")
+                .body(Body::empty())
+                .expect("legacy list providers request should be built"),
+        )
+        .await
+        .expect("legacy list providers request should be handled");
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("legacy list providers response body should be read"),
+    )
+    .expect("legacy list providers response should be json");
+    assert!(payload["items"].is_array());
 }

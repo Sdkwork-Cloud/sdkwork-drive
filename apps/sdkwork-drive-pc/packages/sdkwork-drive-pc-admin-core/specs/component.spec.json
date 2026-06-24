@@ -110,7 +110,7 @@
         "role": "drive-admin-storage-capability",
         "required": true,
         "dependencyMode": "consumer-sdk",
-        "apiPrefix": "/admin/v3/api",
+        "apiPrefix": "/backend/v3/api",
         "apiAuthority": "sdkwork-drive.admin-storage",
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {

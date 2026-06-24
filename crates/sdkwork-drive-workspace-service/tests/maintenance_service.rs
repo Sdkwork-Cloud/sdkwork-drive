@@ -1,7 +1,7 @@
 use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::maintenance_service::{
-    DriveMaintenanceService, ListMaintenanceJobsCommand, SweepExpiredUploadContentCommand,
-    SweepObjectStoreCommand, SweepUploadSessionsCommand,
+    DriveMaintenanceService, ListMaintenanceJobsCommand, SweepAbandonedUploadTasksCommand,
+    SweepExpiredUploadContentCommand, SweepObjectStoreCommand, SweepUploadSessionsCommand,
 };
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::maintenance_store::SqlMaintenanceStore;
@@ -169,6 +169,106 @@ async fn upload_session_sweep_expires_stale_completing_sessions() {
     .await
     .expect("session state should be queryable");
     assert_eq!(state, "expired");
+}
+
+#[tokio::test]
+async fn abandoned_upload_task_sweep_marks_stuck_items_failed_when_session_expired() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES ('space-abandoned-sweep', 'tenant-abandoned-sweep', 'user', 'user-001', 'personal', 'Main', 'active', 1, 'admin-001', 'admin-001')",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be inserted");
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES ('node-abandoned-sweep', 'tenant-abandoned-sweep', 'space-abandoned-sweep', NULL, 'file', 'node.bin', 'uploading', 'active', 1, 'admin-001', 'admin-001')",
+    )
+    .execute(&pool)
+    .await
+    .expect("node should be inserted");
+    seed_storage_provider(&pool, "provider-abandoned", "bucket-abandoned").await;
+    sqlx::query(
+        "INSERT INTO dr_drive_upload_session (
+            id, tenant_id, space_id, node_id, bucket, object_key,
+            idempotency_key, storage_provider_id, storage_upload_id, state,
+            expires_at_epoch_ms, version, created_by, updated_by
+        ) VALUES (
+            'session-abandoned-sweep', 'tenant-abandoned-sweep',
+            'space-abandoned-sweep', 'node-abandoned-sweep',
+            'bucket-abandoned', 'objects/node.bin', 'idem-abandoned-sweep',
+            'provider-abandoned', 'storage-upload-abandoned-sweep',
+            'expired', 1_700_000_000_000, 2, 'admin-001', 'admin-001'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("expired upload session should be inserted");
+    sqlx::query(
+        "INSERT INTO dr_drive_upload_item (
+            id, task_id, tenant_id, organization_id, user_id, actor_type, actor_id,
+            app_id, app_resource_type, app_resource_id, upload_profile_code,
+            file_fingerprint, space_id, node_id, upload_session_id,
+            storage_provider_id, storage_upload_id, original_file_name, file_extension,
+            content_type, content_type_group, detected_content_type, content_length,
+            checksum_sha256_hex, chunk_size_bytes, total_parts, uploaded_parts_count,
+            uploaded_bytes, status, retention_mode, retention_expires_at_epoch_ms,
+            cleanup_action, hard_delete_after_epoch_ms, cleanup_status,
+            post_process_status, created_by, updated_by
+        ) VALUES (
+            'upload-item-abandoned', 'task-abandoned', 'tenant-abandoned-sweep',
+            NULL, 'user-001', 'user', 'user-001',
+            'drive-pc', 'desktop-file-browser', 'root', 'generic',
+            'fp-abandoned', 'space-abandoned-sweep', 'node-abandoned-sweep',
+            'session-abandoned-sweep',
+            'provider-abandoned', 'storage-upload-abandoned-sweep', 'node.bin', 'bin',
+            'application/octet-stream', 'binary', NULL, 1024,
+            NULL, 5242880, 1, 0,
+            0, 'uploading', 'long_term', NULL,
+            NULL, NULL, 'active',
+            'not_required', 'admin-001', 'admin-001'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("upload item should be inserted");
+
+    let service = DriveMaintenanceService::new(SqlMaintenanceStore::new(pool.clone()));
+    let result = service
+        .sweep_abandoned_upload_tasks(SweepAbandonedUploadTasksCommand {
+            now_epoch_ms: 1_800_000_000_000_i64,
+            dry_run: false,
+            limit: Some(100),
+            operator_id: "admin-ops".to_string(),
+            request_id: None,
+            trace_id: None,
+        })
+        .await
+        .expect("abandoned upload task sweep should succeed");
+    assert_eq!(result.scanned_count, 1);
+    assert_eq!(result.affected_count, 1);
+
+    let status: String = sqlx::query_scalar(
+        "SELECT status FROM dr_drive_upload_item WHERE id='upload-item-abandoned'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("upload item status should be queryable");
+    assert_eq!(status, "failed");
 }
 
 #[tokio::test]
@@ -405,6 +505,14 @@ async fn expired_upload_content_sweep_soft_deletes_nodes_and_records_sensitive_o
             "not_required".to_string()
         )
     );
+
+    let change_event: String = sqlx::query_scalar(
+        "SELECT event_type FROM dr_drive_change_log WHERE space_id='space-expired-upload'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("content expired change should be recorded");
+    assert_eq!(change_event, "drive.uploader.content_expired");
 }
 
 #[tokio::test]

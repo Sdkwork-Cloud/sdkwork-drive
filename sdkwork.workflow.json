@@ -41,6 +41,48 @@
       "outputGlobs": ["target/release/sdkwork-drive-standalone-gateway"]
     },
     {
+      "id": "windows-x64-standalone-desktop-zip",
+      "platform": "windows",
+      "architecture": "x64",
+      "deploymentProfile": "standalone",
+      "runtimeTarget": "desktop",
+      "profile": "desktop",
+      "formats": ["zip"],
+      "runner": "windows-latest",
+      "outputGlobs": [
+        "dist/release/**/windows/**/app.zip",
+        "apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-desktop/src-tauri/target/release/bundle/**"
+      ]
+    },
+    {
+      "id": "macos-universal-standalone-desktop-dmg",
+      "platform": "macos",
+      "architecture": "universal",
+      "deploymentProfile": "standalone",
+      "runtimeTarget": "desktop",
+      "profile": "desktop",
+      "formats": ["dmg"],
+      "runner": "macos-latest",
+      "outputGlobs": [
+        "dist/release/**/macos/**/app.dmg",
+        "apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-desktop/src-tauri/target/release/bundle/**/*.dmg"
+      ]
+    },
+    {
+      "id": "linux-x64-standalone-desktop-appimage",
+      "platform": "linux",
+      "architecture": "x64",
+      "deploymentProfile": "standalone",
+      "runtimeTarget": "desktop",
+      "profile": "desktop",
+      "formats": ["appimage"],
+      "runner": "ubuntu-latest",
+      "outputGlobs": [
+        "dist/release/**/linux/**/app.AppImage",
+        "apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-desktop/src-tauri/target/release/bundle/**/*.AppImage"
+      ]
+    },
+    {
       "id": "container-x64-cloud-container-oci",
       "platform": "container",
       "architecture": "x64",
@@ -177,6 +219,83 @@
         "name": "Validate agent workflow standard",
         "shell": "bash",
         "run": "pnpm check:agent-workflow-standard"
+      },
+      {
+        "name": "Validate release readiness",
+        "shell": "bash",
+        "run": "pnpm check:release-readiness"
+      },
+      {
+        "name": "Validate drive alignment integration",
+        "shell": "bash",
+        "run": "pnpm test:drive-integration"
+      },
+      {
+        "name": "Validate drive share link integration",
+        "shell": "bash",
+        "run": "pnpm test:drive-share-link-integration"
+      },
+      {
+        "name": "Validate drive cross-api e2e",
+        "shell": "bash",
+        "run": "pnpm test:drive-e2e"
+      },
+      {
+        "name": "Validate playwright open-api smoke (skips without staging env)",
+        "shell": "bash",
+        "run": "pnpm test:e2e"
+      },
+      {
+        "name": "Validate deployment descriptors",
+        "shell": "bash",
+        "run": "pnpm deploy:validate"
+      }
+    ],
+    "package": [
+      {
+        "name": "Package browser web bundle",
+        "shell": "bash",
+        "run": "node scripts/release-web-bundle.mjs"
+      },
+      {
+        "name": "Package desktop bundle",
+        "shell": "bash",
+        "run": "node scripts/release-desktop-bundle.mjs"
+      },
+      {
+        "name": "Stage catalog media evidence",
+        "shell": "bash",
+        "run": "node scripts/release-catalog-media.mjs"
+      },
+      {
+        "name": "Materialize catalog media manifest evidence",
+        "shell": "bash",
+        "run": "node tools/materialize_catalog_media_evidence.mjs"
+      },
+      {
+        "name": "Package standalone gateway archive",
+        "shell": "bash",
+        "run": "node scripts/gateway-standalone-pack.mjs package"
+      },
+      {
+        "name": "Materialize release manifest checksum evidence",
+        "shell": "bash",
+        "run": "node tools/materialize_release_manifest_evidence.mjs"
+      },
+      {
+        "name": "Generate release SBOM",
+        "shell": "bash",
+        "run": "pnpm release:sbom"
+      },
+      {
+        "name": "Verify release evidence integrity",
+        "shell": "bash",
+        "run": "node tools/verify_release_evidence.mjs"
+      },
+      {
+        "name": "Validate strict release readiness",
+        "shell": "bash",
+        "run": "SDKWORK_RELEASE_VALIDATION=strict pnpm release:validate"
       }
     ]
   },

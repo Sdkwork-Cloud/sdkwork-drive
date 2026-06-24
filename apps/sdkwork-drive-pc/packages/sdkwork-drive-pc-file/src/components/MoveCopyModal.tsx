@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FolderInput, X } from 'lucide-react';
 import { useTranslation } from 'sdkwork-drive-pc-commons';
-import type { DriveFileService } from 'sdkwork-drive-pc-core';
+import { isDriveAbortError, type DriveFileService } from 'sdkwork-drive-pc-core';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
 
 export type MoveCopyMode = 'move' | 'copy';
@@ -32,8 +32,13 @@ export function MoveCopyModal({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [targetParentId, setTargetParentId] = useState<string>('');
+  const submitAbortRef = useRef<AbortController | null>(null);
 
-  const selectedIds = useMemo(() => new Set(files.map((file) => file.id)), [files]);
+  useEffect(() => {
+    return () => {
+      submitAbortRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -42,25 +47,25 @@ export function MoveCopyModal({
     }
 
     let cancelled = false;
+    const controller = new AbortController();
     setLoading(true);
     fileService
-      .getAllWorkspaceFiles()
-      .then((workspaceFiles) => {
-        if (cancelled) {
-          return;
+      .listMoveCopyDestinationFolders(files, activeSection, {
+        signal: controller.signal,
+      })
+      .then((folderCandidates) => {
+        if (!cancelled) {
+          setFolders(folderCandidates);
         }
-        const folderCandidates = workspaceFiles.filter(
-          (entry) => entry.type === 'folder' && !selectedIds.has(entry.id),
-        );
-        setFolders(folderCandidates);
       })
       .catch((error: unknown) => {
-        if (!cancelled) {
-          onToast(
-            error instanceof Error ? error.message : t('fileBrowser.moveCopyLoadFailed'),
-            'err',
-          );
+        if (cancelled || isDriveAbortError(error)) {
+          return;
         }
+        onToast(
+          error instanceof Error ? error.message : t('fileBrowser.moveCopyLoadFailed'),
+          'err',
+        );
       })
       .finally(() => {
         if (!cancelled) {
@@ -70,8 +75,9 @@ export function MoveCopyModal({
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [activeSection, fileService, isOpen, onToast, selectedIds, t]);
+  }, [activeSection, fileService, files, isOpen, onToast, t]);
 
   if (!isOpen || files.length === 0) {
     return null;
@@ -79,13 +85,18 @@ export function MoveCopyModal({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    submitAbortRef.current?.abort();
+    const controller = new AbortController();
+    submitAbortRef.current = controller;
     setSubmitting(true);
     const parentId = targetParentId.trim() || null;
 
     try {
       if (mode === 'move') {
         await Promise.all(
-          files.map((file) => fileService.moveFile(file.id, parentId)),
+          files.map((file) =>
+            fileService.moveFile(file.id, parentId, { signal: controller.signal }),
+          ),
         );
         onToast(t('fileBrowser.moveCompleted', { count: files.length }), 'success');
       } else {
@@ -93,6 +104,7 @@ export function MoveCopyModal({
           files.map((file) =>
             fileService.copyFile(file.id, {
               targetParentNodeId: parentId,
+              signal: controller.signal,
             }),
           ),
         );
@@ -101,11 +113,17 @@ export function MoveCopyModal({
       onCompleted();
       onClose();
     } catch (error: unknown) {
+      if (isDriveAbortError(error)) {
+        return;
+      }
       onToast(
         error instanceof Error ? error.message : t('fileBrowser.moveCopyFailed'),
         'err',
       );
     } finally {
+      if (submitAbortRef.current === controller) {
+        submitAbortRef.current = null;
+      }
       setSubmitting(false);
     }
   };

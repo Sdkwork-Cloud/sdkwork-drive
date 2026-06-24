@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Archive, ExternalLink, Info } from 'lucide-react';
-import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
+import { formatDriveBytes, useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
-import type { DriveArchiveEntry, DriveFileService } from 'sdkwork-drive-pc-core';
+import { isDriveAbortError, type DriveArchiveEntry, type DriveFileService } from 'sdkwork-drive-pc-core';
 
 interface ZipModuleProps {
   file: DriveFile;
@@ -15,16 +15,6 @@ interface ZipModuleProps {
   isReadOnly?: boolean;
 }
 
-function isDriveArchiveAbortError(err: unknown): boolean {
-  if (err instanceof DOMException && err.name === 'AbortError') {
-    return true;
-  }
-  if (err instanceof Error) {
-    return err.name === 'AbortError' || /\babort(?:ed)?\b/i.test(err.message);
-  }
-  return false;
-}
-
 export function ZipModule({
   file,
   fileService,
@@ -35,6 +25,7 @@ export function ZipModule({
   onExtracted,
   isReadOnly = false,
 }: ZipModuleProps) {
+  const { t } = useTranslation();
   const [entries, setEntries] = useState<DriveArchiveEntry[]>([]);
   const [entriesLoading, setEntriesLoading] = useState(false);
   const [entriesError, setEntriesError] = useState<string | null>(null);
@@ -57,11 +48,11 @@ export function ZipModule({
         }
       })
       .catch((err: any) => {
-        if (isDriveArchiveAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (active) {
-          setEntriesError(err?.message || 'Failed to load Drive archive contents.');
+          setEntriesError(err?.message || t('previewModules.archiveLoadFailed'));
         }
       })
       .finally(() => {
@@ -106,16 +97,16 @@ export function ZipModule({
       });
       triggerFeedback(
         extracted.length > 0
-          ? `Extracted ${extracted.length} archive item${extracted.length === 1 ? '' : 's'} to Drive.`
-          : 'Archive extraction completed.',
+          ? t('previewModules.archiveExtractedCount', { count: extracted.length })
+          : t('previewModules.archiveExtractCompleted'),
         'success',
       );
       await onExtracted?.();
     } catch (err: any) {
-      if (isDriveArchiveAbortError(err)) {
+      if (isDriveAbortError(err)) {
         return;
       }
-      triggerFeedback(err?.message || 'Archive extraction failed.', 'error');
+      triggerFeedback(err?.message || t('previewModules.archiveExtractFailed'), 'error');
     } finally {
       if (extractionAbortControllerRef.current === extractionAbortController) {
         extractionAbortControllerRef.current = null;
@@ -195,7 +186,7 @@ export function ZipModule({
                   className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
                 >
                   <ExternalLink size={13} />
-                  Open Archive
+                  {t('previewModules.openArchive')}
                 </a>
               )}
               {!isReadOnly && (
@@ -204,12 +195,12 @@ export function ZipModule({
                   disabled={extracting || entriesLoading}
                   className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-60 disabled:cursor-not-allowed text-neutral-200 border border-neutral-700 rounded-lg text-xs font-bold transition-colors"
                 >
-                  {extracting ? 'Extracting...' : 'Extract'}
+                  {extracting ? t('previewModules.extracting') : t('previewModules.extract')}
                 </button>
               )}
             </div>
             {loading && (
-              <p className="text-[11px] text-neutral-600">Preparing Drive archive download grant...</p>
+              <p className="text-[11px] text-neutral-600">{t('previewModules.preparingArchiveGrant')}</p>
             )}
             {previewError && !previewUrl && (
               <p className="text-[11px] text-neutral-600 max-w-md">{previewError}</p>

@@ -304,7 +304,7 @@ Version: ${context.version}
 Target: ${context.platform}/${context.architecture}
 
 Standalone gateway embeds appbase IAM (OAuth/login) and proxies Drive API upstreams.
-Use sdkwork-api-gateway instead when routing through the unified cloud API surface.
+Use sdkwork-api-cloud-gateway instead when routing through the unified cloud API surface.
 
 ## Start (development profile)
 

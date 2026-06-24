@@ -17,7 +17,7 @@
     "identifiers": {
       "packageName": null,
       "bundleId": null,
-      "desktopAppId": "com.sdkwork.sdkwork.drive.desktop",
+      "desktopAppId": "com.sdkwork.drive.pc",
       "containerImage": "registry.sdkwork.com/apps/sdkwork-drive"
     }
   },
@@ -67,12 +67,17 @@
         "width": 1024,
         "height": 1024,
         "format": "PNG",
-        "fileSizeBytes": 524288,
+        "fileSizeBytes": 5337,
         "alphaChannel": false,
         "sortOrder": 0,
         "enabled": true,
         "metadata": {
-          "generatedPlaceholder": true
+          "generatedPlaceholder": true,
+          "catalogMediaDeferred": true,
+          "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/icon-1024.png",
+          "stagedChecksumAlgorithm": "SHA-256",
+          "stagedChecksum": "c1e82f5f8e535e870d64fab14b8df9c60d890f3232758bf36cec724e4eba91a1",
+          "catalogMediaStagedAt": "2026-06-24T07:56:39.445Z"
         }
       },
       "platform": [],
@@ -93,14 +98,19 @@
         "width": 1920,
         "height": 1080,
         "format": "PNG",
-        "fileSizeBytes": 1048576,
+        "fileSizeBytes": 8565,
         "alphaChannel": false,
         "caption": "SDKWork Drive app screenshot.",
         "sortOrder": 0,
         "enabled": true,
         "metadata": {
           "generatedPlaceholder": true,
-          "altText": "SDKWork Drive app screenshot."
+          "catalogMediaDeferred": true,
+          "altText": "SDKWork Drive app screenshot.",
+          "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/desktop_windows-screenshot.png",
+          "stagedChecksumAlgorithm": "SHA-256",
+          "stagedChecksum": "878e85a25e9358068b35e81add3f4ea2e2ca31a891864183f6548de317634c78",
+          "catalogMediaStagedAt": "2026-06-24T07:56:39.445Z"
         }
       }
     ],
@@ -115,14 +125,19 @@
         "width": 1600,
         "height": 900,
         "format": "PNG",
-        "fileSizeBytes": 786432,
+        "fileSizeBytes": 6400,
         "alphaChannel": false,
         "caption": "SDKWork Drive preview.",
         "sortOrder": 0,
         "enabled": true,
         "metadata": {
           "generatedPlaceholder": true,
-          "altText": "SDKWork Drive preview cover."
+          "catalogMediaDeferred": true,
+          "altText": "SDKWork Drive preview cover.",
+          "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/preview-cover.png",
+          "stagedChecksumAlgorithm": "SHA-256",
+          "stagedChecksum": "1727302af4e20b3ee22e5ee569a7113fda90aebc70cc9153fe2f0b8183d5d499",
+          "catalogMediaStagedAt": "2026-06-24T07:56:39.445Z"
         }
       }
     ],
@@ -132,7 +147,8 @@
     }
   },
   "publish": {
-    "status": "ACTIVE",
+    "status": "DRAFT",
+    "releaseMaturity": "BETA",
     "installSkill": {
       "name": "sdkwork-skills-app"
     },
@@ -190,9 +206,13 @@
           "platform": "WEB",
           "url": "https://cdn.sdkwork.com/apps/sdkwork-drive/STABLE/0.1.0/web.zip",
           "enabled": true,
-          "metadata": {},
+          "metadata": {
+            "releaseArtifactPath": "dist/release/STABLE/0.1.0/web.zip",
+            "releaseEvidenceMaterializedAt": "2026-06-23T04:44:51.646Z",
+            "releaseBuildMaterializedAt": "2026-06-23T04:44:51.646Z"
+          },
           "checksumAlgorithm": "SHA-256",
-          "checksum": "615da704615da704615da704615da704615da704615da704615da704615da704",
+          "checksum": "c6c0917e02b6dc22d3ac7e4c14b9e5f6cc4ba1298f838a6f552a603a51279fad",
           "architecture": "universal",
           "deploymentProfile": "cloud",
           "runtimeTarget": "browser"
@@ -205,10 +225,14 @@
           "platform": "DESKTOP_WINDOWS",
           "url": "https://cdn.sdkwork.com/apps/sdkwork-drive/STABLE/0.1.0/windows/x64/app.zip",
           "enabled": true,
-          "metadata": {},
+          "metadata": {
+            "releaseArtifactPath": "dist/release/STABLE/0.1.0/windows/x64/app.zip",
+            "releaseEvidenceMaterializedAt": "2026-06-23T04:44:51.646Z",
+            "releaseBuildMaterializedAt": "2026-06-23T04:44:51.646Z"
+          },
           "architecture": "x64",
           "checksumAlgorithm": "SHA-256",
-          "checksum": "0014cde00014cde00014cde00014cde00014cde00014cde00014cde00014cde0",
+          "checksum": "e160289706ed042132c6de2b4fbb8e8bce05fe1a94d7e1c0d67d3a5309975aca",
           "deploymentProfile": "standalone",
           "runtimeTarget": "desktop"
         },
@@ -220,7 +244,9 @@
           "platform": "DESKTOP_MACOS",
           "url": "https://cdn.sdkwork.com/apps/sdkwork-drive/STABLE/0.1.0/macos/universal/app.dmg",
           "enabled": true,
-          "metadata": {},
+          "metadata": {
+            "releaseBuildDeferred": true
+          },
           "architecture": "universal",
           "checksumAlgorithm": "SHA-256",
           "checksum": "5ceffa105ceffa105ceffa105ceffa105ceffa105ceffa105ceffa105ceffa10",
@@ -238,7 +264,8 @@
           "metadata": {
             "linux": {
               "distro": "generic"
-            }
+            },
+            "releaseBuildDeferred": true
           },
           "architecture": "x64",
           "checksumAlgorithm": "SHA-256",
@@ -287,8 +314,9 @@
     ]
   },
   "security": {
-    "checksumRequired": false,
+    "checksumRequired": true,
     "signatureRequired": false,
+    "signatureDeferred": true,
     "sbomRequired": true
   },
   "devApp": {

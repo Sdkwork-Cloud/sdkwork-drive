@@ -11,19 +11,16 @@ import {
 } from "lucide-react";
 import {
   applyTransferFailure,
-  applyUploadCompletionToJob,
-  applyUploadProgressToJob,
   canCreateDriveFolderInSection,
   canUploadDriveFileToSection,
   createDownloadJobForFiles,
-  createUploadJobForFile,
   createUploadJobForNativeFile,
   isCompletedTransferStatus,
   decodeLocalFilesystemId,
   type DriveFile,
 } from "sdkwork-drive-pc-types";
 import type { DriveFileService } from "sdkwork-drive-pc-core";
-import { NativeLocalUploadFile, runManagedDownloadTransfer, useDriveRuntime } from "sdkwork-drive-pc-core";
+import { isDriveAbortError, NativeLocalUploadFile, runManagedDownloadTransfer, createHostDownloadStreamAdapter, useDriveRuntime } from "sdkwork-drive-pc-core";
 import type { DriveSection } from "../pages/DrivePage";
 import { DownloadManager, type DownloadJob } from "./DownloadManager";
 import { FileBrowserHeader } from "./FileBrowserHeader";
@@ -32,11 +29,25 @@ import { Info, Star, Download, Trash2, CheckSquare, Copy, FolderInput } from "lu
 import { formatDriveBytes, useTranslation } from "sdkwork-drive-pc-commons";
 import { createLatestRequestGuard } from "./fileBrowserLoadGuard";
 import {
+  getSettledBatchMessage,
+  runBatchSettledOperations,
+} from "./fileBrowserBatchUtils";
+import {
+  queueFileBrowserUploads,
+  queueSelectedFilesForUpload as enqueueSelectedFilesForUpload,
+  type FileBrowserUploadToast,
+} from "./fileBrowserUploadQueue";
+import { resolveFileBrowserSectionTitle } from "./fileBrowserSectionTitle";
+import {
+  sortDriveFiles,
+  type FileBrowserSortField,
+} from "./fileBrowserSort";
+import {
   FILE_LIST_COL_ACTIONS_CLASS,
   FILE_LIST_HEADER_CLASS,
   FILE_LIST_ROW_CLASS,
 } from "../utils/fileListLayout";
-import { formatDriveFileTypeLabel, getDriveFileTypeSortKey } from "../utils/fileTypeLabel";
+import { formatDriveFileTypeLabel } from "../utils/fileTypeLabel";
 
 // Import newly refactored sub-components
 import { FolderModal } from "./FolderModal";
@@ -44,53 +55,6 @@ import { FileRowItem } from "./FileRowItem";
 import { FileGridItem } from "./FileGridItem";
 import { ShareLinkModal } from "./ShareLinkModal";
 import { MoveCopyModal, type MoveCopyMode } from "./MoveCopyModal";
-
-function isDriveUploadAbortError(err: unknown): boolean {
-  if (err instanceof DOMException && err.name === "AbortError") {
-    return true;
-  }
-  if (err instanceof Error) {
-    return err.name === "AbortError" || /\babort(?:ed)?\b/i.test(err.message);
-  }
-  return false;
-}
-
-function isDriveDownloadAbortError(err: unknown): boolean {
-  return isDriveUploadAbortError(err);
-}
-
-function getSettledBatchMessage(result: PromiseSettledResult<unknown>): string {
-  if (result.status !== "rejected") {
-    return "";
-  }
-  const reason = result.reason;
-  if (reason instanceof Error && reason.message.trim()) {
-    return reason.message;
-  }
-  return "One or more operations failed.";
-}
-
-const MAX_PARALLEL_UPLOADS = 3;
-
-async function runWithConcurrency<T>(
-  items: readonly T[],
-  limit: number,
-  worker: (item: T) => Promise<void>,
-): Promise<void> {
-  if (items.length === 0) {
-    return;
-  }
-
-  let nextIndex = 0;
-  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (nextIndex < items.length) {
-      const currentIndex = nextIndex;
-      nextIndex += 1;
-      await worker(items[currentIndex]!);
-    }
-  });
-  await Promise.all(runners);
-}
 
 interface FileBrowserProps {
   activeSection: DriveSection;
@@ -123,14 +87,18 @@ export function FileBrowser({
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [errorState, setErrorState] = useState<string | null>(null);
   const { t } = useTranslation();
   const { host } = useDriveRuntime();
+  const hostDownloadStream = createHostDownloadStreamAdapter(host);
   const canCreateFolderInActiveSection = canCreateDriveFolderInSection(activeSection);
   const canUploadToActiveSection = canUploadDriveFileToSection(activeSection);
   const latestLoadGuardRef = React.useRef(createLatestRequestGuard());
   const [isTransferPanelDismissed, setIsTransferPanelDismissed] = useState(false);
   const knownTransferJobIdsRef = useRef(new Set<string>());
+  const loadFilesRef = React.useRef<() => void>(() => {});
+  const triggerToastRef = React.useRef<FileBrowserUploadToast>(() => {});
 
   useEffect(() => {
     if (downloadJobs.length === 0) {
@@ -146,23 +114,8 @@ export function FileBrowser({
     }
   }, [downloadJobs]);
 
-  const getSectionTitle = (sectionKey: string): string => {
-    switch (sectionKey) {
-      case "my-storage": return t("sidebar.myStorage") || "My Storage";
-      case "recent": return t("sidebar.recent") || "Recent Files";
-      case "starred": return t("sidebar.starred") || "Starred Files";
-      case "shared": return t("sidebar.sharedWithMe") || "Shared with me";
-      case "computers": return t("sidebar.computers") || "Computers";
-      case "transfer": return t("sidebar.transferCenter") || "Transfer Center";
-      case "trash": return t("sidebar.trash") || "Trash";
-      default: {
-        const knowledgeBaseSpace = fileService.getKnowledgeBaseSpaces().find((space) => space.id === sectionKey);
-        if (knowledgeBaseSpace) return knowledgeBaseSpace.name;
-        const remoteSpace = fileService.getSharedSpaces().find((space) => space.id === sectionKey);
-        return remoteSpace?.name || sectionKey;
-      }
-    }
-  };
+  const getSectionTitle = (sectionKey: string): string =>
+    resolveFileBrowserSectionTitle(sectionKey, t, fileService);
 
   // Server-driven pagination state
   const FILE_BROWSER_PAGE_SIZE = 50;
@@ -172,12 +125,10 @@ export function FileBrowser({
     null,
   );
 
-  const [sortBy, setSortBy] = useState<
-    "name" | "owner" | "lastModified" | "size" | "type"
-  >("name");
+  const [sortBy, setSortBy] = useState<FileBrowserSortField>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  const handleSort = (field: "name" | "owner" | "lastModified" | "size" | "type") => {
+  const handleSort = (field: FileBrowserSortField) => {
     if (sortBy === field) {
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
@@ -186,49 +137,12 @@ export function FileBrowser({
     }
   };
 
-  const sortedFiles = React.useMemo(() => {
-    return [...files].sort((a, b) => {
-      // Folders always go first (standard operating system behavior)
-      if (a.type === "folder" && b.type !== "folder") return -1;
-      if (a.type !== "folder" && b.type === "folder") return 1;
+  const sortedFiles = React.useMemo(
+    () => sortDriveFiles(files, sortBy, sortOrder),
+    [files, sortBy, sortOrder],
+  );
 
-      let valA: any;
-      let valB: any;
-
-      switch (sortBy) {
-        case "name":
-          valA = a.name?.toLowerCase() || "";
-          valB = b.name?.toLowerCase() || "";
-          break;
-        case "owner":
-          valA = a.ownerId?.toLowerCase() || "";
-          valB = b.ownerId?.toLowerCase() || "";
-          break;
-        case "lastModified":
-          valA = new Date(a.updatedAt || 0).getTime();
-          valB = new Date(b.updatedAt || 0).getTime();
-          break;
-        case "size":
-          valA = a.size || 0;
-          valB = b.size || 0;
-          break;
-        case "type":
-          valA = getDriveFileTypeSortKey(a);
-          valB = getDriveFileTypeSortKey(b);
-          break;
-        default:
-          return 0;
-      }
-
-      if (valA < valB) return sortOrder === "asc" ? -1 : 1;
-      if (valA > valB) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [files, sortBy, sortOrder]);
-
-  const renderSortIndicator = (
-    field: "name" | "owner" | "lastModified" | "size" | "type",
-  ) => {
+  const renderSortIndicator = (field: FileBrowserSortField) => {
     if (sortBy !== field) {
       return (
         <ArrowUpDown
@@ -253,7 +167,7 @@ export function FileBrowser({
   // Subdirectory and detail modal tracking states
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [breadcrumbFiles, setBreadcrumbFiles] = useState<DriveFile[]>([]);
-  const currentLoadScope = `${activeSection}\u0000${searchQuery}\u0000${currentFolderId ?? ""}`;
+  const currentLoadScope = `${activeSection}\u0000${debouncedSearchQuery}\u0000${currentFolderId ?? ""}`;
   const loadAbortControllerRef = React.useRef<AbortController | null>(null);
   const fileWriteAbortControllersRef = React.useRef(new Map<string, AbortController>());
   const createFolderInFlightRef = React.useRef(false);
@@ -335,35 +249,36 @@ export function FileBrowser({
 
     const isTrashSection = activeSection === "trash";
     const selectedCount = selectedFileIds.length;
+    if (isTrashSection && !window.confirm(t("fileBrowser.permanentDeleteBatchConfirm", { count: selectedCount }))) {
+      return;
+    }
     const batchDeleteController = createFileWriteAbortController("batch-delete");
-    const deletePromises = selectedFileIds.map((id) => {
-      return isTrashSection
+    const deletePromises = selectedFileIds.map((id) => () =>
+      isTrashSection
         ? fileService.permanentlyDeleteFile(id, {
             signal: batchDeleteController.signal,
           })
         : fileService.deleteFile(id, {
             signal: batchDeleteController.signal,
-          });
-    });
+          }),
+    );
 
-    Promise.allSettled(deletePromises)
-      .then((results) => {
-        const failed = results.filter((result) => result.status === "rejected");
-        const succeededCount = results.length - failed.length;
-        if (failed.length === 0) {
+    runBatchSettledOperations(deletePromises)
+      .then(({ succeededCount, failedCount, firstFailure }) => {
+        if (failedCount === 0) {
           triggerToast(
             isTrashSection
-              ? `Successfully deleted ${selectedCount} items permanently`
-              : `Moved ${selectedCount} items to Trash`,
+              ? t("fileBrowser.batchDeletedPermanently", { count: selectedCount })
+              : t("fileBrowser.batchMovedToTrash", { count: selectedCount }),
             "success",
           );
         } else if (succeededCount > 0) {
           triggerToast(
-            `${succeededCount} succeeded, ${failed.length} failed.`,
+            t("fileBrowser.batchPartialResult", { succeeded: succeededCount, failed: failedCount }),
             "info",
           );
         } else {
-          triggerToast(getSettledBatchMessage(failed[0]), "err");
+          triggerToast(getSettledBatchMessage(firstFailure!, t("fileBrowser.batchOperationFailed")), "err");
         }
         setSelectedFileIds([]);
         loadFiles();
@@ -378,28 +293,26 @@ export function FileBrowser({
 
     const selectedCount = selectedFileIds.length;
     const batchRestoreController = createFileWriteAbortController("batch-restore");
-    const restorePromises = selectedFileIds.map((id) =>
+    const restorePromises = selectedFileIds.map((id) => () =>
       fileService.restoreFile(id, {
         signal: batchRestoreController.signal,
       }),
     );
 
-    Promise.allSettled(restorePromises)
-      .then((results) => {
-        const failed = results.filter((result) => result.status === "rejected");
-        const succeededCount = results.length - failed.length;
-        if (failed.length === 0) {
+    runBatchSettledOperations(restorePromises)
+      .then(({ succeededCount, failedCount, firstFailure }) => {
+        if (failedCount === 0) {
           triggerToast(
-            `Successfully restored ${selectedCount} items`,
+            t("fileBrowser.batchRestored", { count: selectedCount }),
             "success",
           );
         } else if (succeededCount > 0) {
           triggerToast(
-            `${succeededCount} restored, ${failed.length} failed.`,
+            t("fileBrowser.batchRestorePartial", { succeeded: succeededCount, failed: failedCount }),
             "info",
           );
         } else {
-          triggerToast(getSettledBatchMessage(failed[0]), "err");
+          triggerToast(getSettledBatchMessage(firstFailure!, t("fileBrowser.batchOperationFailed")), "err");
         }
         setSelectedFileIds([]);
         loadFiles();
@@ -419,7 +332,7 @@ export function FileBrowser({
     const selectedCount = selectedFileIds.length;
     const batchStarController = createFileWriteAbortController("batch-star");
 
-    const starPromises = selectedFilesObj.map((f) => {
+    const starPromises = selectedFilesObj.map((f) => () => {
       if (f.isStarred !== holdsUnstarred) {
         return fileService.toggleStar(f.id, {
           signal: batchStarController.signal,
@@ -428,24 +341,22 @@ export function FileBrowser({
       return Promise.resolve(f.isStarred);
     });
 
-    Promise.allSettled(starPromises)
-      .then((results) => {
-        const failed = results.filter((result) => result.status === "rejected");
-        const succeededCount = results.length - failed.length;
-        if (failed.length === 0) {
+    runBatchSettledOperations(starPromises)
+      .then(({ succeededCount, failedCount, firstFailure }) => {
+        if (failedCount === 0) {
           triggerToast(
             holdsUnstarred
-              ? `Successfully starred ${selectedCount} items`
-              : `Removed star from ${selectedCount} items`,
+              ? t("fileBrowser.batchStarred", { count: selectedCount })
+              : t("fileBrowser.batchUnstarred", { count: selectedCount }),
             "info",
           );
         } else if (succeededCount > 0) {
           triggerToast(
-            `${succeededCount} updated, ${failed.length} failed.`,
+            t("fileBrowser.batchStarPartial", { succeeded: succeededCount, failed: failedCount }),
             "info",
           );
         } else {
-          triggerToast(getSettledBatchMessage(failed[0]), "err");
+          triggerToast(getSettledBatchMessage(firstFailure!, t("fileBrowser.batchOperationFailed")), "err");
         }
         setSelectedFileIds([]);
         loadFiles();
@@ -474,7 +385,10 @@ export function FileBrowser({
     });
     setDownloadJobs((prev) => [newJob, ...prev]);
     triggerToast(
-      `Compressing ${selectedFilesObj.length} files to drive_export_${selectedFilesObj.length}_items.zip for active transfers...`,
+      t("fileBrowser.batchDownloadCompressing", {
+        count: selectedFilesObj.length,
+        fileName: newJob.fileName,
+      }),
       "success",
     );
     const downloadController = createDownloadAbortController(newJob.id);
@@ -492,24 +406,22 @@ export function FileBrowser({
             );
           },
           onOpenExternal: onOpenDownload,
-          saveDownload: host.isNativeHost
-            ? (fileName, blob) => host.saveDownloadFile(fileName, blob)
-            : undefined,
+          saveDownloadStream: hostDownloadStream,
         });
       })
       .catch((err) => {
-        if (isDriveDownloadAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
 
         setDownloadJobs((prev) =>
           prev.map((job) =>
             job.id === newJob.id
-              ? applyTransferFailure(job, err?.message || "Failed to prepare download bundle")
+              ? applyTransferFailure(job, err?.message || t("fileBrowser.downloadBundleFailed"))
               : job,
           ),
         );
-        triggerToast(err?.message || "Failed to prepare download bundle", "err");
+        triggerToast(err?.message || t("fileBrowser.downloadBundleFailed"), "err");
       })
       .finally(() => {
         releaseDownloadAbortController(newJob.id);
@@ -525,6 +437,19 @@ export function FileBrowser({
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  const buildUploadQueueParams = () => ({
+    fileService,
+    activeSection,
+    currentFolderId,
+    setDownloadJobs,
+    createUploadAbortController,
+    releaseUploadAbortController,
+    loadFiles: () => loadFilesRef.current(),
+    triggerToast: (message: string, type: "success" | "err" | "info" = "success") =>
+      triggerToastRef.current(message, type),
+    t,
+  });
+
   const queueUploadJobs = (
     uploadJobs: Array<{
       source: File | NativeLocalUploadFile;
@@ -532,75 +457,10 @@ export function FileBrowser({
     }>,
     toastLabel: string,
   ) => {
-    if (uploadJobs.length === 0) {
-      return;
-    }
-
-    let completedUploadCount = 0;
-    let shouldRefreshAfterSettled = false;
-
-    setDownloadJobs((prev) => [
-      ...uploadJobs.map(({ job }) => job),
-      ...prev,
-    ]);
-    triggerToast(toastLabel, "info");
-
-    const uploadTasks = uploadJobs.map(({ source, job: newUploadJob }) => ({
-      source,
-      job: newUploadJob,
-    }));
-
-    void runWithConcurrency(uploadTasks, MAX_PARALLEL_UPLOADS, async ({ source, job: newUploadJob }) => {
-      const uploadController = createUploadAbortController(newUploadJob.id);
-      try {
-        const uploadedFile = await fileService.uploadFile(source, activeSection, currentFolderId, {
-          taskId: newUploadJob.id,
-          signal: uploadController.signal,
-          onProgress: (uploadedBytes, totalBytes) => {
-            setDownloadJobs((prev) =>
-              prev.map((job) =>
-                job.id === newUploadJob.id
-                  ? applyUploadProgressToJob(job, uploadedBytes, totalBytes)
-                  : job,
-              ),
-            );
-          },
-        });
-        completedUploadCount += 1;
-        shouldRefreshAfterSettled = true;
-        setDownloadJobs((prev) =>
-          prev.map((job) =>
-            job.id === newUploadJob.id
-              ? applyUploadCompletionToJob(job, uploadedFile)
-              : job,
-          ),
-        );
-        loadFiles();
-      } catch (err) {
-        if (isDriveUploadAbortError(err)) {
-          return;
-        }
-
-        shouldRefreshAfterSettled = true;
-        setDownloadJobs((prev) =>
-          prev.map((job) =>
-            job.id === newUploadJob.id
-              ? applyTransferFailure(job, err instanceof Error ? err.message : t("fileBrowser.toastUploadFailed"))
-              : job,
-          ),
-        );
-        triggerToast(
-          err instanceof Error ? err.message : t("fileBrowser.toastUploadFailed"),
-          "err",
-        );
-        loadFiles();
-      } finally {
-        releaseUploadAbortController(newUploadJob.id);
-      }
-    }).then(() => {
-      if (shouldRefreshAfterSettled || completedUploadCount > 0) {
-        loadFiles();
-      }
+    queueFileBrowserUploads({
+      uploadJobs,
+      toastLabel,
+      ...buildUploadQueueParams(),
     });
   };
 
@@ -668,27 +528,7 @@ export function FileBrowser({
   };
 
   const queueSelectedFilesForUpload = (selectedFiles: File[]) => {
-    if (selectedFiles.length === 0) {
-      return;
-    }
-    if (!canUploadDriveFileToSection(activeSection)) {
-      triggerToast("This Drive view does not support uploads.", "err");
-      return;
-    }
-
-    queueUploadJobs(
-      selectedFiles.map((file) => ({
-        source: file,
-        job: createUploadJobForFile(file, {
-          uploadSection: activeSection,
-          uploadParentId: currentFolderId ?? null,
-          uploadBlob: file,
-        }),
-      })),
-      selectedFiles.length === 1
-        ? t("fileBrowser.toastFileAdded", { name: selectedFiles[0].name })
-        : `Added ${selectedFiles.length} files to active upload transfers`,
-    );
+    enqueueSelectedFilesForUpload(selectedFiles, buildUploadQueueParams());
   };
 
   const handleDragOver = (event: React.DragEvent) => {
@@ -718,7 +558,7 @@ export function FileBrowser({
 
   const handleUploadClick = async () => {
     if (!canUploadDriveFileToSection(activeSection)) {
-      triggerToast("This Drive view does not support uploads.", "err");
+      triggerToast(t("fileBrowser.sectionUploadUnsupported"), "err");
       return;
     }
 
@@ -773,6 +613,7 @@ export function FileBrowser({
   ) => {
     setToast({ message, type });
   };
+  triggerToastRef.current = triggerToast;
 
   useEffect(() => {
     if (toast) {
@@ -796,7 +637,7 @@ export function FileBrowser({
     setLoading(true);
     setErrorState(null);
     setNextPageToken(undefined);
-    fileService.listFilesPage(activeSection, searchQuery, currentFolderId, {
+    fileService.listFilesPage(activeSection, debouncedSearchQuery, currentFolderId, {
       signal: loadAbortController.signal,
       pageSize: FILE_BROWSER_PAGE_SIZE,
     })
@@ -809,7 +650,7 @@ export function FileBrowser({
         setLoading(false);
       })
       .catch((err: any) => {
-        if (isDriveUploadAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (!latestLoadGuardRef.current.isCurrent(requestId)) {
@@ -836,7 +677,7 @@ export function FileBrowser({
         setBreadcrumbFiles(path);
       })
       .catch((err: any) => {
-        if (isDriveUploadAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (!latestLoadGuardRef.current.isCurrent(requestId)) {
@@ -845,6 +686,7 @@ export function FileBrowser({
         setBreadcrumbFiles([]);
       });
   };
+  loadFilesRef.current = loadFiles;
 
   const loadMoreFiles = React.useCallback(() => {
     if (!nextPageToken || loadingMore || loading) {
@@ -857,7 +699,7 @@ export function FileBrowser({
     }
 
     setLoadingMore(true);
-    fileService.listFilesPage(activeSection, searchQuery, currentFolderId, {
+    fileService.listFilesPage(activeSection, debouncedSearchQuery, currentFolderId, {
       signal: loadAbortController.signal,
       pageSize: FILE_BROWSER_PAGE_SIZE,
       pageToken: nextPageToken,
@@ -874,12 +716,13 @@ export function FileBrowser({
           return merged;
         });
         setNextPageToken(page.nextPageToken);
-        setLoadingMore(false);
       })
       .catch((err: unknown) => {
-        if (isDriveUploadAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
+      })
+      .finally(() => {
         setLoadingMore(false);
       });
   }, [
@@ -889,8 +732,15 @@ export function FileBrowser({
     loading,
     loadingMore,
     nextPageToken,
-    searchQuery,
+    debouncedSearchQuery,
   ]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     latestLoadGuardRef.current.setCurrentScope(currentLoadScope);
@@ -899,7 +749,7 @@ export function FileBrowser({
       loadAbortControllerRef.current?.abort();
       loadAbortControllerRef.current = null;
     };
-  }, [activeSection, searchQuery, currentFolderId, currentLoadScope]);
+  }, [activeSection, debouncedSearchQuery, currentFolderId, currentLoadScope]);
 
   // Intersection Observer for server-driven infinite scrolling
   useEffect(() => {
@@ -973,7 +823,7 @@ export function FileBrowser({
       if (localPath) {
         void host.openLocalPath(localPath).catch((err: unknown) => {
           triggerToast(
-            err instanceof Error ? err.message : "Failed to open local file",
+            err instanceof Error ? err.message : t("fileBrowser.openLocalFileFailed"),
             "err",
           );
         });
@@ -1004,7 +854,7 @@ export function FileBrowser({
         loadFiles();
       })
       .catch((err) => {
-        if (isDriveUploadAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         triggerToast(
@@ -1042,7 +892,7 @@ export function FileBrowser({
           loadFiles();
         })
         .catch((err) => {
-          if (isDriveUploadAbortError(err)) {
+          if (isDriveAbortError(err)) {
             return;
           }
           triggerToast(err.message, "err");
@@ -1063,7 +913,7 @@ export function FileBrowser({
           loadFiles();
         })
         .catch((err) => {
-          if (isDriveUploadAbortError(err)) {
+          if (isDriveAbortError(err)) {
             return;
           }
           triggerToast(err.message, "err");
@@ -1078,6 +928,9 @@ export function FileBrowser({
   const handlePermanentDelete = (e: React.MouseEvent, file: DriveFile) => {
     e.stopPropagation();
     setActiveMenuId(null);
+    if (!window.confirm(t("fileBrowser.permanentDeleteConfirm", { name: file.name }))) {
+      return;
+    }
     const trashController = createFileWriteAbortController(`trash-${file.id}`);
     fileService.permanentlyDeleteFile(file.id, {
         signal: trashController.signal,
@@ -1090,7 +943,7 @@ export function FileBrowser({
         loadFiles();
       })
       .catch((err) => {
-        if (isDriveUploadAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         triggerToast(err.message, "err");
@@ -1105,7 +958,7 @@ export function FileBrowser({
       return;
     }
     if (!canCreateDriveFolderInSection(activeSection)) {
-      triggerToast("This Drive view does not support folder creation.", "err");
+      triggerToast(t("fileBrowser.sectionFolderUnsupported"), "err");
       return;
     }
 
@@ -1122,7 +975,7 @@ export function FileBrowser({
         loadFiles();
       })
       .catch((err) => {
-        if (isDriveUploadAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         triggerToast(err.message, "err");
@@ -1143,7 +996,7 @@ export function FileBrowser({
   const handleInlineFolderConfirm = () => {
     if (!canCreateDriveFolderInSection(activeSection)) {
       handleInlineFolderCancel();
-      triggerToast("This Drive view does not support folder creation.", "err");
+      triggerToast(t("fileBrowser.sectionFolderUnsupported"), "err");
       return;
     }
 
@@ -1170,7 +1023,7 @@ export function FileBrowser({
         if (currentActive) {
           if (!canCreateDriveFolderInSection(activeSection)) {
             setInlineFolderName("");
-            triggerToast("This Drive view does not support folder creation.", "err");
+            triggerToast(t("fileBrowser.sectionFolderUnsupported"), "err");
             return false;
           }
 
@@ -1227,7 +1080,7 @@ export function FileBrowser({
         loadFiles();
       })
       .catch((err) => {
-        if (isDriveUploadAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         triggerToast(err?.message || t("fileBrowser.toastRenameFailed"), "err");
@@ -1263,7 +1116,7 @@ export function FileBrowser({
         loadFiles();
       })
       .catch((err: any) => {
-        if (isDriveUploadAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         triggerToast(err?.message || t("fileBrowser.toastColorFailed"), "err");
@@ -1281,8 +1134,8 @@ export function FileBrowser({
     setDownloadJobs((prev) => [newJob, ...prev]);
     triggerToast(
       file.type === "folder"
-        ? `Compressing folder "${file.name}" to ZIP archive for download...`
-        : `Added "${file.name}" to active download transfers`,
+        ? t("fileBrowser.toastFolderAdded", { name: file.name })
+        : t("fileBrowser.toastFileAdded", { name: file.name }),
       "success",
     );
     const prepareDownload = file.type === "folder"
@@ -1304,24 +1157,22 @@ export function FileBrowser({
             );
           },
           onOpenExternal: onOpenDownload,
-          saveDownload: host.isNativeHost
-            ? (fileName, blob) => host.saveDownloadFile(fileName, blob)
-            : undefined,
+          saveDownloadStream: hostDownloadStream,
         });
       })
       .catch((err) => {
-        if (isDriveDownloadAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
 
         setDownloadJobs((prev) =>
           prev.map((job) =>
             job.id === newJob.id
-              ? applyTransferFailure(job, err?.message || "Failed to prepare download")
+              ? applyTransferFailure(job, err?.message || t("fileBrowser.downloadPrepareFailed"))
               : job,
           ),
         );
-        triggerToast(err?.message || "Failed to prepare download", "err");
+        triggerToast(err?.message || t("fileBrowser.downloadPrepareFailed"), "err");
       })
       .finally(() => {
         releaseDownloadAbortController(newJob.id);
@@ -1767,8 +1618,7 @@ export function FileBrowser({
           <div className="flex items-center gap-2 border-r border-neutral-800 pr-5 select-none">
             <CheckSquare className="text-blue-500 shrink-0" size={17} />
             <span className="text-[13px] font-semibold text-neutral-200">
-              {selectedFileIds.length}{" "}
-              {selectedFileIds.length === 1 ? "item" : "items"} selected
+              {t("fileBrowser.batchSelectedCount", { count: selectedFileIds.length })}
             </span>
           </div>
 
@@ -1780,14 +1630,14 @@ export function FileBrowser({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-neutral-800/80 text-emerald-400 border border-emerald-950/30 transition-all cursor-pointer"
                 >
                   <RefreshCcw size={14} />
-                  Restore Selected
+                  {t("fileBrowser.batchRestoreSelected")}
                 </button>
                 <button
                   onClick={handleBatchDelete}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-950/20 text-red-400 border border-red-950/30 transition-all cursor-pointer"
                 >
                   <Trash2 size={14} />
-                  Delete Permanently
+                  {t("fileBrowser.batchDeletePermanently")}
                 </button>
               </>
             ) : (
@@ -1797,7 +1647,7 @@ export function FileBrowser({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-200 hover:text-amber-400 hover:bg-neutral-800 border border-neutral-800 transition-all cursor-pointer"
                 >
                   <Star size={14} className="fill-none hover:fill-amber-400" />
-                  Toggle Star
+                  {t("fileBrowser.batchToggleStar")}
                 </button>
                 <button
                   onClick={handleBatchMove}
@@ -1818,14 +1668,14 @@ export function FileBrowser({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-200 hover:text-blue-400 hover:bg-neutral-800 border border-neutral-800 transition-all cursor-pointer"
                 >
                   <Download size={14} />
-                  Download Bundle
+                  {t("fileBrowser.batchDownloadBundle")}
                 </button>
                 <button
                   onClick={handleBatchDelete}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-950/20 text-red-500 hover:text-red-400 border border-red-950/30 transition-all cursor-pointer"
                 >
                   <Trash2 size={14} />
-                  Trash Checked
+                  {t("fileBrowser.batchTrashChecked")}
                 </button>
               </>
             )}
@@ -1836,7 +1686,7 @@ export function FileBrowser({
           <button
             onClick={() => setSelectedFileIds([])}
             className="text-neutral-400 hover:text-white hover:bg-neutral-850 p-1.5 rounded-lg transition-all cursor-pointer"
-            title="Clear Selection"
+            title={t("fileBrowser.clearSelection")}
           >
             <X size={15} />
           </button>

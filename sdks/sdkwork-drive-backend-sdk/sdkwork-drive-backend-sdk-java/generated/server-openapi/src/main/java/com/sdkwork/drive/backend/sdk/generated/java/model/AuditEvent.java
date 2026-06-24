@@ -15,7 +15,7 @@ public class AuditEvent {
     public Integer getId() {
         return this.id;
     }
-    
+
     public void setId(Integer id) {
         this.id = id;
     }
@@ -23,7 +23,7 @@ public class AuditEvent {
     public String getTenantId() {
         return this.tenantId;
     }
-    
+
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
@@ -31,7 +31,7 @@ public class AuditEvent {
     public String getAction() {
         return this.action;
     }
-    
+
     public void setAction(String action) {
         this.action = action;
     }
@@ -39,7 +39,7 @@ public class AuditEvent {
     public String getResourceType() {
         return this.resourceType;
     }
-    
+
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
@@ -47,7 +47,7 @@ public class AuditEvent {
     public String getResourceId() {
         return this.resourceId;
     }
-    
+
     public void setResourceId(String resourceId) {
         this.resourceId = resourceId;
     }
@@ -55,7 +55,7 @@ public class AuditEvent {
     public String getOperatorId() {
         return this.operatorId;
     }
-    
+
     public void setOperatorId(String operatorId) {
         this.operatorId = operatorId;
     }
@@ -63,7 +63,7 @@ public class AuditEvent {
     public String getRequestId() {
         return this.requestId;
     }
-    
+
     public void setRequestId(String requestId) {
         this.requestId = requestId;
     }
@@ -71,7 +71,7 @@ public class AuditEvent {
     public String getTraceId() {
         return this.traceId;
     }
-    
+
     public void setTraceId(String traceId) {
         this.traceId = traceId;
     }
@@ -79,7 +79,7 @@ public class AuditEvent {
     public String getCreatedAt() {
         return this.createdAt;
     }
-    
+
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }

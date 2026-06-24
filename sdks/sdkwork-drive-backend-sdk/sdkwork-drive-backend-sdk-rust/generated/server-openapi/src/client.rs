@@ -18,12 +18,6 @@ impl SdkworkBackendClient {
     pub fn new_with_base_url(base_url: impl Into<String>) -> Result<Self, SdkworkError> {
         Self::new(SdkworkConfig::new(base_url))
     }
-
-    pub fn set_api_key(&self, api_key: impl Into<String>) -> &Self {
-        self.http.set_api_key(api_key);
-        self
-    }
-
     pub fn set_auth_token(&self, token: impl Into<String>) -> &Self {
         self.http.set_auth_token(token);
         self
@@ -44,10 +38,10 @@ impl SdkworkBackendClient {
     }
 
     pub fn drive(&self) -> DriveApi {
-        DriveApi::new(Arc::clone(&self.http))
-    }
+            DriveApi::new(Arc::clone(&self.http))
+        }
 
     pub fn labels(&self) -> LabelsApi {
-        LabelsApi::new(Arc::clone(&self.http))
-    }
+            LabelsApi::new(Arc::clone(&self.http))
+        }
 }

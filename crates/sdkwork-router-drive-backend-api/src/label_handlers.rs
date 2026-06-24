@@ -1,4 +1,5 @@
 use crate::audit::record_label_audit;
+use sdkwork_drive_contract::drive::domain_events::admin_audit;
 use crate::dto::{
     CreateLabelRequest, DeleteLabelResponse, LabelListQuery, LabelListResponse, LabelMutationQuery,
     LabelResponse, UpdateLabelRequest,
@@ -95,7 +96,7 @@ pub(crate) async fn create_label(
     .map_err(internal_sql_error("insert dr_drive_label failed"))?;
 
     let created = find_label(&state, &tenant_id, &id).await?;
-    record_label_audit(&state, "label.created", &created.id, &operator_id).await?;
+    record_label_audit(&state, admin_audit::label::CREATED, &created.id, &operator_id).await?;
     Ok((StatusCode::CREATED, Json(created)))
 }
 
@@ -140,7 +141,7 @@ pub(crate) async fn update_label(
     .map_err(internal_sql_error("update dr_drive_label failed"))?;
 
     let updated = find_label(&state, &tenant_id, &label_id).await?;
-    record_label_audit(&state, "label.updated", &updated.id, &operator_id).await?;
+    record_label_audit(&state, admin_audit::label::UPDATED, &updated.id, &operator_id).await?;
     Ok(Json(updated))
 }
 
@@ -174,7 +175,7 @@ pub(crate) async fn delete_label(
     .await
     .map_err(internal_sql_error("delete dr_drive_label failed"))?;
 
-    record_label_audit(&state, "label.deleted", &label_id, &operator_id).await?;
+    record_label_audit(&state, admin_audit::label::DELETED, &label_id, &operator_id).await?;
     Ok(Json(DeleteLabelResponse { deleted: true }))
 }
 

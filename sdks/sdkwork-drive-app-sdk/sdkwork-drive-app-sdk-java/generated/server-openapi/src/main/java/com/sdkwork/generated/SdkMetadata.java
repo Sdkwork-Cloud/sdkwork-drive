@@ -61,6 +61,7 @@ public final class SdkMetadata {
     operations.put("search.query", "GET /app/v3/api/drive/search");
     operations.put("sharedWithMe.list", "GET /app/v3/api/drive/shared_with_me");
     operations.put("shareLinks.create", "POST /app/v3/api/drive/nodes/{nodeId}/share_links");
+    operations.put("shareLinks.claim", "POST /app/v3/api/drive/share_links/{token}/claim");
     operations.put("shareLinks.get", "GET /app/v3/api/drive/share_links/{shareLinkId}");
     operations.put("shareLinks.list", "GET /app/v3/api/drive/nodes/{nodeId}/share_links");
     operations.put("shareLinks.revoke", "DELETE /app/v3/api/drive/share_links/{shareLinkId}");

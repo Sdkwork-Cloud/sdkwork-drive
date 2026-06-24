@@ -1422,7 +1422,7 @@ async fn list_audit_events_route_supports_filters_and_pagination() {
     for (index, (tenant_id, action, resource_id, operator_id, request_id, trace_id)) in [
         (
             "tenant-001",
-            "storage_provider.created",
+            "drive.storage_provider.created",
             "provider-001",
             "admin-001",
             "request-001",
@@ -1430,7 +1430,7 @@ async fn list_audit_events_route_supports_filters_and_pagination() {
         ),
         (
             "tenant-001",
-            "storage_provider.tested",
+            "drive.storage_provider.tested",
             "provider-001",
             "admin-002",
             "request-002",
@@ -1438,7 +1438,7 @@ async fn list_audit_events_route_supports_filters_and_pagination() {
         ),
         (
             "tenant-002",
-            "storage_provider.created",
+            "drive.storage_provider.created",
             "provider-002",
             "admin-003",
             "request-003",
@@ -1511,7 +1511,7 @@ async fn list_audit_events_route_supports_request_and_trace_filters() {
     for (index, (tenant_id, action, resource_id, operator_id, request_id, trace_id)) in [
         (
             "tenant-001",
-            "storage_provider.created",
+            "drive.storage_provider.created",
             "provider-001",
             "admin-001",
             "request-001",
@@ -1519,7 +1519,7 @@ async fn list_audit_events_route_supports_request_and_trace_filters() {
         ),
         (
             "tenant-001",
-            "storage_provider.tested",
+            "drive.storage_provider.tested",
             "provider-001",
             "admin-002",
             "request-002",
@@ -1527,7 +1527,7 @@ async fn list_audit_events_route_supports_request_and_trace_filters() {
         ),
         (
             "tenant-001",
-            "storage_provider.created",
+            "drive.storage_provider.created",
             "provider-003",
             "admin-003",
             "request-002",
@@ -1578,7 +1578,7 @@ async fn list_audit_events_route_supports_request_and_trace_filters() {
         .as_array()
         .expect("items should be an array");
     assert_eq!(items.len(), 1);
-    assert_eq!(items[0]["action"].as_str(), Some("storage_provider.tested"));
+    assert_eq!(items[0]["action"].as_str(), Some("drive.storage_provider.tested"));
     assert_eq!(items[0]["requestId"].as_str(), Some("request-002"));
     assert_eq!(items[0]["traceId"].as_str(), Some("trace-002"));
 }
@@ -1809,16 +1809,67 @@ async fn maintenance_routes_sweep_objects_and_upload_sessions_and_emit_audit_eve
     .expect("response body should be valid json");
     assert_eq!(upload_sweep_payload["affectedCount"].as_i64(), Some(1));
 
+    let expired_content_sweep_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/backend/v3/api/drive/maintenance/expired_upload_content_sweep")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "nowEpochMs": 1800000000000,
+                        "dryRun": true,
+                        "limit": 100,
+                        "operatorId": "admin-ops",
+                        "requestId": "request-002",
+                        "traceId": "trace-002"
+                    }"#,
+                ))
+                .expect("request should be built"),
+        )
+        .await
+        .expect("expired upload content sweep request should be handled");
+    assert_eq!(expired_content_sweep_response.status(), StatusCode::OK);
+
+    let abandoned_task_sweep_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "nowEpochMs": 1800000000000,
+                        "dryRun": true,
+                        "limit": 100,
+                        "operatorId": "admin-ops",
+                        "requestId": "request-003",
+                        "traceId": "trace-003"
+                    }"#,
+                ))
+                .expect("request should be built"),
+        )
+        .await
+        .expect("abandoned upload task sweep request should be handled");
+    assert_eq!(abandoned_task_sweep_response.status(), StatusCode::OK);
+
     let audit_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
          FROM dr_drive_audit_event
          WHERE resource_type='maintenance'
-           AND action IN ('maintenance.object_sweep.executed', 'maintenance.upload_session_sweep.executed')",
+           AND action IN (
+             'drive.maintenance.object_sweep.executed',
+             'drive.maintenance.upload_session_sweep.executed',
+             'drive.maintenance.expired_upload_content_sweep.executed',
+             'drive.maintenance.abandoned_upload_task_sweep.executed'
+           )",
     )
     .fetch_one(&pool)
     .await
     .expect("audit rows should be queryable");
-    assert_eq!(audit_count, 2);
+    assert_eq!(audit_count, 4);
 }
 
 #[tokio::test]
@@ -2166,7 +2217,7 @@ async fn maintenance_routes_record_failed_jobs_with_request_and_trace() {
         "SELECT COUNT(1)
          FROM dr_drive_audit_event
          WHERE resource_type='maintenance'
-           AND action='maintenance.object_sweep.failed'
+           AND action='drive.maintenance.object_sweep.failed'
            AND operator_id='admin-failed'
            AND request_id='request-failed-001'
            AND trace_id='trace-failed-001'",
@@ -2262,7 +2313,7 @@ async fn maintenance_upload_sweep_failure_records_failed_job_and_audit() {
         "SELECT COUNT(1)
          FROM dr_drive_audit_event
          WHERE resource_type='maintenance'
-           AND action='maintenance.upload_session_sweep.failed'
+           AND action='drive.maintenance.upload_session_sweep.failed'
            AND operator_id='admin-upload-failed'
            AND request_id='request-upload-failed-001'
            AND trace_id='trace-upload-failed-001'",

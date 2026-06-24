@@ -9,6 +9,7 @@ export type { CompleteUploadSessionRequest } from './complete-upload-session-req
 export type { CopyNodeRequest } from './copy-node-request';
 export type { CreateCommentReplyRequest } from './create-comment-reply-request';
 export type { CreateCommentRequest } from './create-comment-request';
+export type { CreateDownloadGrantRequest } from './create-download-grant-request';
 export type { CreateDownloadUrlRequest } from './create-download-url-request';
 export type { CreateDownloadUrlResponse } from './create-download-url-response';
 export type { CreateFileRequest } from './create-file-request';
@@ -29,7 +30,9 @@ export type { DriveLabelSummary } from './drive-label-summary';
 export type { DriveNode } from './drive-node';
 export type { DriveNodeProperty } from './drive-node-property';
 export type { DrivePermission } from './drive-permission';
+export type { ClaimShareLinkResponse } from './claim-share-link-response';
 export type { DriveShareLink } from './drive-share-link';
+export type { CreateShareLinkResponse } from './create-share-link-response';
 export type { DriveSpace } from './drive-space';
 export type { DriveUploadSession } from './drive-upload-session';
 export type { EffectivePermission } from './effective-permission';

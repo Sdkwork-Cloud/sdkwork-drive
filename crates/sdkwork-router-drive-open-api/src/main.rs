@@ -4,7 +4,7 @@ use sdkwork_router_drive_open_api::build_router_with_database_config;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    sdkwork_drive_observability::init_tracing("sdkwork-router-drive-open-api");
     let args: Vec<String> = std::env::args().collect();
     let database_config =
         DatabaseConfig::from_env_and_cli_args(&args).expect("resolve drive database config");

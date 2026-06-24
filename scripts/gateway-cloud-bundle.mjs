@@ -42,8 +42,8 @@ async function main() {
 function printHelp() {
   console.log(`Usage: node scripts/gateway-cloud-bundle.mjs <bundle|validate> [options]
 
-Bundle Drive-owned sdkwork-api-gateway route configs for cloud topology deployment.
-The sdkwork-api-gateway binary is built and released from the sdkwork-api-gateway repository.
+Bundle Drive-owned sdkwork-api-cloud-gateway route configs for cloud topology deployment.
+The sdkwork-api-cloud-gateway binary is built and released from the sdkwork-api-cloud-gateway repository.
 
 Options:
   --version <value>   Bundle version. Defaults to SDKWORK_PACKAGE_VERSION or app manifest.
@@ -142,8 +142,8 @@ async function bundleCloudConfig(context) {
 Version: ${context.version}
 Profile: ${context.profile}
 
-These TOML files configure sdkwork-api-gateway for Drive cloud topology.
-Build and deploy the gateway binary from the sdkwork-api-gateway repository.
+These TOML files configure sdkwork-api-cloud-gateway for Drive cloud topology.
+Build and deploy the gateway binary from the sdkwork-api-cloud-gateway repository.
 
 Included configs:
 ${DRIVE_CLOUD_GATEWAY_CONFIGS.map((name) => `- configs/${name}`).join('\n')}

@@ -11,11 +11,14 @@ import {
 import {
   drivePathToSection,
   driveSectionToPath,
+  isShareLinkClaimPath,
+  parseShareLinkClaimToken,
   type DriveSection,
 } from 'sdkwork-drive-pc-file';
 import {
   DriveAuthGate,
   DriveRuntimeProvider,
+  isDriveAbortError,
   isDriveAuthRoute,
   type DriveStorageSummary,
 } from 'sdkwork-drive-pc-core';
@@ -55,16 +58,6 @@ const SdkworkIamAuthRoutes = React.lazy(() =>
   import('@sdkwork/auth-pc-react').then((module) => ({ default: module.SdkworkIamAuthRoutes })),
 );
 
-function isDriveAppAbortError(err: unknown): boolean {
-  if (err instanceof DOMException && err.name === 'AbortError') {
-    return true;
-  }
-  if (err instanceof Error) {
-    return err.name === 'AbortError' || /\babort(?:ed)?\b/i.test(err.message);
-  }
-  return false;
-}
-
 export default function App() {
   const runtime = useMemo(() => createDrivePcRuntime(), []);
   const preferenceStorage = useMemo(() => createBrowserPreferenceStorage(), []);
@@ -72,6 +65,10 @@ export default function App() {
   const navigate = useNavigate();
   const activeSection = useMemo(
     () => drivePathToSection(location.pathname),
+    [location.pathname],
+  );
+  const shareClaimToken = useMemo(
+    () => parseShareLinkClaimToken(location.pathname),
     [location.pathname],
   );
   const setActiveSection = useCallback((section: DriveSection) => {
@@ -86,6 +83,9 @@ export default function App() {
 
   useEffect(() => {
     if (isDriveAuthRoute(location.pathname)) {
+      return;
+    }
+    if (isShareLinkClaimPath(location.pathname)) {
       return;
     }
 
@@ -119,7 +119,7 @@ export default function App() {
         }
       })
       .catch((err) => {
-        if (isDriveAppAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (active) {
@@ -217,6 +217,8 @@ export default function App() {
                     onOpenExternal={runtime.host.openExternal}
                     onOpenStorageSettings={() => openSettings('storage')}
                     onSectionChange={setActiveSection}
+                    shareClaimToken={shareClaimToken ?? undefined}
+                    onShareClaimDismiss={() => navigate('/shared', { replace: true })}
                   />
                 )}
               </React.Suspense>

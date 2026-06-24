@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ExternalLink, Info, Minus, Plus } from 'lucide-react';
+import { useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
-import type { DriveFileService } from 'sdkwork-drive-pc-core';
+import { isDriveAbortError, type DriveFileService } from 'sdkwork-drive-pc-core';
 
 interface PdfModuleProps {
   file: DriveFile;
@@ -13,16 +14,6 @@ interface PdfModuleProps {
   isReadOnly?: boolean;
 }
 
-function isDrivePdfAbortError(err: unknown): boolean {
-  if (err instanceof DOMException && err.name === 'AbortError') {
-    return true;
-  }
-  if (err instanceof Error) {
-    return err.name === 'AbortError' || /\babort(?:ed)?\b/i.test(err.message);
-  }
-  return false;
-}
-
 export function PdfModule({
   file,
   fileService,
@@ -32,6 +23,7 @@ export function PdfModule({
   triggerFeedback,
   isReadOnly = false,
 }: PdfModuleProps) {
+  const { t } = useTranslation();
   const [pdfZoom, setPdfZoom] = useState(100);
   const [signing, setSigning] = useState(false);
   const previewFrameRef = useRef<HTMLIFrameElement | null>(null);
@@ -61,15 +53,15 @@ export function PdfModule({
       if (signAbortControllerRef.current !== signAbortController) {
         return;
       }
-      triggerFeedback('PDF signature metadata recorded in Drive.', 'success');
+      triggerFeedback(t('previewModules.pdfSigned'), 'success');
     } catch (err: any) {
-      if (isDrivePdfAbortError(err)) {
+      if (isDriveAbortError(err)) {
         return;
       }
       if (signAbortControllerRef.current !== signAbortController) {
         return;
       }
-      triggerFeedback(err?.message || 'PDF signing failed.', 'error');
+      triggerFeedback(err?.message || t('previewModules.pdfSigningFailed'), 'error');
     } finally {
       if (signAbortControllerRef.current === signAbortController) {
         signAbortControllerRef.current = null;
@@ -80,7 +72,7 @@ export function PdfModule({
 
   const handlePrint = () => {
     if (!previewUrl) {
-      triggerFeedback(previewError || 'Drive PDF preview URL is unavailable.', 'error');
+      triggerFeedback(previewError || t('previewModules.pdfPreviewUnavailable'), 'error');
       return;
     }
     try {
@@ -89,7 +81,7 @@ export function PdfModule({
     } catch {
       window.print();
     }
-    triggerFeedback('Print dialog opened for the Drive PDF preview.', 'info');
+    triggerFeedback(t('previewModules.pdfPrintOpened'), 'info');
   };
 
   const renderPdfBody = () => {
@@ -97,7 +89,7 @@ export function PdfModule({
       return (
         <div className="w-full h-full flex flex-col items-center justify-center text-xs text-neutral-400 gap-2">
           <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <span>Preparing Drive PDF preview...</span>
+          <span>{t('previewModules.pdfPreviewPreparing')}</span>
         </div>
       );
     }
@@ -105,7 +97,7 @@ export function PdfModule({
       return (
         <div className="w-full h-full flex flex-col items-center justify-center text-xs text-neutral-400 gap-3 px-8 text-center">
           <Info size={20} className="text-rose-400" />
-          <span>{previewError || 'Drive PDF preview URL is unavailable.'}</span>
+          <span>{previewError || t('previewModules.pdfPreviewUnavailable')}</span>
         </div>
       );
     }
@@ -137,7 +129,7 @@ export function PdfModule({
           <button
             onClick={() => setPdfZoom((value) => Math.max(50, value - 25))}
             className="p-1.5 bg-[#252525] hover:bg-neutral-800 rounded text-neutral-300 cursor-pointer"
-            title="Zoom out"
+            title={t('previewModules.zoomOut')}
           >
             <Minus size={13} />
           </button>
@@ -145,7 +137,7 @@ export function PdfModule({
           <button
             onClick={() => setPdfZoom((value) => Math.min(200, value + 25))}
             className="p-1.5 bg-[#252525] hover:bg-neutral-800 rounded text-neutral-300 cursor-pointer"
-            title="Zoom in"
+            title={t('previewModules.zoomIn')}
           >
             <Plus size={13} />
           </button>
@@ -155,14 +147,14 @@ export function PdfModule({
               disabled={signing}
               className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-60 disabled:cursor-not-allowed text-white border border-neutral-700 font-bold rounded-lg text-xs transition-colors cursor-pointer"
             >
-              {signing ? 'Signing...' : 'Sign'}
+              {signing ? t('previewModules.signing') : t('previewModules.sign')}
             </button>
           )}
           <button
             onClick={handlePrint}
             className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 font-bold rounded-lg text-xs transition-colors cursor-pointer"
           >
-            Print
+            {t('previewModules.print')}
           </button>
           {previewUrl && (
             <a

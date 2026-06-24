@@ -11,7 +11,7 @@ public class SweepObjectStoreRequest {
     public Boolean getDryRun() {
         return this.dryRun;
     }
-    
+
     public void setDryRun(Boolean dryRun) {
         this.dryRun = dryRun;
     }
@@ -19,7 +19,7 @@ public class SweepObjectStoreRequest {
     public Integer getLimit() {
         return this.limit;
     }
-    
+
     public void setLimit(Integer limit) {
         this.limit = limit;
     }
@@ -27,7 +27,7 @@ public class SweepObjectStoreRequest {
     public String getOperatorId() {
         return this.operatorId;
     }
-    
+
     public void setOperatorId(String operatorId) {
         this.operatorId = operatorId;
     }
@@ -35,7 +35,7 @@ public class SweepObjectStoreRequest {
     public String getRequestId() {
         return this.requestId;
     }
-    
+
     public void setRequestId(String requestId) {
         this.requestId = requestId;
     }
@@ -43,7 +43,7 @@ public class SweepObjectStoreRequest {
     public String getTraceId() {
         return this.traceId;
     }
-    
+
     public void setTraceId(String traceId) {
         this.traceId = traceId;
     }

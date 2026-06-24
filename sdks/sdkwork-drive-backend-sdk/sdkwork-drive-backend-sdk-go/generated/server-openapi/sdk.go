@@ -25,11 +25,6 @@ func NewSdkworkBackendClientWithConfig(config sdkhttp.Config) *SdkworkBackendCli
     }
 }
 
-func (c *SdkworkBackendClient) SetApiKey(apiKey string) *SdkworkBackendClient {
-    c.http.SetApiKey(apiKey)
-    return c
-}
-
 func (c *SdkworkBackendClient) SetAuthToken(token string) *SdkworkBackendClient {
     c.http.SetAuthToken(token)
     return c

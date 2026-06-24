@@ -4,20 +4,30 @@ use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_security::DriveAuthValidationPolicy;
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_router_drive_backend_api::{build_router, build_router_with_pool_and_iam_policy};
-use serde_json::Value;
+use sdkwork_web_core::{auth_token_jwt, encode_unsigned_test_jwt};
+use serde_json::{json, Value};
 use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 
+const TEST_SESSION: &str = "session-1";
+const TEST_APP: &str = "appbase";
+
 fn auth_token(tenant: &str, user: &str) -> String {
-    format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;auth_level=password"
-    )
+    auth_token_jwt(tenant, user, TEST_SESSION, TEST_APP)
 }
 
 fn access_token(tenant: &str, user: &str) -> String {
-    format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;environment=prod;deployment_mode=saas;permission_scope=drive.storage.admin"
-    )
+    encode_unsigned_test_jwt(json!({
+        "token_type": "access",
+        "tenant_id": tenant,
+        "user_id": user,
+        "session_id": TEST_SESSION,
+        "app_id": TEST_APP,
+        "environment": "prod",
+        "deployment_mode": "saas",
+        "login_scope": "TENANT",
+        "permission_scope": "drive.storage.admin",
+    }))
 }
 
 #[tokio::test]
@@ -37,7 +47,7 @@ async fn backend_production_routes_require_valid_dual_tokens() {
         .expect("health request should be handled");
     assert_eq!(health.status(), StatusCode::OK);
 
-    let missing_auth = app
+    let missing_credentials = app
         .clone()
         .oneshot(
             Request::builder()
@@ -49,9 +59,9 @@ async fn backend_production_routes_require_valid_dual_tokens() {
         .await
         .expect("protected request should be handled");
     assert_problem(
-        missing_auth,
+        missing_credentials,
         StatusCode::UNAUTHORIZED,
-        "sdkwork.auth.missing_auth_token",
+        "sdkwork.auth.missing_access_token",
     )
     .await;
 

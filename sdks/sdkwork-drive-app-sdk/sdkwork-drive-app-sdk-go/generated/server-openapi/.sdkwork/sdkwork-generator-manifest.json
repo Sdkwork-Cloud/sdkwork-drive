@@ -24,7 +24,7 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "206ad0745547a10d2682b14275924d226b5bbdc652c985ab60eefe6a62e6f33e"
+      "sha256": "20f6481b64dc3c4ac1b1734db7d398f7d5e968b476cf4b2159cf137a3f971724"
     },
     {
       "path": "api/node_labels.go",
@@ -96,7 +96,7 @@
     },
     {
       "path": "types/apply_node_label_request.go",
-      "sha256": "6b99b815de2cb4ce22b9bab9100d12fd5c7b1658b867ed6434296d0e4622be42"
+      "sha256": "4dae0bb4af4160e6e428e773e9556b21013382a11c91ade1fc15fd3b3b3379f6"
     },
     {
       "path": "types/archive_entry_list_response.go",
@@ -141,6 +141,10 @@
     {
       "path": "types/change.go",
       "sha256": "bb9a9653e6cf43a91cc532cad1588281efceb2ee3f2c323c3ed813545a5f226a"
+    },
+    {
+      "path": "types/claim_share_link_response.go",
+      "sha256": "a46d07f7e11d05898979c93466efdda0b2f8f655fd5b4803039f397971615b09"
     },
     {
       "path": "types/comment_list_response.go",
@@ -199,6 +203,10 @@
       "sha256": "ccfb6c73b18202b726708d57a895b6f5d7cfd215f6acc12db8fff4bee79ae770"
     },
     {
+      "path": "types/create_download_grant_request.go",
+      "sha256": "5127c74781aa31ace9b7f47acb87bdb1433db52aee0265555de4954da83b0126"
+    },
+    {
       "path": "types/create_download_package_request.go",
       "sha256": "c674d414331be18697b53824295f5d62c3048c92b2e3e06ec249a70b7093e8b1"
     },
@@ -228,7 +236,11 @@
     },
     {
       "path": "types/create_share_link_request.go",
-      "sha256": "19016599eee00c2fbfce7d3e00f317127da97805ce5c238b60ed28079648b7cd"
+      "sha256": "7f3fc853f207a4abe5854b39a59559b25e6b82b6518c8a529b5b9e5b8fd516ea"
+    },
+    {
+      "path": "types/create_share_link_response.go",
+      "sha256": "83668b8ce5a4ef4fe1bc23a6bba4074e16e24641666d7ef7dbdce666b1bc5259"
     },
     {
       "path": "types/create_shortcut_request.go",
@@ -300,7 +312,7 @@
     },
     {
       "path": "types/drive_node.go",
-      "sha256": "f6358c81fb4e7a8e1d6445558565bed2fd0c2a162bf75142bd9b88fe2c194955"
+      "sha256": "72718a349f743256bc7cbb6dfb9ab683b880d954ef4a148d4d1eb18eaa3a2fc6"
     },
     {
       "path": "types/drive_permission.go",
@@ -308,7 +320,7 @@
     },
     {
       "path": "types/drive_share_link.go",
-      "sha256": "03a480ed5ac929cd1528b7ce7a3dd2f09d96a58dc9b1bfda71ffc48494ba9acd"
+      "sha256": "3e27345bf5cbf48679cdfd37de2cf512722fd0e1c31c067d09999a83b1061f75"
     },
     {
       "path": "types/drive_space.go",
@@ -352,7 +364,7 @@
     },
     {
       "path": "types/favorite_node_request.go",
-      "sha256": "aa7e4fc9ed5d1d009ce995fc7edf6a3cabeb64697b1455ec171b6af72fcf3ba5"
+      "sha256": "a77e7a9d065b71ad0c24acee6d615c4c15aaa2a4da8a1b8314927b86b6099fcc"
     },
     {
       "path": "types/favorite_node_response.go",
@@ -376,7 +388,7 @@
     },
     {
       "path": "types/media_resource.go",
-      "sha256": "71ad599d1a10f016b3dbea04ff973e4a787d11d9f5d5e0ba6c857f485195c117"
+      "sha256": "cbc96303bece4c38f855c9b4ebe3234677f1eeed79722eaab7a844165f1f1b4a"
     },
     {
       "path": "types/move_node_request.go",
@@ -388,7 +400,7 @@
     },
     {
       "path": "types/node_command_request.go",
-      "sha256": "f3cd01757c3bc139a0170d1d41eac141ed6726cc381bb029123e17848e87ff1a"
+      "sha256": "2056f8c830994e29d3bf7178aa99737677da40b44c12c07592934b7936358db8"
     },
     {
       "path": "types/node_label_list_response.go",
@@ -400,7 +412,7 @@
     },
     {
       "path": "types/node_list_response.go",
-      "sha256": "3b9be7cdfdab7de276f9dc014ff5a8eb032fb50c8a82d879ea1882836dc8f553"
+      "sha256": "b754ed8960f3e981350eda7b9711a59cadfd20037f912d88abdfd660fcca4c6d"
     },
     {
       "path": "types/node_path_response.go",
@@ -440,7 +452,7 @@
     },
     {
       "path": "types/quota_summary.go",
-      "sha256": "366ead94688a837f2bdf515743bb835e747b491ec0aa7ac780e312a2f4a8ceff"
+      "sha256": "05b22ebb76e1fc4db77f0ca87aefa8fad932a8bfebf1e3ad59ac24eba76d05d5"
     },
     {
       "path": "types/remove_node_label_response.go",
@@ -464,7 +476,7 @@
     },
     {
       "path": "types/stop_watch_channel_request.go",
-      "sha256": "1f90e6cfe16855232e7eb53a46731e13e4ac3af3ca582b80d637cdb151cab638"
+      "sha256": "6377a37ebdf90e9c883bbc9697b1a1985df27e923d4825643540e4769f387cdc"
     },
     {
       "path": "types/stop_watch_channel_response.go",

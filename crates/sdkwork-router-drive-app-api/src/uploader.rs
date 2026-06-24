@@ -4,7 +4,7 @@ use crate::error::{validation_problem, ProblemDetail};
 use crate::time::current_epoch_ms;
 use axum::http::StatusCode;
 use axum::Json;
-use sdkwork_drive_workspace_service::application::uploader_service::{
+use sdkwork_drive_uploader_service::service::{
     PrepareUploaderUploadCommand, UploaderActor, UploaderRetention, UploaderTarget,
 };
 use sdkwork_drive_workspace_service::domain::uploader::DriveUploadItem;

@@ -1,1 +1,3 @@
-export type NodeCommandRequest = Record<string, unknown>;
+export interface NodeCommandRequest {
+  operatorId?: string;
+}

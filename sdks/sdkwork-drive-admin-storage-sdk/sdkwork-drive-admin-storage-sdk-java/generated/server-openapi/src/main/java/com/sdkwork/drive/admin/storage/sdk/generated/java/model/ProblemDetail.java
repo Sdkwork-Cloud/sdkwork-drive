@@ -13,7 +13,7 @@ public class ProblemDetail {
     public String getType() {
         return this.type;
     }
-    
+
     public void setType(String type) {
         this.type = type;
     }
@@ -21,7 +21,7 @@ public class ProblemDetail {
     public String getTitle() {
         return this.title;
     }
-    
+
     public void setTitle(String title) {
         this.title = title;
     }
@@ -29,7 +29,7 @@ public class ProblemDetail {
     public Integer getStatus() {
         return this.status;
     }
-    
+
     public void setStatus(Integer status) {
         this.status = status;
     }
@@ -37,7 +37,7 @@ public class ProblemDetail {
     public String getDetail() {
         return this.detail;
     }
-    
+
     public void setDetail(String detail) {
         this.detail = detail;
     }
@@ -45,7 +45,7 @@ public class ProblemDetail {
     public String getCode() {
         return this.code;
     }
-    
+
     public void setCode(String code) {
         this.code = code;
     }
@@ -53,7 +53,7 @@ public class ProblemDetail {
     public String getTraceId() {
         return this.traceId;
     }
-    
+
     public void setTraceId(String traceId) {
         this.traceId = traceId;
     }
@@ -61,7 +61,7 @@ public class ProblemDetail {
     public String getRequestId() {
         return this.requestId;
     }
-    
+
     public void setRequestId(String requestId) {
         this.requestId = requestId;
     }

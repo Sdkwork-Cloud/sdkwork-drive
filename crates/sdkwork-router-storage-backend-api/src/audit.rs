@@ -23,6 +23,7 @@ pub(crate) async fn record_audit_event(
     resource_id: &str,
     operator_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    let ids = sdkwork_drive_http::problem_correlation::current_problem_correlation();
     let audit_service = DriveAuditService::new(SqlAuditStore::new(state.pool.clone()));
     audit_service
         .record_event(RecordAuditEventCommand {
@@ -31,8 +32,8 @@ pub(crate) async fn record_audit_event(
             resource_type: resource_type.to_string(),
             resource_id: resource_id.to_string(),
             operator_id: operator_id.to_string(),
-            request_id: Some("request-unset".to_string()),
-            trace_id: Some("trace-unset".to_string()),
+            request_id: Some(ids.request_id),
+            trace_id: Some(ids.trace_id),
         })
         .await
         .map_err(map_service_error)?;

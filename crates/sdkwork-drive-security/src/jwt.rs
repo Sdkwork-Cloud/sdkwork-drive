@@ -72,6 +72,7 @@ pub fn verify_jwt_hmac_claims(
     })?;
     let claims = parse_json_claims(payload)?;
     validate_jwt_expiry(&claims)?;
+    validate_jwt_tenant_kid_binding(kid.as_deref(), &claims)?;
     Ok(claims)
 }
 
@@ -116,6 +117,7 @@ pub fn verify_jwt_jwks_claims(
     })?;
     let claims = json_value_to_claim_map(&token_data.claims)?;
     validate_jwt_expiry(&claims)?;
+    validate_jwt_tenant_kid_binding(kid.as_deref(), &claims)?;
     Ok(claims)
 }
 
@@ -167,7 +169,9 @@ fn jwt_header_kid(header_b64: &str) -> Option<String> {
 
 fn validate_jwt_expiry(claims: &BTreeMap<String, String>) -> Result<(), TokenClaimsError> {
     let Some(exp) = claims.get("exp") else {
-        return Ok(());
+        return Err(TokenClaimsError::InvalidCredentials(
+            "JWT exp claim is required".to_string(),
+        ));
     };
     let exp = exp.trim().parse::<i64>().map_err(|error| {
         TokenClaimsError::InvalidCredentials(format!("invalid exp claim: {error}"))
@@ -181,6 +185,33 @@ fn validate_jwt_expiry(claims: &BTreeMap<String, String>) -> Result<(), TokenCla
     if exp <= now {
         return Err(TokenClaimsError::InvalidCredentials(
             "JWT exp claim is in the past".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_jwt_tenant_kid_binding(
+    kid: Option<&str>,
+    claims: &BTreeMap<String, String>,
+) -> Result<(), TokenClaimsError> {
+    let Some(kid) = kid.map(str::trim).filter(|value| !value.is_empty()) else {
+        return Ok(());
+    };
+    if kid == "default" {
+        return Ok(());
+    }
+    let Some(tenant_id) = claims
+        .get("tenant_id")
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+    else {
+        return Err(TokenClaimsError::InvalidCredentials(
+            "JWT tenant_id claim is required for tenant-bound kid".to_string(),
+        ));
+    };
+    if tenant_id != kid {
+        return Err(TokenClaimsError::InvalidCredentials(
+            "JWT kid does not match tenant_id claim".to_string(),
         ));
     }
     Ok(())
@@ -257,7 +288,8 @@ mod tests {
 
     #[test]
     fn verifies_hmac_signed_jwt() {
-        let payload = r#"{"tenant_id":"tenant-a","user_id":"user-001","app_id":"appbase"}"#;
+        let payload =
+            r#"{"tenant_id":"tenant-a","user_id":"user-001","app_id":"appbase","exp":4102444800}"#;
         let token = encode_test_jwt_hmac(payload, "test-secret");
         let policy = DriveAuthValidationPolicy::require_signed_projection("test-secret");
         let claims = verify_jwt_hmac_claims(&token, &policy).expect("claims");
@@ -267,7 +299,8 @@ mod tests {
 
     #[test]
     fn verifies_hmac_signed_jwt_with_kid_rotation_secret() {
-        let payload = r#"{"tenant_id":"tenant-a","user_id":"user-001","app_id":"appbase"}"#;
+        let payload =
+            r#"{"tenant_id":"tenant-a","user_id":"user-001","app_id":"appbase","exp":4102444800}"#;
         let token = encode_test_jwt_hmac_with_kid(payload, "tenant-a-secret", Some("tenant-a"));
         let policy = DriveAuthValidationPolicy {
             allow_inline_claim_tokens: false,
@@ -283,10 +316,36 @@ mod tests {
 
     #[test]
     fn rejects_invalid_signature() {
-        let payload = r#"{"tenant_id":"tenant-a","user_id":"user-001"}"#;
+        let payload = r#"{"tenant_id":"tenant-a","user_id":"user-001","exp":4102444800}"#;
         let token = encode_test_jwt_hmac(payload, "test-secret");
         let policy = DriveAuthValidationPolicy::require_signed_projection("wrong-secret");
         let error = verify_jwt_hmac_claims(&token, &policy).expect_err("mismatch");
+        assert!(matches!(error, TokenClaimsError::InvalidCredentials(_)));
+    }
+
+    #[test]
+    fn rejects_jwt_without_exp_claim() {
+        let payload = r#"{"tenant_id":"tenant-a","user_id":"user-001","app_id":"appbase"}"#;
+        let token = encode_test_jwt_hmac(payload, "test-secret");
+        let policy = DriveAuthValidationPolicy::require_signed_projection("test-secret");
+        let error = verify_jwt_hmac_claims(&token, &policy).expect_err("missing exp");
+        assert!(matches!(error, TokenClaimsError::InvalidCredentials(_)));
+    }
+
+    #[test]
+    fn rejects_jwt_when_kid_does_not_match_tenant_id_claim() {
+        let payload =
+            r#"{"tenant_id":"tenant-b","user_id":"user-001","app_id":"appbase","exp":4102444800}"#;
+        let token = encode_test_jwt_hmac_with_kid(payload, "tenant-a-secret", Some("tenant-a"));
+        let policy = DriveAuthValidationPolicy {
+            allow_inline_claim_tokens: false,
+            jwt_hmac_secrets: BTreeMap::from([(
+                "tenant-a".to_string(),
+                "tenant-a-secret".to_string(),
+            )]),
+            jwt_jwks_keys: BTreeMap::new(),
+        };
+        let error = verify_jwt_hmac_claims(&token, &policy).expect_err("kid mismatch");
         assert!(matches!(error, TokenClaimsError::InvalidCredentials(_)));
     }
 }

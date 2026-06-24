@@ -15,10 +15,10 @@ impl DriveApi {
         Self { client }
     }
 
-    pub async fn storage_provider_bindings_default_get(&self, tenant_id: &str, space_id: Option<&str>) -> Result<StorageProviderBinding, SdkworkError> {
+    pub async fn storage_provider_bindings_default_get(&self, space_id: Option<&str>, space_type: Option<&str>) -> Result<StorageProviderBinding, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
+            QueryParameterSpec::new("spaceType", space_type, "form", true, false, None),
         ]);
         let path = append_query_string(custom_path(&"/drive/storage/bindings/default".to_string()), &query);
         self.client.get(&path, None, None).await
@@ -30,9 +30,8 @@ impl DriveApi {
     }
 
     /// Delete a Drive default storage provider binding
-    pub async fn storage_provider_bindings_default_delete(&self, tenant_id: &str, operator_id: &str, space_id: Option<&str>) -> Result<DeleteStorageProviderBindingResponse, SdkworkError> {
+    pub async fn storage_provider_bindings_default_delete(&self, operator_id: &str, space_id: Option<&str>) -> Result<DeleteStorageProviderBindingResponse, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
             QueryParameterSpec::new("operatorId", operator_id, "form", true, false, None),
         ]);
@@ -58,11 +57,8 @@ impl DriveApi {
         self.client.patch(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn storage_providers_delete(&self, provider_id: &str, operator_id: &str) -> Result<DeleteStorageProviderResponse, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("operatorId", operator_id, "form", true, false, None),
-        ]);
-        let path = append_query_string(custom_path(&format!("/drive/storage/providers/{}", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false)))), &query);
+    pub async fn storage_providers_delete(&self, provider_id: &str) -> Result<DeleteStorageProviderResponse, SdkworkError> {
+        let path = custom_path(&format!("/drive/storage/providers/{}", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
@@ -153,9 +149,8 @@ impl DriveApi {
     }
 
     /// List Drive storage provider bindings
-    pub async fn storage_provider_bindings_list(&self, tenant_id: &str, space_id: Option<&str>, provider_id: Option<&str>, lifecycle_status: Option<&str>) -> Result<StorageProviderBindingListResponse, SdkworkError> {
+    pub async fn storage_provider_bindings_list(&self, space_id: Option<&str>, provider_id: Option<&str>, lifecycle_status: Option<&str>) -> Result<StorageProviderBindingListResponse, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
             QueryParameterSpec::new("providerId", provider_id, "form", true, false, None),
             QueryParameterSpec::new("lifecycleStatus", lifecycle_status, "form", true, false, None),

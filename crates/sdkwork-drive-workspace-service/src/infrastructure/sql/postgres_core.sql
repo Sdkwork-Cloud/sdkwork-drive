@@ -328,6 +328,7 @@ CREATE TABLE IF NOT EXISTS dr_drive_node_share_link (
     tenant_id VARCHAR(64) NOT NULL,
     node_id VARCHAR(64) NOT NULL,
     token_hash VARCHAR(80) NOT NULL,
+    access_code_hash VARCHAR(80),
     role VARCHAR(32) NOT NULL,
     expires_at_epoch_ms BIGINT,
     download_limit BIGINT,
@@ -359,6 +360,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_node_share_link_token_hash
     ON dr_drive_node_share_link (token_hash);
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_share_link_resource
     ON dr_drive_node_share_link (tenant_id, node_id, lifecycle_status);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'dr_drive_node_share_link'
+          AND column_name = 'access_code_hash'
+    ) THEN
+        ALTER TABLE dr_drive_node_share_link ADD COLUMN access_code_hash VARCHAR(80);
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS dr_drive_node_comment (
     id VARCHAR(64) PRIMARY KEY,

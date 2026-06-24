@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::DriveLabel;
+use crate::models::{DriveLabel};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct LabelListResponse {

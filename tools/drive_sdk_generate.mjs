@@ -12,6 +12,7 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -147,6 +148,32 @@ function main() {
       process.exit(1);
     }
     console.log(`[sdkwork-drive] Generating ${config.sdkFamily} from ${inputPath} via ${config.generator}...`);
+    const generatorArgs = [
+      generatorPath,
+      "--input",
+      resolve(repoRoot, inputPath),
+    ];
+    if (args.language) {
+      generatorArgs.push("--language", args.language);
+    } else {
+      generatorArgs.push("--all-languages");
+    }
+    const result = spawnSync("node", generatorArgs, {
+      cwd: repoRoot,
+      stdio: "inherit",
+    });
+    if (result.error) {
+      console.error(`[sdkwork-drive] Failed to start ${config.generator}: ${result.error.message}`);
+      process.exit(1);
+    }
+    if (typeof result.status === "number" && result.status !== 0) {
+      console.error(`[sdkwork-drive] ${config.generator} failed with exit code ${result.status}`);
+      process.exit(result.status);
+    }
+    if (result.signal) {
+      console.error(`[sdkwork-drive] ${config.generator} terminated by signal ${result.signal}`);
+      process.exit(1);
+    }
   }
 
   console.log("[sdkwork-drive] SDK generation pipeline complete.");

@@ -5,6 +5,7 @@ use sqlx::any::AnyPoolOptions;
 const SQLITE_CORE_SQL: &str = include_str!("../src/infrastructure/sql/sqlite_core.sql");
 const POSTGRES_CORE_SQL: &str = include_str!("../src/infrastructure/sql/postgres_core.sql");
 const AUDIT_STORE: &str = include_str!("../src/infrastructure/sql/audit_store.rs");
+const CHANGE_RECORDER: &str = include_str!("../src/infrastructure/change_recorder.rs");
 const MAINTENANCE_STORE: &str = include_str!("../src/infrastructure/sql/maintenance_store.rs");
 const UPLOADER_STORE: &str = include_str!("../src/infrastructure/sql/uploader_store.rs");
 
@@ -44,13 +45,19 @@ fn drive_runtime_repositories_bind_explicit_ids_before_insert() {
         "maintenance_store.rs must bind an explicit Snowflake id",
     );
     assert_insert_declares_id(
-        UPLOADER_STORE,
+        CHANGE_RECORDER,
         "dr_drive_change_log",
-        "uploader_store.rs must bind an explicit Snowflake id",
+        "change_recorder.rs must bind an explicit Snowflake id",
+    );
+    assert_insert_declares_id(
+        CHANGE_RECORDER,
+        "dr_drive_domain_outbox",
+        "change_recorder.rs must bind an explicit Snowflake id for domain outbox",
     );
 
     for (path, source) in [
         ("audit_store.rs", AUDIT_STORE),
+        ("change_recorder.rs", CHANGE_RECORDER),
         ("maintenance_store.rs", MAINTENANCE_STORE),
         ("uploader_store.rs", UPLOADER_STORE),
     ] {

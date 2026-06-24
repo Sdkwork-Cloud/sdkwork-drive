@@ -6,9 +6,10 @@
     "version": "0.1.0",
     "language": "rust",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-sdk-generated-rust"
   },
-  "changeFingerprint": "702f5db324346bfc7df153e5e214562697f50356e17e768127e31efb6f2e1799",
+  "changeFingerprint": "4d00f80f35274e79aad9ac92d4c8c2558dc72ae7e6c32a5db1bad00371084b9a",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [],

@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.0",
+  "openapi": "3.1.2",
   "info": {
     "title": "SDKWork Drive Admin Storage API",
     "version": "0.1.0",
@@ -19,7 +19,7 @@
     }
   ],
   "paths": {
-    "/admin/v3/api/drive/storage/bindings/default": {
+    "/backend/v3/api/drive/storage/bindings/default": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -27,19 +27,31 @@
         "operationId": "storageProviderBindings.default.get",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "spaceId",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "spaceType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "personal",
+                "team",
+                "knowledge_base",
+                "ai_generated",
+                "git_repository",
+                "deployment",
+                "app_upload",
+                "im",
+                "rtc",
+                "notary"
+              ]
             }
           }
         ],
@@ -122,7 +134,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "put": {
         "tags": [
@@ -218,7 +232,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "delete": {
         "tags": [
@@ -227,16 +243,6 @@
         "summary": "Delete a Drive default storage provider binding",
         "operationId": "storageProviderBindings.default.delete",
         "parameters": [
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64
-            }
-          },
           {
             "name": "spaceId",
             "in": "query",
@@ -251,13 +257,11 @@
             "name": "operatorId",
             "in": "query",
             "required": true,
-            "description": "Drive administration operator subject identifier used for audit events.",
             "schema": {
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$",
-              "description": "Drive administration operator subject identifier used for audit events."
+              "pattern": "^[A-Za-z0-9._:@-]+$"
             }
           }
         ],
@@ -300,10 +304,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers": {
+    "/backend/v3/api/drive/storage/providers": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -353,7 +359,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "post": {
         "tags": [
@@ -434,10 +442,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}": {
+    "/backend/v3/api/drive/storage/providers/{providerId}": {
       "patch": {
         "tags": [
           "storageAdmin"
@@ -527,7 +537,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "delete": {
         "tags": [
@@ -538,14 +550,6 @@
           {
             "name": "providerId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -616,7 +620,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "get": {
         "tags": [
@@ -712,10 +718,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/activate": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/activate": {
       "post": {
         "tags": [
           "storageAdmin"
@@ -820,10 +828,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/capabilities": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/capabilities": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -918,10 +928,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/credentials/rotate": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/credentials/rotate": {
       "post": {
         "tags": [
           "storageAdmin"
@@ -1026,10 +1038,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/deactivate": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/deactivate": {
       "post": {
         "tags": [
           "storageAdmin"
@@ -1134,10 +1148,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/test": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/test": {
       "post": {
         "tags": [
           "storageAdmin"
@@ -1227,10 +1243,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/bucket": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/bucket": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -1325,7 +1343,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "put": {
         "tags": [
@@ -1345,13 +1365,11 @@
             "name": "operatorId",
             "in": "query",
             "required": true,
-            "description": "Drive administration operator subject identifier used for audit events.",
             "schema": {
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$",
-              "description": "Drive administration operator subject identifier used for audit events."
+              "pattern": "^[A-Za-z0-9._:@-]+$"
             }
           }
         ],
@@ -1434,7 +1452,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "delete": {
         "tags": [
@@ -1454,13 +1474,11 @@
             "name": "operatorId",
             "in": "query",
             "required": true,
-            "description": "Drive administration operator subject identifier used for audit events.",
             "schema": {
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$",
-              "description": "Drive administration operator subject identifier used for audit events."
+              "pattern": "^[A-Za-z0-9._:@-]+$"
             }
           }
         ],
@@ -1543,10 +1561,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/objects": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/objects": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -1675,10 +1695,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -1786,7 +1808,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "delete": {
         "tags": [
@@ -1819,13 +1843,11 @@
             "name": "operatorId",
             "in": "query",
             "required": true,
-            "description": "Drive administration operator subject identifier used for audit events.",
             "schema": {
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$",
-              "description": "Drive administration operator subject identifier used for audit events."
+              "pattern": "^[A-Za-z0-9._:@-]+$"
             }
           }
         ],
@@ -1908,10 +1930,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/objects/copy": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/objects/copy": {
       "post": {
         "tags": [
           "storageAdmin"
@@ -2016,10 +2040,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/providers/{providerId}/buckets": {
+    "/backend/v3/api/drive/storage/providers/{providerId}/buckets": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -2097,10 +2123,12 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
-    "/admin/v3/api/drive/storage/bindings": {
+    "/backend/v3/api/drive/storage/bindings": {
       "get": {
         "tags": [
           "storageAdmin"
@@ -2108,16 +2136,6 @@
         "summary": "List Drive storage provider bindings",
         "operationId": "storageProviderBindings.list",
         "parameters": [
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64
-            }
-          },
           {
             "name": "spaceId",
             "in": "query",
@@ -2192,7 +2210,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage"
+        "x-sdkwork-api-authority": "sdkwork-drive.admin.storage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     }
   },
@@ -2240,14 +2260,12 @@
             "type": "string",
             "enum": [
               "tenant",
-              "space"
+              "space",
+              "space_type"
             ]
           },
           "purpose": {
-            "type": "string",
-            "enum": [
-              "primary"
-            ]
+            "type": "string"
           },
           "lifecycleStatus": {
             "type": "string"
@@ -2306,21 +2324,28 @@
       "SetDefaultStorageProviderBindingRequest": {
         "type": "object",
         "required": [
-          "tenantId",
-          "providerId",
-          "operatorId"
+          "providerId"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "spaceId": {
             "type": "string"
           },
-          "providerId": {
-            "type": "string"
+          "spaceType": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "team",
+              "knowledge_base",
+              "ai_generated",
+              "git_repository",
+              "deployment",
+              "app_upload",
+              "im",
+              "rtc",
+              "notary"
+            ]
           },
-          "operatorId": {
+          "providerId": {
             "type": "string"
           },
           "storageRootPrefix": {
@@ -2353,8 +2378,7 @@
           "providerKind",
           "name",
           "endpointUrl",
-          "bucket",
-          "operatorId"
+          "bucket"
         ],
         "properties": {
           "id": {
@@ -2402,9 +2426,6 @@
             "type": "string"
           },
           "status": {
-            "type": "string"
-          },
-          "operatorId": {
             "type": "string"
           },
           "strictTls": {
@@ -2490,9 +2511,7 @@
       },
       "UpdateStorageProviderRequest": {
         "type": "object",
-        "required": [
-          "operatorId"
-        ],
+        "required": [],
         "properties": {
           "name": {
             "type": "string"
@@ -2525,9 +2544,6 @@
           "status": {
             "type": "string"
           },
-          "operatorId": {
-            "type": "string"
-          },
           "strictTls": {
             "type": "boolean",
             "description": "Provider-level TLS policy. HTTPS endpoints default to true, private HTTP endpoints default to false, and true requires an HTTPS endpoint."
@@ -2547,14 +2563,8 @@
       },
       "OperatorRequest": {
         "type": "object",
-        "required": [
-          "operatorId"
-        ],
-        "properties": {
-          "operatorId": {
-            "type": "string"
-          }
-        }
+        "required": [],
+        "properties": {}
       },
       "StorageProviderCapabilities": {
         "type": "object",
@@ -2612,8 +2622,7 @@
       "RotateStorageProviderCredentialRequest": {
         "type": "object",
         "required": [
-          "credentialRef",
-          "operatorId"
+          "credentialRef"
         ],
         "properties": {
           "credentialRef": {
@@ -2622,22 +2631,13 @@
             "maxLength": 255,
             "pattern": "^(plain|env|secret|kms|vault):.+$",
             "description": "Drive storage credential reference. Supported forms: plain:<accessKeyId>:<secretAccessKey>[:<sessionToken>], env:<accessKeyEnv>:<secretKeyEnv>[:<sessionTokenEnv>], secret:<ref>, kms:<ref>, or vault:<ref>. secret/kms/vault refs are materialized at runtime from SDKWORK_DRIVE_STORAGE_CREDENTIAL__<sanitized_ref>__ACCESS_KEY_ID, __SECRET_ACCESS_KEY, and optional __SESSION_TOKEN environment variables."
-          },
-          "operatorId": {
-            "type": "string"
           }
         }
       },
       "TestStorageProviderRequest": {
         "type": "object",
-        "required": [
-          "operatorId"
-        ],
-        "properties": {
-          "operatorId": {
-            "type": "string"
-          }
-        }
+        "required": [],
+        "properties": {}
       },
       "TestStorageProviderResponse": {
         "type": "object",
@@ -2843,8 +2843,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$",
-            "description": "Drive administration operator subject identifier used for audit events."
+            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
         },
         "additionalProperties": false

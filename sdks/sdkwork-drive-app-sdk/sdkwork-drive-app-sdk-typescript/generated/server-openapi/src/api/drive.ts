@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ArchiveEntryListResponse, ChangeListResponse, CommentListResponse, CommentRepliesDeleteResponse, CommentReplyListResponse, CommentsDeleteResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateSpaceRequest, CreateUploadSessionRequest, DeleteNodeResponse, DeleteSpaceResponse, DeleteVersionResponse, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DrivePermission, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermissionListResponse, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, ListSpacesResponse, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodeListResponse, NodePathResponse, PermissionListResponse, PermissionsDeleteResponse, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, ProblemDetail, QuotaSummary, ShareLinkListResponse, ShareLinksRevokeResponse, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, UploadSessionMutationResponse, VersionListResponse } from '../types';
+import type { ArchiveEntryListResponse, ChangeListResponse, ClaimShareLinkResponse, CommentListResponse, CommentRepliesDeleteResponse, CommentReplyListResponse, CommentsDeleteResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, DeleteNodeResponse, DeleteSpaceResponse, DeleteVersionResponse, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DrivePermission, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermissionListResponse, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, ListSpacesResponse, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodeListResponse, NodePathResponse, PermissionListResponse, PermissionsDeleteResponse, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, ProblemDetail, QuotaSummary, ShareLinkListResponse, ShareLinksRevokeResponse, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, UploadSessionMutationResponse, VersionListResponse } from '../types';
 
 
 export class DriveUploaderUploadsPartsApi {
@@ -325,8 +325,8 @@ export class DriveShareLinksApi {
   }
 
 
-async create(nodeId: string, body: CreateShareLinkRequest): Promise<DriveShareLink> {
-    return this.client.post<DriveShareLink>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/share_links`), body, undefined, undefined, 'application/json');
+async create(nodeId: string, body: CreateShareLinkRequest): Promise<CreateShareLinkResponse> {
+    return this.client.post<CreateShareLinkResponse>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/share_links`), body, undefined, undefined, 'application/json');
   }
 
 async list(nodeId: string, params?: DriveShareLinksListParams): Promise<ShareLinkListResponse> {
@@ -335,6 +335,10 @@ async list(nodeId: string, params?: DriveShareLinksListParams): Promise<ShareLin
       { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<ShareLinkListResponse>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/share_links`), query));
+  }
+
+async claim(token: string): Promise<ClaimShareLinkResponse> {
+    return this.client.post<ClaimShareLinkResponse>(appApiPath(`/drive/share_links/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}/claim`));
   }
 
 async revoke(shareLinkId: string): Promise<ShareLinksRevokeResponse> {
@@ -409,6 +413,19 @@ async update(nodeId: string, permissionId: string, body: UpdatePermissionRequest
 
 async get(nodeId: string, permissionId: string): Promise<DrivePermission> {
     return this.client.get<DrivePermission>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions/${serializePathParameter(permissionId, { name: 'permissionId', style: 'simple', explode: false })}`));
+  }
+}
+
+export class DriveDownloadGrantsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+async create(nodeId: string, body?: CreateDownloadGrantRequest): Promise<CreateDownloadUrlResponse> {
+    return this.client.post<CreateDownloadUrlResponse>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/download_grants`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -686,7 +703,7 @@ async resolve(token: string): Promise<ProblemDetail> {
 }
 
 export interface DriveChangesStartPageTokenGetParams {
-  spaceId?: string;
+  spaceId: string;
 }
 
 export class DriveChangesStartPageTokenApi {
@@ -697,16 +714,16 @@ export class DriveChangesStartPageTokenApi {
   }
 
 
-async get(params?: DriveChangesStartPageTokenGetParams): Promise<StartPageTokenResponse> {
+async get(params: DriveChangesStartPageTokenGetParams): Promise<StartPageTokenResponse> {
     const query = buildQueryString([
-      { name: 'spaceId', value: params?.spaceId, style: 'form', explode: true, allowReserved: false },
+      { name: 'spaceId', value: params.spaceId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<StartPageTokenResponse>(appendQueryString(appApiPath(`/drive/changes/start_page_token`), query));
   }
 }
 
 export interface DriveChangesListParams {
-  spaceId?: string;
+  spaceId: string;
   cursor?: string;
   pageSize?: string;
   pageToken?: string;
@@ -722,12 +739,12 @@ export class DriveChangesApi {
   }
 
 
-async list(params?: DriveChangesListParams): Promise<ChangeListResponse> {
+async list(params: DriveChangesListParams): Promise<ChangeListResponse> {
     const query = buildQueryString([
-      { name: 'spaceId', value: params?.spaceId, style: 'form', explode: true, allowReserved: false },
-      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
+      { name: 'spaceId', value: params.spaceId, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params.cursor, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageSize', value: params.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageToken', value: params.pageToken, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<ChangeListResponse>(appendQueryString(appApiPath(`/drive/changes`), query));
   }
@@ -743,6 +760,7 @@ export class DriveApi {
   public readonly nodes: DriveNodesApi;
   public readonly comments: DriveCommentsApi;
   public readonly commentReplies: DriveCommentRepliesApi;
+  public readonly downloadGrants: DriveDownloadGrantsApi;
   public readonly permissions: DrivePermissionsApi;
   public readonly shareLinks: DriveShareLinksApi;
   public readonly trash: DriveTrashApi;
@@ -766,6 +784,7 @@ export class DriveApi {
     this.nodes = new DriveNodesApi(client);
     this.comments = new DriveCommentsApi(client);
     this.commentReplies = new DriveCommentRepliesApi(client);
+    this.downloadGrants = new DriveDownloadGrantsApi(client);
     this.permissions = new DrivePermissionsApi(client);
     this.shareLinks = new DriveShareLinksApi(client);
     this.trash = new DriveTrashApi(client);

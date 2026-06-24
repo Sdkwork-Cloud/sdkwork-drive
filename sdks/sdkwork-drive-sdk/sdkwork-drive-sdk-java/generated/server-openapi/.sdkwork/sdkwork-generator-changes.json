@@ -6,9 +6,10 @@
     "version": "0.1.0",
     "language": "java",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-sdk-generated-java"
   },
-  "changeFingerprint": "c433cbe63c4397ecedeec7185b09a86bb4dd81130d7e2c6b43e3b68d9ca0672d",
+  "changeFingerprint": "5e9730475575b67522a7cdc2751ebc3280b3764315283aa78a010b3230e0ccf0",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [],

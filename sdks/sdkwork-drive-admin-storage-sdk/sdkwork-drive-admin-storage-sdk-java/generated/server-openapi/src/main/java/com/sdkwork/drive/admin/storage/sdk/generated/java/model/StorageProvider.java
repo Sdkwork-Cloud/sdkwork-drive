@@ -20,7 +20,7 @@ public class StorageProvider {
     public String getId() {
         return this.id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -28,7 +28,7 @@ public class StorageProvider {
     public String getProviderKind() {
         return this.providerKind;
     }
-    
+
     public void setProviderKind(String providerKind) {
         this.providerKind = providerKind;
     }
@@ -36,7 +36,7 @@ public class StorageProvider {
     public String getName() {
         return this.name;
     }
-    
+
     public void setName(String name) {
         this.name = name;
     }
@@ -44,7 +44,7 @@ public class StorageProvider {
     public String getEndpointUrl() {
         return this.endpointUrl;
     }
-    
+
     public void setEndpointUrl(String endpointUrl) {
         this.endpointUrl = endpointUrl;
     }
@@ -52,7 +52,7 @@ public class StorageProvider {
     public String getRegion() {
         return this.region;
     }
-    
+
     public void setRegion(String region) {
         this.region = region;
     }
@@ -60,7 +60,7 @@ public class StorageProvider {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -68,7 +68,7 @@ public class StorageProvider {
     public Boolean getPathStyle() {
         return this.pathStyle;
     }
-    
+
     public void setPathStyle(Boolean pathStyle) {
         this.pathStyle = pathStyle;
     }
@@ -76,7 +76,7 @@ public class StorageProvider {
     public String getCredentialRef() {
         return this.credentialRef;
     }
-    
+
     public void setCredentialRef(String credentialRef) {
         this.credentialRef = credentialRef;
     }
@@ -84,7 +84,7 @@ public class StorageProvider {
     public String getServerSideEncryptionMode() {
         return this.serverSideEncryptionMode;
     }
-    
+
     public void setServerSideEncryptionMode(String serverSideEncryptionMode) {
         this.serverSideEncryptionMode = serverSideEncryptionMode;
     }
@@ -92,7 +92,7 @@ public class StorageProvider {
     public String getDefaultStorageClass() {
         return this.defaultStorageClass;
     }
-    
+
     public void setDefaultStorageClass(String defaultStorageClass) {
         this.defaultStorageClass = defaultStorageClass;
     }
@@ -100,7 +100,7 @@ public class StorageProvider {
     public String getStatus() {
         return this.status;
     }
-    
+
     public void setStatus(String status) {
         this.status = status;
     }
@@ -108,7 +108,7 @@ public class StorageProvider {
     public Integer getVersion() {
         return this.version;
     }
-    
+
     public void setVersion(Integer version) {
         this.version = version;
     }
@@ -116,7 +116,7 @@ public class StorageProvider {
     public Boolean getCredentialConfigured() {
         return this.credentialConfigured;
     }
-    
+
     public void setCredentialConfigured(Boolean credentialConfigured) {
         this.credentialConfigured = credentialConfigured;
     }
@@ -124,7 +124,7 @@ public class StorageProvider {
     public Boolean getStrictTls() {
         return this.strictTls;
     }
-    
+
     public void setStrictTls(Boolean strictTls) {
         this.strictTls = strictTls;
     }

@@ -29,8 +29,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = REPO_ROOT;
 
-const DEFAULT_SDKWORK_API_GATEWAY_BIND = '127.0.0.1:3900';
-const DEFAULT_SDKWORK_API_GATEWAY_BASE_URL = `http://${DEFAULT_SDKWORK_API_GATEWAY_BIND}`;
+const DEFAULT_SDKWORK_API_CLOUD_GATEWAY_BIND = '127.0.0.1:3900';
+const DEFAULT_SDKWORK_API_CLOUD_GATEWAY_BASE_URL = `http://${DEFAULT_SDKWORK_API_CLOUD_GATEWAY_BIND}`;
 const DEFAULT_DRIVE_APP_API_BIND = '127.0.0.1:18080';
 const DEFAULT_DRIVE_APP_API_BASE_URL = `http://${DEFAULT_DRIVE_APP_API_BIND}`;
 const DEFAULT_DRIVE_ADMIN_STORAGE_API_BIND = '127.0.0.1:18083';
@@ -43,8 +43,8 @@ const GATEWAY_STARTUP_WAIT_MS = 1000;
 const GATEWAY_MAX_STARTUP_ATTEMPTS = 90;
 const POSTGRES_REACHABILITY_TIMEOUT_MS = 2000;
 
-const SDKWORK_API_GATEWAY_BASE_URL_ENV_KEYS = [
-  'SDKWORK_API_GATEWAY_BASE_URL',
+const SDKWORK_API_CLOUD_GATEWAY_BASE_URL_ENV_KEYS = [
+  'SDKWORK_API_CLOUD_GATEWAY_BASE_URL',
   'SDKWORK_DRIVE_API_GATEWAY_BASE_URL',
 ];
 
@@ -78,7 +78,7 @@ function normalizeUpstreamBaseUrl(value, label) {
   return normalized.replace(/\/+$/u, '');
 }
 
-function normalizeGatewayBind(value, label = 'SDKWORK_API_GATEWAY_BIND') {
+function normalizeGatewayBind(value, label = 'SDKWORK_API_CLOUD_GATEWAY_BIND') {
   const normalized = normalizeText(value);
   if (!normalized) {
     return undefined;
@@ -95,7 +95,7 @@ function resolveSdkworkApiGatewayBind(env = process.env) {
 }
 
 function resolveSdkworkApiGatewayBaseUrl(env = process.env) {
-  for (const key of SDKWORK_API_GATEWAY_BASE_URL_ENV_KEYS) {
+  for (const key of SDKWORK_API_CLOUD_GATEWAY_BASE_URL_ENV_KEYS) {
     const baseUrl = normalizeUpstreamBaseUrl(env[key], key);
     if (baseUrl) {
       return baseUrl;
@@ -504,20 +504,20 @@ function createCloudGatewayProcess({ env, gatewayWillStart }) {
     return undefined;
   }
 
-  const gatewayWorkspace = path.resolve(repoRoot, '..', 'sdkwork-api-gateway');
+  const gatewayWorkspace = path.resolve(repoRoot, '..', 'sdkwork-api-cloud-gateway');
   const gatewayConfig = path.join(
     repoRoot,
     'configs',
-    'sdkwork-api-gateway.drive.development.toml',
+    'sdkwork-api-cloud-gateway.drive.development.toml',
   );
 
   return {
     args: [
       'run',
       '-p',
-      'sdkwork-api-gateway-api-server',
+      'sdkwork-api-cloud-gateway-api-server',
       '--bin',
-      'sdkwork-api-gateway',
+      'sdkwork-api-cloud-gateway',
       '--',
       '--config',
       gatewayConfig,
@@ -525,7 +525,7 @@ function createCloudGatewayProcess({ env, gatewayWillStart }) {
     command: cargoCommand(),
     cwd: gatewayWorkspace,
     env: resolveIamDevEnv(env, repoRoot),
-    label: 'sdkwork-api-gateway',
+    label: 'sdkwork-api-cloud-gateway',
     shell: false,
   };
 }
@@ -700,8 +700,8 @@ Options:
 
 Deployment policy (standalone default for dev):
   Profiles load from configs/topology according to deployment profile and service layout.
-  Dev autostarts the gateway on ${DEFAULT_SDKWORK_API_GATEWAY_BIND} when it is not already listening.
-  Use --deployment-profile cloud to route through sdkwork-api-gateway instead.
+  Dev autostarts the gateway on ${DEFAULT_SDKWORK_API_CLOUD_GATEWAY_BIND} when it is not already listening.
+  Use --deployment-profile cloud to route through sdkwork-api-cloud-gateway instead.
   IAM login requires PostgreSQL (copy .env.postgres.example to .env.postgres and start PostgreSQL).
   Vite/desktop starts only after the gateway health check passes.
   Set SDKWORK_DRIVE_GATEWAY_AUTOSTART=false to skip gateway autostart.

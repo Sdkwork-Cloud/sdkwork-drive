@@ -105,6 +105,32 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
             && dispatcher.contains("'--deployment-profile', 'cloud'"),
         "sdkwork-command.mjs must dispatch build to drive-build.mjs with cloud deployment profile"
     );
+
+    let build_standalone = scripts
+        .get("build:standalone")
+        .and_then(serde_json::Value::as_str)
+        .expect("pnpm build:standalone script should exist");
+    assert!(
+        build_standalone.contains("sdkwork-command.mjs"),
+        "pnpm build:standalone must delegate through sdkwork-command.mjs, got: {build_standalone}"
+    );
+    assert!(
+        build_standalone.contains("standalone"),
+        "pnpm build:standalone must target the standalone deployment profile, got: {build_standalone}"
+    );
+    assert!(
+        dispatcher.contains("'--deployment-profile', 'standalone'"),
+        "sdkwork-command.mjs must dispatch standalone build profiles"
+    );
+
+    let build_debug = scripts
+        .get("build:debug")
+        .and_then(serde_json::Value::as_str)
+        .expect("pnpm build:debug script should exist");
+    assert!(
+        build_debug.contains("drive-build.mjs") && build_debug.contains("--debug"),
+        "pnpm build:debug must invoke drive-build.mjs in debug mode, got: {build_debug}"
+    );
 }
 
 #[test]

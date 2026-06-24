@@ -148,6 +148,11 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<CreateDownloadUrlResponse>() {});
     }
 
+    public CreateDownloadUrlResponse downloadGrantsCreate(String nodeId, CreateDownloadGrantRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/download_grants"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<CreateDownloadUrlResponse>() {});
+    }
+
     public FavoriteNodeResponse favoritesSet(String nodeId, FavoriteNodeRequest body) throws Exception {
         Object raw = client.put(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/favorite"), body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<FavoriteNodeResponse>() {});
@@ -206,9 +211,9 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<EffectivePermissionListResponse>() {});
     }
 
-    public DriveShareLink shareLinksCreate(String nodeId, CreateShareLinkRequest body) throws Exception {
+    public CreateShareLinkResponse shareLinksCreate(String nodeId, CreateShareLinkRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/share_links"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<DriveShareLink>() {});
+        return client.convertValue(raw, new TypeReference<CreateShareLinkResponse>() {});
     }
 
     public ShareLinkListResponse shareLinksList(String nodeId, Integer pageSize, String pageToken) throws Exception {
@@ -278,6 +283,11 @@ public class DriveApi {
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/search"), query));
         return client.convertValue(raw, new TypeReference<NodeListResponse>() {});
+    }
+
+    public ClaimShareLinkResponse shareLinksClaim(String token) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/drive/share_links/" + serializePathParameter(token, new PathParameterSpec("token", "simple", false)) + "/claim"), null);
+        return client.convertValue(raw, new TypeReference<ClaimShareLinkResponse>() {});
     }
 
     public ShareLinksRevokeResponse shareLinksRevoke(String shareLinkId) throws Exception {

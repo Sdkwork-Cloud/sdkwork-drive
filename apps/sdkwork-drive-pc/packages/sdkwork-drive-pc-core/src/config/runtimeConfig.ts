@@ -90,7 +90,7 @@ const LOCAL_APP_API_BASE_URL = LOCAL_API_GATEWAY_BASE_URL;
 const LOCAL_ADMIN_STORAGE_API_BASE_URL = LOCAL_API_GATEWAY_BASE_URL;
 const CLOUD_API_GATEWAY_BASE_URL = 'https://api.sdkwork.com';
 const CLOUD_APP_API_BASE_URL = 'https://drive.sdkwork.com/app/v3/api';
-const CLOUD_ADMIN_STORAGE_API_BASE_URL = 'https://drive.sdkwork.com/admin/v3/api';
+const CLOUD_ADMIN_STORAGE_API_BASE_URL = 'https://drive.sdkwork.com/backend/v3/api';
 
 const VALID_ENVIRONMENTS: SdkworkEnvironment[] = [
   'development',

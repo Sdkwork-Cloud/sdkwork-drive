@@ -26,6 +26,9 @@ export function driveSectionToPath(section: DriveSection): string {
 
 export function drivePathToSection(pathname: string): DriveSection {
   const normalized = normalizePathname(pathname);
+  if (isShareLinkClaimPath(normalized)) {
+    return 'shared';
+  }
   for (const [section, path] of Object.entries(BUILTIN_SECTION_PATHS)) {
     if (normalized === path) {
       return section;
@@ -41,8 +44,37 @@ export function drivePathToSection(pathname: string): DriveSection {
 }
 
 export function resolveDriveSectionPath(pathname: string): string {
+  if (isShareLinkClaimPath(pathname)) {
+    return normalizePathname(pathname);
+  }
   const section = drivePathToSection(pathname);
   return driveSectionToPath(section);
+}
+
+export function parseShareLinkClaimToken(pathname: string): string | null {
+  const normalized = normalizePathname(pathname);
+  const match = normalized.match(/^\/share\/([^/]+)$/);
+  if (!match?.[1]) {
+    return null;
+  }
+  try {
+    const token = decodeURIComponent(match[1]).trim();
+    return token || null;
+  } catch {
+    return null;
+  }
+}
+
+export function buildShareLinkClaimPath(token: string): string {
+  const trimmed = token.trim();
+  if (!trimmed) {
+    return '/share';
+  }
+  return `/share/${encodeURIComponent(trimmed)}`;
+}
+
+export function isShareLinkClaimPath(pathname: string): boolean {
+  return parseShareLinkClaimToken(pathname) !== null;
 }
 
 function normalizePathname(pathname: string): string {

@@ -37,7 +37,7 @@ export function AudioModule({ file, previewUrl, previewError, loading }: AudioMo
       return (
         <div className="h-24 flex flex-col items-center justify-center text-xs text-neutral-400 gap-2">
           <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <span>Preparing Drive audio preview...</span>
+          <span>{t('previewModules.previewPreparing')}</span>
         </div>
       );
     }
@@ -45,7 +45,7 @@ export function AudioModule({ file, previewUrl, previewError, loading }: AudioMo
       return (
         <div className="h-24 flex flex-col items-center justify-center text-xs text-neutral-400 gap-3 px-6 text-center">
           <Info size={20} className="text-rose-400" />
-          <span>{previewError || 'Drive audio preview URL is unavailable.'}</span>
+          <span>{previewError || t('previewModules.audioPreviewUnavailable')}</span>
         </div>
       );
     }

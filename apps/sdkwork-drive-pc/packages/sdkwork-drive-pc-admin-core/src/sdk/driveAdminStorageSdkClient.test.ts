@@ -57,7 +57,7 @@ describe('drive admin storage sdk client', () => {
     expect(tokenManager.getAuthToken()).toBe('auth-token');
     expect(tokenManager.getAccessToken()).toBe('access-token');
     expect(request).toHaveBeenCalledWith(
-      '/admin/v3/api/drive/storage/providers',
+      '/backend/v3/api/drive/storage/providers',
       {
         method: 'GET',
         params: { status: 'active' },

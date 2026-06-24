@@ -27,7 +27,7 @@ function surfaceForPath(routePath, fallback) {
   if (routePath.startsWith('/open/v3/api')) {
     return 'open-api';
   }
-  if (routePath.startsWith('/admin/v3/api')) {
+  if (routePath.startsWith('/admin/v3/api') || routePath.startsWith('/backend/v3/api/drive/storage')) {
     return 'backend-api';
   }
   return fallback;

@@ -17,7 +17,7 @@ public class StorageProviderCapabilities {
     public String getProviderId() {
         return this.providerId;
     }
-    
+
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
@@ -25,7 +25,7 @@ public class StorageProviderCapabilities {
     public String getProviderKind() {
         return this.providerKind;
     }
-    
+
     public void setProviderKind(String providerKind) {
         this.providerKind = providerKind;
     }
@@ -33,7 +33,7 @@ public class StorageProviderCapabilities {
     public Boolean getSupportsMultipartUpload() {
         return this.supportsMultipartUpload;
     }
-    
+
     public void setSupportsMultipartUpload(Boolean supportsMultipartUpload) {
         this.supportsMultipartUpload = supportsMultipartUpload;
     }
@@ -41,7 +41,7 @@ public class StorageProviderCapabilities {
     public Boolean getSupportsPresignedUploadPart() {
         return this.supportsPresignedUploadPart;
     }
-    
+
     public void setSupportsPresignedUploadPart(Boolean supportsPresignedUploadPart) {
         this.supportsPresignedUploadPart = supportsPresignedUploadPart;
     }
@@ -49,7 +49,7 @@ public class StorageProviderCapabilities {
     public Boolean getSupportsPresignedDownload() {
         return this.supportsPresignedDownload;
     }
-    
+
     public void setSupportsPresignedDownload(Boolean supportsPresignedDownload) {
         this.supportsPresignedDownload = supportsPresignedDownload;
     }
@@ -57,7 +57,7 @@ public class StorageProviderCapabilities {
     public Boolean getSupportsServerSideEncryption() {
         return this.supportsServerSideEncryption;
     }
-    
+
     public void setSupportsServerSideEncryption(Boolean supportsServerSideEncryption) {
         this.supportsServerSideEncryption = supportsServerSideEncryption;
     }
@@ -65,7 +65,7 @@ public class StorageProviderCapabilities {
     public Boolean getSupportsStorageClass() {
         return this.supportsStorageClass;
     }
-    
+
     public void setSupportsStorageClass(Boolean supportsStorageClass) {
         this.supportsStorageClass = supportsStorageClass;
     }
@@ -73,7 +73,7 @@ public class StorageProviderCapabilities {
     public Boolean getSupportsCredentialRotation() {
         return this.supportsCredentialRotation;
     }
-    
+
     public void setSupportsCredentialRotation(Boolean supportsCredentialRotation) {
         this.supportsCredentialRotation = supportsCredentialRotation;
     }
@@ -81,7 +81,7 @@ public class StorageProviderCapabilities {
     public List<String> getSupportedServerSideEncryptionModes() {
         return this.supportedServerSideEncryptionModes;
     }
-    
+
     public void setSupportedServerSideEncryptionModes(List<String> supportedServerSideEncryptionModes) {
         this.supportedServerSideEncryptionModes = supportedServerSideEncryptionModes;
     }
@@ -89,7 +89,7 @@ public class StorageProviderCapabilities {
     public List<String> getSupportedStorageClasses() {
         return this.supportedStorageClasses;
     }
-    
+
     public void setSupportedStorageClasses(List<String> supportedStorageClasses) {
         this.supportedStorageClasses = supportedStorageClasses;
     }

@@ -1,1 +1,5 @@
-export type FavoriteNodeRequest = Record<string, unknown>;
+export interface FavoriteNodeRequest {
+  subjectType?: string;
+  subjectId?: string;
+  operatorId?: string;
+}

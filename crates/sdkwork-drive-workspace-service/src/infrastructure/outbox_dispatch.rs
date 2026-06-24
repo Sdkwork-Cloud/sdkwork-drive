@@ -14,13 +14,24 @@ pub struct DomainOutboxDispatchResult {
 
 pub fn spawn_pending_outbox_dispatch(pool: AnyPool) {
     tokio::spawn(async move {
-        if let Err(error) = dispatch_pending_outbox_events(&pool).await {
-            tracing::warn!(
-                target: "sdkwork.drive",
-                event = "drive.domain_outbox.dispatch_failed",
-                error = %error,
-                "domain outbox dispatch failed"
-            );
+        let interval_secs = std::env::var("SDKWORK_DRIVE_DOMAIN_OUTBOX_DISPATCH_INTERVAL_SECONDS")
+            .ok()
+            .and_then(|value| value.trim().parse::<u64>().ok())
+            .filter(|value| *value > 0)
+            .unwrap_or(15);
+        let mut interval =
+            tokio::time::interval(std::time::Duration::from_secs(interval_secs));
+        interval.tick().await;
+        loop {
+            interval.tick().await;
+            if let Err(error) = dispatch_pending_outbox_events(&pool).await {
+                tracing::warn!(
+                    target: "sdkwork.drive",
+                    event = "drive.domain_outbox.dispatch_failed",
+                    error = %error,
+                    "domain outbox dispatch failed"
+                );
+            }
         }
     });
 }
@@ -173,6 +184,9 @@ async fn dispatch_outbox_event(
     for row in rows {
         let channel_id: String = row.get("id");
         let address: String = row.get("address");
+        sdkwork_drive_security::validate_webhook_https_url(&address).map_err(|detail| {
+            format!("outbox webhook channel {channel_id} has invalid address: {detail}")
+        })?;
         let response = client
             .post(&address)
             .json(&payload)

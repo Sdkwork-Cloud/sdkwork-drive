@@ -8,7 +8,7 @@ public class StorageProviderBindingListResponse {
     public List<StorageProviderBinding> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<StorageProviderBinding> items) {
         this.items = items;
     }

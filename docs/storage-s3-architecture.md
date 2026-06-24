@@ -84,26 +84,26 @@ Object-key routes accept slash-separated key tails and `%2F`-encoded keys; route
 
 ### Admin Storage API
 
-`crates/sdkwork-router-storage-backend-api` owns application-level storage administration and uses `/admin/v3/api/drive/storage/...` routes:
+`crates/sdkwork-router-storage-backend-api` owns application-level storage administration and uses `/backend/v3/api/drive/storage/...` routes:
 
-- `GET|POST /admin/v3/api/drive/storage/providers`
-- `GET|PATCH|DELETE /admin/v3/api/drive/storage/providers/{providerId}`
-- `GET /admin/v3/api/drive/storage/providers/{providerId}/capabilities`
-- `POST /admin/v3/api/drive/storage/providers/{providerId}/test`
-- `POST /admin/v3/api/drive/storage/providers/{providerId}/activate`
-- `POST /admin/v3/api/drive/storage/providers/{providerId}/deactivate`
-- `POST /admin/v3/api/drive/storage/providers/{providerId}/credentials/rotate`
-- `GET /admin/v3/api/drive/storage/providers/{providerId}/buckets`
-- `GET|PUT|DELETE /admin/v3/api/drive/storage/providers/{providerId}/bucket`
-- `GET /admin/v3/api/drive/storage/providers/{providerId}/objects`
-- `GET|DELETE /admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey...}`
-- `POST /admin/v3/api/drive/storage/providers/{providerId}/objects/copy`
-- `GET /admin/v3/api/drive/storage/bindings`
-- `GET|PUT|DELETE /admin/v3/api/drive/storage/bindings/default`
+- `GET|POST /backend/v3/api/drive/storage/providers`
+- `GET|PATCH|DELETE /backend/v3/api/drive/storage/providers/{providerId}`
+- `GET /backend/v3/api/drive/storage/providers/{providerId}/capabilities`
+- `POST /backend/v3/api/drive/storage/providers/{providerId}/test`
+- `POST /backend/v3/api/drive/storage/providers/{providerId}/activate`
+- `POST /backend/v3/api/drive/storage/providers/{providerId}/deactivate`
+- `POST /backend/v3/api/drive/storage/providers/{providerId}/credentials/rotate`
+- `GET /backend/v3/api/drive/storage/providers/{providerId}/buckets`
+- `GET|PUT|DELETE /backend/v3/api/drive/storage/providers/{providerId}/bucket`
+- `GET /backend/v3/api/drive/storage/providers/{providerId}/objects`
+- `GET|DELETE /backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey...}`
+- `POST /backend/v3/api/drive/storage/providers/{providerId}/objects/copy`
+- `GET /backend/v3/api/drive/storage/bindings`
+- `GET|PUT|DELETE /backend/v3/api/drive/storage/bindings/default`
 
-It is a standalone runtime service in the local Drive launch plan and binds `127.0.0.1:18083` by default. The same crate also exposes router builders so a host application can embed the admin-storage module without duplicating Drive storage logic.
+It is a standalone runtime service in the local Drive launch plan and binds `127.0.0.1:18083` by default. The same crate also exposes router builders so a host application can embed the admin-storage module without duplicating Drive storage logic. Legacy deployments may continue to call the same handlers through the `/admin/v3/api/drive/storage/*` alias until clients finish migration.
 
-Admin-storage runtime routes under `/admin/v3/api/drive/storage/*` require the same dual-token contract as app and backend APIs. Context is token-derived; projection headers are forbidden.
+Admin-storage runtime routes under `/backend/v3/api/drive/storage/*` require the same dual-token contract as app and backend APIs. Context is token-derived; projection headers are forbidden.
 `/healthz` is the only public admin-storage runtime route. Embedded hosts may use explicit
 no-IAM router builders only for isolated business tests when tokens are supplied through test
 fixtures rather than forged context headers.

@@ -12,9 +12,10 @@ axum.workspace = true
 http.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sdkwork-drive-contract.workspace = true
 sdkwork-drive-config.workspace = true
 sdkwork-drive-http.workspace = true
-sdkwork-drive-observability.workspace = true
+sdkwork-drive-observability = { workspace = true, features = ["otlp"] }
 sdkwork-drive-workspace-service.workspace = true
 sdkwork-drive-security.workspace = true
 sdkwork-drive-storage-contract.workspace = true

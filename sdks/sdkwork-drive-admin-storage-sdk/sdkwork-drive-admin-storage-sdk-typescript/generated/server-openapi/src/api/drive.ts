@@ -119,10 +119,6 @@ export interface DriveStorageProvidersListParams {
   status?: string;
 }
 
-export interface DriveStorageProvidersDeleteParams {
-  operatorId: string;
-}
-
 export class DriveStorageProvidersApi {
   private client: HttpClient;
   public readonly capabilities: DriveStorageProvidersCapabilitiesApi;
@@ -154,11 +150,8 @@ async update(providerId: string, body: UpdateStorageProviderRequest): Promise<St
     return this.client.patch<StorageProvider>(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
-async delete(providerId: string, params: DriveStorageProvidersDeleteParams): Promise<DeleteStorageProviderResponse> {
-    const query = buildQueryString([
-      { name: 'operatorId', value: params.operatorId, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.delete<DeleteStorageProviderResponse>(appendQueryString(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}`), query));
+async delete(providerId: string): Promise<DeleteStorageProviderResponse> {
+    return this.client.delete<DeleteStorageProviderResponse>(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}`));
   }
 
 async get(providerId: string): Promise<StorageProvider> {
@@ -179,13 +172,11 @@ async test(providerId: string, body: TestStorageProviderRequest): Promise<TestSt
 }
 
 export interface DriveStorageProviderBindingsDefaultGetParams {
-  tenantId: string;
   spaceId?: string;
   spaceType?: 'personal' | 'team' | 'knowledge_base' | 'ai_generated' | 'git_repository' | 'deployment' | 'app_upload' | 'im' | 'rtc' | 'notary';
 }
 
 export interface DriveStorageProviderBindingsDefaultDeleteParams {
-  tenantId: string;
   spaceId?: string;
   operatorId: string;
 }
@@ -198,11 +189,10 @@ export class DriveStorageProviderBindingsDefaultApi {
   }
 
 
-async get(params: DriveStorageProviderBindingsDefaultGetParams): Promise<StorageProviderBinding> {
+async get(params?: DriveStorageProviderBindingsDefaultGetParams): Promise<StorageProviderBinding> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-      { name: 'spaceId', value: params.spaceId, style: 'form', explode: true, allowReserved: false },
-      { name: 'spaceType', value: params.spaceType, style: 'form', explode: true, allowReserved: false },
+      { name: 'spaceId', value: params?.spaceId, style: 'form', explode: true, allowReserved: false },
+      { name: 'spaceType', value: params?.spaceType, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<StorageProviderBinding>(appendQueryString(customApiPath(`/drive/storage/bindings/default`), query));
   }
@@ -214,7 +204,6 @@ async set(body: SetDefaultStorageProviderBindingRequest): Promise<StorageProvide
 /** Delete a Drive default storage provider binding */
   async delete(params: DriveStorageProviderBindingsDefaultDeleteParams): Promise<DeleteStorageProviderBindingResponse> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
       { name: 'spaceId', value: params.spaceId, style: 'form', explode: true, allowReserved: false },
       { name: 'operatorId', value: params.operatorId, style: 'form', explode: true, allowReserved: false },
     ]);
@@ -223,7 +212,6 @@ async set(body: SetDefaultStorageProviderBindingRequest): Promise<StorageProvide
 }
 
 export interface DriveStorageProviderBindingsListParams {
-  tenantId: string;
   spaceId?: string;
   providerId?: string;
   lifecycleStatus?: 'active' | 'disabled' | 'deleted';
@@ -240,12 +228,11 @@ export class DriveStorageProviderBindingsApi {
 
 
 /** List Drive storage provider bindings */
-  async list(params: DriveStorageProviderBindingsListParams): Promise<StorageProviderBindingListResponse> {
+  async list(params?: DriveStorageProviderBindingsListParams): Promise<StorageProviderBindingListResponse> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-      { name: 'spaceId', value: params.spaceId, style: 'form', explode: true, allowReserved: false },
-      { name: 'providerId', value: params.providerId, style: 'form', explode: true, allowReserved: false },
-      { name: 'lifecycleStatus', value: params.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
+      { name: 'spaceId', value: params?.spaceId, style: 'form', explode: true, allowReserved: false },
+      { name: 'providerId', value: params?.providerId, style: 'form', explode: true, allowReserved: false },
+      { name: 'lifecycleStatus', value: params?.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<StorageProviderBindingListResponse>(appendQueryString(customApiPath(`/drive/storage/bindings`), query));
   }

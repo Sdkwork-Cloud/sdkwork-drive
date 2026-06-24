@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import ArchiveEntryListResponse, ChangeListResponse, CommentListResponse, CommentRepliesDeleteResponse, CommentReplyListResponse, CommentsDeleteResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateSpaceRequest, CreateUploadSessionRequest, DeleteNodeResponse, DeleteSpaceResponse, DeleteVersionResponse, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DrivePermission, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermissionListResponse, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, ListSpacesResponse, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodeListResponse, NodePathResponse, PermissionListResponse, PermissionsDeleteResponse, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, ProblemDetail, QuotaSummary, ShareLinkListResponse, ShareLinksRevokeResponse, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, UploadSessionMutationResponse, VersionListResponse
+from ..models import ArchiveEntryListResponse, ChangeListResponse, ClaimShareLinkResponse, CommentListResponse, CommentRepliesDeleteResponse, CommentReplyListResponse, CommentsDeleteResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, DeleteNodeResponse, DeleteSpaceResponse, DeleteVersionResponse, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DrivePermission, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermissionListResponse, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, ListSpacesResponse, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodeListResponse, NodePathResponse, PermissionListResponse, PermissionsDeleteResponse, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, ProblemDetail, QuotaSummary, ShareLinkListResponse, ShareLinksRevokeResponse, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, UploadSessionMutationResponse, VersionListResponse
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -197,6 +197,7 @@ class DriveApi:
         self.nodes = DriveNodesApi(client)
         self.comments = DriveCommentsApi(client)
         self.comment_replies = DriveCommentRepliesApi(client)
+        self.download_grants = DriveDownloadGrantsApi(client)
         self.permissions = DrivePermissionsApi(client)
         self.share_links = DriveShareLinksApi(client)
         self.trash = DriveTrashApi(client)
@@ -219,7 +220,7 @@ class DriveChangesApi:
         self.start_page_token = DriveChangesStartPageTokenApi(client)
 
 
-    def list(self, space_id: Optional[str] = None, cursor: Optional[int] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> ChangeListResponse:
+    def list(self, space_id: str, cursor: Optional[int] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> ChangeListResponse:
         query = build_query_string([
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -235,7 +236,7 @@ class DriveChangesStartPageTokenApi:
         self._client = client
 
 
-    def get(self, space_id: Optional[str] = None) -> StartPageTokenResponse:
+    def get(self, space_id: str) -> StartPageTokenResponse:
         query = build_query_string([
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
@@ -432,6 +433,16 @@ class DriveCommentRepliesApi:
     def delete(self, node_id: str, comment_id: str, reply_id: str) -> CommentRepliesDeleteResponse:
         return self._client.delete(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}/replies/{serialize_path_parameter(reply_id, {'name': 'replyId', 'style': 'simple', 'explode': False})}")
 
+class DriveDownloadGrantsApi:
+    """drive drive.download_grants API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def create(self, node_id: str, body: Optional[CreateDownloadGrantRequest] = None) -> CreateDownloadUrlResponse:
+        return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/download_grants", json=body)
+
 class DrivePermissionsApi:
     """drive drive.permissions API client."""
 
@@ -480,7 +491,7 @@ class DriveShareLinksApi:
         self._client = client
 
 
-    def create(self, node_id: str, body: CreateShareLinkRequest) -> DriveShareLink:
+    def create(self, node_id: str, body: CreateShareLinkRequest) -> CreateShareLinkResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/share_links", json=body)
 
     def list(self, node_id: str, page_size: Optional[int] = None, page_token: Optional[str] = None) -> ShareLinkListResponse:
@@ -489,6 +500,9 @@ class DriveShareLinksApi:
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/share_links", query))
+
+    def claim(self, token: str) -> ClaimShareLinkResponse:
+        return self._client.post(f"/app/v3/api/drive/share_links/{serialize_path_parameter(token, {'name': 'token', 'style': 'simple', 'explode': False})}/claim")
 
     def revoke(self, share_link_id: str) -> ShareLinksRevokeResponse:
         return self._client.delete(f"/app/v3/api/drive/share_links/{serialize_path_parameter(share_link_id, {'name': 'shareLinkId', 'style': 'simple', 'explode': False})}")

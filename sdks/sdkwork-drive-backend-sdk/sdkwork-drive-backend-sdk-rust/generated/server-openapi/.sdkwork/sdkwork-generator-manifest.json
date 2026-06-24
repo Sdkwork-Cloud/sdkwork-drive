@@ -6,12 +6,13 @@
     "version": "0.1.0",
     "language": "rust",
     "sdkType": "backend",
+    "protocol": "http",
     "packageName": "sdkwork-drive-backend-sdk-generated-rust"
   },
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -35,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "4f9a0d4dfabdaece5ca3fb85328873e215d53b5473c790b1401e64b1c7e49292"
+      "sha256": "94793be76a246ac6e90d6bed774f30e57ec14c693393718dbb4313b6bced44cf"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -47,11 +48,11 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "2ed03f038d596418f629741c641d45e3863bbc164b60e8360d5de2cbc4ba05fa"
+      "sha256": "d9a8274c99b75e8e30719d1c0599758b81b4f4950932d4521543fdda4dcce086"
     },
     {
       "path": "src/api/labels.rs",
-      "sha256": "3c757ebbc172379ca4f66b54f934e911d2c901089e2e8b660a90f478af3ee26a"
+      "sha256": "7c4d9f9993aa35ec3b54101759ed4dbd35764ce898cb6d0623d8be3d945953c7"
     },
     {
       "path": "src/api/mod.rs",
@@ -63,11 +64,11 @@
     },
     {
       "path": "src/client.rs",
-      "sha256": "fa93216c1b2bfea23f6d6625cde4e29581e83df8f36d61133b11faaa1c2ea360"
+      "sha256": "9b837fa05cc424e94f8f354934bb12de65c74ef065e2e51a54186752d70ddb36"
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "71567159850fdd8b855c72439bf9d9104151dcd8a6ed687918b6015ce86b1c94"
+      "sha256": "ffd88587750661cd174b1d0bae02a876d24f8537acdccaa67e297a549d0a927e"
     },
     {
       "path": "src/http/mod.rs",
@@ -75,7 +76,7 @@
     },
     {
       "path": "src/lib.rs",
-      "sha256": "c1dab4a8eab2ddc82292e3f238479a05575b5ce8c22925188d911c94925f21c4"
+      "sha256": "c67abc7a6cddaf423548f19a294220412e073b3595fcdb4052f57afc1bc12e8f"
     },
     {
       "path": "src/models/audit_event_page.rs",
@@ -95,7 +96,7 @@
     },
     {
       "path": "src/models/create_label_request.rs",
-      "sha256": "fc162ec7afc3a4789ed03906bc2349e35c44e1d07c450f686270ae89e82d6b46"
+      "sha256": "f7fd94a66c98897227659a66e893d5f9586398ab2999e038a53766e009460bfe"
     },
     {
       "path": "src/models/create_storage_provider_request.rs",
@@ -187,7 +188,7 @@
     },
     {
       "path": "src/models/set_default_storage_provider_binding_request.rs",
-      "sha256": "2cbb9f218b7ee55a318e91e6d4b6d268815260895cd1c04768c9e498468f9e51"
+      "sha256": "7a624f9bbd02c9077441b29ab35323e73b64eaace18cecc048a36a28a59c2e6f"
     },
     {
       "path": "src/models/storage_provider_binding.rs",
@@ -223,7 +224,7 @@
     },
     {
       "path": "src/models/update_label_request.rs",
-      "sha256": "91eb9d969d030adde88e3cfd630c5682b68925242a59ebea22d2a98201b0ccc9"
+      "sha256": "6b52210f78e6792951d445379492f616521943c3e55533787072bf8f1ab8c095"
     },
     {
       "path": "src/models/update_storage_provider_request.rs",

@@ -1,6 +1,7 @@
 use sdkwork_drive_config::{is_blocked_upload_content_type, UploadContentPolicyMode};
 use sdkwork_drive_workspace_service::application::upload_content_policy::{
-    enforce_upload_content_policy, UploadContentPolicyContext,
+    evaluate_upload_content_policy, enforce_upload_content_policy,
+    UploadContentPolicyContext, UploadContentPolicyDecision,
 };
 use sdkwork_drive_workspace_service::DriveServiceError;
 
@@ -52,6 +53,16 @@ async fn upload_content_policy_matrix() {
     enforce_upload_content_policy(&safe_context())
         .await
         .expect("safe uploads should pass upload content policy");
+
+    std::env::set_var("SDKWORK_DRIVE_CONTENT_SCAN_MODE", "quarantine");
+    assert_eq!(
+        evaluate_upload_content_policy(&blocked_context()),
+        UploadContentPolicyDecision::Quarantine
+    );
+    let quarantine_error = enforce_upload_content_policy(&blocked_context())
+        .await
+        .expect_err("quarantine mode should reject blocked MIME uploads");
+    assert!(matches!(quarantine_error, DriveServiceError::Validation(message) if message.contains("quarantined")));
 
     std::env::remove_var("SDKWORK_DRIVE_RUNTIME_PROFILE");
     std::env::remove_var("SDKWORK_DRIVE_UPLOAD_CONTENT_POLICY_MODE");

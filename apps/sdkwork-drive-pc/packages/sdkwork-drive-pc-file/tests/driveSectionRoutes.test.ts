@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildShareLinkClaimPath,
   drivePathToSection,
   driveSectionToPath,
+  isShareLinkClaimPath,
+  parseShareLinkClaimToken,
   resolveDriveSectionPath,
 } from '../src/routing/driveSectionRoutes';
 
@@ -26,5 +29,26 @@ describe('drive section routes', () => {
 
   it('normalizes unknown paths to the default section path', () => {
     expect(resolveDriveSectionPath('/unknown')).toBe('/my-storage');
+  });
+
+  it('preserves share link claim paths for authenticated deep links', () => {
+    expect(buildShareLinkClaimPath('claim-share-token')).toBe('/share/claim-share-token');
+    expect(parseShareLinkClaimToken('/share/claim-share-token')).toBe('claim-share-token');
+    expect(isShareLinkClaimPath('/share/claim-share-token')).toBe(true);
+    expect(resolveDriveSectionPath('/share/claim-share-token')).toBe('/share/claim-share-token');
+    expect(drivePathToSection('/share/claim-share-token')).toBe('shared');
+  });
+
+  it('encodes share tokens with reserved path characters', () => {
+    const token = 'token/with spaces+plus';
+    expect(buildShareLinkClaimPath(token)).toBe(`/share/${encodeURIComponent(token)}`);
+    expect(parseShareLinkClaimToken(buildShareLinkClaimPath(token))).toBe(token);
+  });
+
+  it('rejects empty or malformed share claim paths', () => {
+    expect(buildShareLinkClaimPath('')).toBe('/share');
+    expect(parseShareLinkClaimToken('/share/')).toBe(null);
+    expect(parseShareLinkClaimToken('/share')).toBe(null);
+    expect(isShareLinkClaimPath('/shared')).toBe(false);
   });
 });

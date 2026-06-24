@@ -2,16 +2,20 @@ use crate::error::{problem, ProblemDetail};
 use crate::validators::{normalize_optional_text, require_query_value, validate_subject_type};
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_drive_config::is_production_runtime_profile;
 use sdkwork_drive_security::DriveAppContext;
 
 #[derive(Debug, Clone)]
 pub(crate) struct DriveRequestContext {
     pub(crate) tenant_id: String,
     pub(crate) user_id: String,
+    pub(crate) organization_id: Option<String>,
     pub(crate) app_id: Option<String>,
     pub(crate) actor_id: String,
     pub(crate) subject_type: String,
     pub(crate) subject_id: String,
+    pub(crate) request_id: String,
+    pub(crate) trace_id: String,
     from_token: bool,
 }
 
@@ -20,12 +24,37 @@ impl DriveRequestContext {
         Self {
             tenant_id: app_context.tenant_id.clone(),
             user_id: app_context.user_id.clone(),
+            organization_id: app_context.organization_id.clone(),
             app_id: app_context.app_id.clone(),
             actor_id: app_context.actor_id.clone(),
             subject_type: app_context.actor_kind.clone(),
             subject_id: app_context.user_id.clone(),
+            request_id: app_context.request_id.clone(),
+            trace_id: app_context.trace_id.clone(),
             from_token: true,
         }
+    }
+
+    pub(crate) fn problem(
+        &self,
+        status: StatusCode,
+        title: &str,
+        detail: impl Into<String>,
+        code: &str,
+    ) -> (StatusCode, Json<ProblemDetail>) {
+        let ids = sdkwork_drive_http::problem_correlation::current_problem_correlation();
+        let request_id =
+            if ids.request_id == sdkwork_drive_http::problem_correlation::UNSET_REQUEST_ID {
+                self.request_id.as_str()
+            } else {
+                ids.request_id.as_str()
+            };
+        let trace_id = if ids.trace_id == sdkwork_drive_http::problem_correlation::UNSET_TRACE_ID {
+            self.trace_id.as_str()
+        } else {
+            ids.trace_id.as_str()
+        };
+        crate::error::problem_with_ids(status, title, detail, code, request_id, trace_id)
     }
 
     pub(crate) fn resolve_tenant_id(&self) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
@@ -48,6 +77,12 @@ impl DriveRequestContext {
         match normalize_optional_text(requested) {
             Some(value) => self.ensure_actor_match(&value).map(|_| value),
             None if self.from_token => Ok(self.actor_id.clone()),
+            None if is_production_runtime_profile() => Err(problem(
+                StatusCode::BAD_REQUEST,
+                "validation failed",
+                "operatorId is required",
+                "drive.validation.failed",
+            )),
             None => Ok("operator-unset".to_string()),
         }
     }
@@ -111,9 +146,8 @@ impl DriveRequestContext {
         if !self.from_token || value == self.actor_id {
             return Ok(());
         }
-        Err(context_conflict(
-            "request operator does not match verified SDKWork AppContext actor",
-        ))
+        Err(self
+            .context_conflict("request operator does not match verified SDKWork AppContext actor"))
     }
 
     fn ensure_subject_type_match(
@@ -123,7 +157,7 @@ impl DriveRequestContext {
         if !self.from_token || value == self.subject_type {
             return Ok(());
         }
-        Err(context_conflict(
+        Err(self.context_conflict(
             "request subjectType does not match verified SDKWork AppContext subject type",
         ))
     }
@@ -135,7 +169,7 @@ impl DriveRequestContext {
         if !self.from_token || value == self.subject_id {
             return Ok(());
         }
-        Err(context_conflict(
+        Err(self.context_conflict(
             "request subjectId does not match verified SDKWork AppContext subject",
         ))
     }
@@ -144,9 +178,7 @@ impl DriveRequestContext {
         if !self.from_token || value == self.user_id {
             return Ok(());
         }
-        Err(context_conflict(
-            "request userId does not match verified SDKWork AppContext user",
-        ))
+        Err(self.context_conflict("request userId does not match verified SDKWork AppContext user"))
     }
 
     fn ensure_app_match(&self, value: &str) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
@@ -159,19 +191,17 @@ impl DriveRequestContext {
         if value == token_app_id {
             return Ok(());
         }
-        Err(context_conflict(
-            "request appId does not match verified SDKWork AppContext app",
-        ))
+        Err(self.context_conflict("request appId does not match verified SDKWork AppContext app"))
     }
-}
 
-fn context_conflict(detail: &str) -> (StatusCode, Json<ProblemDetail>) {
-    problem(
-        StatusCode::FORBIDDEN,
-        "forbidden",
-        detail,
-        "sdkwork.auth.context_conflict",
-    )
+    fn context_conflict(&self, detail: &str) -> (StatusCode, Json<ProblemDetail>) {
+        self.problem(
+            StatusCode::FORBIDDEN,
+            "forbidden",
+            detail,
+            "sdkwork.auth.context_conflict",
+        )
+    }
 }
 
 #[cfg(test)]
@@ -183,10 +213,13 @@ mod tests {
         let ctx = DriveRequestContext {
             tenant_id: "tenant-001".to_string(),
             user_id: "user-001".to_string(),
+            organization_id: None,
             app_id: Some("appbase".to_string()),
             actor_id: "user-001".to_string(),
             subject_type: "user".to_string(),
             subject_id: "user-001".to_string(),
+            request_id: "request-001".to_string(),
+            trace_id: "trace-001".to_string(),
             from_token: true,
         };
 
@@ -198,10 +231,13 @@ mod tests {
         let ctx = DriveRequestContext {
             tenant_id: "tenant-001".to_string(),
             user_id: "user-001".to_string(),
+            organization_id: None,
             app_id: Some("appbase".to_string()),
             actor_id: "user-001".to_string(),
             subject_type: "user".to_string(),
             subject_id: "user-001".to_string(),
+            request_id: "request-001".to_string(),
+            trace_id: "trace-001".to_string(),
             from_token: false,
         };
 
@@ -214,10 +250,13 @@ mod tests {
         let ctx = DriveRequestContext {
             tenant_id: "tenant-001".to_string(),
             user_id: "user-001".to_string(),
+            organization_id: None,
             app_id: Some("appbase".to_string()),
             actor_id: "user-001".to_string(),
             subject_type: "user".to_string(),
             subject_id: "user-001".to_string(),
+            request_id: "request-001".to_string(),
+            trace_id: "trace-001".to_string(),
             from_token: true,
         };
 
@@ -231,10 +270,13 @@ mod tests {
         let ctx = DriveRequestContext {
             tenant_id: "tenant-001".to_string(),
             user_id: "user-001".to_string(),
+            organization_id: None,
             app_id: Some("appbase".to_string()),
             actor_id: "user-001".to_string(),
             subject_type: "user".to_string(),
             subject_id: "user-001".to_string(),
+            request_id: "request-001".to_string(),
+            trace_id: "trace-001".to_string(),
             from_token: true,
         };
 
@@ -243,5 +285,33 @@ mod tests {
             ctx.resolve_uploader_user_id(None).expect("user"),
             Some("user-001".to_string())
         );
+    }
+
+    #[test]
+    fn production_requires_operator_id_when_token_context_is_missing() {
+        let previous = std::env::var("SDKWORK_DRIVE_RUNTIME_PROFILE").ok();
+        std::env::set_var("SDKWORK_DRIVE_RUNTIME_PROFILE", "production");
+        let ctx = DriveRequestContext {
+            tenant_id: "tenant-001".to_string(),
+            user_id: "user-001".to_string(),
+            organization_id: None,
+            app_id: Some("appbase".to_string()),
+            actor_id: "user-001".to_string(),
+            subject_type: "user".to_string(),
+            subject_id: "user-001".to_string(),
+            request_id: "request-001".to_string(),
+            trace_id: "trace-001".to_string(),
+            from_token: false,
+        };
+
+        let error = ctx
+            .resolve_operator_id(None)
+            .expect_err("production should require operatorId");
+        assert_eq!(error.0, StatusCode::BAD_REQUEST);
+
+        match previous {
+            Some(value) => std::env::set_var("SDKWORK_DRIVE_RUNTIME_PROFILE", value),
+            None => std::env::remove_var("SDKWORK_DRIVE_RUNTIME_PROFILE"),
+        }
     }
 }

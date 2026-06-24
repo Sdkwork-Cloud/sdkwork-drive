@@ -18,9 +18,8 @@ func NewLabelsApi(client *sdkhttp.Client) *LabelsApi {
 }
 
 // List Drive label definitions
-func (a *LabelsApi) List(tenantId string, lifecycleStatus *string, pageSize *int, pageToken *string) (sdktypes.LabelListResponse, error) {
+func (a *LabelsApi) List(lifecycleStatus *string, pageSize *int, pageToken *string) (sdktypes.LabelListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "lifecycleStatus", Value: func() interface{} { if lifecycleStatus == nil { return nil }; return *lifecycleStatus }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageToken", Value: func() interface{} { if pageToken == nil { return nil }; return *pageToken }(), Style: "form", Explode: true, AllowReserved: false},
@@ -44,11 +43,8 @@ func (a *LabelsApi) Create(body sdktypes.CreateLabelRequest) (sdktypes.DriveLabe
 }
 
 // Get a Drive label definition
-func (a *LabelsApi) Get(labelId string, tenantId string) (sdktypes.DriveLabel, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(BackendApiPath(fmt.Sprintf("/drive/labels/%s", SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), query), nil, nil)
+func (a *LabelsApi) Get(labelId string) (sdktypes.DriveLabel, error) {
+    raw, err := a.client.Get(BackendApiPath(fmt.Sprintf("/drive/labels/%s", SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
         var zero sdktypes.DriveLabel
         return zero, err
@@ -67,9 +63,8 @@ func (a *LabelsApi) Update(labelId string, body sdktypes.UpdateLabelRequest) (sd
 }
 
 // Delete a Drive label definition
-func (a *LabelsApi) Delete(labelId string, tenantId string, operatorId string) (sdktypes.DeleteLabelResponse, error) {
+func (a *LabelsApi) Delete(labelId string, operatorId string) (sdktypes.DeleteLabelResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "operatorId", Value: operatorId, Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Delete(AppendQueryString(BackendApiPath(fmt.Sprintf("/drive/labels/%s", SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), query), nil, nil)

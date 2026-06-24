@@ -1,6 +1,5 @@
 export interface CreateLabelRequest {
   id: string;
-  tenantId: string;
   labelKey: string;
   displayName: string;
   color?: string;

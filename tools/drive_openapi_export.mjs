@@ -615,12 +615,12 @@ function adminStoragePathFromBackendPath(pathKey) {
   const providerPrefix = "/backend/v3/api/drive/storage_providers";
   const bindingPath = "/backend/v3/api/drive/storage_provider_bindings/default";
   if (pathKey === bindingPath) {
-    return "/admin/v3/api/drive/storage/bindings/default";
+    return "/backend/v3/api/drive/storage/bindings/default";
   }
   if (pathKey.startsWith(providerPrefix)) {
     return pathKey.replace(
       providerPrefix,
-      "/admin/v3/api/drive/storage/providers",
+      "/backend/v3/api/drive/storage/providers",
     );
   }
   return null;
@@ -720,7 +720,7 @@ function addAdminStorageBucketDiscoveryOpenapi(targetDocument) {
       },
     },
   };
-  targetDocument.paths["/admin/v3/api/drive/storage/providers/{providerId}/buckets"] = {
+  targetDocument.paths["/backend/v3/api/drive/storage/providers/{providerId}/buckets"] = {
     get: {
       tags: ["storageAdmin"],
       summary: "List buckets visible to a Drive storage provider account",
@@ -778,7 +778,7 @@ function addAdminStorageBindingManagementOpenapi(targetDocument) {
     },
   };
 
-  targetDocument.paths["/admin/v3/api/drive/storage/bindings"] = {
+  targetDocument.paths["/backend/v3/api/drive/storage/bindings"] = {
     get: {
       tags: ["storageAdmin"],
       summary: "List Drive storage provider bindings",
@@ -831,9 +831,9 @@ function addAdminStorageBindingManagementOpenapi(targetDocument) {
     },
   };
 
-  targetDocument.paths["/admin/v3/api/drive/storage/bindings/default"] =
-    targetDocument.paths["/admin/v3/api/drive/storage/bindings/default"] || {};
-  targetDocument.paths["/admin/v3/api/drive/storage/bindings/default"].delete = {
+  targetDocument.paths["/backend/v3/api/drive/storage/bindings/default"] =
+    targetDocument.paths["/backend/v3/api/drive/storage/bindings/default"] || {};
+  targetDocument.paths["/backend/v3/api/drive/storage/bindings/default"].delete = {
     tags: ["storageAdmin"],
     summary: "Delete a Drive default storage provider binding",
     operationId: "storageProviderBindings.default.delete",
@@ -1317,27 +1317,27 @@ function normalizeObjectKeyPathParameters(document) {
 }
 
 function normalizeAdminStorageMutationOperatorContract(document) {
-  if (!document.paths?.["/admin/v3/api/drive/storage/providers/{providerId}/objects/copy"]) {
+  if (!document.paths?.["/backend/v3/api/drive/storage/providers/{providerId}/objects/copy"]) {
     return;
   }
   ensureAdminStorageMutationQueryOperator(
     document,
-    "/admin/v3/api/drive/storage/providers/{providerId}/bucket",
+    "/backend/v3/api/drive/storage/providers/{providerId}/bucket",
     "put",
   );
   ensureAdminStorageMutationQueryOperator(
     document,
-    "/admin/v3/api/drive/storage/providers/{providerId}/bucket",
+    "/backend/v3/api/drive/storage/providers/{providerId}/bucket",
     "delete",
   );
   ensureAdminStorageMutationQueryOperator(
     document,
-    "/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
+    "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
     "delete",
   );
   ensureAdminStorageMutationQueryOperator(
     document,
-    "/admin/v3/api/drive/storage/bindings/default",
+    "/backend/v3/api/drive/storage/bindings/default",
     "delete",
   );
 

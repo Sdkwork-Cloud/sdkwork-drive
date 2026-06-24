@@ -1,9 +1,14 @@
-use crate::dto::{LabelSummaryResponse, NodeLabelResponse, NodePropertyResponse};
+use crate::dto::{LabelSummaryResponse, NodeLabelResponse, NodeListResponse, NodePropertyResponse};
 use crate::error::{internal_sql_error, not_found_problem, ProblemDetail};
 use crate::mappers::{map_label_summary_row, map_node_label_row, map_node_property_row};
 use axum::http::StatusCode;
 use axum::Json;
 use sqlx::AnyPool;
+use sqlx::Row;
+use std::collections::HashMap;
+
+pub(crate) const UI_FOLDER_COLOR_PROPERTY_KEY: &str = "ui.folderColor";
+const UI_FOLDER_COLOR_VISIBILITY: &str = "private";
 
 pub(crate) async fn find_node_property(
     pool: &AnyPool,
@@ -33,6 +38,95 @@ pub(crate) async fn find_node_property(
         return Err(not_found_problem("property not found"));
     };
     Ok(map_node_property_row(&row))
+}
+
+pub(crate) async fn enrich_drive_nodes_with_folder_colors(
+    pool: &AnyPool,
+    tenant_id: &str,
+    nodes: &mut [crate::dto::DriveNodeResponse],
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    let folder_ids = nodes
+        .iter()
+        .filter(|node| node.node_type == "folder")
+        .map(|node| node.id.clone())
+        .collect::<Vec<_>>();
+    if folder_ids.is_empty() {
+        return Ok(());
+    }
+
+    let colors = load_ui_folder_colors_for_nodes(pool, tenant_id, &folder_ids).await?;
+    for node in nodes.iter_mut() {
+        if node.node_type == "folder" {
+            node.folder_color = colors.get(&node.id).cloned();
+        }
+    }
+    Ok(())
+}
+
+pub(crate) async fn present_drive_node(
+    pool: &AnyPool,
+    tenant_id: &str,
+    mut node: crate::dto::DriveNodeResponse,
+) -> Result<crate::dto::DriveNodeResponse, (StatusCode, Json<ProblemDetail>)> {
+    enrich_drive_nodes_with_folder_colors(pool, tenant_id, std::slice::from_mut(&mut node)).await?;
+    Ok(node)
+}
+
+pub(crate) async fn present_node_list(
+    pool: &AnyPool,
+    tenant_id: &str,
+    mut items: Vec<crate::dto::DriveNodeResponse>,
+    next_page_token: Option<String>,
+    incomplete_page: bool,
+) -> Result<NodeListResponse, (StatusCode, Json<ProblemDetail>)> {
+    enrich_drive_nodes_with_folder_colors(pool, tenant_id, &mut items).await?;
+    Ok(NodeListResponse {
+        items,
+        next_page_token,
+        incomplete_page,
+    })
+}
+
+async fn load_ui_folder_colors_for_nodes(
+    pool: &AnyPool,
+    tenant_id: &str,
+    node_ids: &[String],
+) -> Result<HashMap<String, String>, (StatusCode, Json<ProblemDetail>)> {
+    let mut colors = HashMap::new();
+    for chunk in node_ids.chunks(100) {
+        if chunk.is_empty() {
+            continue;
+        }
+        let placeholders = (0..chunk.len())
+            .map(|index| format!("${}", index + 2))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql = format!(
+            "SELECT node_id, property_value
+             FROM dr_drive_node_property
+             WHERE tenant_id=$1
+               AND property_key='{UI_FOLDER_COLOR_PROPERTY_KEY}'
+               AND visibility='{UI_FOLDER_COLOR_VISIBILITY}'
+               AND lifecycle_status='active'
+               AND node_id IN ({placeholders})"
+        );
+        let mut query = sqlx::query(&sql).bind(tenant_id);
+        for node_id in chunk {
+            query = query.bind(node_id);
+        }
+        let rows = query
+            .fetch_all(pool)
+            .await
+            .map_err(internal_sql_error("load ui.folderColor properties failed"))?;
+        for row in rows {
+            let node_id: String = row.get("node_id");
+            let property_value: String = row.get("property_value");
+            if !property_value.trim().is_empty() {
+                colors.insert(node_id, property_value);
+            }
+        }
+    }
+    Ok(colors)
 }
 
 pub(crate) async fn find_label(

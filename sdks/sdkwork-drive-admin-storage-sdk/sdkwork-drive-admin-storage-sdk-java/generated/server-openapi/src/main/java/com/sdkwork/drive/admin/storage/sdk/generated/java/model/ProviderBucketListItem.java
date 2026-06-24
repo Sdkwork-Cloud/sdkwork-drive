@@ -9,7 +9,7 @@ public class ProviderBucketListItem {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -17,7 +17,7 @@ public class ProviderBucketListItem {
     public Boolean getConfigured() {
         return this.configured;
     }
-    
+
     public void setConfigured(Boolean configured) {
         this.configured = configured;
     }
@@ -25,7 +25,7 @@ public class ProviderBucketListItem {
     public Integer getCreationDateEpochMs() {
         return this.creationDateEpochMs;
     }
-    
+
     public void setCreationDateEpochMs(Integer creationDateEpochMs) {
         this.creationDateEpochMs = creationDateEpochMs;
     }

@@ -29,6 +29,7 @@ pub async fn install_any_schema(pool: &AnyPool, engine: DatabaseEngine) -> Resul
         DatabaseEngine::Sqlite => {
             sqlx::raw_sql(SQLITE_CORE_SQL).execute(pool).await?;
             upgrade_sqlite_dr_drive_node_head_columns(pool).await?;
+            upgrade_sqlite_dr_drive_node_share_link_access_code_column(pool).await?;
         }
         DatabaseEngine::Postgresql => {
             sqlx::raw_sql(POSTGRES_CORE_SQL).execute(pool).await?;
@@ -62,6 +63,23 @@ async fn upgrade_sqlite_dr_drive_node_head_columns(pool: &AnyPool) -> Result<(),
         }
     }
 
+    Ok(())
+}
+
+async fn upgrade_sqlite_dr_drive_node_share_link_access_code_column(
+    pool: &AnyPool,
+) -> Result<(), sqlx::Error> {
+    let exists: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1) FROM pragma_table_info('dr_drive_node_share_link') WHERE name = ?",
+    )
+    .bind("access_code_hash")
+    .fetch_one(pool)
+    .await?;
+    if exists == 0 {
+        sqlx::query("ALTER TABLE dr_drive_node_share_link ADD COLUMN access_code_hash TEXT")
+            .execute(pool)
+            .await?;
+    }
     Ok(())
 }
 

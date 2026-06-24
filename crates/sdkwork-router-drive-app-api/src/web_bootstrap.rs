@@ -14,7 +14,11 @@ use crate::app_context::DriveRequestContext;
 use crate::http_route_manifest::app_route_manifest;
 
 pub fn drive_app_public_path_prefixes() -> Vec<String> {
-    vec!["/healthz".to_owned(), "/metrics".to_owned()]
+    vec![
+        "/healthz".to_owned(),
+        "/readyz".to_owned(),
+        "/metrics".to_owned(),
+    ]
 }
 
 #[derive(Clone, Default)]
@@ -26,7 +30,11 @@ impl DomainContextInjector for DriveAppContextInjector {
             return;
         };
 
-        let app_context = drive_app_context_from_web_principal(principal, context);
+        let mut app_context = drive_app_context_from_web_principal(principal, context);
+        sdkwork_drive_http::web_app_context::apply_trace_id_from_transport(
+            request.headers(),
+            &mut app_context,
+        );
         let drive_context = DriveRequestContext::from_app_context(&app_context);
         request.extensions_mut().insert(app_context);
         request.extensions_mut().insert(drive_context);
@@ -75,7 +83,7 @@ pub fn drive_app_context_from_web_principal(
         actor_kind,
         device_id: None,
         request_id: context.request_id.0.clone(),
-        trace_id: context.request_id.0.clone(),
+        trace_id: String::new(),
     }
 }
 

@@ -24,6 +24,7 @@ const session: SessionSnapshot = {
   context: {
     tenantId: 'tenant-001',
     userId: 'user-001',
+    organizationId: 'org-001',
     actorId: 'actor-001',
     actorKind: 'user',
   },
@@ -166,6 +167,10 @@ function createDesktopHost(
     readLocalUploadRange: async () => new ArrayBuffer(0),
     checksumLocalUploadFile: async () => 'sha256:0',
     saveDownloadFile: async () => true,
+    beginDownloadSave: async () => 'session-test',
+    writeDownloadChunk: async () => undefined,
+    finishDownloadSave: async () => true,
+    abortDownloadSave: async () => undefined,
   };
 }
 
@@ -280,6 +285,11 @@ describe('drive file service', () => {
       expect.objectContaining({
         operationId: 'favorites.list',
         signal: listAbortController.signal,
+      }),
+      expect.objectContaining({
+        operationId: 'nodeProperties.list',
+        signal: listAbortController.signal,
+        pathParams: { nodeId: 'folder-001' },
       }),
     ]);
   });
@@ -614,6 +624,92 @@ describe('drive file service', () => {
       body: {
       },
     });
+  });
+
+  it('lists move/copy destination folders from the source space and excludes selected nodes', async () => {
+    const requests: DriveAppSdkRequest[] = [];
+    const nestedFolder = {
+      id: 'folder-nested',
+      spaceId: 'my-storage',
+      parentNodeId: 'folder-001',
+      nodeType: 'folder',
+      nodeName: 'Archive',
+      lifecycleStatus: 'active',
+      version: 1,
+    };
+    const appSdkClient = attachUploader({
+      metadata: {} as DriveAppSdkClient['metadata'],
+      operations: {} as DriveAppSdkClient['operations'],
+      request: vi.fn(async (request: DriveAppSdkRequest) => {
+        requests.push(request);
+        if (request.operationId === 'nodes.list') {
+          const parentId = request.query?.parentNodeId;
+          if (!parentId) {
+            return { items: [folderNode, fileNode] };
+          }
+          if (parentId === 'folder-001') {
+            return { items: [nestedFolder] };
+          }
+          return { items: [] };
+        }
+        return {};
+      }) as DriveAppSdkClient['request'],
+    });
+    const service = createDriveFileService({
+      appSdkClient,
+      getSession: () => session,
+    });
+
+    const folders = await service.listMoveCopyDestinationFolders(
+      [{ id: 'file-001', spaceId: 'my-storage' }],
+      'my-storage',
+    );
+
+    expect(folders.map((folder) => folder.id)).toEqual(['folder-001', 'folder-nested']);
+    expect(requests.filter((request) => request.operationId === 'nodes.list').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('does not offer descendant folders as move destinations when moving a folder', async () => {
+    const requests: DriveAppSdkRequest[] = [];
+    const nestedFolder = {
+      id: 'folder-nested',
+      spaceId: 'my-storage',
+      parentNodeId: 'folder-001',
+      nodeType: 'folder',
+      nodeName: 'Archive',
+      lifecycleStatus: 'active',
+      version: 1,
+    };
+    const appSdkClient = attachUploader({
+      metadata: {} as DriveAppSdkClient['metadata'],
+      operations: {} as DriveAppSdkClient['operations'],
+      request: vi.fn(async (request: DriveAppSdkRequest) => {
+        requests.push(request);
+        if (request.operationId === 'nodes.list') {
+          const parentId = request.query?.parentNodeId;
+          if (!parentId) {
+            return { items: [folderNode] };
+          }
+          if (parentId === 'folder-001') {
+            return { items: [nestedFolder] };
+          }
+          return { items: [] };
+        }
+        return {};
+      }) as DriveAppSdkClient['request'],
+    });
+    const service = createDriveFileService({
+      appSdkClient,
+      getSession: () => session,
+    });
+
+    const folders = await service.listMoveCopyDestinationFolders(
+      [{ id: 'folder-001', spaceId: 'my-storage' }],
+      'my-storage',
+    );
+
+    expect(folders.map((folder) => folder.id)).not.toContain('folder-nested');
+    expect(folders.map((folder) => folder.id)).not.toContain('folder-001');
   });
 
   it('rejects write operations from aggregate Drive views before calling the App SDK', async () => {
@@ -1089,6 +1185,10 @@ describe('drive file service', () => {
         query: expect.objectContaining({
           spaceId: 'space-git-repository-001',
         }),
+      }),
+      expect.objectContaining({
+        operationId: 'nodeProperties.list',
+        pathParams: { nodeId: 'folder-git-repository-sdkwork-drive' },
       }),
     ]);
     expect(
@@ -2329,8 +2429,8 @@ describe('drive file service', () => {
     expect(requests.find((request) => request.operationId === 'spaces.create')).toMatchObject({
       signal: createAbortController.signal,
       body: {
-        ownerSubjectType: 'group',
-        ownerSubjectId: expect.any(String),
+        ownerSubjectType: 'organization',
+        ownerSubjectId: 'org-001',
         displayName: 'Design Team',
         spaceType: 'team',
         presentationIcon: 'Palette',
@@ -2385,5 +2485,274 @@ describe('drive file service', () => {
     });
 
     expect(service.getSharedSpaces()).toEqual([]);
+  });
+
+  it('rejects shared space creation when organization context is missing', async () => {
+    const service = createDriveFileService({
+      appSdkClient: createFakeClient({}, []),
+      getSession: () => ({
+        ...session,
+        context: {
+          ...session.context!,
+          organizationId: undefined,
+        },
+      }),
+    });
+
+    await expect(
+      service.createSharedSpace('Design Team', 'Palette', 'blue', 'Design files'),
+    ).rejects.toThrow('Drive organization context is required to create a shared space.');
+  });
+
+  it('loads shared and knowledge base spaces from one spaces.list request', async () => {
+    const requests: DriveAppSdkRequest[] = [];
+    const appSdkClient = createFakeClient(
+      {
+        'spaces.list': {
+          items: [
+            sharedSpaceNode,
+            {
+              id: 'space-knowledge',
+              displayName: 'Product Docs',
+              spaceType: 'knowledge_base',
+              presentationIcon: 'Book',
+              presentationColor: 'green',
+            },
+          ],
+        },
+      },
+      requests,
+    );
+    const service = createDriveFileService({
+      appSdkClient,
+      getSession: () => session,
+    });
+
+    const [sharedSpaces, knowledgeBaseSpaces] = await Promise.all([
+      service.listSharedSpaces(),
+      service.listKnowledgeBaseSpaces(),
+    ]);
+
+    expect(sharedSpaces).toEqual([
+      {
+        id: 'space-marketing',
+        name: 'Marketing Assets',
+        icon: 'Palette',
+        color: 'violet',
+        description: 'Marketing collateral',
+        isCustom: true,
+      },
+    ]);
+    expect(knowledgeBaseSpaces).toEqual([
+      {
+        id: 'space-knowledge',
+        name: 'Product Docs',
+        icon: 'Book',
+        color: 'green',
+      },
+    ]);
+    expect(requests.filter((request) => request.operationId === 'spaces.list')).toHaveLength(1);
+  });
+
+  it('paginates apps section files through listFilesPage', async () => {
+    const requests: DriveAppSdkRequest[] = [];
+    const appSdkClient = createFakeClient(
+      {
+        'spaces.list': {
+          items: [gitRepositorySpaceNode],
+        },
+        'nodes.list': {
+          items: [
+            {
+              id: 'repo-001',
+              spaceId: 'space-git-repository-001',
+              nodeType: 'folder',
+              nodeName: 'sdkwork-drive',
+            },
+          ],
+          nextPageToken: 'node-page-2',
+        },
+        'favorites.list': { items: [] },
+      },
+      requests,
+    );
+    const service = createDriveFileService({
+      appSdkClient,
+      getSession: () => session,
+    });
+
+    const page = await service.listFilesPage('apps', undefined, null, {
+      pageSize: 50,
+    });
+
+    expect(page.files).toEqual([
+      expect.objectContaining({
+        id: 'repo-001',
+        name: 'sdkwork-drive',
+        type: 'folder',
+      }),
+    ]);
+    expect(page.nextPageToken).toBe('node-page-2');
+    expect(requests.some((request) => request.operationId === 'nodes.list')).toBe(true);
+  });
+
+  it('uses inline folderColor from nodes.list without nodeProperties.list fan-out', async () => {
+    const requests: DriveAppSdkRequest[] = [];
+    const appSdkClient = createFakeClient(
+      {
+        'spaces.list': {
+          items: [personalSpaceNode],
+        },
+        'nodes.list': {
+          items: [
+            {
+              id: 'folder-colored',
+              spaceId: 'my-storage',
+              nodeType: 'folder',
+              nodeName: 'Colored',
+              folderColor: 'emerald',
+              lifecycleStatus: 'active',
+              version: 1,
+            },
+          ],
+        },
+        'favorites.list': { items: [] },
+      },
+      requests,
+    );
+    const service = createDriveFileService({
+      appSdkClient,
+      getSession: () => session,
+    });
+
+    const page = await service.listFilesPage('my-storage', undefined, undefined, {});
+
+    expect(page.files[0]).toEqual(expect.objectContaining({
+      id: 'folder-colored',
+      color: 'emerald',
+    }));
+    expect(requests.some((request) => request.operationId === 'nodeProperties.list')).toBe(false);
+  });
+
+  it('lists and revokes share links through the generated Drive App SDK surface', async () => {
+    const requests: DriveAppSdkRequest[] = [];
+    const appSdkClient = createFakeClient(
+      {
+        'shareLinks.list': {
+          items: [
+            {
+              id: 'share-link-001',
+              nodeId: 'node-001',
+              role: 'reader',
+              downloadCount: 0,
+              accessCodeRequired: false,
+              lifecycleStatus: 'active',
+              version: 1,
+            },
+          ],
+        },
+        'shareLinks.revoke': {
+          revoked: true,
+        },
+      },
+      requests,
+    );
+    const service = createDriveFileService({
+      appSdkClient,
+      getSession: () => session,
+    });
+
+    const links = await service.listShareLinks('node-001');
+    const revoked = await service.revokeShareLink('share-link-001');
+
+    expect(links).toEqual([
+      expect.objectContaining({
+        id: 'share-link-001',
+        nodeId: 'node-001',
+        role: 'reader',
+      }),
+    ]);
+    expect(revoked).toBe(true);
+    expect(requests.map((request) => request.operationId)).toEqual([
+      'shareLinks.list',
+      'shareLinks.revoke',
+    ]);
+  });
+
+  it('claims share links through the generated Drive App SDK surface', async () => {
+    const requests: DriveAppSdkRequest[] = [];
+    const appSdkClient = createFakeClient(
+      {
+        'shareLinks.claim': {
+          shareLinkId: 'share-claim',
+          nodeId: 'node-shared',
+          spaceId: 'space-shared',
+          role: 'reader',
+          permissionId: 'perm-claim',
+          alreadyClaimed: false,
+        },
+      },
+      requests,
+    );
+    const service = createDriveFileService({
+      appSdkClient,
+      getSession: () => session,
+    });
+
+    const result = await service.claimShareLink('claim-share-token');
+
+    expect(result).toEqual({
+      shareLinkId: 'share-claim',
+      nodeId: 'node-shared',
+      spaceId: 'space-shared',
+      role: 'reader',
+      permissionId: 'perm-claim',
+      alreadyClaimed: false,
+    });
+    expect(requests).toEqual([
+      expect.objectContaining({
+        operationId: 'shareLinks.claim',
+        pathParams: { token: 'claim-share-token' },
+      }),
+    ]);
+  });
+
+  it('creates share links with extraction codes through the generated Drive App SDK surface', async () => {
+    const requests: DriveAppSdkRequest[] = [];
+    const appSdkClient = createFakeClient(
+      {
+        'shareLinks.create': {
+          id: 'share-access-code',
+          token: 'share-token-with-access-code-123456789012345678901234567890',
+          role: 'reader',
+          accessCodeRequired: true,
+          downloadCount: 0,
+          lifecycleStatus: 'active',
+        },
+      },
+      requests,
+    );
+    const service = createDriveFileService({
+      appSdkClient,
+      getSession: () => session,
+    });
+
+    const created = await service.createShareLink('node-shared', {
+      role: 'reader',
+      accessCode: 'extract-42',
+    });
+
+    expect(created.accessCodeRequired).toBe(true);
+    expect(created.token).toContain('share-token-with-access-code');
+    expect(requests).toEqual([
+      expect.objectContaining({
+        operationId: 'shareLinks.create',
+        pathParams: { nodeId: 'node-shared' },
+        body: expect.objectContaining({
+          role: 'reader',
+          accessCode: 'extract-42',
+        }),
+      }),
+    ]);
   });
 });

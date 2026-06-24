@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::app_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{ArchiveEntryListResponse, ChangeListResponse, CommentListResponse, CommentRepliesDeleteResponse, CommentReplyListResponse, CommentsDeleteResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateSpaceRequest, CreateUploadSessionRequest, DeleteNodeResponse, DeleteSpaceResponse, DeleteVersionResponse, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DrivePermission, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermissionListResponse, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, ListSpacesResponse, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodeListResponse, NodePathResponse, PermissionListResponse, PermissionsDeleteResponse, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignUploadPartRequest, PresignedUploadPart, ProblemDetail, QuotaSummary, ShareLinkListResponse, ShareLinksRevokeResponse, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploadSessionMutationResponse, UploaderUploadPart, VersionListResponse};
+use crate::models::{ArchiveEntryListResponse, ChangeListResponse, ClaimShareLinkResponse, CommentListResponse, CommentRepliesDeleteResponse, CommentReplyListResponse, CommentsDeleteResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, DeleteNodeResponse, DeleteSpaceResponse, DeleteVersionResponse, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DrivePermission, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermissionListResponse, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, ListSpacesResponse, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodeListResponse, NodePathResponse, PermissionListResponse, PermissionsDeleteResponse, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignUploadPartRequest, PresignedUploadPart, ProblemDetail, QuotaSummary, ShareLinkListResponse, ShareLinksRevokeResponse, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploadSessionMutationResponse, UploaderUploadPart, VersionListResponse};
 
 #[derive(Clone)]
 pub struct DriveApi {
@@ -15,7 +15,7 @@ impl DriveApi {
         Self { client }
     }
 
-    pub async fn changes_list(&self, space_id: Option<&str>, cursor: Option<i64>, page_size: Option<i64>, page_token: Option<&str>) -> Result<ChangeListResponse, SdkworkError> {
+    pub async fn changes_list(&self, space_id: &str, cursor: Option<i64>, page_size: Option<i64>, page_token: Option<&str>) -> Result<ChangeListResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
@@ -26,7 +26,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn changes_start_page_token_get(&self, space_id: Option<&str>) -> Result<StartPageTokenResponse, SdkworkError> {
+    pub async fn changes_start_page_token_get(&self, space_id: &str) -> Result<StartPageTokenResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
         ]);
@@ -150,6 +150,11 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
+    pub async fn download_grants_create(&self, node_id: &str, body: &CreateDownloadGrantRequest) -> Result<CreateDownloadUrlResponse, SdkworkError> {
+        let path = app_path(&format!("/drive/nodes/{}/download_grants", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
     pub async fn favorites_set(&self, node_id: &str, body: &FavoriteNodeRequest) -> Result<FavoriteNodeResponse, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/favorite", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.put(&path, Some(body), None, None, Some("application/json")).await
@@ -208,7 +213,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn share_links_create(&self, node_id: &str, body: &CreateShareLinkRequest) -> Result<DriveShareLink, SdkworkError> {
+    pub async fn share_links_create(&self, node_id: &str, body: &CreateShareLinkRequest) -> Result<CreateShareLinkResponse, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/share_links", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
@@ -280,6 +285,11 @@ impl DriveApi {
         ]);
         let path = append_query_string(app_path(&"/drive/search".to_string()), &query);
         self.client.get(&path, None, None).await
+    }
+
+    pub async fn share_links_claim(&self, token: &str) -> Result<ClaimShareLinkResponse, SdkworkError> {
+        let path = app_path(&format!("/drive/share_links/{}/claim", serialize_path_parameter(token, PathParameterSpec::new("token", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
     pub async fn share_links_revoke(&self, share_link_id: &str) -> Result<ShareLinksRevokeResponse, SdkworkError> {

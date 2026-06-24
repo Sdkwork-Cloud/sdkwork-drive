@@ -94,6 +94,10 @@ describe('desktop architecture contract', () => {
       'packages/sdkwork-drive-pc-core/src/host/hostAdapter.ts',
       'packages/sdkwork-drive-pc-core/src/services/driveFileService.ts',
       'packages/sdkwork-drive-pc-core/src/runtime/DriveRuntimeProvider.tsx',
+      'packages/sdkwork-drive-pc-drive/package.json',
+      'packages/sdkwork-drive-pc-drive/specs/component.spec.json',
+      'packages/sdkwork-drive-pc-drive/src/createHostManagedDriveRuntime.ts',
+      'packages/sdkwork-drive-pc-drive/src/sdkPorts.ts',
       'packages/sdkwork-drive-pc-admin-core/package.json',
       'packages/sdkwork-drive-pc-admin-core/src/index.ts',
       'packages/sdkwork-drive-pc-admin-core/src/sdk/driveAdminStorageSdkClient.ts',
@@ -118,6 +122,10 @@ describe('desktop architecture contract', () => {
     expect(coreSource).toContain('resolveDriveAuthGateDecision');
     expect(coreSource).toContain('createHostAdapter');
     expect(coreSource).toContain('createDriveFileService');
+
+    const driveHostModule = read('packages/sdkwork-drive-pc-drive/src/createHostManagedDriveRuntime.ts');
+    expect(driveHostModule).toContain('getConfiguredDriveAppSdkClient');
+    expect(driveHostModule).not.toMatch(/\bfetch\s*\(/);
   });
 
   it('declares scoped Drive SDK package facades in app and core component specs', () => {
@@ -289,6 +297,9 @@ describe('desktop architecture contract', () => {
   it('routes feature file workflows through an injected App SDK-backed file service boundary', () => {
     const drivePage = read('packages/sdkwork-drive-pc-file/src/pages/DrivePage.tsx');
     const fileBrowser = read('packages/sdkwork-drive-pc-file/src/components/FileBrowser.tsx');
+    const fileBrowserUploadQueue = read(
+      'packages/sdkwork-drive-pc-file/src/components/fileBrowserUploadQueue.ts',
+    );
     const driveFileService = read('packages/sdkwork-drive-pc-core/src/services/driveFileService.ts');
     const drivePageParams = drivePage.match(
       /export function DrivePage\(\{[\s\S]*?\}: DrivePageProps\)/,
@@ -304,20 +315,31 @@ describe('desktop architecture contract', () => {
     expect(fileBrowser).not.toContain('files?.[0]');
     expect(fileBrowser).toContain('e.target.files ? Array.from(e.target.files) : []');
     expect(fileBrowser).toContain('multiple');
-    expect(fileBrowser).toContain('fileService.uploadFile(source, activeSection, currentFolderId, {');
-    expect(fileBrowser).toContain('taskId: newUploadJob.id');
+    expect(fileBrowser).toContain('fileBrowserUploadQueue');
+    expect(fileBrowser).toContain('queueFileBrowserUploads');
+    expect(fileBrowserUploadQueue).toContain(
+      'fileService.uploadFile(source, activeSection, currentFolderId, {',
+    );
+    expect(fileBrowserUploadQueue).toContain('taskId: job.id');
     expect(fileBrowser).toContain('host.isNativeHost');
     expect(fileBrowser).toContain('pickLocalUploadFiles');
-    expect(fileBrowser).toContain('signal: uploadController.signal');
+    expect(fileBrowserUploadQueue).toContain('signal: uploadController.signal');
     expect(fileBrowser).toContain('loadAbortControllerRef.current?.abort()');
-    expect(fileBrowser).toContain('fileService.listFilesPage(activeSection, searchQuery, currentFolderId, {');
+    expect(fileBrowser).toContain('fileService.listFilesPage(activeSection, debouncedSearchQuery, currentFolderId, {');
+    expect(fileBrowser).toContain('debouncedSearchQuery');
+    expect(fileBrowser).toContain('setDebouncedSearchQuery(searchQuery)');
+    expect(fileBrowser).toContain('fileBrowser.permanentDeleteConfirm');
+    expect(fileBrowser).toContain('fileBrowser.permanentDeleteBatchConfirm');
+    expect(fileBrowser).toContain('fileBrowser.batchSelectedCount');
+    expect(fileBrowser).toContain('fileBrowser.batchOperationFailed');
+    expect(fileBrowser).toContain('fileBrowser.sectionUploadUnsupported');
     expect(fileBrowser).toContain('pageSize: FILE_BROWSER_PAGE_SIZE');
     expect(fileBrowser).toContain('pageToken: nextPageToken');
     expect(driveFileService).toContain('listFilesPage(');
     expect(fileBrowser).toContain('fileService.getFolderPath(currentFolderId, {');
     expect(fileBrowser).not.toContain('fileService.getAllWorkspaceFiles({');
     expect(fileBrowser).toContain('signal: loadAbortController.signal');
-    expect(fileBrowser).toContain('isDriveUploadAbortError(err)');
+    expect(fileBrowser).toContain('isDriveAbortError(err)');
     expect(driveFileService).toContain('export interface DriveFileReadOptions');
     expect(driveFileService).toContain('getAllWorkspaceFiles(options?: DriveFileReadOptions)');
     expect(driveFileService).toContain('getFolderPath(folderId: string, options?: DriveFileReadOptions)');
@@ -370,12 +392,12 @@ describe('desktop architecture contract', () => {
     expect(fileBrowser).toContain('signal: renameController.signal');
     expect(fileBrowser).toContain('const colorController = createFileWriteAbortController(`folder-color-${folderId}`)');
     expect(fileBrowser).toContain('signal: colorController.signal');
-    expect(fileBrowser).toContain('isDriveUploadAbortError(err)');
+    expect(fileBrowser).toContain('isDriveAbortError(err)');
     expect(fileDetailModal).toContain('headerRenameAbortControllerRef.current?.abort()');
     expect(fileDetailModal).toContain('const headerRenameAbortController = new AbortController()');
     expect(fileDetailModal).toContain('fileService.renameFile(file.id, trimmed, {');
     expect(fileDetailModal).toContain('signal: headerRenameAbortController.signal');
-    expect(fileDetailModal).toContain('isDrivePreviewAbortError(err)');
+    expect(fileDetailModal).toContain('isDriveAbortError(err)');
   });
 
   it('keeps raw Tauri access out of web UI and feature packages', () => {
@@ -472,7 +494,9 @@ describe('desktop architecture contract', () => {
     expect(zipModule).toContain('extractionAbortControllerRef.current?.abort()');
     expect(zipModule).toContain('signal: archiveListAbortController.signal');
     expect(zipModule).toContain('signal: extractionAbortController.signal');
-    expect(zipModule).toContain('isDriveArchiveAbortError');
+    expect(zipModule).toContain('isDriveAbortError');
+    expect(zipModule).toContain('useTranslation');
+    expect(zipModule).toContain("t('previewModules.archiveLoadFailed')");
     expect(zipModule).not.toContain('not exposed by the Drive App API');
     expect(zipModule).not.toContain('requires a backend extraction contract');
     expect(fileDetailModal).toContain('const isArchivePreview');
@@ -511,6 +535,8 @@ describe('desktop architecture contract', () => {
     expect(fileDetailModal).toContain('isTrashSection = false');
     expect(fileDetailModal).toContain('{!isTrashSection && (');
     expect(fileDetailModal).toContain('isReadOnly={isTrashSection}');
+    expect(fileDetailModal).toContain("t('fileDetail.previewUrlFailed')");
+    expect(fileDetailModal).toContain("t('fileDetail.renameSuccess')");
     expect(textEditorModule).toContain('isReadOnly?: boolean');
     expect(textEditorModule).toContain('if (isReadOnly || isSavingContent) return;');
     expect(textEditorModule).toContain('readOnly: isReadOnly');
@@ -531,13 +557,26 @@ describe('desktop architecture contract', () => {
     const textEditorModule = read(
       'packages/sdkwork-drive-pc-file/src/components/preview-modules/TextEditorModule.tsx',
     );
+    const imageModule = read(
+      'packages/sdkwork-drive-pc-file/src/components/preview-modules/ImageModule.tsx',
+    );
+    const drivePage = read('packages/sdkwork-drive-pc-file/src/pages/DrivePage.tsx');
 
     expect(pdfModule).toContain('fileService: DriveFileService');
     expect(pdfModule).toContain('fileService.signPdfFile');
     expect(pdfModule).toContain('signAbortControllerRef.current?.abort()');
     expect(pdfModule).toContain('fileService.signPdfFile(file, {');
     expect(pdfModule).toContain('signal: signAbortController.signal');
-    expect(pdfModule).toContain('isDrivePdfAbortError');
+    expect(pdfModule).toContain('isDriveAbortError');
+    expect(pdfModule).toContain('useTranslation');
+    expect(pdfModule).toContain("t('previewModules.pdfSigned')");
+    expect(textEditorModule).toContain("t('previewModules.textSavedToDrive')");
+    expect(imageModule).toContain('useTranslation');
+    expect(imageModule).toContain("t('previewModules.mediaPreviewUnavailable')");
+    expect(officeModule).toContain('useTranslation');
+    expect(officeModule).toContain("t('previewModules.officeOpenFile')");
+    expect(drivePage).toContain('getUploadRetryMismatchContext');
+    expect(drivePage).toContain("t('transfer.uploadRetryMismatch'");
     expect(pdfModule).toContain('window.print()');
     expect(pdfModule).not.toContain('not exposed by the Drive App API');
     expect(officeModule).not.toContain('requires a backend conversion contract');
@@ -625,7 +664,7 @@ describe('desktop architecture contract', () => {
     expect(app).toContain('.getStorageSummary({');
     expect(app).toContain('signal: storageAbortController.signal');
     expect(app).toContain('storageAbortController.abort()');
-    expect(app).toContain('isDriveAppAbortError');
+    expect(app).toContain('isDriveAbortError');
     expect(app).toContain("openSettings('storage')");
     expect(app).toContain('settingsInitialTab');
     expect(drivePage).toContain('onOpenStorageSettings');
@@ -813,6 +852,139 @@ describe('desktop architecture contract', () => {
     expect(adminSource).not.toContain('accessKeySecret');
   });
 
+  it('keeps shared space creation localized and backed by abortable spaces SDK calls', () => {
+    const createSharedSpaceModal = read(
+      'packages/sdkwork-drive-pc-file/src/components/CreateSharedSpaceModal.tsx',
+    );
+    const drivePage = read('packages/sdkwork-drive-pc-file/src/pages/DrivePage.tsx');
+    const sharedSpaceLocaleEn = read(
+      'packages/sdkwork-drive-pc-commons/src/i18n/locales/en/sharedSpace.ts',
+    );
+    const sharedSpaceLocaleZh = read(
+      'packages/sdkwork-drive-pc-commons/src/i18n/locales/zh/sharedSpace.ts',
+    );
+    const commonsIndex = read('packages/sdkwork-drive-pc-commons/src/i18n/locales/en/index.ts');
+
+    expect(commonsIndex).toContain('sharedSpace');
+    expect(sharedSpaceLocaleEn).toContain('createSuccess');
+    expect(sharedSpaceLocaleZh).toContain('createSuccess');
+    expect(createSharedSpaceModal).toContain("t('sharedSpace.createTitle')");
+    expect(createSharedSpaceModal).toContain("t('sharedSpace.confirmCreate')");
+    expect(drivePage).toContain("t('sharedSpace.createSuccess'");
+    expect(drivePage).toContain("t('sharedSpace.deleteSuccess')");
+    expect(createSharedSpaceModal).not.toMatch(/\bfetch\s*\(|axios\.|Authorization\s*:|Access-Token\s*:/);
+  });
+
+  it('keeps desktop native downloads wired through the Tauri local_download_save command', () => {
+    const hostAdapter = read('packages/sdkwork-drive-pc-core/src/host/hostAdapter.ts');
+    const downloadTransfer = read('packages/sdkwork-drive-pc-core/src/transfer/downloadTransfer.ts');
+    const fileBrowser = read('packages/sdkwork-drive-pc-file/src/components/FileBrowser.tsx');
+    const desktopMain = read('packages/sdkwork-drive-pc-desktop/src-tauri/src/main.rs');
+    const localDownload = read('packages/sdkwork-drive-pc-desktop/src-tauri/src/local_download.rs');
+
+    expect(hostAdapter).toContain("invoke<{ saved: boolean }>('local_download_save'");
+    expect(hostAdapter).toContain("invoke<{ sessionId: string; saved: boolean }>('local_download_begin'");
+    expect(hostAdapter).toContain("'local_download_write_chunk'");
+    expect(hostAdapter).toContain("'local_download_finish'");
+    expect(hostAdapter).toContain("'local_download_abort'");
+    expect(downloadTransfer).toContain('createHostDownloadStreamAdapter');
+    expect(downloadTransfer).toContain('saveDownloadStream');
+    expect(fileBrowser).toContain('createHostDownloadStreamAdapter');
+    expect(fileBrowser).toContain('saveDownloadStream: hostDownloadStream');
+    expect(desktopMain).toContain('mod local_download;');
+    expect(desktopMain).toContain('local_download_save');
+    expect(desktopMain).toContain('local_download_begin');
+    expect(desktopMain).toContain('local_download_write_chunk');
+    expect(localDownload).toContain('sanitize_download_file_name');
+    expect(localDownload).toContain('begin_download_save');
+    expect(localDownload).not.toContain('unsafe');
+  });
+
+  it('grants Tauri capabilities for every registered native download command', () => {
+    const desktopMain = read('packages/sdkwork-drive-pc-desktop/src-tauri/src/main.rs');
+    const permissionsToml = read('packages/sdkwork-drive-pc-desktop/src-tauri/permissions/default.toml');
+    const capabilities = JSON.parse(
+      read('packages/sdkwork-drive-pc-desktop/src-tauri/capabilities/default.json'),
+    ) as { permissions: string[] };
+
+    const downloadCommands = [
+      'local_download_save',
+      'local_download_begin',
+      'local_download_write_chunk',
+      'local_download_finish',
+      'local_download_abort',
+    ];
+
+    for (const command of downloadCommands) {
+      expect(desktopMain).toContain(command);
+      expect(permissionsToml).toContain(`"${command}"`);
+      expect(capabilities.permissions).toContain(`allow-${command.replaceAll('_', '-')}`);
+    }
+  });
+
+  it('keeps move and copy flows backed by scoped folder listing and SDK node mutations', () => {
+    const moveCopyModal = read('packages/sdkwork-drive-pc-file/src/components/MoveCopyModal.tsx');
+    const fileBrowser = read('packages/sdkwork-drive-pc-file/src/components/FileBrowser.tsx');
+    const driveFileService = read(
+      'packages/sdkwork-drive-pc-core/src/services/driveFileService.ts',
+    );
+
+    expect(driveFileService).toContain('listMoveCopyDestinationFolders(');
+    expect(driveFileService).toContain("operationId: 'nodes.list'");
+    expect(driveFileService).toContain("operationId: 'nodes.move'");
+    expect(driveFileService).toContain("operationId: 'nodes.copy'");
+    expect(moveCopyModal).toContain('listMoveCopyDestinationFolders(files, activeSection');
+    expect(moveCopyModal).toContain('fileService.moveFile(file.id, parentId, { signal: controller.signal })');
+    expect(moveCopyModal).toContain('fileService.copyFile(file.id');
+    expect(moveCopyModal).toContain('signal: controller.signal');
+    expect(moveCopyModal).toContain('isDriveAbortError');
+    expect(moveCopyModal).not.toContain('getAllWorkspaceFiles');
+    expect(fileBrowser).toContain('MoveCopyModal');
+    expect(fileBrowser).toContain('openMoveCopyModal');
+  });
+
+  it('keeps share link claim deep links wired through SDK claim and section navigation', () => {
+    const app = read('src/App.tsx');
+    const drivePage = read('packages/sdkwork-drive-pc-file/src/pages/DrivePage.tsx');
+    const shareLinkModal = read('packages/sdkwork-drive-pc-file/src/components/ShareLinkModal.tsx');
+    const driveFileService = read(
+      'packages/sdkwork-drive-pc-core/src/services/driveFileService.ts',
+    );
+    const driveSectionRoutes = read(
+      'packages/sdkwork-drive-pc-file/src/routing/driveSectionRoutes.ts',
+    );
+
+    expect(driveSectionRoutes).toContain('export function parseShareLinkClaimToken');
+    expect(driveSectionRoutes).toContain('export function buildShareLinkClaimPath');
+    expect(driveSectionRoutes).toContain('export function isShareLinkClaimPath');
+    expect(app).toContain('parseShareLinkClaimToken(location.pathname)');
+    expect(app).toContain('isShareLinkClaimPath(location.pathname)');
+    expect(app).toContain('shareClaimToken={shareClaimToken');
+    expect(drivePage).toContain('shareClaimToken?: string');
+    expect(drivePage).toContain('claimShareLink(token, { signal: controller.signal })');
+    expect(drivePage).toContain("setActiveSection('shared')");
+    expect(drivePage).toContain('shareClaimAttemptRef.current');
+    expect(drivePage).toContain('pendingShareClaimToken');
+    expect(drivePage).toContain('handleAcceptShareClaim');
+    expect(drivePage).toContain('handleDeclineShareClaim');
+    expect(drivePage).toContain('fileBrowser.shareLinkClaimPrompt');
+    expect(drivePage).toContain('fileBrowser.shareLinkClaimAccept');
+    expect(drivePage).toContain('onShareClaimDismiss');
+    expect(drivePage).toContain('fileBrowser.shareLinkClaimSuccess');
+    expect(drivePage).toContain('fileBrowser.shareLinkAlreadyClaimed');
+    expect(driveFileService).toContain('claimShareLink(');
+    expect(driveFileService).toContain('token: string');
+    expect(driveFileService).toContain("operationId: 'shareLinks.claim'");
+    expect(shareLinkModal).toContain('buildShareLinkClaimPath(token)');
+    expect(shareLinkModal).toContain('window.location.origin');
+    expect(shareLinkModal).toContain('listShareLinks(file.id, { signal: controller.signal })');
+    expect(shareLinkModal).toContain('createShareLink(file.id, {');
+    expect(shareLinkModal).toContain('signal: controller.signal');
+    expect(shareLinkModal).toContain('revokeShareLink(shareLinkId, {');
+    expect(shareLinkModal).toContain('isDriveAbortError');
+    expect(shareLinkModal).not.toMatch(/\bfetch\s*\(|axios\.|Authorization\s*:|Access-Token\s*:/);
+  });
+
   it('keeps shared space management backed by abortable Drive App SDK spaces calls', () => {
     const drivePage = read('packages/sdkwork-drive-pc-file/src/pages/DrivePage.tsx');
     const driveFileService = read(
@@ -836,7 +1008,7 @@ describe('desktop architecture contract', () => {
     expect(drivePage).toContain('signal: createSpaceAbortController.signal');
     expect(drivePage).toContain('fileService.deleteSharedSpace(id, {');
     expect(drivePage).toContain('signal: deleteSpaceAbortController.signal');
-    expect(drivePage).toContain('isDrivePageAbortError');
+    expect(drivePage).toContain('isDriveAbortError');
     expect(drivePage).toContain('isMountedRef.current');
   });
 
@@ -966,13 +1138,15 @@ describe('desktop architecture contract', () => {
     expect(drivePage).toContain('createDownloadAbortController');
     expect(drivePage).toContain('releaseDownloadAbortController');
     expect(drivePage).toContain('downloadAbortControllersRef.current.get(job.id)?.abort();');
-    expect(drivePage.indexOf('if (isDrivePageAbortError(err))')).toBeLessThan(
-      drivePage.indexOf("applyTransferFailure(item, err?.message || 'Failed to retry transfer')"),
+    expect(drivePage.indexOf('if (isDriveAbortError(err))')).toBeLessThan(
+      drivePage.indexOf("applyTransferFailure(item, err?.message || t('transfer.retryTransferFailed')"),
     );
+    expect(drivePage).toContain("t('transfer.retryUploadFailed')");
+    expect(drivePage).toContain("t('transfer.uploadDestinationUnavailable')");
     expect(drivePage).toContain('downloadAbortControllersRef.current.get(job.id) !== downloadController');
     expect(drivePage).toContain('releaseDownloadAbortController(job.id, downloadController);');
-    expect(fileBrowser).toContain('createUploadAbortController(newUploadJob.id)');
-    expect(fileBrowser).toContain('releaseUploadAbortController(newUploadJob.id)');
+    expect(fileBrowser).toContain('fileBrowserUploadQueue');
+    expect(fileBrowser).toContain('queueFileBrowserUploads');
     expect(fileBrowser).toContain('createDownloadAbortController(newJob.id)');
     expect(fileBrowser).toContain('releaseDownloadAbortController(newJob.id)');
     expect(transferPage).toContain('onCancelJob: (id: string) => void');
@@ -989,15 +1163,17 @@ describe('desktop architecture contract', () => {
       /const handleClearAll = \(\) => \{\s*downloadJobs\s*\.filter\(\(job\) => isActiveTransferStatus\(job\.status\)\)\s*\.forEach\(\(job\) => onCancelJob\(job\.id\)\);\s*setDownloadJobs\(\[\]\);\s*\};/,
     );
     expect(downloadManager).toContain('canCancelTransferJob');
-    expect(downloadManager).toContain('canPauseTransferJob');
-    expect(downloadManager).toContain('canResumeTransferJob');
+    expect(transferJobs).toContain('canPauseTransferJob');
+    expect(transferJobs).toContain('canResumeTransferJob');
     expect(downloadManager).toContain("case 'uploading'");
     expect(downloadManager).toContain('activeUploadCount');
     expect(downloadManager).toContain('isWorking && (');
     expect(downloadManager).not.toContain("job.status === 'downloading' &&");
     expect(transferPage).toContain("case 'uploading'");
     expect(transferPage).toContain("j.status === 'downloading' || j.status === 'uploading'");
-    expect(transferPage).toContain("job.status === 'uploading' ? `${job.speed} - ${job.timeRemaining}`");
+    expect(transferPage).toContain('formatTransferJobProgressDetail(job, t)');
+    expect(downloadManager).toContain('formatTransferJobSpeedLabel(job.speed, t)');
+    expect(downloadManager).toContain('formatTransferJobTimeRemainingLabel(job.timeRemaining, t)');
     expect(fileBrowser).not.toContain('cancelTransferJob');
     expect(fileBrowser).toContain('onRetryJob: (job: DownloadJob) => void');
     expect(fileBrowser).toContain('onCancelJob: (id: string) => void');
@@ -1039,6 +1215,34 @@ describe('desktop architecture contract', () => {
       minHeight: 680,
     });
     expect(tauriConfig.identifier).toBe('com.sdkwork.drive.pc');
+
+    const mainSource = read('packages/sdkwork-drive-pc-desktop/src-tauri/src/main.rs');
+    const defaultToml = read('packages/sdkwork-drive-pc-desktop/src-tauri/permissions/default.toml');
+    const capabilities = JSON.parse(
+      readFileSync(path.join(desktopRoot, 'src-tauri', 'capabilities', 'default.json'), 'utf8'),
+    ) as { permissions: string[] };
+    const invokeBlock = mainSource.match(
+      /invoke_handler\(tauri::generate_handler!\[([\s\S]*?)\]\)/,
+    )?.[1];
+    expect(invokeBlock, 'Tauri invoke_handler block should exist').toBeTruthy();
+    const registeredCommands = [...invokeBlock!.matchAll(/\b(local_[a-z_]+|window_control)\b/g)].map(
+      (match) => match[1],
+    );
+    const allowedCommands = [...defaultToml.matchAll(/"([^"]+)"/g)]
+      .map((match) => match[1])
+      .filter((name) => name.includes('_') || name === 'window_control');
+    for (const command of registeredCommands) {
+      expect(allowedCommands, command).toContain(command);
+    }
+    expect(capabilities.permissions).toEqual(
+      expect.arrayContaining([
+        'allow-local-download-save',
+        'allow-local-download-begin',
+        'allow-local-download-write-chunk',
+        'allow-local-download-finish',
+        'allow-local-download-abort',
+      ]),
+    );
   });
 
   it('exposes top-level workspace commands for server, PC renderer, and Tauri shell', () => {
@@ -1127,6 +1331,29 @@ describe('desktop architecture contract', () => {
     expect(generatedSource).not.toContain('createDrivePcRuntime');
     expect(composedSource).toContain('export const sdkMetadata');
     expect(composedSource).toContain('"nodes.list"');
+  });
+
+  it('uses a single canonical abort-error helper from sdkwork-drive-pc-core', () => {
+    const downloadTransfer = read('packages/sdkwork-drive-pc-core/src/transfer/downloadTransfer.ts');
+    const driveFileService = read('packages/sdkwork-drive-pc-core/src/services/driveFileService.ts');
+
+    expect(downloadTransfer).toContain('export function isDriveAbortError');
+    expect(driveFileService).toContain("import { isDriveAbortError } from '../transfer/downloadTransfer'");
+
+    for (const [label, source] of [
+      ['file browser', read('packages/sdkwork-drive-pc-file/src/components/FileBrowser.tsx')],
+      ['file detail modal', read('packages/sdkwork-drive-pc-file/src/components/FileDetailModal.tsx')],
+      ['drive page', read('packages/sdkwork-drive-pc-file/src/pages/DrivePage.tsx')],
+      ['move/copy modal', read('packages/sdkwork-drive-pc-file/src/components/MoveCopyModal.tsx')],
+      ['share link modal', read('packages/sdkwork-drive-pc-file/src/components/ShareLinkModal.tsx')],
+      ['text editor preview', read('packages/sdkwork-drive-pc-file/src/components/preview-modules/TextEditorModule.tsx')],
+      ['pdf preview', read('packages/sdkwork-drive-pc-file/src/components/preview-modules/PdfModule.tsx')],
+      ['zip preview', read('packages/sdkwork-drive-pc-file/src/components/preview-modules/ZipModule.tsx')],
+      ['app shell', read('src/App.tsx')],
+    ] as const) {
+      expect(source, label).toContain('isDriveAbortError');
+      expect(source, label).not.toMatch(/function isDrive\w+AbortError/);
+    }
   });
 
   it('uses canonical SDK family names for generated Drive SDK artifacts', () => {

@@ -2319,6 +2319,101 @@
         "x-sdkwork-api-surface": "app-api"
       }
     },
+    "/app/v3/api/drive/nodes/{nodeId}/download_grants": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "downloadGrants.create",
+        "parameters": [
+          {
+            "name": "nodeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDownloadGrantRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDownloadUrlResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
+      }
+    },
     "/app/v3/api/drive/nodes/{nodeId}/favorite": {
       "put": {
         "tags": [
@@ -4170,7 +4265,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveShareLink"
+                  "$ref": "#/components/schemas/CreateShareLinkResponse"
                 }
               }
             }
@@ -5432,6 +5527,131 @@
           },
           "409": {
             "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
+      }
+    },
+    "/app/v3/api/drive/share_links/{token}/claim": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "shareLinks.claim",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimShareLinkResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimShareLinkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12140,6 +12360,17 @@
           }
         }
       },
+      "CreateDownloadGrantRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "requestedTtlSeconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 300
+          }
+        }
+      },
       "CreateDownloadUrlRequest": {
         "type": "object",
         "required": [
@@ -12286,15 +12517,15 @@
       "CreateShareLinkRequest": {
         "type": "object",
         "required": [
-          "id",
-          "token"
+          "id"
         ],
         "properties": {
           "id": {
             "type": "string"
           },
           "token": {
-            "type": "string"
+            "type": "string",
+            "description": "Optional client-supplied token. When omitted, the server generates a high-entropy token and returns it once in the create response."
           },
           "role": {
             "type": "string",
@@ -12313,6 +12544,12 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
+          },
+          "accessCode": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 64,
+            "description": "Optional extraction code required by recipients before resolving or downloading the shared link."
           }
         }
       },
@@ -12775,6 +13012,10 @@
             "type": "integer",
             "format": "int64",
             "description": "Byte size of the latest active file version."
+          },
+          "folderColor": {
+            "type": "string",
+            "description": "Optional UI folder color from node property ui.folderColor."
           }
         }
       },
@@ -12877,6 +13118,37 @@
           }
         }
       },
+      "ClaimShareLinkResponse": {
+        "type": "object",
+        "required": [
+          "shareLinkId",
+          "nodeId",
+          "spaceId",
+          "role",
+          "permissionId",
+          "alreadyClaimed"
+        ],
+        "properties": {
+          "shareLinkId": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "spaceId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "permissionId": {
+            "type": "string"
+          },
+          "alreadyClaimed": {
+            "type": "boolean"
+          }
+        }
+      },
       "DriveShareLink": {
         "type": "object",
         "required": [
@@ -12915,12 +13187,76 @@
             "format": "int64",
             "minimum": 0
           },
+          "accessCodeRequired": {
+            "type": "boolean"
+          },
           "lifecycleStatus": {
             "type": "string"
           },
           "version": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "CreateShareLinkResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "nodeId",
+          "role",
+          "downloadCount",
+          "lifecycleStatus",
+          "version",
+          "token"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "expiresAtEpochMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "downloadLimit": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "downloadCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "accessCodeRequired": {
+            "type": "boolean"
+          },
+          "lifecycleStatus": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "token": {
+            "type": "string",
+            "description": "Raw share token returned only once when the share link is created."
+          },
+          "accessCode": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 64,
+            "description": "Extraction code returned only once when configured at create time."
           }
         }
       },
@@ -13461,6 +13797,10 @@
           },
           "nextPageToken": {
             "type": "string"
+          },
+          "incompletePage": {
+            "type": "boolean",
+            "description": "True when ACL pagination scan budget was exhausted before the requested page could be filled."
           }
         }
       },
@@ -13640,6 +13980,12 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
+          },
+          "quotaBytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Configured tenant storage quota cap from SDKWORK_DRIVE_TENANT_QUOTA_MAX_BYTES when set."
           }
         }
       },
@@ -14752,14 +15098,71 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "mediaResourceId": {
+          "id": {
             "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video",
+              "audio",
+              "document",
+              "archive",
+              "file",
+              "folder",
+              "generated",
+              "other"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "drive",
+              "external_url",
+              "data_url",
+              "provider_asset",
+              "generated"
+            ]
+          },
+          "uri": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "string"
+          },
+          "checksum": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "algorithm": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          },
+          "url": {
+            "type": "string"
+          },
+          "mediaResourceId": {
+            "type": "string",
+            "description": "Legacy alias for id."
           },
           "mediaType": {
-            "type": "string"
+            "type": "string",
+            "description": "Legacy alias for kind."
           },
           "contentType": {
-            "type": "string"
+            "type": "string",
+            "description": "Legacy alias for mimeType."
           },
           "width": {
             "type": "integer",
@@ -14773,12 +15176,9 @@
             "type": "integer",
             "format": "int64"
           },
-          "sizeBytes": {
-            "type": "integer",
-            "format": "int64"
-          },
           "checksumSha256": {
-            "type": "string"
+            "type": "string",
+            "description": "Legacy checksum field."
           },
           "metadata": {
             "type": "object",

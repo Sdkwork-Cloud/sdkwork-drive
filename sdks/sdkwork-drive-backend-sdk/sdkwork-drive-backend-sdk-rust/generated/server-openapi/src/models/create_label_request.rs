@@ -4,9 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct CreateLabelRequest {
     pub id: String,
 
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     #[serde(rename = "labelKey")]
     pub label_key: String,
 

@@ -9,7 +9,7 @@ public class OpenDownloadUrlResponse {
     public String getDownloadUrl() {
         return this.downloadUrl;
     }
-    
+
     public void setDownloadUrl(String downloadUrl) {
         this.downloadUrl = downloadUrl;
     }
@@ -17,7 +17,7 @@ public class OpenDownloadUrlResponse {
     public Integer getExpiresAtEpochMs() {
         return this.expiresAtEpochMs;
     }
-    
+
     public void setExpiresAtEpochMs(Integer expiresAtEpochMs) {
         this.expiresAtEpochMs = expiresAtEpochMs;
     }
@@ -25,7 +25,7 @@ public class OpenDownloadUrlResponse {
     public String getMethod() {
         return this.method;
     }
-    
+
     public void setMethod(String method) {
         this.method = method;
     }

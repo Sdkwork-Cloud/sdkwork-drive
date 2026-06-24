@@ -6,12 +6,13 @@
     "version": "0.1.0",
     "language": "java",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-java"
   },
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -35,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "9fa0de2eeef2d477143ca2486c1f52d1fac7fa216f989e68e3e49be6dfd1c69c"
+      "sha256": "afc9d793d83f5a7c78fdba7a9a77211d62e7ef994d1db13577f878cad00fc307"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -43,11 +44,11 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/api/ApiPaths.java",
-      "sha256": "9713b62eb1384fdc3961cad01f4bc0ad56d95cb4ecaddae8a4e039fecb757d8e"
+      "sha256": "bb6db59d0f7efdc848c81131c4891aca0faa3012b0e92a5d38ce0658f343d015"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/api/DriveApi.java",
-      "sha256": "2633b99d07069395db249c7eb3e89f6e5606a1c8a5fd724f05992651828de25e"
+      "sha256": "8bce10c5280a8fbd802476d8a3c58606df3f32c1d612a91b186cb9a2fa5545b8"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/api/package-info.java",
@@ -55,99 +56,99 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/http/HttpClient.java",
-      "sha256": "f19d51d3154aca27ba834cad352e85ded9a290d11e129da5f8ccff5998962f4f"
+      "sha256": "b9ab09b3c5da5708d9544226da98b4500dd060b276c4264b195ea2172f5eb24e"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/CopyProviderObjectRequest.java",
-      "sha256": "f23c188245f668f4db39e71694ab2f93df5b9ee9b605a41ba8659bd427cd69bc"
+      "sha256": "b5fc36139d42a14a16c442af6c6107998db7e06d0dd391dce565888053f36840"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/CreateStorageProviderRequest.java",
-      "sha256": "38c29eb4d1e88fd490af59a8364ce61e272017a7e728b0ddba47073da4d851a1"
+      "sha256": "f43c70523f804e0ebd8b1274eb3573996688cec03752e28eeeeb47334ed91449"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/DeleteStorageProviderBindingResponse.java",
-      "sha256": "340789f1673864483f930f178873818f008c9b90425955ff695ba8ffc3af6e59"
+      "sha256": "10085fe4ac0a7205c27707b913d9d52751820ff47100be2d65d0fa08f68dce71"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/DeleteStorageProviderResponse.java",
-      "sha256": "d1ce255293769ce4a42f10a03fc9082e5fd6f653bb88c3d5be0b8f74bcfbc2fa"
+      "sha256": "4e53eb034deec232c74a75a9d106fd492d4a5d4442385cd02baf65b37d30b99e"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ListStorageProvidersResponse.java",
-      "sha256": "ac321536bb6526b27f7c1e71c1fc26d0f37984036666f3d5aeadf8274b9d9b86"
+      "sha256": "7053b0660c591eac51a73c934edf2f1fe77615127516076d778e3f8b40b13c89"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/OperatorRequest.java",
-      "sha256": "ee60de9297d661a95b12d1fe36b9431d6d9b0942c7bcb6b90bb8171a640ecaa2"
+      "sha256": "b25b58989f2e4a70169acf5a1231998eaf377e28c1869db4890e8e21f3a14e54"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProblemDetail.java",
-      "sha256": "5e8a9c05ff0804976e330235b352a1cfa0884ef44bee5b89350201fb846fb6d6"
+      "sha256": "2260284be52fdc50b315c3887bba9161b280111b59ae9a62c81536035f36a190"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderBucket.java",
-      "sha256": "3194f1192158e7e097f025708ca1e966d474911dbea5fdee9e1999b1d31e45ce"
+      "sha256": "08bbf52c457f8b8b1bb5af1db31e7d73d3134359f17f5f260b1efb124fa63af6"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderBucketList.java",
-      "sha256": "72e0d9e180cb62109e11db87effa16e89fd0265fd8dc1467df6f65af13b1545d"
+      "sha256": "8c3dc88fb909a6736c39b4832e738f69fcd0029a5ca0a40ebe766d96ef27e53e"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderBucketListItem.java",
-      "sha256": "32b05cf9a84837fdf9a3023c0405276cddb386683a325a9dea9d116015ec5707"
+      "sha256": "b0cdad444224716fe642968eb49961715ec5f555ce2b62f8edacb11f7f1580fc"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderBucketMutation.java",
-      "sha256": "509328b21248817d773da0ebb2d9534a4d4bb09af3500c2089ee5059dbad2b27"
+      "sha256": "146a2aa602d16d69b00881b3ed8c5405babad975cfec662a6f25fa576d640694"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderObject.java",
-      "sha256": "ef5df7e0a7249d55b7d6324a8e9d194a6389377f265f4a1e4f5993028d204ada"
+      "sha256": "5a67bd2bad8b56c19512ba07315ba1997b5ac116ea6f483f06a7634667b7636f"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderObjectList.java",
-      "sha256": "76bc0efbb5993594551d8374953cf00262c20523370ac3a57f1c89798a0f579e"
+      "sha256": "01733502e01920ba2e3862fe973b2a210789dd3fc1bfc898195de6df25a9f71a"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderObjectMutation.java",
-      "sha256": "1a0427c51fc9889e22b51fc3b0e460db3fbda31585a04f51f725b9c161c89d66"
+      "sha256": "c033d6bbef595185b4fe5efd87fc1fe1d887879339f19f967b3e6c563f491c1e"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/RotateStorageProviderCredentialRequest.java",
-      "sha256": "539a290bf09040c6c6110d46dd92475f538c2125d7aea8015c4e80bbe3adb4db"
+      "sha256": "097699c3c101d68e81837b96b10a74f1d5487392d840d178ad0cfd16cbf0d639"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/SetDefaultStorageProviderBindingRequest.java",
-      "sha256": "fe7de23898c1bd13d2f4fc8935f9524b913c2b43ce11881bb7b73e81a4453f74"
+      "sha256": "76bd50cbf5af09533120b0f941ca33c3b5782fe9f0bef43520e0dc03c568585f"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvider.java",
-      "sha256": "f08509083b92cb5f655561ec8f54d706831933d867eb720846ca797262047bab"
+      "sha256": "ece446abb801cb3f52cf1f0fba49ee068d38165e1b4f5ea5d5f8537073a21bc6"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProviderBinding.java",
-      "sha256": "b786f4bcd50f493cd756a860f3a29b953fe5cc42e48fda39037f95af88892913"
+      "sha256": "8c2f4a7c46e9347e1cacbfd9959aa79e98330bf85a31baf5609520a004409d05"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProviderBindingListResponse.java",
-      "sha256": "99d5bf87f123a306a4b5372b3ce4e38a6bd1a3e6e9b7aeeba1572f0f9073fee7"
+      "sha256": "bfd35f3c648cad2c4209b7b863c75648a26a1bb1c413d0a613bf9ba7f5f58a92"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProviderCapabilities.java",
-      "sha256": "c263a96fe673110ba35a7261313883c0efb7ea94fbe5c55a6613896647c80011"
+      "sha256": "a1b0a1505afec926f837c3075ae880728f1123ddfd961ff1219f2477d169d3dc"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/TestStorageProviderRequest.java",
-      "sha256": "6612b5c5f79ab5832c059eda8d8b5986c7f4f3773a317ff74c8c57fb73e12016"
+      "sha256": "ac3ac6ff6c116d21f87761679a154a951ac49053f81604010c90d911402bf743"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/TestStorageProviderResponse.java",
-      "sha256": "993974304e8ba2b2ef19bf1c78713744cba486ce0eaeefb3e81d38117bd745bc"
+      "sha256": "b6f3585a13573aef8ff47d881a58f865d4f88735574265ac31e5af1dc9ab6fdf"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/UpdateStorageProviderRequest.java",
-      "sha256": "d72847819a0b6a1303bf66b955395ceb221ff7f2c341fabf7f9ae8c22deb34f3"
+      "sha256": "894fd727568f5f966e4d6ae2710577e9c8ccdd6708c938b2136cd64d95006908"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/SdkworkCustomClient.java",

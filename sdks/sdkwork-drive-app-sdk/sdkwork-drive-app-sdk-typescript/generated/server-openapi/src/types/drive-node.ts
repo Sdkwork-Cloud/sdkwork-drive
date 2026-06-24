@@ -24,4 +24,6 @@ export interface DriveNode {
   contentTypeGroup?: 'image' | 'video' | 'audio' | 'text' | 'document' | 'archive' | 'binary';
   /** Byte size of the latest active file version. */
   contentLength?: string;
+  /** Optional UI folder color from node property ui.folderColor. */
+  folderColor?: string;
 }

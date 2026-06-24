@@ -1,6 +1,6 @@
 # sdkwork-drive-backend-sdk (Python)
 
-Professional Python SDK for SDKWork API.
+Generated SDKWork v3 dual-token transport SDK.
 
 ## Installation
 
@@ -18,41 +18,20 @@ config = SdkConfig(
 )
 
 client = SdkworkBackendClient(config)
-client.set_api_key("your-api-key")
-
-# Use the SDK
-params = {
-    'status': 'status',
-}
-result = client.drive.storage_providers.list(params)
-```
-
-## Authentication Modes (Mutually Exclusive)
-
-Choose exactly one mode for the same client instance.
-
-### Mode A: API Key
-
-```python
-config = SdkConfig(base_url="http://127.0.0.1:18080")
-client = SdkworkBackendClient(config)
-client.set_api_key("your-api-key")
-# Sends: Access-Token: <apiKey>
-```
-
-### Mode B: Dual Token
-
-```python
-config = SdkConfig(base_url="http://127.0.0.1:18080")
-client = SdkworkBackendClient(config)
 client.set_auth_token("your-auth-token")
 client.set_access_token("your-access-token")
-# Sends:
-# Authorization: Bearer <authToken>
-# Access-Token: <accessToken>
+
+# Use the SDK
+result = client.drive.quotas.summary()
 ```
 
-> Do not call `set_api_key(...)` together with `set_auth_token(...)` + `set_access_token(...)` on the same client.
+## Authentication
+
+```text
+Authorization: Bearer <authToken>
+Access-Token: <accessToken>
+```
+
 
 ## Configuration (Non-Auth)
 
@@ -77,11 +56,8 @@ client.set_header('X-Custom-Header', 'value')
 ### drive
 
 ```python
-# GET /backend/v3/api/drive/storage_providers
-params = {
-    'status': 'status',
-}
-result = client.drive.storage_providers.list(params)
+# GET /backend/v3/api/drive/quotas
+result = client.drive.quotas.summary()
 print(result)
 ```
 
@@ -90,9 +66,8 @@ print(result)
 ```python
 # List Drive label definitions
 params = {
-    'tenantId': 'tenantId',
     'lifecycleStatus': 'active',
-    'pageSize': 3,
+    'pageSize': 2,
     'pageToken': 'pageToken',
 }
 result = client.labels.list(params)
@@ -103,10 +78,7 @@ print(result)
 
 ```python
 try:
-    params = {
-        'status': 'status',
-    }
-    client.drive.storage_providers.list(params)
+    client.drive.quotas.summary()
 except Exception as error:
     print(f"Error: {error}")
 ```
@@ -134,7 +106,7 @@ This SDK includes cross-platform publish scripts in `bin/`:
 .\bin\publish.ps1 --action publish --channel test --dry-run
 ```
 
-> Set `PYPI_TOKEN` for release (or `TEST_PYPI_TOKEN` for test channel).
+> Configure Python package registry credentials before release publish.
 
 ## License
 
@@ -142,10 +114,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

@@ -3,7 +3,6 @@ use sqlx::any::AnyRow;
 use sqlx::{AnyConnection, AnyPool, Row};
 
 use crate::domain::uploader::{DriveUploadItem, DriveUploadPart};
-use crate::infrastructure::sql::runtime_id::next_drive_runtime_id;
 use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::infrastructure::sql::upload_query_columns::{
     DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS, DRIVE_UPLOAD_PART_SELECT_COLUMNS,
@@ -553,6 +552,198 @@ impl DriveUploaderStore for SqlUploaderStore {
             }
         }
     }
+
+    async fn quarantine_blocked_upload_content(
+        &self,
+        tenant_id: &str,
+        upload_item_id: &str,
+        operator_id: &str,
+    ) -> Result<(), DriveServiceError> {
+        use crate::infrastructure::change_recorder::{
+            record_drive_change_on_connection, RecordDriveChangeCommand,
+        };
+        use sdkwork_drive_contract::drive::domain_events as drive_events;
+
+        let row = sqlx::query(
+            "SELECT ui.space_id, ui.node_id, ui.organization_id, ui.user_id,
+                    ui.content_type, ui.content_type_group, ui.content_length,
+                    ui.checksum_sha256_hex, ui.upload_session_id,
+                    us.bucket AS object_bucket, us.object_key AS object_key
+             FROM dr_drive_upload_item ui
+             LEFT JOIN dr_drive_upload_session us
+               ON us.tenant_id = ui.tenant_id
+              AND us.id = ui.upload_session_id
+             WHERE ui.tenant_id = $1 AND ui.id = $2",
+        )
+        .bind(tenant_id)
+        .bind(upload_item_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!(
+                "find dr_drive_upload_item for quarantine failed: {error}"
+            ))
+        })?
+        .ok_or_else(|| {
+            DriveServiceError::NotFound(format!("upload item not found: {upload_item_id}"))
+        })?;
+
+        let space_id: String = row.get("space_id");
+        let node_id: String = row.get("node_id");
+        let upload_session_id: Option<String> = row.get("upload_session_id");
+
+        let mut connection = self.pool.acquire().await.map_err(|error| {
+            DriveServiceError::Internal(format!(
+                "acquire quarantine transaction connection failed: {error}"
+            ))
+        })?;
+        sqlx::query("BEGIN")
+            .execute(&mut *connection)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!("begin quarantine transaction failed: {error}"))
+            })?;
+
+        let transaction_result: Result<(), DriveServiceError> = async {
+            sqlx::query(
+                "UPDATE dr_drive_node
+                 SET lifecycle_status='trashed',
+                     version=version + 1,
+                     updated_by=$1,
+                     updated_at=CURRENT_TIMESTAMP
+                 WHERE tenant_id=$2
+                   AND id=$3
+                   AND lifecycle_status='active'",
+            )
+            .bind(operator_id)
+            .bind(tenant_id)
+            .bind(&node_id)
+            .execute(&mut *connection)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "quarantine blocked upload node failed: {error}"
+                ))
+            })?;
+
+            sqlx::query(
+                "UPDATE dr_drive_upload_item
+                 SET status='failed',
+                     cleanup_status='failed',
+                     updated_by=$1,
+                     updated_at=CURRENT_TIMESTAMP
+                 WHERE tenant_id=$2 AND id=$3",
+            )
+            .bind(operator_id)
+            .bind(tenant_id)
+            .bind(upload_item_id)
+            .execute(&mut *connection)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "mark quarantined dr_drive_upload_item failed: {error}"
+                ))
+            })?;
+
+            if let Some(session_id) = upload_session_id.as_deref() {
+                sqlx::query(
+                    "UPDATE dr_drive_upload_session
+                     SET state='aborted',
+                         updated_by=$1,
+                         updated_at=CURRENT_TIMESTAMP,
+                         version=version + 1
+                     WHERE tenant_id=$2
+                       AND id=$3
+                       AND state IN ('created', 'uploading', 'completing')",
+                )
+                .bind(operator_id)
+                .bind(tenant_id)
+                .bind(session_id)
+                .execute(&mut *connection)
+                .await
+                .map_err(|error| {
+                    DriveServiceError::Internal(format!(
+                        "abort quarantined dr_drive_upload_session failed: {error}"
+                    ))
+                })?;
+            }
+
+            let sensitive_operation_id = format!("fso-quarantine-{upload_item_id}");
+            sqlx::query(
+                "INSERT INTO dr_drive_file_sensitive_operation (
+                    id, tenant_id, organization_id, user_id, space_id, node_id,
+                    storage_object_id, upload_item_id, operation_type, operation_reason,
+                    content_type, content_type_group, content_length, checksum_sha256_hex,
+                    object_bucket, object_key, before_lifecycle_status, after_lifecycle_status,
+                    operator_id, maintenance_job_id, request_id, trace_id, object_delete_status
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6,
+                    NULL, $7, 'soft_delete', 'system',
+                    $8, $9, $10, $11,
+                    $12, $13, 'active', 'trashed',
+                    $14, NULL, NULL, NULL, 'not_required'
+                )",
+            )
+            .bind(sensitive_operation_id)
+            .bind(tenant_id)
+            .bind(row.get::<Option<String>, _>("organization_id"))
+            .bind(row.get::<Option<String>, _>("user_id"))
+            .bind(&space_id)
+            .bind(&node_id)
+            .bind(upload_item_id)
+            .bind(row.get::<String, _>("content_type"))
+            .bind(row.get::<String, _>("content_type_group"))
+            .bind(row.get::<i64, _>("content_length"))
+            .bind(row.get::<Option<String>, _>("checksum_sha256_hex"))
+            .bind(row.get::<Option<String>, _>("object_bucket"))
+            .bind(row.get::<Option<String>, _>("object_key"))
+            .bind(operator_id)
+            .execute(&mut *connection)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "insert quarantine dr_drive_file_sensitive_operation failed: {error}"
+                ))
+            })?;
+
+            record_drive_change_on_connection(
+                &mut connection,
+                RecordDriveChangeCommand {
+                    tenant_id,
+                    space_id: &space_id,
+                    node_id: Some(&node_id),
+                    event_type: drive_events::object::QUARANTINED,
+                    actor_id: operator_id,
+                },
+            )
+            .await?;
+
+            Ok(())
+        }
+        .await;
+
+        match transaction_result {
+            Ok(()) => {
+                sqlx::query("COMMIT")
+                    .execute(&mut *connection)
+                    .await
+                    .map_err(|error| {
+                        DriveServiceError::Internal(format!(
+                            "commit quarantine transaction failed: {error}"
+                        ))
+                    })?;
+                sdkwork_drive_observability::metrics::record_outbox_pending();
+                crate::infrastructure::outbox_dispatch::spawn_pending_outbox_dispatch(
+                    self.pool.clone(),
+                );
+                Ok(())
+            }
+            Err(error) => {
+                let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+                Err(error)
+            }
+        }
+    }
 }
 
 struct StoredUploadCompletionTarget {
@@ -730,12 +921,15 @@ async fn complete_stored_upload_in_transaction(
         object_key,
     )
     .await?;
-    record_upload_completed_change(
+    crate::infrastructure::change_recorder::record_drive_change_on_connection(
         connection,
-        &completion.tenant_id,
-        &target.item.space_id,
-        &target.item.node_id,
-        &completion.operator_id,
+        crate::infrastructure::change_recorder::RecordDriveChangeCommand {
+            tenant_id: &completion.tenant_id,
+            space_id: &target.item.space_id,
+            node_id: Some(&target.item.node_id),
+            event_type: sdkwork_drive_contract::drive::domain_events::uploader::UPLOAD_COMPLETED,
+            actor_id: &completion.operator_id,
+        },
     )
     .await?;
 
@@ -970,68 +1164,6 @@ async fn insert_upload_completed_sensitive_operation(
     .map_err(|error| {
         DriveServiceError::Internal(format!(
             "insert stored upload completion operation failed: {error}"
-        ))
-    })?;
-    Ok(())
-}
-
-async fn record_upload_completed_change(
-    connection: &mut AnyConnection,
-    tenant_id: &str,
-    space_id: &str,
-    node_id: &str,
-    operator_id: &str,
-) -> Result<(), DriveServiceError> {
-    let cursor_id = format!("cursor:{tenant_id}:{space_id}");
-    sqlx::query(
-        "INSERT INTO dr_drive_change_cursor (
-            id, tenant_id, space_id, last_sequence_no
-         ) VALUES ($1, $2, $3, 1)
-         ON CONFLICT(tenant_id, space_id) DO UPDATE SET
-            last_sequence_no=dr_drive_change_cursor.last_sequence_no + 1,
-            updated_at=CURRENT_TIMESTAMP",
-    )
-    .bind(&cursor_id)
-    .bind(tenant_id)
-    .bind(space_id)
-    .execute(&mut *connection)
-    .await
-    .map_err(|error| {
-        DriveServiceError::Internal(format!(
-            "allocate stored upload change cursor failed: {error}"
-        ))
-    })?;
-
-    let sequence_no: i64 = sqlx::query_scalar(
-        "SELECT last_sequence_no
-         FROM dr_drive_change_cursor
-         WHERE tenant_id=$1 AND space_id=$2",
-    )
-    .bind(tenant_id)
-    .bind(space_id)
-    .fetch_one(&mut *connection)
-    .await
-    .map_err(|error| {
-        DriveServiceError::Internal(format!("read stored upload change cursor failed: {error}"))
-    })?;
-
-    let change_log_id = next_drive_runtime_id("drive change log")?;
-    sqlx::query(
-        "INSERT INTO dr_drive_change_log (
-            id, tenant_id, space_id, node_id, sequence_no, event_type, actor_id
-         ) VALUES ($1, $2, $3, $4, $5, 'upload.completed', $6)",
-    )
-    .bind(change_log_id)
-    .bind(tenant_id)
-    .bind(space_id)
-    .bind(node_id)
-    .bind(sequence_no)
-    .bind(operator_id)
-    .execute(&mut *connection)
-    .await
-    .map_err(|error| {
-        DriveServiceError::Internal(format!(
-            "record stored upload completed change failed: {error}"
         ))
     })?;
     Ok(())

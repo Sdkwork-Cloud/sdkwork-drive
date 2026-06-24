@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Info, Save, Search, Sparkles } from 'lucide-react';
 import { useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
-import type { DriveFileService } from 'sdkwork-drive-pc-core';
+import { isDriveAbortError, type DriveFileService } from 'sdkwork-drive-pc-core';
 import Editor from '@monaco-editor/react';
 
 interface TextEditorModuleProps {
@@ -11,16 +11,6 @@ interface TextEditorModuleProps {
   triggerFeedback: (text: string, type?: 'success' | 'info' | 'error') => void;
   onSaved?: () => void;
   isReadOnly?: boolean;
-}
-
-function isDriveContentAbortError(err: unknown): boolean {
-  if (err instanceof DOMException && err.name === 'AbortError') {
-    return true;
-  }
-  if (err instanceof Error) {
-    return err.name === 'AbortError' || /\babort(?:ed)?\b/i.test(err.message);
-  }
-  return false;
 }
 
 export function TextEditorModule({ file, fileService, triggerFeedback, onSaved, isReadOnly = false }: TextEditorModuleProps) {
@@ -56,11 +46,11 @@ export function TextEditorModule({ file, fileService, triggerFeedback, onSaved, 
         }
       })
       .catch((err: any) => {
-        if (isDriveContentAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (active) {
-          setLoadError(err?.message || 'Failed to load file content from Drive.');
+          setLoadError(err?.message || t('previewModules.textLoadFailed'));
         }
       })
       .finally(() => {
@@ -99,17 +89,17 @@ export function TextEditorModule({ file, fileService, triggerFeedback, onSaved, 
         if (saveAbortControllerRef.current !== saveAbortController) {
           return;
         }
-        triggerFeedback('Text content saved to Drive.', 'success');
+        triggerFeedback(t('previewModules.textSavedToDrive'), 'success');
         onSaved?.();
       })
       .catch((err: any) => {
-        if (isDriveContentAbortError(err)) {
+        if (isDriveAbortError(err)) {
           return;
         }
         if (saveAbortControllerRef.current !== saveAbortController) {
           return;
         }
-        triggerFeedback(err?.message || 'Failed to save text content to Drive.', 'error');
+        triggerFeedback(err?.message || t('previewModules.textSaveFailed'), 'error');
       })
       .finally(() => {
         if (saveAbortControllerRef.current === saveAbortController) {

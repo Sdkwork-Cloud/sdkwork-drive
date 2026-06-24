@@ -9,7 +9,7 @@ public class ProviderBucketMutation {
     public String getProviderId() {
         return this.providerId;
     }
-    
+
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
@@ -17,7 +17,7 @@ public class ProviderBucketMutation {
     public String getBucket() {
         return this.bucket;
     }
-    
+
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
@@ -25,7 +25,7 @@ public class ProviderBucketMutation {
     public Boolean getChanged() {
         return this.changed;
     }
-    
+
     public void setChanged(Boolean changed) {
         this.changed = changed;
     }

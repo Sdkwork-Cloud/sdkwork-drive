@@ -2,7 +2,7 @@ package com.sdkwork.drive.backend.sdk.generated.java.api;
 
 public class ApiPaths {
     public static final String API_PREFIX = "/backend/v3/api";
-    
+
     public static String backendPath(String path) {
         if (path == null || path.isEmpty()) {
             return API_PREFIX;

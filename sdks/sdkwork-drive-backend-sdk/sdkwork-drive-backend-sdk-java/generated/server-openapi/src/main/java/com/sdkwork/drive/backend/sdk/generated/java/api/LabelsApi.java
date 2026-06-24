@@ -8,15 +8,14 @@ import java.util.Map;
 
 public class LabelsApi {
     private final HttpClient client;
-    
+
     public LabelsApi(HttpClient client) {
         this.client = client;
     }
 
     /** List Drive label definitions */
-    public LabelListResponse list(String tenantId, String lifecycleStatus, Integer pageSize, String pageToken) throws Exception {
+    public LabelListResponse list(String lifecycleStatus, Integer pageSize, String pageToken) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
             new QueryParameterSpec("lifecycleStatus", lifecycleStatus, "form", true, false, null),
             new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
             new QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
@@ -32,11 +31,8 @@ public class LabelsApi {
     }
 
     /** Get a Drive label definition */
-    public DriveLabel get(String labelId, String tenantId) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null)
-        ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""), query));
+    public DriveLabel get(String labelId) throws Exception {
+        Object raw = client.get(ApiPaths.backendPath("/drive/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<DriveLabel>() {});
     }
 
@@ -47,9 +43,8 @@ public class LabelsApi {
     }
 
     /** Delete a Drive label definition */
-    public DeleteLabelResponse delete(String labelId, String tenantId, String operatorId) throws Exception {
+    public DeleteLabelResponse delete(String labelId, String operatorId) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
             new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
         ));
         Object raw = client.delete(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""), query));

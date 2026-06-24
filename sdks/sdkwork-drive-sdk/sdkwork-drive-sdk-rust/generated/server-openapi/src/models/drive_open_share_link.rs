@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenNode;
+use crate::models::{OpenNode};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DriveOpenShareLink {
@@ -21,6 +21,10 @@ pub struct DriveOpenShareLink {
 
     #[serde(rename = "downloadCount")]
     pub download_count: i64,
+
+    #[serde(rename = "accessCodeRequired")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub access_code_required: Option<bool>,
 
     pub node: OpenNode,
 }

@@ -2,12 +2,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct SetDefaultStorageProviderBindingRequest {
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-
     #[serde(rename = "spaceId")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub space_id: Option<String>,
+
+    #[serde(rename = "spaceType")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub space_type: Option<String>,
 
     #[serde(rename = "providerId")]
     pub provider_id: String,

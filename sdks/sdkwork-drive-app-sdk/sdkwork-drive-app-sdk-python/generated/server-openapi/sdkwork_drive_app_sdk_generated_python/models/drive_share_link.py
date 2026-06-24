@@ -14,3 +14,4 @@ class DriveShareLink:
     tenant_id: Optional[str] = None
     expires_at_epoch_ms: Optional[int] = None
     download_limit: Optional[int] = None
+    access_code_required: Optional[bool] = None

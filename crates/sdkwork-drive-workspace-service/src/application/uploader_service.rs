@@ -1,5 +1,5 @@
 use crate::application::upload_content_policy::{
-    enforce_upload_content_policy, UploadContentPolicyContext,
+    evaluate_upload_content_policy, UploadContentPolicyContext, UploadContentPolicyDecision,
 };
 use crate::domain::uploader::{content_type_group_for, DriveUploadItem, DriveUploadPart};
 use crate::ports::uploader_store::{
@@ -402,14 +402,35 @@ where
         }
         let operator_id = require_identifier(command.operator_id, "operator_id")?;
 
-        enforce_upload_content_policy(&UploadContentPolicyContext {
+        let policy_context = UploadContentPolicyContext {
             tenant_id: tenant_id.clone(),
             upload_item_id: upload_item_id.clone(),
             content_type: content_type.clone(),
             content_length: command.content_length,
             checksum_sha256_hex: command.checksum_sha256_hex.clone(),
-        })
-        .await?;
+        };
+        match evaluate_upload_content_policy(&policy_context) {
+            UploadContentPolicyDecision::Allow => {}
+            UploadContentPolicyDecision::Block => {
+                return Err(DriveServiceError::Validation(format!(
+                    "upload blocked by content policy for content type {}",
+                    content_type
+                )));
+            }
+            UploadContentPolicyDecision::Quarantine => {
+                self.store
+                    .quarantine_blocked_upload_content(
+                        &tenant_id,
+                        &upload_item_id,
+                        &operator_id,
+                    )
+                    .await?;
+                return Err(DriveServiceError::Validation(format!(
+                    "upload quarantined by content policy for content type {}",
+                    content_type
+                )));
+            }
+        }
 
         self.store
             .complete_stored_upload(&CompleteDriveStoredUpload {

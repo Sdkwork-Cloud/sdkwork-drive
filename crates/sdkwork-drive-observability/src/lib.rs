@@ -3,6 +3,10 @@ use std::time::Instant;
 pub const OBSERVABILITY_TARGET: &str = "sdkwork.drive";
 
 pub mod metrics;
+pub mod latency_histogram;
+pub mod tracing_setup;
+
+pub use tracing_setup::init_tracing;
 
 pub mod events {
     pub const BACKEND_AUDIT_EVENTS_LIST: &str = "drive.audit_events.list";
@@ -10,12 +14,18 @@ pub mod events {
     pub const BACKEND_MAINTENANCE_OBJECT_SWEEP: &str = "drive.maintenance.object_sweep";
     pub const BACKEND_MAINTENANCE_UPLOAD_SESSION_SWEEP: &str =
         "drive.maintenance.upload_session_sweep";
+    pub const BACKEND_MAINTENANCE_EXPIRED_UPLOAD_CONTENT_SWEEP: &str =
+        "drive.maintenance.expired_upload_content_sweep";
+    pub const BACKEND_MAINTENANCE_ABANDONED_UPLOAD_TASK_SWEEP: &str =
+        "drive.maintenance.abandoned_upload_task_sweep";
     pub const APP_SPACES_LIST: &str = "drive.app.spaces.list";
     pub const APP_SPACES_CREATE: &str = "drive.app.spaces.create";
     pub const APP_SPACES_GET: &str = "drive.app.spaces.get";
     pub const APP_SPACES_UPDATE: &str = "drive.app.spaces.update";
     pub const APP_SPACES_DELETE: &str = "drive.app.spaces.delete";
     pub const APP_UPLOAD_SESSIONS_CREATE: &str = "drive.app.upload_sessions.create";
+    pub const APP_UPLOADER_UPLOADS_PREPARE: &str = "drive.app.uploader.uploads.prepare";
+    pub const APP_UPLOADER_PART_MARK_UPLOADED: &str = "drive.app.uploader.uploads.parts.mark_uploaded";
     pub const APP_DOWNLOAD_URLS_CREATE: &str = "drive.app.download_urls.create";
     pub const APP_DOWNLOAD_TOKENS_RESOLVE: &str = "drive.app.download_tokens.resolve";
 }

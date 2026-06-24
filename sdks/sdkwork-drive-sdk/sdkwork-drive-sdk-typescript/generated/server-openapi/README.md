@@ -27,7 +27,10 @@ client.setApiKey('your-api-key');
 
 // Use the SDK
 const token = 'token';
-const result = await client.drive.openShareLinksResolve(token);
+const params = {
+  accessCode: 'accessCode',
+};
+const result = await client.drive.openShareLinksResolve(token, params);
 ```
 
 ## Authentication Modes (Mutually Exclusive)
@@ -80,7 +83,10 @@ const client = new SdkworkCustomClient({
 ```typescript
 // GET /open/v3/api/drive/share_links/{token}
 const token = 'token';
-const result = await client.drive.openShareLinksResolve(token);
+const params = {
+  accessCode: 'accessCode',
+};
+const result = await client.drive.openShareLinksResolve(token, params);
 ```
 
 ## Error Handling
@@ -90,7 +96,10 @@ import { SdkworkCustomClient, NetworkError, TimeoutError, AuthenticationError } 
 
 try {
   const token = 'token';
-  const result = await client.drive.openShareLinksResolve(token);
+  const params = {
+    accessCode: 'accessCode',
+  };
+  const result = await client.drive.openShareLinksResolve(token, params);
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

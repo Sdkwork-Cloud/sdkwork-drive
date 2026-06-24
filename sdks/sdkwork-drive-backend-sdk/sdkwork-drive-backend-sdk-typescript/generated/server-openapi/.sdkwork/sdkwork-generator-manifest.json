@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "7071a2974abe28888b79e55d78c3cc1eca23a6161f18f60c1893b02f290ef2c6"
+      "sha256": "10f103071573f62deedc145f3938741077e5a6f3a56afb0aafcef58e2b100cf9"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -56,7 +56,7 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "e06ae552cc2254b0811064d93f5c9c9b1fe9700941166d9cc98a973b781c0019"
+      "sha256": "dc31cc2d25d6d8cf859ce37aed95c6d52d1bef268c58624ea4cf2fdf961d2f16"
     },
     {
       "path": "src/api/index.ts",
@@ -64,7 +64,7 @@
     },
     {
       "path": "src/api/labels.ts",
-      "sha256": "4cefac78c1474d2e798c890a905c0b362e02fe966d8efd4ebf30a7d25c75cfed"
+      "sha256": "c2ef6c1add1e33efd3baae3b06cb15fdcb04b5ed32e6203f5a4c3a56d0534ee2"
     },
     {
       "path": "src/api/paths.ts",
@@ -76,7 +76,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "e1026e5587705492dcf32bf25ebb2584d5645b11a1046db92e9d4808f4b3edc0"
+      "sha256": "1d339275acee6ec54660a32eb9effcc718ebf0992c5e9bfdb80a3452e0702137"
     },
     {
       "path": "src/http/index.ts",
@@ -108,7 +108,7 @@
     },
     {
       "path": "src/types/create-label-request.ts",
-      "sha256": "270c0a354ce2e8e257ca13d134b0635907f61a097642690b4df7e06976a69e67"
+      "sha256": "8735c67233a3bfb1c6526dd87c56bfdcf921de7b2a702fcd0ecea05bb690509d"
     },
     {
       "path": "src/types/create-storage-provider-request.ts",
@@ -160,7 +160,7 @@
     },
     {
       "path": "src/types/maintenance-job.ts",
-      "sha256": "3d4b622f909b5ca5a19e0c9df0ffd3989439acae5b5fc454497df52fb203e496"
+      "sha256": "d2e0f714656ea42a218caf7b1081e2c3d853d1f4a2eb1c5f0ddede60430e7522"
     },
     {
       "path": "src/types/operator-request.ts",
@@ -200,7 +200,7 @@
     },
     {
       "path": "src/types/set-default-storage-provider-binding-request.ts",
-      "sha256": "9362b528faf5c9e50d5a6994f3a33e6dfd9ee5eea6d8ea39bee1bbc2aea64714"
+      "sha256": "9e2c9503bbe991447a621b23ed4388e5b6d86a9ec640a2852ecf9c7694edea05"
     },
     {
       "path": "src/types/storage-provider-binding.ts",
@@ -236,7 +236,7 @@
     },
     {
       "path": "src/types/update-label-request.ts",
-      "sha256": "e27fe5b25ccf3ef766b803475676791913f3559f460d1e26e96ad25900a52ab8"
+      "sha256": "28956c90d7ae897514056c260d6cfec1475c5c1a3596543e8bcbb6ff0471e536"
     },
     {
       "path": "src/types/update-storage-provider-request.ts",

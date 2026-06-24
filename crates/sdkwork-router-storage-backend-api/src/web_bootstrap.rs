@@ -18,7 +18,7 @@ pub fn drive_admin_storage_public_path_prefixes() -> Vec<String> {
 }
 
 pub fn drive_admin_storage_gateway_api_prefixes() -> Vec<String> {
-    vec!["/admin/v3/api".to_owned()]
+    vec!["/admin/v3/api".to_owned(), "/backend/v3/api".to_owned()]
 }
 
 #[derive(Clone, Default)]
@@ -30,7 +30,11 @@ impl DomainContextInjector for DriveAdminStorageContextInjector {
             return;
         };
 
-        let app_context = drive_app_context_from_web_principal(principal, context);
+        let mut app_context = drive_app_context_from_web_principal(principal, context);
+        sdkwork_drive_http::web_app_context::apply_trace_id_from_transport(
+            request.headers(),
+            &mut app_context,
+        );
         let drive_context = DriveRequestContext::from_app_context(&app_context);
         request.extensions_mut().insert(app_context);
         request.extensions_mut().insert(drive_context);
@@ -101,7 +105,7 @@ pub fn drive_app_context_from_web_principal(
         actor_kind,
         device_id: None,
         request_id: context.request_id.0.clone(),
-        trace_id: context.request_id.0.clone(),
+        trace_id: String::new(),
     }
 }
 

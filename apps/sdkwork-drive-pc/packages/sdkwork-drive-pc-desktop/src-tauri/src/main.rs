@@ -3,12 +3,17 @@ mod local_filesystem;
 mod local_upload;
 
 use local_download::{
-    save_download_file, LocalDownloadSaveRequest, LocalDownloadSaveResponse,
+    abort_download_save, begin_download_save, finish_download_save, save_download_file,
+    write_download_chunk, LocalDownloadBeginRequest, LocalDownloadBeginResponse,
+    LocalDownloadSaveRequest, LocalDownloadSaveResponse, LocalDownloadSessionRequest,
+    LocalDownloadWriteChunkRequest,
 };
 use local_filesystem::{
     list_local_filesystem, open_local_filesystem_path, LocalFilesystemListRequest,
     LocalFilesystemOpenRequest,
-};use local_upload::{
+};
+
+use local_upload::{
     checksum_local_upload_file, describe_local_upload_file, pick_upload_files,
     read_local_upload_range, LocalUploadChecksumResponse, LocalUploadFileDescriptor,
     LocalUploadPathRequest, LocalUploadReadRangeRequest, LocalUploadReadRangeResponse,
@@ -93,6 +98,30 @@ fn local_download_save(
     save_download_file(request)
 }
 
+#[tauri::command]
+fn local_download_begin(
+    request: LocalDownloadBeginRequest,
+) -> Result<LocalDownloadBeginResponse, String> {
+    begin_download_save(request)
+}
+
+#[tauri::command]
+fn local_download_write_chunk(request: LocalDownloadWriteChunkRequest) -> Result<(), String> {
+    write_download_chunk(request)
+}
+
+#[tauri::command]
+fn local_download_finish(
+    request: LocalDownloadSessionRequest,
+) -> Result<LocalDownloadSaveResponse, String> {
+    finish_download_save(request)
+}
+
+#[tauri::command]
+fn local_download_abort(request: LocalDownloadSessionRequest) -> Result<(), String> {
+    abort_download_save(request)
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -103,7 +132,11 @@ fn main() {
             local_upload_describe_file,
             local_upload_read_range,
             local_upload_checksum_file,
-            local_download_save
+            local_download_save,
+            local_download_begin,
+            local_download_write_chunk,
+            local_download_finish,
+            local_download_abort
         ])
         .run(tauri::generate_context!())
         .expect("failed to run SDKWork Drive desktop host");

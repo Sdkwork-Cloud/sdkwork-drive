@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::MaintenanceJob;
+use crate::models::{MaintenanceJob};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct MaintenanceJobPage {

@@ -17,9 +17,8 @@ func NewDriveApi(client *sdkhttp.Client) *DriveApi {
     return &DriveApi{client: client}
 }
 
-func (a *DriveApi) AuditEventsList(tenantId *string, action *string, resourceType *string, resourceId *string, requestId *string, traceId *string, page *int, pageSize *int) (sdktypes.AuditEventPage, error) {
+func (a *DriveApi) AuditEventsList(action *string, resourceType *string, resourceId *string, requestId *string, traceId *string, page *int, pageSize *int) (sdktypes.AuditEventPage, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: func() interface{} { if tenantId == nil { return nil }; return *tenantId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "action", Value: func() interface{} { if action == nil { return nil }; return *action }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "resourceType", Value: func() interface{} { if resourceType == nil { return nil }; return *resourceType }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "resourceId", Value: func() interface{} { if resourceId == nil { return nil }; return *resourceId }(), Style: "form", Explode: true, AllowReserved: false},
@@ -70,11 +69,26 @@ func (a *DriveApi) MaintenanceUploadSessionSweepStart(body sdktypes.SweepUploadS
     return decodeResult[sdktypes.SweepResponse](raw)
 }
 
-func (a *DriveApi) QuotasSummary(tenantId string) (sdktypes.QuotaSummary, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Get(AppendQueryString(BackendApiPath("/drive/quotas"), query), nil, nil)
+func (a *DriveApi) MaintenanceExpiredUploadContentSweepStart(body sdktypes.SweepUploadSessionsRequest) (sdktypes.SweepResponse, error) {
+    raw, err := a.client.Post(BackendApiPath("/drive/maintenance/expired_upload_content_sweep"), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.SweepResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.SweepResponse](raw)
+}
+
+func (a *DriveApi) MaintenanceAbandonedUploadTaskSweepStart(body sdktypes.SweepUploadSessionsRequest) (sdktypes.SweepResponse, error) {
+    raw, err := a.client.Post(BackendApiPath("/drive/maintenance/abandoned_upload_task_sweep"), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.SweepResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.SweepResponse](raw)
+}
+
+func (a *DriveApi) QuotasSummary() (sdktypes.QuotaSummary, error) {
+    raw, err := a.client.Get(BackendApiPath("/drive/quotas"), nil, nil)
     if err != nil {
         var zero sdktypes.QuotaSummary
         return zero, err
@@ -82,9 +96,8 @@ func (a *DriveApi) QuotasSummary(tenantId string) (sdktypes.QuotaSummary, error)
     return decodeResult[sdktypes.QuotaSummary](raw)
 }
 
-func (a *DriveApi) SpacesAdminList(tenantId string, ownerSubjectType *string, ownerSubjectId *string) (sdktypes.ListSpacesResponse, error) {
+func (a *DriveApi) SpacesAdminList(ownerSubjectType *string, ownerSubjectId *string) (sdktypes.ListSpacesResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "ownerSubjectType", Value: func() interface{} { if ownerSubjectType == nil { return nil }; return *ownerSubjectType }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "ownerSubjectId", Value: func() interface{} { if ownerSubjectId == nil { return nil }; return *ownerSubjectId }(), Style: "form", Explode: true, AllowReserved: false},
     })
@@ -96,10 +109,10 @@ func (a *DriveApi) SpacesAdminList(tenantId string, ownerSubjectType *string, ow
     return decodeResult[sdktypes.ListSpacesResponse](raw)
 }
 
-func (a *DriveApi) StorageProviderBindingsDefaultGet(tenantId string, spaceId *string) (sdktypes.StorageProviderBinding, error) {
+func (a *DriveApi) StorageProviderBindingsDefaultGet(spaceId *string, spaceType *string) (sdktypes.StorageProviderBinding, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "spaceId", Value: func() interface{} { if spaceId == nil { return nil }; return *spaceId }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "spaceType", Value: func() interface{} { if spaceType == nil { return nil }; return *spaceType }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(BackendApiPath("/drive/storage_provider_bindings/default"), query), nil, nil)
     if err != nil {
@@ -283,9 +296,8 @@ func (a *DriveApi) StorageProvidersObjectsCopy(providerId string, body sdktypes.
     return decodeResult[sdktypes.ProviderObjectMutation](raw)
 }
 
-func (a *DriveApi) DownloadPackagesList(tenantId *string, state *string, page *int, pageSize *int) (sdktypes.DownloadPackagePage, error) {
+func (a *DriveApi) DownloadPackagesList(state *string, page *int, pageSize *int) (sdktypes.DownloadPackagePage, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: func() interface{} { if tenantId == nil { return nil }; return *tenantId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "state", Value: func() interface{} { if state == nil { return nil }; return *state }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},

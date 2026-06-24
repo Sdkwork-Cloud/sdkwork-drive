@@ -11,6 +11,5 @@ type UpdateStorageProviderRequest struct {
 	ServerSideEncryptionMode string `json:"serverSideEncryptionMode"`
 	DefaultStorageClass string `json:"defaultStorageClass"`
 	Status string `json:"status"`
-	OperatorId string `json:"operatorId"`
 	StrictTls bool `json:"strictTls"`
 }

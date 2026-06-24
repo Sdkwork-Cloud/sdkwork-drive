@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": false,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "aa14a8189647ea70dcddfe569d29897e053dc764dcd4d1bf6cabe3df4ba0bee7",
+  "changeFingerprint": "fffe4311b91e29da9a15b1ca0dffa9392e27a65c3682cb6feb6f66d3d9bc79b1",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [],
@@ -47,6 +47,7 @@
     "version": "0.1.0",
     "language": "go",
     "sdkType": "backend",
+    "protocol": "http",
     "outputPath": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-go\\generated\\server-openapi",
     "packageName": "sdkwork-drive-backend-sdk-generated-go"
   },
@@ -63,12 +64,13 @@
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
+    "controlPlaneEnabled": true,
     "writtenFiles": 0,
     "skippedScaffoldFiles": 1,
     "skippedUnchangedGeneratedFiles": 55,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "aa14a8189647ea70dcddfe569d29897e053dc764dcd4d1bf6cabe3df4ba0bee7",
+    "changeFingerprint": "fffe4311b91e29da9a15b1ca0dffa9392e27a65c3682cb6feb6f66d3d9bc79b1",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [],

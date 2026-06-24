@@ -9,12 +9,11 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-typescript"
   },
-  "changeFingerprint": "0088fce451e45a3ce919e7837b56abcb870dccdf259408a7709f384fab600308",
+  "changeFingerprint": "0e915f7b022223b8de57912f37446d28ed68fcc58f7e2fcb3e20cae9f2e7119d",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [
-      "src/api/drive.ts",
-      "src/types/prepare-uploader-upload-request.ts"
+      "src/types/quota-summary.ts"
     ],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -29,6 +28,7 @@
       "sdkwork-sdk.json",
       "src/api/assets.ts",
       "src/api/base.ts",
+      "src/api/drive.ts",
       "src/api/index.ts",
       "src/api/node-labels.ts",
       "src/api/node-properties.ts",
@@ -52,6 +52,7 @@
       "src/types/asset-relation.ts",
       "src/types/change-list-response.ts",
       "src/types/change.ts",
+      "src/types/claim-share-link-response.ts",
       "src/types/comment-list-response.ts",
       "src/types/comment-replies-delete-response.ts",
       "src/types/comment-reply-list-response.ts",
@@ -66,6 +67,7 @@
       "src/types/create-asset-request.ts",
       "src/types/create-comment-reply-request.ts",
       "src/types/create-comment-request.ts",
+      "src/types/create-download-grant-request.ts",
       "src/types/create-download-package-request.ts",
       "src/types/create-download-url-request.ts",
       "src/types/create-download-url-response.ts",
@@ -74,6 +76,7 @@
       "src/types/create-folder-request.ts",
       "src/types/create-permission-request.ts",
       "src/types/create-share-link-request.ts",
+      "src/types/create-share-link-response.ts",
       "src/types/create-shortcut-request.ts",
       "src/types/create-space-request.ts",
       "src/types/create-upload-session-request.ts",
@@ -121,11 +124,11 @@
       "src/types/node-property-list-response.ts",
       "src/types/permission-list-response.ts",
       "src/types/permissions-delete-response.ts",
+      "src/types/prepare-uploader-upload-request.ts",
       "src/types/prepare-uploader-upload-response.ts",
       "src/types/presign-upload-part-request.ts",
       "src/types/presigned-upload-part.ts",
       "src/types/problem-detail.ts",
-      "src/types/quota-summary.ts",
       "src/types/remove-node-label-response.ts",
       "src/types/set-node-property-request.ts",
       "src/types/share-link-list-response.ts",
@@ -153,43 +156,34 @@
       "custom/build-runtime.mjs",
       "custom/README.md"
     ],
-    "backedUpFiles": [
-      "src/types/prepare-uploader-upload-request.ts"
-    ]
+    "backedUpFiles": []
   },
   "impact": {
     "schemaVersion": 1,
     "areas": [
-      "api-surface",
       "models"
     ],
     "details": [
       {
-        "area": "api-surface",
-        "paths": [
-          "src/api/drive.ts"
-        ]
-      },
-      {
         "area": "models",
         "paths": [
-          "src/types/prepare-uploader-upload-request.ts"
+          "src/types/quota-summary.ts"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models. Verification is required."
+    "summary": "Detected impact areas: models. Verification is required."
   },
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: models. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: models.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -207,7 +201,7 @@
         "id": "build",
         "title": "Unified package build",
         "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models.",
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: models.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -225,14 +219,12 @@
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "high",
+    "riskLevel": "medium",
     "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
     "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
-      "backed-up-generated-files",
-      "manual-review-required",
       "verification-required"
     ]
   },

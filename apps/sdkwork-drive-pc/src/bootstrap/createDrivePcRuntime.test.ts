@@ -104,7 +104,7 @@ describe('createDrivePcRuntime', () => {
     vi.stubEnv('VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL', 'https://drive-app.example.test/app/v3/api');
     vi.stubEnv(
       'VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL',
-      'https://drive-admin-storage.example.test/admin/v3/api',
+      'https://drive-admin-storage.example.test/backend/v3/api',
     );
 
     const runtime = createDrivePcRuntime();
@@ -117,7 +117,7 @@ describe('createDrivePcRuntime', () => {
         appApiBaseUrl: 'https://drive-app.example.test/app/v3/api',
       },
       'sdkwork-drive-admin-storage-sdk': {
-        backendApiBaseUrl: 'https://drive-admin-storage.example.test/admin/v3/api',
+        backendApiBaseUrl: 'https://drive-admin-storage.example.test/backend/v3/api',
       },
     });
   });

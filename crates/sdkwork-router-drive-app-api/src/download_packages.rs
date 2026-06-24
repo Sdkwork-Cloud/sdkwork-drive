@@ -13,6 +13,7 @@ use crate::error::{
     internal_problem, internal_sql_error, map_object_store_route_error, map_service_error,
     not_found_problem, problem, ProblemDetail,
 };
+use crate::hashing::{sha256_raw_hex_separated, tenant_shard_prefix};
 use crate::mappers::map_node_row;
 use crate::node_repository::find_node;
 use crate::object_store::{
@@ -34,7 +35,6 @@ use sdkwork_drive_storage_contract::{
 use sdkwork_drive_storage_s3::S3DriveObjectStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
 use sdkwork_drive_workspace_service::ports::storage_object_store::SignedDownloadPayload;
-use crate::hashing::{sha256_raw_hex_separated, tenant_shard_prefix};
 use sqlx::AnyPool;
 use sqlx::Row;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -72,13 +72,7 @@ pub(crate) async fn create_download_package(
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id)?;
     let requested_node_ids = normalize_download_package_node_ids(payload.node_ids)?;
-    acl::ensure_node_ids_role(
-        &state.pool,
-        &ctx,
-        &requested_node_ids,
-        "reader",
-    )
-    .await?;
+    acl::ensure_node_ids_role(&state.pool, &ctx, &requested_node_ids, "reader").await?;
     let package_name = normalize_package_name(payload.package_name);
     let requested_ttl_seconds = validate_requested_ttl_seconds(
         payload.requested_ttl_seconds,

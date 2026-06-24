@@ -6,6 +6,7 @@ export interface DriveShareLink {
   expiresAtEpochMs?: string;
   downloadLimit?: string;
   downloadCount: string;
+  accessCodeRequired?: boolean;
   lifecycleStatus: string;
   version: string;
 }

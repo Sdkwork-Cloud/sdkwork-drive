@@ -29,7 +29,7 @@ Generated SDK families use `*-sdk` naming because they are consumable client SDK
 The default/open SDK is `sdkwork-drive-sdk`. It is not `sdkwork-drive-open-api` and not `sdkwork-drive-open-sdk`.
 The admin storage SDK is `sdkwork-drive-admin-storage-sdk`. It is not `sdkwork-drive-admin-storage-api` and not `drive-admin-storage-sdk`.
 
-Admin storage uses the `/admin/v3/api` runtime prefix. The canonical generator's `sdkwork-v3` backend profile is intentionally reserved for `/backend/v3/api`, so `sdkwork-drive-admin-storage-sdk` uses generator SDK type `custom` and Drive-local standard profile metadata `sdkwork-drive-admin-storage-v3`. It still declares dual-token security and consumes appbase backend IAM through `sdkDependencies` instead of copying appbase routes.
+Admin storage uses the `/backend/v3/api` runtime prefix. The canonical generator's `sdkwork-v3` backend profile maps to `/backend/v3/api`, so `sdkwork-drive-admin-storage-sdk` uses generator SDK type `custom` and Drive-local standard profile metadata `sdkwork-drive-admin-storage-v3`. It still declares dual-token security and consumes appbase backend IAM through `sdkDependencies` instead of copying appbase routes.
 
 ## Canonical SDK Names
 
@@ -154,7 +154,7 @@ The PC app must keep UI/product design separate from remote business transport.
 Canonical call path:
 
 ```text
-feature UI -> injected DriveFileService -> @sdkwork/drive-pc-core service facade
+feature UI -> injected DriveFileService -> sdkwork-drive-pc-core service facade
   -> createDriveAppSdkClient -> sdks/sdkwork-drive-app-sdk/... composed operations + generated transport
   -> crates/sdkwork-router-drive-app-api
 ```

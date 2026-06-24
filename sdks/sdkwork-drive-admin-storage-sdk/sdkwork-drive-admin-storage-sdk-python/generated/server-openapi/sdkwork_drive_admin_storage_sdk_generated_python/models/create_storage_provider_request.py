@@ -10,7 +10,6 @@ class CreateStorageProviderRequest:
     name: str
     endpoint_url: str
     bucket: str
-    operator_id: str
     region: Optional[str] = None
     path_style: Optional[bool] = None
     credential_ref: Optional[str] = None

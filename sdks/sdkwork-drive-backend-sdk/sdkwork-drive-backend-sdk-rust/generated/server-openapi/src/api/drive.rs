@@ -15,9 +15,8 @@ impl DriveApi {
         Self { client }
     }
 
-    pub async fn audit_events_list(&self, tenant_id: Option<&str>, action: Option<&str>, resource_type: Option<&str>, resource_id: Option<&str>, request_id: Option<&str>, trace_id: Option<&str>, page: Option<i64>, page_size: Option<i64>) -> Result<AuditEventPage, SdkworkError> {
+    pub async fn audit_events_list(&self, action: Option<&str>, resource_type: Option<&str>, resource_id: Option<&str>, request_id: Option<&str>, trace_id: Option<&str>, page: Option<i64>, page_size: Option<i64>) -> Result<AuditEventPage, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("action", action, "form", true, false, None),
             QueryParameterSpec::new("resourceType", resource_type, "form", true, false, None),
             QueryParameterSpec::new("resourceId", resource_id, "form", true, false, None),
@@ -52,17 +51,23 @@ impl DriveApi {
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn quotas_summary(&self, tenant_id: &str) -> Result<QuotaSummary, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
-        ]);
-        let path = append_query_string(backend_path(&"/drive/quotas".to_string()), &query);
+    pub async fn maintenance_expired_upload_content_sweep_start(&self, body: &SweepUploadSessionsRequest) -> Result<SweepResponse, SdkworkError> {
+        let path = backend_path(&"/drive/maintenance/expired_upload_content_sweep".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    pub async fn maintenance_abandoned_upload_task_sweep_start(&self, body: &SweepUploadSessionsRequest) -> Result<SweepResponse, SdkworkError> {
+        let path = backend_path(&"/drive/maintenance/abandoned_upload_task_sweep".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    pub async fn quotas_summary(&self) -> Result<QuotaSummary, SdkworkError> {
+        let path = backend_path(&"/drive/quotas".to_string());
         self.client.get(&path, None, None).await
     }
 
-    pub async fn spaces_admin_list(&self, tenant_id: &str, owner_subject_type: Option<&str>, owner_subject_id: Option<&str>) -> Result<ListSpacesResponse, SdkworkError> {
+    pub async fn spaces_admin_list(&self, owner_subject_type: Option<&str>, owner_subject_id: Option<&str>) -> Result<ListSpacesResponse, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("ownerSubjectType", owner_subject_type, "form", true, false, None),
             QueryParameterSpec::new("ownerSubjectId", owner_subject_id, "form", true, false, None),
         ]);
@@ -70,10 +75,10 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn storage_provider_bindings_default_get(&self, tenant_id: &str, space_id: Option<&str>) -> Result<StorageProviderBinding, SdkworkError> {
+    pub async fn storage_provider_bindings_default_get(&self, space_id: Option<&str>, space_type: Option<&str>) -> Result<StorageProviderBinding, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
+            QueryParameterSpec::new("spaceType", space_type, "form", true, false, None),
         ]);
         let path = append_query_string(backend_path(&"/drive/storage_provider_bindings/default".to_string()), &query);
         self.client.get(&path, None, None).await
@@ -181,9 +186,8 @@ impl DriveApi {
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn download_packages_list(&self, tenant_id: Option<&str>, state: Option<&str>, page: Option<i64>, page_size: Option<i64>) -> Result<DownloadPackagePage, SdkworkError> {
+    pub async fn download_packages_list(&self, state: Option<&str>, page: Option<i64>, page_size: Option<i64>) -> Result<DownloadPackagePage, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("state", state, "form", true, false, None),
             QueryParameterSpec::new("page", page, "form", true, false, None),
             QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),

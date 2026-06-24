@@ -11,6 +11,8 @@ sdkwork-database-repository.workspace = true
 sdkwork-id-core.workspace = true
 async-trait.workspace = true
 sdkwork-drive-config.workspace = true
+sdkwork-drive-contract.workspace = true
+sdkwork-drive-security.workspace = true
 sdkwork-drive-observability.workspace = true
 sdkwork-drive-storage-contract.workspace = true
 sdkwork-utils-rust.workspace = true
@@ -22,6 +24,8 @@ serde_json = { workspace = true }
 chrono = { version = "0.4", features = ["serde"] }
 reqwest.workspace = true
 uuid = { version = "1", features = ["v4"] }
+hmac.workspace = true
+sha2.workspace = true
 
 [dev-dependencies]
 sdkwork-drive-storage-local.workspace = true

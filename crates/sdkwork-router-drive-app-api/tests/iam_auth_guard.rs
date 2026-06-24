@@ -2,20 +2,20 @@ use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
 use sdkwork_drive_security::DriveAuthValidationPolicy;
 use sdkwork_router_drive_app_api::{build_router, build_router_with_pool_and_iam_policy};
+use sdkwork_web_core::{access_token_jwt, auth_token_jwt};
 use serde_json::Value;
 use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 
+const DEFAULT_SESSION_ID: &str = "session-1";
+const DEFAULT_APP_ID: &str = "appbase";
+
 fn auth_token(tenant: &str, user: &str) -> String {
-    format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;auth_level=password"
-    )
+    auth_token_jwt(tenant, user, DEFAULT_SESSION_ID, DEFAULT_APP_ID)
 }
 
 fn access_token(tenant: &str, user: &str) -> String {
-    format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;environment=prod;deployment_mode=saas"
-    )
+    access_token_jwt(tenant, user, DEFAULT_SESSION_ID, DEFAULT_APP_ID)
 }
 
 #[tokio::test]
@@ -35,7 +35,7 @@ async fn app_production_routes_require_valid_dual_tokens() {
         .expect("health request should be handled");
     assert_eq!(health.status(), StatusCode::OK);
 
-    let missing_auth = app
+    let missing_credentials = app
         .clone()
         .oneshot(
             Request::builder()
@@ -47,9 +47,9 @@ async fn app_production_routes_require_valid_dual_tokens() {
         .await
         .expect("protected request should be handled");
     assert_problem(
-        missing_auth,
+        missing_credentials,
         StatusCode::UNAUTHORIZED,
-        "sdkwork.auth.missing_auth_token",
+        "sdkwork.auth.missing_access_token",
     )
     .await;
 

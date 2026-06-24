@@ -1,10 +1,11 @@
 #![allow(clippy::result_large_err)]
 
-mod app_context;
 mod acl;
+mod acl_sql;
+mod app_context;
 mod archive;
 mod archive_storage;
-mod asset_handlers;
+mod assets;
 mod collaboration_repository;
 mod constants;
 mod download_packages;
@@ -19,6 +20,7 @@ mod mappers;
 mod metadata_repository;
 mod node_repository;
 mod object_store;
+mod rate_limit;
 mod routes;
 mod space_repository;
 mod state;
@@ -28,6 +30,7 @@ mod uploader;
 mod validators;
 mod watch_repository;
 mod web_bootstrap;
+mod webhook_url;
 
 pub use http_route_manifest::app_route_manifest;
 pub use routes::*;

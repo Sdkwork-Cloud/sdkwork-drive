@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": false,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "8cb820038ab34f3b047059308fe3d5250ed8e04cb4a771fd577d13d96a002d0c",
+  "changeFingerprint": "5ea4e37eb7f567fbc111c08a6d07ad6b73590fa3d9f035614f12977fd785f5f4",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [],
@@ -47,6 +47,7 @@
     "version": "0.1.0",
     "language": "python",
     "sdkType": "custom",
+    "protocol": "http",
     "outputPath": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-python\\generated\\server-openapi",
     "packageName": "sdkwork-drive-sdk-generated-python"
   },
@@ -63,12 +64,13 @@
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
+    "controlPlaneEnabled": true,
     "writtenFiles": 0,
     "skippedScaffoldFiles": 1,
     "skippedUnchangedGeneratedFiles": 22,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "8cb820038ab34f3b047059308fe3d5250ed8e04cb4a771fd577d13d96a002d0c",
+    "changeFingerprint": "5ea4e37eb7f567fbc111c08a6d07ad6b73590fa3d9f035614f12977fd785f5f4",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [],

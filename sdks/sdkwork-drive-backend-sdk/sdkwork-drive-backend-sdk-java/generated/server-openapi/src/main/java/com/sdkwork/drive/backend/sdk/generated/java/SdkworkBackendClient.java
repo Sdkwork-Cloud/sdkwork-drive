@@ -29,12 +29,6 @@ public class SdkworkBackendClient {
     public LabelsApi getLabels() {
         return this.labels;
     }
-
-    public SdkworkBackendClient setApiKey(String apiKey) {
-        httpClient.setApiKey(apiKey);
-        return this;
-    }
-
     public SdkworkBackendClient setAuthToken(String token) {
         httpClient.setAuthToken(token);
         return this;

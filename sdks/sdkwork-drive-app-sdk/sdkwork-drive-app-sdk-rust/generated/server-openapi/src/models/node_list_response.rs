@@ -9,4 +9,9 @@ pub struct NodeListResponse {
     #[serde(rename = "nextPageToken")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub next_page_token: Option<String>,
+
+    /// True when ACL pagination scan budget was exhausted before the requested page could be filled.
+    #[serde(rename = "incompletePage")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub incomplete_page: Option<bool>,
 }

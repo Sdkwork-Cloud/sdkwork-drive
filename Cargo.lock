@@ -2015,6 +2015,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6cb138bb79a146c1bd460005623e142ef0181e3d0219cb493e02f7d08a35695"
 
 [[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2473,6 +2482,80 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
 
 [[package]]
+name = "opentelemetry"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aaf416e4cb72756655126f7dd7bb0af49c674f4c1b9903e80c009e0c37e552e6"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+ "js-sys",
+ "pin-project-lite",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "opentelemetry-http"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50f6639e842a97dbea8886e3439710ae463120091e2e064518ba8e716e6ac36d"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "http 1.4.1",
+ "opentelemetry",
+ "reqwest 0.12.28",
+]
+
+[[package]]
+name = "opentelemetry-otlp"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dbee664a43e07615731afc539ca60c6d9f1a9425e25ca09c57bc36c87c55852b"
+dependencies = [
+ "http 1.4.1",
+ "opentelemetry",
+ "opentelemetry-http",
+ "opentelemetry-proto",
+ "opentelemetry_sdk",
+ "prost",
+ "reqwest 0.12.28",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "opentelemetry-proto"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e046fd7660710fe5a05e8748e70d9058dc15c94ba914e7c4faa7c728f0e8ddc"
+dependencies = [
+ "opentelemetry",
+ "opentelemetry_sdk",
+ "prost",
+ "tonic",
+]
+
+[[package]]
+name = "opentelemetry_sdk"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11f644aa9e5e31d11896e024305d7e3c98a88884d9f8919dbf37a9991bc47a4b"
+dependencies = [
+ "futures-channel",
+ "futures-executor",
+ "futures-util",
+ "opentelemetry",
+ "percent-encoding",
+ "rand 0.9.4",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+]
+
+[[package]]
 name = "ordered-multimap"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2580,6 +2663,26 @@ name = "percent-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
+
+[[package]]
+name = "pin-project"
+version = "1.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2466b2336ed02bcdca6b294417127b90ec92038d1d5c4fbeac971a922e0e0924"
+dependencies = [
+ "pin-project-internal",
+]
+
+[[package]]
+name = "pin-project-internal"
+version = "1.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c96395f0a926bc13b1c17622aaddda1ecb55d49c8f1bf9777e4d877800a43f8b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "pin-project-lite"
@@ -2720,6 +2823,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "prost"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2796faa41db3ec313a31f7624d9286acf277b52de526150b7e69f3debf891ee5"
+dependencies = [
+ "bytes",
+ "prost-derive",
+]
+
+[[package]]
+name = "prost-derive"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
+dependencies = [
+ "anyhow",
+ "itertools",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -3407,6 +3533,7 @@ dependencies = [
  "sdkwork-database-sqlx",
  "serde",
  "serde_json",
+ "sqlx",
  "thiserror",
  "tokio",
  "tracing",
@@ -3490,7 +3617,10 @@ name = "sdkwork-drive-http"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "http 1.4.1",
  "sdkwork-drive-observability",
+ "sdkwork-drive-security",
+ "sdkwork-web-core",
  "serde",
  "serde_json",
  "tokio",
@@ -3509,14 +3639,18 @@ dependencies = [
  "sqlx",
  "tokio",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
 name = "sdkwork-drive-observability"
 version = "0.1.0"
 dependencies = [
+ "opentelemetry",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
  "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -3541,6 +3675,7 @@ dependencies = [
  "axum",
  "http 1.4.1",
  "sdkwork-drive-config",
+ "sdkwork-drive-observability",
  "sdkwork-drive-security",
  "sdkwork-drive-workspace-service",
  "sdkwork-router-drive-app-api",
@@ -3555,7 +3690,6 @@ dependencies = [
  "tower",
  "tower-http",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -3616,24 +3750,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-drive-uploader-service"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-drive-workspace-service",
+ "tokio",
+]
+
+[[package]]
 name = "sdkwork-drive-workspace-service"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "hmac 0.12.1",
  "reqwest 0.12.28",
  "sdkwork-database-config",
  "sdkwork-database-repository",
  "sdkwork-database-sqlx",
  "sdkwork-drive-config",
+ "sdkwork-drive-contract",
  "sdkwork-drive-database-host",
  "sdkwork-drive-observability",
+ "sdkwork-drive-security",
  "sdkwork-drive-storage-contract",
  "sdkwork-drive-storage-local",
  "sdkwork-id-core",
  "sdkwork-utils-rust",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "sqlx",
  "tokio",
  "tracing",
@@ -3645,14 +3791,6 @@ name = "sdkwork-iam-context-service"
 version = "0.1.0"
 dependencies = [
  "sdkwork-utils-rust",
-]
-
-[[package]]
-name = "sdkwork-iam-directory-repository-sqlx"
-version = "0.1.0"
-dependencies = [
- "sdkwork-database-config",
- "sdkwork-iam-context-service",
 ]
 
 [[package]]
@@ -3710,13 +3848,16 @@ dependencies = [
  "chrono",
  "http 1.4.1",
  "sdkwork-drive-config",
+ "sdkwork-drive-contract",
  "sdkwork-drive-http",
  "sdkwork-drive-observability",
  "sdkwork-drive-security",
  "sdkwork-drive-storage-contract",
  "sdkwork-drive-storage-s3",
+ "sdkwork-drive-uploader-service",
  "sdkwork-drive-workspace-service",
  "sdkwork-iam-web-adapter",
+ "sdkwork-router-drive-open-api",
  "sdkwork-utils-rust",
  "sdkwork-web-axum",
  "sdkwork-web-core",
@@ -3738,6 +3879,7 @@ dependencies = [
  "axum",
  "http 1.4.1",
  "sdkwork-drive-config",
+ "sdkwork-drive-contract",
  "sdkwork-drive-http",
  "sdkwork-drive-observability",
  "sdkwork-drive-security",
@@ -3796,7 +3938,6 @@ dependencies = [
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
  "sdkwork-iam-context-service",
- "sdkwork-iam-directory-repository-sqlx",
  "sdkwork-iam-web-adapter",
  "sdkwork-utils-rust",
  "sdkwork-web-axum",
@@ -3819,6 +3960,7 @@ dependencies = [
  "axum",
  "http 1.4.1",
  "sdkwork-drive-config",
+ "sdkwork-drive-contract",
  "sdkwork-drive-http",
  "sdkwork-drive-observability",
  "sdkwork-drive-security",
@@ -3883,10 +4025,14 @@ dependencies = [
  "async-trait",
  "axum",
  "getrandom 0.2.17",
+ "hmac 0.12.1",
  "http 1.4.1",
+ "rsa",
  "sdkwork-web-contract",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
+ "tokio",
  "tracing",
 ]
 
@@ -4687,6 +4833,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 
 [[package]]
+name = "tonic"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e581ba15a835f4d9ea06c55ab1bd4dce26fc53752c69a04aac00703bfb49ba9"
+dependencies = [
+ "async-trait",
+ "base64",
+ "bytes",
+ "http 1.4.1",
+ "http-body 1.0.1",
+ "http-body-util",
+ "percent-encoding",
+ "pin-project",
+ "prost",
+ "tokio-stream",
+ "tower-layer",
+ "tower-service",
+ "tracing",
+]
+
+[[package]]
 name = "tower"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4775,6 +4942,24 @@ dependencies = [
  "log",
  "once_cell",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-opentelemetry"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ddcf5959f39507d0d04d6413119c04f33b623f4f951ebcbdddddfad2d0623a9c"
+dependencies = [
+ "js-sys",
+ "once_cell",
+ "opentelemetry",
+ "opentelemetry_sdk",
+ "smallvec",
+ "tracing",
+ "tracing-core",
+ "tracing-log",
+ "tracing-subscriber",
+ "web-time",
 ]
 
 [[package]]

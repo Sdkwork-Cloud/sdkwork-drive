@@ -15,6 +15,7 @@ import {
 import { omitAuthProjectionBody, omitAuthProjectionQuery } from '../sdk/authProjection';
 import type { DriveAppSdkClient, DriveAppSdkRequest } from '../sdk/driveAppSdkClient';
 import type { SessionSnapshot } from '../session/sessionStore';
+import { isDriveAbortError } from '../transfer/downloadTransfer';
 
 export interface SharedSpace {
   id: string;
@@ -124,22 +125,39 @@ export interface DriveShareLink {
   expiresAtEpochMs?: number;
   downloadLimit?: number;
   downloadCount: number;
+  accessCodeRequired: boolean;
   lifecycleStatus: string;
   version: number;
 }
 
 export interface DriveShareLinkWithToken extends DriveShareLink {
   token: string;
+  accessCode?: string;
 }
 
 export interface DriveCreateShareLinkOptions extends DriveFileWriteOptions {
   role?: DriveShareLinkRole;
   expiresAtEpochMs?: number;
   downloadLimit?: number;
+  accessCode?: string;
+}
+
+export interface DriveClaimShareLinkResult {
+  shareLinkId: string;
+  nodeId: string;
+  spaceId: string;
+  role: DriveShareLinkRole;
+  permissionId: string;
+  alreadyClaimed: boolean;
 }
 
 export interface DriveFileService {
   getAllWorkspaceFiles(options?: DriveFileReadOptions): Promise<DriveFile[]>;
+  listMoveCopyDestinationFolders(
+    sourceFiles: Array<Pick<DriveFile, 'id' | 'spaceId'>>,
+    section: string,
+    options?: DriveFileReadOptions,
+  ): Promise<DriveFile[]>;
   getFolderPath(folderId: string, options?: DriveFileReadOptions): Promise<DriveFile[]>;
   listFiles(
     section: string,
@@ -178,6 +196,10 @@ export interface DriveFileService {
     options?: DriveCreateShareLinkOptions,
   ): Promise<DriveShareLinkWithToken>;
   revokeShareLink(shareLinkId: string, options?: DriveFileWriteOptions): Promise<boolean>;
+  claimShareLink(
+    token: string,
+    options?: DriveFileReadOptions,
+  ): Promise<DriveClaimShareLinkResult>;
   toggleStar(id: string, options?: DriveFileWriteOptions): Promise<boolean>;
   uploadFile(
     file: DriveUploaderBlobLike,
@@ -258,16 +280,6 @@ interface RemoteIdentity {
 
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function isAbortError(value: unknown): boolean {
-  if (value instanceof DOMException && value.name === 'AbortError') {
-    return true;
-  }
-  if (value instanceof Error) {
-    return value.name === 'AbortError' || /\babort(?:ed)?\b/i.test(value.message);
-  }
-  return false;
 }
 
 function isConflictError(value: unknown): boolean {
@@ -439,6 +451,8 @@ function mapShareLink(record: unknown): DriveShareLink {
     expiresAtEpochMs: numberField(source, 'expiresAtEpochMs', 'expires_at_epoch_ms'),
     downloadLimit: numberField(source, 'downloadLimit', 'download_limit'),
     downloadCount: numberField(source, 'downloadCount', 'download_count') ?? 0,
+    accessCodeRequired:
+      booleanField(source, 'accessCodeRequired', 'access_code_required') ?? false,
     lifecycleStatus:
       stringField(source, 'lifecycleStatus', 'lifecycle_status') || 'active',
     version: numberField(source, 'version') ?? 1,
@@ -505,6 +519,14 @@ function resolveIdentity(getSession: () => SessionSnapshot): RemoteIdentity {
     subjectType: normalizeSubjectType(snapshot.context?.actorKind),
     ownerLabel: snapshot.user?.displayName || snapshot.user?.email || userId,
   };
+}
+
+function resolveOrganizationId(getSession: () => SessionSnapshot): string {
+  const organizationId = getSession().context?.organizationId?.trim();
+  if (!organizationId || organizationId === '0') {
+    throw new Error('Drive organization context is required to create a shared space.');
+  }
+  return organizationId;
 }
 
 function mapNodeToDriveFile(
@@ -699,12 +721,86 @@ function createSdkBackedDriveFileService(
   downloadFetch: typeof fetch = fetch,
 ): DriveFileService {
   const favoriteNodeIds = new Set<string>();
+  const favoriteIdsApiCache = new Map<string, Set<string>>();
+  const folderColorCache = new Map<string, string | null>();
   const knownFiles = new Map<string, DriveFile>();
   const KNOWN_FILES_CACHE_LIMIT = 2_000;
   const personalSpaceIds = new Map<string, string>();
   const gitRepositorySpaceIds = new Map<string, string>();
   let sharedSpacesCache: SharedSpace[] = [];
   let knowledgeBaseSpacesCache: KnowledgeBaseSpace[] = [];
+  let spacesCatalogFetch: Promise<void> | null = null;
+
+  const favoriteCacheScopeKey = (identity: RemoteIdentity, spaceId?: string): string =>
+    `${identity.tenantId}:${spaceId ?? '__all__'}`;
+
+  const invalidateFavoriteIdsCache = (): void => {
+    favoriteIdsApiCache.clear();
+  };
+
+  const rememberFolderColor = (folderId: string, color: string | null | undefined): void => {
+    if (color && color.trim()) {
+      folderColorCache.set(folderId, color);
+      return;
+    }
+    folderColorCache.set(folderId, null);
+  };
+
+  const resolveFolderColor = (
+    folderId: string,
+    inlineColor: string | undefined,
+  ): string | undefined => {
+    if (inlineColor) {
+      rememberFolderColor(folderId, inlineColor);
+      return inlineColor;
+    }
+    const cached = folderColorCache.get(folderId);
+    if (cached === null) {
+      return undefined;
+    }
+    if (cached) {
+      return cached;
+    }
+    return undefined;
+  };
+
+  const loadFolderColor = async (
+    folderId: string,
+    options: DriveFileReadOptions = {},
+  ): Promise<string | undefined> => {
+    const cached = folderColorCache.get(folderId);
+    if (cached !== undefined) {
+      return cached || undefined;
+    }
+
+    try {
+      const properties = await requestPaginatedItems({
+        operationId: 'nodeProperties.list',
+        signal: options.signal,
+        pathParams: { nodeId: folderId },
+        query: {
+          visibility: 'private',
+          pageSize: DEFAULT_PAGE_SIZE,
+        },
+      });
+      const property = properties.find((item) => {
+        const record = isRecord(item) ? item : {};
+        const key = stringField(record, 'propertyKey', 'property_key');
+        return key === FOLDER_COLOR_PROPERTY_KEY || key === 'folderColor';
+      });
+      const color = isRecord(property)
+        ? stringField(property, 'propertyValue', 'property_value', 'value')
+        : undefined;
+      rememberFolderColor(folderId, color);
+      return color || undefined;
+    } catch (err) {
+      if (isDriveAbortError(err)) {
+        throw err;
+      }
+      rememberFolderColor(folderId, null);
+      return undefined;
+    }
+  };
 
   const rememberFiles = (files: DriveFile[]): void => {
     for (const file of files) {
@@ -790,35 +886,52 @@ function createSdkBackedDriveFileService(
       return file;
     }
 
-    try {
-      const properties = await requestPaginatedItems({
-        operationId: 'nodeProperties.list',
-        signal: options.signal,
-        pathParams: { nodeId: file.id },
-        query: {
-          visibility: 'private',
-          pageSize: DEFAULT_PAGE_SIZE,
-        },
-      });
-      const property = properties.find((item) => {
-        const record = isRecord(item) ? item : {};
-        const key = stringField(record, 'propertyKey', 'property_key');
-        return key === FOLDER_COLOR_PROPERTY_KEY || key === 'folderColor';
-      });
-      if (isRecord(property)) {
-        return {
-          ...file,
-          color: stringField(property, 'propertyValue', 'property_value', 'value') || file.color,
-        };
-      }
-    } catch (err) {
-      if (isAbortError(err)) {
-        throw err;
-      }
-      return file;
+    const resolvedColor = resolveFolderColor(file.id, file.color);
+    if (resolvedColor !== undefined || folderColorCache.has(file.id)) {
+      return {
+        ...file,
+        color: resolvedColor,
+      };
     }
 
-    return file;
+    const loadedColor = await loadFolderColor(file.id, options);
+    return {
+      ...file,
+      color: loadedColor,
+    };
+  };
+
+  const applyFolderColorsToFiles = async (
+    files: DriveFile[],
+    options: DriveFileReadOptions = {},
+  ): Promise<DriveFile[]> => {
+    const foldersNeedingFetch = files.filter(
+      (file) =>
+        file.type === 'folder'
+        && !resolveFolderColor(file.id, file.color)
+        && !folderColorCache.has(file.id),
+    );
+    if (foldersNeedingFetch.length === 0) {
+      return files.map((file) => {
+        if (file.type !== 'folder') {
+          return file;
+        }
+        const color = resolveFolderColor(file.id, file.color);
+        return color ? { ...file, color } : file;
+      });
+    }
+
+    await Promise.all(
+      foldersNeedingFetch.map((file) => loadFolderColor(file.id, options)),
+    );
+
+    return files.map((file) => {
+      if (file.type !== 'folder') {
+        return file;
+      }
+      const color = resolveFolderColor(file.id, file.color);
+      return color ? { ...file, color } : file;
+    });
   };
 
   const listFavoriteNodeIds = async (
@@ -826,6 +939,15 @@ function createSdkBackedDriveFileService(
     spaceId?: string,
     options: DriveFileReadOptions = {},
   ): Promise<Set<string>> => {
+    const cacheKey = favoriteCacheScopeKey(identity, spaceId);
+    const cachedFavoriteIds = favoriteIdsApiCache.get(cacheKey);
+    if (cachedFavoriteIds) {
+      for (const id of cachedFavoriteIds) {
+        favoriteNodeIds.add(id);
+      }
+      return new Set(cachedFavoriteIds);
+    }
+
     const favoriteIds = new Set<string>();
     const items = await requestPaginatedItems({
       operationId: 'favorites.list',
@@ -843,7 +965,34 @@ function createSdkBackedDriveFileService(
         favoriteNodeIds.add(id);
       }
     }
+    favoriteIdsApiCache.set(cacheKey, favoriteIds);
     return favoriteIds;
+  };
+
+  const loadSpacesCatalog = async (options: DriveFileReadOptions = {}): Promise<void> => {
+    if (spacesCatalogFetch) {
+      await spacesCatalogFetch;
+      return;
+    }
+
+    spacesCatalogFetch = (async () => {
+      const response = await sdkRequest<unknown>({
+        operationId: 'spaces.list',
+        signal: options.signal,
+        query: {},
+      });
+      const items = extractItems(response);
+      sharedSpacesCache = items
+        .filter(isTeamSpace)
+        .map((item) => responseToSharedSpace(item));
+      knowledgeBaseSpacesCache = items
+        .filter(isKnowledgeBaseSpace)
+        .map((item) => responseToKnowledgeBaseSpace(item));
+    })().finally(() => {
+      spacesCatalogFetch = null;
+    });
+
+    await spacesCatalogFetch;
   };
 
   const mapNodeList = async (
@@ -884,12 +1033,14 @@ function createSdkBackedDriveFileService(
 
     if (options.parentId) {
       const filteredFiles = files.filter((file) => file.parentId === options.parentId);
-      rememberFiles(filteredFiles);
-      return filteredFiles;
+      const decoratedFiles = await applyFolderColorsToFiles(filteredFiles, options);
+      rememberFiles(decoratedFiles);
+      return decoratedFiles;
     }
 
-    rememberFiles(files);
-    return files;
+    const decoratedFiles = await applyFolderColorsToFiles(files, options);
+    rememberFiles(decoratedFiles);
+    return decoratedFiles;
   };
 
   const resolveTrashListQuery = async (
@@ -1187,7 +1338,7 @@ function createSdkBackedDriveFileService(
       });
       forgetFile(nodeId);
     } catch (cleanupError) {
-      if (isAbortError(cleanupError)) {
+      if (isDriveAbortError(cleanupError)) {
         throw cleanupError;
       }
     }
@@ -1322,7 +1473,7 @@ function createSdkBackedDriveFileService(
       return normalizedFile;
     } catch (error) {
       // Keep prepared upload nodes for resumable retries unless the caller explicitly aborted.
-      if (isAbortError(error)) {
+      if (isDriveAbortError(error)) {
         await discardIncompleteUploadNode(preparedNodeId, identity, options);
       }
       throw error;
@@ -1333,6 +1484,53 @@ function createSdkBackedDriveFileService(
     async getAllWorkspaceFiles(options) {
       await service.listFiles('my-storage', undefined, undefined, options);
       return Array.from(knownFiles.values());
+    },
+    async listMoveCopyDestinationFolders(sourceFiles, section, options) {
+      if (sourceFiles.length === 0) {
+        return [];
+      }
+
+      const identity = resolveIdentity(getSession);
+      const excludeNodeIds = new Set(sourceFiles.map((file) => file.id));
+      const firstFile = sourceFiles[0];
+      let spaceId = firstFile.spaceId;
+      if (!spaceId && section && !VIEW_SECTIONS.has(section) && section !== 'computers') {
+        spaceId = await resolvePrimarySpaceId(section, identity, options);
+      }
+      if (!spaceId) {
+        spaceId = await resolveNodeSpaceId(firstFile.id, identity, options);
+      }
+      const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
+      const folders: DriveFile[] = [];
+      const queue: Array<string | null> = [null];
+
+      while (queue.length > 0) {
+        const parentId = queue.shift();
+        const items = await requestPaginatedItems({
+          operationId: 'nodes.list',
+          signal: options?.signal,
+          pathParams: { spaceId },
+          query: {
+            parentNodeId: parentId || undefined,
+            pageSize: DEFAULT_PAGE_SIZE,
+          },
+        });
+        const mapped = await mapNodeList(items, identity, {
+          parentId,
+          favoriteIds,
+          signal: options?.signal,
+        });
+        for (const entry of mapped) {
+          if (entry.type !== 'folder' || excludeNodeIds.has(entry.id)) {
+            continue;
+          }
+          folders.push(entry);
+          queue.push(entry.id);
+        }
+      }
+
+      rememberFiles(folders);
+      return folders;
     },
     async getFolderPath(folderId, options) {
       const localPath = decodeLocalFilesystemId(folderId);
@@ -1528,9 +1726,33 @@ function createSdkBackedDriveFileService(
         const files = await mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
         return { files, nextPageToken };
       }
-      if (section === 'computers' || section === APP_SECTION_ID) {
-        const files = await service.listFiles(section, searchQuery, parentId, options);
-        return { files };
+      if (section === 'computers') {
+        const allFiles = await listLocalComputerFiles(searchQuery, parentId, identity, options);
+        const pageSize = pageOptions.pageSize ?? DEFAULT_PAGE_SIZE;
+        const startOffset = options?.pageToken ? Number(options.pageToken) : 0;
+        const safeStart = Number.isFinite(startOffset) && startOffset >= 0 ? startOffset : 0;
+        const files = allFiles.slice(safeStart, safeStart + pageSize);
+        const nextOffset = safeStart + pageSize;
+        return {
+          files,
+          nextPageToken: nextOffset < allFiles.length ? String(nextOffset) : undefined,
+        };
+      }
+      if (section === APP_SECTION_ID) {
+        const spaceIds = await resolveSectionSpaceIds(section, identity, options);
+        const spaceId = spaceIds[0];
+        if (!spaceId) {
+          return { files: [] };
+        }
+        const { items, nextPageToken } = await requestPageItems({
+          operationId: 'nodes.list',
+          signal: options?.signal,
+          pathParams: { spaceId },
+          query: { parentNodeId: parentId || undefined },
+        }, pageOptions);
+        const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
+        const files = await mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
+        return { files, nextPageToken };
       }
 
       let request: DriveAppSdkRequest;
@@ -1589,7 +1811,6 @@ function createSdkBackedDriveFileService(
       return file;
     },
     async setFolderColor(folderId, color, options) {
-      const identity = resolveIdentity(getSession);
       if (color) {
         await sdkRequest<unknown>({
           operationId: 'nodeProperties.set',
@@ -1603,6 +1824,11 @@ function createSdkBackedDriveFileService(
             visibility: 'private',
           },
         });
+        rememberFolderColor(folderId, color);
+        const cached = knownFiles.get(folderId);
+        if (cached) {
+          rememberFiles([{ ...cached, color }]);
+        }
         return;
       }
 
@@ -1617,6 +1843,12 @@ function createSdkBackedDriveFileService(
           visibility: 'private',
         },
       });
+      rememberFolderColor(folderId, null);
+      const cached = knownFiles.get(folderId);
+      if (cached) {
+        const { color: _removed, ...rest } = cached;
+        rememberFiles([rest]);
+      }
     },
     async createFolder(name, section, parentId, options) {
       assertCanCreateFolderInSection(section);
@@ -1747,23 +1979,28 @@ function createSdkBackedDriveFileService(
       return extractItems(response).map((item) => mapShareLink(item));
     },
     async createShareLink(nodeId, options = {}) {
-      const token = makeShareToken();
       const body: JsonRecord = {
         id: makeId('share-link'),
-        token,
         role: options.role || 'reader',
       };
       assignDefined(body, 'expiresAtEpochMs', options.expiresAtEpochMs);
       assignDefined(body, 'downloadLimit', options.downloadLimit);
+      assignDefined(body, 'accessCode', options.accessCode);
       const response = await sdkRequest<unknown>({
         operationId: 'shareLinks.create',
         signal: options?.signal,
         pathParams: { nodeId },
         body,
       });
+      const source = isRecord(response) ? response : {};
+      const responseToken = stringField(source, 'token');
+      if (!responseToken) {
+        throw new Error('Share link token was not returned by the server.');
+      }
       return {
         ...mapShareLink(response),
-        token,
+        token: responseToken,
+        accessCode: stringField(source, 'accessCode', 'access_code') || undefined,
       };
     },
     async revokeShareLink(shareLinkId, options) {
@@ -1774,6 +2011,34 @@ function createSdkBackedDriveFileService(
         query: {},
       });
       return booleanField(isRecord(response) ? response : {}, 'revoked') ?? false;
+    },
+    async claimShareLink(token, options) {
+      const trimmed = token.trim();
+      if (!trimmed) {
+        throw new Error('Share link token is required.');
+      }
+      const response = await sdkRequest<unknown>({
+        operationId: 'shareLinks.claim',
+        signal: options?.signal,
+        pathParams: { token: trimmed },
+      });
+      const source = isRecord(response) ? response : {};
+      const role = stringField(source, 'role');
+      const normalizedRole: DriveShareLinkRole =
+        role === 'writer' || role === 'commenter' ? role : 'reader';
+      return {
+        shareLinkId: requiredStringField(source, 'shareLinkId', 'shareLinkId', 'share_link_id'),
+        nodeId: requiredStringField(source, 'nodeId', 'nodeId', 'node_id'),
+        spaceId: requiredStringField(source, 'spaceId', 'spaceId', 'space_id'),
+        role: normalizedRole,
+        permissionId: requiredStringField(source, 'permissionId', 'permissionId', 'permission_id'),
+        alreadyClaimed: requiredBooleanField(
+          source,
+          'alreadyClaimed',
+          'alreadyClaimed',
+          'already_claimed',
+        ),
+      };
     },
     async toggleStar(id, options) {
       const identity = resolveIdentity(getSession);
@@ -1787,6 +2052,7 @@ function createSdkBackedDriveFileService(
         });
         const favorited = booleanField(isRecord(response) ? response : {}, 'favorited') ?? false;
         favoriteNodeIds.delete(id);
+        invalidateFavoriteIdsCache();
         const existing = knownFiles.get(id);
         if (existing) {
           knownFiles.set(id, { ...existing, isStarred: false });
@@ -1805,6 +2071,7 @@ function createSdkBackedDriveFileService(
       if (favorited) {
         favoriteNodeIds.add(id);
       }
+      invalidateFavoriteIdsCache();
       const existing = knownFiles.get(id);
       if (existing) {
         knownFiles.set(id, { ...existing, isStarred: favorited });
@@ -1930,43 +2197,25 @@ function createSdkBackedDriveFileService(
       return responseToStorageSummary(response, identity);
     },
     async listSharedSpaces(options) {
-      const identity = resolveIdentity(getSession);
-      const response = await sdkRequest<unknown>({
-        operationId: 'spaces.list',
-        signal: options?.signal,
-        query: {
-        },
-      });
-      sharedSpacesCache = extractItems(response)
-        .filter(isTeamSpace)
-        .map((item) => responseToSharedSpace(item));
+      await loadSpacesCatalog(options);
       return sharedSpacesCache;
     },
     getSharedSpaces: () => sharedSpacesCache,
     async listKnowledgeBaseSpaces(options) {
-      const identity = resolveIdentity(getSession);
-      const response = await sdkRequest<unknown>({
-        operationId: 'spaces.list',
-        signal: options?.signal,
-        query: {
-        },
-      });
-      knowledgeBaseSpacesCache = extractItems(response)
-        .filter(isKnowledgeBaseSpace)
-        .map((item) => responseToKnowledgeBaseSpace(item));
+      await loadSpacesCatalog(options);
       return knowledgeBaseSpacesCache;
     },
     getKnowledgeBaseSpaces: () => knowledgeBaseSpacesCache,
     async createSharedSpace(name, icon, color, description, options) {
-      const identity = resolveIdentity(getSession);
+      const organizationId = resolveOrganizationId(getSession);
       const spaceId = makeId('space');
       const response = await sdkRequest<unknown>({
         operationId: 'spaces.create',
         signal: options?.signal,
         body: {
           id: spaceId,
-          ownerSubjectType: 'group',
-          ownerSubjectId: spaceId,
+          ownerSubjectType: 'organization',
+          ownerSubjectId: organizationId,
           displayName: name,
           spaceType: 'team',
           presentationIcon: icon,

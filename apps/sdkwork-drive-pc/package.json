@@ -9,7 +9,9 @@
     "test": "vitest run",
     "dev:desktop": "pnpm --filter sdkwork-drive-pc-desktop dev:desktop",
     "build:desktop": "pnpm --filter sdkwork-drive-pc-desktop build:desktop",
-    "build:desktop:local": "pnpm --filter sdkwork-drive-pc-desktop build:desktop:local"
+    "build:desktop:local": "pnpm --filter sdkwork-drive-pc-desktop build:desktop:local",
+    "build:standalone": "node ../../scripts/sdkwork-command.mjs build --deployment-profile standalone",
+    "build:debug": "node ../../scripts/drive-build.mjs --deployment-profile standalone --debug"
   },
   "dependencies": {
     "@sdkwork/appbase-app-sdk": "workspace:*",
@@ -20,6 +22,7 @@
     "@sdkwork/drive-app-sdk": "workspace:*",
     "@sdkwork/i18n-pc-react": "workspace:*",
     "@sdkwork/ui-pc-react": "workspace:*",
+    "@sdkwork/utils": "workspace:*",
     "lucide-react": "catalog:",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
@@ -50,11 +53,14 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.14",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
+    "jsdom": "^26.1.0",
     "tailwindcss": "^4.1.14",
     "typescript": "~5.8.2",
     "vite": "^6.2.3",

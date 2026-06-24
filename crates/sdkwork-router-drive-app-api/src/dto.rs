@@ -86,6 +86,12 @@ pub(crate) struct CreateUploadSessionResponse {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub(crate) struct CreateDownloadGrantRequest {
+    pub(crate) requested_ttl_seconds: Option<u32>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct CreateDownloadUrlRequest {
     pub(crate) node_id: String,
     pub(crate) requested_ttl_seconds: Option<u32>,
@@ -519,6 +525,8 @@ pub(crate) struct DriveNodeResponse {
     pub(crate) content_type_group: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) content_length: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) folder_color: Option<String>,
     pub(crate) lifecycle_status: String,
     pub(crate) version: i64,
 }
@@ -528,6 +536,12 @@ pub(crate) struct DriveNodeResponse {
 pub(crate) struct NodeListResponse {
     pub(crate) items: Vec<DriveNodeResponse>,
     pub(crate) next_page_token: Option<String>,
+    #[serde(skip_serializing_if = "is_false_bool")]
+    pub(crate) incomplete_page: bool,
+}
+
+pub(crate) fn is_false_bool(value: &bool) -> bool {
+    !*value
 }
 
 #[derive(Debug, Serialize)]
@@ -854,7 +868,10 @@ pub(crate) struct EffectivePermissionListResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateShareLinkRequest {
     pub(crate) id: String,
+    #[serde(default)]
     pub(crate) token: String,
+    #[serde(default)]
+    pub(crate) access_code: Option<String>,
     pub(crate) role: Option<String>,
     pub(crate) expires_at_epoch_ms: Option<i64>,
     pub(crate) download_limit: Option<i64>,
@@ -872,8 +889,19 @@ pub(crate) struct ShareLinkResponse {
     pub(crate) expires_at_epoch_ms: Option<i64>,
     pub(crate) download_limit: Option<i64>,
     pub(crate) download_count: i64,
+    pub(crate) access_code_required: bool,
     pub(crate) lifecycle_status: String,
     pub(crate) version: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct CreateShareLinkResponse {
+    #[serde(flatten)]
+    pub(crate) link: ShareLinkResponse,
+    pub(crate) token: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) access_code: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -881,6 +909,17 @@ pub(crate) struct ShareLinkResponse {
 pub(crate) struct ShareLinkListResponse {
     pub(crate) items: Vec<ShareLinkResponse>,
     pub(crate) next_page_token: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ClaimShareLinkResponse {
+    pub(crate) share_link_id: String,
+    pub(crate) node_id: String,
+    pub(crate) space_id: String,
+    pub(crate) role: String,
+    pub(crate) permission_id: String,
+    pub(crate) already_claimed: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1021,6 +1060,8 @@ pub(crate) struct QuotaSummaryResponse {
     pub(crate) tenant_id: String,
     pub(crate) used_bytes: i64,
     pub(crate) object_count: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) quota_bytes: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1151,8 +1192,10 @@ pub(crate) struct ShareLinkRecord {
     pub(crate) expires_at_epoch_ms: Option<i64>,
     pub(crate) download_limit: Option<i64>,
     pub(crate) download_count: i64,
+    pub(crate) access_code_hash: Option<String>,
     pub(crate) lifecycle_status: String,
     pub(crate) version: i64,
+    pub(crate) created_by: String,
 }
 
 #[derive(Debug, Clone)]
@@ -1365,6 +1408,11 @@ impl From<ShareLinkRecord> for ShareLinkResponse {
             expires_at_epoch_ms: value.expires_at_epoch_ms,
             download_limit: value.download_limit,
             download_count: value.download_count,
+            access_code_required: value
+                .access_code_hash
+                .as_deref()
+                .map(str::trim)
+                .is_some_and(|hash| !hash.is_empty()),
             lifecycle_status: value.lifecycle_status,
             version: value.version,
         }
@@ -1428,6 +1476,218 @@ where
         Some(value) => OptionalI64Patch::Value(value),
         None => OptionalI64Patch::Null,
     })
+}
+
+pub(crate) const ASSET_NODE_SELECT_COLUMNS: &str = "\
+    id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, \
+    node_type, node_name, scene, source, content_state, file_extension, \
+    head_content_type, head_content_type_group, head_content_length, \
+    lifecycle_status, version, created_at, updated_at";
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ListAssetsQuery {
+    pub(crate) cursor: Option<String>,
+    pub(crate) page_size: Option<i64>,
+    pub(crate) kind: Option<String>,
+    pub(crate) source_type: Option<String>,
+    pub(crate) q: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct CreateAssetRequest {
+    pub(crate) organization_id: Option<String>,
+    pub(crate) drive_node_id: Option<String>,
+    pub(crate) virtual_reference: Option<serde_json::Value>,
+    pub(crate) title: Option<String>,
+    pub(crate) description: Option<String>,
+    pub(crate) scene: Option<String>,
+    pub(crate) source: Option<String>,
+    pub(crate) tags: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct UpdateAssetRequest {
+    pub(crate) title: Option<String>,
+    pub(crate) description: Option<String>,
+    pub(crate) scene: Option<String>,
+    pub(crate) source: Option<String>,
+    pub(crate) tags: Option<Vec<String>>,
+    pub(crate) visibility: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AssetActionRequest {
+    pub(crate) reason: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct MediaResourceResponse {
+    pub(crate) id: String,
+    pub(crate) kind: String,
+    pub(crate) source: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) uri: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) file_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) mime_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) size_bytes: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AssetItemResponse {
+    pub(crate) asset_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) id: Option<String>,
+    pub(crate) tenant_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) organization_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) user_id: Option<String>,
+    pub(crate) drive_space_id: String,
+    pub(crate) drive_node_id: String,
+    pub(crate) drive_uri: String,
+    pub(crate) node_type: String,
+    pub(crate) asset_kind: String,
+    pub(crate) title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) scene: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) source_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) tags: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) visibility: Option<String>,
+    pub(crate) lifecycle_status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) resource_snapshot: Option<MediaResourceResponse>,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AssetPageResponse {
+    pub(crate) items: Vec<AssetItemResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) next_cursor: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ListAssetCollectionsQuery {
+    pub(crate) cursor: Option<String>,
+    pub(crate) page_size: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct CreateAssetCollectionRequest {
+    pub(crate) organization_id: Option<String>,
+    pub(crate) title: String,
+    pub(crate) description: Option<String>,
+    pub(crate) collection_type: Option<String>,
+    pub(crate) visibility: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AssetCollectionResponse {
+    pub(crate) id: String,
+    pub(crate) tenant_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) organization_id: Option<String>,
+    pub(crate) user_id: String,
+    pub(crate) title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) collection_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) visibility: Option<String>,
+    pub(crate) lifecycle_status: String,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AssetCollectionPageResponse {
+    pub(crate) items: Vec<AssetCollectionResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) next_cursor: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct CreateAssetCollectionItemRequest {
+    pub(crate) asset_id: String,
+    pub(crate) sort_order: Option<i64>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AssetCollectionItemResponse {
+    pub(crate) id: String,
+    pub(crate) tenant_id: String,
+    pub(crate) collection_id: String,
+    pub(crate) asset_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) sort_order: Option<i64>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct DeleteAssetCollectionItemResponse {
+    pub(crate) deleted: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct CreateAssetRelationRequest {
+    pub(crate) related_asset_id: Option<String>,
+    pub(crate) relation_type: String,
+    pub(crate) source_domain: Option<String>,
+    pub(crate) source_resource_type: Option<String>,
+    pub(crate) source_resource_id: Option<String>,
+    pub(crate) metadata: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AssetRelationResponse {
+    pub(crate) id: String,
+    pub(crate) tenant_id: String,
+    pub(crate) asset_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) related_asset_id: Option<String>,
+    pub(crate) relation_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) source_domain: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) source_resource_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) source_resource_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) metadata: Option<serde_json::Value>,
+    pub(crate) lifecycle_status: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct DeleteAssetRelationResponse {
+    pub(crate) deleted: bool,
 }
 
 #[cfg(test)]

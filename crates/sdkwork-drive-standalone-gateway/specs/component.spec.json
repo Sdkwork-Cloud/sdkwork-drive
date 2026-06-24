@@ -141,7 +141,7 @@
         "sdkFamily": "sdkwork-drive-admin-storage-sdk",
         "apiAuthority": "sdkwork-drive.admin-storage",
         "surface": "backend-api",
-        "apiPrefix": "/admin/v3/api",
+        "apiPrefix": "/backend/v3/api",
         "runtimeMode": "embedded",
         "executableExport": "sdkwork_router_storage_backend_api::build_router_with_pool",
         "cargoDependency": "sdkwork-router-storage-backend-api",

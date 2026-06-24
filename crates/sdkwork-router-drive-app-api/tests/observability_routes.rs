@@ -474,7 +474,8 @@ async fn app_routes_emit_standardized_observability_events() {
         );
     }
     for expected_field in [
-        "INFO sdkwork.drive:",
+        "sdkwork.drive:",
+        "drive.http.request",
         "result=\"ok\"",
         "filter_has_owner_subject_type=true",
         "filter_has_owner_subject_id=true",
@@ -562,7 +563,11 @@ async fn app_route_errors_emit_standardized_observability_events() {
                 .method(Method::GET)
                 .uri(format!(
                     "/app/v3/api/drive/download_tokens/{}",
-                    build_download_token("node-not-found-001", now_epoch_ms() + 120_000)
+                    build_download_token(
+                        "tenant-001",
+                        "node-not-found-001",
+                        now_epoch_ms() + 120_000
+                    )
                 ))
                 .body(Body::empty())
                 .expect("request should be built"),
@@ -592,16 +597,13 @@ async fn app_route_errors_emit_standardized_observability_events() {
     }
 }
 
-fn build_download_token(node_id: &str, expires_at_epoch_ms: i64) -> String {
-    format!("dlv1_{}_{}", hex_encode(node_id), expires_at_epoch_ms)
-}
-
-fn hex_encode(value: &str) -> String {
-    value
-        .as_bytes()
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect()
+fn build_download_token(tenant_id: &str, node_id: &str, expires_at_epoch_ms: i64) -> String {
+    sdkwork_drive_workspace_service::application::download_service::build_download_token(
+        tenant_id,
+        node_id,
+        expires_at_epoch_ms,
+    )
+    .expect("download token should be signed")
 }
 
 fn now_epoch_ms() -> i64 {

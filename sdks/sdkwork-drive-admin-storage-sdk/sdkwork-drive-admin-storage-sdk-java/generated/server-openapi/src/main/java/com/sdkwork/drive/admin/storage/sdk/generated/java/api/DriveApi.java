@@ -8,15 +8,15 @@ import java.util.Map;
 
 public class DriveApi {
     private final HttpClient client;
-    
+
     public DriveApi(HttpClient client) {
         this.client = client;
     }
 
-    public StorageProviderBinding storageProviderBindingsDefaultGet(String tenantId, String spaceId) throws Exception {
+    public StorageProviderBinding storageProviderBindingsDefaultGet(String spaceId, String spaceType) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
-            new QueryParameterSpec("spaceId", spaceId, "form", true, false, null)
+            new QueryParameterSpec("spaceId", spaceId, "form", true, false, null),
+            new QueryParameterSpec("spaceType", spaceType, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/bindings/default"), query));
         return client.convertValue(raw, new TypeReference<StorageProviderBinding>() {});
@@ -28,9 +28,8 @@ public class DriveApi {
     }
 
     /** Delete a Drive default storage provider binding */
-    public DeleteStorageProviderBindingResponse storageProviderBindingsDefaultDelete(String tenantId, String operatorId, String spaceId) throws Exception {
+    public DeleteStorageProviderBindingResponse storageProviderBindingsDefaultDelete(String operatorId, String spaceId) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
             new QueryParameterSpec("spaceId", spaceId, "form", true, false, null),
             new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
         ));
@@ -56,11 +55,8 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<StorageProvider>() {});
     }
 
-    public DeleteStorageProviderResponse storageProvidersDelete(String providerId, String operatorId) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
-        ));
-        Object raw = client.delete(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + ""), query));
+    public DeleteStorageProviderResponse storageProvidersDelete(String providerId) throws Exception {
+        Object raw = client.delete(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + ""));
         return client.convertValue(raw, new TypeReference<DeleteStorageProviderResponse>() {});
     }
 
@@ -151,9 +147,8 @@ public class DriveApi {
     }
 
     /** List Drive storage provider bindings */
-    public StorageProviderBindingListResponse storageProviderBindingsList(String tenantId, String spaceId, String providerId, String lifecycleStatus) throws Exception {
+    public StorageProviderBindingListResponse storageProviderBindingsList(String spaceId, String providerId, String lifecycleStatus) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("tenantId", tenantId, "form", true, false, null),
             new QueryParameterSpec("spaceId", spaceId, "form", true, false, null),
             new QueryParameterSpec("providerId", providerId, "form", true, false, null),
             new QueryParameterSpec("lifecycleStatus", lifecycleStatus, "form", true, false, null)

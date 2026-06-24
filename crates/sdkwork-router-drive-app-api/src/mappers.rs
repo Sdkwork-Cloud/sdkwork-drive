@@ -19,6 +19,7 @@ pub(crate) fn map_node_row(row: &sqlx::any::AnyRow) -> DriveNodeResponse {
         content_type: row.try_get("head_content_type").ok().flatten(),
         content_type_group: row.try_get("head_content_type_group").ok().flatten(),
         content_length: row.try_get("head_content_length").ok().flatten(),
+        folder_color: None,
         lifecycle_status: row.get("lifecycle_status"),
         version: row.get("version"),
     }
@@ -80,6 +81,12 @@ pub(crate) fn map_share_link_row(row: &sqlx::any::AnyRow) -> ShareLinkResponse {
         expires_at_epoch_ms: row.get("expires_at_epoch_ms"),
         download_limit: row.get("download_limit"),
         download_count: row.get("download_count"),
+        access_code_required: row
+            .try_get::<Option<String>, _>("access_code_hash")
+            .ok()
+            .flatten()
+            .map(|value| !value.trim().is_empty())
+            .unwrap_or(false),
         lifecycle_status: row.get("lifecycle_status"),
         version: row.get("version"),
     }
@@ -94,8 +101,10 @@ pub(crate) fn map_share_link_record(row: &sqlx::any::AnyRow) -> ShareLinkRecord 
         expires_at_epoch_ms: row.get("expires_at_epoch_ms"),
         download_limit: row.get("download_limit"),
         download_count: row.get("download_count"),
+        access_code_hash: row.try_get("access_code_hash").ok().flatten(),
         lifecycle_status: row.get("lifecycle_status"),
         version: row.get("version"),
+        created_by: row.get("created_by"),
     }
 }
 

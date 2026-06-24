@@ -6,6 +6,7 @@
     "version": "0.1.0",
     "language": "go",
     "sdkType": "backend",
+    "protocol": "http",
     "packageName": "sdkwork-drive-backend-sdk-generated-go"
   },
   "generatedFiles": [
@@ -19,11 +20,11 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "22bc25992de15a7d18468e61f95366835492c560e33f647e0a40d47fbb064a10"
+      "sha256": "5dc8830ce02b41c09a20bf2f8c75a07d3631e09dfe80904771d481955d892eac"
     },
     {
       "path": "api/labels.go",
-      "sha256": "991e3c24fed2676a061df0ece3255da9c9497440b85be893291278b21bf7efd9"
+      "sha256": "6affeb5ed4c9c06a3434dfb28b62965d1a5c8e0b5f3632725e4cf867f5da3778"
     },
     {
       "path": "api/paths.go",
@@ -31,7 +32,7 @@
     },
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -55,7 +56,7 @@
     },
     {
       "path": "http/client.go",
-      "sha256": "8eb80a7718afbcbe5f83dcee1c4e5be529a8bba1707204e79d583dfe79a959c6"
+      "sha256": "5574d28592e72078ae744ce20c0930fa7825b32ab3e2b18ed3de16652df50b0e"
     },
     {
       "path": "http/doc.go",
@@ -67,11 +68,11 @@
     },
     {
       "path": "README.md",
-      "sha256": "2952c162403dc0c2fb874e162d6368dbc609f16f694c10be5330f1a73f197cfd"
+      "sha256": "61c3c8bca92fdf609880233b17ecbb5a0769ba9f12ac5783555b2a7104494209"
     },
     {
       "path": "sdk.go",
-      "sha256": "285ae445ba0c7e5bd2bc09a18327f1f86a45359dc6c5938eb851dbdbb12a2f7f"
+      "sha256": "91f09e5aaf82585db521b84f610b14456ecc450291e7636102594955c65056a6"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -95,7 +96,7 @@
     },
     {
       "path": "types/create_label_request.go",
-      "sha256": "676c163411deb74bae202d000a2a88ce01bc1e3481902415ad5845036fadede4"
+      "sha256": "565005a6b50673094a6a0146ce68c2eb42cdacea0ddb36429c0fb46305529f5a"
     },
     {
       "path": "types/create_storage_provider_request.go",
@@ -187,7 +188,7 @@
     },
     {
       "path": "types/set_default_storage_provider_binding_request.go",
-      "sha256": "3162fd8b11bd7c1e31a16f3bfedeabc3837d13bf906fb3fad618a6c6da96dafb"
+      "sha256": "4253b297a20af704364352a15c901e91c7ea6797dad4faf094429ff335ab1aac"
     },
     {
       "path": "types/storage_provider_binding.go",
@@ -223,7 +224,7 @@
     },
     {
       "path": "types/update_label_request.go",
-      "sha256": "d089880ccdcd6f2b74fc6d2724d9a00fa647bed6df7cdfa426b2d19b0ec845b6"
+      "sha256": "5a9365d21ac58cc039e2edf3b2c2cdc89c7613953fce9b0fb89826105809d8de"
     },
     {
       "path": "types/update_storage_provider_request.go",

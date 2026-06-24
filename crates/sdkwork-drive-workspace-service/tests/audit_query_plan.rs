@@ -17,9 +17,9 @@ async fn audit_event_query_plan_uses_filter_indexes_for_list_and_count_patterns(
 
     for index in 0..600 {
         let action = if index % 2 == 0 {
-            "storage_provider.created"
+            "drive.storage_provider.created"
         } else {
-            "storage_provider.updated"
+            "drive.storage_provider.updated"
         };
         let request_id = if index % 3 == 0 {
             "request-001"
@@ -55,7 +55,7 @@ async fn audit_event_query_plan_uses_filter_indexes_for_list_and_count_patterns(
          WHERE action = ?1
          ORDER BY id DESC
          LIMIT ?2 OFFSET ?3",
-        &["storage_provider.created", "20", "0"],
+        &["drive.storage_provider.created", "20", "0"],
         "ix_dr_drive_audit_event_action_created",
     )
     .await;

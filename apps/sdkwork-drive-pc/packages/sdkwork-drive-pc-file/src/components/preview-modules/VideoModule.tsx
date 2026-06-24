@@ -50,7 +50,7 @@ export function VideoModule({ file, previewUrl, previewError, loading }: VideoMo
       return (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-xs text-neutral-400 gap-2">
           <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <span>Preparing Drive video preview...</span>
+          <span>{t('previewModules.videoPreviewPreparing')}</span>
         </div>
       );
     }
@@ -58,7 +58,7 @@ export function VideoModule({ file, previewUrl, previewError, loading }: VideoMo
       return (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-xs text-neutral-400 gap-3 px-8 text-center">
           <Info size={20} className="text-rose-400" />
-          <span>{previewError || 'Drive video preview URL is unavailable.'}</span>
+          <span>{previewError || t('previewModules.videoPreviewUnavailable')}</span>
         </div>
       );
     }

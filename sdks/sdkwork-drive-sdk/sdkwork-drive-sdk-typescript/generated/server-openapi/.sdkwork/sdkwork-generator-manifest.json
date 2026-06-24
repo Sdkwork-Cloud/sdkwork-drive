@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "093715648e81e11542d605bd814ef0788dc54010fe9bcc9c252eddad32e1e5eb"
+      "sha256": "f15a170c728802820629094b691c7266e35ddfc8740778794957fb5b73b71b2c"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -56,7 +56,7 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "4fe88fcd76609fb072552366f06e9b9a7a9bfa194be1d5b4d01adebd3317eafe"
+      "sha256": "35c5d513fd9537a90148a29c25a73d893b55a22475a1e43ba58b5337abbd8f48"
     },
     {
       "path": "src/api/index.ts",
@@ -72,7 +72,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "eb09c3544c38ee862a537d50df7d9d898a75244fd44b468b0bffb083a771df7f"
+      "sha256": "a5c340df80caf1b8149ff51f159574a5d07684a75587cd24b9ac843bb209e400"
     },
     {
       "path": "src/http/index.ts",
@@ -92,11 +92,11 @@
     },
     {
       "path": "src/types/create-open-download-url-request.ts",
-      "sha256": "04f2caa0e0b50269b44436ccb8eaef585f00d05a8fd406e0e0e2afcabd66e1e5"
+      "sha256": "2b13c00ba8591ff4054ca097ff822bb4aaf226e0773e63718da4f0cc0c579f37"
     },
     {
       "path": "src/types/drive-open-share-link.ts",
-      "sha256": "18a356d2f9f12087781cc0409e3a6dcd528d1a01f0eb3003d9d4826859f7ecbb"
+      "sha256": "374b9e131ab7b1d97bb8127adb142d7dd5bd5a7a4a4c982b906907828831c62a"
     },
     {
       "path": "src/types/index.ts",

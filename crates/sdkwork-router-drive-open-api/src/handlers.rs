@@ -1,4 +1,4 @@
-use crate::dto::{CreateOpenDownloadUrlRequest, OpenDownloadUrlResponse, OpenShareLinkResponse};
+use crate::dto::{CreateOpenDownloadUrlRequest, OpenDownloadUrlResponse, OpenShareLinkAccessQuery, OpenShareLinkResponse};
 use crate::error::{map_service_error, problem, share_link_expired_problem, ProblemDetail};
 use crate::repository::{
     claim_share_link_download_slot, find_active_share_link, map_share_link_row,
@@ -11,7 +11,7 @@ use crate::storage::{
     unsupported_signing_provider_error,
 };
 use crate::time::now_epoch_ms;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_storage_contract::{
@@ -32,8 +32,14 @@ pub(crate) async fn metrics() -> impl axum::response::IntoResponse {
 pub(crate) async fn resolve_share_link(
     State(state): State<OpenState>,
     Path(token): Path<String>,
+    Query(query): Query<OpenShareLinkAccessQuery>,
 ) -> Result<Json<OpenShareLinkResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let row = find_active_share_link(&state.pool, &token).await?;
+    let row = find_active_share_link(
+        &state.pool,
+        &token,
+        query.access_code.as_deref(),
+    )
+    .await?;
     Ok(Json(map_share_link_row(&row)))
 }
 
@@ -42,7 +48,12 @@ pub(crate) async fn create_share_link_download_url(
     Path(token): Path<String>,
     Json(payload): Json<CreateOpenDownloadUrlRequest>,
 ) -> Result<(StatusCode, Json<OpenDownloadUrlResponse>), (StatusCode, Json<ProblemDetail>)> {
-    let row = find_active_share_link(&state.pool, &token).await?;
+    let row = find_active_share_link(
+        &state.pool,
+        &token,
+        payload.access_code.as_deref(),
+    )
+    .await?;
     let share_id: String = row.get("share_id");
     let download_limit: Option<i64> = row.get("download_limit");
     let download_count: i64 = row.get("download_count");
@@ -69,12 +80,12 @@ pub(crate) async fn create_share_link_download_url(
             "active storage object for shared node is not found".to_string(),
         )));
     };
-    let Some(bucket) = bucket.filter(|value| !value.trim().is_empty()) else {
+    let Some(bucket) = bucket.filter(|value| !value.is_empty()) else {
         return Err(map_service_error(DriveServiceError::NotFound(
             "active storage object for shared node is not found".to_string(),
         )));
     };
-    let Some(object_key) = object_key.filter(|value| !value.trim().is_empty()) else {
+    let Some(object_key) = object_key.filter(|value| !value.is_empty()) else {
         return Err(map_service_error(DriveServiceError::NotFound(
             "active storage object for shared node is not found".to_string(),
         )));

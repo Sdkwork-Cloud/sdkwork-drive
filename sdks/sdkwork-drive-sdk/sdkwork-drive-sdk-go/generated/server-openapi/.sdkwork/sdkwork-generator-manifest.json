@@ -6,6 +6,7 @@
     "version": "0.1.0",
     "language": "go",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-sdk-generated-go"
   },
   "generatedFiles": [
@@ -19,7 +20,7 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "b71ecba11ca2b33ea8d64779e965b674fe8508ea5260af53f694677ebc682272"
+      "sha256": "e1df684af83f151db51263d20b6918cb580573a06d456f4d399d51004acb284b"
     },
     {
       "path": "api/paths.go",
@@ -27,7 +28,7 @@
     },
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -51,7 +52,7 @@
     },
     {
       "path": "http/client.go",
-      "sha256": "ac5f01ef342d75a462f6290495c4351fe1147cfd7ae988dd388f9fbd969949b5"
+      "sha256": "64fa46697d7002bc1e26ae2b6ba557db3e935053ea45e7689394cef2e5666159"
     },
     {
       "path": "http/doc.go",
@@ -63,7 +64,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "3a3943d47ebf0a41d2e693c870e865ae92297e6c63336302ebfe4592612c3fb0"
+      "sha256": "dc3289ee63145e2b49810fb7715a1713cee81de090b2d1d0025f85d769c6aff3"
     },
     {
       "path": "sdk.go",
@@ -79,7 +80,7 @@
     },
     {
       "path": "types/create_open_download_url_request.go",
-      "sha256": "190fa4ff097c7b6a079046f95f0870edbf2ef124b18a5effff62d56ed0461b42"
+      "sha256": "88132722814bb6e137e3be07ef22c02b143c8735fcf8e256f29bf156709a5486"
     },
     {
       "path": "types/doc.go",
@@ -87,7 +88,7 @@
     },
     {
       "path": "types/drive_open_share_link.go",
-      "sha256": "253b40d505aa9d0a1c295836e75eef563f0b2de55e08fb78e1a9cea57dbd8402"
+      "sha256": "e5fd830f677a100bbd8f08a81b17e8c69686dc9ce77f91e952e319d28d666904"
     },
     {
       "path": "types/open_download_url_response.go",

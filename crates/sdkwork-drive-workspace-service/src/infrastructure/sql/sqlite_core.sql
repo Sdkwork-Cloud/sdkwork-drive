@@ -220,6 +220,7 @@ CREATE TABLE IF NOT EXISTS dr_drive_node_share_link (
     tenant_id TEXT NOT NULL,
     node_id TEXT NOT NULL,
     token_hash TEXT NOT NULL,
+    access_code_hash TEXT,
     role TEXT NOT NULL,
     expires_at_epoch_ms INTEGER,
     download_limit INTEGER,

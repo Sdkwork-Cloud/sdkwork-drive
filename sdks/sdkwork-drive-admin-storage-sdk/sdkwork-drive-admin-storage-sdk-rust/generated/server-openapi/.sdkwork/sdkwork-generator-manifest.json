@@ -6,12 +6,13 @@
     "version": "0.1.0",
     "language": "rust",
     "sdkType": "custom",
+    "protocol": "http",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-rust"
   },
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -35,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "b82e30254341bba0d301f9b961d1e8deb443279cb3488846e8b445ed3d8dafb8"
+      "sha256": "64bdbf5eb0ae94d6d2b50c2eda3012cd36293cab346f16cf689892a9cde6c52a"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -47,7 +48,7 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "a02434d74b8f0f7d08a13306157947bab8737155f2ea5c1b4e78890192ab270f"
+      "sha256": "9d6df1645d6d41e40e8efcdb7ee3cd1553d0be61e8223f0aca28204f2528ab60"
     },
     {
       "path": "src/api/mod.rs",
@@ -55,7 +56,7 @@
     },
     {
       "path": "src/api/paths.rs",
-      "sha256": "989f1ea4f80a26a1198067c7f3406be0c4a4b8dc811ccfe2cd579202f907e0b7"
+      "sha256": "7b99c257a69d3934ba6130049ed9e04a803ca3642fe77bdb7e98acb07e7b0424"
     },
     {
       "path": "src/client.rs",
@@ -63,7 +64,7 @@
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "71567159850fdd8b855c72439bf9d9104151dcd8a6ed687918b6015ce86b1c94"
+      "sha256": "1d30ef65ca14328e4c40fa82e89678a411bee8805498bcec516e9cf96dfe1bf4"
     },
     {
       "path": "src/http/mod.rs",
@@ -71,7 +72,7 @@
     },
     {
       "path": "src/lib.rs",
-      "sha256": "8926f62a64e3914767ebc3f55026ebbba4d0888fa390f2ca65b0c2952a2c2c7e"
+      "sha256": "015a6abfc4c3393df8f0e721cda37311295c0440ac8eb91d3145ae162d58b194"
     },
     {
       "path": "src/models/common.rs",
@@ -79,11 +80,11 @@
     },
     {
       "path": "src/models/copy_provider_object_request.rs",
-      "sha256": "c0c62f647943a4ac92addf4842ff55e989b62e69189fc4c47da519c9d11a7f5c"
+      "sha256": "72e8fb4cfbcaa2ef6f68703943fd7e3a0439d817c4778b2ca97ecb738a7ae5ab"
     },
     {
       "path": "src/models/create_storage_provider_request.rs",
-      "sha256": "ebae720b3c2f5128aff605101adbb6bb8c784ebea9759f1a99a0ddf8e33b01a7"
+      "sha256": "faa56d1e9ff6c232ddd7e6052d64b48f975d15afc589d1a905220337f9b41ce4"
     },
     {
       "path": "src/models/delete_storage_provider_binding_response.rs",
@@ -103,7 +104,7 @@
     },
     {
       "path": "src/models/operator_request.rs",
-      "sha256": "7bcab21ba3fd5cd3aac7b2cba073e311117d63abb75016669858c06afd5ae2dd"
+      "sha256": "8dce662b3867e130d6b062911c8d7c67d872c181ca50a38b16738a758e1bbbce"
     },
     {
       "path": "src/models/problem_detail.rs",
@@ -139,11 +140,11 @@
     },
     {
       "path": "src/models/rotate_storage_provider_credential_request.rs",
-      "sha256": "f2f840828b00dca0ee3109c54ef67c617eca36ecebb58103c53ddfb77303d343"
+      "sha256": "07ab7121f62511fe985324d4cfb3f822d7ffa69619dbc2e05f3a08504f61d312"
     },
     {
       "path": "src/models/set_default_storage_provider_binding_request.rs",
-      "sha256": "2cbb9f218b7ee55a318e91e6d4b6d268815260895cd1c04768c9e498468f9e51"
+      "sha256": "9c4a2ed8fe5472fa474ab6e24eb0930f64ec851632981a9ef50c5e9046dc548e"
     },
     {
       "path": "src/models/storage_provider_binding_list_response.rs",
@@ -163,7 +164,7 @@
     },
     {
       "path": "src/models/test_storage_provider_request.rs",
-      "sha256": "c7d01b20cab5872d5ce82d129e0a74812cc0baf18c962155e3ee8117e51ed885"
+      "sha256": "9050592a9399f547d7d37ca3da29f7206fdf7dfedc47d5dea5156e9b965ae782"
     },
     {
       "path": "src/models/test_storage_provider_response.rs",
@@ -171,7 +172,7 @@
     },
     {
       "path": "src/models/update_storage_provider_request.rs",
-      "sha256": "e7ae5d3dfc2292fe989fb9ef3e48a0e8129bea79a304284d8a612a962a37b219"
+      "sha256": "60b647be76a1156dab683018e63276f7dbaaa875ab1481ecbdcf4aa2a90d3fa7"
     }
   ],
   "scaffoldFiles": [

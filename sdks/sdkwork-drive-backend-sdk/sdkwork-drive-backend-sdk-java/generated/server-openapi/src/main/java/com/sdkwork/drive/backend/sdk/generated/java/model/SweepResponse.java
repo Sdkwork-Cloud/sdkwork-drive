@@ -9,7 +9,7 @@ public class SweepResponse {
     public Integer getScannedCount() {
         return this.scannedCount;
     }
-    
+
     public void setScannedCount(Integer scannedCount) {
         this.scannedCount = scannedCount;
     }
@@ -17,7 +17,7 @@ public class SweepResponse {
     public Integer getAffectedCount() {
         return this.affectedCount;
     }
-    
+
     public void setAffectedCount(Integer affectedCount) {
         this.affectedCount = affectedCount;
     }
@@ -25,7 +25,7 @@ public class SweepResponse {
     public Boolean getDryRun() {
         return this.dryRun;
     }
-    
+
     public void setDryRun(Boolean dryRun) {
         this.dryRun = dryRun;
     }

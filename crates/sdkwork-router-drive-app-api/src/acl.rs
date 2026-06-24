@@ -8,11 +8,110 @@ use sdkwork_drive_workspace_service::application::permission_service::SqlDrivePe
 use sdkwork_drive_workspace_service::ports::permission_store::{
     DriveEffectiveNodeAccess, ResolveEffectiveNodeAccessCommand,
 };
+use sdkwork_drive_workspace_service::DriveServiceError;
+use sqlx::any::AnyRow;
 use sqlx::AnyPool;
 use sqlx::Row;
-use sqlx::any::AnyRow;
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::future::Future;
+
+struct ReaderPaginationAclCache {
+    space_owner: HashMap<String, bool>,
+}
+
+impl ReaderPaginationAclCache {
+    fn new() -> Self {
+        Self {
+            space_owner: HashMap::new(),
+        }
+    }
+
+    async fn subject_can_read_node(
+        &mut self,
+        pool: &AnyPool,
+        tenant_id: &str,
+        space_id: &str,
+        node_id: &str,
+        subject_type: &str,
+        subject_id: &str,
+    ) -> Result<bool, (StatusCode, Json<ProblemDetail>)> {
+        if self
+            .is_space_owner(pool, tenant_id, space_id, subject_type, subject_id)
+            .await?
+        {
+            return Ok(true);
+        }
+        Ok(ensure_subject_role(
+            pool,
+            tenant_id,
+            space_id,
+            node_id,
+            subject_type,
+            subject_id,
+            "reader",
+        )
+        .await
+        .is_ok())
+    }
+
+    async fn is_space_owner(
+        &mut self,
+        pool: &AnyPool,
+        tenant_id: &str,
+        space_id: &str,
+        subject_type: &str,
+        subject_id: &str,
+    ) -> Result<bool, (StatusCode, Json<ProblemDetail>)> {
+        if let Some(is_owner) = self.space_owner.get(space_id) {
+            return Ok(*is_owner);
+        }
+        let service = SqlDrivePermissionService::new(pool.clone());
+        let is_owner = service
+            .is_space_owner(tenant_id, space_id, subject_type, subject_id)
+            .await
+            .map_err(map_service_error)?;
+        self.space_owner.insert(space_id.to_string(), is_owner);
+        Ok(is_owner)
+    }
+}
+
+pub(crate) async fn is_subject_space_owner(
+    pool: &AnyPool,
+    tenant_id: &str,
+    space_id: &str,
+    subject_type: &str,
+    subject_id: &str,
+) -> Result<bool, (StatusCode, Json<ProblemDetail>)> {
+    let mut cache = ReaderPaginationAclCache::new();
+    cache
+        .is_space_owner(pool, tenant_id, space_id, subject_type, subject_id)
+        .await
+}
+
+pub(crate) async fn paginate_offset_limited_items<T, F, Fut>(
+    page: crate::dto::PageRequest,
+    mut fetch_batch: F,
+    map_row: fn(&AnyRow) -> T,
+) -> Result<(Vec<T>, Option<String>), (StatusCode, Json<ProblemDetail>)>
+where
+    F: FnMut(i64, usize) -> Fut,
+    Fut: Future<Output = Result<Vec<AnyRow>, (StatusCode, Json<ProblemDetail>)>>,
+{
+    let batch_limit = (page.limit + 1) as usize;
+    let rows = fetch_batch(page.offset, batch_limit).await?;
+    let has_more = rows.len() > page.limit as usize;
+    let items = rows
+        .iter()
+        .take(page.limit as usize)
+        .map(map_row)
+        .collect::<Vec<_>>();
+    let next_page_token = if has_more {
+        Some((page.offset + page.limit).to_string())
+    } else {
+        None
+    };
+    Ok((items, next_page_token))
+}
 
 pub(crate) fn permission_denied_problem() -> (StatusCode, Json<ProblemDetail>) {
     problem(
@@ -78,6 +177,115 @@ pub(crate) async fn ensure_list_parent_reader(
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    ensure_subject_space_scoped_reader(
+        pool,
+        &tenant_id,
+        space_id,
+        parent_node_id,
+        &subject_type,
+        &subject_id,
+    )
+    .await
+}
+
+pub(crate) async fn ensure_subject_space_scoped_reader(
+    pool: &AnyPool,
+    tenant_id: &str,
+    space_id: &str,
+    parent_node_id: Option<&str>,
+    subject_type: &str,
+    subject_id: &str,
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    let service = SqlDrivePermissionService::new(pool.clone());
+    if service
+        .is_space_owner(tenant_id, space_id, subject_type, subject_id)
+        .await
+        .map_err(map_service_error)?
+    {
+        return Ok(());
+    }
+
+    let anchor_node_id = match parent_node_id {
+        Some(parent_id) => parent_id.to_string(),
+        None => match service
+            .resolve_space_permission_anchor_node(tenant_id, space_id)
+            .await
+        {
+            Ok(anchor_node_id) => anchor_node_id,
+            Err(DriveServiceError::NotFound(_)) => return Err(permission_denied_problem()),
+            Err(error) => return Err(map_service_error(error)),
+        },
+    };
+
+    if ensure_subject_role(
+        pool,
+        tenant_id,
+        space_id,
+        &anchor_node_id,
+        subject_type,
+        subject_id,
+        "reader",
+    )
+    .await
+    .is_ok()
+    {
+        return Ok(());
+    }
+
+    if parent_node_id.is_none()
+        && subject_has_any_space_permission_grant(
+            pool,
+            tenant_id,
+            space_id,
+            subject_type,
+            subject_id,
+        )
+        .await?
+    {
+        return Ok(());
+    }
+
+    Err(permission_denied_problem())
+}
+
+async fn subject_has_any_space_permission_grant(
+    pool: &AnyPool,
+    tenant_id: &str,
+    space_id: &str,
+    subject_type: &str,
+    subject_id: &str,
+) -> Result<bool, (StatusCode, Json<ProblemDetail>)> {
+    let count = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(1)
+         FROM dr_drive_node_permission p
+         INNER JOIN dr_drive_node n
+            ON n.tenant_id = p.tenant_id
+           AND n.id = p.node_id
+         WHERE p.tenant_id = $1
+           AND n.space_id = $2
+           AND p.lifecycle_status = 'active'
+           AND p.subject_type = $3
+           AND p.subject_id = $4",
+    )
+    .bind(tenant_id)
+    .bind(space_id)
+    .bind(subject_type)
+    .bind(subject_id)
+    .fetch_one(pool)
+    .await
+    .map_err(internal_sql_error(
+        "count dr_drive_node_permission grants for space scope failed",
+    ))?;
+    Ok(count > 0)
+}
+
+pub(crate) async fn ensure_space_owner(
+    pool: &AnyPool,
+    ctx: &DriveRequestContext,
+    space_id: &str,
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
     let service = SqlDrivePermissionService::new(pool.clone());
     if service
         .is_space_owner(&tenant_id, space_id, &subject_type, &subject_id)
@@ -87,14 +295,14 @@ pub(crate) async fn ensure_list_parent_reader(
         return Ok(());
     }
 
-    let anchor_node_id = match parent_node_id {
-        Some(parent_id) => parent_id.to_string(),
-        None => service
-            .resolve_space_permission_anchor_node(&tenant_id, space_id)
-            .await
-            .map_err(map_service_error)?,
+    let anchor_node_id = match service
+        .resolve_space_permission_anchor_node(&tenant_id, space_id)
+        .await
+    {
+        Ok(anchor_node_id) => anchor_node_id,
+        Err(DriveServiceError::NotFound(_)) => return Err(permission_denied_problem()),
+        Err(error) => return Err(map_service_error(error)),
     };
-
     ensure_subject_role(
         pool,
         &tenant_id,
@@ -102,10 +310,37 @@ pub(crate) async fn ensure_list_parent_reader(
         &anchor_node_id,
         &subject_type,
         &subject_id,
-        "reader",
+        "owner",
     )
     .await?;
     Ok(())
+}
+
+pub(crate) async fn space_is_accessible_to_subject(
+    pool: &AnyPool,
+    tenant_id: &str,
+    space_id: &str,
+    subject_type: &str,
+    subject_id: &str,
+) -> Result<bool, (StatusCode, Json<ProblemDetail>)> {
+    let service = SqlDrivePermissionService::new(pool.clone());
+    if service
+        .is_space_owner(tenant_id, space_id, subject_type, subject_id)
+        .await
+        .map_err(map_service_error)?
+    {
+        return Ok(true);
+    }
+    Ok(ensure_subject_space_scoped_reader(
+        pool,
+        tenant_id,
+        space_id,
+        None,
+        subject_type,
+        subject_id,
+    )
+    .await
+    .is_ok())
 }
 
 pub(crate) async fn ensure_parent_writer(
@@ -174,15 +409,7 @@ pub(crate) async fn ensure_space_change_feed_reader(
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
-    if is_space_owner_any_lifecycle(
-        pool,
-        &tenant_id,
-        space_id,
-        &subject_type,
-        &subject_id,
-    )
-    .await?
-    {
+    if is_space_owner_any_lifecycle(pool, &tenant_id, space_id, &subject_type, &subject_id).await? {
         return Ok(());
     }
     ensure_list_parent_reader(pool, ctx, space_id, None).await
@@ -242,7 +469,7 @@ pub(crate) async fn paginate_reader_visible_items<T, F, Fut>(
     mut fetch_batch: F,
     map_row: fn(&AnyRow) -> T,
     node_scope: fn(&T) -> (String, String),
-) -> Result<(Vec<T>, Option<String>), (StatusCode, Json<ProblemDetail>)>
+) -> Result<(Vec<T>, Option<String>, bool), (StatusCode, Json<ProblemDetail>)>
 where
     F: FnMut(i64, usize) -> Fut,
     Fut: Future<Output = Result<Vec<AnyRow>, (StatusCode, Json<ProblemDetail>)>>,
@@ -253,6 +480,7 @@ where
     let mut scan_offset = page.offset;
     let mut scanned_rows = 0usize;
     let mut has_more_in_db = false;
+    let mut acl_cache = ReaderPaginationAclCache::new();
 
     while (items.len() as i64) <= page.limit && scanned_rows < max_scan_rows {
         let rows = fetch_batch(scan_offset, batch_limit).await?;
@@ -268,17 +496,16 @@ where
         for row in rows {
             let item = map_row(&row);
             let (space_id, node_id) = node_scope(&item);
-            if ensure_subject_role(
-                pool,
-                tenant_id,
-                &space_id,
-                &node_id,
-                subject_type,
-                subject_id,
-                "reader",
-            )
-            .await
-            .is_ok()
+            if acl_cache
+                .subject_can_read_node(
+                    pool,
+                    tenant_id,
+                    &space_id,
+                    &node_id,
+                    subject_type,
+                    subject_id,
+                )
+                .await?
             {
                 items.push(item);
                 if (items.len() as i64) > page.limit {
@@ -292,6 +519,19 @@ where
         }
     }
 
+    let scan_budget_exhausted = scanned_rows >= max_scan_rows && has_more_in_db;
+    if scan_budget_exhausted {
+        tracing::warn!(
+            target: "sdkwork.drive",
+            event = "drive.acl.pagination_scan_budget_exhausted",
+            tenant_id = %tenant_id,
+            scanned_rows,
+            max_scan_rows,
+            visible_items = items.len(),
+            "ACL pagination scan budget exhausted before filling the requested page"
+        );
+    }
+
     let next_page_token = if (items.len() as i64) > page.limit {
         let overflow = items.len() - page.limit as usize;
         items.truncate(page.limit as usize);
@@ -302,7 +542,7 @@ where
         None
     };
 
-    Ok((items, next_page_token))
+    Ok((items, next_page_token, scan_budget_exhausted))
 }
 
 fn map_change_row(row: &AnyRow) -> ChangeResponse {
@@ -317,12 +557,7 @@ fn map_change_row(row: &AnyRow) -> ChangeResponse {
     }
 }
 
-pub(crate) async fn paginate_reader_visible_changes<F, Fut>(
-    pool: &AnyPool,
-    tenant_id: &str,
-    space_id: &str,
-    subject_type: &str,
-    subject_id: &str,
+pub(crate) async fn paginate_cursor_limited_changes<F, Fut>(
     page: PageRequest,
     mut fetch_batch: F,
 ) -> Result<(Vec<ChangeResponse>, Option<String>), (StatusCode, Json<ProblemDetail>)>
@@ -331,62 +566,17 @@ where
     Fut: Future<Output = Result<Vec<AnyRow>, (StatusCode, Json<ProblemDetail>)>>,
 {
     let batch_limit = (page.limit + 1) as usize;
-    let max_scan_rows = (page.limit.saturating_mul(20).max(page.limit + 1)) as usize;
-    let mut items = Vec::new();
-    let mut scan_cursor = page.offset;
-    let mut scanned_rows = 0usize;
-    let mut has_more_in_db = false;
-
-    while (items.len() as i64) <= page.limit && scanned_rows < max_scan_rows {
-        let rows = fetch_batch(scan_cursor, batch_limit).await?;
-        if rows.is_empty() {
-            has_more_in_db = false;
-            break;
-        }
-
-        scanned_rows += rows.len();
-        has_more_in_db = rows.len() == batch_limit;
-
-        for row in rows {
-            let item = map_change_row(&row);
-            scan_cursor = item.sequence_no;
-            let visible = match item.node_id.as_deref() {
-                None => true,
-                Some(node_id) => {
-                    ensure_subject_role(
-                        pool,
-                        tenant_id,
-                        space_id,
-                        node_id,
-                        subject_type,
-                        subject_id,
-                        "reader",
-                    )
-                    .await
-                    .is_ok()
-                }
-            };
-            if visible {
-                items.push(item);
-                if (items.len() as i64) > page.limit {
-                    break;
-                }
-            }
-        }
-
-        if (items.len() as i64) > page.limit {
-            break;
-        }
-    }
-
-    let next_page_token = if (items.len() as i64) > page.limit {
-        items.pop();
+    let rows = fetch_batch(page.offset, batch_limit).await?;
+    let has_more = rows.len() > page.limit as usize;
+    let items = rows
+        .iter()
+        .take(page.limit as usize)
+        .map(map_change_row)
+        .collect::<Vec<_>>();
+    let next_page_token = if has_more {
         items.last().map(|item| item.sequence_no.to_string())
-    } else if has_more_in_db {
-        Some(scan_cursor.to_string())
     } else {
         None
     };
-
     Ok((items, next_page_token))
 }

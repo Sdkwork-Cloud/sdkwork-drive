@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.0",
+  "openapi": "3.1.2",
   "info": {
     "title": "SDKWork Drive Backend API",
     "version": "0.1.0",
@@ -19,14 +19,6 @@
         ],
         "operationId": "auditEvents.list",
         "parameters": [
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "action",
             "in": "query",
@@ -147,7 +139,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/labels": {
@@ -158,17 +152,6 @@
         "operationId": "labels.list",
         "summary": "List Drive label definitions",
         "parameters": [
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
-            }
-          },
           {
             "name": "lifecycleStatus",
             "in": "query",
@@ -283,7 +266,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "post": {
         "tags": [
@@ -380,7 +365,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/labels/{labelId}": {
@@ -394,17 +381,6 @@
           {
             "name": "labelId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string",
@@ -493,7 +469,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "patch": {
         "tags": [
@@ -603,7 +581,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "delete": {
         "tags": [
@@ -615,17 +595,6 @@
           {
             "name": "labelId",
             "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
-            }
-          },
-          {
-            "name": "tenantId",
-            "in": "query",
             "required": true,
             "schema": {
               "type": "string",
@@ -725,7 +694,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/maintenance/jobs": {
@@ -743,7 +714,9 @@
               "type": "string",
               "enum": [
                 "object_sweep",
-                "upload_session_sweep"
+                "upload_session_sweep",
+                "expired_upload_content_sweep",
+                "abandoned_upload_task_sweep"
               ]
             }
           },
@@ -839,7 +812,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/maintenance/object_sweep": {
@@ -907,7 +882,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/maintenance/upload_session_sweep": {
@@ -975,7 +952,149 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
+      }
+    },
+    "/backend/v3/api/drive/maintenance/expired_upload_content_sweep": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "maintenance.expiredUploadContentSweep.start",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SweepUploadSessionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SweepResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
+      }
+    },
+    "/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "maintenance.abandonedUploadTaskSweep.start",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SweepUploadSessionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SweepResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/quotas": {
@@ -984,16 +1103,7 @@
           "drive"
         ],
         "operationId": "quotas.summary",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "OK",
@@ -1043,7 +1153,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/spaces": {
@@ -1053,14 +1165,6 @@
         ],
         "operationId": "spaces.admin.list",
         "parameters": [
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "ownerSubjectType",
             "in": "query",
@@ -1127,7 +1231,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_provider_bindings/default": {
@@ -1138,19 +1244,31 @@
         "operationId": "storageProviderBindings.default.get",
         "parameters": [
           {
-            "name": "tenantId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "spaceId",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "spaceType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "personal",
+                "team",
+                "knowledge_base",
+                "ai_generated",
+                "git_repository",
+                "deployment",
+                "app_upload",
+                "im",
+                "rtc",
+                "notary"
+              ]
             }
           }
         ],
@@ -1233,7 +1351,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "put": {
         "tags": [
@@ -1329,7 +1449,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_providers": {
@@ -1382,7 +1504,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "post": {
         "tags": [
@@ -1463,7 +1587,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_providers/{providerId}": {
@@ -1556,7 +1682,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "delete": {
         "tags": [
@@ -1645,7 +1773,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "get": {
         "tags": [
@@ -1741,7 +1871,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_providers/{providerId}/activate": {
@@ -1849,7 +1981,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_providers/{providerId}/capabilities": {
@@ -1947,7 +2081,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_providers/{providerId}/credentials/rotate": {
@@ -2055,7 +2191,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_providers/{providerId}/deactivate": {
@@ -2163,7 +2301,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_providers/{providerId}/test": {
@@ -2256,7 +2396,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_providers/{providerId}/bucket": {
@@ -2354,7 +2496,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "put": {
         "tags": [
@@ -2450,7 +2594,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "delete": {
         "tags": [
@@ -2546,7 +2692,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_providers/{providerId}/objects": {
@@ -2678,7 +2826,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_providers/{providerId}/objects/{objectKey}": {
@@ -2789,7 +2939,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       },
       "delete": {
         "tags": [
@@ -2898,7 +3050,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/storage_providers/{providerId}/objects/copy": {
@@ -3006,7 +3160,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     },
     "/backend/v3/api/drive/download_packages": {
@@ -3016,15 +3172,6 @@
         ],
         "operationId": "downloadPackages.list",
         "parameters": [
-          {
-            "name": "tenantId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "maxLength": 64
-            }
-          },
           {
             "name": "state",
             "in": "query",
@@ -3154,7 +3301,9 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.backend"
+        "x-sdkwork-api-authority": "sdkwork-drive.backend",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api"
       }
     }
   },
@@ -3239,19 +3388,12 @@
         "type": "object",
         "required": [
           "id",
-          "tenantId",
           "labelKey",
           "displayName",
           "operatorId"
         ],
         "properties": {
           "id": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
-          "tenantId": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
@@ -3464,8 +3606,12 @@
               "team",
               "knowledge_base",
               "ai_generated",
-              "app",
-              "app_upload"
+              "git_repository",
+              "deployment",
+              "app_upload",
+              "im",
+              "rtc",
+              "notary"
             ]
           },
           "lifecycleStatus": {
@@ -3547,7 +3693,9 @@
             "type": "string",
             "enum": [
               "object_sweep",
-              "upload_session_sweep"
+              "upload_session_sweep",
+              "expired_upload_content_sweep",
+              "abandoned_upload_task_sweep"
             ]
           },
           "status": {
@@ -3718,16 +3866,27 @@
       "SetDefaultStorageProviderBindingRequest": {
         "type": "object",
         "required": [
-          "tenantId",
           "providerId",
           "operatorId"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string"
-          },
           "spaceId": {
             "type": "string"
+          },
+          "spaceType": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "team",
+              "knowledge_base",
+              "ai_generated",
+              "git_repository",
+              "deployment",
+              "app_upload",
+              "im",
+              "rtc",
+              "notary"
+            ]
           },
           "providerId": {
             "type": "string"
@@ -3849,14 +4008,12 @@
             "type": "string",
             "enum": [
               "tenant",
-              "space"
+              "space",
+              "space_type"
             ]
           },
           "purpose": {
-            "type": "string",
-            "enum": [
-              "primary"
-            ]
+            "type": "string"
           },
           "lifecycleStatus": {
             "type": "string"
@@ -4051,16 +4208,9 @@
       "UpdateLabelRequest": {
         "type": "object",
         "required": [
-          "tenantId",
           "operatorId"
         ],
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
           "displayName": {
             "type": "string",
             "minLength": 1,

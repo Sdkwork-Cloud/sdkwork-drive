@@ -9,4 +9,8 @@ export default {
   iconLabel: '专属标识图标',
   cancel: '放弃',
   confirmCreate: '确认新建共享空间',
+  createSuccess: '已创建共享空间「{name}」',
+  createFailed: '创建共享空间失败',
+  deleteSuccess: '已删除共享空间',
+  deleteFailed: '删除共享空间失败',
 };

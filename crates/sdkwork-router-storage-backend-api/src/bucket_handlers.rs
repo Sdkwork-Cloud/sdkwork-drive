@@ -1,4 +1,5 @@
 use crate::audit::record_storage_provider_audit;
+use sdkwork_drive_contract::drive::domain_events::admin_audit;
 use crate::dto::{
     OperatorQuery, ProviderBucketListItemResponse, ProviderBucketListResponse,
     ProviderBucketMutationResponse, ProviderBucketResponse,
@@ -78,7 +79,7 @@ pub(crate) async fn create_storage_provider_bucket(
         .map_err(map_object_store_route_error)?;
     record_storage_provider_audit(
         &state,
-        "storage_provider.bucket_created",
+        admin_audit::storage_provider::BUCKET_CREATED,
         &provider_id,
         &operator_id,
     )
@@ -106,7 +107,7 @@ pub(crate) async fn delete_storage_provider_bucket(
         .map_err(map_object_store_route_error)?;
     record_storage_provider_audit(
         &state,
-        "storage_provider.bucket_deleted",
+        admin_audit::storage_provider::BUCKET_DELETED,
         &provider_id,
         &operator_id,
     )

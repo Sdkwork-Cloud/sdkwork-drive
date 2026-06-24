@@ -94,7 +94,7 @@ function printHelp() {
   console.log(`Usage: node scripts/gateway-standalone-run.mjs [options]
 
 Drive standalone gateway embeds appbase IAM and proxies Drive API upstreams.
-Use this for local/standalone deployment. Cloud unified routing uses sdkwork-api-gateway.
+Use this for local/standalone deployment. Cloud unified routing uses sdkwork-api-cloud-gateway.
 
 Options:
   --environment <development|production>  Config profile (default: development)

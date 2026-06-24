@@ -1,8 +1,8 @@
 package com.sdkwork.drive.admin.storage.sdk.generated.java.api;
 
 public class ApiPaths {
-    public static final String API_PREFIX = "/admin/v3/api";
-    
+    public static final String API_PREFIX = "/backend/v3/api";
+
     public static String customPath(String path) {
         if (path == null || path.isEmpty()) {
             return API_PREFIX;

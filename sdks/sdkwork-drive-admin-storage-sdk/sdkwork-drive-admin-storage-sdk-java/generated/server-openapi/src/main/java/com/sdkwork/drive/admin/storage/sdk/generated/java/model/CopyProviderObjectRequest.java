@@ -11,7 +11,7 @@ public class CopyProviderObjectRequest {
     public String getSourceObjectKey() {
         return this.sourceObjectKey;
     }
-    
+
     public void setSourceObjectKey(String sourceObjectKey) {
         this.sourceObjectKey = sourceObjectKey;
     }
@@ -19,7 +19,7 @@ public class CopyProviderObjectRequest {
     public String getDestinationObjectKey() {
         return this.destinationObjectKey;
     }
-    
+
     public void setDestinationObjectKey(String destinationObjectKey) {
         this.destinationObjectKey = destinationObjectKey;
     }
@@ -27,7 +27,7 @@ public class CopyProviderObjectRequest {
     public String getDestinationBucket() {
         return this.destinationBucket;
     }
-    
+
     public void setDestinationBucket(String destinationBucket) {
         this.destinationBucket = destinationBucket;
     }
@@ -35,7 +35,7 @@ public class CopyProviderObjectRequest {
     public String getMetadataDirective() {
         return this.metadataDirective;
     }
-    
+
     public void setMetadataDirective(String metadataDirective) {
         this.metadataDirective = metadataDirective;
     }
@@ -43,7 +43,7 @@ public class CopyProviderObjectRequest {
     public String getOperatorId() {
         return this.operatorId;
     }
-    
+
     public void setOperatorId(String operatorId) {
         this.operatorId = operatorId;
     }

@@ -4,32 +4,47 @@ use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_security::DriveAuthValidationPolicy;
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_router_storage_backend_api::{build_router, build_router_with_pool_and_iam_policy};
-use serde_json::Value;
+use sdkwork_web_core::{access_token_jwt, auth_token_jwt, encode_unsigned_test_jwt};
+use serde_json::{json, Value};
 use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 
+const TEST_SESSION: &str = "session-1";
+const TEST_APP: &str = "appbase";
+
 fn auth_token(tenant: &str, user: &str) -> String {
-    format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;auth_level=password"
-    )
+    auth_token_jwt(tenant, user, TEST_SESSION, TEST_APP)
 }
 
 fn admin_auth_token(tenant: &str, user: &str) -> String {
-    format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;auth_level=password;permission_scope=drive.storage.admin"
-    )
+    encode_unsigned_test_jwt(json!({
+        "token_type": "auth",
+        "tenant_id": tenant,
+        "user_id": user,
+        "session_id": TEST_SESSION,
+        "app_id": TEST_APP,
+        "auth_level": "password",
+        "login_scope": "TENANT",
+        "permission_scope": "drive.storage.admin",
+    }))
 }
 
 fn admin_access_token(tenant: &str, user: &str) -> String {
-    format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;environment=prod;deployment_mode=saas;permission_scope=drive.storage.admin"
-    )
+    encode_unsigned_test_jwt(json!({
+        "token_type": "access",
+        "tenant_id": tenant,
+        "user_id": user,
+        "session_id": TEST_SESSION,
+        "app_id": TEST_APP,
+        "environment": "prod",
+        "deployment_mode": "saas",
+        "login_scope": "TENANT",
+        "permission_scope": "drive.storage.admin",
+    }))
 }
 
 fn access_token(tenant: &str, user: &str) -> String {
-    format!(
-        "tenant_id={tenant};user_id={user};session_id=session-1;app_id=appbase;environment=prod;deployment_mode=saas"
-    )
+    access_token_jwt(tenant, user, TEST_SESSION, TEST_APP)
 }
 
 #[tokio::test]
@@ -49,21 +64,21 @@ async fn admin_storage_production_routes_require_valid_dual_tokens() {
         .expect("health request should be handled");
     assert_eq!(health.status(), StatusCode::OK);
 
-    let missing_auth = app
+    let missing_credentials = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings")
+                .uri("/backend/v3/api/drive/storage/bindings")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
         .await
         .expect("protected request should be handled");
     assert_problem(
-        missing_auth,
+        missing_credentials,
         StatusCode::UNAUTHORIZED,
-        "sdkwork.auth.missing_auth_token",
+        "sdkwork.auth.missing_access_token",
     )
     .await;
 
@@ -72,7 +87,7 @@ async fn admin_storage_production_routes_require_valid_dual_tokens() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings")
+                .uri("/backend/v3/api/drive/storage/bindings")
                 .header(
                     "authorization",
                     format!("Bearer {}", auth_token("tenant-a", "admin-001")),
@@ -93,7 +108,7 @@ async fn admin_storage_production_routes_require_valid_dual_tokens() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings")
+                .uri("/backend/v3/api/drive/storage/bindings")
                 .header("authorization", "Bearer opaque-auth-token")
                 .header("access-token", "opaque-access-token")
                 .body(Body::empty())
@@ -118,7 +133,7 @@ async fn admin_storage_routes_validate_token_derived_app_context() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings")
+                .uri("/backend/v3/api/drive/storage/bindings")
                 .header(
                     "authorization",
                     format!("Bearer {}", admin_auth_token("tenant-a", "admin-001")),
@@ -141,7 +156,7 @@ async fn admin_storage_routes_validate_token_derived_app_context() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/admin/v3/api/drive/storage/providers/provider-s3/test")
+                .uri("/backend/v3/api/drive/storage/providers/provider-s3/test")
                 .header(
                     "authorization",
                     format!("Bearer {}", admin_auth_token("tenant-a", "admin-001")),
@@ -165,7 +180,7 @@ async fn admin_storage_routes_validate_token_derived_app_context() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings")
+                .uri("/backend/v3/api/drive/storage/bindings")
                 .header(
                     "authorization",
                     format!("Bearer {}", auth_token("tenant-a", "user-001")),
@@ -187,7 +202,7 @@ async fn admin_storage_routes_validate_token_derived_app_context() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/admin/v3/api/drive/storage/bindings")
+                .uri("/backend/v3/api/drive/storage/bindings")
                 .header(
                     "authorization",
                     format!("Bearer {}", admin_auth_token("tenant-a", "admin-001")),

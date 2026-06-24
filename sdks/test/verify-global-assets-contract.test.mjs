@@ -9,7 +9,8 @@ const repoRoot = path.resolve(testDir, "..", "..");
 const appOpenapiPath = path.join(
   repoRoot,
   "apis",
-  "openapi",
+  "app-api",
+  "drive",
   "drive-app-api.openapi.json",
 );
 const assetsSchemaPath = path.join(

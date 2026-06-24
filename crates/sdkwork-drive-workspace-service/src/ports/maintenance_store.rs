@@ -28,6 +28,14 @@ pub struct SweepExpiredUploadContentQuery {
 }
 
 #[derive(Debug, Clone)]
+pub struct SweepAbandonedUploadTasksQuery {
+    pub now_epoch_ms: i64,
+    pub dry_run: bool,
+    pub limit: i64,
+    pub operator_id: String,
+}
+
+#[derive(Debug, Clone)]
 pub struct NewDriveMaintenanceJob {
     pub job_type: String,
     pub status: String,
@@ -72,6 +80,11 @@ pub trait DriveMaintenanceStore: Send + Sync {
     async fn sweep_expired_upload_content(
         &self,
         query: &SweepExpiredUploadContentQuery,
+    ) -> Result<DriveSweepResult, DriveServiceError>;
+
+    async fn sweep_abandoned_upload_tasks(
+        &self,
+        query: &SweepAbandonedUploadTasksQuery,
     ) -> Result<DriveSweepResult, DriveServiceError>;
 
     async fn insert_maintenance_job(

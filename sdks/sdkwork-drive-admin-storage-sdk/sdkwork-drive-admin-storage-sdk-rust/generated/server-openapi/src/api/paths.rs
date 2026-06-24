@@ -1,4 +1,4 @@
-pub const API_PREFIX: &str = "/admin/v3/api";
+pub const API_PREFIX: &str = "/backend/v3/api";
 
 pub fn custom_path(path: &str) -> String {
     if path.starts_with("http://") || path.starts_with("https://") {
@@ -11,9 +11,7 @@ pub fn custom_path(path: &str) -> String {
     if normalized_prefix.is_empty() {
         return normalized_path;
     }
-    if normalized_path == normalized_prefix
-        || normalized_path.starts_with(&(normalized_prefix.clone() + "/"))
-    {
+    if normalized_path == normalized_prefix || normalized_path.starts_with(&(normalized_prefix.clone() + "/")) {
         return normalized_path;
     }
 

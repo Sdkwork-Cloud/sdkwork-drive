@@ -87,7 +87,7 @@ async fn list_audit_events_emits_structured_observability_log() {
         ) VALUES (97001, ?1, ?2, 'storage_provider', ?3, ?4, ?5, ?6)",
     )
     .bind("tenant-001")
-    .bind("storage_provider.created")
+    .bind("drive.storage_provider.created")
     .bind("provider-001")
     .bind("admin-001")
     .bind("request-001")
@@ -101,7 +101,7 @@ async fn list_audit_events_emits_structured_observability_log() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/audit_events?action=storage_provider.created&resourceType=storage_provider&resourceId=provider-001&requestId=request-001&traceId=trace-001&page=1&pageSize=10")
+                .uri("/backend/v3/api/drive/audit_events?action=drive.storage_provider.created&resourceType=storage_provider&resourceId=provider-001&requestId=request-001&traceId=trace-001&page=1&pageSize=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -297,6 +297,37 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
         .await
         .expect("response body should be readable");
 
+    for uri in [
+        "/backend/v3/api/drive/maintenance/expired_upload_content_sweep",
+        "/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri(uri)
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        r#"{
+                            "nowEpochMs": 1800000000000,
+                            "dryRun": true,
+                            "limit": 100,
+                            "operatorId": "admin-ops",
+                            "requestId": "request-001",
+                            "traceId": "trace-001"
+                        }"#,
+                    ))
+                    .expect("request should be built"),
+            )
+            .await
+            .unwrap_or_else(|error| panic!("{uri} should be handled: {error}"));
+        assert_eq!(response.status(), StatusCode::OK);
+        let _ = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("response body should be readable");
+    }
+
     let jobs_response = app
         .oneshot(
             Request::builder()
@@ -336,6 +367,15 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
     assert!(
         logs.contains("event=\"drive.maintenance.upload_session_sweep\""),
         "expected maintenance upload sweep log, got:\n{logs}"
+    );
+
+    assert!(
+        logs.contains("event=\"drive.maintenance.expired_upload_content_sweep\""),
+        "expected expired upload content sweep log, got:\n{logs}"
+    );
+    assert!(
+        logs.contains("event=\"drive.maintenance.abandoned_upload_task_sweep\""),
+        "expected abandoned upload task sweep log, got:\n{logs}"
     );
     for expected_field in [
         "result=\"ok\"",

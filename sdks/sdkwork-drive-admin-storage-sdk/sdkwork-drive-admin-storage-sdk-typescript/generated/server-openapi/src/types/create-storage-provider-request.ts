@@ -11,7 +11,6 @@ export interface CreateStorageProviderRequest {
   serverSideEncryptionMode?: string;
   defaultStorageClass?: string;
   status?: string;
-  operatorId: string;
   /** Provider-level TLS policy. HTTPS endpoints default to true, private HTTP endpoints default to false, and true requires an HTTPS endpoint. */
   strictTls?: boolean;
 }

@@ -57,6 +57,7 @@ const requiredOperations = [
   "permissions.effective.list",
   "shareLinks.get",
   "shareLinks.list",
+  "shareLinks.claim",
   "shareLinks.update",
   "comments.list",
   "comments.create",
@@ -267,6 +268,35 @@ test("sdkwork-drive-app-sdk composed TypeScript operations include completed dri
   }
   for (const operationId of forbiddenStorageAdminOperations) {
     assert.doesNotMatch(source, new RegExp(`"${operationId.replace(".", "\\.")}"`));
+  }
+});
+
+test("sdkwork-drive-app-sdk language operation metadata includes shareLinks.claim", () => {
+  const metadataSources = {
+    python: path.join(
+      sdkRoot,
+      "sdkwork-drive-app-sdk-python",
+      "generated/server-openapi/sdkwork_drive_generated/__init__.py",
+    ),
+    java: path.join(
+      sdkRoot,
+      "sdkwork-drive-app-sdk-java",
+      "generated/server-openapi/src/main/java/com/sdkwork/generated/SdkMetadata.java",
+    ),
+    go: path.join(
+      sdkRoot,
+      "sdkwork-drive-app-sdk-go",
+      "generated/server-openapi/client.go",
+    ),
+  };
+
+  for (const [language, metadataPath] of Object.entries(metadataSources)) {
+    const source = readFileSync(metadataPath, "utf8");
+    assert.match(
+      source,
+      /"shareLinks\.claim"/,
+      `${language} operation metadata should include shareLinks.claim`,
+    );
   }
 });
 

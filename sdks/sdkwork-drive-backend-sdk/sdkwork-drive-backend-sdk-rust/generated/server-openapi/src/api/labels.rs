@@ -16,9 +16,8 @@ impl LabelsApi {
     }
 
     /// List Drive label definitions
-    pub async fn list(&self, tenant_id: &str, lifecycle_status: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<LabelListResponse, SdkworkError> {
+    pub async fn list(&self, lifecycle_status: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<LabelListResponse, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("lifecycleStatus", lifecycle_status, "form", true, false, None),
             QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
             QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
@@ -34,11 +33,8 @@ impl LabelsApi {
     }
 
     /// Get a Drive label definition
-    pub async fn get(&self, label_id: &str, tenant_id: &str) -> Result<DriveLabel, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
-        ]);
-        let path = append_query_string(backend_path(&format!("/drive/labels/{}", serialize_path_parameter(label_id, PathParameterSpec::new("labelId", "simple", false)))), &query);
+    pub async fn get(&self, label_id: &str) -> Result<DriveLabel, SdkworkError> {
+        let path = backend_path(&format!("/drive/labels/{}", serialize_path_parameter(label_id, PathParameterSpec::new("labelId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
@@ -49,9 +45,8 @@ impl LabelsApi {
     }
 
     /// Delete a Drive label definition
-    pub async fn delete(&self, label_id: &str, tenant_id: &str, operator_id: &str) -> Result<DeleteLabelResponse, SdkworkError> {
+    pub async fn delete(&self, label_id: &str, operator_id: &str) -> Result<DeleteLabelResponse, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("tenantId", tenant_id, "form", true, false, None),
             QueryParameterSpec::new("operatorId", operator_id, "form", true, false, None),
         ]);
         let path = append_query_string(backend_path(&format!("/drive/labels/{}", serialize_path_parameter(label_id, PathParameterSpec::new("labelId", "simple", false)))), &query);

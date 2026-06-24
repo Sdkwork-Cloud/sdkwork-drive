@@ -60,7 +60,7 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/api/drive.py",
-      "sha256": "9a7b4f40aceb78957d3e8cd7fa34319032e982b069877950e5bdb0a5ca6b3e83"
+      "sha256": "125244c4a929cd48b4133c4755db3b7b3d23f43b77a10adfdc2972b8c8cbf37d"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/api/node_labels.py",
@@ -88,11 +88,11 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
-      "sha256": "1c921d9f68dd4800d3dac1a3a35873fcdf554eec2a9fdc2d0cbac637bafb9a4a"
+      "sha256": "4314407c81f057893b1d8aff7aba05e18a76e2ca5a1d72d547ad23c6158bce33"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/apply_node_label_request.py",
-      "sha256": "c2a692de1f4a30935bbab7b6aa7773cb28096e39d1a6c98e13bebb40b34b6fdc"
+      "sha256": "b2f1e8cc09fbd5fa7c172b62147e6129d21354ea55cc6e09ee65eb274ffc1aa1"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/archive_entry_list_response.py",
@@ -137,6 +137,10 @@
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/change.py",
       "sha256": "0c3d0501199f824e4868956daa305f11c1d6816cae1007681059d47f10c74705"
+    },
+    {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/claim_share_link_response.py",
+      "sha256": "96d63c8bd99b59815ec4a2b2a845d876c0cd4357dc48a8837ba35e06970db41f"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/comment_list_response.py",
@@ -191,6 +195,10 @@
       "sha256": "60819135951a2753277bc82f0cdf2880acb767028665685f31103e27254974dd"
     },
     {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/create_download_grant_request.py",
+      "sha256": "cde9ed99b3d1c03ab17e3d39adf3e5d62d78dcf3d5f52e1a5c8e8f7372694f6c"
+    },
+    {
       "path": "sdkwork_drive_app_sdk_generated_python/models/create_download_package_request.py",
       "sha256": "489e92ddd575b5275096877b17c5de92ae6dabe3033ec5b68edaece78a80830a"
     },
@@ -220,7 +228,11 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/create_share_link_request.py",
-      "sha256": "8dce726699a3e5b1405a7212cdc175598ca2db507cc8d2bbb7ce4fd6a29a0a53"
+      "sha256": "f97275ab40d33a549978e3610eced82b64acc31996765be72b3cef994c5c95a5"
+    },
+    {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/create_share_link_response.py",
+      "sha256": "935d7e15a34dabdcdf3664a9fc4c88a2eebd68a12f4d3053b6d33de06cfd7bcf"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/create_shortcut_request.py",
@@ -288,7 +300,7 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/drive_node.py",
-      "sha256": "70733dc54635e1f7f155f95fc6ad374b77e34bc530318cccc8d2e5a8fc23f205"
+      "sha256": "973ad9073472a826affcc27e953efdda6df44f71c221e31e73428206b71323da"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/drive_permission.py",
@@ -296,7 +308,7 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/drive_share_link.py",
-      "sha256": "f40f85dff2310f8dca72e57f72499969951fe17f476852568927d8d85e77b897"
+      "sha256": "3fcbb47d54ebcc69fba56cc049189eb8a5cdd65b4581c8d4978b88b93081c171"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/drive_space.py",
@@ -340,7 +352,7 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/favorite_node_request.py",
-      "sha256": "3e43c95422bce554d27463cac189bf4a3267b188d607813556067435a0de9f30"
+      "sha256": "1619d6fb3556e057ba135cd8ac8fbdcbd0ab9a83d1d0990b178dfe865f1f04a6"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/favorite_node_response.py",
@@ -364,7 +376,7 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/media_resource.py",
-      "sha256": "ed1e9d9fbf04025fb767f1cade9e1d7d9e2ee118a6f52f2f7df7886e6fa68fa7"
+      "sha256": "b3b7bcf6ea697b745489d1505c9a276e4a23022b384774ef2002dc92b914a3b6"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/move_node_request.py",
@@ -376,7 +388,7 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/node_command_request.py",
-      "sha256": "2072ff5ef960448af06013d9784dbdad58d240fb3307b520df00f148281455d2"
+      "sha256": "22552db8e5f993b256e68e1bd54a923f20fd0f58747f813c73e8daaaf1482a95"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/node_label_list_response.py",
@@ -388,7 +400,7 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/node_list_response.py",
-      "sha256": "13f57d5858692a76249280a0709a7586c850e39cda8c64debb9b1101b28db40d"
+      "sha256": "ab26d76f60428188ebca30af4e00dc83552743587e634ed33335d6af02c44462"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/node_path_response.py",
@@ -428,7 +440,7 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/quota_summary.py",
-      "sha256": "053977d1dda1821bc7a6f57fbb8e2238af2c2d601a8c21da33b5be4d54580839"
+      "sha256": "5884db3f3667de7b49de8cf8cfd05f4a5f4ccb9c2ec505ac735133a089c6b9d9"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/remove_node_label_response.py",
@@ -452,7 +464,7 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/stop_watch_channel_request.py",
-      "sha256": "254182818924c186f21f15547642109c726e85990241623f153229042c19b082"
+      "sha256": "a46e618d32652a700eeb3ca24e363749bde0fda5087bd16de66299f10c412b53"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/stop_watch_channel_response.py",

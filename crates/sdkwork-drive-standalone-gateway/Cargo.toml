@@ -17,9 +17,8 @@ toml = { workspace = true }
 tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.6", features = ["cors", "trace"] }
 tracing = { workspace = true }
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
-
 sdkwork_drive_config = { package = "sdkwork-drive-config", path = "../sdkwork-drive-config" }
+sdkwork_drive_observability = { package = "sdkwork-drive-observability", path = "../sdkwork-drive-observability", features = ["otlp"] }
 sdkwork_drive_security = { package = "sdkwork-drive-security", path = "../sdkwork-drive-security" }
 sdkwork_drive_workspace_service = { package = "sdkwork-drive-workspace-service", path = "../sdkwork-drive-workspace-service" }
 sdkwork_router_drive_app_api = { package = "sdkwork-router-drive-app-api", path = "../sdkwork-router-drive-app-api" }

@@ -11,7 +11,7 @@ public class DownloadPackagePage {
     public List<DownloadPackage> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<DownloadPackage> items) {
         this.items = items;
     }
@@ -19,7 +19,7 @@ public class DownloadPackagePage {
     public Integer getPage() {
         return this.page;
     }
-    
+
     public void setPage(Integer page) {
         this.page = page;
     }
@@ -27,7 +27,7 @@ public class DownloadPackagePage {
     public Integer getPageSize() {
         return this.pageSize;
     }
-    
+
     public void setPageSize(Integer pageSize) {
         this.pageSize = pageSize;
     }
@@ -35,7 +35,7 @@ public class DownloadPackagePage {
     public Integer getTotal() {
         return this.total;
     }
-    
+
     public void setTotal(Integer total) {
         this.total = total;
     }

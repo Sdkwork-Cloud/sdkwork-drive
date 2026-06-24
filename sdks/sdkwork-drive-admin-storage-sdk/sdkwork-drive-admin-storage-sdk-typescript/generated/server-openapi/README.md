@@ -80,7 +80,7 @@ const client = new SdkworkCustomClient({
 ### drive
 
 ```typescript
-// GET /admin/v3/api/drive/storage/providers
+// GET /backend/v3/api/drive/storage/providers
 const params = {
   status: 'status',
 };

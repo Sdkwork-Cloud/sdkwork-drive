@@ -22,7 +22,7 @@ async fn record_audit_event_persists_append_only_row() {
     service
         .record_event(RecordAuditEventCommand {
             tenant_id: "tenant-001".to_string(),
-            action: "storage_provider.created".to_string(),
+            action: "drive.storage_provider.created".to_string(),
             resource_type: "storage_provider".to_string(),
             resource_id: "provider-001".to_string(),
             operator_id: "admin-001".to_string(),
@@ -42,7 +42,7 @@ async fn record_audit_event_persists_append_only_row() {
            AND operator_id=?5",
     )
     .bind("tenant-001")
-    .bind("storage_provider.created")
+    .bind("drive.storage_provider.created")
     .bind("storage_provider")
     .bind("provider-001")
     .bind("admin-001")
@@ -68,7 +68,7 @@ async fn list_audit_events_supports_filter_and_pagination() {
         (
             9_001_i64,
             "tenant-001",
-            "storage_provider.created",
+            "drive.storage_provider.created",
             "provider-001",
             "request-001",
             "trace-001",
@@ -76,7 +76,7 @@ async fn list_audit_events_supports_filter_and_pagination() {
         (
             9_002_i64,
             "tenant-001",
-            "storage_provider.tested",
+            "drive.storage_provider.tested",
             "provider-001",
             "request-002",
             "trace-002",
@@ -84,7 +84,7 @@ async fn list_audit_events_supports_filter_and_pagination() {
         (
             9_003_i64,
             "tenant-002",
-            "storage_provider.created",
+            "drive.storage_provider.created",
             "provider-002",
             "request-003",
             "trace-003",
@@ -111,7 +111,7 @@ async fn list_audit_events_supports_filter_and_pagination() {
     let page = service
         .list_events(ListAuditEventsCommand {
             tenant_id: Some("tenant-001".to_string()),
-            action: Some("storage_provider.created".to_string()),
+            action: Some("drive.storage_provider.created".to_string()),
             resource_type: Some("storage_provider".to_string()),
             resource_id: None,
             request_id: None,
@@ -123,7 +123,7 @@ async fn list_audit_events_supports_filter_and_pagination() {
         .expect("audit event list should succeed");
     assert_eq!(page.total, 1);
     assert_eq!(page.items.len(), 1);
-    assert_eq!(page.items[0].action, "storage_provider.created");
+    assert_eq!(page.items[0].action, "drive.storage_provider.created");
 
     let paged = service
         .list_events(ListAuditEventsCommand {
@@ -158,7 +158,7 @@ async fn list_audit_events_supports_filter_and_pagination() {
     assert_eq!(request_trace_filtered.items.len(), 1);
     assert_eq!(
         request_trace_filtered.items[0].action,
-        "storage_provider.tested"
+        "drive.storage_provider.tested"
     );
 }
 

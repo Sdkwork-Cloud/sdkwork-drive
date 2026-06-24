@@ -1,3 +1,4 @@
+import type { HostAdapter } from '../host/hostAdapter';
 import type { DownloadGrantLike, DownloadJob } from 'sdkwork-drive-pc-types';
 import {
   applyDownloadCompletionToJob,
@@ -18,11 +19,172 @@ export interface ExecuteDownloadTransferResult {
   fileName: string;
 }
 
-function isAbortError(error: unknown): boolean {
+export interface SaveDownloadStreamAdapter {
+  begin(fileName: string): Promise<string | null>;
+  writeChunk(sessionId: string, chunk: Uint8Array): Promise<void>;
+  finish(sessionId: string): Promise<boolean>;
+  abort(sessionId: string): Promise<void>;
+}
+
+export function createHostDownloadStreamAdapter(host: HostAdapter): SaveDownloadStreamAdapter | undefined {
+  if (!host.isNativeHost) {
+    return undefined;
+  }
+  return {
+    begin: (fileName) => host.beginDownloadSave(fileName),
+    writeChunk: (sessionId, chunk) => host.writeDownloadChunk(sessionId, chunk),
+    finish: (sessionId) => host.finishDownloadSave(sessionId),
+    abort: (sessionId) => host.abortDownloadSave(sessionId),
+  };
+}
+
+type BrowserWritableFileStream = {
+  write(data: BufferSource): Promise<void>;
+  close(): Promise<void>;
+  abort(): Promise<void>;
+};
+
+type BrowserSaveFileHandle = {
+  createWritable(): Promise<BrowserWritableFileStream>;
+};
+
+interface BrowserSaveFilePickerOptions {
+  suggestedName?: string;
+}
+
+const BROWSER_DOWNLOAD_SESSION_ID = 'browser-download-session';
+
+export async function createBrowserDownloadStreamAdapter(
+  fileName: string,
+): Promise<SaveDownloadStreamAdapter | undefined> {
+  if (typeof globalThis.showSaveFilePicker !== 'function') {
+    return undefined;
+  }
+
+  try {
+    const handle = await globalThis.showSaveFilePicker({
+      suggestedName: fileName,
+    } satisfies BrowserSaveFilePickerOptions) as BrowserSaveFileHandle;
+    const writable = await handle.createWritable();
+    let closed = false;
+
+    const closeWritable = async (mode: 'close' | 'abort') => {
+      if (closed) {
+        return;
+      }
+      closed = true;
+      if (mode === 'close') {
+        await writable.close();
+        return;
+      }
+      await writable.abort();
+    };
+
+    return {
+      begin: async () => BROWSER_DOWNLOAD_SESSION_ID,
+      writeChunk: async (_sessionId, chunk) => {
+        await writable.write(chunk);
+      },
+      finish: async () => {
+        await closeWritable('close');
+        return true;
+      },
+      abort: async () => {
+        await closeWritable('abort');
+      },
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+declare global {
+  interface Window {
+    showSaveFilePicker?: (options?: BrowserSaveFilePickerOptions) => Promise<BrowserSaveFileHandle>;
+  }
+
+  // eslint-disable-next-line no-var
+  var showSaveFilePicker: Window['showSaveFilePicker'];
+}
+
+export function isDriveAbortError(error: unknown): boolean {
   if (error instanceof DOMException && error.name === 'AbortError') {
     return true;
   }
   return error instanceof Error && (error.name === 'AbortError' || /\babort(?:ed)?\b/i.test(error.message));
+}
+
+function buildDownloadRequestInit(
+  job: DownloadJob,
+  grant: DownloadGrantLike,
+  signal?: AbortSignal,
+): RequestInit {
+  const init: RequestInit = {
+    method: grant.method || job.downloadMethod || 'GET',
+    signal,
+  };
+  const resumeFromBytes = Math.max(0, Math.floor(job.downloadedSize || 0));
+  if (resumeFromBytes > 0) {
+    init.headers = {
+      Range: `bytes=${resumeFromBytes}-`,
+    };
+  }
+  return init;
+}
+
+function resolveExpectedDownloadTotal(
+  response: Response,
+  grant: DownloadGrantLike,
+  job: DownloadJob,
+  resumeFromBytes: number,
+): number {
+  const headerLength = Number(response.headers.get('content-length'));
+  const partialLength =
+    Number.isFinite(headerLength) && headerLength > 0 ? headerLength : 0;
+  const grantTotal = grant.archiveSizeBytes || grant.totalBytes || job.totalSize || 0;
+
+  if (response.status === 206 && partialLength > 0) {
+    return resumeFromBytes + partialLength;
+  }
+  if (partialLength > 0) {
+    return partialLength;
+  }
+  return grantTotal;
+}
+
+async function streamResponseBodyToSession(
+  response: Response,
+  sessionId: string,
+  streamAdapter: SaveDownloadStreamAdapter,
+  expectedTotal: number,
+  resumeFromBytes: number,
+  onProgress?: (downloadedBytes: number, totalBytes: number) => void,
+): Promise<number> {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    const blob = await response.blob();
+    await streamAdapter.writeChunk(sessionId, new Uint8Array(await blob.arrayBuffer()));
+    onProgress?.(
+      resumeFromBytes + blob.size,
+      expectedTotal || resumeFromBytes + blob.size,
+    );
+    return resumeFromBytes + blob.size;
+  }
+
+  let receivedBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    await streamAdapter.writeChunk(sessionId, value);
+    receivedBytes += value.byteLength;
+    onProgress?.(
+      resumeFromBytes + receivedBytes,
+      expectedTotal || resumeFromBytes + receivedBytes,
+    );
+  }
+  return resumeFromBytes + receivedBytes;
 }
 
 export async function executeDownloadTransfer(
@@ -36,26 +198,24 @@ export async function executeDownloadTransfer(
   }
 
   const fetchImpl = options.fetchImpl ?? fetch;
-  const response = await fetchImpl(url, {
-    method: grant.method || job.downloadMethod || 'GET',
-    signal: options.signal,
-  });
+  const resumeFromBytes = Math.max(0, Math.floor(job.downloadedSize || 0));
+  const response = await fetchImpl(url, buildDownloadRequestInit(job, grant, options.signal));
   if (!response.ok) {
     throw new Error(`Download failed with status ${response.status}.`);
   }
+  if (resumeFromBytes > 0 && response.status === 200) {
+    throw new Error('Download resume is not supported by the storage source.');
+  }
 
-  const headerLength = Number(response.headers.get('content-length'));
-  const expectedTotal =
-    (Number.isFinite(headerLength) && headerLength > 0 ? headerLength : 0) ||
-    grant.archiveSizeBytes ||
-    grant.totalBytes ||
-    job.totalSize ||
-    0;
+  const expectedTotal = resolveExpectedDownloadTotal(response, grant, job, resumeFromBytes);
 
   const reader = response.body?.getReader();
   if (!reader) {
     const blob = await response.blob();
-    options.onProgress?.(blob.size, blob.size || expectedTotal);
+    options.onProgress?.(
+      resumeFromBytes + blob.size,
+      expectedTotal || resumeFromBytes + blob.size,
+    );
     return {
       blob,
       fileName: job.fileName,
@@ -71,13 +231,19 @@ export async function executeDownloadTransfer(
     }
     chunks.push(value);
     receivedBytes += value.byteLength;
-    options.onProgress?.(receivedBytes, expectedTotal || receivedBytes);
+    options.onProgress?.(
+      resumeFromBytes + receivedBytes,
+      expectedTotal || resumeFromBytes + receivedBytes,
+    );
   }
 
   const blob = new Blob(chunks, {
     type: response.headers.get('content-type') || job.mimeType || 'application/octet-stream',
   });
-  options.onProgress?.(blob.size, blob.size || expectedTotal);
+  options.onProgress?.(
+    resumeFromBytes + blob.size,
+    expectedTotal || resumeFromBytes + blob.size,
+  );
   return {
     blob,
     fileName: job.fileName,
@@ -104,12 +270,61 @@ export interface RunManagedDownloadTransferParams {
   onJobUpdate: (updater: (current: DownloadJob) => DownloadJob) => void;
   onOpenExternal?: (url: string) => void | Promise<void>;
   saveDownload?: (fileName: string, blob: Blob) => Promise<boolean>;
+  saveDownloadStream?: SaveDownloadStreamAdapter;
+}
+
+async function executeDownloadToStream(
+  job: DownloadJob,
+  grant: DownloadGrantLike,
+  streamAdapter: SaveDownloadStreamAdapter,
+  options: Pick<ExecuteDownloadTransferOptions, 'signal' | 'fetchImpl' | 'onProgress'>,
+): Promise<number> {
+  const url = resolveTransferOpenUrl(grant);
+  if (!url) {
+    throw new Error('Download grant did not include a URL.');
+  }
+
+  const sessionId = await streamAdapter.begin(job.fileName);
+  if (!sessionId) {
+    return -1;
+  }
+
+  try {
+    const fetchImpl = options.fetchImpl ?? fetch;
+    const resumeFromBytes = Math.max(0, Math.floor(job.downloadedSize || 0));
+    const response = await fetchImpl(url, buildDownloadRequestInit(job, grant, options.signal));
+    if (!response.ok) {
+      throw new Error(`Download failed with status ${response.status}.`);
+    }
+    if (resumeFromBytes > 0 && response.status === 200) {
+      throw new Error('Download resume is not supported by the storage source.');
+    }
+
+    const expectedTotal = resolveExpectedDownloadTotal(response, grant, job, resumeFromBytes);
+
+    const receivedBytes = await streamResponseBodyToSession(
+      response,
+      sessionId,
+      streamAdapter,
+      expectedTotal,
+      resumeFromBytes,
+      options.onProgress,
+    );
+    const saved = await streamAdapter.finish(sessionId);
+    if (!saved) {
+      throw new Error('Download save was not completed.');
+    }
+    return receivedBytes;
+  } catch (error) {
+    await streamAdapter.abort(sessionId).catch(() => undefined);
+    throw error;
+  }
 }
 
 export async function runManagedDownloadTransfer(
   params: RunManagedDownloadTransferParams,
 ): Promise<void> {
-  const { job, grant, signal, fetchImpl, onJobUpdate, onOpenExternal, saveDownload } = params;
+  const { job, grant, signal, fetchImpl, onJobUpdate, onOpenExternal, saveDownload, saveDownloadStream } = params;
   const openUrl = resolveTransferOpenUrl(grant);
 
   onJobUpdate(() => applyDownloadGrantToJob(job, grant));
@@ -122,7 +337,33 @@ export async function runManagedDownloadTransfer(
   }
 
   try {
-    const { blob, fileName } = await executeDownloadTransfer(applyDownloadGrantToJob(job, grant), grant, {
+    const activeJob = applyDownloadGrantToJob(job, grant);
+    const streamAdapter =
+      saveDownloadStream ??
+      (!saveDownload ? await createBrowserDownloadStreamAdapter(activeJob.fileName) : undefined);
+
+    if (streamAdapter) {
+      const receivedBytes = await executeDownloadToStream(activeJob, grant, streamAdapter, {
+        signal,
+        fetchImpl,
+        onProgress: (downloadedBytes, totalBytes) => {
+          onJobUpdate((current) => applyDownloadProgressToJob(current, downloadedBytes, totalBytes));
+        },
+      });
+      if (receivedBytes < 0) {
+        onJobUpdate((current) => ({
+          ...applyDownloadProgressToJob(current, 0, current.totalSize || 0),
+          status: 'ready',
+          speed: 'Ready',
+          timeRemaining: 'Save cancelled',
+        }));
+        return;
+      }
+      onJobUpdate((current) => applyDownloadCompletionToJob(current, receivedBytes));
+      return;
+    }
+
+    const { blob, fileName } = await executeDownloadTransfer(activeJob, grant, {
       signal,
       fetchImpl,
       onProgress: (downloadedBytes, totalBytes) => {
@@ -145,14 +386,19 @@ export async function runManagedDownloadTransfer(
     }
     onJobUpdate((current) => applyDownloadCompletionToJob(current, blob.size));
   } catch (error) {
-    if (isAbortError(error)) {
+    if (isDriveAbortError(error)) {
       return;
     }
 
     if (onOpenExternal) {
       try {
-        onJobUpdate((current) => applyDownloadCompletionToJob(current));
         await onOpenExternal(openUrl);
+        onJobUpdate((current) =>
+          applyTransferFailure(
+            current,
+            'Download failed; opened the source URL in your browser instead.',
+          ),
+        );
         return;
       } catch {
         // Fall through to failure state when external open also fails.

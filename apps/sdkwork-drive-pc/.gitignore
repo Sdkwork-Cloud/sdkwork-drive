@@ -11,4 +11,6 @@ dist/
 config/*.local.toml
 packages/*/node_modules/
 packages/sdkwork-drive-pc-desktop/src-tauri/target/
+packages/sdkwork-drive-pc-desktop/src-tauri/target-test-migrate/
 packages/sdkwork-drive-pc-desktop/src-tauri/gen/
+pnpm-lock.yaml

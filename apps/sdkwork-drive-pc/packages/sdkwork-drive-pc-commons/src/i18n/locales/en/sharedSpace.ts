@@ -9,4 +9,8 @@ export default {
   iconLabel: 'Space icon',
   cancel: 'Cancel',
   confirmCreate: 'Create shared space',
+  createSuccess: 'Created shared space "{name}"',
+  createFailed: 'Failed to create shared space',
+  deleteSuccess: 'Deleted shared space',
+  deleteFailed: 'Failed to delete shared space',
 };

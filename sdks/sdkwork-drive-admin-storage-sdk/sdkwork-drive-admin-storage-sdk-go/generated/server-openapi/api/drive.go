@@ -17,10 +17,10 @@ func NewDriveApi(client *sdkhttp.Client) *DriveApi {
     return &DriveApi{client: client}
 }
 
-func (a *DriveApi) StorageProviderBindingsDefaultGet(tenantId string, spaceId *string) (sdktypes.StorageProviderBinding, error) {
+func (a *DriveApi) StorageProviderBindingsDefaultGet(spaceId *string, spaceType *string) (sdktypes.StorageProviderBinding, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "spaceId", Value: func() interface{} { if spaceId == nil { return nil }; return *spaceId }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "spaceType", Value: func() interface{} { if spaceType == nil { return nil }; return *spaceType }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(CustomApiPath("/drive/storage/bindings/default"), query), nil, nil)
     if err != nil {
@@ -40,9 +40,8 @@ func (a *DriveApi) StorageProviderBindingsDefaultSet(body sdktypes.SetDefaultSto
 }
 
 // Delete a Drive default storage provider binding
-func (a *DriveApi) StorageProviderBindingsDefaultDelete(tenantId string, operatorId string, spaceId *string) (sdktypes.DeleteStorageProviderBindingResponse, error) {
+func (a *DriveApi) StorageProviderBindingsDefaultDelete(operatorId string, spaceId *string) (sdktypes.DeleteStorageProviderBindingResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "spaceId", Value: func() interface{} { if spaceId == nil { return nil }; return *spaceId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "operatorId", Value: operatorId, Style: "form", Explode: true, AllowReserved: false},
     })
@@ -84,11 +83,8 @@ func (a *DriveApi) StorageProvidersUpdate(providerId string, body sdktypes.Updat
     return decodeResult[sdktypes.StorageProvider](raw)
 }
 
-func (a *DriveApi) StorageProvidersDelete(providerId string, operatorId string) (sdktypes.DeleteStorageProviderResponse, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "operatorId", Value: operatorId, Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Delete(AppendQueryString(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), query), nil, nil)
+func (a *DriveApi) StorageProvidersDelete(providerId string) (sdktypes.DeleteStorageProviderResponse, error) {
+    raw, err := a.client.Delete(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
         var zero sdktypes.DeleteStorageProviderResponse
         return zero, err
@@ -239,9 +235,8 @@ func (a *DriveApi) StorageProvidersBucketsList(providerId string) (sdktypes.Prov
 }
 
 // List Drive storage provider bindings
-func (a *DriveApi) StorageProviderBindingsList(tenantId string, spaceId *string, providerId *string, lifecycleStatus *string) (sdktypes.StorageProviderBindingListResponse, error) {
+func (a *DriveApi) StorageProviderBindingsList(spaceId *string, providerId *string, lifecycleStatus *string) (sdktypes.StorageProviderBindingListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "tenantId", Value: tenantId, Style: "form", Explode: true, AllowReserved: false},
         {Name: "spaceId", Value: func() interface{} { if spaceId == nil { return nil }; return *spaceId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "providerId", Value: func() interface{} { if providerId == nil { return nil }; return *providerId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "lifecycleStatus", Value: func() interface{} { if lifecycleStatus == nil { return nil }; return *lifecycleStatus }(), Style: "form", Explode: true, AllowReserved: false},

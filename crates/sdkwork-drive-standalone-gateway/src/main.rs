@@ -29,7 +29,7 @@ struct EmbeddedServiceState {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    tracing_subscriber::fmt::init();
+    sdkwork_drive_observability::init_tracing("sdkwork-drive-standalone-gateway");
     sdkwork_drive_security::ensure_drive_auth_policy_refresh_task();
 
     let args: Vec<String> = std::env::args().collect();
@@ -73,6 +73,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .route(
             "/app/v3/api",
             any(dispatch_embedded).with_state(app_api_router),
+        )
+        .route(
+            "/backend/v3/api/drive/storage/{*rest}",
+            any(dispatch_embedded).with_state(admin_storage_router.clone()),
+        )
+        .route(
+            "/backend/v3/api/drive/storage",
+            any(dispatch_embedded).with_state(admin_storage_router.clone()),
         )
         .route(
             "/backend/v3/api/{*rest}",

@@ -857,7 +857,7 @@ assertOpenapiVersion31(adminStorageOpenapi, "admin storage openapi");
 assertPathPrefix(openOpenapi, "/open/v3/api", "open openapi");
 assertPathPrefix(appOpenapi, "/app/v3/api", "app openapi");
 assertPathPrefix(backendOpenapi, "/backend/v3/api", "backend openapi");
-assertPathPrefix(adminStorageOpenapi, "/admin/v3/api/drive/storage", "admin storage openapi");
+assertPathPrefix(adminStorageOpenapi, "/backend/v3/api/drive/storage", "admin storage openapi");
 
 assertPathExists(openOpenapi, "/open/v3/api/drive/share_links/{token}", "open openapi");
 assertPathExists(
@@ -886,6 +886,11 @@ assertPathExists(appOpenapi, "/app/v3/api/drive/nodes/{nodeId}/trash", "app open
 assertPathExists(
   appOpenapi,
   "/app/v3/api/drive/nodes/{nodeId}/download_url",
+  "app openapi",
+);
+assertPathExists(
+  appOpenapi,
+  "/app/v3/api/drive/nodes/{nodeId}/download_grants",
   "app openapi",
 );
 assertPathExists(appOpenapi, "/app/v3/api/drive/nodes/{nodeId}/labels", "app openapi");
@@ -1109,6 +1114,16 @@ assertPathExists(
 );
 assertPathExists(
   backendOpenapi,
+  "/backend/v3/api/drive/maintenance/expired_upload_content_sweep",
+  "backend openapi",
+);
+assertPathExists(
+  backendOpenapi,
+  "/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep",
+  "backend openapi",
+);
+assertPathExists(
+  backendOpenapi,
   "/backend/v3/api/drive/maintenance/jobs",
   "backend openapi",
 );
@@ -1116,57 +1131,57 @@ assertPathExists(backendOpenapi, "/backend/v3/api/drive/spaces", "backend openap
 assertPathExists(backendOpenapi, "/backend/v3/api/drive/quotas", "backend openapi");
 assertPathExists(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/providers",
+  "/backend/v3/api/drive/storage/providers",
   "admin storage openapi",
 );
 assertPathExists(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/providers/{providerId}",
+  "/backend/v3/api/drive/storage/providers/{providerId}",
   "admin storage openapi",
 );
 assertPathExists(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/providers/{providerId}/test",
+  "/backend/v3/api/drive/storage/providers/{providerId}/test",
   "admin storage openapi",
 );
 assertPathExists(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/providers/{providerId}/capabilities",
+  "/backend/v3/api/drive/storage/providers/{providerId}/capabilities",
   "admin storage openapi",
 );
 assertPathExists(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/providers/{providerId}/bucket",
+  "/backend/v3/api/drive/storage/providers/{providerId}/bucket",
   "admin storage openapi",
 );
 assertPathExists(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/providers/{providerId}/buckets",
+  "/backend/v3/api/drive/storage/providers/{providerId}/buckets",
   "admin storage openapi",
 );
 assertPathExists(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/providers/{providerId}/objects",
+  "/backend/v3/api/drive/storage/providers/{providerId}/objects",
   "admin storage openapi",
 );
 assertPathExists(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
+  "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
   "admin storage openapi",
 );
 assertPathExists(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/providers/{providerId}/objects/copy",
+  "/backend/v3/api/drive/storage/providers/{providerId}/objects/copy",
   "admin storage openapi",
 );
 assertPathExists(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/bindings/default",
+  "/backend/v3/api/drive/storage/bindings/default",
   "admin storage openapi",
 );
 assertPathExists(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/bindings",
+  "/backend/v3/api/drive/storage/bindings",
   "admin storage openapi",
 );
 assertProblemDetailSchema(openOpenapi, "open openapi");
@@ -1189,7 +1204,7 @@ for (const [document, pathKey, label] of [
   ],
   [
     adminStorageOpenapi,
-    "/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
+    "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
     "admin storage openapi",
   ],
 ]) {
@@ -1403,13 +1418,18 @@ assertSchemaHasProperties(
   "app openapi",
 );
 for (const schemaName of [
-  "NodeListResponse",
   "VersionListResponse",
   "PermissionListResponse",
   "ShareLinkListResponse",
 ]) {
   assertSchemaHasProperties(appOpenapi, schemaName, ["items", "nextPageToken"], "app openapi");
 }
+assertSchemaHasProperties(
+  appOpenapi,
+  "NodeListResponse",
+  ["items", "nextPageToken", "incompletePage"],
+  "app openapi",
+);
 assertSchemaHasProperties(
   appOpenapi,
   "CopyNodeRequest",
@@ -1901,10 +1921,10 @@ assertSchemaHasProperties(
 );
 if (!isSdkExportGate) {
   for (const [pathKey, method] of [
-    ["/admin/v3/api/drive/storage/providers/{providerId}/bucket", "put"],
-    ["/admin/v3/api/drive/storage/providers/{providerId}/bucket", "delete"],
-    ["/admin/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}", "delete"],
-    ["/admin/v3/api/drive/storage/bindings/default", "delete"],
+    ["/backend/v3/api/drive/storage/providers/{providerId}/bucket", "put"],
+    ["/backend/v3/api/drive/storage/providers/{providerId}/bucket", "delete"],
+    ["/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}", "delete"],
+    ["/backend/v3/api/drive/storage/bindings/default", "delete"],
   ]) {
     assertQueryParameterExists(
       adminStorageOpenapi,
@@ -1933,7 +1953,7 @@ if (!isSdkExportGate) {
 }
 assertQueryParameterAbsent(
   adminStorageOpenapi,
-  "/admin/v3/api/drive/storage/bindings",
+  "/backend/v3/api/drive/storage/bindings",
   "get",
   "tenantId",
   "admin storage openapi",
@@ -2206,7 +2226,12 @@ assertSchemaPropertyEnum(
   backendOpenapi,
   "MaintenanceJob",
   "jobType",
-  ["object_sweep", "upload_session_sweep"],
+  [
+    "object_sweep",
+    "upload_session_sweep",
+    "expired_upload_content_sweep",
+    "abandoned_upload_task_sweep",
+  ],
   "backend openapi",
 );
 assertSchemaPropertyEnum(
@@ -2273,7 +2298,12 @@ assertQueryParameterEnum(
   "/backend/v3/api/drive/maintenance/jobs",
   "get",
   "jobType",
-  ["object_sweep", "upload_session_sweep"],
+  [
+    "object_sweep",
+    "upload_session_sweep",
+    "expired_upload_content_sweep",
+    "abandoned_upload_task_sweep",
+  ],
   "backend openapi",
 );
 assertQueryParameterEnum(

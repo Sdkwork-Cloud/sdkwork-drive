@@ -10,7 +10,7 @@ public class ProviderBucketList {
     public String getProviderId() {
         return this.providerId;
     }
-    
+
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
@@ -18,7 +18,7 @@ public class ProviderBucketList {
     public String getConfiguredBucket() {
         return this.configuredBucket;
     }
-    
+
     public void setConfiguredBucket(String configuredBucket) {
         this.configuredBucket = configuredBucket;
     }
@@ -26,7 +26,7 @@ public class ProviderBucketList {
     public List<ProviderBucketListItem> getItems() {
         return this.items;
     }
-    
+
     public void setItems(List<ProviderBucketListItem> items) {
         this.items = items;
     }

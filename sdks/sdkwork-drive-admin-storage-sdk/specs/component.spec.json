@@ -89,7 +89,7 @@
   "contracts": {
     "apiAuthority": {
       "name": "sdkwork-drive.admin.storage",
-      "prefix": "/admin/v3/api",
+      "prefix": "/backend/v3/api",
       "authorityOpenApi": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json",
       "derivedOpenApi": [
         "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json"

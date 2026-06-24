@@ -1,5 +1,6 @@
 use crate::app_context::DriveRequestContext;
 use crate::audit::record_audit_event;
+use sdkwork_drive_contract::drive::domain_events::admin_audit;
 use crate::dto::{
     DefaultStorageProviderBindingQuery, DeleteDefaultStorageProviderBindingQuery,
     DeleteStorageProviderBindingResponse, ListStorageProviderBindingsQuery,
@@ -148,7 +149,7 @@ pub(crate) async fn set_default_storage_provider_binding(
     let audit_resource_id = binding_audit_resource_id(&tenant_id, &target);
     record_audit_event(
         &state,
-        "storage_provider_binding.default_set",
+        admin_audit::storage_provider_binding::DEFAULT_SET,
         "storage_provider_binding",
         audit_resource_id.as_str(),
         &operator_id,
@@ -194,7 +195,7 @@ pub(crate) async fn delete_default_storage_provider_binding(
         let audit_resource_id = binding_audit_resource_id(&tenant_id, &target);
         record_audit_event(
             &state,
-            "storage_provider_binding.default_deleted",
+            admin_audit::storage_provider_binding::DEFAULT_DELETED,
             "storage_provider_binding",
             audit_resource_id.as_str(),
             &operator_id,

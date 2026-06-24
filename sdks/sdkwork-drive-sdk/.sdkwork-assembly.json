@@ -3,10 +3,10 @@
   "title": "SDKWork Drive Open API SDK",
   "apiVersion": "0.1.0",
   "openapiVersion": "3.1.2",
-  "authoritySpec": "../../apis/drive-open-api.openapi.json",
-  "generationInputSpec": "../../apis/drive-open-api.openapi.json",
+  "authoritySpec": "../../apis/open-api/drive/drive-open-api.openapi.json",
+  "generationInputSpec": "../../apis/open-api/drive/drive-open-api.openapi.json",
   "derivedSpecs": {
-    "default": "../../apis/drive-open-api.openapi.json"
+    "default": "../../apis/open-api/drive/drive-open-api.openapi.json"
   },
   "apiAuthority": "sdkwork-drive.open",
   "discoverySurface": {

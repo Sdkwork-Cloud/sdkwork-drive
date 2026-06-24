@@ -1,3 +1,1 @@
-export interface OperatorRequest {
-  operatorId: string;
-}
+export type OperatorRequest = Record<string, unknown>;

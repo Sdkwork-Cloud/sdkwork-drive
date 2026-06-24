@@ -1,4 +1,5 @@
 use crate::audit::record_storage_provider_audit;
+use sdkwork_drive_contract::drive::domain_events::admin_audit;
 use crate::dto::*;
 use crate::error::{map_object_store_route_error, map_service_error, ProblemDetail};
 use crate::object_store::{
@@ -69,7 +70,7 @@ pub(crate) async fn create_storage_provider(
         .map_err(map_service_error)?;
     record_storage_provider_audit(
         &state,
-        "storage_provider.created",
+        admin_audit::storage_provider::CREATED,
         &created.id,
         &operator_id,
     )
@@ -112,7 +113,7 @@ pub(crate) async fn update_storage_provider(
         .map_err(map_service_error)?;
     record_storage_provider_audit(
         &state,
-        "storage_provider.updated",
+        admin_audit::storage_provider::UPDATED,
         &updated.id,
         &operator_id,
     )
@@ -140,7 +141,7 @@ pub(crate) async fn delete_storage_provider(
         .map_err(map_service_error)?;
     record_storage_provider_audit(
         &state,
-        "storage_provider.deleted",
+        admin_audit::storage_provider::DELETED,
         &provider_id,
         &operator_id,
     )
@@ -199,7 +200,7 @@ pub(crate) async fn test_storage_provider(
     };
     record_storage_provider_audit(
         &state,
-        "storage_provider.tested",
+        admin_audit::storage_provider::TESTED,
         &provider_id,
         &payload.operator_id,
     )
@@ -244,7 +245,7 @@ pub(crate) async fn rotate_storage_provider_credentials(
         .map_err(map_service_error)?;
     record_storage_provider_audit(
         &state,
-        "storage_provider.credentials_rotated",
+        admin_audit::storage_provider::CREDENTIALS_ROTATED,
         &provider_id,
         &operator_id,
     )
@@ -269,9 +270,9 @@ pub(crate) async fn set_storage_provider_status(
         .await
         .map_err(map_service_error)?;
     let action = match status {
-        "active" => "storage_provider.activated",
-        "disabled" => "storage_provider.deactivated",
-        _ => "storage_provider.status_changed",
+        "active" => admin_audit::storage_provider::ACTIVATED,
+        "disabled" => admin_audit::storage_provider::DEACTIVATED,
+        _ => admin_audit::storage_provider::STATUS_CHANGED,
     };
     record_storage_provider_audit(&state, action, &provider_id, &operator_id).await?;
     Ok(Json(map_storage_provider(updated)))

@@ -8,7 +8,7 @@ public class RotateStorageProviderCredentialRequest {
     public String getCredentialRef() {
         return this.credentialRef;
     }
-    
+
     public void setCredentialRef(String credentialRef) {
         this.credentialRef = credentialRef;
     }
@@ -16,7 +16,7 @@ public class RotateStorageProviderCredentialRequest {
     public String getOperatorId() {
         return this.operatorId;
     }
-    
+
     public void setOperatorId(String operatorId) {
         this.operatorId = operatorId;
     }

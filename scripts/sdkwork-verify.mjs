@@ -15,7 +15,12 @@ const steps = [
   ['api:check', [pnpmCommand(), ['api:check']]],
   ['test:app-openapi-context', [pnpmCommand(), ['test:app-openapi-context']]],
   ['test:app-sdk-smoke', [pnpmCommand(), ['test:app-sdk-smoke']]],
+  ['test:global-assets-contract', [pnpmCommand(), ['test:global-assets-contract']]],
   ['test:drive-integration', [pnpmCommand(), ['test:drive-integration']]],
+  ['test:drive-share-link-integration', [pnpmCommand(), ['test:drive-share-link-integration']]],
+  ['test:drive-e2e', [pnpmCommand(), ['test:drive-e2e']]],
+  ['test:e2e', [pnpmCommand(), ['test:e2e']]],
+  ['test:release-evidence', [pnpmCommand(), ['test:release-evidence']]],
   ['sdk:check', [pnpmCommand(), ['sdk:check']]],
 ];
 

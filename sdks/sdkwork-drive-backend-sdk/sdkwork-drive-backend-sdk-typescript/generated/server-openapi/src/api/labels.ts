@@ -5,18 +5,12 @@ import type { CreateLabelRequest, DeleteLabelResponse, DriveLabel, LabelListResp
 
 
 export interface LabelsListParams {
-  tenantId: string;
   lifecycleStatus?: 'active' | 'deleted';
   pageSize?: number;
   pageToken?: string;
 }
 
-export interface LabelsGetParams {
-  tenantId: string;
-}
-
 export interface LabelsDeleteParams {
-  tenantId: string;
   operatorId: string;
 }
 
@@ -29,12 +23,11 @@ export class LabelsApi {
 
 
 /** List Drive label definitions */
-  async list(params: LabelsListParams): Promise<LabelListResponse> {
+  async list(params?: LabelsListParams): Promise<LabelListResponse> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-      { name: 'lifecycleStatus', value: params.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageToken', value: params.pageToken, style: 'form', explode: true, allowReserved: false },
+      { name: 'lifecycleStatus', value: params?.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<LabelListResponse>(appendQueryString(backendApiPath(`/drive/labels`), query));
   }
@@ -45,11 +38,8 @@ export class LabelsApi {
   }
 
 /** Get a Drive label definition */
-  async get(labelId: string, params: LabelsGetParams): Promise<DriveLabel> {
-    const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.get<DriveLabel>(appendQueryString(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), query));
+  async get(labelId: string): Promise<DriveLabel> {
+    return this.client.get<DriveLabel>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`));
   }
 
 /** Update a Drive label definition */
@@ -60,7 +50,6 @@ export class LabelsApi {
 /** Delete a Drive label definition */
   async delete(labelId: string, params: LabelsDeleteParams): Promise<DeleteLabelResponse> {
     const query = buildQueryString([
-      { name: 'tenantId', value: params.tenantId, style: 'form', explode: true, allowReserved: false },
       { name: 'operatorId', value: params.operatorId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.delete<DeleteLabelResponse>(appendQueryString(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), query));
