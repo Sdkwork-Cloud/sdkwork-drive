@@ -1,7 +1,6 @@
 use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
-use sdkwork_drive_security::DriveAuthValidationPolicy;
-use sdkwork_router_drive_app_api::{build_router, build_router_with_pool_and_iam_policy};
+use sdkwork_router_drive_app_api::{build_router, build_router_with_pool_and_iam};
 use sdkwork_web_core::{access_token_jwt, auth_token_jwt};
 use serde_json::Value;
 use sqlx::any::AnyPoolOptions;
@@ -286,10 +285,7 @@ fn app_router_allowing_unsigned_context() -> axum::Router {
         .max_connections(1)
         .connect_lazy("sqlite::memory:")
         .expect("create in-memory sqlite pool");
-    build_router_with_pool_and_iam_policy(
-        pool,
-        DriveAuthValidationPolicy::allow_unsigned_for_development(),
-    )
+    build_router_with_pool_and_iam(pool)
 }
 
 async fn assert_problem(response: axum::response::Response, status: StatusCode, code: &str) {

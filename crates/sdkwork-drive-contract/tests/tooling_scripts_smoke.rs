@@ -272,8 +272,8 @@ fn sdk_standards_require_canonical_sdkgen_and_code_generator_alias_policy() {
             GLOBAL_CANONICAL_SDK_GENERATOR_BIN,
         ),
         (
-            "drive-sdk-integration-standard.md",
-            root.join("docs/drive-sdk-integration-standard.md"),
+            "TECH-drive-sdk-integration-standard.md",
+            root.join("docs/architecture/tech/TECH-drive-sdk-integration-standard.md"),
             DRIVE_CANONICAL_SDK_GENERATOR_ROOT,
             DRIVE_CANONICAL_SDK_GENERATOR_BIN,
         ),
@@ -813,16 +813,21 @@ fn schema_quality_gate_fails_when_storage_provider_kind_pattern_is_missing() {
 
     let app_src = root.join("apis/app-api/drive/drive-app-api.openapi.json");
     let backend_src = root.join("apis/backend-api/drive/drive-backend-api.openapi.json");
+    let admin_storage_src =
+        root.join("apis/backend-api/drive/drive-admin-storage-api.openapi.json");
     let special_spaces_src = root.join("docs/schema-registry/tables/002-drive-special-spaces.yaml");
     let security_audit_src = root.join("docs/schema-registry/tables/004-drive-security-audit.yaml");
     let storage_schema_src = root.join("docs/schema-registry/tables/003-drive-storage.yaml");
     let app_dst = temp_dir.join("drive-app-api.openapi.json");
     let backend_dst = temp_dir.join("drive-backend-api.openapi.json");
+    let admin_storage_dst = temp_dir.join("drive-admin-storage-api.openapi.json");
     let special_spaces_dst = temp_dir.join("002-drive-special-spaces.yaml");
     let security_audit_dst = temp_dir.join("004-drive-security-audit.yaml");
     let storage_schema_dst = temp_dir.join("003-drive-storage.yaml");
     std::fs::copy(&app_src, &app_dst).expect("app openapi should be copied");
     std::fs::copy(&backend_src, &backend_dst).expect("backend openapi should be copied");
+    std::fs::copy(&admin_storage_src, &admin_storage_dst)
+        .expect("admin storage openapi should be copied");
     std::fs::copy(&special_spaces_src, &special_spaces_dst)
         .expect("special spaces schema should be copied");
     std::fs::copy(&security_audit_src, &security_audit_dst)
@@ -830,11 +835,11 @@ fn schema_quality_gate_fails_when_storage_provider_kind_pattern_is_missing() {
     std::fs::copy(&storage_schema_src, &storage_schema_dst)
         .expect("storage schema should be copied");
 
-    let backend_raw =
-        std::fs::read_to_string(&backend_dst).expect("backend openapi should be readable");
-    let mut backend_json: serde_json::Value =
-        serde_json::from_str(&backend_raw).expect("backend openapi should be valid json");
-    let provider_kind = backend_json
+    let admin_storage_raw = std::fs::read_to_string(&admin_storage_dst)
+        .expect("admin storage openapi should be readable");
+    let mut admin_storage_json: serde_json::Value =
+        serde_json::from_str(&admin_storage_raw).expect("admin storage openapi should be valid json");
+    let provider_kind = admin_storage_json
         .get_mut("components")
         .and_then(|value| value.get_mut("schemas"))
         .and_then(|value| value.get_mut("CreateStorageProviderRequest"))
@@ -844,10 +849,10 @@ fn schema_quality_gate_fails_when_storage_provider_kind_pattern_is_missing() {
     if let Some(object) = provider_kind.as_object_mut() {
         object.remove("pattern");
     }
-    let patched = serde_json::to_string_pretty(&backend_json)
-        .expect("patched backend openapi should be serializable");
-    std::fs::write(&backend_dst, format!("{patched}\n"))
-        .expect("patched backend openapi should be writable");
+    let patched = serde_json::to_string_pretty(&admin_storage_json)
+        .expect("patched admin storage openapi should be serializable");
+    std::fs::write(&admin_storage_dst, format!("{patched}\n"))
+        .expect("patched admin storage openapi should be writable");
 
     let output = run_node_command_in(
         &root,
@@ -857,6 +862,8 @@ fn schema_quality_gate_fails_when_storage_provider_kind_pattern_is_missing() {
             app_dst.clone(),
             PathBuf::from("--backend-openapi"),
             backend_dst.clone(),
+            PathBuf::from("--admin-storage-openapi"),
+            admin_storage_dst.clone(),
             PathBuf::from("--special-spaces-schema"),
             special_spaces_dst.clone(),
             PathBuf::from("--security-audit-schema"),

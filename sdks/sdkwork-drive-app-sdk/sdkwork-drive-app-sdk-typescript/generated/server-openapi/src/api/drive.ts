@@ -581,6 +581,8 @@ export interface DriveNodesListParams {
   parentNodeId?: string;
   pageSize?: string;
   pageToken?: string;
+  sortBy?: 'name' | 'owner' | 'lastModified' | 'size' | 'type';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class DriveNodesApi {
@@ -626,6 +628,8 @@ async list(spaceId: string, params?: DriveNodesListParams): Promise<NodeListResp
       { name: 'parentNodeId', value: params?.parentNodeId, style: 'form', explode: true, allowReserved: false },
       { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
+      { name: 'sortBy', value: params?.sortBy, style: 'form', explode: true, allowReserved: false },
+      { name: 'sortOrder', value: params?.sortOrder, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<NodeListResponse>(appendQueryString(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/nodes`), query));
   }

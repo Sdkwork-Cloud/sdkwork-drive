@@ -1,6 +1,6 @@
 //! Durable Drive change log and domain outbox recording per EVENT_SPEC.
 
-use crate::infrastructure::outbox_dispatch::spawn_pending_outbox_dispatch;
+use crate::infrastructure::outbox_dispatch::trigger_immediate_outbox_dispatch;
 use crate::infrastructure::sql::next_drive_runtime_id;
 use crate::DriveServiceError;
 use serde_json::json;
@@ -32,7 +32,7 @@ pub async fn record_drive_change(
     let mut connection = pool.acquire().await.map_err(sql_internal)?;
     record_drive_change_on_connection(&mut connection, command).await?;
     sdkwork_drive_observability::metrics::record_outbox_pending();
-    spawn_pending_outbox_dispatch(pool.clone());
+    trigger_immediate_outbox_dispatch(pool.clone());
     Ok(())
 }
 

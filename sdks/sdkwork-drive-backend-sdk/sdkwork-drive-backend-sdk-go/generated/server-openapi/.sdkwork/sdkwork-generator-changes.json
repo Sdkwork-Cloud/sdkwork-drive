@@ -9,14 +9,15 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-backend-sdk-generated-go"
   },
-  "changeFingerprint": "fffe4311b91e29da9a15b1ca0dffa9392e27a65c3682cb6feb6f66d3d9bc79b1",
+  "changeFingerprint": "a87b6f6b4e63dd98c05105af63f063e096d1a6d2deed0bf4575d81c7af2042be",
   "changes": {
     "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [],
+    "updatedGeneratedFiles": [
+      "api/drive.go"
+    ],
     "unchangedGeneratedFiles": [
       "api/base.go",
       "api/doc.go",
-      "api/drive.go",
       "api/labels.go",
       "api/paths.go",
       "bin/publish-core.mjs",
@@ -34,11 +35,8 @@
       "types/audit_event_page.go",
       "types/audit_event.go",
       "types/common.go",
-      "types/copy_provider_object_request.go",
       "types/create_label_request.go",
-      "types/create_storage_provider_request.go",
       "types/delete_label_response.go",
-      "types/delete_storage_provider_response.go",
       "types/doc.go",
       "types/download_package_page.go",
       "types/download_package.go",
@@ -46,31 +44,36 @@
       "types/drive_space.go",
       "types/label_list_response.go",
       "types/list_spaces_response.go",
-      "types/list_storage_providers_response.go",
       "types/maintenance_job_page.go",
       "types/maintenance_job.go",
-      "types/operator_request.go",
       "types/problem_detail.go",
+      "types/quota_summary.go",
+      "types/sweep_object_store_request.go",
+      "types/sweep_response.go",
+      "types/sweep_upload_sessions_request.go",
+      "types/update_label_request.go",
+      "types/update_quota_policy_request.go"
+    ],
+    "deletedGeneratedFiles": [
+      "types/copy_provider_object_request.go",
+      "types/create_storage_provider_request.go",
+      "types/delete_storage_provider_response.go",
+      "types/list_storage_providers_response.go",
+      "types/operator_request.go",
       "types/provider_bucket_mutation.go",
       "types/provider_bucket.go",
       "types/provider_object_list.go",
       "types/provider_object_mutation.go",
       "types/provider_object.go",
-      "types/quota_summary.go",
       "types/rotate_storage_provider_credential_request.go",
       "types/set_default_storage_provider_binding_request.go",
       "types/storage_provider_binding.go",
       "types/storage_provider_capabilities.go",
       "types/storage_provider.go",
-      "types/sweep_object_store_request.go",
-      "types/sweep_response.go",
-      "types/sweep_upload_sessions_request.go",
       "types/test_storage_provider_request.go",
       "types/test_storage_provider_response.go",
-      "types/update_label_request.go",
       "types/update_storage_provider_request.go"
     ],
-    "deletedGeneratedFiles": [],
     "scaffoldedFiles": [],
     "preservedScaffoldFiles": [
       "custom/README.md"
@@ -79,26 +82,80 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [],
-    "details": [],
-    "requiresVerification": false,
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+    "areas": [
+      "api-surface",
+      "models"
+    ],
+    "details": [
+      {
+        "area": "api-surface",
+        "paths": [
+          "api/drive.go"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "types/copy_provider_object_request.go",
+          "types/create_storage_provider_request.go",
+          "types/delete_storage_provider_response.go",
+          "types/list_storage_providers_response.go",
+          "types/operator_request.go",
+          "types/provider_bucket_mutation.go",
+          "types/provider_bucket.go",
+          "types/provider_object_list.go",
+          "types/provider_object_mutation.go",
+          "types/provider_object.go",
+          "types/rotate_storage_provider_credential_request.go",
+          "types/set_default_storage_provider_binding_request.go",
+          "types/storage_provider_binding.go",
+          "types/storage_provider_capabilities.go",
+          "types/storage_provider.go",
+          "types/test_storage_provider_request.go",
+          "types/test_storage_provider_response.go",
+          "types/update_storage_provider_request.go"
+        ]
+      }
+    ],
+    "requiresVerification": true,
+    "summary": "Detected impact areas: api-surface, models. Verification is required."
   },
   "verificationPlan": {
-    "shouldRun": false,
-    "runPhase": "skip",
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
-    "steps": []
+    "shouldRun": true,
+    "runPhase": "now",
+    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "steps": [
+      {
+        "id": "check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-go\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "go",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language go --project-dir . --action check"
+      }
+    ]
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "low",
-    "nextAction": "skip",
+    "riskLevel": "high",
+    "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
-      "no-actionable-changes"
+      "deleted-generated-files",
+      "manual-review-required",
+      "verification-required"
     ]
   },
   "preservedLegacyFiles": false

@@ -1,4 +1,3 @@
-> Migrated from `docs/drive-topology-standard.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
 Human summary. Machine contract: `specs/topology.spec.json`.

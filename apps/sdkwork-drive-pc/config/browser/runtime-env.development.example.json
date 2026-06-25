@@ -5,20 +5,20 @@
   "deploymentMode": "desktop",
   "runtimeTarget": "browser",
   "appKey": "sdkwork-drive-pc",
-  "appApiBaseUrl": "http://127.0.0.1:18080",
-  "backendApiBaseUrl": "http://127.0.0.1:18083",
+  "appApiBaseUrl": "http://127.0.0.1:3900",
+  "backendApiBaseUrl": "http://127.0.0.1:3900",
   "sdkBaseUrls": {
-    "appApiBaseUrl": "http://127.0.0.1:18080",
-    "backendApiBaseUrl": "http://127.0.0.1:18083",
+    "appApiBaseUrl": "http://127.0.0.1:3900",
+    "backendApiBaseUrl": "http://127.0.0.1:3900",
     "dependencySdkBaseUrls": {
-      "sdkwork-appbase-app-sdk": {
-        "appApiBaseUrl": "http://127.0.0.1:18080"
+      "sdkwork-iam-app-sdk": {
+        "appApiBaseUrl": "http://127.0.0.1:3900"
       },
       "sdkwork-drive-app-sdk": {
-        "appApiBaseUrl": "http://127.0.0.1:18080"
+        "appApiBaseUrl": "http://127.0.0.1:3900"
       },
       "sdkwork-drive-admin-storage-sdk": {
-        "backendApiBaseUrl": "http://127.0.0.1:18083"
+        "backendApiBaseUrl": "http://127.0.0.1:3900"
       }
     }
   },
@@ -31,7 +31,7 @@
   },
   "publicRuntime": {
     "runtimeEnvFile": "/runtime-env.json",
-    "appApiBaseUrl": "http://127.0.0.1:18080",
-    "backendApiBaseUrl": "http://127.0.0.1:18083"
+    "appApiBaseUrl": "http://127.0.0.1:3900",
+    "backendApiBaseUrl": "http://127.0.0.1:3900"
   }
 }

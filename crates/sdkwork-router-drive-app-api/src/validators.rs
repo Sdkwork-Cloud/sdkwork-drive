@@ -84,6 +84,35 @@ pub(crate) fn parse_page_request(
     Ok(PageRequest { limit, offset })
 }
 
+pub(crate) fn parse_nodes_list_order_clause(
+    sort_by: Option<String>,
+    sort_order: Option<String>,
+) -> Result<&'static str, (StatusCode, Json<ProblemDetail>)> {
+    let sort_by = normalize_optional_text(sort_by).unwrap_or_else(|| "name".to_string());
+    let sort_order = normalize_optional_text(sort_order).unwrap_or_else(|| "asc".to_string());
+    let desc = sort_order.eq_ignore_ascii_case("desc");
+    match (sort_by.as_str(), desc) {
+        ("name", false) => Ok("node_type ASC, node_name ASC"),
+        ("name", true) => Ok("node_type ASC, node_name DESC"),
+        ("owner", false) => Ok("node_type ASC, created_by ASC, node_name ASC"),
+        ("owner", true) => Ok("node_type ASC, created_by DESC, node_name ASC"),
+        ("lastModified", false) => Ok("node_type ASC, updated_at ASC, node_name ASC"),
+        ("lastModified", true) => Ok("node_type ASC, updated_at DESC, node_name ASC"),
+        ("size", false) => Ok("node_type ASC, COALESCE(head_content_length, 0) ASC, node_name ASC"),
+        ("size", true) => Ok("node_type ASC, COALESCE(head_content_length, 0) DESC, node_name ASC"),
+        ("type", false) => {
+            Ok("node_type ASC, COALESCE(head_content_type_group, '') ASC, node_name ASC")
+        }
+        ("type", true) => Ok("node_type ASC, COALESCE(head_content_type_group, '') DESC, node_name ASC"),
+        _ => Err(problem(
+            StatusCode::BAD_REQUEST,
+            "validation failed",
+            "sortBy is invalid",
+            "drive.validation.failed",
+        )),
+    }
+}
+
 pub(crate) fn next_page_token<T>(items: &mut Vec<T>, page: PageRequest) -> Option<String> {
     if items.len() as i64 > page.limit {
         items.pop();
@@ -521,4 +550,31 @@ pub(crate) fn validate_watch_expiration(
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod nodes_list_order_tests {
+    use super::parse_nodes_list_order_clause;
+
+    #[test]
+    fn defaults_to_folder_first_name_asc() {
+        let clause = parse_nodes_list_order_clause(None, None).expect("default sort");
+        assert_eq!(clause, "node_type ASC, node_name ASC");
+    }
+
+    #[test]
+    fn maps_size_descending() {
+        let clause =
+            parse_nodes_list_order_clause(Some("size".to_string()), Some("desc".to_string()))
+                .expect("size desc");
+        assert!(clause.contains("head_content_length"));
+        assert!(clause.contains("DESC"));
+    }
+
+    #[test]
+    fn rejects_unknown_sort_field() {
+        let err = parse_nodes_list_order_clause(Some("invalid".to_string()), None)
+            .expect_err("invalid sort");
+        assert_eq!(err.0, axum::http::StatusCode::BAD_REQUEST);
+    }
 }

@@ -67,12 +67,61 @@ export function canCancelTransferJob(job: Pick<DownloadJob, 'status'>): boolean 
   return isActiveTransferStatus(job.status) || job.status === 'paused';
 }
 
-export function canPauseTransferJob(_job: Pick<DownloadJob, 'status'>): boolean {
-  return false;
+export function canPauseTransferJob(job: Pick<DownloadJob, 'status' | 'type'>): boolean {
+  return job.type === 'download' && isActiveTransferStatus(job.status);
 }
 
-export function canResumeTransferJob(_job: Pick<DownloadJob, 'status'>): boolean {
-  return false;
+export function canResumeTransferJob(
+  job: Pick<
+    DownloadJob,
+    'status' | 'type' | 'downloadUrl' | 'signedSourceUrl' | 'expiresAtEpochMs'
+  >,
+): boolean {
+  return job.type === 'download' && job.status === 'paused' && isDownloadGrantStillValid(job);
+}
+
+export function isDownloadGrantStillValid(
+  job: Pick<DownloadJob, 'downloadUrl' | 'signedSourceUrl' | 'expiresAtEpochMs'>,
+): boolean {
+  if (!resolveTransferOpenUrl(job)) {
+    return false;
+  }
+  if (job.expiresAtEpochMs && job.expiresAtEpochMs <= Date.now()) {
+    return false;
+  }
+  return true;
+}
+
+export function pauseTransferJob(job: DownloadJob): DownloadJob {
+  return {
+    ...job,
+    status: 'paused',
+    speed: '--',
+    timeRemaining: '',
+  };
+}
+
+export function resumeTransferJob(job: DownloadJob): DownloadJob {
+  return {
+    ...job,
+    status: 'downloading',
+    speed: 'Downloading...',
+    timeRemaining: 'Calculating...',
+    errorMessage: undefined,
+  };
+}
+
+export function downloadGrantFromJob(job: DownloadJob): DownloadGrantLike {
+  return {
+    id: job.fileId,
+    packageName: job.fileName,
+    downloadUrl: job.downloadUrl,
+    signedSourceUrl: job.signedSourceUrl,
+    method: job.downloadMethod,
+    expiresAtEpochMs: job.expiresAtEpochMs,
+    totalBytes: job.totalSize,
+    archiveSizeBytes: job.downloadKind === 'bundle' ? job.totalSize : undefined,
+  };
 }
 
 export function isCompletedTransferStatus(status: DownloadJob['status']): boolean {

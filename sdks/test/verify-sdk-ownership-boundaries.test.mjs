@@ -20,24 +20,24 @@ const families = [
     owner: "sdkwork-drive",
     authority: "sdkwork-drive.app",
     input: "apis/app-api/drive/drive-app-api.openapi.json",
-    dependencyWorkspace: "sdkwork-appbase-app-sdk",
-    dependencyAuthority: "sdkwork-appbase-app-api",
+    dependencyWorkspace: "sdkwork-iam-app-sdk",
+    dependencyAuthority: "sdkwork-iam-app-api",
   },
   {
     root: "sdkwork-drive-backend-sdk",
     owner: "sdkwork-drive",
     authority: "sdkwork-drive.backend",
     input: "apis/backend-api/drive/drive-backend-api.openapi.json",
-    dependencyWorkspace: "sdkwork-appbase-backend-sdk",
-    dependencyAuthority: "sdkwork-appbase-backend-api",
+    dependencyWorkspace: "sdkwork-iam-backend-sdk",
+    dependencyAuthority: "sdkwork-iam-backend-api",
   },
   {
     root: "sdkwork-drive-admin-storage-sdk",
     owner: "sdkwork-drive",
     authority: "sdkwork-drive.admin.storage",
     input: "apis/backend-api/drive/drive-admin-storage-api.openapi.json",
-    dependencyWorkspace: "sdkwork-appbase-backend-sdk",
-    dependencyAuthority: "sdkwork-appbase-backend-api",
+    dependencyWorkspace: "sdkwork-iam-backend-sdk",
+    dependencyAuthority: "sdkwork-iam-backend-api",
   },
 ];
 
@@ -54,12 +54,29 @@ const appbaseOwnedPathPrefixes = [
 ];
 
 function isAllowedComposedAppbaseRoute(family, pathKey, operation) {
-  return (
-    family.root === "sdkwork-drive-app-sdk" &&
-    appbaseOwnedPathPrefixes.some((prefix) => pathKey.startsWith(prefix)) &&
-    operation["x-sdkwork-composed-from-owner"] === "sdkwork-appbase" &&
-    String(operation["x-sdkwork-composed-from-api-authority"] || "").startsWith("sdkwork-appbase")
-  );
+  const composedAuthority = String(operation["x-sdkwork-composed-from-api-authority"] || "");
+  const allowedAuthorities = new Set([
+    "sdkwork-iam-app-api",
+    "sdkwork-iam-backend-api",
+  ]);
+
+  if (family.root === "sdkwork-drive-app-sdk") {
+    return (
+      appbaseOwnedPathPrefixes.some((prefix) => pathKey.startsWith(prefix)) &&
+      operation["x-sdkwork-composed-from-owner"] === "sdkwork-appbase" &&
+      allowedAuthorities.has(composedAuthority)
+    );
+  }
+
+  if (family.root === "sdkwork-drive-backend-sdk") {
+    return (
+      appbaseOwnedPathPrefixes.some((prefix) => pathKey.startsWith(prefix)) &&
+      operation["x-sdkwork-composed-from-owner"] === "sdkwork-appbase" &&
+      allowedAuthorities.has(composedAuthority)
+    );
+  }
+
+  return false;
 }
 
 function readJson(relativePath) {

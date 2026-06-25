@@ -48,7 +48,7 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "d9a8274c99b75e8e30719d1c0599758b81b4f4950932d4521543fdda4dcce086"
+      "sha256": "d6ac06799fd7539b99180d88272fb42a4f8cd8617240955a87c8a4135e62c3d4"
     },
     {
       "path": "src/api/labels.rs",
@@ -91,24 +91,12 @@
       "sha256": "fce0239d85066b1c42435ab8c96676ea2d5300e5dcb87c52fd3e33d29a603a5e"
     },
     {
-      "path": "src/models/copy_provider_object_request.rs",
-      "sha256": "312c2d6a759fcb4b0ae83cfff98e1cc20118e9f59c510026e60782c9bbe1edc4"
-    },
-    {
       "path": "src/models/create_label_request.rs",
       "sha256": "f7fd94a66c98897227659a66e893d5f9586398ab2999e038a53766e009460bfe"
     },
     {
-      "path": "src/models/create_storage_provider_request.rs",
-      "sha256": "ebae720b3c2f5128aff605101adbb6bb8c784ebea9759f1a99a0ddf8e33b01a7"
-    },
-    {
       "path": "src/models/delete_label_response.rs",
       "sha256": "4824426173f2995597eeea0a1e741fc79a3254488cc61a9dfc33a3193b475371"
-    },
-    {
-      "path": "src/models/delete_storage_provider_response.rs",
-      "sha256": "3789fbd21b557cef676e55fc12d1593ebcce073a23dcad87376dc8651c11ec6f"
     },
     {
       "path": "src/models/download_package_page.rs",
@@ -135,10 +123,6 @@
       "sha256": "cb5eca20432da91c3e3779c87b3bc1868e1b9560e88f8cd97eae2ade9a36b4a3"
     },
     {
-      "path": "src/models/list_storage_providers_response.rs",
-      "sha256": "86cbf944ebdf1e7133c41d7b68641b79053c3695d31e73c1fd2e6265f10ecb97"
-    },
-    {
       "path": "src/models/maintenance_job_page.rs",
       "sha256": "71977c341b4d38dfa858149302d1b208b07494a5b40666e9f55f967c9cc2fda7"
     },
@@ -148,59 +132,15 @@
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "f5326d854d129b8d2c3433e6f3773abfa956e7696026423a979cf8f2b7c1af79"
-    },
-    {
-      "path": "src/models/operator_request.rs",
-      "sha256": "7bcab21ba3fd5cd3aac7b2cba073e311117d63abb75016669858c06afd5ae2dd"
+      "sha256": "5a6d62cc6ff04027c975a6109f6a2ae59fb9d7fddf92372c8eb371825b48e4b8"
     },
     {
       "path": "src/models/problem_detail.rs",
       "sha256": "6baa4dceb7426f91ab8fea59e81a684e7273b2f857aea4e15ea84af22a3fc0b2"
     },
     {
-      "path": "src/models/provider_bucket_mutation.rs",
-      "sha256": "8e1188a92f8beeb3fd41f21d8bb91c2eecc94fe0d45e2b84c5e0399b7c343706"
-    },
-    {
-      "path": "src/models/provider_bucket.rs",
-      "sha256": "83736fb9a48d609116467b6a49ce5c9f8a50b4c1c686d777757a2804a8a675c1"
-    },
-    {
-      "path": "src/models/provider_object_list.rs",
-      "sha256": "4a945a8b0dc9b4471d1997d172cff510910eacf39f16c251a15d098dafe05a39"
-    },
-    {
-      "path": "src/models/provider_object_mutation.rs",
-      "sha256": "92deb3458c38eaa931adbf77fe0bb9ae3ed1acc98051ccbbc18e0370b7ccc84e"
-    },
-    {
-      "path": "src/models/provider_object.rs",
-      "sha256": "4170ad1a0ad8131eb97aca99f5a57b0d4163e59a867c053aeeb421476a95de46"
-    },
-    {
       "path": "src/models/quota_summary.rs",
-      "sha256": "45b6508dcf669a01f4c9803056045a4e05fc2b31fcce914e2bda828c395f2bff"
-    },
-    {
-      "path": "src/models/rotate_storage_provider_credential_request.rs",
-      "sha256": "f2f840828b00dca0ee3109c54ef67c617eca36ecebb58103c53ddfb77303d343"
-    },
-    {
-      "path": "src/models/set_default_storage_provider_binding_request.rs",
-      "sha256": "7a624f9bbd02c9077441b29ab35323e73b64eaace18cecc048a36a28a59c2e6f"
-    },
-    {
-      "path": "src/models/storage_provider_binding.rs",
-      "sha256": "9e6b93614fcec3a5da95dcdb03d227dec6a6c281a067b287f91ea181d58f5c7c"
-    },
-    {
-      "path": "src/models/storage_provider_capabilities.rs",
-      "sha256": "62a764f963745eac03dec119603a5b0927a7a753361ee91dd9f882b665ac4e3f"
-    },
-    {
-      "path": "src/models/storage_provider.rs",
-      "sha256": "1063f5f0bacc6358a82954b8bd71d7099737ae9319004974beced359c183bf8b"
+      "sha256": "e41d2bc0fce268641a1524d2d1ec4c3b29be7329e856c08ab4e0abf82901676d"
     },
     {
       "path": "src/models/sweep_object_store_request.rs",
@@ -215,20 +155,12 @@
       "sha256": "1d53d673efffacd94a3d256500f62e844ac5e518124b6888befe355f98003150"
     },
     {
-      "path": "src/models/test_storage_provider_request.rs",
-      "sha256": "c7d01b20cab5872d5ce82d129e0a74812cc0baf18c962155e3ee8117e51ed885"
-    },
-    {
-      "path": "src/models/test_storage_provider_response.rs",
-      "sha256": "c852e5f262957a1e38e80aea6a83847e12dda7fe12a6aea5aec7bbaf9e01d130"
-    },
-    {
       "path": "src/models/update_label_request.rs",
       "sha256": "6b52210f78e6792951d445379492f616521943c3e55533787072bf8f1ab8c095"
     },
     {
-      "path": "src/models/update_storage_provider_request.rs",
-      "sha256": "e7ae5d3dfc2292fe989fb9ef3e48a0e8129bea79a304284d8a612a962a37b219"
+      "path": "src/models/update_quota_policy_request.rs",
+      "sha256": "5c986aa5427fc731e6b666c213604caab2d2f5a505bbfcdb4c0d975baf0fb80a"
     }
   ],
   "scaffoldFiles": [

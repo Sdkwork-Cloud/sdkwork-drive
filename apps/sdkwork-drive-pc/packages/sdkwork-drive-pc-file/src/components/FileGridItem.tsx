@@ -119,6 +119,7 @@ export function FileGridItem({
           ? 'border-blue-500 dark:border-blue-400 bg-blue-500/10 dark:bg-blue-500/10 shadow-[0_0_0_1px_#3b82f6]' 
           : 'border-neutral-100 dark:border-neutral-800/80 hover:border-neutral-200 dark:hover:border-neutral-700 bg-white/70 dark:bg-[#131315]/90 hover:bg-neutral-50 dark:hover:bg-[#18181c]'
       }`}
+      style={{ contentVisibility: "auto", containIntrinsicSize: "0 145px" }}
     >
       {/* Top Action Indicators */}
       <div className="flex items-start justify-between w-full h-10">

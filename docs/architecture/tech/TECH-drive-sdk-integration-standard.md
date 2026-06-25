@@ -1,4 +1,3 @@
-> Migrated from `docs/drive-sdk-integration-standard.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
 # SDKWork Drive SDK Integration Standard
@@ -145,10 +144,22 @@ The App SDK must not expose storage administration routes, operationIds, schemas
 
 Those capabilities belong to backend/admin control-plane SDK families:
 
-- backend operational storage administration: `sdks/sdkwork-drive-backend-sdk`;
-- application storage administration and S3 account management: `sdks/sdkwork-drive-admin-storage-sdk`.
+- application storage administration and S3 account management: `sdks/sdkwork-drive-admin-storage-sdk` at `/backend/v3/api/drive/storage/*`;
+- backend operations administration (audit, maintenance, quotas, labels, spaces, download packages): `sdks/sdkwork-drive-backend-sdk`.
+
+The legacy flat `/backend/v3/api/drive/storage_providers/*` routes and `storageProviders.*` operations were removed from `drive-backend-api`; do not reintroduce them.
 
 The OpenAPI export layer must remove App storage administration paths and unreachable storage administration schemas before App SDK generation. Do not hand-delete generated SDK files as the primary fix; fix API routing, OpenAPI export filters, schema quality gates, and SDK family smoke tests, then regenerate with `sdkgen` through Drive wrapper scripts.
+
+## Backend Admin Permission Scopes
+
+`drive-backend-api` and `drive-admin-storage-api` enforce per-route authorization through the web framework `AuthorizationPolicy` and `operationId` manifest mapping:
+
+- umbrella: `drive.storage.admin` (all backend + storage admin operations)
+- wildcard: `drive.*`
+- granular: capability scopes such as `drive.audit.admin`, `drive.maintenance.admin`, `drive.quota.admin`, `drive.labels.admin`, `drive.spaces.admin`, and `drive.download_packages.admin`
+
+Storage admin routes require `drive.storage.admin` or `drive.*`. Backend operations routes require the matching capability scope or the umbrella/wildcard scopes. PC admin navigation mirrors the same scope evaluation through `resolveDriveAdminSectionAccess` in `sdkwork-drive-pc-admin-core`.
 
 ## PC Frontend Boundary
 

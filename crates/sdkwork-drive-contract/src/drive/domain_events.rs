@@ -162,6 +162,11 @@ pub mod admin_audit {
         pub const ABANDONED_UPLOAD_TASK_SWEEP_FAILED: &str =
             "drive.maintenance.abandoned_upload_task_sweep.failed";
     }
+
+    /// Tenant quota policy mutations (backend-api).
+    pub mod quota {
+        pub const UPDATED: &str = "drive.quota.updated";
+    }
 }
 
 #[cfg(test)]
@@ -243,6 +248,7 @@ mod tests {
         admin_audit::maintenance::EXPIRED_UPLOAD_CONTENT_SWEEP_FAILED,
         admin_audit::maintenance::ABANDONED_UPLOAD_TASK_SWEEP_EXECUTED,
         admin_audit::maintenance::ABANDONED_UPLOAD_TASK_SWEEP_FAILED,
+        admin_audit::quota::UPDATED,
     ];
 
     #[test]

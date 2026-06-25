@@ -1,5 +1,8 @@
 # Engineering Collaboration
 
-Implementation plans and review records.
+Working documents for in-flight engineering:
 
-See `DOCUMENTATION_SPEC.md` section 2.
+- [plans/](plans/) — `PLAN-*` implementation plans
+- [reviews/](reviews/) — `REVIEW-*` design and release reviews
+
+See `../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2.3.

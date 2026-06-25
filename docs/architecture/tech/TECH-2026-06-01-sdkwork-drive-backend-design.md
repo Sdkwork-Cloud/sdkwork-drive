@@ -1,4 +1,3 @@
-> Migrated from `docs/superpowers/specs/2026-06-01-sdkwork-drive-backend-design.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
 # sdkwork-drive Backend Design
@@ -1027,11 +1026,7 @@ Representative routes:
 GET    /backend/v3/api/drive/spaces
 POST   /backend/v3/api/drive/spaces
 GET    /backend/v3/api/drive/audit_events
-GET    /backend/v3/api/drive/quota_usages
-GET    /backend/v3/api/drive/storage_providers
-POST   /backend/v3/api/drive/storage_providers
-PATCH  /backend/v3/api/drive/storage_providers/{provider_id}
-POST   /backend/v3/api/drive/storage_providers/{provider_id}/test
+GET    /backend/v3/api/drive/quotas
 GET    /backend/v3/api/drive/upload_sessions
 POST   /backend/v3/api/drive/knowledge_spaces
 PATCH  /backend/v3/api/drive/knowledge_spaces/{space_id}/indexing_policy
@@ -1041,6 +1036,16 @@ PATCH  /backend/v3/api/drive/app_upload_spaces/{space_id}/retention_policy
 POST   /backend/v3/api/drive/maintenance/object_sweep
 POST   /backend/v3/api/drive/maintenance/upload_session_sweep
 ```
+
+Storage administration lives on the dedicated `drive-admin-storage-api` authority at `/backend/v3/api/drive/storage/*` (not on `drive-backend-api`):
+
+```text
+GET    /backend/v3/api/drive/storage/providers
+POST   /backend/v3/api/drive/storage/providers
+PATCH  /backend/v3/api/drive/storage/providers/{provider_id}
+POST   /backend/v3/api/drive/storage/providers/{provider_id}/test
+GET    /backend/v3/api/drive/storage/providers/{provider_id}/buckets
+GET    /backend/v3/api/drive/storage/bindings
 
 ### 12.3 OperationId Standard
 
@@ -1058,8 +1063,15 @@ uploadSessions.complete
 knowledgeSpaces.uploadSessions.create
 aiGeneratedSpaces.assets.saveToDrive
 appUploadSpaces.uploadSessions.create
-storageProviders.test
 maintenance.objectSweep.start
+```
+
+Admin storage SDK (`sdkwork-drive-admin-storage-sdk`) uses the nested storage authority:
+
+```text
+storageProviders.list
+storageProviders.test
+storageProviderBindings.list
 ```
 
 Generated SDK shape should be resource-oriented:
@@ -1072,7 +1084,13 @@ client.drive.uploadSessions.parts.upload(uploadSessionId, partNo, body)
 client.drive.knowledgeSpaces.uploadSessions.create(knowledgeBaseId, body)
 client.drive.aiGeneratedSpaces.assets.saveToDrive(assetId, body)
 client.drive.appUploadSpaces.uploadSessions.create(appId, body)
-client.drive.storageProviders.test(providerId)
+```
+
+Admin storage consumers use `@sdkwork/drive-admin-storage-sdk`:
+
+```ts
+adminStorageClient.storageProviders.test(providerId)
+adminStorageClient.storageProviders.buckets.list(providerId)
 ```
 
 ## 13. SDK Generation
@@ -1082,6 +1100,7 @@ SDK families:
 ```text
 sdks/sdkwork-drive-app-sdk/
 sdks/sdkwork-drive-backend-sdk/
+sdks/sdkwork-drive-admin-storage-sdk/
 ```
 
 Each SDK family contains:

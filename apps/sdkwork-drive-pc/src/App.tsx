@@ -1,11 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  LanguageProvider,
   SettingsModal,
   SystemSidebar,
-  ThemeProvider,
-  type PreferenceStorage,
   type SettingsTab,
 } from 'sdkwork-drive-pc-commons';
 import {
@@ -23,10 +20,11 @@ import {
   type DriveStorageSummary,
 } from 'sdkwork-drive-pc-core';
 import {
-  canAccessDriveAdminStorage,
+  canAccessAdminSection,
+  resolveDriveAdminSectionAccess,
+  type DriveAdminSectionAccess,
   type DriveRuntime,
 } from 'sdkwork-drive-pc-admin-core';
-import { createDrivePcRuntime } from './bootstrap/createDrivePcRuntime';
 import {
   createDriveAccountViewModel,
   signOutDriveAccount,
@@ -41,6 +39,17 @@ import {
   type SdkworkAuthRuntimeConfig,
 } from './bootstrap/driveAuthConfig';
 
+const ADMIN_SECTION_ACCESS_KEYS: Record<string, keyof DriveAdminSectionAccess> = {
+  'admin-storage-providers': 'storageProviders',
+  'admin-storage-bindings': 'storageBindings',
+  'admin-audit': 'audit',
+  'admin-maintenance': 'maintenance',
+  'admin-quotas': 'quotas',
+  'admin-labels': 'labels',
+  'admin-spaces': 'spaces',
+  'admin-download-packages': 'downloadPackages',
+};
+
 const DrivePage = React.lazy(() =>
   import('sdkwork-drive-pc-file').then((module) => ({ default: module.DrivePage })),
 );
@@ -54,13 +63,41 @@ const StorageBindingsAdminPage = React.lazy(() =>
     default: module.StorageBindingsAdminPage,
   })),
 );
+const AuditAdminPage = React.lazy(() =>
+  import('sdkwork-drive-pc-admin-operations').then((module) => ({
+    default: module.AuditAdminPage,
+  })),
+);
+const MaintenanceAdminPage = React.lazy(() =>
+  import('sdkwork-drive-pc-admin-operations').then((module) => ({
+    default: module.MaintenanceAdminPage,
+  })),
+);
+const QuotaAdminPage = React.lazy(() =>
+  import('sdkwork-drive-pc-admin-operations').then((module) => ({
+    default: module.QuotaAdminPage,
+  })),
+);
+const LabelsAdminPage = React.lazy(() =>
+  import('sdkwork-drive-pc-admin-operations').then((module) => ({
+    default: module.LabelsAdminPage,
+  })),
+);
+const SpacesAdminPage = React.lazy(() =>
+  import('sdkwork-drive-pc-admin-operations').then((module) => ({
+    default: module.SpacesAdminPage,
+  })),
+);
+const DownloadPackagesAdminPage = React.lazy(() =>
+  import('sdkwork-drive-pc-admin-operations').then((module) => ({
+    default: module.DownloadPackagesAdminPage,
+  })),
+);
 const SdkworkIamAuthRoutes = React.lazy(() =>
   import('@sdkwork/auth-pc-react').then((module) => ({ default: module.SdkworkIamAuthRoutes })),
 );
 
-export default function App() {
-  const runtime = useMemo(() => createDrivePcRuntime(), []);
-  const preferenceStorage = useMemo(() => createBrowserPreferenceStorage(), []);
+export default function App({ runtime }: { runtime: DriveRuntime }) {
   const location = useLocation();
   const navigate = useNavigate();
   const activeSection = useMemo(
@@ -76,6 +113,7 @@ export default function App() {
   }, [navigate]);
   const [sessionSnapshot, setSessionSnapshot] = useState(() => runtime.session.getSnapshot());
   const [storageSummary, setStorageSummary] = useState<DriveStorageSummary | undefined>();
+  const [storageSummaryUnavailable, setStorageSummaryUnavailable] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('account');
 
@@ -104,11 +142,13 @@ export default function App() {
   useEffect(() => {
     if (!sessionSnapshot.context?.tenantId || !sessionSnapshot.context?.userId) {
       setStorageSummary(undefined);
+      setStorageSummaryUnavailable(false);
       return;
     }
 
     let active = true;
     const storageAbortController = new AbortController();
+    setStorageSummaryUnavailable(false);
     runtime.services.fileService
       .getStorageSummary({
         signal: storageAbortController.signal,
@@ -116,6 +156,7 @@ export default function App() {
       .then((summary) => {
         if (active) {
           setStorageSummary(summary);
+          setStorageSummaryUnavailable(false);
         }
       })
       .catch((err) => {
@@ -124,6 +165,7 @@ export default function App() {
         }
         if (active) {
           setStorageSummary(undefined);
+          setStorageSummaryUnavailable(true);
         }
       });
 
@@ -141,23 +183,26 @@ export default function App() {
     () => createDriveAccountViewModel(sessionSnapshot, storageSummary),
     [sessionSnapshot, storageSummary],
   );
-  const canAccessAdminStorage = useMemo(
-    () => canAccessDriveAdminStorage(sessionSnapshot),
+  const adminSectionAccess = useMemo(
+    () => resolveDriveAdminSectionAccess(sessionSnapshot),
     [sessionSnapshot],
   );
 
   useEffect(() => {
-    if (!canAccessAdminStorage && (activeSection === 'admin-storage-providers' || activeSection === 'admin-storage-bindings')) {
+    const accessKey = ADMIN_SECTION_ACCESS_KEYS[activeSection];
+    if (accessKey && !canAccessAdminSection(sessionSnapshot, accessKey)) {
       setActiveSection('my-storage');
     }
-  }, [activeSection, canAccessAdminStorage]);
+  }, [activeSection, sessionSnapshot]);
 
   const handleSignOut = () => {
     void (async () => {
       try {
         await getDriveIamRuntime(runtime).service.auth.sessions.current.delete();
       } finally {
-        signOutDriveAccount(runtime.session);
+        await signOutDriveAccount(runtime.session, {
+          tokenStorage: runtime.config.auth.tokenStorage,
+        });
         if (typeof window !== 'undefined') {
           window.location.assign('/auth/login?redirect=%2F');
         }
@@ -182,9 +227,7 @@ export default function App() {
 
   return (
     <DriveRuntimeProvider runtime={runtime}>
-      <LanguageProvider preferenceStorage={preferenceStorage}>
-        <ThemeProvider preferenceStorage={preferenceStorage}>
-          <DriveAuthGate
+      <DriveAuthGate
             authRoutes={authRoutes}
             session={runtime.session}
           >
@@ -196,17 +239,47 @@ export default function App() {
                 onSignOut={handleSignOut}
                 isSettingsOpen={isSettingsOpen}
                 onOpenSettings={openSettings}
-                showAdminNavigation={canAccessAdminStorage}
+                adminSectionAccess={adminSectionAccess}
               />
               <React.Suspense fallback={<DriveWorkspaceFallback />}>
-                {canAccessAdminStorage && activeSection === 'admin-storage-providers' ? (
+                {adminSectionAccess.storageProviders && activeSection === 'admin-storage-providers' ? (
                   <StorageProvidersAdminPage
                     adminStorageSdkClient={runtime.admin.adminStorage}
                     getSession={runtime.session.getSnapshot}
                   />
-                ) : canAccessAdminStorage && activeSection === 'admin-storage-bindings' ? (
+                ) : adminSectionAccess.storageBindings && activeSection === 'admin-storage-bindings' ? (
                   <StorageBindingsAdminPage
                     adminStorageSdkClient={runtime.admin.adminStorage}
+                    getSession={runtime.session.getSnapshot}
+                  />
+                ) : adminSectionAccess.audit && activeSection === 'admin-audit' ? (
+                  <AuditAdminPage
+                    backendSdkClient={runtime.admin.backend}
+                    getSession={runtime.session.getSnapshot}
+                  />
+                ) : adminSectionAccess.maintenance && activeSection === 'admin-maintenance' ? (
+                  <MaintenanceAdminPage
+                    backendSdkClient={runtime.admin.backend}
+                    getSession={runtime.session.getSnapshot}
+                  />
+                ) : adminSectionAccess.quotas && activeSection === 'admin-quotas' ? (
+                  <QuotaAdminPage
+                    backendSdkClient={runtime.admin.backend}
+                    getSession={runtime.session.getSnapshot}
+                  />
+                ) : adminSectionAccess.labels && activeSection === 'admin-labels' ? (
+                  <LabelsAdminPage
+                    backendSdkClient={runtime.admin.backend}
+                    getSession={runtime.session.getSnapshot}
+                  />
+                ) : adminSectionAccess.spaces && activeSection === 'admin-spaces' ? (
+                  <SpacesAdminPage
+                    backendSdkClient={runtime.admin.backend}
+                    getSession={runtime.session.getSnapshot}
+                  />
+                ) : adminSectionAccess.downloadPackages && activeSection === 'admin-download-packages' ? (
+                  <DownloadPackagesAdminPage
+                    backendSdkClient={runtime.admin.backend}
                     getSession={runtime.session.getSnapshot}
                   />
                 ) : (
@@ -214,6 +287,7 @@ export default function App() {
                     activeSection={activeSection}
                     fileService={runtime.services.fileService}
                     storageSummary={storageSummary}
+                    storageSummaryUnavailable={storageSummaryUnavailable}
                     onOpenExternal={runtime.host.openExternal}
                     onOpenStorageSettings={() => openSettings('storage')}
                     onSectionChange={setActiveSection}
@@ -233,25 +307,8 @@ export default function App() {
               />
             </div>
           </DriveAuthGate>
-        </ThemeProvider>
-      </LanguageProvider>
     </DriveRuntimeProvider>
   );
-}
-
-function createBrowserPreferenceStorage(): PreferenceStorage | undefined {
-  if (typeof window === 'undefined') {
-    return undefined;
-  }
-
-  return {
-    getItem(key) {
-      return window.localStorage.getItem(key) ?? undefined;
-    },
-    setItem(key, value) {
-      window.localStorage.setItem(key, value);
-    },
-  };
 }
 
 function DriveAppbaseAuthRouteHost({

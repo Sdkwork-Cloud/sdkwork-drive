@@ -24,8 +24,9 @@ Key metrics:
 ## 2. Rate Limiting
 
 1. **Edge**: Configure `deployments/nginx/drive-edge-rate-limit.conf.example` on the public ingress, or apply the `Ingress` resource in `deployments/kubernetes/drive-services.yaml` (`limit-rps: 120`, burst multiplier `2`).
-2. **In-process**: Tune `SDKWORK_DRIVE_APP_API_RATE_LIMIT_*` and `SDKWORK_DRIVE_OPEN_API_RATE_LIMIT_*`.
-3. **Alert** when `drive_http_rate_limited_total` spikes alongside 429 responses on share-link paths.
+2. **In-process**: Tune `SDKWORK_DRIVE_APP_API_RATE_LIMIT_*`, `SDKWORK_DRIVE_BACKEND_API_RATE_LIMIT_*`, `SDKWORK_DRIVE_ADMIN_STORAGE_API_RATE_LIMIT_*`, and `SDKWORK_DRIVE_OPEN_API_RATE_LIMIT_*`.
+3. **Cloud outbox**: Set `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` on API pods; dispatch via install-worker only.
+4. **Alert** when `drive_http_rate_limited_total` spikes alongside 429 responses on share-link paths.
 
 ## 3. Trace Correlation
 

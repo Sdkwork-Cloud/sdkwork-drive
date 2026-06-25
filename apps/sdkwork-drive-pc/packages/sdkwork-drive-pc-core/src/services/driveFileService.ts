@@ -94,6 +94,8 @@ export interface DriveFileReadOptions {
   signal?: AbortSignal;
   pageToken?: string;
   pageSize?: number;
+  sortBy?: 'name' | 'owner' | 'lastModified' | 'size' | 'type';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface DriveFileListPage {
@@ -827,15 +829,23 @@ function createSdkBackedDriveFileService(
     });
   const requestPageItems = async (
     request: DriveAppSdkRequest,
-    options: Pick<DriveFileReadOptions, 'pageToken' | 'pageSize'> = {},
+    options: Pick<DriveFileReadOptions, 'pageToken' | 'pageSize' | 'sortBy' | 'sortOrder'> = {},
   ): Promise<{ items: unknown[]; nextPageToken?: string }> => {
     const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
+    const sortQuery =
+      request.operationId === 'nodes.list'
+        ? {
+            sortBy: options.sortBy ?? 'name',
+            sortOrder: options.sortOrder ?? 'asc',
+          }
+        : {};
     const response = await sdkRequest<unknown>({
       ...request,
       query: {
         ...request.query,
         pageSize,
         pageToken: options.pageToken,
+        ...sortQuery,
       },
     });
     return {
@@ -1659,6 +1669,8 @@ function createSdkBackedDriveFileService(
       const pageOptions = {
         pageToken: options?.pageToken,
         pageSize: options?.pageSize ?? DEFAULT_PAGE_SIZE,
+        sortBy: options?.sortBy,
+        sortOrder: options?.sortOrder,
       };
 
       if (searchQuery) {

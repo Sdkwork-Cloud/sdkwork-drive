@@ -3,6 +3,7 @@ import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
 import type { StorageProviderAdminService } from '../services/storageProviderAdminService';
 import type { StorageProviderBindingView, StorageProviderBucketView, StorageProviderCapabilitiesView, StorageProviderView } from '../types/storageProviderAdminTypes';
 import { getProviderKindMeta, HEALTH_STATUS_CONFIG, formatBytes } from '../utils/providerKindConfig';
+import { formatMutationError } from '../utils/mutationError';
 import { SECONDARY_BUTTON_CLASS, PRIMARY_BUTTON_CLASS, BADGE_BASE_CLASS } from '../utils/uiPrimitives';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -41,7 +42,7 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
     try {
       setCapabilities(await service.getCapabilities(provider.id));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed');
+      setError(formatMutationError(e, t('noticeCapabilitiesFailed')));
     } finally {
       setLoading(false);
     }
@@ -54,11 +55,11 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
       setBucket(r);
       setBucketExists(r.exists);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed');
+      setError(formatMutationError(e, t('noticeBucketFailed')));
     } finally {
       setLoading(false);
     }
-  }, [provider.id, service]);
+  }, [provider.id, service, t]);
 
   const runDiagnostics = useCallback(async () => {
     setLoading(true);
@@ -73,7 +74,7 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
       setBucketExists(bucketResult.exists);
       setDiagnosticsLoaded(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed');
+      setError(formatMutationError(e, t('noticeCapabilitiesFailed')));
     } finally {
       setLoading(false);
     }
@@ -90,11 +91,11 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
     }
   }, [provider.id, tab, runDiagnostics]);
 
-  const loadBuckets = useCallback(async () => { setLoading(true); try { setBuckets(await service.listBuckets(provider.id)); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, service]);
-  const createBucket = useCallback(async () => { setLoading(true); try { await service.createBucket(provider.id); setBucketExists(true); await loadBuckets(); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, service, loadBuckets]);
-  const deleteBucket = useCallback(async () => { if (!window.confirm(t('deleteBucketConfirm', { bucket: provider.bucket }))) return; setLoading(true); try { await service.deleteBucket(provider.id); setBucketExists(false); setBuckets([]); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, provider.bucket, service, t]);
-  const loadObjects = useCallback(async (prefix: string, token?: string) => { setLoading(true); try { const result = await service.listObjects(provider.id, { prefix, pageToken: token }); if (token) setObjects((prev) => [...prev, ...result.items]); else setObjects(result.items); setPageToken(result.nextPageToken || null); setHasMore(result.hasMore); setCurrentPrefix(prefix); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, service]);
-  const deleteObject = useCallback(async (key: string) => { if (!window.confirm(t('deleteObjectConfirm', { key }))) return; setLoading(true); try { await service.deleteObject(provider.id, key); await loadObjects(currentPrefix); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setLoading(false); } }, [provider.id, currentPrefix, service, loadObjects, t]);
+  const loadBuckets = useCallback(async () => { setLoading(true); try { setBuckets(await service.listBuckets(provider.id)); } catch (e) { setError(formatMutationError(e, t('errorLoadBuckets'))); } finally { setLoading(false); } }, [provider.id, service, t]);
+  const createBucket = useCallback(async () => { setLoading(true); try { await service.createBucket(provider.id); setBucketExists(true); await loadBuckets(); } catch (e) { setError(formatMutationError(e, t('errorCreateBucket'))); } finally { setLoading(false); } }, [provider.id, service, loadBuckets, t]);
+  const deleteBucket = useCallback(async () => { if (!window.confirm(t('deleteBucketConfirm', { bucket: provider.bucket }))) return; setLoading(true); try { await service.deleteBucket(provider.id); setBucketExists(false); setBuckets([]); } catch (e) { setError(formatMutationError(e, t('errorDeleteBucket'))); } finally { setLoading(false); } }, [provider.id, provider.bucket, service, loadBuckets, t]);
+  const loadObjects = useCallback(async (prefix: string, token?: string) => { setLoading(true); try { const result = await service.listObjects(provider.id, { prefix, pageToken: token }); if (token) setObjects((prev) => [...prev, ...result.items]); else setObjects(result.items); setPageToken(result.nextPageToken || null); setHasMore(result.hasMore); setCurrentPrefix(prefix); } catch (e) { setError(formatMutationError(e, t('errorLoadObjects'))); } finally { setLoading(false); } }, [provider.id, service, t]);
+  const deleteObject = useCallback(async (key: string) => { if (!window.confirm(t('deleteObjectConfirm', { key }))) return; setLoading(true); try { await service.deleteObject(provider.id, key); await loadObjects(currentPrefix); } catch (e) { setError(formatMutationError(e, t('errorDeleteObject'))); } finally { setLoading(false); } }, [provider.id, currentPrefix, service, loadObjects, t]);
 
   const tabClass = (d: DrawerTab) => `px-3 py-2 text-xs font-medium border-b-2 transition-colors ${tab === d ? 'border-blue-600 text-blue-600' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`;
 

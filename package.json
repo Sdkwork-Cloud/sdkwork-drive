@@ -6,7 +6,8 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "devDependencies": {
-    "@playwright/test": "^1.52.0"
+    "@playwright/test": "^1.52.0",
+    "yaml": "^2.8.0"
   },
   "dependencies": {
     "@sdkwork/app-topology": "file:../sdkwork-app-topology"
@@ -22,7 +23,7 @@
     "build:standalone": "node scripts/sdkwork-command.mjs build --deployment-profile standalone",
     "build:debug": "node scripts/drive-build.mjs --deployment-profile standalone --debug",
     "test": "node scripts/sdkwork-command.mjs test",
-    "check": "cargo check --workspace && pnpm check:architecture-alignment && pnpm check:dependency-management && pnpm check:app-sdk-consumers && pnpm check:package-standard && pnpm check:component-spec-standard && pnpm check:pc-standard && pnpm check:pnpm-script-standard && pnpm check:agent-workflow-standard && pnpm check:release-readiness && pnpm deploy:validate && pnpm topology:validate && pnpm db:validate",
+    "check": "cargo check --workspace && pnpm check:architecture-alignment && pnpm check:dependency-management && pnpm check:app-sdk-consumers && pnpm check:package-standard && pnpm check:component-spec-standard && pnpm check:pc-standard && pnpm check:docs-standard && pnpm check:pnpm-script-standard && pnpm check:agent-workflow-standard && pnpm check:release-readiness && pnpm test:iam-application-bootstrap-standard && node ../sdkwork-specs/tools/audit-iam-embedded-bootstrap-workspace.mjs && pnpm deploy:validate && pnpm topology:validate && pnpm db:validate",
     "check:component-spec-standard": "node tools/normalize_component_spec_roots.mjs --check",
     "verify": "node scripts/sdkwork-verify.mjs",
     "clean": "node scripts/sdkwork-command.mjs clean",
@@ -30,8 +31,14 @@
     "test:pc": "pnpm --filter sdkwork-drive-pc test",
     "test:app-openapi-context": "node --test scripts/dev/sdkwork-drive-app-openapi-context.test.mjs",
     "test:app-sdk-smoke": "node --test sdks/sdkwork-drive-app-sdk/tests/sdk-family-smoke.test.mjs",
+    "test:open-sdk-smoke": "node --test sdks/sdkwork-drive-sdk/tests/sdk-family-smoke.test.mjs",
+    "test:backend-sdk-smoke": "node --test sdks/sdkwork-drive-backend-sdk/tests/sdk-family-smoke.test.mjs",
+    "test:admin-storage-sdk-smoke": "node --test sdks/sdkwork-drive-admin-storage-sdk/tests/sdk-family-smoke.test.mjs",
+    "test:sdk-ownership-boundaries": "node --test sdks/test/verify-sdk-ownership-boundaries.test.mjs",
+    "test:database-framework-contract": "node --test tests/contract/database-framework.contract.test.mjs",
     "test:global-assets-contract": "node --test sdks/test/verify-global-assets-contract.test.mjs",
     "test:drive-integration": "node --test tests/integration/drive-alignment.integration.test.mjs",
+    "test:iam-application-bootstrap-standard": "node scripts/dev/sdkwork-drive-iam-application-bootstrap-standard.test.mjs",
     "test:drive-share-link-integration": "node --test tests/integration/drive-share-link-flow.integration.test.mjs",
     "test:drive-e2e": "cargo test -p sdkwork-router-drive-app-api --test share_link_cross_api_e2e",
     "test:e2e": "playwright test --config tests/e2e/playwright.config.mjs",
@@ -41,6 +48,7 @@
     "check:app-sdk-consumers": "node tools/check_drive_app_sdk_consumer_integration.mjs",
     "check:package-standard": "node tools/check_sdkwork_drive_package_standard.mjs",
     "check:pc-standard": "node tools/check_sdkwork_drive_pc_standard.mjs",
+    "check:docs-standard": "node ../sdkwork-specs/tools/check-repository-docs-standard.mjs --root .",
     "check:pnpm-script-standard": "node ../sdkwork-specs/tools/check-pnpm-script-standard.mjs --root . --product-prefix drive",
     "check:agent-workflow-standard": "node ../sdkwork-specs/tools/check-agent-workflow-standard.mjs --root .",
     "check:release-readiness": "node tools/check_sdkwork_drive_release_readiness.mjs",
@@ -54,6 +62,7 @@
     "db:seed": "node scripts/sdkwork-command.mjs db:seed",
     "db:status": "node scripts/sdkwork-command.mjs db:status",
     "db:validate": "node ../sdkwork-specs/tools/check-database-framework-standard.mjs --root .",
+    "db:materialize:contract": "node tools/materialize_drive_database_contract.mjs",
     "db:bootstrap": "node scripts/sdkwork-command.mjs db:bootstrap",
     "db:drift": "node scripts/sdkwork-command.mjs db:drift",
     "db:drift:check": "node scripts/sdkwork-command.mjs db:drift:check",

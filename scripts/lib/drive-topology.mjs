@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 
 export const REPO_ROOT = path.resolve(__dirname, '..', '..');
 export const SPEC_PATH = path.join(REPO_ROOT, 'specs/topology.spec.json');
+export const IAM_REPO_ROOT = path.resolve(REPO_ROOT, '..', 'sdkwork-iam');
 
 const spec = loadTopologySpec(SPEC_PATH);
 const runtime = createTopologyRuntime(spec, REPO_ROOT);
@@ -36,6 +37,12 @@ export const APPLICATION_PUBLIC_INGRESS_PACKAGE_TARGETS = runtime.listPackageTar
 );
 export const PLATFORM_CONFIG_BUNDLE_TARGET = runtime.findPackageTarget('platform-config-bundle-tar-gz');
 export const DRIVE_CLOUD_GATEWAY_CONFIGS = spec.packaging?.cloudConfigFiles ?? [];
+
+export const IAM_APPLICATION_BOOTSTRAP_ENV = {
+  SDKWORK_APP_ROOT: REPO_ROOT,
+  SDKWORK_DRIVE_APP_ROOT: REPO_ROOT,
+  SDKWORK_IAM_APP_ROOT: IAM_REPO_ROOT,
+};
 
 export function resolveDevProfileId(deploymentProfile, serviceLayout) {
   runtime.assertDeploymentProfile(deploymentProfile);

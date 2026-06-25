@@ -52,7 +52,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java",
-      "sha256": "d671b02b034a7ca711e7867437982133bfc767cbaffad24508a65652e239a50b"
+      "sha256": "7de71253be7a926db1caf3df4348a6a627a55188a270ef969113e664e95d807a"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodeLabelsApi.java",

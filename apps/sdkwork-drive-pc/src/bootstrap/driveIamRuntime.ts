@@ -10,7 +10,7 @@ import type {
 import {
   createClient,
   type SdkworkAppClient,
-} from '@sdkwork/appbase-app-sdk';
+} from '@sdkwork/iam-app-sdk';
 import {
   createSdkworkAppbasePcAuthRuntime,
   type SdkworkAppbasePcAuthRuntimeComposition,
@@ -23,7 +23,7 @@ import type {
   IamEnvironment,
 } from '@sdkwork/iam-contracts';
 
-const APPBASE_APP_SDK_FAMILY_ID = 'sdkwork-appbase-app-sdk';
+const IAM_APP_SDK_FAMILY_ID = 'sdkwork-iam-app-sdk';
 const APP_API_PREFIX = '/app/v3/api';
 
 export type DriveIamRuntime = ReturnType<
@@ -153,7 +153,7 @@ function ensureIamTenantSelectionCompat(client: SdkworkAppClient): SdkworkAppCli
 }
 
 function resolveAppbaseAppApiBaseUrl(config: DriveRuntimeConfig): string {
-  return config.sdkBaseUrls.dependencySdkBaseUrls[APPBASE_APP_SDK_FAMILY_ID]?.appApiBaseUrl
+  return config.sdkBaseUrls.dependencySdkBaseUrls[IAM_APP_SDK_FAMILY_ID]?.appApiBaseUrl
     ?? config.appApiBaseUrl;
 }
 

@@ -509,6 +509,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_label_key
 CREATE INDEX IF NOT EXISTS ix_dr_drive_label_tenant_status
     ON dr_drive_label (tenant_id, lifecycle_status, label_key ASC);
 
+CREATE TABLE IF NOT EXISTS dr_drive_tenant_quota (
+    tenant_id VARCHAR(64) PRIMARY KEY,
+    max_bytes BIGINT,
+    updated_by VARCHAR(128) NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    version BIGINT NOT NULL DEFAULT 1,
+    CONSTRAINT ck_dr_drive_tenant_quota_version
+        CHECK (version >= 1),
+    CONSTRAINT ck_dr_drive_tenant_quota_max_bytes
+        CHECK (max_bytes IS NULL OR max_bytes > 0)
+);
+
 CREATE TABLE IF NOT EXISTS dr_drive_node_label (
     id VARCHAR(64) PRIMARY KEY,
     tenant_id VARCHAR(64) NOT NULL,

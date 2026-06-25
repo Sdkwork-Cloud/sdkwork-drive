@@ -1,4 +1,5 @@
 use sdkwork_drive_config::DatabaseConfig;
+use sdkwork_drive_install_worker::health::spawn_install_worker_health_server;
 use sdkwork_drive_install_worker::scheduler::{Scheduler, SchedulerConfig};
 use sdkwork_drive_workspace_service::infrastructure::sql::connect_any_database_and_install_schema;
 use std::time::Duration;
@@ -14,8 +15,20 @@ async fn main() {
         .await
         .expect("connect drive database for install worker");
 
+    let health_pool = pool.clone();
+    tokio::spawn(async move {
+        if let Err(error) = spawn_install_worker_health_server(health_pool).await {
+            tracing::error!(
+                target: "sdkwork.drive",
+                event = "drive.install_worker.health_failed",
+                error = %error,
+                "install worker health server failed"
+            );
+        }
+    });
+
     let mut scheduler = Scheduler::new(read_scheduler_config());
-    scheduler.start(pool);
+    scheduler.start(pool, database_config.engine());
     tracing::info!(
         target: "sdkwork.drive",
         event = "drive.install_worker.started",

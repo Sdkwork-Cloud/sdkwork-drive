@@ -36,7 +36,7 @@ pub fn render_prometheus_histogram(
     metric_name: &str,
     service: &str,
     environment: &str,
-    deployment_mode: &str,
+    deployment_profile: &str,
 ) -> String {
     let mut output = format!(
         "# HELP {metric_name} HTTP request latency in seconds.\n\
@@ -46,19 +46,19 @@ pub fn render_prometheus_histogram(
     for (index, upper_bound) in BUCKET_UPPER_SECONDS.iter().enumerate() {
         cumulative += BUCKET_COUNTS[index].load(Ordering::Relaxed);
         output.push_str(&format!(
-            "{metric_name}_bucket{{service=\"{service}\",environment=\"{environment}\",deployment_mode=\"{deployment_mode}\",le=\"{upper_bound}\"}} {cumulative}\n"
+            "{metric_name}_bucket{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\",le=\"{upper_bound}\"}} {cumulative}\n"
         ));
     }
     let total = DURATION_COUNT.load(Ordering::Relaxed);
     output.push_str(&format!(
-        "{metric_name}_bucket{{service=\"{service}\",environment=\"{environment}\",deployment_mode=\"{deployment_mode}\",le=\"+Inf\"}} {total}\n"
+        "{metric_name}_bucket{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\",le=\"+Inf\"}} {total}\n"
     ));
     let sum_seconds = DURATION_SUM_MICROS.load(Ordering::Relaxed) as f64 / 1_000_000.0;
     output.push_str(&format!(
-        "{metric_name}_sum{{service=\"{service}\",environment=\"{environment}\",deployment_mode=\"{deployment_mode}\"}} {sum_seconds}\n"
+        "{metric_name}_sum{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {sum_seconds}\n"
     ));
     output.push_str(&format!(
-        "{metric_name}_count{{service=\"{service}\",environment=\"{environment}\",deployment_mode=\"{deployment_mode}\"}} {total}\n"
+        "{metric_name}_count{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {total}\n"
     ));
     output
 }

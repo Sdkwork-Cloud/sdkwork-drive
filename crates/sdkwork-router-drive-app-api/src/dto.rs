@@ -361,6 +361,8 @@ pub(crate) struct ListNodesQuery {
     pub(crate) parent_node_id: Option<String>,
     pub(crate) page_size: Option<i64>,
     pub(crate) page_token: Option<String>,
+    pub(crate) sort_by: Option<String>,
+    pub(crate) sort_order: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

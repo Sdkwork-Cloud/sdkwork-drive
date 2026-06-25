@@ -12,6 +12,7 @@ edition = "2021"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+keyring = "3"
 open = "5"
 rfd = "0.15"
 serde = { version = "1", features = ["derive"] }

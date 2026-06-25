@@ -16,6 +16,7 @@ sdkwork-web-axum.workspace = true
 sdkwork-web-core.workspace = true
 sdkwork-drive-storage-contract.workspace = true
 sdkwork-drive-storage-s3.workspace = true
+sdkwork-iam-web-adapter.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 tower.workspace = true

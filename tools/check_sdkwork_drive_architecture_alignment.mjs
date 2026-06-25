@@ -181,7 +181,47 @@ for (const routerCrate of routerCrates) {
     fs.existsSync(path.join(repoRoot, `crates/${crateName}/src/web_bootstrap.rs`)),
     `${crateName} must provide web_bootstrap.rs`,
   );
+  const webBootstrap = readText(`crates/${crateName}/src/web_bootstrap.rs`);
+  assert(
+    webBootstrap.includes('iam_database_resolver_from_env().await'),
+    `${crateName} must resolve IAM sessions through iam_database_resolver_from_env per IAM_LOGIN_INTEGRATION_SPEC.md`,
+  );
+  assert(
+    !webBootstrap.includes('SDKWORK_DRIVE_DATABASE_URL')
+      || !webBootstrap.includes('wrap_router_with_web_framework_from_env'),
+    `${crateName} must not gate IAM resolver wiring on Drive database env presence`,
+  );
 }
+
+const protectedRouterSources = [
+  'crates/sdkwork-router-drive-app-api/src/routes.rs',
+  'crates/sdkwork-router-drive-backend-api/src/routes.rs',
+  'crates/sdkwork-router-storage-backend-api/src/routes.rs',
+  'crates/sdkwork-router-drive-open-api/src/routes.rs',
+];
+
+for (const relativePath of protectedRouterSources) {
+  const source = readText(relativePath);
+  assert(
+    source.includes('wrap_router_with_web_framework_from_env'),
+    `${relativePath} must finalize production routers with wrap_router_with_web_framework_from_env`,
+  );
+  assert(
+    source.includes('build_protected_router_with_pool'),
+    `${relativePath} must expose build_protected_router_with_pool for production assembly`,
+  );
+  assert(
+    !source.includes('build_router_with_state(state, true)\n}'),
+    `${relativePath} must not return unwrapped IAM routers from production builders`,
+  );
+}
+
+assert(
+  readText('crates/sdkwork-drive-security/src/webhook_url.rs').includes(
+    'validate_webhook_https_url_for_dispatch',
+  ),
+  'sdkwork-drive-security must validate webhook DNS resolution before outbox dispatch',
+);
 
 const appOpenapi = readText('apis/app-api/drive/drive-app-api.openapi.json');
 assert(
@@ -250,10 +290,178 @@ assert(
   'configs/topology/README.md must exist per APP_RUNTIME_TOPOLOGY_ADOPTION.md',
 );
 
+assert(
+  !readText('crates/sdkwork-router-drive-app-api/src/routes.rs').includes(
+    'build_router_with_pool_and_iam_policy',
+  ),
+  'sdkwork-router-drive-app-api must not expose deprecated build_router_with_pool_and_iam_policy',
+);
+
+const appRoutesPath = 'crates/sdkwork-router-drive-app-api/src/routes.rs';
+const appRoutesLineCount = readText(appRoutesPath).split(/\r?\n/u).length;
+assert(
+  appRoutesLineCount <= 500,
+  `${appRoutesPath} has ${appRoutesLineCount} lines; must stay router wiring only per ADR-20260625-app-api-route-modularization`,
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/share_link_handlers.rs')),
+  'share_link_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/route_change.rs')),
+  'route_change.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/permission_handlers.rs')),
+  'permission_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/comment_handlers.rs')),
+  'comment_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/watch_handlers.rs')),
+  'watch_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/quota_handlers.rs')),
+  'quota_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/trash_handlers.rs')),
+  'trash_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/library_handlers.rs')),
+  'library_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/node_lifecycle.rs')),
+  'node_lifecycle.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/change_handlers.rs')),
+  'change_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/search_handlers.rs')),
+  'search_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/version_handlers.rs')),
+  'version_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/metadata_handlers.rs')),
+  'metadata_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/space_handlers.rs')),
+  'space_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/node_handlers.rs')),
+  'node_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/upload_handlers.rs')),
+  'upload_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/download_handlers.rs')),
+  'download_handlers.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/upload_support.rs')),
+  'upload_support.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/src/node_support.rs')),
+  'node_support.rs must exist per ADR-20260625-app-api-route-modularization',
+);
+assert(
+  fs.existsSync(
+    path.join(
+      repoRoot,
+      'crates/sdkwork-drive-workspace-service/src/application/space_lifecycle_service.rs',
+    ),
+  ),
+  'space_lifecycle_service.rs must exist per ADR-20260625-app-api-route-modularization Phase 8',
+);
+assert(
+  fs.existsSync(
+    path.join(
+      repoRoot,
+      'crates/sdkwork-drive-workspace-service/src/application/change_feed_service.rs',
+    ),
+  ),
+  'change_feed_service.rs must exist per ADR-20260625-app-api-route-modularization Phase 8',
+);
+const changeHandlersPath = 'crates/sdkwork-router-drive-app-api/src/change_handlers.rs';
+const spaceHandlersPath = 'crates/sdkwork-router-drive-app-api/src/space_handlers.rs';
+assert(
+  !readText(changeHandlersPath).includes('sqlx::query'),
+  `${changeHandlersPath} must delegate SQL to workspace-service per Phase 8`,
+);
+assert(
+  !readText(spaceHandlersPath).includes('sqlx::query'),
+  `${spaceHandlersPath} must delegate SQL to workspace-service per Phase 8`,
+);
+
 const rpcSignals = ['tonic', 'prost', 'sdkwork-discovery', '.proto'];
 for (const signal of rpcSignals) {
   assert(!cargoToml.includes(signal), `Cargo.toml must not declare ${signal} until RPC services are introduced`);
 }
+
+assertDirectory('apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-operations');
+assertDirectory('sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/src');
+const backendComposedOps = readText(
+  'sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/composed/operations.ts',
+);
+assert(
+  backendComposedOps.includes('"quotas.update"'),
+  'backend-sdk composed operations must include quotas.update',
+);
+assert(
+  backendComposedOps.includes('"auditEvents.list"'),
+  'backend-sdk composed operations must include auditEvents.list',
+);
+const backendOpenapi = readJson('apis/backend-api/drive/drive-backend-api.openapi.json');
+assert(
+  backendOpenapi?.paths?.['/backend/v3/api/drive/quotas']?.put?.operationId === 'quotas.update',
+  'backend OpenAPI must declare quotas.update on PUT /backend/v3/api/drive/quotas',
+);
+assert(
+  backendOpenapi?.paths?.['/backend/v3/api/drive/audit_events']?.get?.operationId === 'auditEvents.list',
+  'backend OpenAPI must declare auditEvents.list on GET /backend/v3/api/drive/audit_events',
+);
+const tenantQuotaSchema = readText('docs/schema-registry/tables/001-drive-core.yaml');
+assert(
+  tenantQuotaSchema.includes('dr_drive_tenant_quota'),
+  'schema registry must declare dr_drive_tenant_quota for tenant quota policy',
+);
+const drivePcComponentSpec = readJson('apps/sdkwork-drive-pc/specs/component.spec.json');
+const backendSdkDependency = drivePcComponentSpec?.contracts?.sdkDependencies?.find(
+  (dependency) => dependency.packageByLanguage?.typescript === '@sdkwork/drive-backend-sdk',
+);
+assert(
+  backendSdkDependency,
+  'apps/sdkwork-drive-pc/specs/component.spec.json must declare @sdkwork/drive-backend-sdk sdkDependency',
+);
+const backendOpenapiText = readText('apis/backend-api/drive/drive-backend-api.openapi.json');
+assert(
+  !backendOpenapiText.includes('/backend/v3/api/drive/storage_providers'),
+  'backend OpenAPI must not retain legacy flat storage provider paths; use drive-admin-storage-api',
+);
+assert(
+  !backendOpenapiText.includes('"operationId": "storageProviders.list"'),
+  'backend OpenAPI must not retain storageProviders.* operationIds',
+);
+
+assert(
+  !backendComposedOps.includes('"storageProviders.list"'),
+  'backend-sdk composed operations must not include deprecated storageProviders.* ops',
+);
 
 const retiredEnvPrefixes = ['SDKWORK_CLAW_DATABASE_'];
 for (const relativePath of [

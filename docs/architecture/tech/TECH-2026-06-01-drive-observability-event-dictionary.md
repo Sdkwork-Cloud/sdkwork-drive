@@ -1,4 +1,3 @@
-> Migrated from `docs/superpowers/specs/2026-06-01-drive-observability-event-dictionary.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
 # Drive Observability Event Dictionary

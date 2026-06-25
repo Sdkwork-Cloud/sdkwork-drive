@@ -320,11 +320,13 @@ class DriveNodesApi:
     def move(self, node_id: str, body: MoveNodeRequest) -> DriveNode:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/move", json=body)
 
-    def list(self, space_id: str, parent_node_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodeListResponse:
+    def list(self, space_id: str, parent_node_id: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None) -> NodeListResponse:
         query = build_query_string([
             {'name': 'parentNodeId', 'value': parent_node_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'sortBy', 'value': sort_by, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'sortOrder', 'value': sort_order, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/spaces/{serialize_path_parameter(space_id, {'name': 'spaceId', 'style': 'simple', 'explode': False})}/nodes", query))
 

@@ -139,7 +139,7 @@
       {
         "workspace": "sdkwork-drive",
         "sdkFamily": "sdkwork-drive-admin-storage-sdk",
-        "apiAuthority": "sdkwork-drive.admin-storage",
+        "apiAuthority": "sdkwork-drive.admin.storage",
         "surface": "backend-api",
         "apiPrefix": "/backend/v3/api",
         "runtimeMode": "embedded",
@@ -154,9 +154,9 @@
         "surface": "app-api",
         "apiPrefix": "/auth",
         "runtimeMode": "embedded",
-        "executableExport": "sdkwork_router_iam_app_api::build_sdkwork_appbase_app_api_router",
+        "executableExport": "sdkwork_router_iam_app_api::build_sdkwork_iam_app_api_router",
         "cargoDependency": "sdkwork-router-iam-app-api",
-        "coverageEvidence": "../sdkwork-appbase/crates/sdkwork-router-iam-app-api/src/routes.rs"
+        "coverageEvidence": "../sdkwork-iam/crates/sdkwork-router-iam-app-api/src/routes.rs"
       }
     ]
   },

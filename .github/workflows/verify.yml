@@ -66,3 +66,38 @@ jobs:
 
       - name: Strict release readiness (non-GA warnings only)
         run: SDKWORK_RELEASE_VALIDATION=strict node tools/check_sdkwork_drive_release_readiness.mjs
+
+  release-evidence:
+    name: Release Evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Prepare SDKWork source dependencies
+        env:
+          SDKWORK_RELEASE_TOKEN: ${{ secrets.SDKWORK_RELEASE_TOKEN || github.token }}
+        run: node scripts/prepare-ci-dependencies.mjs --apply
+
+      - name: Install root dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate release evidence when artifacts exist
+        run: |
+          if [ -f target/release/release-evidence.json ]; then
+            pnpm release:validate
+          else
+            echo "Release evidence artifacts not present; skipping release:validate on main."
+          fi

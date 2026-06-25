@@ -1,7 +1,10 @@
 #!/usr/bin/env node
+import { createRequire } from "node:module";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+const require = createRequire(import.meta.url);
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(scriptDir, "..");
@@ -38,15 +41,44 @@ const APPBASE_BACKEND_PATH_PREFIXES = [
 ];
 const APPBASE_SCHEMA_PREFIXES = ["Iam"];
 const APPBASE_TAGS = new Set(["auth", "iam", "oauth", "openPlatform", "system"]);
-const APPBASE_APP_OPENAPI_PATH = path.resolve(
-  workspaceRoot,
-  "..",
-  "sdkwork-appbase",
-  "sdks",
-  "sdkwork-appbase-app-sdk",
-  "openapi",
-  "sdkwork-appbase-app-api.openapi.yaml",
-);
+const APPBASE_APP_OPENAPI_RELATIVE_PATHS = [
+  path.join("sdks", "sdkwork-iam-app-sdk", "openapi", "sdkwork-iam-app-api.openapi.yaml"),
+  path.join("apis", "app-api", "iam", "sdkwork-iam-app-api.openapi.yaml"),
+  path.join("sdks", "sdkwork-iam-app-sdk", "openapi", "sdkwork-iam-app-api.openapi.json"),
+];
+
+function resolveIamRoot() {
+  const override = String(process.env.SDKWORK_IAM_ROOT || process.env.SDKWORK_APPBASE_ROOT || "").trim();
+  if (override) {
+    return path.resolve(override);
+  }
+  const candidates = [
+    path.resolve(workspaceRoot, "..", "sdkwork-iam"),
+    path.resolve(workspaceRoot, "..", "sdkwork-appbase"),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return candidates[0];
+}
+
+function resolveAppbaseIamAppOpenapiPath(explicitPath = null) {
+  if (explicitPath) {
+    return resolveWorkspacePath(explicitPath);
+  }
+  const iamRoot = resolveIamRoot();
+  for (const relativePath of APPBASE_APP_OPENAPI_RELATIVE_PATHS) {
+    const candidate = path.join(iamRoot, relativePath);
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return path.join(iamRoot, APPBASE_APP_OPENAPI_RELATIVE_PATHS[0]);
+}
+
+const APPBASE_APP_OPENAPI_PATH = resolveAppbaseIamAppOpenapiPath();
 const APPBASE_APP_OPERATION_IDS = new Set([
   "oauth.authorizationUrls.create",
   "oauth.sessions.create",
@@ -199,7 +231,10 @@ const defaultBackendOpenapiPath = path.join(
   "drive-backend-api.openapi.json",
 );
 const defaultAdminStorageOpenapiPath = path.join(
-  generatedOpenapiDir,
+  workspaceRoot,
+  "apis",
+  "backend-api",
+  "drive",
   "drive-admin-storage-api.openapi.json",
 );
 
@@ -218,15 +253,36 @@ function resolveWorkspacePath(inputPath) {
   return path.resolve(workspaceRoot, inputPath);
 }
 
-function ensureReadableJson(filePath) {
+function readOpenapiDocument(filePath, label) {
   if (!existsSync(filePath)) {
     fail(`missing OpenAPI file: ${filePath}`);
   }
-  try {
-    return JSON.parse(readFileSync(filePath, "utf8"));
-  } catch (error) {
-    fail(`invalid JSON in ${filePath}: ${error.message}`);
+  const raw = readFileSync(filePath, "utf8");
+  if (filePath.endsWith(".yaml") || filePath.endsWith(".yml")) {
+    return parseYamlOpenapi(raw, label);
   }
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    fail(`invalid JSON in ${label}: ${error.message}`);
+  }
+}
+
+function parseYamlOpenapi(raw, label) {
+  try {
+    const { parse } = require("yaml");
+    const parsed = parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      fail(`invalid YAML in ${label}: expected an object document`);
+    }
+    return parsed;
+  } catch (error) {
+    fail(`invalid YAML in ${label}: ${error.message}`);
+  }
+}
+
+function ensureReadableJson(filePath) {
+  return readOpenapiDocument(filePath, filePath);
 }
 
 function maybeReadJson(filePath, label) {
@@ -236,11 +292,7 @@ function maybeReadJson(filePath, label) {
   if (!existsSync(filePath)) {
     return null;
   }
-  try {
-    return JSON.parse(readFileSync(filePath, "utf8"));
-  } catch (error) {
-    fail(`invalid JSON in ${label}: ${error.message}`);
-  }
+  return readOpenapiDocument(filePath, label);
 }
 
 function cloneJson(value) {
@@ -396,6 +448,9 @@ function removeDependencyOwnedOperations(document, {
       const matched = exactOperationKeys.has(key)
         || pathPrefixes.some((prefix) => pathKey.startsWith(prefix));
       if (!matched) {
+        continue;
+      }
+      if (operation?.["x-sdkwork-composed-from-owner"]) {
         continue;
       }
       removed.push({
@@ -611,271 +666,6 @@ function removeAppStorageAdminSurface(document) {
   pruneUnreferencedSchemas(document);
 }
 
-function adminStoragePathFromBackendPath(pathKey) {
-  const providerPrefix = "/backend/v3/api/drive/storage_providers";
-  const bindingPath = "/backend/v3/api/drive/storage_provider_bindings/default";
-  if (pathKey === bindingPath) {
-    return "/backend/v3/api/drive/storage/bindings/default";
-  }
-  if (pathKey.startsWith(providerPrefix)) {
-    return pathKey.replace(
-      providerPrefix,
-      "/backend/v3/api/drive/storage/providers",
-    );
-  }
-  return null;
-}
-
-function deriveAdminStorageOpenapiFromBackend(backendDocument) {
-  const target = {
-    openapi: backendDocument.openapi || "3.1.0",
-    info: {
-      title: "SDKWork Drive Admin Storage API",
-      version: backendDocument.info?.version || "0.1.0",
-    },
-    servers: cloneJson(backendDocument.servers || [{ url: "/" }]),
-    tags: [
-      {
-        name: "storageAdmin",
-        description: "Drive storage administration resources.",
-        "x-sdk-nested-resource-surface": true,
-      },
-    ],
-    paths: {},
-    components: {
-      securitySchemes: cloneJson(backendDocument.components?.securitySchemes || {}),
-      schemas: {},
-    },
-  };
-
-  const rootSchemaNames = new Set();
-  for (const [pathKey, pathItem] of Object.entries(backendDocument.paths || {})) {
-    const adminPath = adminStoragePathFromBackendPath(pathKey);
-    if (!adminPath || !pathItem || typeof pathItem !== "object") {
-      continue;
-    }
-    target.paths[adminPath] = target.paths[adminPath] || {};
-    for (const [methodName, operation] of Object.entries(pathItem)) {
-      if (!HTTP_METHODS.has(methodName.toLowerCase()) || !operation || typeof operation !== "object") {
-        continue;
-      }
-      const adminOperation = cloneJson(operation);
-      adminOperation.tags = ["storageAdmin"];
-      target.paths[adminPath][methodName] = adminOperation;
-      for (const schemaName of collectSchemaRefs(adminOperation)) {
-        rootSchemaNames.add(schemaName);
-      }
-    }
-  }
-
-  if (Object.keys(target.paths).length === 0) {
-    fail("cannot derive admin storage OpenAPI: backend storage provider routes are missing");
-  }
-  copyReferencedSchemas(target, backendDocument, rootSchemaNames);
-  addAdminStorageBucketDiscoveryOpenapi(target);
-  addAdminStorageBindingManagementOpenapi(target);
-  return target;
-}
-
-function addAdminStorageBucketDiscoveryOpenapi(targetDocument) {
-  const schemas = ensureComponentContainer(targetDocument, "schemas");
-  schemas.ProviderBucketListItem = {
-    type: "object",
-    required: ["bucket", "configured"],
-    properties: {
-      bucket: {
-        type: "string",
-        minLength: 1,
-        maxLength: 255,
-      },
-      configured: {
-        type: "boolean",
-      },
-      creationDateEpochMs: {
-        type: "integer",
-        format: "int64",
-        minimum: 0,
-      },
-    },
-  };
-  schemas.ProviderBucketList = {
-    type: "object",
-    required: ["providerId", "configuredBucket", "items"],
-    properties: {
-      providerId: {
-        type: "string",
-        minLength: 1,
-        maxLength: 64,
-      },
-      configuredBucket: {
-        type: "string",
-        minLength: 1,
-        maxLength: 255,
-      },
-      items: {
-        type: "array",
-        items: {
-          $ref: "#/components/schemas/ProviderBucketListItem",
-        },
-      },
-    },
-  };
-  targetDocument.paths["/backend/v3/api/drive/storage/providers/{providerId}/buckets"] = {
-    get: {
-      tags: ["storageAdmin"],
-      summary: "List buckets visible to a Drive storage provider account",
-      operationId: "storageProviders.buckets.list",
-      parameters: [
-        {
-          name: "providerId",
-          in: "path",
-          required: true,
-          schema: { type: "string", minLength: 1, maxLength: 64 },
-        },
-      ],
-      responses: {
-        200: {
-          description: "Drive storage provider bucket list.",
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/ProviderBucketList",
-              },
-            },
-          },
-        },
-        400: problemDetailResponse("Bad Request"),
-        404: problemDetailResponse("Not Found"),
-        409: problemDetailResponse("Conflict"),
-        500: problemDetailResponse("Internal Server Error"),
-      },
-      security: [{ AuthToken: [], AccessToken: [] }],
-    },
-  };
-}
-
-function addAdminStorageBindingManagementOpenapi(targetDocument) {
-  const schemas = ensureComponentContainer(targetDocument, "schemas");
-  schemas.StorageProviderBindingListResponse = {
-    type: "object",
-    required: ["items"],
-    properties: {
-      items: {
-        type: "array",
-        items: {
-          $ref: "#/components/schemas/StorageProviderBinding",
-        },
-      },
-    },
-  };
-  schemas.DeleteStorageProviderBindingResponse = {
-    type: "object",
-    required: ["deleted"],
-    properties: {
-      deleted: {
-        type: "boolean",
-      },
-    },
-  };
-
-  targetDocument.paths["/backend/v3/api/drive/storage/bindings"] = {
-    get: {
-      tags: ["storageAdmin"],
-      summary: "List Drive storage provider bindings",
-      operationId: "storageProviderBindings.list",
-      parameters: [
-        {
-          name: "tenantId",
-          in: "query",
-          required: true,
-          schema: { type: "string", minLength: 1, maxLength: 64 },
-        },
-        {
-          name: "spaceId",
-          in: "query",
-          required: false,
-          schema: { type: "string", minLength: 1, maxLength: 64 },
-        },
-        {
-          name: "providerId",
-          in: "query",
-          required: false,
-          schema: { type: "string", minLength: 1, maxLength: 64 },
-        },
-        {
-          name: "lifecycleStatus",
-          in: "query",
-          required: false,
-          schema: {
-            type: "string",
-            enum: ["active", "disabled", "deleted"],
-            default: "active",
-          },
-        },
-      ],
-      responses: {
-        200: {
-          description: "Drive storage provider bindings.",
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/StorageProviderBindingListResponse",
-              },
-            },
-          },
-        },
-        400: problemDetailResponse("Bad Request"),
-        500: problemDetailResponse("Internal Server Error"),
-      },
-      security: [{ AuthToken: [], AccessToken: [] }],
-    },
-  };
-
-  targetDocument.paths["/backend/v3/api/drive/storage/bindings/default"] =
-    targetDocument.paths["/backend/v3/api/drive/storage/bindings/default"] || {};
-  targetDocument.paths["/backend/v3/api/drive/storage/bindings/default"].delete = {
-    tags: ["storageAdmin"],
-    summary: "Delete a Drive default storage provider binding",
-    operationId: "storageProviderBindings.default.delete",
-    parameters: [
-      {
-        name: "tenantId",
-        in: "query",
-        required: true,
-        schema: { type: "string", minLength: 1, maxLength: 64 },
-      },
-      {
-        name: "spaceId",
-        in: "query",
-        required: false,
-        schema: { type: "string", minLength: 1, maxLength: 64 },
-      },
-      {
-        name: "operatorId",
-        in: "query",
-        required: true,
-        description: OPERATOR_ID_DESCRIPTION,
-        schema: cloneJson(OPERATOR_ID_SCHEMA),
-      },
-    ],
-    responses: {
-      200: {
-        description: "Drive storage provider binding deletion result.",
-        content: {
-          "application/json": {
-            schema: {
-              $ref: "#/components/schemas/DeleteStorageProviderBindingResponse",
-            },
-          },
-        },
-      },
-      400: problemDetailResponse("Bad Request"),
-      500: problemDetailResponse("Internal Server Error"),
-    },
-    security: [{ AuthToken: [], AccessToken: [] }],
-  };
-}
-
 function problemDetailResponse(description) {
   return {
     description,
@@ -905,7 +695,7 @@ function composeAppbaseIamAppOperations(targetDocument, sourceDocument) {
     return;
   }
   if (!sourceDocument) {
-    fail(`missing appbase app OpenAPI at ${APPBASE_APP_OPENAPI_PATH}; run sdkwork-appbase materializer or pass --appbase-app-input`);
+    fail(`missing appbase app OpenAPI at ${resolveAppbaseIamAppOpenapiPath()}; run sdkwork-iam materializer or pass --appbase-app-input`);
   }
   const normalizedSource = normalizeOpenapiDocument(sourceDocument, "appbase app openapi");
   const copiedOperationIds = new Set();
@@ -934,7 +724,7 @@ function composeAppbaseIamAppOperations(targetDocument, sourceDocument) {
       composedOperation["x-sdkwork-composed-from-owner"] =
         operation["x-sdkwork-owner"] || "sdkwork-appbase";
       composedOperation["x-sdkwork-composed-from-api-authority"] =
-        operation["x-sdkwork-api-authority"] || "sdkwork-appbase-app-api";
+        operation["x-sdkwork-api-authority"] || "sdkwork-iam-app-api";
       targetDocument.paths[pathKey][methodName] = composedOperation;
       copiedOperationIds.add(String(operation.operationId));
       for (const tagName of composedOperation.tags || []) {
@@ -1385,8 +1175,8 @@ function parseArgs(argv) {
     openInput: defaultOpenOpenapiPath,
     appInput: defaultAppOpenapiPath,
     backendInput: defaultBackendOpenapiPath,
-    adminStorageInput: null,
-    appbaseAppInput: APPBASE_APP_OPENAPI_PATH,
+    adminStorageInput: defaultAdminStorageOpenapiPath,
+    appbaseAppInput: resolveAppbaseIamAppOpenapiPath(),
   };
   for (let index = 0; index < argv.length; index += 1) {
     const current = argv[index];
@@ -1438,8 +1228,8 @@ const appOpenapi = materializeOwnerOnlyOpenapi(ensureReadableJson(args.appInput)
   authority: SDK_AUTHORITIES.app,
   dependencyExclusions: [
     {
-      dependencyWorkspace: "sdkwork-appbase-app-sdk",
-      dependencyAuthority: "sdkwork-appbase-app-api",
+      dependencyWorkspace: "sdkwork-iam-app-sdk",
+      dependencyAuthority: "sdkwork-iam-app-api",
       pathPrefixes: APPBASE_APP_PATH_PREFIXES,
       schemaPrefixes: APPBASE_SCHEMA_PREFIXES,
       tagNames: APPBASE_TAGS,
@@ -1452,21 +1242,26 @@ const backendOpenapi = materializeOwnerOnlyOpenapi(ensureReadableJson(args.backe
   authority: SDK_AUTHORITIES.backend,
   dependencyExclusions: [
     {
-      dependencyWorkspace: "sdkwork-appbase-backend-sdk",
-      dependencyAuthority: "sdkwork-appbase-backend-api",
+      dependencyWorkspace: "sdkwork-iam-backend-sdk",
+      dependencyAuthority: "sdkwork-iam-backend-api",
       pathPrefixes: APPBASE_BACKEND_PATH_PREFIXES,
       schemaPrefixes: APPBASE_SCHEMA_PREFIXES,
       tagNames: APPBASE_TAGS,
     },
   ],
 });
-const adminStorageInputOpenapi = maybeReadJson(args.adminStorageInput, args.adminStorageInput);
-const adminStorageOpenapi = materializeOwnerOnlyOpenapi(
-  adminStorageInputOpenapi || deriveAdminStorageOpenapiFromBackend(backendOpenapi),
-  {
-    authority: SDK_AUTHORITIES.adminStorage,
-  },
+const adminStorageInputOpenapi = maybeReadJson(
+  args.adminStorageInput,
+  "admin storage OpenAPI",
 );
+if (!adminStorageInputOpenapi) {
+  fail(
+    `admin storage OpenAPI is required; pass --admin-storage-input or ensure ${defaultAdminStorageOpenapiPath} exists`,
+  );
+}
+const adminStorageOpenapi = materializeOwnerOnlyOpenapi(adminStorageInputOpenapi, {
+  authority: SDK_AUTHORITIES.adminStorage,
+});
 
 if (!args.check) {
   mkdirSync(args.outputDir, { recursive: true });

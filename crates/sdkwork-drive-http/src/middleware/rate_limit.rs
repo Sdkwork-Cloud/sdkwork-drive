@@ -6,6 +6,8 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
+const MAX_RATE_LIMIT_BUCKETS: usize = 10_000;
+
 #[derive(Debug, Clone, Copy)]
 pub struct RateLimitConfig {
     pub window: Duration,
@@ -29,10 +31,24 @@ impl RateLimitState {
 
     fn allow(&self, key: &str) -> bool {
         let now = Instant::now();
-        let mut buckets = self
-            .buckets
-            .lock()
-            .expect("drive rate limit bucket lock");
+        let mut buckets = match self.buckets.lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => poisoned.into_inner(),
+        };
+        if buckets.len() >= MAX_RATE_LIMIT_BUCKETS && !buckets.contains_key(key) {
+            if let Some(oldest_key) = buckets
+                .iter()
+                .min_by_key(|(_, entries)| {
+                    entries
+                        .first()
+                        .copied()
+                        .unwrap_or_else(Instant::now)
+                })
+                .map(|(bucket_key, _)| bucket_key.clone())
+            {
+                buckets.remove(&oldest_key);
+            }
+        }
         let entries = buckets.entry(key.to_string()).or_default();
         entries.retain(|seen| now.duration_since(*seen) <= self.config.window);
         if entries.len() as u32 >= self.config.max_requests {
@@ -44,14 +60,37 @@ impl RateLimitState {
 }
 
 pub fn rate_limit_client_key(request: &Request<Body>, fallback: &str) -> String {
+    if rate_limit_trust_proxy_enabled() {
+        if let Some(real_ip) = request
+            .headers()
+            .get("x-real-ip")
+            .and_then(|value| value.to_str().ok())
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            return real_ip.to_string();
+        }
+    }
+
     request
         .headers()
         .get("x-forwarded-for")
         .and_then(|value| value.to_str().ok())
         .map(str::trim)
         .filter(|value| !value.is_empty())
-        .map(str::to_string)
+        .map(|value| value.split(',').next().unwrap_or(value).trim().to_string())
+        .filter(|value| !value.is_empty())
         .unwrap_or_else(|| fallback.to_string())
+}
+
+fn rate_limit_trust_proxy_enabled() -> bool {
+    std::env::var("SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY")
+        .ok()
+        .map(|value| {
+            let value = value.trim().to_ascii_lowercase();
+            value == "1" || value == "true" || value == "on" || value == "yes"
+        })
+        .unwrap_or(false)
 }
 
 pub fn shared_rate_limit_state(init: impl FnOnce() -> RateLimitConfig) -> &'static SharedRateLimitState {

@@ -100,7 +100,7 @@ fn schema_registry_documents_runtime_dictionary_constraints() {
         "enum: [created, uploading, completing, completed, aborted, expired]",
         "enum: [active, deleted]",
         "enum: [active, stopped, expired]",
-        "enum: [object_sweep, upload_session_sweep]",
+        "enum: [object_sweep, upload_session_sweep, expired_upload_content_sweep, abandoned_upload_task_sweep]",
         "enum: [completed, failed]",
         "min: 0",
         "min: 1",

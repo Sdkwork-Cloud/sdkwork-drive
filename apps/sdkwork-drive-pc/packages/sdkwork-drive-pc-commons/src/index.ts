@@ -4,5 +4,7 @@ export * from './components/SettingsModal';
 export * from './components/LanguageProvider';
 export * from './components/UserProfileModal';
 export * from './components/preferenceStorage';
+export * from './components/drivePcPreferences';
 export * from './utils/formatDriveBytes';
 export * from './utils/transferJobDisplay';
+export * from './utils/driveSensitiveConfirm';

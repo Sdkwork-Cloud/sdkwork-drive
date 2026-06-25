@@ -3,6 +3,7 @@ import type { StorageProviderBindingView, StorageProviderView } from '../types/s
 import { getProviderKindMeta } from '../utils/providerKindConfig';
 import { SELECT_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS, CARD_CLASS, BADGE_BASE_CLASS } from '../utils/uiPrimitives';
 import { ConfirmDialog } from './ConfirmDialog';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface StorageProviderBindingPanelProps {
   providers: StorageProviderView[];
@@ -19,6 +20,7 @@ export function StorageProviderBindingPanel({
   onDeleteDefaultBinding,
   pending,
 }: StorageProviderBindingPanelProps) {
+  const { t } = useTranslation();
   const [providerId, setProviderId] = useState('');
   const [spaceId, setSpaceId] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -28,16 +30,16 @@ export function StorageProviderBindingPanel({
   return (
     <div className={CARD_CLASS}>
       <div className="border-b border-neutral-100 px-5 py-3 dark:border-neutral-800">
-        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Default binding</h3>
+        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('storageProviders.defaultBinding')}</h3>
         <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
-          Map tenant or space to a storage provider for new file uploads.
+          {t('storageProviders.bindingDesc')}
         </p>
       </div>
 
       <div className="px-5 py-4">
         {/* Current binding visualization */}
         <div className="mb-4 rounded-md border border-neutral-100 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-900/50">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">Current binding</div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">{t('storageProviders.currentBinding')}</div>
           {binding && boundProvider ? (
             <div className="mt-2 flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -82,7 +84,7 @@ export function StorageProviderBindingPanel({
             </div>
           ) : (
             <div className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-              No binding configured. All files use the default storage target.
+              {t('storageProviders.notConfigured')}
             </div>
           )}
         </div>
@@ -94,7 +96,7 @@ export function StorageProviderBindingPanel({
             onChange={(e) => setProviderId(e.target.value)}
             className={SELECT_CLASS}
           >
-            <option value="">Select provider...</option>
+            <option value="">{t('storageProviders.selectProvider')}</option>
             {providers.filter((p) => p.status === 'active').map((provider) => (
               <option key={provider.id} value={provider.id}>
                 {provider.displayName || provider.id}
@@ -106,7 +108,7 @@ export function StorageProviderBindingPanel({
               value={spaceId}
               onChange={(e) => setSpaceId(e.target.value)}
               className={`${INPUT_CLASS} flex-1`}
-              placeholder="Space ID (optional, leave empty for tenant default)"
+              placeholder={t('storageProviders.spaceIdOptional')}
             />
             <button
               type="button"
@@ -114,7 +116,7 @@ export function StorageProviderBindingPanel({
               disabled={pending || !providerId}
               onClick={() => onSetDefaultBinding(providerId, spaceId || undefined)}
             >
-              Set binding
+              {t('storageProviders.set')}
             </button>
           </div>
         </div>
@@ -126,7 +128,7 @@ export function StorageProviderBindingPanel({
               className="text-xs text-red-600 hover:text-red-700 dark:text-red-400"
               onClick={() => setShowClearConfirm(true)}
             >
-              Clear current binding
+              {t('storageProviders.clear')}
             </button>
           </div>
         )}
@@ -134,9 +136,9 @@ export function StorageProviderBindingPanel({
 
       <ConfirmDialog
         open={showClearConfirm}
-        title="Clear binding"
-        message="This will remove the current storage provider binding. New files will use the system default storage target."
-        confirmLabel="Clear binding"
+        title={t('storageProviders.clearConfirmTitle')}
+        message={t('storageProviders.clearConfirmMessage')}
+        confirmLabel={t('storageProviders.clearConfirmLabel')}
         variant="danger"
         onConfirm={() => { onDeleteDefaultBinding(spaceId || undefined); setShowClearConfirm(false); }}
         onCancel={() => setShowClearConfirm(false)}

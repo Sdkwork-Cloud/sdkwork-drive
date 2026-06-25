@@ -1,5 +1,5 @@
-# plans
+# Engineering Plans
 
-See `DOCUMENTATION_SPEC.md` section 2.
+Implementation plans use the `PLAN-` prefix in this directory.
 
-See `DOCUMENTATION_SPEC.md` section 2.
+See [../../../sdkwork-specs/DOCUMENTATION_SPEC.md](../../../sdkwork-specs/DOCUMENTATION_SPEC.md) section 2.3.

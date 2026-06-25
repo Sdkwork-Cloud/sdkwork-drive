@@ -1,6 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import type { StorageProviderAdminService } from '../services/storageProviderAdminService';
 import type { StorageProviderView } from '../types/storageProviderAdminTypes';
+import { formatMutationError } from '../utils/mutationError';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface BucketInfo {
   name: string;
@@ -15,6 +17,7 @@ interface StorageBucketPanelProps {
 }
 
 export function StorageBucketPanel({ provider, service }: StorageBucketPanelProps) {
+  const { t } = useTranslation();
   const [buckets, setBuckets] = useState<BucketInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,11 +35,11 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
         creationDate: item.creationDate,
       })));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load buckets');
+      setError(formatMutationError(err, t('errorLoadBuckets')));
     } finally {
       setLoading(false);
     }
-  }, [provider.id, service]);
+  }, [provider.id, service, t]);
 
   const checkBucket = useCallback(async () => {
     setLoading(true);
@@ -45,14 +48,14 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
       const result = await service.headBucket(provider.id);
       setBucketExists(result.exists);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to check bucket');
+      setError(formatMutationError(err, t('errorCheckBucket')));
     } finally {
       setLoading(false);
     }
-  }, [provider.id, service]);
+  }, [provider.id, service, t]);
 
   const createBucket = useCallback(async () => {
-    if (!confirm(`Create bucket "${provider.bucket}"?`)) return;
+    if (!confirm(t('confirmCreateBucket'))) return;
     setLoading(true);
     setError(null);
     try {
@@ -60,14 +63,14 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
       setBucketExists(true);
       await loadBuckets();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create bucket');
+      setError(formatMutationError(err, t('errorCreateBucket')));
     } finally {
       setLoading(false);
     }
-  }, [provider.id, provider.bucket, service, loadBuckets]);
+  }, [provider.id, service, loadBuckets, t]);
 
   const deleteBucket = useCallback(async () => {
-    if (!confirm(`Delete bucket "${provider.bucket}"? This will fail if the bucket is not empty.`)) return;
+    if (!confirm(t('deleteBucketConfirm', { bucket: provider.bucket }))) return;
     setLoading(true);
     setError(null);
     try {
@@ -75,42 +78,42 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
       setBucketExists(false);
       setBuckets([]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete bucket');
+      setError(formatMutationError(err, t('errorDeleteBucket')));
     } finally {
       setLoading(false);
     }
-  }, [provider.id, provider.bucket, service]);
+  }, [provider.id, provider.bucket, service, t]);
 
   return (
     <div className="border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-[#171717]">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Bucket Management</h3>
+        <h3 className="text-sm font-semibold">{t('buckets')}</h3>
         <button type="button" onClick={loadBuckets} disabled={loading} className="text-xs text-blue-600 hover:underline">
-          Refresh
+          {t('listAll')}
         </button>
       </div>
 
-      {error && <div className="mb-3 rounded bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>}
+      {error && <div className="mb-3 rounded bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/20 dark:text-red-300">{error}</div>}
 
       <div className="mb-3 rounded-md bg-neutral-50 p-3 dark:bg-neutral-800">
-        <div className="text-xs text-neutral-500">Configured bucket</div>
+        <div className="text-xs text-neutral-500">{t('configuredBucket')}</div>
         <div className="font-mono text-sm">{provider.bucket}</div>
         {bucketExists !== null && (
           <div className={`mt-1 text-xs ${bucketExists ? 'text-emerald-600' : 'text-red-600'}`}>
-            {bucketExists ? 'Bucket exists' : 'Bucket does not exist'}
+            {bucketExists ? t('bucketReachable') : t('bucketUnreachable')}
           </div>
         )}
       </div>
 
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={checkBucket} disabled={loading} className="rounded border px-3 py-1.5 text-xs">
-          Check Exists
+          {t('checkExists')}
         </button>
         <button type="button" onClick={createBucket} disabled={loading} className="rounded bg-emerald-600 px-3 py-1.5 text-xs text-white">
-          Create Bucket
+          {t('createBucket')}
         </button>
         <button type="button" onClick={deleteBucket} disabled={loading} className="rounded bg-red-600 px-3 py-1.5 text-xs text-white">
-          Delete Bucket
+          {t('deleteBucket')}
         </button>
       </div>
 

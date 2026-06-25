@@ -3,6 +3,11 @@ import {
   isActiveTransferStatus,
   type DownloadJob,
 } from 'sdkwork-drive-pc-types';
+import {
+  TRANSFER_INTERRUPTION_TRANSFER_RETRY,
+  TRANSFER_INTERRUPTION_UPLOAD_NATIVE_RETRY,
+  TRANSFER_INTERRUPTION_UPLOAD_RESELECT,
+} from './transferInterruptionCodes';
 
 const DRIVE_TRANSFER_JOBS_STORAGE_KEY = 'sdkwork.drive.pc.transfer.jobs.v1';
 
@@ -11,9 +16,17 @@ function isLocalStorageAvailable(): boolean {
 }
 
 function sanitizeJobForStorage(job: DownloadJob): DownloadJob {
-  return {
+  const withoutBlob = {
     ...job,
     uploadBlob: undefined,
+  };
+  if (job.status === 'paused') {
+    return withoutBlob;
+  }
+  return {
+    ...withoutBlob,
+    downloadUrl: undefined,
+    signedSourceUrl: undefined,
   };
 }
 
@@ -37,9 +50,9 @@ export function loadPersistedTransferJobs(): DownloadJob[] {
           restored,
           restored.type === 'upload'
             ? restored.uploadLocalPath
-              ? 'Upload was interrupted. Retry to continue from the original local file.'
-              : 'Upload was interrupted. Re-select the local file and retry to continue.'
-            : 'Transfer was interrupted. Retry to continue.',
+              ? TRANSFER_INTERRUPTION_UPLOAD_NATIVE_RETRY
+              : TRANSFER_INTERRUPTION_UPLOAD_RESELECT
+            : TRANSFER_INTERRUPTION_TRANSFER_RETRY,
         );
       }
       return restored;

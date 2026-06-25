@@ -267,6 +267,7 @@ export interface RunManagedDownloadTransferParams {
   grant: DownloadGrantLike;
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
+  resumeExistingProgress?: boolean;
   onJobUpdate: (updater: (current: DownloadJob) => DownloadJob) => void;
   onOpenExternal?: (url: string) => void | Promise<void>;
   saveDownload?: (fileName: string, blob: Blob) => Promise<boolean>;
@@ -324,10 +325,30 @@ async function executeDownloadToStream(
 export async function runManagedDownloadTransfer(
   params: RunManagedDownloadTransferParams,
 ): Promise<void> {
-  const { job, grant, signal, fetchImpl, onJobUpdate, onOpenExternal, saveDownload, saveDownloadStream } = params;
+  const {
+    job,
+    grant,
+    signal,
+    fetchImpl,
+    resumeExistingProgress = false,
+    onJobUpdate,
+    onOpenExternal,
+    saveDownload,
+    saveDownloadStream,
+  } = params;
   const openUrl = resolveTransferOpenUrl(grant);
 
-  onJobUpdate(() => applyDownloadGrantToJob(job, grant));
+  if (!resumeExistingProgress) {
+    onJobUpdate(() => applyDownloadGrantToJob(job, grant));
+  } else {
+    onJobUpdate((current) => ({
+      ...current,
+      status: 'downloading',
+      speed: 'Downloading...',
+      timeRemaining: 'Calculating...',
+      errorMessage: undefined,
+    }));
+  }
 
   if (!openUrl) {
     onJobUpdate((current) =>
@@ -337,7 +358,7 @@ export async function runManagedDownloadTransfer(
   }
 
   try {
-    const activeJob = applyDownloadGrantToJob(job, grant);
+    const activeJob = resumeExistingProgress ? job : applyDownloadGrantToJob(job, grant);
     const streamAdapter =
       saveDownloadStream ??
       (!saveDownload ? await createBrowserDownloadStreamAdapter(activeJob.fileName) : undefined);

@@ -5,6 +5,7 @@ public class QuotaSummary {
     private String tenantId;
     private Integer totalBytes;
     private Integer objectCount;
+    private Integer quotaBytes;
 
     public String getTenantId() {
         return this.tenantId;
@@ -28,5 +29,13 @@ public class QuotaSummary {
 
     public void setObjectCount(Integer objectCount) {
         this.objectCount = objectCount;
+    }
+
+    public Integer getQuotaBytes() {
+        return this.quotaBytes;
+    }
+
+    public void setQuotaBytes(Integer quotaBytes) {
+        this.quotaBytes = quotaBytes;
     }
 }

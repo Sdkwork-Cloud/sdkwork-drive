@@ -149,6 +149,10 @@ export default {
   spaceIdOptional: 'Space ID (optional)',
   set: 'Set',
   clear: 'Clear',
+  clearConfirmTitle: 'Clear binding',
+  clearConfirmMessage:
+    'This will remove the current storage provider binding. New files will use the system default storage target.',
+  clearConfirmLabel: 'Clear binding',
 
   // Diagnostics
   diagnostics: 'Diagnostics',
@@ -175,6 +179,7 @@ export default {
   doesNotExist: 'Does not exist',
   checkExists: 'Check exists',
   createBucket: 'Create bucket',
+  confirmCreateBucket: 'Create storage bucket for this provider?',
   deleteBucket: 'Delete bucket',
   listAll: 'List all',
   availableBuckets: 'Available Buckets',
@@ -205,6 +210,12 @@ export default {
   noticeOperationFailed: 'Storage provider operation failed.',
   noticeCapabilitiesFailed: 'Failed to load capabilities.',
   noticeBucketFailed: 'Failed to inspect bucket.',
+  errorLoadObjects: 'Failed to load objects.',
+  errorDeleteObject: 'Failed to delete object.',
+  errorLoadBuckets: 'Failed to load buckets.',
+  errorCheckBucket: 'Failed to check bucket.',
+  errorCreateBucket: 'Failed to create bucket.',
+  errorDeleteBucket: 'Failed to delete bucket.',
   loading: 'Loading storage providers...',
 
   // List filters

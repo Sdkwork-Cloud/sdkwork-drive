@@ -74,8 +74,9 @@ describe('desktop architecture contract', () => {
     const app = read('src/App.tsx');
     const main = read('src/main.tsx');
 
-    expect(app).toContain('createDrivePcRuntime');
+    expect(main).toContain('createDrivePcRuntime');
     expect(app).toContain('DriveRuntimeProvider');
+    expect(app).toContain('runtime: DriveRuntime');
     expect(app).not.toMatch(/\bfetch\s*\(/);
     expect(app).not.toMatch(/__TAURI__|@tauri-apps\/api|invoke\s*\(/);
     expect(main).toContain('BrowserRouter');
@@ -101,6 +102,7 @@ describe('desktop architecture contract', () => {
       'packages/sdkwork-drive-pc-admin-core/package.json',
       'packages/sdkwork-drive-pc-admin-core/src/index.ts',
       'packages/sdkwork-drive-pc-admin-core/src/sdk/driveAdminStorageSdkClient.ts',
+      'packages/sdkwork-drive-pc-admin-core/src/sdk/driveBackendSdkClient.ts',
       'packages/sdkwork-drive-pc-admin-core/src/auth/adminAccess.ts',
     ]) {
       expect(existsSync(path.join(appRoot, relativePath)), `${relativePath} should exist`).toBe(true);
@@ -112,12 +114,14 @@ describe('desktop architecture contract', () => {
     expect(coreSource).toContain("from '@sdkwork/drive-app-sdk'");
     expect(coreSource).not.toContain("from '@sdkwork/drive-admin-storage-sdk'");
     expect(adminCoreSource).toContain("from '@sdkwork/drive-admin-storage-sdk'");
+    expect(adminCoreSource).toContain("from '@sdkwork/drive-backend-sdk'");
     expect(coreSource).not.toContain('sdkwork-drive-app-sdk-typescript/generated/server-openapi');
     expect(coreSource).not.toContain('sdkwork-drive-app-sdk-typescript/composed/');
     expect(adminCoreSource).not.toContain('sdkwork-drive-admin-storage-sdk-typescript/generated/server-openapi');
     expect(adminCoreSource).not.toContain('sdkwork-drive-admin-storage-sdk-typescript/composed/');
     expect(coreSource).toContain('createDriveAppSdkClient');
     expect(adminCoreSource).toContain('createDriveAdminStorageSdkClient');
+    expect(adminCoreSource).toContain('createDriveBackendSdkClient');
     expect(coreSource).toContain('createSessionStore');
     expect(coreSource).toContain('resolveDriveAuthGateDecision');
     expect(coreSource).toContain('createHostAdapter');
@@ -153,8 +157,8 @@ describe('desktop architecture contract', () => {
     expect(packageNameFor(appSpec, 'sdkwork-drive-admin-storage-sdk')).toBe(
       '@sdkwork/drive-admin-storage-sdk',
     );
-    expect(packageNameFor(appSpec, 'sdkwork-appbase-app-sdk')).toBe(
-      '@sdkwork/appbase-app-sdk',
+    expect(packageNameFor(appSpec, 'sdkwork-iam-app-sdk')).toBe(
+      '@sdkwork/iam-app-sdk',
     );
   });
 
@@ -213,10 +217,10 @@ describe('desktop architecture contract', () => {
       './src/bootstrap/sdkworkCorePcReactShim.ts',
     ]);
     expect(tsconfig.compilerOptions.paths['@sdkwork/auth-runtime-pc-react']).toEqual([
-      '../../../sdkwork-appbase/packages/pc-react/iam/sdkwork-auth-runtime-pc-react/src/index.ts',
+      '../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-runtime-pc-react/src/index.ts',
     ]);
     expect(tsconfig.compilerOptions.paths['@sdkwork/iam-runtime']).toEqual([
-      '../../../sdkwork-appbase/packages/common/iam/sdkwork-iam-runtime/src/index.ts',
+      '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-runtime/src/index.ts',
     ]);
     expect(tsconfig.compilerOptions.paths).not.toHaveProperty('@sdkwork/iam-sdk-adapter');
     expect(existsSync(coreShimPath)).toBe(true);
@@ -426,7 +430,7 @@ describe('desktop architecture contract', () => {
       'packages/sdkwork-drive-pc-commons/src/components/UserProfileModal.tsx',
     );
 
-    expect(systemSidebar.match(/title="账号菜单"/g) ?? []).toHaveLength(1);
+    expect(systemSidebar).toContain('settings.profileMenuTitle');
     expect(systemSidebar.match(/<AccountAvatar/g) ?? []).toHaveLength(1);
     expect(profileMenu).toContain('top-12 left-16');
     expect(profileMenu).not.toContain('bottom-16 left-16');
@@ -453,13 +457,14 @@ describe('desktop architecture contract', () => {
     const commonsSource = readAll(
       path.join(appRoot, 'packages', 'sdkwork-drive-pc-commons', 'src'),
     );
-    const app = read('src/App.tsx');
+    const bootstrap = read('src/main.tsx');
 
     expect(commonsSource).not.toContain('localStorage');
     expect(commonsSource).not.toContain('sessionStorage');
-    expect(app).toContain('createBrowserPreferenceStorage');
-    expect(app).toContain('<LanguageProvider preferenceStorage={preferenceStorage}>');
-    expect(app).toContain('<ThemeProvider preferenceStorage={preferenceStorage}>');
+    expect(bootstrap).toContain('createBrowserPreferenceStorage');
+    expect(bootstrap).toContain('<LanguageProvider preferenceStorage={preferenceStorage}>');
+    expect(bootstrap).toContain('<ThemeProvider preferenceStorage={preferenceStorage}>');
+    expect(bootstrap).toContain('<DrivePcPreferencesProvider preferenceStorage={preferenceStorage}>');
   });
 
   it('keeps Drive previews and actions on App SDK-backed data instead of local samples', () => {
@@ -852,6 +857,75 @@ describe('desktop architecture contract', () => {
     expect(adminSource).not.toContain('accessKeySecret');
   });
 
+  it('places backend operations admin in a PC internal admin package', () => {
+    const app = read('src/App.tsx');
+    const packageJson = read('package.json');
+    const tsconfig = JSON.parse(read('tsconfig.json')) as {
+      compilerOptions: { paths: Record<string, string[]> };
+    };
+    const adminRoot = path.join(appRoot, 'packages', 'sdkwork-drive-pc-admin-operations');
+
+    for (const relativePath of [
+      'package.json',
+      'README.md',
+      'specs/component.spec.json',
+      'src/index.ts',
+      'src/pages/AuditAdminPage.tsx',
+      'src/pages/MaintenanceAdminPage.tsx',
+      'src/pages/QuotaAdminPage.tsx',
+      'src/pages/LabelsAdminPage.tsx',
+      'src/pages/SpacesAdminPage.tsx',
+      'src/pages/DownloadPackagesAdminPage.tsx',
+      'src/services/driveOperationsAdminService.ts',
+      'tests/driveOperationsAdminService.test.ts',
+    ]) {
+      expect(
+        existsSync(path.join(adminRoot, relativePath)),
+        `sdkwork-drive-pc-admin-operations/${relativePath} should exist`,
+      ).toBe(true);
+    }
+
+    const adminPackage = read('packages/sdkwork-drive-pc-admin-operations/package.json');
+    const adminSpec = readJson(
+      'packages/sdkwork-drive-pc-admin-operations/specs/component.spec.json',
+    ) as {
+      component: { name: string; capability: string };
+      contracts: { sdkDependencies: Array<Record<string, unknown>> };
+    };
+    const adminSource = readAll(path.join(adminRoot, 'src'));
+
+    expect(adminPackage).toContain('"name": "sdkwork-drive-pc-admin-operations"');
+    expect(adminSpec.component.capability).toBe('operations');
+    expect(adminSpec.contracts.sdkDependencies).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sdkFamily: '@sdkwork/drive-backend-sdk',
+          consumedThrough: 'sdkwork-drive-pc-admin-core',
+        }),
+      ]),
+    );
+    expect(packageJson).toContain('"sdkwork-drive-pc-admin-operations": "workspace:*"');
+    expect(tsconfig.compilerOptions.paths['sdkwork-drive-pc-admin-operations']).toEqual([
+      './packages/sdkwork-drive-pc-admin-operations/src',
+    ]);
+    expect(app).toContain("import('sdkwork-drive-pc-admin-operations')");
+    expect(app).toContain('admin-audit');
+    expect(app).toContain('admin-labels');
+    expect(app).toContain('admin-spaces');
+    expect(app).toContain('admin-download-packages');
+    expect(app).toContain('runtime.admin.backend');
+    expect(adminSource).toContain("operationId: 'auditEvents.list'");
+    expect(adminSource).toContain("operationId: 'maintenance.jobs.list'");
+    expect(adminSource).toContain("operationId: 'quotas.summary'");
+    expect(adminSource).toContain("operationId: 'quotas.update'");
+    expect(adminSource).toContain("operationId: 'labels.list'");
+    expect(adminSource).toContain("operationId: 'labels.update'");
+    expect(adminSource).toContain("operationId: 'spaces.admin.list'");
+    expect(adminSource).toContain("operationId: 'downloadPackages.list'");
+    expect(adminSource).not.toMatch(/\bfetch\s*\(|axios\.|Authorization\s*:|Access-Token\s*:/);
+    expect(adminSource).not.toContain('sdkwork-drive-backend-sdk-typescript');
+  });
+
   it('keeps shared space creation localized and backed by abortable spaces SDK calls', () => {
     const createSharedSpaceModal = read(
       'packages/sdkwork-drive-pc-file/src/components/CreateSharedSpaceModal.tsx',
@@ -1225,7 +1299,7 @@ describe('desktop architecture contract', () => {
       /invoke_handler\(tauri::generate_handler!\[([\s\S]*?)\]\)/,
     )?.[1];
     expect(invokeBlock, 'Tauri invoke_handler block should exist').toBeTruthy();
-    const registeredCommands = [...invokeBlock!.matchAll(/\b(local_[a-z_]+|window_control)\b/g)].map(
+    const registeredCommands = [...invokeBlock!.matchAll(/\b(local_[a-z_]+|(?:read_|write_|remove_|clear_)?secure_session[a-z_]*|window_control)\b/g)].map(
       (match) => match[1],
     );
     const allowedCommands = [...defaultToml.matchAll(/"([^"]+)"/g)]
@@ -1241,8 +1315,33 @@ describe('desktop architecture contract', () => {
         'allow-local-download-write-chunk',
         'allow-local-download-finish',
         'allow-local-download-abort',
+        'allow-write-secure-session-value',
+        'allow-remove-secure-session-value',
+        'allow-clear-secure-session-values',
+        'allow-read-secure-session-snapshot',
       ]),
     );
+  });
+
+  it('grants Tauri capabilities for every registered secure session command', () => {
+    const desktopMain = read('packages/sdkwork-drive-pc-desktop/src-tauri/src/main.rs');
+    const permissionsToml = read('packages/sdkwork-drive-pc-desktop/src-tauri/permissions/default.toml');
+    const capabilities = JSON.parse(
+      read('packages/sdkwork-drive-pc-desktop/src-tauri/capabilities/default.json'),
+    ) as { permissions: string[] };
+
+    const secureSessionCommands = [
+      'write_secure_session_value',
+      'remove_secure_session_value',
+      'clear_secure_session_values',
+      'read_secure_session_snapshot',
+    ];
+
+    for (const command of secureSessionCommands) {
+      expect(desktopMain).toContain(command);
+      expect(permissionsToml).toContain(`"${command}"`);
+      expect(capabilities.permissions).toContain(`allow-${command.replaceAll('_', '-')}`);
+    }
   });
 
   it('exposes top-level workspace commands for server, PC renderer, and Tauri shell', () => {

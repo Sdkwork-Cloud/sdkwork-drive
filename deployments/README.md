@@ -7,7 +7,8 @@ SDKWork Drive. It is the deployment boundary governed by
 
 ## Allowed Content
 
-- Dockerfile and container build descriptors.
+- Dockerfile and container build descriptors under `deployments/docker/`.
+- Container packaging notes under `deployments/container/`.
 - Kubernetes manifests and Helm charts.
 - Terraform or infrastructure-as-code examples.
 - Deployment topology examples.
@@ -27,3 +28,12 @@ SDKWork Drive. It is the deployment boundary governed by
 ## Verification
 
 - `pnpm deploy:validate` (validate deployment descriptors)
+
+## Cloud deployment notes
+
+- Replace every `REPLACE_WITH_RELEASE_DIGEST` image reference with the immutable digest from release evidence before applying manifests.
+- API pods should set `SDKWORK_DRIVE_DEPLOYMENT_PROFILE=cloud` and `SDKWORK_DRIVE_RUNTIME_TARGET=server`.
+- When `sdkwork-drive-install-worker` is deployed, set `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` on API pods so only the worker runs the periodic outbox loop.
+- `install-worker` uses PostgreSQL advisory locks so only one replica runs maintenance tasks at a time; SQLite standalone runs maintenance locally.
+- Distributed rate limiting in cloud is expected from ingress (see Ingress annotations); app-level limiters remain in-process with optional `SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY=true`.
+- Use `/readyz` for readiness probes on HTTP services; `/healthz` remains the liveness probe.

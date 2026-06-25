@@ -1,15 +1,57 @@
-import {StrictMode} from 'react';
-import {createRoot} from 'react-dom/client';
-import {BrowserRouter, Route, Routes} from 'react-router-dom';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import App from './App.tsx';
+import { DriveErrorBoundaryShell } from './components/DriveErrorBoundaryShell.tsx';
+import { createDrivePcRuntime } from './bootstrap/createDrivePcRuntime';
+import { createBrowserPreferenceStorage } from './bootstrap/browserPreferenceStorage';
+import { resolveDriveBootstrapMessages } from './bootstrap/resolveDriveBootstrapMessages';
+import { renderBootstrapFailureMarkup } from './bootstrap/renderBootstrapFailure';
+import {
+  DrivePcPreferencesProvider,
+  LanguageProvider,
+  ThemeProvider,
+} from 'sdkwork-drive-pc-commons';
 import './index.css';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/*" element={<App />} />
-      </Routes>
-    </BrowserRouter>
-  </StrictMode>,
-);
+async function bootstrapDrivePcApp(): Promise<void> {
+  const runtime = await createDrivePcRuntime();
+  const rootElement = document.getElementById('root');
+  if (!rootElement) {
+    throw new Error('Drive PC root element was not found.');
+  }
+  const preferenceStorage = createBrowserPreferenceStorage();
+
+  createRoot(rootElement).render(
+    <StrictMode>
+      <LanguageProvider preferenceStorage={preferenceStorage}>
+        <ThemeProvider preferenceStorage={preferenceStorage}>
+          <DrivePcPreferencesProvider preferenceStorage={preferenceStorage}>
+            <DriveErrorBoundaryShell>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/*" element={<App runtime={runtime} />} />
+              </Routes>
+            </BrowserRouter>
+            </DriveErrorBoundaryShell>
+          </DrivePcPreferencesProvider>
+        </ThemeProvider>
+      </LanguageProvider>
+    </StrictMode>,
+  );
+}
+
+void bootstrapDrivePcApp().catch((error: unknown) => {
+  console.error('[sdkwork-drive-pc] bootstrap failed', error);
+  const rootElement = document.getElementById('root');
+  const detail = error instanceof Error ? error.message : String(error);
+  const messages = resolveDriveBootstrapMessages();
+  if (rootElement) {
+    rootElement.innerHTML = renderBootstrapFailureMarkup(
+      messages.bootstrapFailedTitle,
+      messages.bootstrapFailedDesc,
+      detail,
+      messages.bootstrapReload,
+    );
+  }
+});

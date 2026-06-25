@@ -35,6 +35,14 @@ This directory is the SDKWork PC application root for `sdkwork-drive-pc`. Read `
 - `src/`: thin application bootstrap, providers, AuthGate wiring, and root composition.
 - `package.json`: app-surface command manifest; public command names still follow `PNPM_SCRIPT_SPEC.md`.
 
+## Documentation Canon
+
+- [docs/README.md](docs/README.md)
+- [docs/product/prd/PRD.md](docs/product/prd/PRD.md)
+- [docs/architecture/tech/TECH_ARCHITECTURE.md](docs/architecture/tech/TECH_ARCHITECTURE.md)
+
+Repository-wide product and platform docs: [../../docs/README.md](../../docs/README.md).
+
 ## Spec Resolution Order
 
 Use dynamic progressive loading:

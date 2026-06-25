@@ -10,84 +10,37 @@
   },
   "status": "ok",
   "mode": "apply",
-  "hasChanges": true,
+  "hasChanges": false,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "83de24a3850adb8d1f57bba585e61fa4d200a24174b54d05870fe55dd40bbf32",
+  "changeFingerprint": "4c2415d8586bfec1cbd03a58314a8de53635e8387aed0d1a4546bdd4f8df22a5",
   "changeImpact": {
     "schemaVersion": 1,
-    "areas": [
-      "models"
-    ],
-    "details": [
-      {
-        "area": "models",
-        "paths": [
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/QuotaSummary.java"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: models. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "executionHandoff": {
     "schemaVersion": 1,
-    "summary": "Run the required verification commands now.",
-    "steps": [
-      {
-        "id": "verify-check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: models.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-java\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "java",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language java --project-dir . --action check"
-      }
-    ]
+    "summary": "No further commands are required.",
+    "steps": []
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: models. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: models.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-java\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "java",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language java --project-dir . --action check"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "sdk": {
     "name": "sdkwork-drive-app-sdk",
@@ -112,17 +65,15 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 1,
+    "writtenFiles": 0,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 124,
+    "skippedUnchangedGeneratedFiles": 125,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "83de24a3850adb8d1f57bba585e61fa4d200a24174b54d05870fe55dd40bbf32",
+    "changeFingerprint": "4c2415d8586bfec1cbd03a58314a8de53635e8387aed0d1a4546bdd4f8df22a5",
     "changes": {
       "createdGeneratedFiles": [],
-      "updatedGeneratedFiles": [
-        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/QuotaSummary.java"
-      ],
+      "updatedGeneratedFiles": [],
       "unchangedGeneratedFiles": [
         "bin/publish-core.mjs",
         "bin/publish.ps1",
@@ -228,6 +179,7 @@
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/PresignedUploadPart.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/PresignUploadPartRequest.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ProblemDetail.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/QuotaSummary.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/RemoveNodeLabelResponse.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SetNodePropertyRequest.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ShareLinkListResponse.java",
@@ -258,54 +210,26 @@
     },
     "impact": {
       "schemaVersion": 1,
-      "areas": [
-        "models"
-      ],
-      "details": [
-        {
-          "area": "models",
-          "paths": [
-            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/QuotaSummary.java"
-          ]
-        }
-      ],
-      "requiresVerification": true,
-      "summary": "Detected impact areas: models. Verification is required."
+      "areas": [],
+      "details": [],
+      "requiresVerification": false,
+      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
     },
     "verificationPlan": {
-      "shouldRun": true,
-      "runPhase": "now",
-      "summary": "Detected impact areas: models. Verification is required. Run the required verification commands now against the generated SDK output.",
-      "steps": [
-        {
-          "id": "check",
-          "title": "Unified package check",
-          "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: models.",
-          "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-java\\generated\\server-openapi",
-          "command": "node",
-          "args": [
-            "./bin/publish-core.mjs",
-            "--language",
-            "java",
-            "--project-dir",
-            ".",
-            "--action",
-            "check"
-          ],
-          "displayCommand": "node ./bin/publish-core.mjs --language java --project-dir . --action check"
-        }
-      ]
+      "shouldRun": false,
+      "runPhase": "skip",
+      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+      "steps": []
     },
     "executionDecision": {
       "schemaVersion": 1,
-      "riskLevel": "medium",
-      "nextAction": "verify",
+      "riskLevel": "low",
+      "nextAction": "skip",
       "requiresManualReview": false,
       "applyRequiresExpectedFingerprint": false,
-      "summary": "Changes have been applied. Run the required verification plan now.",
+      "summary": "No actionable changes were detected. No apply or verification step is required.",
       "reasons": [
-        "verification-required"
+        "no-actionable-changes"
       ]
     },
     "backedUpFiles": [],

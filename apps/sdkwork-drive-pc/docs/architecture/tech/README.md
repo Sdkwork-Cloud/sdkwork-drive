@@ -1,15 +1,9 @@
 # Technical Architecture Directory
 
-This directory owns the technical architecture Canon for the repository.
+PC application Canon entry for renderer and desktop host architecture.
 
 ## Fixed Entry
 
-- [TECH_ARCHITECTURE.md](TECH_ARCHITECTURE.md) — required entry document. Keep summary, status, and links here.
+- [TECH_ARCHITECTURE.md](TECH_ARCHITECTURE.md) — package boundaries, SDK/IAM wiring; links to repository backend topology.
 
-## Splitting Rules
-
-- Split large architecture content into sibling shards named `TECH-<kebab-topic>.md`.
-- Every shard `MUST` be linked from `TECH_ARCHITECTURE.md`.
-- Do not create competing architecture roots such as `docs/architecture/TECH_ARCHITECTURE.md`; that path is retired and redirect-only.
-
-See `DOCUMENTATION_SPEC.md` section 2.2.
+See [../../../sdkwork-specs/DOCUMENTATION_SPEC.md](../../../sdkwork-specs/DOCUMENTATION_SPEC.md) section 2.2.

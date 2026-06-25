@@ -1055,42 +1055,12 @@ for (const schemaName of [
 ]) {
   assertSchemaMissing(appOpenapi, schemaName, "app openapi");
 }
-assertPathExists(
+assertPathMissing(
   backendOpenapi,
   "/backend/v3/api/drive/storage_providers",
   "backend openapi",
 );
-assertPathExists(
-  backendOpenapi,
-  "/backend/v3/api/drive/storage_providers/{providerId}",
-  "backend openapi",
-);
-assertPathExists(
-  backendOpenapi,
-  "/backend/v3/api/drive/storage_providers/{providerId}/test",
-  "backend openapi",
-);
-assertPathExists(
-  backendOpenapi,
-  "/backend/v3/api/drive/storage_providers/{providerId}/capabilities",
-  "backend openapi",
-);
-assertPathExists(
-  backendOpenapi,
-  "/backend/v3/api/drive/storage_providers/{providerId}/activate",
-  "backend openapi",
-);
-assertPathExists(
-  backendOpenapi,
-  "/backend/v3/api/drive/storage_providers/{providerId}/deactivate",
-  "backend openapi",
-);
-assertPathExists(
-  backendOpenapi,
-  "/backend/v3/api/drive/storage_providers/{providerId}/credentials/rotate",
-  "backend openapi",
-);
-assertPathExists(
+assertPathMissing(
   backendOpenapi,
   "/backend/v3/api/drive/storage_provider_bindings/default",
   "backend openapi",
@@ -1197,11 +1167,6 @@ assertDualTokenSecurity(adminStorageOpenapi, "admin storage openapi");
 assertNoDependencyOwnedPaths(openOpenapi, "open openapi");
 assertNoDependencyOwnedPaths(backendOpenapi, "backend openapi", APPBASE_BACKEND_DEPENDENCY_PATH_PREFIXES);
 for (const [document, pathKey, label] of [
-  [
-    backendOpenapi,
-    "/backend/v3/api/drive/storage_providers/{providerId}/objects/{objectKey}",
-    "backend openapi",
-  ],
   [
     adminStorageOpenapi,
     "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
@@ -1608,153 +1573,6 @@ assertSchemaPropertyEnum(
   "DriveSpace",
   "spaceType",
   DRIVE_SPACE_TYPE_ENUM,
-  "backend openapi",
-);
-assertSchemaPropertyEnum(
-  backendOpenapi,
-  "CreateStorageProviderRequest",
-  "providerKind",
-  STORAGE_PROVIDER_KIND_ENUM,
-  "backend openapi",
-);
-assertSchemaPropertyEnumAndPattern(
-  backendOpenapi,
-  "StorageProvider",
-  "providerKind",
-  STORAGE_PROVIDER_KIND_ENUM,
-  STORAGE_PROVIDER_KIND_PATTERN,
-  "backend openapi",
-);
-assertSchemaPropertyEnumAndPattern(
-  backendOpenapi,
-  "CreateStorageProviderRequest",
-  "providerKind",
-  STORAGE_PROVIDER_KIND_ENUM,
-  STORAGE_PROVIDER_KIND_PATTERN,
-  "backend openapi",
-);
-assertSchemaHasProperties(
-  backendOpenapi,
-  "CreateStorageProviderRequest",
-  [
-    "name",
-    "region",
-    "pathStyle",
-    "strictTls",
-    "serverSideEncryptionMode",
-    "defaultStorageClass",
-  ],
-  "backend openapi",
-);
-assertSchemaHasProperties(
-  backendOpenapi,
-  "UpdateStorageProviderRequest",
-  [
-    "name",
-    "region",
-    "pathStyle",
-    "strictTls",
-    "serverSideEncryptionMode",
-    "defaultStorageClass",
-  ],
-  "backend openapi",
-);
-assertSchemaHasProperties(
-  backendOpenapi,
-  "StorageProvider",
-  [
-    "name",
-    "region",
-    "pathStyle",
-    "strictTls",
-    "serverSideEncryptionMode",
-    "defaultStorageClass",
-    "credentialConfigured",
-  ],
-  "backend openapi",
-);
-assertSchemaHasProperties(
-  backendOpenapi,
-  "StorageProviderCapabilities",
-  [
-    "providerId",
-    "providerKind",
-    "supportsMultipartUpload",
-    "supportsPresignedUploadPart",
-    "supportsPresignedDownload",
-    "supportsServerSideEncryption",
-    "supportsStorageClass",
-    "supportsCredentialRotation",
-    "supportedServerSideEncryptionModes",
-    "supportedStorageClasses",
-  ],
-  "backend openapi",
-);
-assertSchemaPropertyStringConstraints(
-  backendOpenapi,
-  "ProviderObject",
-  "objectKey",
-  OBJECT_KEY_MAX_LENGTH,
-  OBJECT_KEY_PATTERN,
-  "backend openapi",
-);
-for (const propertyName of ["sourceObjectKey", "destinationObjectKey"]) {
-  assertSchemaPropertyStringConstraints(
-    backendOpenapi,
-    "CopyProviderObjectRequest",
-    propertyName,
-    OBJECT_KEY_MAX_LENGTH,
-    OBJECT_KEY_PATTERN,
-    "backend openapi",
-  );
-}
-assertSchemaPropertyStringConstraints(
-  backendOpenapi,
-  "CopyProviderObjectRequest",
-  "destinationBucket",
-  S3_BUCKET_NAME_MAX_LENGTH,
-  S3_BUCKET_NAME_PATTERN,
-  "backend openapi",
-);
-assertSchemaHasProperties(
-  backendOpenapi,
-  "RotateStorageProviderCredentialRequest",
-  [
-  "credentialRef"
-  ],
-  "backend openapi",
-);
-for (const schemaName of [
-  "CreateStorageProviderRequest",
-  "UpdateStorageProviderRequest",
-  "RotateStorageProviderCredentialRequest",
-  "StorageProvider",
-]) {
-  assertStorageCredentialRefContract(backendOpenapi, schemaName, "backend openapi");
-}
-assertSchemaHasProperties(
-  backendOpenapi,
-  "SetDefaultStorageProviderBindingRequest",
-  [
-  "providerId",
-  "storageRootPrefix"
-  ],
-  "backend openapi",
-);
-assertSchemaHasProperties(
-  backendOpenapi,
-  "StorageProviderBinding",
-  [
-    "id",
-    "tenantId",
-    "providerId",
-    "bindingScope",
-    "purpose",
-    "storageRootPrefix",
-    "lifecycleStatus",
-    "version",
-    "storageProvider",
-  ],
   "backend openapi",
 );
 assertSchemaPropertyEnum(
@@ -2505,18 +2323,30 @@ assertIamAppbaseSecurity(appOpenapi, "app openapi appbase IAM routes");
 assertOperationIdsInclude(
   backendOperationIds,
   [
-    "storageProviders.get",
-    "storageProviders.capabilities.get",
-    "storageProviders.activate",
-    "storageProviders.deactivate",
-    "storageProviders.credentials.rotate",
-    "storageProviderBindings.default.get",
-    "storageProviderBindings.default.set",
     "labels.list",
     "labels.create",
     "labels.get",
     "labels.update",
     "labels.delete",
+    "quotas.summary",
+    "quotas.update",
+    "auditEvents.list",
+    "maintenance.jobs.list",
+    "maintenance.objectSweep.start",
+    "maintenance.uploadSessionSweep.start",
+    "maintenance.expiredUploadContentSweep.start",
+    "maintenance.abandonedUploadTaskSweep.start",
+    "spaces.admin.list",
+    "downloadPackages.list",
+  ],
+  "backend openapi",
+);
+assertOperationIdsExclude(
+  backendOperationIds,
+  [
+    "storageProviders.list",
+    "storageProviders.get",
+    "storageProviderBindings.default.get",
   ],
   "backend openapi",
 );

@@ -1,4 +1,3 @@
-> Migrated from `docs/drive-iam-integration-standard.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
 # SDKWork Drive IAM Integration Standard
@@ -45,12 +44,13 @@ Rules:
   routes, call raw auth HTTP APIs, or manually build IAM tokens.
 - React and React DOM are peer dependencies for embeddable Drive packages that
   render React components.
-- The standalone PC app may declare appbase IAM packages as optional peer
-  dependencies because it is an application shell, not an embeddable business
+- The standalone PC app may declare IAM auth packages (`@sdkwork/auth-pc-react`,
+  `@sdkwork/auth-runtime-pc-react`) and platform shell packages (`@sdkwork/appbase-pc-react`)
+  as optional peer dependencies because it is an application shell, not an embeddable business
   package.
-- The standalone PC app may alias local appbase packages during development.
-  The default local appbase root is
-  `../../sdkwork-appbase` from the app root. Override it with `SDKWORK_APPBASE_ROOT` only for an
+- The standalone PC app may alias local `sdkwork-iam` and `sdkwork-appbase` packages during development.
+  The default local IAM root is
+  `../../sdkwork-iam` from the app root. Override it with `SDKWORK_IAM_ROOT` only for an
   explicit nonstandard local layout.
 
 ## Integration Modes
@@ -63,6 +63,25 @@ tenant, user, actor, and scope context from verified token claims. Clients must 
 `x-sdkwork-actor-id`, or `x-sdkwork-actor-kind`.
 
 Admin-storage `/healthz` is public; `/backend/v3/api/drive/storage/*` is protected. Dedicated admin SDKs must declare the same security contract in OpenAPI and must not bypass the shared Drive security crate with handwritten token parsing.
+
+### Backend Web Framework IAM Resolver
+
+Production assembly paths for Drive HTTP routers must finalize with
+`wrap_router_with_web_framework_from_env`, which resolves sessions through
+`sdkwork_iam_web_adapter::iam_database_resolver_from_env()`.
+
+Rules:
+
+- `build_router_with_database_config` and standalone-gateway embedded routers
+  must call `build_protected_router_with_pool*` helpers; they must not hardcode
+  `DefaultWebRequestContextResolver` in production paths.
+- Sync test helpers may wrap routers with `DefaultWebRequestContextResolver`
+  only for unit/integration tests in non-production profiles.
+- Cloud Kubernetes Deployments must mount `sdkwork-drive-iam` secrets alongside
+  Drive database secrets for app-api, backend-api, open-api, and admin-storage-api.
+- Development fallback to unsigned JWT parsing is allowed only when
+  `allows_dev_authentication_fallback()` is true and no IAM database pool is
+  configured.
 
 ### Standalone Mode
 
@@ -125,7 +144,7 @@ Required behavior:
 - Drive package manifests must keep React as a peer dependency where the package
   is intended for reuse by another React application.
 - Generated Drive SDK output must remain generated-only. Missing auth or session
-  capability must be fixed in `sdkwork-appbase` app SDK/OpenAPI inputs, not
+  capability must be fixed in `sdkwork-iam` app SDK/OpenAPI inputs, not
   inside Drive feature packages.
 - Appbase IAM packages belong only to application shells. `sdkwork-drive-pc-core`
   may expose an opaque `auth.iamRuntime` slot on `DriveRuntime`, but it must not
@@ -133,7 +152,7 @@ Required behavior:
 
 ## App SDK IAM Contract
 
-Drive app SDK declares `sdkwork-appbase-app-sdk` as the dependency for appbase
+Drive app SDK declares `sdkwork-iam-app-sdk` as the dependency for appbase
 IAM app operations needed by the PC auth route host:
 
 - `auth.sessions.create`
@@ -187,6 +206,9 @@ Required checks:
 - `pnpm --dir apps\sdkwork-drive-pc build` proves the appbase IAM route host and
   aliased appbase packages are resolvable by the standalone PC shell.
 - Workspace tests prove Rust services do not expose product-local auth routes.
+- `pnpm check:architecture-alignment` proves production router builders call
+  `wrap_router_with_web_framework_from_env` and IAM web bootstrap does not gate
+  resolver wiring on Drive database env presence.
 - OpenAPI contract tests prove app/backend/admin-storage Drive APIs require
   `AuthToken` and `AccessToken`, while open APIs remain public.
 

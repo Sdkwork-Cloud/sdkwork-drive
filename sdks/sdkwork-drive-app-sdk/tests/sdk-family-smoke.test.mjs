@@ -177,8 +177,8 @@ test("sdkwork-drive-app-sdk records family metadata outside generated output for
     })),
     [
       {
-        workspace: "sdkwork-appbase-app-sdk",
-        apiAuthority: "sdkwork-appbase-app-api",
+        workspace: "sdkwork-iam-app-sdk",
+        apiAuthority: "sdkwork-iam-app-api",
         dependencyMode: "consumer-sdk",
         generatedTransportImportPolicy: "forbidden",
       },

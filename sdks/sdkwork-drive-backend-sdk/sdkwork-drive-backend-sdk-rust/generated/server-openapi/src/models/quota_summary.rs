@@ -10,4 +10,8 @@ pub struct QuotaSummary {
 
     #[serde(rename = "objectCount")]
     pub object_count: i64,
+
+    #[serde(rename = "quotaBytes")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quota_bytes: Option<i64>,
 }

@@ -363,8 +363,10 @@ fn drive_launch_plan_accepts_explicit_sqlite_database_url() {
 #[test]
 fn database_architecture_doc_records_runtime_boundary() {
     let root = workspace_root();
-    let doc = std::fs::read_to_string(root.join("docs/database-architecture.md"))
-        .expect("database architecture doc should exist");
+    let doc = std::fs::read_to_string(
+        root.join("docs/architecture/tech/TECH-database-architecture.md"),
+    )
+    .expect("database architecture doc should exist");
 
     for required in [
         "PostgreSQL is the server, Docker, Kubernetes, and production target",

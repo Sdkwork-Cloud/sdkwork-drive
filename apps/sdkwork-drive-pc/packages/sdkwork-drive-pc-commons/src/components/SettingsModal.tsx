@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { useTranslation } from './LanguageProvider';
+import { useDrivePcPreferences, type DrivePcPreferences } from './drivePcPreferences';
 import type { DriveSidebarAccount } from './UserProfileModal';
 
 export type SettingsTab = 'account' | 'general' | 'notifications' | 'security' | 'storage' | 'about';
@@ -39,6 +40,7 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t } = useTranslation();
+  const { preferences, updatePreferences } = useDrivePcPreferences();
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab ?? 'account');
 
   useEffect(() => {
@@ -50,12 +52,12 @@ export function SettingsModal({
   if (!isOpen) return null;
 
   const activeTitle: Record<SettingsTab, string> = {
-    account: '账号信息',
+    account: t('settings.account'),
     general: t('commons.general'),
     notifications: t('commons.notifications'),
-    security: '隐私安全',
+    security: t('settings.security'),
     storage: t('commons.storage'),
-    about: '关于 Drive',
+    about: t('settings.about'),
   };
 
   return (
@@ -72,7 +74,7 @@ export function SettingsModal({
           <div className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
             <SettingsNavItem
               icon={<UserRound size={16} />}
-              label="账号信息"
+              label={t('settings.account')}
               active={activeTab === 'account'}
               onClick={() => setActiveTab('account')}
             />
@@ -90,7 +92,7 @@ export function SettingsModal({
             />
             <SettingsNavItem
               icon={<Shield size={16} />}
-              label="隐私安全"
+              label={t('settings.security')}
               active={activeTab === 'security'}
               onClick={() => setActiveTab('security')}
             />
@@ -102,7 +104,7 @@ export function SettingsModal({
             />
             <SettingsNavItem
               icon={<Info size={16} />}
-              label="关于 Drive"
+              label={t('settings.about')}
               active={activeTab === 'about'}
               onClick={() => setActiveTab('about')}
             />
@@ -116,7 +118,7 @@ export function SettingsModal({
               className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
             >
               <LogOut size={16} />
-              退出登录
+              {t('settings.signOut')}
             </button>
           </div>
         </div>
@@ -137,21 +139,36 @@ export function SettingsModal({
 
           <div className="flex-1 overflow-y-auto">
             <div className="w-full p-8 pb-16">
-              {activeTab === 'account' && <AccountSettings account={account} />}
+              {activeTab === 'account' && <AccountSettings account={account} t={t} />}
               {activeTab === 'general' && (
                 <GeneralSettings
                   language={language}
                   setLanguage={setLanguage}
                   theme={theme}
                   setTheme={setTheme}
+                  compactMode={preferences.compactMode}
+                  onCompactModeChange={(checked) => updatePreferences({ compactMode: checked })}
                   t={t}
                 />
               )}
-              {activeTab === 'notifications' && <NotificationSettings t={t} />}
-              {activeTab === 'security' && <SecuritySettings account={account} />}
+              {activeTab === 'notifications' && (
+                <NotificationSettings
+                  preferences={preferences}
+                  onPreferenceChange={updatePreferences}
+                  t={t}
+                />
+              )}
+              {activeTab === 'security' && (
+                <SecuritySettings
+                  account={account}
+                  preferences={preferences}
+                  onPreferenceChange={updatePreferences}
+                  t={t}
+                />
+              )}
               {activeTab === 'storage' && <StorageSettings account={account} t={t} />}
               {activeTab === 'about' && (
-                <AboutSettings runtimeMode={runtimeMode} appApiBaseUrl={appApiBaseUrl} />
+                <AboutSettings runtimeMode={runtimeMode} appApiBaseUrl={appApiBaseUrl} t={t} />
               )}
             </div>
           </div>
@@ -161,20 +178,26 @@ export function SettingsModal({
   );
 }
 
-function AccountSettings({ account }: { account?: DriveSidebarAccount }) {
+function AccountSettings({
+  account,
+  t,
+}: {
+  account?: DriveSidebarAccount;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}) {
   return (
     <div className="space-y-6">
-      <SettingsSection title="账号资料" description="来自 SDKWork IAM 会话的当前登录身份。">
-        <KeyValueRow label="显示名称" value={account?.displayName ?? 'SDKWork Drive User'} />
-        <KeyValueRow label="邮箱" value={account?.email ?? '--'} />
-        <KeyValueRow label="账号 ID" value={account?.id ?? '--'} mono />
-        <KeyValueRow label="租户 ID" value={account?.tenantId ?? '--'} mono />
-        <KeyValueRow label="组织 ID" value={account?.organizationId ?? '--'} mono />
+      <SettingsSection title={t('settings.accountProfileTitle')} description={t('settings.accountProfileDesc')}>
+        <KeyValueRow label={t('settings.displayName')} value={account?.displayName ?? t('settings.defaultDisplayName')} />
+        <KeyValueRow label={t('settings.email')} value={account?.email ?? '--'} />
+        <KeyValueRow label={t('settings.accountId')} value={account?.id ?? '--'} mono />
+        <KeyValueRow label={t('settings.tenantId')} value={account?.tenantId ?? '--'} mono />
+        <KeyValueRow label={t('settings.organizationId')} value={account?.organizationId ?? '--'} mono />
       </SettingsSection>
-      <SettingsSection title="当前会话" description="Drive 会在请求 SDKWork API 时携带这些上下文字段。">
-        <KeyValueRow label="会话 ID" value={account?.sessionId ?? '--'} mono />
-        <KeyValueRow label="认证等级" value={account?.authLevel ?? 'standard'} />
-        <KeyValueRow label="运行环境" value={account?.environmentLabel ?? 'standard'} />
+      <SettingsSection title={t('settings.currentSessionTitle')} description={t('settings.currentSessionDesc')}>
+        <KeyValueRow label={t('settings.sessionId')} value={account?.sessionId ?? '--'} mono />
+        <KeyValueRow label={t('settings.authLevel')} value={account?.authLevel ?? 'standard'} />
+        <KeyValueRow label={t('settings.runtimeEnvironment')} value={account?.environmentLabel ?? 'standard'} />
       </SettingsSection>
     </div>
   );
@@ -185,12 +208,16 @@ function GeneralSettings({
   setLanguage,
   theme,
   setTheme,
+  compactMode,
+  onCompactModeChange,
   t,
 }: {
   language: 'en' | 'zh';
   setLanguage: (language: 'en' | 'zh') => void;
   theme: 'dark' | 'light' | 'system';
   setTheme: (theme: 'dark' | 'light' | 'system') => void;
+  compactMode: boolean;
+  onCompactModeChange: (checked: boolean) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   return (
@@ -211,7 +238,7 @@ function GeneralSettings({
           />
         </div>
       </SettingsSection>
-      <SettingsSection title={t('commons.themePreferences')} description="选择 Drive PC 的界面主题。">
+      <SettingsSection title={t('commons.themePreferences')} description={t('settings.themeSectionDesc')}>
         <div className="grid grid-cols-3 gap-3">
           <ThemeCard
             active={theme === 'light'}
@@ -236,8 +263,9 @@ function GeneralSettings({
       <SettingsSection title={t('commons.compactMode')} description={t('commons.compactDescription')}>
         <NotificationToggle
           label={t('commons.enableCompact')}
-          desc="减少文件列表和操作区的垂直间距。"
-          defaultChecked
+          desc={t('settings.compactModeDescExtra')}
+          checked={compactMode}
+          onCheckedChange={onCompactModeChange}
         />
       </SettingsSection>
     </div>
@@ -245,45 +273,72 @@ function GeneralSettings({
 }
 
 function NotificationSettings({
+  preferences,
+  onPreferenceChange,
   t,
 }: {
+  preferences: DrivePcPreferences;
+  onPreferenceChange: (patch: Partial<DrivePcPreferences>) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   return (
-    <SettingsSection title={t('commons.alertNotifications')} description="控制传输、分享和安全检查相关提醒。">
+    <SettingsSection title={t('commons.alertNotifications')} description={t('settings.notificationsSectionDesc')}>
       <div className="space-y-4">
         <NotificationToggle
           label={t('commons.transferStartAlert')}
           desc={t('commons.transferStartAlertDesc')}
-          defaultChecked
+          checked={preferences.transferStartAlert}
+          onCheckedChange={(checked) => onPreferenceChange({ transferStartAlert: checked })}
         />
         <NotificationToggle
           label={t('commons.systemDialogVerification')}
           desc={t('commons.systemDialogVerificationDesc')}
-          defaultChecked={false}
+          checked={preferences.systemDialogVerification}
+          onCheckedChange={(checked) => onPreferenceChange({ systemDialogVerification: checked })}
         />
         <NotificationToggle
           label={t('commons.malwareCheckBanners')}
           desc={t('commons.malwareCheckBannersDesc')}
-          defaultChecked
+          checked={preferences.malwareCheckBanners}
+          onCheckedChange={(checked) => onPreferenceChange({ malwareCheckBanners: checked })}
         />
       </div>
     </SettingsSection>
   );
 }
 
-function SecuritySettings({ account }: { account?: DriveSidebarAccount }) {
+function SecuritySettings({
+  account,
+  preferences,
+  onPreferenceChange,
+  t,
+}: {
+  account?: DriveSidebarAccount;
+  preferences: DrivePcPreferences;
+  onPreferenceChange: (patch: Partial<DrivePcPreferences>) => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}) {
   return (
     <div className="space-y-6">
-      <SettingsSection title="登录与设备" description="Drive 的登录态由宿主 IAM 统一管理。">
-        <KeyValueRow label="认证模式" value={account?.authLevel ?? 'standard'} />
-        <KeyValueRow label="当前设备" value="Drive PC" />
-        <KeyValueRow label="数据范围" value="Drive workspace" />
+      <SettingsSection title={t('settings.loginDevicesTitle')} description={t('settings.loginDevicesDesc')}>
+        <KeyValueRow label={t('settings.authMode')} value={account?.authLevel ?? 'standard'} />
+        <KeyValueRow label={t('settings.currentDevice')} value={t('settings.driveDeviceLabel')} />
+        <KeyValueRow label={t('settings.dataScope')} value={t('settings.dataScopeValue')} />
       </SettingsSection>
-      <SettingsSection title="安全偏好" description="这些设置会影响敏感操作提示和本地缓存行为。">
+      <SettingsSection title={t('settings.securityPreferencesTitle')} description={t('settings.securityPreferencesDesc')}>
         <div className="space-y-4">
-          <NotificationToggle label="删除和外链分享前二次确认" desc="高风险文件操作需要再次确认。" defaultChecked />
-          <NotificationToggle label="本地预览缓存自动清理" desc="关闭窗口后清理临时预览缓存。" defaultChecked />
+          <NotificationToggle
+            label={t('settings.deleteShareConfirm')}
+            desc={t('settings.deleteShareConfirmDesc')}
+            checked={preferences.deleteShareConfirm}
+            onCheckedChange={(checked) => onPreferenceChange({ deleteShareConfirm: checked })}
+          />
+          <NotificationToggle
+            label={t('settings.previewCacheAutoClear')}
+            desc={t('settings.previewCacheAutoClearDesc')}
+            checked={preferences.previewCacheAutoClear}
+            onCheckedChange={(checked) => onPreferenceChange({ previewCacheAutoClear: checked })}
+          />
         </div>
       </SettingsSection>
     </div>
@@ -302,14 +357,14 @@ function StorageSettings({
   const storageUsagePercent = Math.min(100, Math.max(0, account?.storageUsagePercent ?? 0));
 
   return (
-    <SettingsSection title={t('commons.drivePartitionDetails')} description="当前账号的 Drive 空间和本地传输缓存。">
+    <SettingsSection title={t('commons.drivePartitionDetails')} description={t('settings.storageSectionDesc')}>
       <div className="rounded-xl border border-white/5 bg-[#202020] p-5">
         <div className="mb-3 flex items-end justify-between gap-4">
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold text-gray-100">
               {account?.planLabel ?? 'Drive'}
             </div>
-            <div className="mt-1 text-xs text-gray-500">我的云盘与共享空间统一额度</div>
+            <div className="mt-1 text-xs text-gray-500">{t('settings.unifiedQuotaDesc')}</div>
           </div>
           <div className="shrink-0 text-sm font-semibold text-blue-400">
             {storageUsedLabel} / {storageTotalLabel}
@@ -322,8 +377,8 @@ function StorageSettings({
           />
         </div>
       </div>
-      <KeyValueRow label={t('commons.cachePackets')} value="--" />
-      <KeyValueRow label={t('commons.activeCompressedDir')} value="--" />
+      <KeyValueRow label={t('commons.cachePackets')} value={t('settings.cacheUnavailable')} />
+      <KeyValueRow label={t('commons.activeCompressedDir')} value={t('settings.cacheUnavailable')} />
       <KeyValueRow label={t('commons.quotaLimits')} value={storageTotalLabel} />
     </SettingsSection>
   );
@@ -332,22 +387,24 @@ function StorageSettings({
 function AboutSettings({
   runtimeMode,
   appApiBaseUrl,
+  t,
 }: {
   runtimeMode?: string;
   appApiBaseUrl?: string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   return (
     <div className="space-y-6">
-      <SettingsSection title="SDKWork Drive PC" description="网盘 PC 客户端运行时信息。">
-        <KeyValueRow label="应用" value="SDKWork Drive" />
-        <KeyValueRow label="运行模式" value={runtimeMode ?? '--'} />
-        <KeyValueRow label="App API" value={appApiBaseUrl ?? '--'} mono />
-        <KeyValueRow label="身份集成" value="SDKWork IAM / Appbase" />
+      <SettingsSection title={t('settings.aboutAppTitle')} description={t('settings.aboutAppDesc')}>
+        <KeyValueRow label={t('settings.application')} value="SDKWork Drive" />
+        <KeyValueRow label={t('settings.runtimeMode')} value={runtimeMode ?? '--'} />
+        <KeyValueRow label={t('settings.appApi')} value={appApiBaseUrl ?? '--'} mono />
+        <KeyValueRow label={t('settings.identityIntegration')} value={t('settings.identityIntegrationValue')} />
       </SettingsSection>
-      <SettingsSection title="能力范围" description="当前 PC 端通过 SDK 调用 Drive Rust 后端能力。">
-        <KeyValueRow label="文件管理" value="上传、下载、批量打包、分享、回收站" />
-        <KeyValueRow label="存储后端" value="Local / S3 compatible" />
-        <KeyValueRow label="同步状态" value="安全同步" />
+      <SettingsSection title={t('settings.capabilitiesTitle')} description={t('settings.capabilitiesDesc')}>
+        <KeyValueRow label={t('settings.fileManagement')} value={t('settings.fileManagementValue')} />
+        <KeyValueRow label={t('settings.storageBackend')} value={t('settings.storageBackendValue')} />
+        <KeyValueRow label={t('settings.syncStatus')} value={t('settings.syncStatusValue')} />
       </SettingsSection>
     </div>
   );
@@ -485,14 +542,14 @@ function LanguageCard({
 function NotificationToggle({
   label,
   desc,
-  defaultChecked,
+  checked,
+  onCheckedChange,
 }: {
   label: string;
   desc: string;
-  defaultChecked: boolean;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
 }) {
-  const [checked, setChecked] = useState(defaultChecked);
-
   return (
     <label className="flex cursor-pointer select-none items-start justify-between gap-4 rounded-xl border border-white/5 bg-[#202020] px-4 py-3">
       <div className="space-y-0.5">
@@ -504,7 +561,7 @@ function NotificationToggle({
           type="checkbox"
           className="peer sr-only"
           checked={checked}
-          onChange={(event) => setChecked(event.target.checked)}
+          onChange={(event) => onCheckedChange(event.target.checked)}
         />
         <div className="h-4 w-8 rounded-full bg-gray-700 peer-checked:bg-blue-500 after:absolute after:left-[2px] after:top-[4px] after:h-3 after:w-3 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
       </div>

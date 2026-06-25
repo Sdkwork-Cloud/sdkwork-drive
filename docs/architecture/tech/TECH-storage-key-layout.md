@@ -1,4 +1,3 @@
-> Migrated from `docs/storage-key-layout.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
 # SDKWork Drive Storage Key Layout

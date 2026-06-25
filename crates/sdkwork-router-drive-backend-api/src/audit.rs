@@ -7,25 +7,6 @@ use sdkwork_drive_workspace_service::application::audit_service::{
 };
 use sdkwork_drive_workspace_service::infrastructure::sql::audit_store::SqlAuditStore;
 
-pub(crate) async fn record_storage_provider_audit(
-    state: &BackendState,
-    action: &str,
-    provider_id: &str,
-    operator_id: &str,
-) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-    let (request_id, trace_id) = current_audit_correlation();
-    record_audit_event(
-        state,
-        action,
-        "storage_provider",
-        provider_id,
-        operator_id,
-        request_id,
-        trace_id,
-    )
-    .await
-}
-
 pub(crate) async fn record_label_audit(
     state: &BackendState,
     action: &str,

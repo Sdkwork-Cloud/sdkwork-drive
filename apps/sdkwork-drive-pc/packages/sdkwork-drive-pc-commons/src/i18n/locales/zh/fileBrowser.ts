@@ -178,4 +178,7 @@ export default {
   downloadPrepareFailed: '准备下载失败',
   openLocalFileFailed: '打开本地文件失败',
   batchOperationFailed: '部分操作失败。',
+  unexpectedServiceError: 'Drive 服务出现意外错误。',
+  loadMoreFailed: '加载更多文件失败。',
+  loadingAllForSort: '正在加载剩余条目以完成排序...',
 };

@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { DownloadJob } from 'sdkwork-drive-pc-types';
+import {
+  TRANSFER_INTERRUPTION_TRANSFER_RETRY,
+  TRANSFER_INTERRUPTION_UPLOAD_NATIVE_RETRY,
+  TRANSFER_INTERRUPTION_UPLOAD_RESELECT,
+} from './transferInterruptionCodes';
 import { loadPersistedTransferJobs, persistTransferJobs } from './transferJobStore';
 
 const STORAGE_KEY = 'sdkwork.drive.pc.transfer.jobs.v1';
@@ -61,6 +66,41 @@ describe('transfer job store', () => {
     expect(stored[0].uploadBlob).toBeUndefined();
   });
 
+  it('strips signed download URLs from completed jobs before persistence', () => {
+    const backing = installMockWindowStorage();
+    persistTransferJobs([
+      makeJob({
+        type: 'download',
+        status: 'completed',
+        downloadUrl: 'https://signed.example.test/download',
+        signedSourceUrl: 'https://signed.example.test/source',
+      }),
+    ]);
+
+    const raw = backing.get(STORAGE_KEY);
+    const stored = JSON.parse(raw ?? '[]') as DownloadJob[];
+    expect(stored[0].downloadUrl).toBeUndefined();
+    expect(stored[0].signedSourceUrl).toBeUndefined();
+  });
+
+  it('retains signed download URLs for paused jobs so resume can continue', () => {
+    const backing = installMockWindowStorage();
+    persistTransferJobs([
+      makeJob({
+        type: 'download',
+        status: 'paused',
+        downloadUrl: 'https://signed.example.test/download',
+        signedSourceUrl: 'https://signed.example.test/source',
+        expiresAtEpochMs: Date.now() + 60_000,
+      }),
+    ]);
+
+    const raw = backing.get(STORAGE_KEY);
+    const stored = JSON.parse(raw ?? '[]') as DownloadJob[];
+    expect(stored[0].downloadUrl).toBe('https://signed.example.test/download');
+    expect(stored[0].signedSourceUrl).toBe('https://signed.example.test/source');
+  });
+
   it('restores interrupted active jobs as failed retryable jobs', () => {
     const backing = installMockWindowStorage();
     backing.set(
@@ -78,7 +118,7 @@ describe('transfer job store', () => {
     expect(restored).toHaveLength(1);
     expect(restored[0]).toMatchObject({
       status: 'failed',
-      errorMessage: 'Upload was interrupted. Re-select the local file and retry to continue.',
+      errorMessage: TRANSFER_INTERRUPTION_UPLOAD_RESELECT,
       uploadSection: 'my-storage',
       uploadParentId: 'folder-001',
     });
@@ -101,7 +141,7 @@ describe('transfer job store', () => {
     const restored = loadPersistedTransferJobs();
     expect(restored[0]).toMatchObject({
       status: 'failed',
-      errorMessage: 'Upload was interrupted. Retry to continue from the original local file.',
+      errorMessage: TRANSFER_INTERRUPTION_UPLOAD_NATIVE_RETRY,
       uploadLocalPath: 'C:\\\\Users\\\\demo\\\\Roadmap.pdf',
     });
   });
@@ -125,7 +165,7 @@ describe('transfer job store', () => {
     expect(restored[0]).toMatchObject({
       type: 'download',
       status: 'failed',
-      errorMessage: 'Transfer was interrupted. Retry to continue.',
+      errorMessage: TRANSFER_INTERRUPTION_TRANSFER_RETRY,
       sourceNodeIds: ['node-download'],
     });
   });

@@ -15,6 +15,22 @@ impl TenantQuotaPolicy {
     }
 }
 
+/// Returns the canonical deployment profile label for metrics and tracing.
+/// Prefers `SDKWORK_DRIVE_DEPLOYMENT_PROFILE`; accepts legacy `SDKWORK_DRIVE_DEPLOYMENT_MODE`.
+pub fn resolve_deployment_profile_label() -> String {
+    std::env::var("SDKWORK_DRIVE_DEPLOYMENT_PROFILE")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .or_else(|| {
+            std::env::var("SDKWORK_DRIVE_DEPLOYMENT_MODE")
+                .ok()
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+        })
+        .unwrap_or_else(|| "standalone".to_string())
+}
+
 /// Returns true when production-hardening rules should be enforced.
 pub fn is_production_runtime_profile() -> bool {
     matches_runtime_profile(&["production", "prod"])

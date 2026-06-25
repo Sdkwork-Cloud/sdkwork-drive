@@ -1,4 +1,3 @@
-> Migrated from `docs/drive-uploader-standard.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
 # SDKWork Drive Uploader Standard

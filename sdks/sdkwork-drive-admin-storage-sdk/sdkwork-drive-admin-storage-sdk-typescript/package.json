@@ -29,10 +29,10 @@
     "@sdkwork/sdk-common": "^1.0.2"
   },
   "peerDependencies": {
-    "@sdkwork/appbase-backend-sdk": "workspace:*"
+    "@sdkwork/iam-backend-sdk": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "@sdkwork/appbase-backend-sdk": {
+    "@sdkwork/iam-backend-sdk": {
       "optional": true
     }
   },

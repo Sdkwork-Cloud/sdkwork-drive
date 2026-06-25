@@ -726,6 +726,146 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
 }
 
 #[tokio::test]
+async fn list_nodes_rejects_invalid_sort_by() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES ('space-sort-guard', 'tenant-sort-guard', 'user', 'user-owner', 'personal', 'Sort Guard', 'active', 1, 'user-owner', 'user-owner')",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+
+    let app = common::test_router_with_pool(pool);
+    let response = app
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-sort-guard", "user-owner", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-sort-guard", "user-owner", "appbase"),
+                )
+                .method(Method::GET)
+                .uri("/app/v3/api/drive/spaces/space-sort-guard/nodes?sortBy=not-a-field")
+                .body(Body::empty())
+                .expect("invalid sort request should be built"),
+        )
+        .await
+        .expect("invalid sort request should be handled");
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("invalid sort response should be read"),
+    )
+    .expect("invalid sort response should be valid json");
+    assert_eq!(payload["detail"].as_str(), Some("sortBy is invalid"));
+}
+
+#[tokio::test]
+async fn list_nodes_sort_by_name_desc_orders_active_children() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES ('space-sort-name', 'tenant-sort-name', 'user', 'user-owner', 'personal', 'Sort Name', 'active', 1, 'user-owner', 'user-owner')",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'folder-sort-parent', 'tenant-sort-name', 'space-sort-name',
+            NULL, 'folder', 'Parent', 'ready', 'active', 1, 'user-owner', 'user-owner'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("parent folder should be seeded");
+    for (id, node_name) in [("file-sort-alpha", "alpha.txt"), ("file-sort-zeta", "zeta.txt")] {
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
+                id, tenant_id, space_id, parent_node_id, node_type, node_name,
+                content_state, lifecycle_status, version, created_by, updated_by
+            ) VALUES (?1, 'tenant-sort-name', 'space-sort-name', 'folder-sort-parent', 'file', ?2, 'ready', 'active', 1, 'user-owner', 'user-owner')",
+        )
+        .bind(id)
+        .bind(node_name)
+        .execute(&pool)
+        .await
+        .expect("node should be seeded");
+    }
+
+    let app = common::test_router_with_pool(pool);
+    let response = app
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-sort-name", "user-owner", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-sort-name", "user-owner", "appbase"),
+                )
+                .method(Method::GET)
+                .uri("/app/v3/api/drive/spaces/space-sort-name/nodes?parentNodeId=folder-sort-parent&sortBy=name&sortOrder=desc")
+                .body(Body::empty())
+                .expect("sorted list request should be built"),
+        )
+        .await
+        .expect("sorted list request should be handled");
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("sorted list response should be read"),
+    )
+    .expect("sorted list response should be valid json");
+    let names = payload["items"]
+        .as_array()
+        .expect("sorted list items should be an array")
+        .iter()
+        .filter(|item| item["nodeType"].as_str() == Some("file"))
+        .map(|item| item["nodeName"].as_str().unwrap_or_default().to_string())
+        .collect::<Vec<_>>();
+    assert_eq!(names, vec!["zeta.txt".to_string(), "alpha.txt".to_string()]);
+}
+
+#[tokio::test]
 async fn list_nodes_includes_ui_folder_color_from_node_properties() {
     sqlx::any::install_default_drivers();
     let pool = AnyPoolOptions::new()

@@ -733,7 +733,7 @@ impl DriveUploaderStore for SqlUploaderStore {
                         ))
                     })?;
                 sdkwork_drive_observability::metrics::record_outbox_pending();
-                crate::infrastructure::outbox_dispatch::spawn_pending_outbox_dispatch(
+                crate::infrastructure::outbox_dispatch::trigger_immediate_outbox_dispatch(
                     self.pool.clone(),
                 );
                 Ok(())

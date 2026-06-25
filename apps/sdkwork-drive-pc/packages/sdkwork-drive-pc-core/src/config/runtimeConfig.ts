@@ -374,7 +374,7 @@ export function createRuntimeConfig(env: RuntimeEnv = {}): DriveRuntimeConfig {
       appApiBaseUrl: resolvedAppApiBaseUrl,
       backendApiBaseUrl: resolvedBackendApiBaseUrl,
       dependencySdkBaseUrls: {
-        'sdkwork-appbase-app-sdk': {
+        'sdkwork-iam-app-sdk': {
           appApiBaseUrl: appbaseAppApiBaseUrl,
         },
         'sdkwork-drive-app-sdk': {

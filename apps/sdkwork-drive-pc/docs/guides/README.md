@@ -1,5 +1,7 @@
 # Guides
 
-Role-based developer, operator, and integrator guides.
+- [Developer](./developer/README.md)
+- [Operator](./operator/README.md)
+- [Integrator](./integrator/README.md)
 
-See `DOCUMENTATION_SPEC.md` section 2.
+See [../../../sdkwork-specs/DOCUMENTATION_SPEC.md](../../../sdkwork-specs/DOCUMENTATION_SPEC.md) section 2.1.

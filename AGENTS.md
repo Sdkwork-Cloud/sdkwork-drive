@@ -89,6 +89,7 @@ Use canonical root package scripts from `PNPM_SCRIPT_SPEC.md`:
 - `pnpm dev:browser:sqlite` or `pnpm dev:desktop:sqlite`: explicit SQLite development variants.
 - `pnpm build`, `pnpm test`, `pnpm check`, `pnpm verify`, `pnpm clean`: standard root lifecycle commands.
 - `pnpm check:pnpm-script-standard`: validate package script standardization.
+- `pnpm check:docs-standard`: validate repository documentation Canon layout.
 - `pnpm check:agent-workflow-standard`: validate AGENTS and GitHub packaging workflow standardization.
 
 Run the narrowest relevant check first, then broader verification when API contracts, SDK generation, persistence, security, packaging, or cross-package boundaries change.

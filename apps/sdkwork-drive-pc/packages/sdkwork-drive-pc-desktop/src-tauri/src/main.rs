@@ -1,6 +1,7 @@
 mod local_download;
 mod local_filesystem;
 mod local_upload;
+mod session_secure_store;
 
 use local_download::{
     abort_download_save, begin_download_save, finish_download_save, save_download_file,
@@ -17,6 +18,10 @@ use local_upload::{
     checksum_local_upload_file, describe_local_upload_file, pick_upload_files,
     read_local_upload_range, LocalUploadChecksumResponse, LocalUploadFileDescriptor,
     LocalUploadPathRequest, LocalUploadReadRangeRequest, LocalUploadReadRangeResponse,
+};
+use session_secure_store::{
+    clear_secure_session_values, init_secure_session_state, read_secure_session_snapshot,
+    remove_secure_session_value, write_secure_session_value,
 };
 use serde::Deserialize;
 use tauri::{AppHandle, Manager};
@@ -124,6 +129,10 @@ fn local_download_abort(request: LocalDownloadSessionRequest) -> Result<(), Stri
 
 fn main() {
     tauri::Builder::default()
+        .setup(|app| {
+            init_secure_session_state(&app.handle())?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             window_control,
             local_filesystem_list,
@@ -136,7 +145,11 @@ fn main() {
             local_download_begin,
             local_download_write_chunk,
             local_download_finish,
-            local_download_abort
+            local_download_abort,
+            write_secure_session_value,
+            remove_secure_session_value,
+            clear_secure_session_values,
+            read_secure_session_snapshot
         ])
         .run(tauri::generate_context!())
         .expect("failed to run SDKWork Drive desktop host");

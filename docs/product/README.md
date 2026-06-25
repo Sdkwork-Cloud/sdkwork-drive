@@ -1,5 +1,9 @@
 # Product Documentation
 
-Product PRD, requirements, and roadmap.
+Product PRD, requirements, and roadmap for SDKWork Drive.
 
-See `DOCUMENTATION_SPEC.md` section 2.
+- Canon entry: [prd/PRD.md](prd/PRD.md)
+- Requirements: [requirements/](requirements/)
+- Roadmap placeholder: [roadmap/](roadmap/)
+
+See `../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2.2.

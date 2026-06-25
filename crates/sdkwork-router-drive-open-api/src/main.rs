@@ -1,10 +1,13 @@
 use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_http::server::{bind_addr_from_env, serve_router};
+use sdkwork_drive_workspace_service::application::download_service::ensure_production_download_token_signing_configured;
 use sdkwork_router_drive_open_api::build_router_with_database_config;
 
 #[tokio::main]
 async fn main() {
     sdkwork_drive_observability::init_tracing("sdkwork-router-drive-open-api");
+    ensure_production_download_token_signing_configured()
+        .expect("download token signing config invalid");
     let args: Vec<String> = std::env::args().collect();
     let database_config =
         DatabaseConfig::from_env_and_cli_args(&args).expect("resolve drive database config");

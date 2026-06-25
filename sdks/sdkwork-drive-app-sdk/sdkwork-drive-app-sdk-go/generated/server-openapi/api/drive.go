@@ -564,11 +564,13 @@ func (a *DriveApi) SpacesDelete(spaceId string) (sdktypes.DeleteSpaceResponse, e
     return decodeResult[sdktypes.DeleteSpaceResponse](raw)
 }
 
-func (a *DriveApi) NodesList(spaceId string, parentNodeId *string, pageSize *int, pageToken *string) (sdktypes.NodeListResponse, error) {
+func (a *DriveApi) NodesList(spaceId string, parentNodeId *string, pageSize *int, pageToken *string, sortBy *string, sortOrder *string) (sdktypes.NodeListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "parentNodeId", Value: func() interface{} { if parentNodeId == nil { return nil }; return *parentNodeId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageToken", Value: func() interface{} { if pageToken == nil { return nil }; return *pageToken }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "sortBy", Value: func() interface{} { if sortBy == nil { return nil }; return *sortBy }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "sortOrder", Value: func() interface{} { if sortOrder == nil { return nil }; return *sortOrder }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath(fmt.Sprintf("/drive/spaces/%s/nodes", SerializePathParameter(spaceId, PathParameterSpec{Name: "spaceId", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {

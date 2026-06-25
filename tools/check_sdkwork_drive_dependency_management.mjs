@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const expectedDependencyIds = [
   'sdkwork-appbase',
+  'sdkwork-iam',
   'sdkwork-database',
   'sdkwork-id',
   'sdkwork-ui',
@@ -29,9 +30,9 @@ const sourceDependencyFiles = [
 ];
 const activeDocumentationFiles = [
   'README.md',
-  'docs/drive-iam-integration-standard.md',
-  'docs/drive-sdk-integration-standard.md',
-  'docs/storage-s3-architecture.md',
+  'docs/architecture/tech/TECH-drive-iam-integration-standard.md',
+  'docs/architecture/tech/TECH-drive-sdk-integration-standard.md',
+  'docs/architecture/tech/TECH-storage-s3-architecture.md',
 ];
 const retiredDependencyRoot = ['.sdkwork', 'dependencies'].join('/');
 const retiredLocalScript = ['prepare-local', 'dependencies.mjs'].join('-');

@@ -14,7 +14,7 @@
     "build:debug": "node ../../scripts/drive-build.mjs --deployment-profile standalone --debug"
   },
   "dependencies": {
-    "@sdkwork/appbase-app-sdk": "workspace:*",
+    "@sdkwork/iam-app-sdk": "workspace:*",
     "@sdkwork/appbase-pc-react": "workspace:*",
     "@sdkwork/auth-pc-react": "workspace:*",
     "@sdkwork/auth-runtime-pc-react": "workspace:*",
@@ -29,6 +29,7 @@
     "react-router-dom": "^7.17.0",
     "sdkwork-drive-pc-admin-core": "workspace:*",
     "sdkwork-drive-pc-admin-storage-providers": "workspace:*",
+    "sdkwork-drive-pc-admin-operations": "workspace:*",
     "sdkwork-drive-pc-commons": "workspace:*",
     "sdkwork-drive-pc-core": "workspace:*",
     "sdkwork-drive-pc-file": "workspace:*",
@@ -36,12 +37,12 @@
     "sdkwork-drive-pc-types": "workspace:*"
   },
   "peerDependencies": {
-    "@sdkwork/appbase-app-sdk": "*",
+    "@sdkwork/iam-app-sdk": "*",
     "@sdkwork/appbase-pc-react": "*",
     "@sdkwork/auth-pc-react": "*"
   },
   "peerDependenciesMeta": {
-    "@sdkwork/appbase-app-sdk": {
+    "@sdkwork/iam-app-sdk": {
       "optional": true
     },
     "@sdkwork/appbase-pc-react": {

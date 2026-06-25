@@ -629,7 +629,7 @@ tables:
       - name: job_type
         type: varchar(64)
         constraints:
-          - "enum: [object_sweep, upload_session_sweep]"
+          - "enum: [object_sweep, upload_session_sweep, expired_upload_content_sweep, abandoned_upload_task_sweep]"
       - name: status
         type: varchar(32)
         constraints:

@@ -1,4 +1,3 @@
-> Migrated from `docs/storage-s3-architecture.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
 # SDKWork Drive S3 Storage Architecture
@@ -70,24 +69,9 @@ The app upload session response includes `storageUploadId` so clients can correl
 
 The app upload session response also includes `objectKey` for diagnostics and low-level correlation. It is an internal physical key under the active binding root and is not a user-facing path.
 
-### Backend API
-
-Backend API owns storage administration:
-
-- `GET /backend/v3/api/drive/storage_providers/{providerId}/bucket`
-- `PUT /backend/v3/api/drive/storage_providers/{providerId}/bucket`
-- `DELETE /backend/v3/api/drive/storage_providers/{providerId}/bucket`
-- `GET /backend/v3/api/drive/storage_providers/{providerId}/objects`
-- `GET /backend/v3/api/drive/storage_providers/{providerId}/objects/{objectKey...}`
-- `DELETE /backend/v3/api/drive/storage_providers/{providerId}/objects/{objectKey...}`
-- `POST /backend/v3/api/drive/storage_providers/{providerId}/objects/copy`
-
-These routes resolve the provider, build a `DriveObjectStore`, and execute object-store operations through the storage contract.
-Object-key routes accept slash-separated key tails and `%2F`-encoded keys; route handlers validate that the resulting key is a trimmed relative object key. Object keys must be 1-1024 UTF-8 bytes and must not start or end with `/`, contain `//`, contain NUL, or contain `.` / `..` path segments.
-
 ### Admin Storage API
 
-`crates/sdkwork-router-storage-backend-api` owns application-level storage administration and uses `/backend/v3/api/drive/storage/...` routes:
+`crates/sdkwork-router-storage-backend-api` owns storage administration and uses `/backend/v3/api/drive/storage/...` routes:
 
 - `GET|POST /backend/v3/api/drive/storage/providers`
 - `GET|PATCH|DELETE /backend/v3/api/drive/storage/providers/{providerId}`
@@ -104,7 +88,7 @@ Object-key routes accept slash-separated key tails and `%2F`-encoded keys; route
 - `GET /backend/v3/api/drive/storage/bindings`
 - `GET|PUT|DELETE /backend/v3/api/drive/storage/bindings/default`
 
-It is a standalone runtime service in the local Drive launch plan and binds `127.0.0.1:18083` by default. The same crate also exposes router builders so a host application can embed the admin-storage module without duplicating Drive storage logic. Legacy deployments may continue to call the same handlers through the `/admin/v3/api/drive/storage/*` alias until clients finish migration.
+It is a standalone runtime service in the local Drive launch plan and binds `127.0.0.1:18083` by default. The same crate also exposes router builders so a host application can embed the admin-storage module without duplicating Drive storage logic. Compatibility alias `/admin/v3/api/drive/storage/*` mirrors the canonical `/backend/v3/api/drive/storage/*` handlers for legacy hosts; new clients must use the canonical prefix and `@sdkwork/drive-admin-storage-sdk`.
 
 Admin-storage runtime routes under `/backend/v3/api/drive/storage/*` require the same dual-token contract as app and backend APIs. Context is token-derived; projection headers are forbidden.
 `/healthz` is the only public admin-storage runtime route. Embedded hosts may use explicit

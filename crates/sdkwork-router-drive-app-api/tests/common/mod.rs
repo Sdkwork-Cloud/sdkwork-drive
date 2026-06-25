@@ -3,8 +3,7 @@
 use axum::body::Body;
 use axum::Router;
 use http::{Method, Request};
-use sdkwork_drive_security::DriveAuthValidationPolicy;
-use sdkwork_router_drive_app_api::build_router_with_pool_and_iam_policy;
+use sdkwork_router_drive_app_api::build_router_with_pool_and_iam;
 use sdkwork_web_core::{access_token_jwt, auth_token_jwt, encode_unsigned_test_jwt};
 use serde_json::json;
 use sqlx::AnyPool;
@@ -90,10 +89,7 @@ fn percent_decode(value: &str) -> String {
 }
 
 pub fn test_router_with_pool(pool: AnyPool) -> Router {
-    build_router_with_pool_and_iam_policy(
-        pool,
-        DriveAuthValidationPolicy::allow_unsigned_for_development(),
-    )
+    build_router_with_pool_and_iam(pool)
 }
 
 pub fn authed_request(

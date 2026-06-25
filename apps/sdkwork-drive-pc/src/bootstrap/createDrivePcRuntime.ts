@@ -3,25 +3,34 @@ import {
   createDriveSessionTokenManager,
   createDriveFileService,
   createHostAdapter,
+  createOsSecureSessionStorage,
   createRuntimeConfig,
   createSessionStore,
   type SessionStorageLike,
 } from 'sdkwork-drive-pc-core';
 import {
   createDriveAdminStorageSdkClient,
+  createDriveBackendSdkClient,
   type DriveRuntime,
 } from 'sdkwork-drive-pc-admin-core';
 import { createDriveIamRuntime } from './driveIamRuntime';
+import { primePcReactRuntimeSessionCache } from './sdkworkCorePcReactShim';
 
-export function createDrivePcRuntime(): DriveRuntime {
+export async function createDrivePcRuntime(): Promise<DriveRuntime> {
   const config = createRuntimeConfig(import.meta.env);
-  const session = createSessionStore(resolveSessionStorage(config.auth.tokenStorage));
+  const sessionStorage = await resolveSessionStorage(config.auth.tokenStorage);
+  const session = createSessionStore(sessionStorage);
   const tokenManager = createDriveSessionTokenManager(session);
   const appSdkClient = createDriveAppSdkClient({
     config,
     tokenManager,
+    uploaderStateStorage: sessionStorage,
   });
   const adminStorageSdkClient = createDriveAdminStorageSdkClient({
+    config,
+    tokenManager,
+  });
+  const backendSdkClient = createDriveBackendSdkClient({
     config,
     tokenManager,
   });
@@ -32,8 +41,13 @@ export function createDrivePcRuntime(): DriveRuntime {
     tokenManager,
   });
   adminStorageSdkClient.setTokenManager(tokenManager);
+  backendSdkClient.setTokenManager(tokenManager);
 
   const host = createHostAdapter();
+  primePcReactRuntimeSessionCache(session.getSnapshot());
+  session.subscribe((snapshot) => {
+    primePcReactRuntimeSessionCache(snapshot);
+  });
 
   return {
     config,
@@ -45,6 +59,7 @@ export function createDrivePcRuntime(): DriveRuntime {
     },
     admin: {
       adminStorage: adminStorageSdkClient,
+      backend: backendSdkClient,
     },
     session,
     host,
@@ -58,14 +73,20 @@ export function createDrivePcRuntime(): DriveRuntime {
   };
 }
 
-function resolveSessionStorage(
+async function resolveSessionStorage(
   tokenStorage: DriveRuntime['config']['auth']['tokenStorage'],
-): SessionStorageLike | undefined {
+): Promise<SessionStorageLike | undefined> {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
   if (tokenStorage === 'browser-local') {
-    return typeof window === 'undefined' ? undefined : window.localStorage;
+    return window.localStorage;
+  }
+  if (tokenStorage === 'os-secure-storage') {
+    return createOsSecureSessionStorage();
   }
   if (tokenStorage === 'browser-session') {
-    return typeof window === 'undefined' ? undefined : window.sessionStorage;
+    return window.sessionStorage;
   }
   return undefined;
 }

@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 axum.workspace = true
 http.workspace = true
+sdkwork-drive-config.workspace = true
 sdkwork-drive-observability.workspace = true
 sdkwork-drive-security.workspace = true
 sdkwork-web-core.workspace = true

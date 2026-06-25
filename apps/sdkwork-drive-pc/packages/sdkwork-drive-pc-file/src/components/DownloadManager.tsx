@@ -9,8 +9,16 @@ import {
   FolderOpen,
   File,
   Loader2,
+  AlertCircle,
 } from 'lucide-react';
-import { formatDriveBytes, formatTransferJobProgressDetail, formatTransferJobSpeedLabel, formatTransferJobTimeRemainingLabel, useTranslation } from 'sdkwork-drive-pc-commons';
+import {
+  formatDriveBytes,
+  formatTransferInterruptionMessage,
+  formatTransferJobProgressDetail,
+  formatTransferJobSpeedLabel,
+  formatTransferJobTimeRemainingLabel,
+  useTranslation,
+} from 'sdkwork-drive-pc-commons';
 import type { DownloadJob } from 'sdkwork-drive-pc-types';
 import {
   canCancelTransferJob,
@@ -246,8 +254,28 @@ export function DownloadManager({
                   </div>
                 )}
                 {job.status === 'cancelled' && (
-                  <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-medium">
-                    <span>{t('downloadManager.cancelled')}</span>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-medium">
+                      <span>{t('downloadManager.cancelled')}</span>
+                    </div>
+                    {job.errorMessage && (
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-snug" role="status">
+                        {formatTransferInterruptionMessage(job.errorMessage, t)}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {job.status === 'failed' && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-[10px] text-rose-600 dark:text-rose-400 font-medium">
+                      <AlertCircle size={11} />
+                      <span>{t('downloadManager.failed')}</span>
+                    </div>
+                    {job.errorMessage && (
+                      <p className="text-[10px] text-rose-600/90 dark:text-rose-400/90 leading-snug" role="alert">
+                        {formatTransferInterruptionMessage(job.errorMessage, t)}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

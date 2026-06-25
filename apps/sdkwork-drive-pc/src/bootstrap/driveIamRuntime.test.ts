@@ -29,6 +29,9 @@ const TEST_REFRESH_TOKEN = 'refresh-token';
 
 function createOAuthClient() {
   return {
+    authorizations: {
+      completions: { create: vi.fn() },
+    },
     deviceAuthorizations: {
       create: vi.fn(),
       retrieve: vi.fn(),

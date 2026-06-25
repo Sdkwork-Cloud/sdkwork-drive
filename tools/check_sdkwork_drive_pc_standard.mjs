@@ -17,6 +17,7 @@ const expectedPackageDirs = [
   'sdkwork-drive-pc-types',
   'sdkwork-drive-pc-admin-core',
   'sdkwork-drive-pc-admin-storage-providers',
+  'sdkwork-drive-pc-admin-operations',
 ];
 
 const oldPackageTokens = [
@@ -478,6 +479,26 @@ assertNoLocalByteFormatters();
 assertStandardRuntimeConfig();
 assertNoSdkTransportBypass();
 assertStandardIamRuntime();
+
+function assertRepositoryDocsStandard() {
+  const docsChecker = path.join(repoRoot, '..', 'sdkwork-specs', 'tools', 'check-repository-docs-standard.mjs');
+  if (!existsSync(docsChecker)) {
+    fail('sdkwork-specs/tools/check-repository-docs-standard.mjs is missing');
+    return;
+  }
+  try {
+    execSync(`node "${docsChecker}" --root "${appRoot}"`, {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
+  } catch (error) {
+    const output = `${error.stdout ?? ''}${error.stderr ?? ''}`.trim();
+    fail(output || 'apps/sdkwork-drive-pc documentation layout failed check-repository-docs-standard.mjs');
+  }
+}
+
+assertRepositoryDocsStandard();
 
 if (failures.length > 0) {
   console.error('SDKWork Drive PC standard check failed:');

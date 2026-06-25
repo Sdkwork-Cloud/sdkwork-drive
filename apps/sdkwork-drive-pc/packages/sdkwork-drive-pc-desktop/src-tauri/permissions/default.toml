@@ -12,5 +12,9 @@ commands.allow = [
   "local_download_begin",
   "local_download_write_chunk",
   "local_download_finish",
-  "local_download_abort"
+  "local_download_abort",
+  "write_secure_session_value",
+  "remove_secure_session_value",
+  "clear_secure_session_values",
+  "read_secure_session_snapshot"
 ]

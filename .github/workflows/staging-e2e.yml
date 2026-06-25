@@ -1,6 +1,8 @@
 name: Drive Staging E2E
 
 on:
+  schedule:
+    - cron: '0 4 * * 1'
   workflow_dispatch:
     inputs:
       run_pc_browser:
@@ -31,9 +33,13 @@ jobs:
           DRIVE_E2E_SHARE_TOKEN: ${{ secrets.DRIVE_E2E_SHARE_TOKEN }}
           DRIVE_E2E_SHARE_ACCESS_CODE: ${{ secrets.DRIVE_E2E_SHARE_ACCESS_CODE }}
           DRIVE_E2E_PC_BASE_URL: ${{ secrets.DRIVE_E2E_PC_BASE_URL }}
-          RUN_PC_BROWSER: ${{ inputs.run_pc_browser }}
+          RUN_PC_BROWSER: ${{ inputs.run_pc_browser || 'false' }}
         run: |
           set -euo pipefail
+          if [ "${{ github.event_name }}" = "schedule" ] && [ -z "${DRIVE_E2E_OPEN_API_BASE_URL:-}" ]; then
+            echo "Staging secrets are not configured; skipping scheduled smoke."
+            exit 0
+          fi
           missing=0
           for name in DRIVE_E2E_OPEN_API_BASE_URL DRIVE_E2E_SHARE_TOKEN DRIVE_E2E_SHARE_ACCESS_CODE; do
             if [ -z "${!name:-}" ]; then

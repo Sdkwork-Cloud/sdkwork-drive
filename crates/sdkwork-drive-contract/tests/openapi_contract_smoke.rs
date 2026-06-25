@@ -154,8 +154,15 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(app.contains("\"operationId\": \"watchChannels.list\""));
     assert!(app.contains("\"operationId\": \"watchChannels.get\""));
     assert!(app.contains("\"operationId\": \"watchChannels.stop\""));
-    assert!(backend.contains("/backend/v3/api/drive/storage_providers"));
     assert!(backend.contains("\"title\": \"SDKWork Drive Backend API\""));
+    assert!(
+        !backend.contains("/backend/v3/api/drive/storage_providers"),
+        "backend OpenAPI must not retain legacy flat storage provider paths"
+    );
+    assert!(
+        !backend.contains("\"operationId\": \"storageProviders."),
+        "backend OpenAPI must not retain storageProviders.* operationIds"
+    );
     assert!(admin_storage.contains("\"title\": \"SDKWork Drive Admin Storage API\""));
     assert!(admin_storage.contains("/backend/v3/api/drive/storage/providers"));
     assert!(admin_storage.contains("/backend/v3/api/drive/storage/providers/{providerId}"));
@@ -228,31 +235,9 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(app.contains("\"signedSourceUrl\""));
     assert!(backend.contains("/backend/v3/api/drive/quotas"));
     assert!(backend.contains("\"operationId\": \"quotas.summary\""));
-    assert!(backend.contains("/backend/v3/api/drive/storage_providers/{providerId}"));
-    assert!(backend.contains("/backend/v3/api/drive/storage_providers/{providerId}/capabilities"));
-    assert!(backend.contains("/backend/v3/api/drive/storage_providers/{providerId}/activate"));
-    assert!(backend.contains("/backend/v3/api/drive/storage_providers/{providerId}/deactivate"));
-    assert!(
-        backend.contains("/backend/v3/api/drive/storage_providers/{providerId}/credentials/rotate")
-    );
-    assert!(backend.contains("/backend/v3/api/drive/storage_providers/{providerId}/bucket"));
-    assert!(backend.contains("/backend/v3/api/drive/storage_providers/{providerId}/objects"));
-    assert!(backend
-        .contains("/backend/v3/api/drive/storage_providers/{providerId}/objects/{objectKey}"));
-    assert!(backend.contains("/backend/v3/api/drive/storage_providers/{providerId}/objects/copy"));
-    assert!(backend.contains("/backend/v3/api/drive/storage_provider_bindings/default"));
+    assert!(backend.contains("\"operationId\": \"quotas.update\""));
     assert!(backend.contains("/backend/v3/api/drive/labels"));
     assert!(backend.contains("/backend/v3/api/drive/labels/{labelId}"));
-    assert!(backend.contains("\"operationId\": \"storageProviders.get\""));
-    assert!(backend.contains("\"operationId\": \"storageProviders.capabilities.get\""));
-    assert!(backend.contains("\"operationId\": \"storageProviders.activate\""));
-    assert!(backend.contains("\"operationId\": \"storageProviders.deactivate\""));
-    assert!(backend.contains("\"operationId\": \"storageProviders.credentials.rotate\""));
-    assert!(backend.contains("\"operationId\": \"storageProviderBindings.default.get\""));
-    assert!(backend.contains("\"operationId\": \"storageProviderBindings.default.set\""));
-    assert!(backend.contains("\"operationId\": \"storageProviders.update\""));
-    assert!(backend.contains("\"operationId\": \"storageProviders.delete\""));
-    assert!(backend.contains("\"operationId\": \"storageProviders.test\""));
     assert!(backend.contains("\"operationId\": \"labels.list\""));
     assert!(backend.contains("\"operationId\": \"labels.create\""));
     assert!(backend.contains("\"operationId\": \"labels.get\""));
@@ -795,15 +780,19 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_property_string_constraints(properties, "requestId", 64, "^[A-Za-z0-9._:@-]+$");
     assert_property_string_constraints(properties, "traceId", 128, "^[A-Za-z0-9._:@-]+$");
 
-    let create_storage_provider_properties = schemas
+    let admin_storage_schemas = admin_storage_json
+        .get("components")
+        .and_then(|value| value.get("schemas"))
+        .expect("admin storage openapi components.schemas should exist");
+    let create_storage_provider_properties = admin_storage_schemas
         .get("CreateStorageProviderRequest")
         .and_then(|value| value.get("properties"))
         .expect("CreateStorageProviderRequest.properties should exist");
-    let update_storage_provider_properties = schemas
+    let update_storage_provider_properties = admin_storage_schemas
         .get("UpdateStorageProviderRequest")
         .and_then(|value| value.get("properties"))
         .expect("UpdateStorageProviderRequest.properties should exist");
-    let storage_provider_properties = schemas
+    let storage_provider_properties = admin_storage_schemas
         .get("StorageProvider")
         .and_then(|value| value.get("properties"))
         .expect("StorageProvider.properties should exist");
@@ -864,23 +853,23 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         "StorageProvider.credentialConfigured should exist"
     );
     assert_schema_property_exists(
-        &backend_json,
+        &admin_storage_json,
         "StorageProviderCapabilities",
         "supportsMultipartUpload",
     );
-    assert_schema_property_exists(&backend_json, "ProviderBucket", "exists");
-    assert_schema_property_exists(&backend_json, "ProviderBucketMutation", "changed");
-    assert_schema_property_exists(&backend_json, "ProviderObject", "objectKey");
-    assert_schema_property_exists(&backend_json, "ProviderObject", "contentLength");
-    assert_schema_property_exists(&backend_json, "ProviderObjectList", "nextPageToken");
-    assert_schema_property_exists(&backend_json, "ProviderObjectMutation", "changed");
+    assert_schema_property_exists(&admin_storage_json, "ProviderBucket", "exists");
+    assert_schema_property_exists(&admin_storage_json, "ProviderBucketMutation", "changed");
+    assert_schema_property_exists(&admin_storage_json, "ProviderObject", "objectKey");
+    assert_schema_property_exists(&admin_storage_json, "ProviderObject", "contentLength");
+    assert_schema_property_exists(&admin_storage_json, "ProviderObjectList", "nextPageToken");
+    assert_schema_property_exists(&admin_storage_json, "ProviderObjectMutation", "changed");
     assert_schema_property_exists(
-        &backend_json,
+        &admin_storage_json,
         "CopyProviderObjectRequest",
         "destinationObjectKey",
     );
     assert_string_schema_bounds(
-        backend_json
+        admin_storage_json
             .pointer("/components/schemas/ProviderObject/properties/objectKey")
             .expect("ProviderObject.objectKey should exist"),
         1,
@@ -888,14 +877,14 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         "ProviderObject.objectKey",
     );
     assert_string_schema_pattern(
-        backend_json
+        admin_storage_json
             .pointer("/components/schemas/ProviderObject/properties/objectKey")
             .expect("ProviderObject.objectKey should exist"),
         object_key_pattern,
         "ProviderObject.objectKey",
     );
     assert_string_schema_bounds(
-        backend_json
+        admin_storage_json
             .pointer("/components/schemas/CopyProviderObjectRequest/properties/sourceObjectKey")
             .expect("CopyProviderObjectRequest.sourceObjectKey should exist"),
         1,
@@ -903,14 +892,14 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         "CopyProviderObjectRequest.sourceObjectKey",
     );
     assert_string_schema_pattern(
-        backend_json
+        admin_storage_json
             .pointer("/components/schemas/CopyProviderObjectRequest/properties/sourceObjectKey")
             .expect("CopyProviderObjectRequest.sourceObjectKey should exist"),
         object_key_pattern,
         "CopyProviderObjectRequest.sourceObjectKey",
     );
     assert_string_schema_bounds(
-        backend_json
+        admin_storage_json
             .pointer(
                 "/components/schemas/CopyProviderObjectRequest/properties/destinationObjectKey",
             )
@@ -920,7 +909,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         "CopyProviderObjectRequest.destinationObjectKey",
     );
     assert_string_schema_pattern(
-        backend_json
+        admin_storage_json
             .pointer(
                 "/components/schemas/CopyProviderObjectRequest/properties/destinationObjectKey",
             )
@@ -928,27 +917,23 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         object_key_pattern,
         "CopyProviderObjectRequest.destinationObjectKey",
     );
-    assert_backend_object_key_path_parameters_are_bounded(&backend_json, object_key_pattern);
+    assert_admin_storage_object_key_path_parameters_are_bounded(
+        &admin_storage_json,
+        object_key_pattern,
+    );
     assert_schema_property_exists(
-        &backend_json,
+        &admin_storage_json,
         "RotateStorageProviderCredentialRequest",
         "credentialRef",
     );
     assert_schema_property_exists(
-        &backend_json,
+        &admin_storage_json,
         "SetDefaultStorageProviderBindingRequest",
         "providerId",
     );
-    assert_schema_property_exists(&backend_json, "StorageProviderBinding", "storageProvider");
-    let admin_json: Value = serde_json::from_str(
-        &std::fs::read_to_string(
-            workspace_root().join("apis/backend-api/drive/drive-admin-storage-api.openapi.json"),
-        )
-        .expect("admin storage openapi missing"),
-    )
-    .expect("admin storage openapi should be valid json");
-    assert_schema_property_exists(&admin_json, "ProviderBucketList", "items");
-    assert_schema_property_exists(&admin_json, "ProviderBucketListItem", "configured");
+    assert_schema_property_exists(&admin_storage_json, "StorageProviderBinding", "storageProvider");
+    assert_schema_property_exists(&admin_storage_json, "ProviderBucketList", "items");
+    assert_schema_property_exists(&admin_storage_json, "ProviderBucketListItem", "configured");
     assert_schema_property_exists(&backend_json, "DriveLabel", "labelKey");
     assert_schema_property_exists(&backend_json, "CreateLabelRequest", "labelKey");
     assert_schema_property_exists(&backend_json, "UpdateLabelRequest", "operatorId");
@@ -1039,14 +1024,17 @@ fn assert_string_schema_pattern(schema: &Value, pattern: &str, name: &str) {
     );
 }
 
-fn assert_backend_object_key_path_parameters_are_bounded(backend_json: &Value, pattern: &str) {
+fn assert_admin_storage_object_key_path_parameters_are_bounded(
+    admin_json: &Value,
+    pattern: &str,
+) {
     for method in ["get", "delete"] {
-        let parameters = backend_json
+        let parameters = admin_json
             .pointer(&format!(
-                "/paths/~1backend~1v3~1api~1drive~1storage_providers~1{{providerId}}~1objects~1{{objectKey}}/{method}/parameters"
+                "/paths/~1backend~1v3~1api~1drive~1storage~1providers~1{{providerId}}~1objects~1{{objectKey}}/{method}/parameters"
             ))
             .and_then(Value::as_array)
-            .expect("backend object route parameters should exist");
+            .expect("admin storage object route parameters should exist");
         let object_key_parameter = parameters
             .iter()
             .find(|value| value.get("name").and_then(Value::as_str) == Some("objectKey"))
@@ -1057,14 +1045,14 @@ fn assert_backend_object_key_path_parameters_are_bounded(backend_json: &Value, p
                 .expect("objectKey parameter schema should exist"),
             1,
             1024,
-            "backend objectKey path parameter",
+            "admin storage objectKey path parameter",
         );
         assert_string_schema_pattern(
             object_key_parameter
                 .get("schema")
                 .expect("objectKey parameter schema should exist"),
             pattern,
-            "backend objectKey path parameter",
+            "admin storage objectKey path parameter",
         );
     }
 }

@@ -45,4 +45,9 @@ export default {
   saveCancelled: 'Save cancelled',
   uploadRetryMismatch: 'Selected file does not match this upload task. Expected "{expectedName}" ({expectedSize}, modified {expectedModified}).',
   openDownload: 'Open download',
+  uploadInterruptedNativeRetry:
+    'Upload was interrupted. Retry to continue from the original local file.',
+  uploadInterruptedReselect:
+    'Upload was interrupted. Re-select the local file and retry to continue.',
+  transferInterruptedRetry: 'Transfer was interrupted. Retry to continue.',
 };

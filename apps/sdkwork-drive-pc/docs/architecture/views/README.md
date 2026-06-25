@@ -1,5 +1,5 @@
-# views
+# Architecture Views
 
-See `DOCUMENTATION_SPEC.md` section 2.
+Supplementary diagrams must link back to [../tech/TECH_ARCHITECTURE.md](../tech/TECH_ARCHITECTURE.md).
 
-See `DOCUMENTATION_SPEC.md` section 2.
+See [../../../sdkwork-specs/DOCUMENTATION_SPEC.md](../../../sdkwork-specs/DOCUMENTATION_SPEC.md) section 2.1.

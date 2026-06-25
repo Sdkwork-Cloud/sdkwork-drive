@@ -1,5 +1,8 @@
 import { createRuntimeConfig } from 'sdkwork-drive-pc-core/config/runtimeConfig';
-import { DEFAULT_SESSION_STORAGE_KEY } from 'sdkwork-drive-pc-core/session/sessionStore';
+import {
+  DEFAULT_SESSION_STORAGE_KEY,
+  type SessionSnapshot,
+} from 'sdkwork-drive-pc-core/session/sessionStore';
 
 export interface PcReactRuntimeSession {
   accessToken?: string;
@@ -8,8 +11,9 @@ export interface PcReactRuntimeSession {
 }
 
 const SESSION_STORAGE_KEY = DEFAULT_SESSION_STORAGE_KEY;
+let runtimeSessionCache: PcReactRuntimeSession = {};
 
-function readStorage(): Storage | undefined {
+function readBrowserStorage(): Storage | undefined {
   if (typeof window === 'undefined') {
     return undefined;
   }
@@ -29,8 +33,25 @@ function normalizeToken(value: unknown): string | undefined {
   return normalized.replace(/^Bearer\s+/i, '') || undefined;
 }
 
+function toRuntimeSession(session: SessionSnapshot): PcReactRuntimeSession {
+  return {
+    accessToken: normalizeToken(session.accessToken),
+    authToken: normalizeToken(session.authToken),
+    refreshToken: normalizeToken(session.refreshToken),
+  };
+}
+
+export function primePcReactRuntimeSessionCache(session: SessionSnapshot): void {
+  runtimeSessionCache = toRuntimeSession(session);
+}
+
 function readStoredSession(): PcReactRuntimeSession {
-  const storage = readStorage();
+  const tokenStorage = createRuntimeConfig(import.meta.env).auth.tokenStorage;
+  if (tokenStorage === 'os-secure-storage') {
+    return runtimeSessionCache;
+  }
+
+  const storage = readBrowserStorage();
   if (!storage) {
     return {};
   }
@@ -70,7 +91,8 @@ export function persistPcReactRuntimeSession(
       ? normalizeToken(tokens.refreshToken)
       : current.refreshToken,
   };
-  const storage = readStorage();
+  runtimeSessionCache = next;
+  const storage = readBrowserStorage();
 
   if (storage) {
     if (!next.accessToken && !next.authToken && !next.refreshToken) {
@@ -84,7 +106,8 @@ export function persistPcReactRuntimeSession(
 }
 
 export function clearPcReactRuntimeSession(): void {
-  readStorage()?.removeItem(SESSION_STORAGE_KEY);
+  runtimeSessionCache = {};
+  readBrowserStorage()?.removeItem(SESSION_STORAGE_KEY);
 }
 
 export function resolveAppClientAccessToken(): string {

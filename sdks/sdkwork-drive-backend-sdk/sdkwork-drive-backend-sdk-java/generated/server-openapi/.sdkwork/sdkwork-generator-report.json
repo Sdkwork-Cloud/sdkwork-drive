@@ -10,37 +10,110 @@
   },
   "status": "ok",
   "mode": "apply",
-  "hasChanges": false,
-  "hasDestructiveChanges": false,
-  "changeFingerprint": "55c584d56a13495183e3c2a2adfb4d24a9fde9553e548150ca4a18ee449f2641",
+  "hasChanges": true,
+  "hasDestructiveChanges": true,
+  "changeFingerprint": "a6770dddfa404ba777a7589ecf2c888f10f09bac6893b43dfe78f3e506ef0515",
   "changeImpact": {
     "schemaVersion": 1,
-    "areas": [],
-    "details": [],
-    "requiresVerification": false,
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+    "areas": [
+      "api-surface",
+      "models"
+    ],
+    "details": [
+      {
+        "area": "api-surface",
+        "paths": [
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/DriveApi.java"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CopyProviderObjectRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateStorageProviderRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DeleteStorageProviderResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ListStorageProvidersResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/OperatorRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderBucket.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderBucketMutation.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObject.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObjectList.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObjectMutation.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/RotateStorageProviderCredentialRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SetDefaultStorageProviderBindingRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProvider.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProviderBinding.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProviderCapabilities.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/TestStorageProviderRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/TestStorageProviderResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateStorageProviderRequest.java"
+        ]
+      }
+    ],
+    "requiresVerification": true,
+    "summary": "Detected impact areas: api-surface, models. Verification is required."
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "low",
-    "nextAction": "skip",
+    "riskLevel": "high",
+    "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
-      "no-actionable-changes"
+      "deleted-generated-files",
+      "manual-review-required",
+      "verification-required"
     ]
   },
   "executionHandoff": {
     "schemaVersion": 1,
-    "summary": "No further commands are required.",
-    "steps": []
+    "summary": "Run the required verification commands now.",
+    "steps": [
+      {
+        "id": "verify-check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-java\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "java",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language java --project-dir . --action check"
+      }
+    ]
   },
   "verificationPlan": {
-    "shouldRun": false,
-    "runPhase": "skip",
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
-    "steps": []
+    "shouldRun": true,
+    "runPhase": "now",
+    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "steps": [
+      {
+        "id": "check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-java\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "java",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language java --project-dir . --action check"
+      }
+    ]
   },
   "sdk": {
     "name": "sdkwork-drive-backend-sdk",
@@ -56,8 +129,8 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 51,
-    "models": 36,
+    "totalFiles": 34,
+    "models": 19,
     "apis": 2,
     "types": 0
   },
@@ -65,15 +138,17 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 0,
+    "writtenFiles": 1,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 50,
-    "deletedGeneratedFiles": 0,
+    "skippedUnchangedGeneratedFiles": 32,
+    "deletedGeneratedFiles": 18,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "55c584d56a13495183e3c2a2adfb4d24a9fde9553e548150ca4a18ee449f2641",
+    "changeFingerprint": "a6770dddfa404ba777a7589ecf2c888f10f09bac6893b43dfe78f3e506ef0515",
     "changes": {
       "createdGeneratedFiles": [],
-      "updatedGeneratedFiles": [],
+      "updatedGeneratedFiles": [
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/DriveApi.java"
+      ],
       "unchangedGeneratedFiles": [
         "bin/publish-core.mjs",
         "bin/publish.ps1",
@@ -84,49 +159,50 @@
         "README.md",
         "sdkwork-sdk.json",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/ApiPaths.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/DriveApi.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/LabelsApi.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/package-info.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/http/HttpClient.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/AuditEvent.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/AuditEventPage.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CopyProviderObjectRequest.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateLabelRequest.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateStorageProviderRequest.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DeleteLabelResponse.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DeleteStorageProviderResponse.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DownloadPackage.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DownloadPackagePage.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DriveLabel.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DriveSpace.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/LabelListResponse.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ListSpacesResponse.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ListStorageProvidersResponse.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/MaintenanceJob.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/MaintenanceJobPage.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/OperatorRequest.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProblemDetail.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/QuotaSummary.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepObjectStoreRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepUploadSessionsRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateLabelRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateQuotaPolicyRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/SdkworkBackendClient.java"
+      ],
+      "deletedGeneratedFiles": [
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CopyProviderObjectRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateStorageProviderRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DeleteStorageProviderResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ListStorageProvidersResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/OperatorRequest.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderBucket.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderBucketMutation.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObject.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObjectList.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObjectMutation.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/QuotaSummary.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/RotateStorageProviderCredentialRequest.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SetDefaultStorageProviderBindingRequest.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProvider.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProviderBinding.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProviderCapabilities.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepObjectStoreRequest.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepResponse.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepUploadSessionsRequest.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/TestStorageProviderRequest.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/TestStorageProviderResponse.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateLabelRequest.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateStorageProviderRequest.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/SdkworkBackendClient.java"
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateStorageProviderRequest.java"
       ],
-      "deletedGeneratedFiles": [],
       "scaffoldedFiles": [],
       "preservedScaffoldFiles": [
         "custom/README.md"
@@ -135,26 +211,80 @@
     },
     "impact": {
       "schemaVersion": 1,
-      "areas": [],
-      "details": [],
-      "requiresVerification": false,
-      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+      "areas": [
+        "api-surface",
+        "models"
+      ],
+      "details": [
+        {
+          "area": "api-surface",
+          "paths": [
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/DriveApi.java"
+          ]
+        },
+        {
+          "area": "models",
+          "paths": [
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CopyProviderObjectRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateStorageProviderRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DeleteStorageProviderResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ListStorageProvidersResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/OperatorRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderBucket.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderBucketMutation.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObject.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObjectList.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObjectMutation.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/RotateStorageProviderCredentialRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SetDefaultStorageProviderBindingRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProvider.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProviderBinding.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProviderCapabilities.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/TestStorageProviderRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/TestStorageProviderResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateStorageProviderRequest.java"
+          ]
+        }
+      ],
+      "requiresVerification": true,
+      "summary": "Detected impact areas: api-surface, models. Verification is required."
     },
     "verificationPlan": {
-      "shouldRun": false,
-      "runPhase": "skip",
-      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
-      "steps": []
+      "shouldRun": true,
+      "runPhase": "now",
+      "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "steps": [
+        {
+          "id": "check",
+          "title": "Unified package check",
+          "required": true,
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+          "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-java\\generated\\server-openapi",
+          "command": "node",
+          "args": [
+            "./bin/publish-core.mjs",
+            "--language",
+            "java",
+            "--project-dir",
+            ".",
+            "--action",
+            "check"
+          ],
+          "displayCommand": "node ./bin/publish-core.mjs --language java --project-dir . --action check"
+        }
+      ]
     },
     "executionDecision": {
       "schemaVersion": 1,
-      "riskLevel": "low",
-      "nextAction": "skip",
+      "riskLevel": "high",
+      "nextAction": "verify",
       "requiresManualReview": false,
       "applyRequiresExpectedFingerprint": false,
-      "summary": "No actionable changes were detected. No apply or verification step is required.",
+      "summary": "Changes have been applied. Run the required verification plan now.",
       "reasons": [
-        "no-actionable-changes"
+        "deleted-generated-files",
+        "manual-review-required",
+        "verification-required"
       ]
     },
     "backedUpFiles": [],

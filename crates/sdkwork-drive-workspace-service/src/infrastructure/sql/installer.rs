@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use sqlx::any::AnyPoolOptions;
 use sqlx::AnyPool;
 use sqlx::Executor;
@@ -30,6 +32,7 @@ pub async fn install_any_schema(pool: &AnyPool, engine: DatabaseEngine) -> Resul
             sqlx::raw_sql(SQLITE_CORE_SQL).execute(pool).await?;
             upgrade_sqlite_dr_drive_node_head_columns(pool).await?;
             upgrade_sqlite_dr_drive_node_share_link_access_code_column(pool).await?;
+            upgrade_sqlite_dr_drive_domain_outbox_pending_dispatch_index(pool).await?;
         }
         DatabaseEngine::Postgresql => {
             sqlx::raw_sql(POSTGRES_CORE_SQL).execute(pool).await?;
@@ -83,10 +86,26 @@ async fn upgrade_sqlite_dr_drive_node_share_link_access_code_column(
     Ok(())
 }
 
+async fn upgrade_sqlite_dr_drive_domain_outbox_pending_dispatch_index(
+    pool: &AnyPool,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending_dispatch
+         ON dr_drive_domain_outbox (attempt_count, created_at)
+         WHERE delivery_status = 'pending'",
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
 pub async fn connect_any_database(config: &DatabaseConfig) -> Result<AnyPool, sqlx::Error> {
     sqlx::any::install_default_drivers();
     AnyPoolOptions::new()
         .max_connections(config.max_connections())
+        .acquire_timeout(Duration::from_secs(30))
+        .idle_timeout(Duration::from_secs(600))
+        .max_lifetime(Duration::from_secs(1800))
         .connect(config.url())
         .await
 }

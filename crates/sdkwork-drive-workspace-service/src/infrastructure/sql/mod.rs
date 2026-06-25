@@ -1,4 +1,6 @@
+pub mod acl_predicate;
 pub mod audit_store;
+pub mod change_feed_store;
 pub mod entities;
 mod installer;
 pub mod maintenance_store;
@@ -8,6 +10,7 @@ pub mod node_version_store;
 pub mod permission_store;
 pub mod quota_store;
 mod runtime_id;
+pub mod space_lifecycle_store;
 pub mod space_store;
 pub mod sql_error;
 pub mod storage_object_store;

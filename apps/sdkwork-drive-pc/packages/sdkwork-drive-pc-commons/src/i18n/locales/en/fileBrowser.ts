@@ -178,4 +178,7 @@ export default {
   downloadPrepareFailed: 'Failed to prepare download',
   openLocalFileFailed: 'Failed to open local file',
   batchOperationFailed: 'One or more operations failed.',
+  unexpectedServiceError: 'An unexpected Drive service error occurred.',
+  loadMoreFailed: 'Failed to load more files.',
+  loadingAllForSort: 'Loading remaining items for sorting...',
 };

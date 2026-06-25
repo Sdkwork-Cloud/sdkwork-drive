@@ -1,54 +1,48 @@
 # Drive Documentation
 
-`docs/` contains architecture notes, runbooks, and standards docs for
-SDKWork Drive. It is the documentation boundary governed by
-`../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md` and
-`../sdkwork-specs/DOCUMENTATION_SPEC.md`.
+Documentation for SDKWork Drive follows `../sdkwork-specs/DOCUMENTATION_SPEC.md`.
 
-## Current Documentation
+## Canon
 
-- `database-architecture.md`: Drive database policy and runtime boundaries.
-- `drive-iam-integration-standard.md`: Drive IAM integration boundaries.
-- `drive-sdk-integration-standard.md`: Drive SDK family naming and app
-  integration rules.
+| Document | Path |
+| --- | --- |
+| Product PRD | [product/prd/PRD.md](product/prd/PRD.md) |
+| Technical architecture | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) |
+| Production operations | [runbooks/drive-production-operations.md](runbooks/drive-production-operations.md) |
+| Backup and DR | [runbooks/drive-backup-disaster-recovery.md](runbooks/drive-backup-disaster-recovery.md) |
 
-## Allowed Content
+## Standards (TECH shards)
 
-- Architecture decision records and notes.
-- Operational runbooks.
-- Standards documentation and integration guides.
-- Module READMEs for reusable capabilities.
+- [TECH-drive-iam-integration-standard.md](architecture/tech/TECH-drive-iam-integration-standard.md)
+- [TECH-drive-sdk-integration-standard.md](architecture/tech/TECH-drive-sdk-integration-standard.md)
+- [TECH-drive-topology-standard.md](architecture/tech/TECH-drive-topology-standard.md)
+- [TECH-drive-uploader-standard.md](architecture/tech/TECH-drive-uploader-standard.md)
+- [TECH-database-architecture.md](architecture/tech/TECH-database-architecture.md)
+- [TECH-storage-s3-architecture.md](architecture/tech/TECH-storage-s3-architecture.md)
 
-## Forbidden Content
+## Requirements
 
-- Generated API documentation (generated from OpenAPI contracts).
-- Runtime state, databases, logs, or caches.
+- [REQ-2026-0001-production-readiness.md](product/requirements/REQ-2026-0001-production-readiness.md)
+- [REQ-2026-0002-production-security-alignment.md](product/requirements/REQ-2026-0002-production-security-alignment.md)
+- [REQ-2026-0003-pre-launch-debt-cleanup.md](product/requirements/REQ-2026-0003-pre-launch-debt-cleanup.md)
 
-## Related Specs
+## Evidence and operator guides
 
-- `../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md`
-- `../sdkwork-specs/DOCUMENTATION_SPEC.md`
+| Document | Path |
+| --- | --- |
+| Pre-launch checklist | [guides/operator/pre-launch-checklist.md](guides/operator/pre-launch-checklist.md) |
+| Operator guide index | [guides/operator/README.md](guides/operator/README.md) |
+| Releases and GA promotion | [releases/README.md](releases/README.md) |
+| Changelog index | [changelogs/README.md](changelogs/README.md) |
+
+## Release maturity
+
+Drive is **Beta / DRAFT** for catalog publication. Code and verification gates pass for controlled pilot deployment. Commercial GA requires signed multi-platform artifacts, CDN catalog media, immutable K8s digests, and staging smoke evidence — see [releases/README.md](releases/README.md).
 
 ## Verification
 
-- `pnpm verify` (repository-wide verification)
+- `pnpm verify`
+- `pnpm deploy:validate`
+- `pnpm check:docs-standard`
 
-## Canon Documents
-
-| Document | Path |
-| --- | --- |
-| Product PRD | [product/prd/PRD.md](product/prd/PRD.md) |
-| Technical architecture | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) |
-
-- [docs/product/prd/PRD.md](product/prd/PRD.md)
-- [docs/architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md)
-
-## Canon Documents
-
-| Document | Path |
-| --- | --- |
-| Product PRD | [product/prd/PRD.md](product/prd/PRD.md) |
-| Technical architecture | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) |
-
-- [docs/product/prd/PRD.md](product/prd/PRD.md)
-- [docs/architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md)
+Legacy root-level filenames under `docs/` redirect to the TECH shards above. Do not add new content outside the canon paths.

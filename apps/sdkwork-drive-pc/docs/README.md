@@ -1,32 +1,29 @@
-# SDKWork Drive Documentation
+# SDKWork Drive PC Documentation
+
+Documentation for the PC application root follows [../../../sdkwork-specs/DOCUMENTATION_SPEC.md](../../../sdkwork-specs/DOCUMENTATION_SPEC.md). Repository-wide platform docs live under [../../../../docs/README.md](../../../../docs/README.md).
 
 ## Audience Routing
 
 | I am… | Read first | Then read |
 | --- | --- | --- |
-| Product or business | [product/prd/PRD.md](product/prd/PRD.md) | [product/requirements/](product/requirements/) |
-| Architect | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) | [architecture/decisions/](architecture/decisions/) |
-| Developer | [guides/developer/README.md](guides/developer/README.md) | [engineering/plans/](engineering/plans/) |
-| Operator | [guides/operator/README.md](guides/operator/README.md) | [runbooks/](runbooks/) |
-| Integrator | [guides/integrator/README.md](guides/integrator/README.md) | repository `apis/` and `sdks/` |
+| Product or business | [product/prd/PRD.md](product/prd/PRD.md) | [../../../../docs/product/prd/PRD.md](../../../../docs/product/prd/PRD.md) |
+| Architect | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) | [../../../../docs/architecture/tech/TECH_ARCHITECTURE.md](../../../../docs/architecture/tech/TECH_ARCHITECTURE.md) |
+| Developer | [guides/developer/README.md](guides/developer/README.md) | application `README.md`, `specs/component.spec.json` |
+| Operator | [guides/operator/README.md](guides/operator/README.md) | [../../../../docs/guides/operator/pre-launch-checklist.md](../../../../docs/guides/operator/pre-launch-checklist.md) |
 | Agent | [../AGENTS.md](../AGENTS.md) | [INDEX.yaml](INDEX.yaml) |
 
 ## Canon Documents
 
 | Document | Path |
 | --- | --- |
-| Product PRD | [product/prd/PRD.md](product/prd/PRD.md) |
-| Technical architecture | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) |
-
-## Related Specs
-
-- `DOCUMENTATION_SPEC.md`
-- `SDKWORK_WORKSPACE_SPEC.md`
-- `REQUIREMENTS_SPEC.md`
-- `ARCHITECTURE_DECISION_SPEC.md`
+| PC product PRD | [product/prd/PRD.md](product/prd/PRD.md) |
+| PC technical architecture | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) |
 
 ## Verification
 
 ```bash
-node ../sdkwork-specs/tools/check-repository-docs-standard.mjs --root .
+pnpm test
+pnpm typecheck
+pnpm check:pc-standard
+node ../../../sdkwork-specs/tools/check-repository-docs-standard.mjs --root .
 ```

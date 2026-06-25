@@ -19,7 +19,12 @@ import {
   RefreshCcw,
   ExternalLink
 } from 'lucide-react';
-import { formatDriveBytes, formatTransferJobProgressDetail, useTranslation } from 'sdkwork-drive-pc-commons';
+import {
+  formatDriveBytes,
+  formatTransferInterruptionMessage,
+  formatTransferJobProgressDetail,
+  useTranslation,
+} from 'sdkwork-drive-pc-commons';
 import {
   canCancelTransferJob,
   canPauseTransferJob,
@@ -166,7 +171,7 @@ export function TransferPage({
       case 'ready':
         return { text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/15', border: 'border-emerald-100 dark:border-emerald-950/30' };
       case 'completed':
-        return { text: 'text-emerald-505 text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/15', border: 'border-emerald-100 dark:border-emerald-950/30' };
+        return { text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/15', border: 'border-emerald-100 dark:border-emerald-950/30' };
       case 'paused':
         return { text: 'text-gray-500', bg: 'bg-gray-50 dark:bg-[#252525]', border: 'border-gray-100 dark:border-neutral-800' };
       case 'cancelled':
@@ -433,6 +438,14 @@ export function TransferPage({
                           style={{ width: `${job.progress}%` }}
                         />
                       </div>
+                      {(job.status === 'failed' || job.status === 'cancelled') && job.errorMessage && (
+                        <p
+                          className="text-[10px] text-rose-600 dark:text-rose-400 font-medium leading-snug"
+                          role="alert"
+                        >
+                          {formatTransferInterruptionMessage(job.errorMessage, t)}
+                        </p>
+                      )}
                     </div>
 
                     {/* Item 4: Numerical Size */}

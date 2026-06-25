@@ -23,7 +23,7 @@ describe('createDrivePcRuntime', () => {
     vi.unstubAllEnvs();
   });
 
-  it('does not seed an IAM session before appbase login completes', () => {
+  it('does not seed an IAM session before appbase login completes', async () => {
     const originalWindow = globalThis.window;
     const localStorage = new MemoryStorage();
     Object.defineProperty(globalThis, 'window', {
@@ -32,7 +32,7 @@ describe('createDrivePcRuntime', () => {
     });
 
     try {
-      const runtime = createDrivePcRuntime();
+      const runtime = await createDrivePcRuntime();
 
       expect(hasDriveIamSession(runtime.session.getSnapshot())).toBe(false);
       expect(runtime.session.getSnapshot().context).toBeUndefined();
@@ -44,15 +44,15 @@ describe('createDrivePcRuntime', () => {
     }
   });
 
-  it('defaults local PC runtime to the Drive App SDK data service without a prebuilt IAM context', () => {
-    const runtime = createDrivePcRuntime();
+  it('defaults local PC runtime to the Drive App SDK data service without a prebuilt IAM context', async () => {
+    const runtime = await createDrivePcRuntime();
     const session = runtime.session.getSnapshot();
 
     expect(hasDriveIamSession(session)).toBe(false);
     expect(session.context).toBeUndefined();
   });
 
-  it('keeps a persisted real IAM session for the generated App SDK wrapper', () => {
+  it('keeps a persisted real IAM session for the generated App SDK wrapper', async () => {
     const originalWindow = globalThis.window;
     const localStorage = new MemoryStorage();
     vi.stubEnv('VITE_DRIVE_PC_TOKEN_STORAGE', 'browser-local');
@@ -80,7 +80,7 @@ describe('createDrivePcRuntime', () => {
     });
 
     try {
-      const runtime = createDrivePcRuntime();
+      const runtime = await createDrivePcRuntime();
 
       expect(hasDriveIamSession(runtime.session.getSnapshot())).toBe(true);
       expect(runtime.session.getSnapshot()).toMatchObject({
@@ -99,7 +99,7 @@ describe('createDrivePcRuntime', () => {
     }
   });
 
-  it('keeps dependency SDK base URLs explicit for appbase, Drive app, and Drive admin storage', () => {
+  it('keeps dependency SDK base URLs explicit for appbase, Drive app, and Drive admin storage', async () => {
     vi.stubEnv('VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL', 'https://appbase.example.test/app/v3/api');
     vi.stubEnv('VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL', 'https://drive-app.example.test/app/v3/api');
     vi.stubEnv(
@@ -107,10 +107,10 @@ describe('createDrivePcRuntime', () => {
       'https://drive-admin-storage.example.test/backend/v3/api',
     );
 
-    const runtime = createDrivePcRuntime();
+    const runtime = await createDrivePcRuntime();
 
     expect(runtime.config.sdkBaseUrls.dependencySdkBaseUrls).toMatchObject({
-      'sdkwork-appbase-app-sdk': {
+      'sdkwork-iam-app-sdk': {
         appApiBaseUrl: 'https://appbase.example.test/app/v3/api',
       },
       'sdkwork-drive-app-sdk': {
@@ -122,15 +122,16 @@ describe('createDrivePcRuntime', () => {
     });
   });
 
-  it('exposes admin storage SDK outside the app SDK runtime surface', () => {
-    const runtime = createDrivePcRuntime();
+  it('exposes admin storage SDK outside the app SDK runtime surface', async () => {
+    const runtime = await createDrivePcRuntime();
 
     expect(runtime.sdk.app).toBeDefined();
     expect(runtime.admin.adminStorage).toBeDefined();
+    expect(runtime.admin.backend).toBeDefined();
     expect('adminStorage' in runtime.sdk).toBe(false);
   });
 
-  it('does not fall back to browser localStorage when desktop config requires secure storage', () => {
+  it('does not fall back to browser localStorage when desktop config requires secure storage', async () => {
     const originalWindow = globalThis.window;
     const localStorage = new MemoryStorage();
     vi.stubEnv('VITE_DRIVE_PC_RUNTIME_TARGET', 'desktop');
@@ -152,7 +153,7 @@ describe('createDrivePcRuntime', () => {
     });
 
     try {
-      const runtime = createDrivePcRuntime();
+      const runtime = await createDrivePcRuntime();
 
       expect(runtime.config.auth.tokenStorage).toBe('os-secure-storage');
       expect(hasDriveIamSession(runtime.session.getSnapshot())).toBe(false);

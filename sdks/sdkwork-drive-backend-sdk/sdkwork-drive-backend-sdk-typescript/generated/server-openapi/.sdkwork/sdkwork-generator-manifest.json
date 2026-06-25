@@ -56,7 +56,7 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "dc31cc2d25d6d8cf859ce37aed95c6d52d1bef268c58624ea4cf2fdf961d2f16"
+      "sha256": "c6747e4389863560e394e18a68478d51a7e61a45e60981513b4f5ea5845f9600"
     },
     {
       "path": "src/api/index.ts",
@@ -103,24 +103,12 @@
       "sha256": "351d721c3c6f48f4453f92276856105120d72eb8d2fa9cd28de8e3854bf10f6c"
     },
     {
-      "path": "src/types/copy-provider-object-request.ts",
-      "sha256": "27f8fd328981aba86f39206cc9c86705bec9cece7a3a6d2584a6346049d1163d"
-    },
-    {
       "path": "src/types/create-label-request.ts",
       "sha256": "8735c67233a3bfb1c6526dd87c56bfdcf921de7b2a702fcd0ecea05bb690509d"
     },
     {
-      "path": "src/types/create-storage-provider-request.ts",
-      "sha256": "ee342e49aeb1520ae22f5779b20ac3c3f0e218ffd9703a13e852b8e979677b91"
-    },
-    {
       "path": "src/types/delete-label-response.ts",
       "sha256": "7993302dddc1e9b1e523e3873c560bbf0352ef3e95d878399b2d293a6e2af96f"
-    },
-    {
-      "path": "src/types/delete-storage-provider-response.ts",
-      "sha256": "caed15bf856a20c1d681947beb278ba4d0b4ef642d40857b2c9dc40ac2514670"
     },
     {
       "path": "src/types/download-package-page.ts",
@@ -140,7 +128,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "aa79b1b3979bbc797f81582f5ce0551cb3c4dc69923b5af6402e1893e6ee5a1e"
+      "sha256": "7c0b308b525ae0245dde6e902831269199d26b4a9bf722a2ab5e0ad30decb806"
     },
     {
       "path": "src/types/label-list-response.ts",
@@ -151,10 +139,6 @@
       "sha256": "eb76a4778f6b3373d8bfbee63f488352c9116010b6df45921888b0e004ac0483"
     },
     {
-      "path": "src/types/list-storage-providers-response.ts",
-      "sha256": "8ff334ae9635705537e9f8c71ffc36c2157d9835bbffa74968f15bcc44577efa"
-    },
-    {
       "path": "src/types/maintenance-job-page.ts",
       "sha256": "a8b942ebc9702ea22fc567fff144d8d3a8c9277b7e1397284fc6771dd52940ee"
     },
@@ -163,56 +147,12 @@
       "sha256": "d2e0f714656ea42a218caf7b1081e2c3d853d1f4a2eb1c5f0ddede60430e7522"
     },
     {
-      "path": "src/types/operator-request.ts",
-      "sha256": "2dc09d74ff9b3982a67536a1b6b67ce6c222c257389b44c3565c15a0f8100d58"
-    },
-    {
       "path": "src/types/problem-detail.ts",
       "sha256": "4ae6f09328af91c3ed4b2588db2df51c1a28964fda0d041118bcaa77d47dc30e"
     },
     {
-      "path": "src/types/provider-bucket-mutation.ts",
-      "sha256": "6f0b9f9cf8e7fc329978103d458fe29db30ac77e21b37c51cfb4b4fb9178259a"
-    },
-    {
-      "path": "src/types/provider-bucket.ts",
-      "sha256": "1cfbf52494828aae33a15d5a8eb0810c108969883e883e7092b46db6dd49838b"
-    },
-    {
-      "path": "src/types/provider-object-list.ts",
-      "sha256": "81f1cfbf14a148b5c6fab67419d24ddf76a59560a9ce81d0b2b0c4c962de610d"
-    },
-    {
-      "path": "src/types/provider-object-mutation.ts",
-      "sha256": "f235c49a601615c7baa8cc598de69927c6c051f7b11bf4b2894ce03ac001c7ea"
-    },
-    {
-      "path": "src/types/provider-object.ts",
-      "sha256": "7a435bcde3702c2622b16206283a61a799665463782970460dea027711e6c656"
-    },
-    {
       "path": "src/types/quota-summary.ts",
-      "sha256": "09fa171105deb763b985131ac5a2d5b70e16a3b393acfbc33e7d21113cda6579"
-    },
-    {
-      "path": "src/types/rotate-storage-provider-credential-request.ts",
-      "sha256": "30ce2326d7601172ba7c3fdb1a5a8fa744876c4ba17f7f1a5f395b97be314fd3"
-    },
-    {
-      "path": "src/types/set-default-storage-provider-binding-request.ts",
-      "sha256": "9e2c9503bbe991447a621b23ed4388e5b6d86a9ec640a2852ecf9c7694edea05"
-    },
-    {
-      "path": "src/types/storage-provider-binding.ts",
-      "sha256": "862d2c6cea62c8deffdb259a51ee8e5e1a063b3389f1c06b4a10fe321db7a30c"
-    },
-    {
-      "path": "src/types/storage-provider-capabilities.ts",
-      "sha256": "5a9f2ae158032e46bab502979acf8170f847aa187a18c979bf58004fa0cff71f"
-    },
-    {
-      "path": "src/types/storage-provider.ts",
-      "sha256": "cfbc2d2c7c53c26a9e87a8da811fae68b2ee1bd7d5204c21da9ecaf276656370"
+      "sha256": "15577f4a8931b187c9ae443d079b54fc2d06747596636724ef608e9c866b97f7"
     },
     {
       "path": "src/types/sweep-object-store-request.ts",
@@ -227,20 +167,12 @@
       "sha256": "2e8fa211510db9ada2b3b9c73367bf2a74af7e6de5ade7e2bc4577fe73093e8c"
     },
     {
-      "path": "src/types/test-storage-provider-request.ts",
-      "sha256": "70c922c52102246d4ea63ae56fae1bef13000e343846adac7f4d441ac8913ab1"
-    },
-    {
-      "path": "src/types/test-storage-provider-response.ts",
-      "sha256": "1cfc21e0d5d8f33b6ac62abbf546bab7cf2491775f4674988c88594a134ccfde"
-    },
-    {
       "path": "src/types/update-label-request.ts",
       "sha256": "28956c90d7ae897514056c260d6cfec1475c5c1a3596543e8bcbb6ff0471e536"
     },
     {
-      "path": "src/types/update-storage-provider-request.ts",
-      "sha256": "5290ba6a185d17b138f943165d117992812e39c6f41928faeb255eb5be020a67"
+      "path": "src/types/update-quota-policy-request.ts",
+      "sha256": "4b012da5940c852a9ecd181f724ec3154cc1e4ad261627f507769824e680393b"
     },
     {
       "path": "tsconfig.json",

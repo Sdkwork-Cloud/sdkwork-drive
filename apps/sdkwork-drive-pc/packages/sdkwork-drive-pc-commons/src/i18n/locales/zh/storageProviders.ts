@@ -154,6 +154,9 @@ export default {
   spaceIdOptional: '空间 ID（可选）',
   set: '设置',
   clear: '清除',
+  clearConfirmTitle: '清除绑定',
+  clearConfirmMessage: '这将移除当前存储提供商绑定。新文件将使用系统默认存储目标。',
+  clearConfirmLabel: '清除绑定',
 
   // 诊断
   diagnostics: '诊断',
@@ -180,6 +183,7 @@ export default {
   doesNotExist: '不存在',
   checkExists: '检查是否存在',
   createBucket: '创建存储桶',
+  confirmCreateBucket: '为此存储提供商创建存储桶？',
   deleteBucket: '删除存储桶',
   listAll: '列出全部',
   availableBuckets: '可用存储桶',
@@ -210,6 +214,12 @@ export default {
   noticeOperationFailed: '存储提供商操作失败。',
   noticeCapabilitiesFailed: '加载能力信息失败。',
   noticeBucketFailed: '检查存储桶失败。',
+  errorLoadObjects: '加载对象列表失败。',
+  errorDeleteObject: '删除对象失败。',
+  errorLoadBuckets: '加载存储桶列表失败。',
+  errorCheckBucket: '检查存储桶失败。',
+  errorCreateBucket: '创建存储桶失败。',
+  errorDeleteBucket: '删除存储桶失败。',
   loading: '正在加载存储提供商...',
 
   // 列表筛选

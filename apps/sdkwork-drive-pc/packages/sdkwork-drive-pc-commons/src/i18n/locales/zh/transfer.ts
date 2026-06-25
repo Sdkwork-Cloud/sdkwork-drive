@@ -45,4 +45,7 @@ export default {
   saveCancelled: '已取消保存',
   uploadRetryMismatch: '所选文件与上传任务不匹配。期望文件为「{expectedName}」（{expectedSize}，修改时间 {expectedModified}）。',
   openDownload: '打开下载',
+  uploadInterruptedNativeRetry: '上传已中断。请重试以继续使用原本地文件。',
+  uploadInterruptedReselect: '上传已中断。请重新选择本地文件后重试。',
+  transferInterruptedRetry: '传输已中断。请重试以继续。',
 };

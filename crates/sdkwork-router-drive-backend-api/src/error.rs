@@ -2,7 +2,6 @@ use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_observability::error_kinds;
 use sdkwork_drive_security::DriveAuthError;
-use sdkwork_drive_storage_contract::{DriveObjectStoreError, DriveObjectStoreErrorKind};
 use sdkwork_drive_workspace_service::DriveServiceError;
 use serde::Serialize;
 
@@ -18,26 +17,6 @@ pub(crate) struct ProblemDetail {
     request_id: String,
 }
 
-pub(crate) fn map_object_store_route_error(
-    error: DriveObjectStoreError,
-) -> (StatusCode, Json<ProblemDetail>) {
-    map_service_error(match error.kind {
-        DriveObjectStoreErrorKind::NotFound => DriveServiceError::NotFound(error.message),
-        DriveObjectStoreErrorKind::InvalidRequest => DriveServiceError::Validation(error.message),
-        DriveObjectStoreErrorKind::Conflict => DriveServiceError::Conflict(error.message),
-        DriveObjectStoreErrorKind::PermissionDenied => {
-            DriveServiceError::PermissionDenied(error.message)
-        }
-        _ => DriveServiceError::Internal(error.message),
-    })
-}
-
-pub(crate) fn not_found_binding_problem() -> (StatusCode, Json<ProblemDetail>) {
-    map_service_error(DriveServiceError::NotFound(
-        "default storage provider binding not found".to_string(),
-    ))
-}
-
 pub(crate) fn validation_problem(detail: impl Into<String>) -> (StatusCode, Json<ProblemDetail>) {
     problem(
         StatusCode::BAD_REQUEST,
@@ -48,10 +27,16 @@ pub(crate) fn validation_problem(detail: impl Into<String>) -> (StatusCode, Json
 }
 
 pub(crate) fn internal_problem(detail: impl Into<String>) -> (StatusCode, Json<ProblemDetail>) {
+    let detail = detail.into();
+    tracing::error!(
+        target: "sdkwork.drive",
+        detail = %detail,
+        "internal error response"
+    );
     problem(
         StatusCode::INTERNAL_SERVER_ERROR,
         "internal error",
-        detail,
+        "An unexpected error occurred.",
         "drive.internal_error",
     )
 }
@@ -59,7 +44,15 @@ pub(crate) fn internal_problem(detail: impl Into<String>) -> (StatusCode, Json<P
 pub(crate) fn internal_sql_error(
     prefix: &'static str,
 ) -> impl Fn(sqlx::Error) -> (StatusCode, Json<ProblemDetail>) {
-    move |error| internal_problem(format!("{prefix}: {error}"))
+    move |error| {
+        tracing::error!(
+            target: "sdkwork.drive",
+            prefix = prefix,
+            error = %error,
+            "database operation failed"
+        );
+        internal_problem("A database operation failed.")
+    }
 }
 
 pub(crate) fn not_found_problem(detail: impl Into<String>) -> (StatusCode, Json<ProblemDetail>) {
@@ -96,12 +89,19 @@ pub(crate) fn map_service_error(error: DriveServiceError) -> (StatusCode, Json<P
             detail,
             "drive.permission_denied",
         ),
-        DriveServiceError::Internal(detail) => problem(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "internal error",
-            detail,
-            "drive.internal_error",
-        ),
+        DriveServiceError::Internal(detail) => {
+            tracing::error!(
+                target: "sdkwork.drive",
+                detail = %detail,
+                "internal drive service error"
+            );
+            problem(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "internal error",
+                "An unexpected error occurred.",
+                "drive.internal_error",
+            )
+        }
     }
 }
 

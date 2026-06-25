@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HardDrive, Settings, Activity, ServerCog, Link2 } from 'lucide-react';
+import { HardDrive, Settings, Activity, ServerCog, Link2, ScrollText, Wrench, PieChart, Tags, LayoutGrid, Package } from 'lucide-react';
 import type { SettingsTab } from './SettingsModal';
 import {
   AccountAvatar,
@@ -8,6 +8,17 @@ import {
 } from './UserProfileModal';
 import { useTranslation } from './LanguageProvider';
 
+export interface DriveAdminNavigationAccess {
+  storageProviders: boolean;
+  storageBindings: boolean;
+  audit: boolean;
+  maintenance: boolean;
+  quotas: boolean;
+  labels: boolean;
+  spaces: boolean;
+  downloadPackages: boolean;
+}
+
 interface SystemSidebarProps {
   activeSection?: string;
   onSectionChange?: (section: any) => void;
@@ -15,7 +26,7 @@ interface SystemSidebarProps {
   onSignOut?: () => void | Promise<void>;
   isSettingsOpen?: boolean;
   onOpenSettings?: (tab?: SettingsTab) => void;
-  showAdminNavigation?: boolean;
+  adminSectionAccess?: DriveAdminNavigationAccess;
   runtimeMode?: string;
   appApiBaseUrl?: string;
 }
@@ -27,19 +38,38 @@ export function SystemSidebar({
   onSignOut,
   isSettingsOpen,
   onOpenSettings,
-  showAdminNavigation = false,
+  adminSectionAccess,
 }: SystemSidebarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { t } = useTranslation();
+  const showAdminNavigation = adminSectionAccess
+    ? Object.values(adminSectionAccess).some(Boolean)
+    : false;
 
   const handleOpenSettings = () => {
     onOpenSettings?.();
   };
 
-  const isStorageActive = activeSection !== 'transfer' && activeSection !== 'admin-storage-providers' && activeSection !== 'admin-storage-bindings';
+  const adminSections = new Set([
+    'admin-storage-providers',
+    'admin-storage-bindings',
+    'admin-audit',
+    'admin-maintenance',
+    'admin-quotas',
+    'admin-labels',
+    'admin-spaces',
+    'admin-download-packages',
+  ]);
+  const isStorageActive = activeSection !== 'transfer' && !adminSections.has(activeSection);
   const isTransferActive = activeSection === 'transfer';
   const isAdminStorageProvidersActive = activeSection === 'admin-storage-providers';
   const isAdminStorageBindingsActive = activeSection === 'admin-storage-bindings';
+  const isAdminAuditActive = activeSection === 'admin-audit';
+  const isAdminMaintenanceActive = activeSection === 'admin-maintenance';
+  const isAdminQuotasActive = activeSection === 'admin-quotas';
+  const isAdminLabelsActive = activeSection === 'admin-labels';
+  const isAdminSpacesActive = activeSection === 'admin-spaces';
+  const isAdminDownloadPackagesActive = activeSection === 'admin-download-packages';
 
   return (
     <>
@@ -50,7 +80,7 @@ export function SystemSidebar({
           type="button"
           className="mb-2 rounded-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
           onClick={() => setIsProfileOpen(true)}
-          title="账号菜单"
+          title={t('settings.profileMenuTitle')}
         >
           <AccountAvatar account={account} sizeClassName="h-10 w-10 rounded-lg text-sm" />
         </button>
@@ -70,18 +100,70 @@ export function SystemSidebar({
         />
         {showAdminNavigation ? (
           <>
+            {adminSectionAccess?.storageProviders ? (
             <SidebarIcon
               icon={<ServerCog size={22} />}
-              title="Storage Providers"
+              title={t('sidebar.adminStorageProviders')}
               active={isAdminStorageProvidersActive}
               onClick={() => onSectionChange?.('admin-storage-providers')}
             />
+            ) : null}
+            {adminSectionAccess?.storageBindings ? (
             <SidebarIcon
               icon={<Link2 size={22} />}
-              title="Storage Bindings"
+              title={t('sidebar.adminStorageBindings')}
               active={isAdminStorageBindingsActive}
               onClick={() => onSectionChange?.('admin-storage-bindings')}
             />
+            ) : null}
+            {adminSectionAccess?.audit ? (
+            <SidebarIcon
+              icon={<ScrollText size={22} />}
+              title={t('sidebar.adminAudit')}
+              active={isAdminAuditActive}
+              onClick={() => onSectionChange?.('admin-audit')}
+            />
+            ) : null}
+            {adminSectionAccess?.maintenance ? (
+            <SidebarIcon
+              icon={<Wrench size={22} />}
+              title={t('sidebar.adminMaintenance')}
+              active={isAdminMaintenanceActive}
+              onClick={() => onSectionChange?.('admin-maintenance')}
+            />
+            ) : null}
+            {adminSectionAccess?.quotas ? (
+            <SidebarIcon
+              icon={<PieChart size={22} />}
+              title={t('sidebar.adminQuotas')}
+              active={isAdminQuotasActive}
+              onClick={() => onSectionChange?.('admin-quotas')}
+            />
+            ) : null}
+            {adminSectionAccess?.labels ? (
+            <SidebarIcon
+              icon={<Tags size={22} />}
+              title={t('sidebar.adminLabels')}
+              active={isAdminLabelsActive}
+              onClick={() => onSectionChange?.('admin-labels')}
+            />
+            ) : null}
+            {adminSectionAccess?.spaces ? (
+            <SidebarIcon
+              icon={<LayoutGrid size={22} />}
+              title={t('sidebar.adminSpaces')}
+              active={isAdminSpacesActive}
+              onClick={() => onSectionChange?.('admin-spaces')}
+            />
+            ) : null}
+            {adminSectionAccess?.downloadPackages ? (
+            <SidebarIcon
+              icon={<Package size={22} />}
+              title={t('sidebar.adminDownloadPackages')}
+              active={isAdminDownloadPackagesActive}
+              onClick={() => onSectionChange?.('admin-download-packages')}
+            />
+            ) : null}
           </>
         ) : null}
       </div>

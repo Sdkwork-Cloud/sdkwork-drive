@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Star,
 } from 'lucide-react';
+import { useTranslation } from './LanguageProvider';
 
 export interface DriveSidebarAccount {
   id: string;
@@ -45,6 +46,7 @@ export function UserProfileModal({
   onOpenStarred,
   onSignOut,
 }: UserProfileModalProps) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   const copyAccountId = async () => {
@@ -58,13 +60,13 @@ export function UserProfileModal({
     <>
       <button
         type="button"
-        aria-label="关闭账号菜单"
+        aria-label={t('settings.profileMenuClose')}
         className="fixed inset-0 z-[90] cursor-default bg-transparent"
         onClick={onClose}
       />
       <div
         role="dialog"
-        aria-label="账号菜单"
+        aria-label={t('settings.profileMenuTitle')}
         className="absolute top-12 left-16 z-[110] w-80 overflow-hidden rounded-2xl border border-white/10 bg-[#1e1e1e] text-gray-100 shadow-2xl"
       >
         <div className="flex items-center gap-4 border-b border-white/5 p-5">
@@ -79,7 +81,7 @@ export function UserProfileModal({
             )}
             <button
               type="button"
-              title="复制账号 ID"
+              title={t('settings.copyAccountId')}
               onClick={() => void copyAccountId()}
               className="mt-2 flex max-w-full items-center gap-1.5 rounded text-left text-[11px] font-mono text-gray-500 transition-colors hover:text-gray-300"
             >
@@ -92,7 +94,7 @@ export function UserProfileModal({
         <div className="grid grid-cols-2 gap-1 border-b border-white/5 p-2 text-center">
           <ProfileAction
             icon={<Star size={20} />}
-            label="已加星标"
+            label={t('settings.profileStarred')}
             onClick={() => {
               onClose();
               onOpenStarred?.();
@@ -100,7 +102,7 @@ export function UserProfileModal({
           />
           <ProfileAction
             icon={<Settings size={20} />}
-            label="设置"
+            label={t('settings.profileSettings')}
             onClick={() => {
               onClose();
               onOpenSettings?.();
@@ -109,15 +111,15 @@ export function UserProfileModal({
         </div>
 
         <div className="space-y-1 p-2">
-          <ProfileInfo icon={<Cloud size={15} />} label="空间版本" value={account.planLabel ?? 'Drive'} />
+          <ProfileInfo icon={<Cloud size={15} />} label={t('settings.profilePlanVersion')} value={account.planLabel ?? 'Drive'} />
           <ProfileInfo
             icon={<HardDrive size={15} />}
-            label="存储空间"
+            label={t('settings.profileStorage')}
             value={`${account.storageUsedLabel ?? '--'} / ${account.storageTotalLabel ?? '--'}`}
           />
           <ProfileInfo
             icon={<Database size={15} />}
-            label="运行环境"
+            label={t('settings.profileRuntime')}
             value={account.environmentLabel ?? 'standard'}
           />
           <div className="mx-2 my-2 h-px bg-white/5" />
@@ -130,7 +132,7 @@ export function UserProfileModal({
             className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
           >
             <LogOut size={16} />
-            <span>退出登录</span>
+            <span>{t('settings.signOut')}</span>
           </button>
         </div>
       </div>

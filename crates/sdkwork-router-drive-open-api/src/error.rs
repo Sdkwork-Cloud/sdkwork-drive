@@ -37,10 +37,16 @@ pub(crate) fn internal_sql_error(
     prefix: &'static str,
 ) -> impl Fn(sqlx::Error) -> (StatusCode, Json<ProblemDetail>) {
     move |error| {
+        tracing::error!(
+            target: "sdkwork.drive",
+            prefix = prefix,
+            error = %error,
+            "database operation failed"
+        );
         problem(
             StatusCode::INTERNAL_SERVER_ERROR,
             "internal error",
-            format!("{prefix}: {error}"),
+            "An unexpected error occurred.",
             "drive.internal_error",
         )
     }
@@ -69,12 +75,19 @@ pub(crate) fn map_service_error(error: DriveServiceError) -> (StatusCode, Json<P
             detail,
             "drive.permission_denied",
         ),
-        DriveServiceError::Internal(detail) => problem(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "internal error",
-            detail,
-            "drive.internal_error",
-        ),
+        DriveServiceError::Internal(detail) => {
+            tracing::error!(
+                target: "sdkwork.drive",
+                detail = %detail,
+                "internal drive service error"
+            );
+            problem(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "internal error",
+                "An unexpected error occurred.",
+                "drive.internal_error",
+            )
+        }
     }
 }
 

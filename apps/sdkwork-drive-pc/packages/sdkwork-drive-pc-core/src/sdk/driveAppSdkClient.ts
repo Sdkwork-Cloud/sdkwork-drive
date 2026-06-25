@@ -10,6 +10,7 @@ import {
   type DriveUploaderTransport,
 } from '@sdkwork/drive-app-sdk';
 import type { DriveRuntimeConfig } from '../config/runtimeConfig';
+import type { SessionStorageLike } from '../session/sessionStore';
 import type { DriveSessionTokenManager } from '../session/sessionTokenManager';
 import { omitAuthProjectionBody, omitAuthProjectionQuery } from './authProjection';
 import {
@@ -42,6 +43,7 @@ export interface DriveAppSdkClientOptions {
   config: DriveRuntimeConfig;
   sdkClient?: TokenManagerAwareGeneratedSdkClient;
   tokenManager: DriveSessionTokenManager;
+  uploaderStateStorage?: SessionStorageLike;
 }
 
 const DRIVE_UPLOADER_STATE_STORAGE_KEY = 'sdkwork.drive.pc.uploader.state.v1';
@@ -60,14 +62,16 @@ function isUploaderStateSnapshot(value: unknown): value is DriveUploaderStateSna
   );
 }
 
-function createPersistentDriveUploaderStateStore(): DriveUploaderStateStore {
-  if (typeof window === 'undefined' || !window.localStorage) {
+function createPersistentDriveUploaderStateStore(
+  storage?: SessionStorageLike,
+): DriveUploaderStateStore {
+  if (!storage) {
     return createInMemoryUploaderStateStore();
   }
 
   const readAll = (): Record<string, DriveUploaderStateSnapshot> => {
     try {
-      const raw = window.localStorage.getItem(DRIVE_UPLOADER_STATE_STORAGE_KEY);
+      const raw = storage.getItem(DRIVE_UPLOADER_STATE_STORAGE_KEY);
       if (!raw) {
         return {};
       }
@@ -86,7 +90,7 @@ function createPersistentDriveUploaderStateStore(): DriveUploaderStateStore {
 
   const writeAll = (snapshots: Record<string, DriveUploaderStateSnapshot>): void => {
     try {
-      window.localStorage.setItem(DRIVE_UPLOADER_STATE_STORAGE_KEY, JSON.stringify(snapshots));
+      storage.setItem(DRIVE_UPLOADER_STATE_STORAGE_KEY, JSON.stringify(snapshots));
     } catch {
       // Ignore storage persistence failures and keep uploads running in-memory.
     }
@@ -172,6 +176,7 @@ export function createDriveAppSdkClient({
   config,
   sdkClient,
   tokenManager,
+  uploaderStateStorage,
 }: DriveAppSdkClientOptions): DriveAppSdkClient {
   const generatedClient = sdkClient ?? createGeneratedDriveAppClient({
     authMode: 'dual-token',
@@ -216,7 +221,9 @@ export function createDriveAppSdkClient({
   };
   client.uploader = createDriveUploaderClient({
     transport: createDriveUploaderTransport(client),
-    stateStore: createPersistentDriveUploaderStateStore(),
+    stateStore: createPersistentDriveUploaderStateStore(
+      uploaderStateStorage ?? resolveDefaultUploaderStateStorage(config.auth.tokenStorage),
+    ),
   });
   return client;
 }
@@ -288,4 +295,19 @@ export function createDriveUploaderTransport(
       },
     },
   };
+}
+
+function resolveDefaultUploaderStateStorage(
+  tokenStorage: DriveRuntimeConfig['auth']['tokenStorage'],
+): SessionStorageLike | undefined {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+  if (tokenStorage === 'browser-local') {
+    return window.localStorage;
+  }
+  if (tokenStorage === 'browser-session') {
+    return window.sessionStorage;
+  }
+  return undefined;
 }

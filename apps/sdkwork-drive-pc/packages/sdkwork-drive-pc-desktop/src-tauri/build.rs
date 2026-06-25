@@ -8,6 +8,15 @@ fn main() {
             "local_upload_describe_file",
             "local_upload_read_range",
             "local_upload_checksum_file",
+            "local_download_save",
+            "local_download_begin",
+            "local_download_write_chunk",
+            "local_download_finish",
+            "local_download_abort",
+            "write_secure_session_value",
+            "remove_secure_session_value",
+            "clear_secure_session_values",
+            "read_secure_session_snapshot",
         ]));
 
     tauri_build::try_build(attributes).expect("failed to run SDKWork Drive desktop build script");

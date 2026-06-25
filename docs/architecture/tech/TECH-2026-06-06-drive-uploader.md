@@ -1,4 +1,3 @@
-> Migrated from `docs/superpowers/plans/2026-06-06-drive-uploader.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
 # Drive Uploader Implementation Plan
@@ -17,7 +16,7 @@
 
 **Files:**
 - Create: `docs/drive-uploader-standard.md`
-- Create: `docs/superpowers/plans/2026-06-06-drive-uploader.md`
+- Create: `docs/architecture/tech/TECH-2026-06-06-drive-uploader.md`
 - Modify: `crates/sdkwork-drive-workspace-service/tests/sqlite_schema_contract.rs`
 - Modify: `crates/sdkwork-drive-workspace-service/tests/postgres_schema_contract.rs`
 - Modify: `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/sqlite_core.sql`

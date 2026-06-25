@@ -16,6 +16,7 @@ mod object_store;
 mod provider_handlers;
 mod provider_lookup;
 mod provider_mappers;
+mod rate_limit;
 mod route_paths;
 mod routes;
 mod state;

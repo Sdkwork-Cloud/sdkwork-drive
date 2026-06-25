@@ -91,10 +91,16 @@ pub(crate) fn share_link_download_limit_problem() -> (StatusCode, Json<ProblemDe
 }
 
 pub(crate) fn internal_problem(detail: impl Into<String>) -> (StatusCode, Json<ProblemDetail>) {
+    let detail = detail.into();
+    tracing::error!(
+        target: "sdkwork.drive",
+        detail = %detail,
+        "internal error response"
+    );
     problem(
         StatusCode::INTERNAL_SERVER_ERROR,
         "internal error",
-        detail,
+        "An unexpected error occurred.",
         "drive.internal_error",
     )
 }
@@ -237,6 +243,17 @@ pub(crate) fn map_object_store_route_error(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::http::StatusCode;
+
+    #[test]
+    fn internal_problem_does_not_expose_internal_detail_to_clients() {
+        let (_, Json(problem)) =
+            internal_problem("insert dr_drive_node failed: duplicate key value violates unique constraint");
+        assert_eq!(problem.status, StatusCode::INTERNAL_SERVER_ERROR.as_u16());
+        assert_eq!(problem.detail, "An unexpected error occurred.");
+        assert_eq!(problem.code, "drive.internal_error");
+    }
+
     use sdkwork_drive_http::problem_correlation::{
         current_problem_correlation, with_problem_correlation, ProblemCorrelationIds,
         UNSET_REQUEST_ID, UNSET_TRACE_ID,

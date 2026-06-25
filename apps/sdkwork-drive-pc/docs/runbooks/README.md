@@ -1,5 +1,6 @@
-# runbooks
+# Runbooks
 
-See `DOCUMENTATION_SPEC.md` section 2.
+Production operations runbooks live at repository scope:
 
-See `DOCUMENTATION_SPEC.md` section 2.
+- [../../../../docs/runbooks/drive-production-operations.md](../../../../docs/runbooks/drive-production-operations.md)
+- [../../../../docs/runbooks/drive-backup-disaster-recovery.md](../../../../docs/runbooks/drive-backup-disaster-recovery.md)

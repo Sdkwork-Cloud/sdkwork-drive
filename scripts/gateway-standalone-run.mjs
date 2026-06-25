@@ -6,9 +6,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-import { fileURLToPath } from 'node:url';
-
 import {
+  IAM_APPLICATION_BOOTSTRAP_ENV,
   loadEnvFile,
   REPO_ROOT,
   resolveIamDevEnv,
@@ -127,6 +126,7 @@ function main() {
   const fileEnv = loadDevEnvFile(settings.devEnvFile);
   const gatewayEnv = {
     ...resolveIamDevEnv({ ...process.env, ...fileEnv }, repoRoot),
+    ...IAM_APPLICATION_BOOTSTRAP_ENV,
     SDKWORK_DRIVE_STANDALONE_GATEWAY_CONFIG: configPath,
     SDKWORK_DRIVE_STANDALONE_GATEWAY_ENVIRONMENT: settings.environment,
   };

@@ -120,12 +120,6 @@ where
 }
 
 pub async fn wrap_router_with_web_framework_from_env(router: Router) -> Router {
-    if std::env::var("SDKWORK_DRIVE_DATABASE_URL").is_ok()
-        || std::env::var("SDKWORK_DRIVE_CONFIG_FILE").is_ok()
-    {
-        let resolver = sdkwork_iam_web_adapter::iam_database_resolver_from_env().await;
-        return wrap_router_with_iam_database_web_framework(resolver, router);
-    }
-
-    wrap_router_with_web_framework(DefaultWebRequestContextResolver::default(), router)
+    let resolver = sdkwork_iam_web_adapter::iam_database_resolver_from_env().await;
+    wrap_router_with_iam_database_web_framework(resolver, router)
 }

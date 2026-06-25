@@ -252,7 +252,7 @@ fn s3_architecture_document_defines_plugin_and_admin_storage_boundaries() {
     let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     root.pop();
     root.pop();
-    let doc_path = root.join("docs/storage-s3-architecture.md");
+    let doc_path = root.join("docs/architecture/tech/TECH-storage-s3-architecture.md");
     let doc = std::fs::read_to_string(&doc_path)
         .unwrap_or_else(|error| panic!("{} must be readable: {error}", doc_path.display()));
 
@@ -370,7 +370,7 @@ fn admin_storage_iam_runtime_boundary_is_documented() {
         );
     }
 
-    let iam_standard = read("docs/drive-iam-integration-standard.md");
+    let iam_standard = read("docs/architecture/tech/TECH-drive-iam-integration-standard.md");
     for required in [
         "App, backend, and admin-storage Drive routes must validate the same dual-token contract:",
         "Clients must not send AppContext projection headers",
@@ -382,7 +382,7 @@ fn admin_storage_iam_runtime_boundary_is_documented() {
         );
     }
 
-    let s3_architecture = read("docs/storage-s3-architecture.md");
+    let s3_architecture = read("docs/architecture/tech/TECH-storage-s3-architecture.md");
     for required in [
         "Admin-storage runtime routes under `/backend/v3/api/drive/storage/*` require the same dual-token contract as app and backend APIs.",
         "projection headers are forbidden",
@@ -400,8 +400,9 @@ fn observability_event_dictionary_spec_exists() {
     let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     root.pop();
     root.pop();
-    let spec_path =
-        root.join("docs/superpowers/specs/2026-06-01-drive-observability-event-dictionary.md");
+    let spec_path = root.join(
+        "docs/architecture/tech/TECH-2026-06-01-drive-observability-event-dictionary.md",
+    );
     let spec = std::fs::read_to_string(spec_path)
         .expect("observability event dictionary spec should exist");
     assert!(spec.contains("sdkwork.drive"));

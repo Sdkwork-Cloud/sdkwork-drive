@@ -1,0 +1,574 @@
+use crate::acl;
+use crate::acl_sql;
+use crate::app_context::DriveRequestContext;
+use crate::dto::{
+    FavoriteNodeQuery, FavoriteNodeRequest, FavoriteNodeResponse, NodeListResponse,
+    NodeViewQuery, SubjectNodeViewQuery,
+};
+use crate::error::{internal_sql_error, ProblemDetail};
+use crate::mappers::map_node_row;
+use crate::metadata_repository::present_node_list;
+use crate::node_repository::find_active_node;
+use crate::route_change::record_change;
+use crate::space_repository::validate_space_exists;
+use crate::state::AppState;
+use crate::time::current_epoch_ms;
+use crate::validators::{
+    normalize_optional_text, parse_page_request, validate_subject_type,
+};
+use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
+use axum::{Extension, Json};
+use sdkwork_drive_contract::drive::domain_events as drive_events;
+use sdkwork_drive_workspace_service::infrastructure::sql::{
+    NODE_API_SELECT_COLUMNS, NODE_API_SELECT_JOIN_COLUMNS,
+};
+
+pub(crate) async fn list_recent_nodes(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Query(query): Query<NodeViewQuery>,
+) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let page = parse_page_request(query.page_size, query.page_token)?;
+    let space_id = normalize_optional_text(query.space_id);
+    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    if let Some(space_id) = space_id.as_deref() {
+        validate_space_exists(&state.pool, &tenant_id, space_id).await?;
+        acl::ensure_list_parent_reader(&state.pool, &ctx, space_id, None).await?;
+    }
+    let pool = state.pool.clone();
+    let tenant_id_for_fetch = tenant_id.clone();
+    let subject_type_for_fetch = subject_type.clone();
+    let subject_id_for_fetch = subject_id.clone();
+
+    let (items, next_page_token, incomplete_page) = if let Some(space_id) = space_id.clone() {
+        let is_space_owner = acl::is_subject_space_owner(
+            &state.pool,
+            &tenant_id,
+            &space_id,
+            &subject_type,
+            &subject_id,
+        )
+        .await?;
+        let reader_acl_predicate =
+            acl_sql::reader_inherited_permission_exists_sql("dr_drive_node", "$3", "$4");
+        let (items, next_page_token) = if is_space_owner {
+            acl::paginate_offset_limited_items(
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let space_id = space_id.clone();
+                    async move {
+                        let rows = sqlx::query(&format!(
+                            "SELECT {NODE_API_SELECT_COLUMNS}
+                             FROM dr_drive_node
+                             WHERE tenant_id=$1
+                               AND space_id=$2
+                               AND lifecycle_status='active'
+                               AND content_state='ready'
+                             ORDER BY updated_at DESC, id ASC
+                             LIMIT $3 OFFSET $4",
+                        ))
+                        .bind(&tenant_id)
+                        .bind(&space_id)
+                        .bind(batch_limit as i64)
+                        .bind(scan_offset)
+                        .fetch_all(&pool)
+                        .await
+                        .map_err(internal_sql_error("list recent dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+            )
+            .await?
+        } else {
+            acl::paginate_offset_limited_items(
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let space_id = space_id.clone();
+                    let subject_type = subject_type_for_fetch.clone();
+                    let subject_id = subject_id_for_fetch.clone();
+                    let reader_acl_predicate = reader_acl_predicate.clone();
+                    async move {
+                        let rows = sqlx::query(&format!(
+                            "SELECT {NODE_API_SELECT_COLUMNS}
+                             FROM dr_drive_node
+                             WHERE tenant_id=$1
+                               AND space_id=$2
+                               AND lifecycle_status='active'
+                               AND content_state='ready'
+                               AND ({reader_acl_predicate})
+                             ORDER BY updated_at DESC, id ASC
+                             LIMIT $5 OFFSET $6",
+                        ))
+                        .bind(&tenant_id)
+                        .bind(&space_id)
+                        .bind(&subject_type)
+                        .bind(&subject_id)
+                        .bind(batch_limit as i64)
+                        .bind(scan_offset)
+                        .fetch_all(&pool)
+                        .await
+                        .map_err(internal_sql_error("list recent dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+            )
+            .await?
+        };
+        (items, next_page_token, false)
+    } else {
+        acl::paginate_reader_visible_items(
+            &state.pool,
+            &tenant_id,
+            &subject_type,
+            &subject_id,
+            page,
+            move |scan_offset, batch_limit| {
+                let pool = pool.clone();
+                let tenant_id = tenant_id_for_fetch.clone();
+                async move {
+                    let rows = sqlx::query(&format!(
+                        "SELECT {NODE_API_SELECT_COLUMNS}
+                         FROM dr_drive_node
+                         WHERE tenant_id=$1
+                           AND lifecycle_status='active'
+                           AND content_state='ready'
+                         ORDER BY updated_at DESC, id ASC
+                         LIMIT $2 OFFSET $3",
+                    ))
+                    .bind(&tenant_id)
+                    .bind(batch_limit as i64)
+                    .bind(scan_offset)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(internal_sql_error("list recent dr_drive_node failed"))?;
+                    Ok(rows)
+                }
+            },
+            map_node_row,
+            |item| (item.space_id.clone(), item.id.clone()),
+        )
+        .await?
+    };
+
+    Ok(Json(
+        present_node_list(
+            &state.pool,
+            &tenant_id,
+            items,
+            next_page_token,
+            incomplete_page,
+        )
+        .await?,
+    ))
+}
+pub(crate) async fn list_shared_with_me(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Query(query): Query<SubjectNodeViewQuery>,
+) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
+    let page = parse_page_request(query.page_size, query.page_token)?;
+    let space_id = normalize_optional_text(query.space_id);
+    if let Some(space_id) = space_id.as_deref() {
+        validate_space_exists(&state.pool, &tenant_id, space_id).await?;
+        acl::ensure_subject_space_scoped_reader(
+            &state.pool,
+            &tenant_id,
+            space_id,
+            None,
+            &subject_type,
+            &subject_id,
+        )
+        .await?;
+    }
+    let pool = state.pool.clone();
+    let tenant_id_for_fetch = tenant_id.clone();
+    let subject_type_for_fetch = subject_type.clone();
+    let subject_id_for_fetch = subject_id.clone();
+    let now_epoch_ms = current_epoch_ms();
+
+    if let Some(space_id) = space_id.clone() {
+        if acl::is_subject_space_owner(
+            &state.pool,
+            &tenant_id,
+            &space_id,
+            &subject_type,
+            &subject_id,
+        )
+        .await?
+        {
+            return Ok(Json(
+                present_node_list(&state.pool, &tenant_id, Vec::new(), None, false).await?,
+            ));
+        }
+    }
+
+    let shared_with_me_predicate_for_space =
+        acl_sql::shared_with_me_visible_sql("n", "$3", "$4", "$5");
+    let shared_with_me_predicate_for_tenant =
+        acl_sql::shared_with_me_visible_sql("n", "$2", "$3", "$4");
+    let (items, next_page_token) = if let Some(space_id) = space_id.clone() {
+        acl::paginate_offset_limited_items(
+            page,
+            move |scan_offset, batch_limit| {
+                let pool = pool.clone();
+                let tenant_id = tenant_id_for_fetch.clone();
+                let space_id = space_id.clone();
+                let subject_type = subject_type_for_fetch.clone();
+                let subject_id = subject_id_for_fetch.clone();
+                let shared_with_me_predicate = shared_with_me_predicate_for_space.clone();
+                async move {
+                    let rows = sqlx::query(&format!(
+                        "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
+                         FROM dr_drive_node n
+                         WHERE n.tenant_id=$1
+                           AND n.space_id=$2
+                           AND n.lifecycle_status='active'
+                           AND n.content_state='ready'
+                           AND {shared_with_me_predicate}
+                         ORDER BY n.updated_at DESC, n.id ASC
+                         LIMIT $6 OFFSET $7",
+                    ))
+                    .bind(&tenant_id)
+                    .bind(&space_id)
+                    .bind(&subject_type)
+                    .bind(&subject_id)
+                    .bind(now_epoch_ms)
+                    .bind(batch_limit as i64)
+                    .bind(scan_offset)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(internal_sql_error("list shared dr_drive_node failed"))?;
+                    Ok(rows)
+                }
+            },
+            map_node_row,
+        )
+        .await?
+    } else {
+        acl::paginate_offset_limited_items(
+            page,
+            move |scan_offset, batch_limit| {
+                let pool = pool.clone();
+                let tenant_id = tenant_id_for_fetch.clone();
+                let subject_type = subject_type_for_fetch.clone();
+                let subject_id = subject_id_for_fetch.clone();
+                let shared_with_me_predicate = shared_with_me_predicate_for_tenant.clone();
+                async move {
+                    let rows = sqlx::query(&format!(
+                        "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
+                         FROM dr_drive_node n
+                         WHERE n.tenant_id=$1
+                           AND n.lifecycle_status='active'
+                           AND n.content_state='ready'
+                           AND {shared_with_me_predicate}
+                         ORDER BY n.updated_at DESC, n.id ASC
+                         LIMIT $5 OFFSET $6",
+                    ))
+                    .bind(&tenant_id)
+                    .bind(&subject_type)
+                    .bind(&subject_id)
+                    .bind(now_epoch_ms)
+                    .bind(batch_limit as i64)
+                    .bind(scan_offset)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(internal_sql_error("list shared dr_drive_node failed"))?;
+                    Ok(rows)
+                }
+            },
+            map_node_row,
+        )
+        .await?
+    };
+
+    Ok(Json(
+        present_node_list(&state.pool, &tenant_id, items, next_page_token, false).await?,
+    ))
+}
+pub(crate) async fn list_favorite_nodes(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Query(query): Query<SubjectNodeViewQuery>,
+) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
+    let page = parse_page_request(query.page_size, query.page_token)?;
+    let space_id = normalize_optional_text(query.space_id);
+    if let Some(space_id) = space_id.as_deref() {
+        validate_space_exists(&state.pool, &tenant_id, space_id).await?;
+        acl::ensure_subject_space_scoped_reader(
+            &state.pool,
+            &tenant_id,
+            space_id,
+            None,
+            &subject_type,
+            &subject_id,
+        )
+        .await?;
+    }
+    let pool = state.pool.clone();
+    let tenant_id_for_fetch = tenant_id.clone();
+    let subject_type_for_fetch = subject_type.clone();
+    let subject_id_for_fetch = subject_id.clone();
+
+    let (items, next_page_token, incomplete_page) = if let Some(space_id) = space_id.clone() {
+        let is_space_owner = acl::is_subject_space_owner(
+            &state.pool,
+            &tenant_id,
+            &space_id,
+            &subject_type,
+            &subject_id,
+        )
+        .await?;
+        let reader_acl_predicate = acl_sql::reader_inherited_permission_exists_sql("n", "$3", "$4");
+        let (items, next_page_token) = if is_space_owner {
+            acl::paginate_offset_limited_items(
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let space_id = space_id.clone();
+                    let subject_type = subject_type_for_fetch.clone();
+                    let subject_id = subject_id_for_fetch.clone();
+                    async move {
+                        let rows = sqlx::query(&format!(
+                            "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
+                             FROM dr_drive_node_favorite f
+                             INNER JOIN dr_drive_node n
+                                ON n.tenant_id=f.tenant_id
+                               AND n.id=f.node_id
+                               AND n.lifecycle_status='active'
+                               AND n.content_state='ready'
+                             WHERE f.tenant_id=$1
+                               AND n.space_id=$2
+                               AND f.subject_type=$3
+                               AND f.subject_id=$4
+                               AND f.lifecycle_status='active'
+                             ORDER BY f.updated_at DESC, n.id ASC
+                             LIMIT $5 OFFSET $6",
+                        ))
+                        .bind(&tenant_id)
+                        .bind(&space_id)
+                        .bind(&subject_type)
+                        .bind(&subject_id)
+                        .bind(batch_limit as i64)
+                        .bind(scan_offset)
+                        .fetch_all(&pool)
+                        .await
+                        .map_err(internal_sql_error("list favorite dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+            )
+            .await?
+        } else {
+            acl::paginate_offset_limited_items(
+                page,
+                move |scan_offset, batch_limit| {
+                    let pool = pool.clone();
+                    let tenant_id = tenant_id_for_fetch.clone();
+                    let space_id = space_id.clone();
+                    let subject_type = subject_type_for_fetch.clone();
+                    let subject_id = subject_id_for_fetch.clone();
+                    let reader_acl_predicate = reader_acl_predicate.clone();
+                    async move {
+                        let rows = sqlx::query(&format!(
+                            "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
+                             FROM dr_drive_node_favorite f
+                             INNER JOIN dr_drive_node n
+                                ON n.tenant_id=f.tenant_id
+                               AND n.id=f.node_id
+                               AND n.lifecycle_status='active'
+                               AND n.content_state='ready'
+                             WHERE f.tenant_id=$1
+                               AND n.space_id=$2
+                               AND f.subject_type=$3
+                               AND f.subject_id=$4
+                               AND f.lifecycle_status='active'
+                               AND ({reader_acl_predicate})
+                             ORDER BY f.updated_at DESC, n.id ASC
+                             LIMIT $5 OFFSET $6",
+                        ))
+                        .bind(&tenant_id)
+                        .bind(&space_id)
+                        .bind(&subject_type)
+                        .bind(&subject_id)
+                        .bind(batch_limit as i64)
+                        .bind(scan_offset)
+                        .fetch_all(&pool)
+                        .await
+                        .map_err(internal_sql_error("list favorite dr_drive_node failed"))?;
+                        Ok(rows)
+                    }
+                },
+                map_node_row,
+            )
+            .await?
+        };
+        (items, next_page_token, false)
+    } else {
+        acl::paginate_reader_visible_items(
+            &state.pool,
+            &tenant_id,
+            &subject_type,
+            &subject_id,
+            page,
+            move |scan_offset, batch_limit| {
+                let pool = pool.clone();
+                let tenant_id = tenant_id_for_fetch.clone();
+                let subject_type = subject_type_for_fetch.clone();
+                let subject_id = subject_id_for_fetch.clone();
+                async move {
+                    let rows = sqlx::query(&format!(
+                        "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
+                         FROM dr_drive_node_favorite f
+                         INNER JOIN dr_drive_node n
+                            ON n.tenant_id=f.tenant_id
+                           AND n.id=f.node_id
+                           AND n.lifecycle_status='active'
+                           AND n.content_state='ready'
+                         WHERE f.tenant_id=$1
+                           AND f.subject_type=$2
+                           AND f.subject_id=$3
+                           AND f.lifecycle_status='active'
+                         ORDER BY f.updated_at DESC, n.id ASC
+                         LIMIT $4 OFFSET $5",
+                    ))
+                    .bind(&tenant_id)
+                    .bind(&subject_type)
+                    .bind(&subject_id)
+                    .bind(batch_limit as i64)
+                    .bind(scan_offset)
+                    .fetch_all(&pool)
+                    .await
+                    .map_err(internal_sql_error("list favorite dr_drive_node failed"))?;
+                    Ok(rows)
+                }
+            },
+            map_node_row,
+            |item| (item.space_id.clone(), item.id.clone()),
+        )
+        .await?
+    };
+
+    Ok(Json(
+        present_node_list(
+            &state.pool,
+            &tenant_id,
+            items,
+            next_page_token,
+            incomplete_page,
+        )
+        .await?,
+    ))
+}
+pub(crate) async fn set_favorite(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Path(node_id): Path<String>,
+    Json(payload): Json<FavoriteNodeRequest>,
+) -> Result<Json<FavoriteNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let (subject_type, subject_id) =
+        ctx.resolve_subject(payload.subject_type, payload.subject_id)?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
+    validate_subject_type(&subject_type)?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
+    let favorite_id = build_favorite_id(&tenant_id, &subject_type, &subject_id, &node_id);
+    sqlx::query(
+        "INSERT INTO dr_drive_node_favorite (
+            id, tenant_id, node_id, subject_type, subject_id,
+            lifecycle_status, version, created_by, updated_by
+         ) VALUES ($1, $2, $3, $4, $5, 'active', 1, $6, $6)
+         ON CONFLICT(tenant_id, subject_type, subject_id, node_id)
+         DO UPDATE SET lifecycle_status='active',
+                       updated_by=excluded.updated_by,
+                       updated_at=CURRENT_TIMESTAMP,
+                       version=dr_drive_node_favorite.version + 1",
+    )
+    .bind(favorite_id)
+    .bind(&tenant_id)
+    .bind(&node_id)
+    .bind(&subject_type)
+    .bind(&subject_id)
+    .bind(&operator_id)
+    .execute(&state.pool)
+    .await
+    .map_err(internal_sql_error("upsert dr_drive_node_favorite failed"))?;
+    record_change(
+        &state.pool,
+        &tenant_id,
+        &node.space_id,
+        Some(&node_id),
+        drive_events::favorite::CREATED,
+        &operator_id,
+    )
+    .await?;
+    Ok(Json(FavoriteNodeResponse { favorited: true }))
+}
+pub(crate) async fn unset_favorite(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Path(node_id): Path<String>,
+    Query(query): Query<FavoriteNodeQuery>,
+) -> Result<Json<FavoriteNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
+    validate_subject_type(&subject_type)?;
+    acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
+    let affected = sqlx::query(
+        "UPDATE dr_drive_node_favorite
+         SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
+         WHERE tenant_id=$2
+           AND node_id=$3
+           AND subject_type=$4
+           AND subject_id=$5
+           AND lifecycle_status='active'",
+    )
+    .bind(&operator_id)
+    .bind(&tenant_id)
+    .bind(&node_id)
+    .bind(&subject_type)
+    .bind(&subject_id)
+    .execute(&state.pool)
+    .await
+    .map_err(internal_sql_error("delete dr_drive_node_favorite failed"))?
+    .rows_affected();
+    if affected > 0 {
+        record_change(
+            &state.pool,
+            &tenant_id,
+            &node.space_id,
+            Some(&node_id),
+            drive_events::favorite::DELETED,
+            &operator_id,
+        )
+        .await?;
+    }
+    Ok(Json(FavoriteNodeResponse { favorited: false }))
+}
+fn build_favorite_id(
+    tenant_id: &str,
+    subject_type: &str,
+    subject_id: &str,
+    node_id: &str,
+) -> String {
+    format!(
+        "fav:{}:{}:{}:{}",
+        tenant_id, subject_type, subject_id, node_id
+    )
+}

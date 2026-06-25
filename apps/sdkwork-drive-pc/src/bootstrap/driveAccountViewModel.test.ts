@@ -68,7 +68,7 @@ describe('drive account view model', () => {
     expect(account.planLabel).toBeUndefined();
   });
 
-  it('clears the runtime IAM session when signing out from the profile menu', () => {
+  it('clears the runtime IAM session when signing out from the profile menu', async () => {
     const session = createSessionStore();
     session.setSession({
       authToken: 'auth-token',
@@ -79,7 +79,7 @@ describe('drive account view model', () => {
       },
     });
 
-    signOutDriveAccount(session);
+    await signOutDriveAccount(session);
 
     expect(session.getSnapshot()).toEqual({});
   });

@@ -26,7 +26,7 @@ import { DownloadManager, type DownloadJob } from "./DownloadManager";
 import { FileBrowserHeader } from "./FileBrowserHeader";
 import { FileDetailModal } from "./FileDetailModal";
 import { Info, Star, Download, Trash2, CheckSquare, Copy, FolderInput } from "lucide-react";
-import { formatDriveBytes, useTranslation } from "sdkwork-drive-pc-commons";
+import { formatDriveBytes, useTranslation, useDrivePcPreferences } from "sdkwork-drive-pc-commons";
 import { createLatestRequestGuard } from "./fileBrowserLoadGuard";
 import {
   getSettledBatchMessage,
@@ -42,6 +42,16 @@ import {
   sortDriveFiles,
   type FileBrowserSortField,
 } from "./fileBrowserSort";
+import {
+  fetchRemainingFileBrowserPages,
+  isDefaultFileBrowserSort,
+} from "./fileBrowserPageFetcher";
+import { supportsServerSideFileBrowserSort } from "./fileBrowserSortSupport";
+import { useFileBrowserVirtualWindow } from "./useFileBrowserVirtualWindow";
+import {
+  FILE_BROWSER_GRID_ROW_HEIGHT_PX,
+  useFileBrowserGridColumns,
+} from "./useFileBrowserGridColumns";
 import {
   FILE_LIST_COL_ACTIONS_CLASS,
   FILE_LIST_HEADER_CLASS,
@@ -90,6 +100,7 @@ export function FileBrowser({
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [errorState, setErrorState] = useState<string | null>(null);
   const { t } = useTranslation();
+  const { preferences } = useDrivePcPreferences();
   const { host } = useDriveRuntime();
   const hostDownloadStream = createHostDownloadStreamAdapter(host);
   const canCreateFolderInActiveSection = canCreateDriveFolderInSection(activeSection);
@@ -127,20 +138,26 @@ export function FileBrowser({
 
   const [sortBy, setSortBy] = useState<FileBrowserSortField>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const sortFetchAbortRef = useRef<AbortController | null>(null);
+  const filesRef = useRef<DriveFile[]>([]);
+  const nextPageTokenRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    filesRef.current = files;
+  }, [files]);
+
+  useEffect(() => {
+    nextPageTokenRef.current = nextPageToken;
+  }, [nextPageToken]);
 
   const handleSort = (field: FileBrowserSortField) => {
     if (sortBy === field) {
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortBy(field);
-      setSortOrder("asc");
+      return;
     }
+    setSortBy(field);
+    setSortOrder("asc");
   };
-
-  const sortedFiles = React.useMemo(
-    () => sortDriveFiles(files, sortBy, sortOrder),
-    [files, sortBy, sortOrder],
-  );
 
   const renderSortIndicator = (field: FileBrowserSortField) => {
     if (sortBy !== field) {
@@ -166,6 +183,66 @@ export function FileBrowser({
 
   // Subdirectory and detail modal tracking states
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const serverSideSort = supportsServerSideFileBrowserSort(
+    activeSection,
+    debouncedSearchQuery,
+    currentFolderId,
+  );
+
+  const sortedFiles = React.useMemo(() => {
+    if (serverSideSort) {
+      return files;
+    }
+    if (isDefaultFileBrowserSort(sortBy, sortOrder)) {
+      return files;
+    }
+    return sortDriveFiles(files, sortBy, sortOrder);
+  }, [files, sortBy, sortOrder, serverSideSort]);
+
+  const listRowHeight = preferences.compactMode ? 40 : 48;
+  const gridColumns = useFileBrowserGridColumns(viewMode === "grid");
+  const virtualRowHeight =
+    viewMode === "grid" ? FILE_BROWSER_GRID_ROW_HEIGHT_PX : listRowHeight;
+  const virtualColumns = viewMode === "grid" ? gridColumns : 1;
+  const {
+    containerRef: listVirtualContainerRef,
+    startIndex: virtualStartIndex,
+    endIndex: virtualEndIndex,
+    totalHeight: virtualTotalHeight,
+    offsetTop: virtualOffsetTop,
+  } = useFileBrowserVirtualWindow({
+    itemCount: sortedFiles.length,
+    itemHeight: virtualRowHeight,
+    columns: virtualColumns,
+  });
+
+  const visibleListFiles = React.useMemo(
+    () => sortedFiles.slice(virtualStartIndex, virtualEndIndex),
+    [sortedFiles, virtualEndIndex, virtualStartIndex],
+  );
+
+  const virtualBottomSpacerHeight = React.useMemo(() => {
+    if (sortedFiles.length === 0) {
+      return 0;
+    }
+    const renderedRows =
+      viewMode === "grid"
+        ? Math.ceil(visibleListFiles.length / gridColumns)
+        : visibleListFiles.length;
+    return Math.max(
+      0,
+      virtualTotalHeight - virtualOffsetTop - renderedRows * virtualRowHeight,
+    );
+  }, [
+    gridColumns,
+    sortedFiles.length,
+    viewMode,
+    virtualOffsetTop,
+    virtualRowHeight,
+    virtualTotalHeight,
+    visibleListFiles.length,
+  ]);
+
   const [breadcrumbFiles, setBreadcrumbFiles] = useState<DriveFile[]>([]);
   const currentLoadScope = `${activeSection}\u0000${debouncedSearchQuery}\u0000${currentFolderId ?? ""}`;
   const loadAbortControllerRef = React.useRef<AbortController | null>(null);
@@ -640,6 +717,8 @@ export function FileBrowser({
     fileService.listFilesPage(activeSection, debouncedSearchQuery, currentFolderId, {
       signal: loadAbortController.signal,
       pageSize: FILE_BROWSER_PAGE_SIZE,
+      sortBy,
+      sortOrder,
     })
       .then((page) => {
         if (!latestLoadGuardRef.current.isCurrent(requestId)) {
@@ -657,7 +736,7 @@ export function FileBrowser({
           return;
         }
         setErrorState(
-          err?.message || "An unexpected Drive service error occurred.",
+          err?.message || t("fileBrowser.unexpectedServiceError"),
         );
         setLoading(false);
       });
@@ -703,6 +782,8 @@ export function FileBrowser({
       signal: loadAbortController.signal,
       pageSize: FILE_BROWSER_PAGE_SIZE,
       pageToken: nextPageToken,
+      sortBy,
+      sortOrder,
     })
       .then((page) => {
         setFiles((current) => {
@@ -721,6 +802,12 @@ export function FileBrowser({
         if (isDriveAbortError(err)) {
           return;
         }
+        triggerToast(
+          err instanceof Error
+            ? err.message
+            : t("fileBrowser.loadMoreFailed"),
+          "err",
+        );
       })
       .finally(() => {
         setLoadingMore(false);
@@ -733,6 +820,73 @@ export function FileBrowser({
     loadingMore,
     nextPageToken,
     debouncedSearchQuery,
+    sortBy,
+    sortOrder,
+  ]);
+
+  useEffect(() => {
+    if (serverSideSort) {
+      return;
+    }
+    if (isDefaultFileBrowserSort(sortBy, sortOrder)) {
+      return;
+    }
+    if (loading || loadingMore || !nextPageToken) {
+      return;
+    }
+
+    const controller = new AbortController();
+    sortFetchAbortRef.current?.abort();
+    sortFetchAbortRef.current = controller;
+    setLoadingMore(true);
+
+    void fetchRemainingFileBrowserPages({
+      fileService,
+      activeSection,
+      searchQuery: debouncedSearchQuery,
+      parentId: currentFolderId,
+      pageSize: FILE_BROWSER_PAGE_SIZE,
+      initialFiles: filesRef.current,
+      initialNextPageToken: nextPageTokenRef.current,
+      signal: controller.signal,
+    })
+      .then((result) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+        setFiles(result.files);
+        setNextPageToken(result.nextPageToken);
+      })
+      .catch((err: unknown) => {
+        if (isDriveAbortError(err)) {
+          return;
+        }
+        triggerToast(
+          err instanceof Error ? err.message : t("fileBrowser.loadMoreFailed"),
+          "err",
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoadingMore(false);
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [
+    activeSection,
+    currentFolderId,
+    debouncedSearchQuery,
+    fileService,
+    loading,
+    loadingMore,
+    nextPageToken,
+    sortBy,
+    sortOrder,
+    serverSideSort,
+    t,
   ]);
 
   useEffect(() => {
@@ -749,7 +903,7 @@ export function FileBrowser({
       loadAbortControllerRef.current?.abort();
       loadAbortControllerRef.current = null;
     };
-  }, [activeSection, debouncedSearchQuery, currentFolderId, currentLoadScope]);
+  }, [activeSection, debouncedSearchQuery, currentFolderId, currentLoadScope, sortBy, sortOrder]);
 
   // Intersection Observer for server-driven infinite scrolling
   useEffect(() => {
@@ -1192,7 +1346,11 @@ export function FileBrowser({
     <div className="flex min-h-0 min-w-0 flex-1 bg-white dark:bg-[#151515] flex flex-col h-full overflow-hidden transition-colors relative">
       {/* Toast Alert popup banner */}
       {toast && (
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3 rounded-lg shadow-xl border text-sm animate-in fade-in slide-in-from-top-4 duration-300 bg-white dark:bg-[#252525] border-gray-100 dark:border-neutral-800 text-gray-900 dark:text-gray-100">
+        <div
+          role="status"
+          aria-live="polite"
+          className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3 rounded-lg shadow-xl border text-sm animate-in fade-in slide-in-from-top-4 duration-300 bg-white dark:bg-[#252525] border-gray-100 dark:border-neutral-800 text-gray-900 dark:text-gray-100"
+        >
           {toast.type === "success" && (
             <CheckCircle2 className="text-emerald-500 shrink-0" size={18} />
           )}
@@ -1290,7 +1448,11 @@ export function FileBrowser({
         ) : (
           /* Scrolled files display area */
           <div className="flex-1 overflow-hidden flex flex-col">
-            <div className="sdkwork-drive-file-list-table flex min-h-0 flex-1 flex-col">
+            <div
+              className={`sdkwork-drive-file-list-table flex min-h-0 flex-1 flex-col${
+                preferences.compactMode ? " sdkwork-drive-file-list-table--compact" : ""
+              }`}
+            >
             {/* Table layout titles header */}
             {viewMode === "list" &&
               (files.length > 0 || isCreatingFolderInline) && (
@@ -1347,12 +1509,20 @@ export function FileBrowser({
 
             {/* Scroller Pane */}
             <div
+              ref={listVirtualContainerRef}
               className={
                 viewMode === "grid"
                   ? "sdkwork-drive-file-list-body sdkwork-drive-file-list-body--grid"
                   : "sdkwork-drive-file-list-body"
               }
             >
+              {sortedFiles.length > 0 && virtualOffsetTop > 0 && (
+                <div
+                  aria-hidden
+                  className={viewMode === "grid" ? "col-span-full" : undefined}
+                  style={{ height: virtualOffsetTop }}
+                />
+              )}
               {isCreatingFolderInline &&
                 (viewMode === "list" ? (
                   <div className={`${FILE_LIST_ROW_CLASS} sdkwork-drive-file-list-row--inline inline-folder-container`}>
@@ -1469,7 +1639,7 @@ export function FileBrowser({
                   </div>
                 ))}
 
-              {sortedFiles.map((file) => {
+              {visibleListFiles.map((file) => {
                 if (viewMode === "list") {
                   return (
                     <FileRowItem
@@ -1535,6 +1705,14 @@ export function FileBrowser({
                 }
               })}
 
+              {sortedFiles.length > 0 && virtualBottomSpacerHeight > 0 && (
+                <div
+                  aria-hidden
+                  className={viewMode === "grid" ? "col-span-full" : undefined}
+                  style={{ height: virtualBottomSpacerHeight }}
+                />
+              )}
+
               {/* Infinite Scrolling detector row */}
               {sortedFiles.length > 0 && (
                 <div
@@ -1546,7 +1724,12 @@ export function FileBrowser({
                       <div className="flex items-center gap-2.5">
                         <div className="w-4 h-4 rounded-full border-2 border-blue-500/30 border-t-blue-600 animate-spin" />
                         <span className="font-medium tracking-wide">
-                          {t("fileBrowser.loadingMore")}
+                          {!serverSideSort &&
+                          !isDefaultFileBrowserSort(sortBy, sortOrder) &&
+                          nextPageToken &&
+                          loadingMore
+                            ? t("fileBrowser.loadingAllForSort")
+                            : t("fileBrowser.loadingMore")}
                         </span>
                       </div>
                       <button

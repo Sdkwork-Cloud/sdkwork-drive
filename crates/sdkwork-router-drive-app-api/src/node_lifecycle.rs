@@ -1,0 +1,147 @@
+use crate::acl;
+use crate::app_context::DriveRequestContext;
+use crate::dto::{DriveNodeResponse, NodeCommandRequest};
+use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail};
+use crate::metadata_repository::present_drive_node;
+use crate::node_repository::{collect_node_subtree, find_node};
+use crate::route_change::record_change;
+use crate::space_repository::ensure_git_repository_space_root_accepts_node_type;
+use crate::state::AppState;
+use axum::http::StatusCode;
+use axum::Json;
+use sqlx::AnyPool;
+use sqlx::Row;
+use std::collections::{BTreeMap, BTreeSet};
+
+pub(crate) async fn set_node_lifecycle(
+    state: AppState,
+    ctx: &DriveRequestContext,
+    node_id: String,
+    payload: NodeCommandRequest,
+    lifecycle_status: &str,
+    event_type: &str,
+) -> Result<Json<crate::dto::DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let node = find_node(&state.pool, &tenant_id, &node_id).await?;
+    acl::ensure_ctx_node_role(&state.pool, ctx, &node.space_id, &node_id, "writer").await?;
+    let nodes_to_update = collect_node_subtree(&state.pool, &tenant_id, &node).await?;
+    if lifecycle_status == "active" {
+        ensure_restorable_subtree(&state.pool, &tenant_id, &nodes_to_update).await?;
+    }
+    let mut updated_count = 0_u64;
+    for node_to_update in &nodes_to_update {
+        let affected = sqlx::query(
+            "UPDATE dr_drive_node
+             SET lifecycle_status=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
+             WHERE tenant_id=$3 AND id=$4 AND lifecycle_status != 'deleted'",
+        )
+        .bind(lifecycle_status)
+        .bind(&operator_id)
+        .bind(&tenant_id)
+        .bind(&node_to_update.id)
+        .execute(&state.pool)
+        .await
+        .map_err(internal_sql_error("update dr_drive_node lifecycle failed"))?
+        .rows_affected();
+        updated_count += affected;
+        if affected > 0 {
+            record_change(
+                &state.pool,
+                &tenant_id,
+                &node_to_update.space_id,
+                Some(&node_to_update.id),
+                event_type,
+                &operator_id,
+            )
+            .await?;
+        }
+    }
+    if updated_count == 0 {
+        return Err(not_found_problem("node not found"));
+    }
+    Ok(Json(
+        present_drive_node(
+            &state.pool,
+            &tenant_id,
+            find_node(&state.pool, &tenant_id, &node_id).await?,
+        )
+        .await?,
+    ))
+}
+
+pub(crate) async fn ensure_restorable_subtree(
+    pool: &AnyPool,
+    tenant_id: &str,
+    nodes: &[DriveNodeResponse],
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    let restoring_ids = nodes
+        .iter()
+        .map(|node| node.id.as_str())
+        .collect::<BTreeSet<_>>();
+    let restoring_types = nodes
+        .iter()
+        .map(|node| (node.id.as_str(), node.node_type.as_str()))
+        .collect::<BTreeMap<_, _>>();
+
+    for node in nodes {
+        ensure_git_repository_space_root_accepts_node_type(
+            pool,
+            tenant_id,
+            &node.space_id,
+            node.parent_node_id.as_deref(),
+            &node.node_type,
+        )
+        .await?;
+
+        let Some(parent_id) = node.parent_node_id.as_deref() else {
+            continue;
+        };
+        if restoring_ids.contains(parent_id) {
+            if restoring_types.get(parent_id).copied() != Some("folder") {
+                return Err(problem(
+                    StatusCode::CONFLICT,
+                    "conflict",
+                    "parent node must be active before restore",
+                    "drive.conflict",
+                ));
+            }
+            continue;
+        }
+
+        let row = sqlx::query(
+            "SELECT space_id, node_type, lifecycle_status
+             FROM dr_drive_node
+             WHERE tenant_id=$1 AND id=$2",
+        )
+        .bind(tenant_id)
+        .bind(parent_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(internal_sql_error("validate restore parent failed"))?;
+        let Some(row) = row else {
+            return Err(problem(
+                StatusCode::CONFLICT,
+                "conflict",
+                "parent node must be active before restore",
+                "drive.conflict",
+            ));
+        };
+        let parent_space_id: String = row.get("space_id");
+        let parent_node_type: String = row.get("node_type");
+        let parent_lifecycle_status: String = row.get("lifecycle_status");
+        if parent_space_id != node.space_id
+            || parent_node_type != "folder"
+            || parent_lifecycle_status != "active"
+        {
+            return Err(problem(
+                StatusCode::CONFLICT,
+                "conflict",
+                "parent node must be active before restore",
+                "drive.conflict",
+            ));
+        }
+    }
+
+    Ok(())
+}

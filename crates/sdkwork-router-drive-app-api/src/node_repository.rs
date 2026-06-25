@@ -92,3 +92,27 @@ pub(crate) async fn collect_node_subtree(
 
     Ok(nodes)
 }
+
+pub(crate) async fn resolve_node_path(
+    pool: &AnyPool,
+    tenant_id: &str,
+    node_id: &str,
+) -> Result<Vec<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let mut current_node_id = Some(node_id.to_string());
+    let mut reversed = Vec::<DriveNodeResponse>::new();
+    for _ in 0..128 {
+        let Some(next_node_id) = current_node_id.take() else {
+            reversed.reverse();
+            return Ok(reversed);
+        };
+        let node = find_node(pool, tenant_id, &next_node_id).await?;
+        current_node_id = node.parent_node_id.clone();
+        reversed.push(node);
+    }
+    Err(problem(
+        StatusCode::CONFLICT,
+        "conflict",
+        "node parent chain exceeds maximum depth",
+        "drive.conflict",
+    ))
+}

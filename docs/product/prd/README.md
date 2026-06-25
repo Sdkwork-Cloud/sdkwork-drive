@@ -12,4 +12,4 @@ This directory owns the product Canon for the repository.
 - Every shard `MUST` be linked from `PRD.md`.
 - Do not create competing product roots such as `docs/product/PRD.md`; that path is retired and redirect-only.
 
-See `DOCUMENTATION_SPEC.md` section 2.2.
+See `../../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2.2.

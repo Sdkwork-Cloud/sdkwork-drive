@@ -1,20 +1,23 @@
 use std::sync::Arc;
 
 use axum::Router;
-use sdkwork_drive_security::{can_access_drive_admin_storage, DriveAppContext};
+use sdkwork_drive_security::{
+    can_invoke_drive_storage_operation, DriveAppContext,
+};
 use sdkwork_iam_web_adapter::IamDatabaseWebRequestContextResolver;
 use sdkwork_web_axum::{with_web_request_context, WebFrameworkLayer};
 use sdkwork_web_core::{
-    AuthorizationPolicy, DefaultWebRequestContextResolver, DomainContextInjector, WebAuthLevel,
-    WebDeploymentMode, WebEnvironment, WebFrameworkError, WebRequestContext,
-    WebRequestContextProfile, WebRequestPrincipal, WebSubjectType,
+    AuthorizationPolicy, DefaultWebRequestContextResolver, DomainContextInjector,
+    EnforcePrincipalTenantIsolationPolicy, WebAuthLevel, WebDeploymentMode, WebEnvironment,
+    WebFrameworkError, WebLoginScope, WebRequestContext, WebRequestContextProfile,
+    WebRequestPrincipal, WebSubjectType,
 };
 
 use crate::app_context::DriveRequestContext;
 use crate::http_route_manifest::storage_route_manifest;
 
 pub fn drive_admin_storage_public_path_prefixes() -> Vec<String> {
-    vec!["/healthz".to_owned(), "/metrics".to_owned()]
+    vec!["/healthz".to_owned(), "/readyz".to_owned(), "/metrics".to_owned()]
 }
 
 pub fn drive_admin_storage_gateway_api_prefixes() -> Vec<String> {
@@ -48,13 +51,26 @@ impl AuthorizationPolicy for DriveAdminStorageAuthorizationPolicy {
     fn authorize(
         &self,
         ctx: &WebRequestContext,
-        _operation_id: Option<&str>,
+        operation_id: Option<&str>,
     ) -> Result<(), WebFrameworkError> {
         let principal = ctx.principal.as_ref().ok_or_else(|| {
             WebFrameworkError::missing_credentials("authenticated principal is required")
         })?;
+        if ctx.login_scope() == Some(WebLoginScope::Tenant) {
+            return Err(WebFrameworkError::forbidden(
+                "backend API rejects personal sessions (login_scope TENANT)",
+            ));
+        }
         let app_context = drive_app_context_from_web_principal(principal, ctx);
-        if can_access_drive_admin_storage(&app_context) {
+        if let Some(operation_id) = operation_id {
+            if can_invoke_drive_storage_operation(&app_context, operation_id) {
+                return Ok(());
+            }
+            return Err(WebFrameworkError::forbidden(
+                "Drive storage admin permission is required for this operation",
+            ));
+        }
+        if can_invoke_drive_storage_operation(&app_context, "storageProviders.list") {
             return Ok(());
         }
         Err(WebFrameworkError::forbidden(
@@ -141,17 +157,12 @@ where
             ..WebRequestContextProfile::default()
         })
         .with_route_manifest(route_manifest)
+        .with_tenant_isolation_policy(Arc::new(EnforcePrincipalTenantIsolationPolicy))
         .with_domain_injector(Arc::new(DriveAdminStorageContextInjector))
         .with_authorization_policy(Arc::new(DriveAdminStorageAuthorizationPolicy))
 }
 
 pub async fn wrap_router_with_web_framework_from_env(router: Router) -> Router {
-    if std::env::var("SDKWORK_DRIVE_DATABASE_URL").is_ok()
-        || std::env::var("SDKWORK_DRIVE_CONFIG_FILE").is_ok()
-    {
-        let resolver = sdkwork_iam_web_adapter::iam_database_resolver_from_env().await;
-        return wrap_router_with_iam_database_web_framework(resolver, router);
-    }
-
-    wrap_router_with_web_framework(DefaultWebRequestContextResolver::default(), router)
+    let resolver = sdkwork_iam_web_adapter::iam_database_resolver_from_env().await;
+    wrap_router_with_iam_database_web_framework(resolver, router)
 }

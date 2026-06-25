@@ -11,6 +11,13 @@ export const TRANSFER_TIME_WAITING_BACKEND = 'Waiting for backend confirmation';
 export const TRANSFER_TIME_AVAILABLE = 'Available';
 export const TRANSFER_TIME_SAVE_CANCELLED = 'Save cancelled';
 
+export const TRANSFER_INTERRUPTION_UPLOAD_NATIVE_RETRY =
+  'transfer.uploadInterruptedNativeRetry';
+export const TRANSFER_INTERRUPTION_UPLOAD_RESELECT =
+  'transfer.uploadInterruptedReselect';
+export const TRANSFER_INTERRUPTION_TRANSFER_RETRY =
+  'transfer.transferInterruptedRetry';
+
 type TranslateFn = (key: string) => string;
 
 export function formatTransferJobSpeedLabel(speed: string, translate: TranslateFn): string {
@@ -78,4 +85,20 @@ export function formatTransferJobProgressDetail(
     return translate('transfer.paused');
   }
   return '--';
+}
+
+export function formatTransferInterruptionMessage(
+  message: string | undefined,
+  translate: TranslateFn,
+): string {
+  switch (message) {
+    case TRANSFER_INTERRUPTION_UPLOAD_NATIVE_RETRY:
+      return translate('transfer.uploadInterruptedNativeRetry');
+    case TRANSFER_INTERRUPTION_UPLOAD_RESELECT:
+      return translate('transfer.uploadInterruptedReselect');
+    case TRANSFER_INTERRUPTION_TRANSFER_RETRY:
+      return translate('transfer.transferInterruptedRetry');
+    default:
+      return message ?? translate('transfer.transferInterruptedRetry');
+  }
 }

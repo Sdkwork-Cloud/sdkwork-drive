@@ -79,6 +79,19 @@ describe('drive auth gate', () => {
     );
   });
 
+  it('allows anonymous share-link claim routes without forcing IAM login first', () => {
+    expect(
+      resolveDriveAuthGateDecision({
+        hasSession: false,
+        location: {
+          pathname: '/share/public-share-token',
+          search: '',
+          hash: '',
+        },
+      }),
+    ).toEqual({ kind: 'product-route' });
+  });
+
   it('lets host-managed integrations avoid mounting duplicate IAM routes', () => {
     expect(
       resolveDriveAuthGateDecision({

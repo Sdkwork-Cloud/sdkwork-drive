@@ -18,6 +18,10 @@
     "allow-local-download-begin",
     "allow-local-download-write-chunk",
     "allow-local-download-finish",
-    "allow-local-download-abort"
+    "allow-local-download-abort",
+    "allow-write-secure-session-value",
+    "allow-remove-secure-session-value",
+    "allow-clear-secure-session-values",
+    "allow-read-secure-session-snapshot"
   ]
 }

@@ -545,35 +545,20 @@ where
     Ok((items, next_page_token, scan_budget_exhausted))
 }
 
-fn map_change_row(row: &AnyRow) -> ChangeResponse {
-    ChangeResponse {
-        sequence_no: row.get("sequence_no"),
-        tenant_id: row.get("tenant_id"),
-        space_id: row.get("space_id"),
-        node_id: row.get("node_id"),
-        event_type: row.get("event_type"),
-        actor_id: row.get("actor_id"),
-        created_at: row.get("created_at"),
-    }
-}
-
 pub(crate) async fn paginate_cursor_limited_changes<F, Fut>(
     page: PageRequest,
     mut fetch_batch: F,
 ) -> Result<(Vec<ChangeResponse>, Option<String>), (StatusCode, Json<ProblemDetail>)>
 where
     F: FnMut(i64, usize) -> Fut,
-    Fut: Future<Output = Result<Vec<AnyRow>, (StatusCode, Json<ProblemDetail>)>>,
+    Fut: Future<Output = Result<Vec<ChangeResponse>, (StatusCode, Json<ProblemDetail>)>>,
 {
     let batch_limit = (page.limit + 1) as usize;
-    let rows = fetch_batch(page.offset, batch_limit).await?;
-    let has_more = rows.len() > page.limit as usize;
-    let items = rows
-        .iter()
-        .take(page.limit as usize)
-        .map(map_change_row)
-        .collect::<Vec<_>>();
+    let items = fetch_batch(page.offset, batch_limit).await?;
+    let has_more = items.len() > page.limit as usize;
+    let mut items = items;
     let next_page_token = if has_more {
+        items.truncate(page.limit as usize);
         items.last().map(|item| item.sequence_no.to_string())
     } else {
         None

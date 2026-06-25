@@ -11,6 +11,12 @@ const BUILTIN_SECTION_PATHS: Record<string, string> = {
   apps: '/apps',
   'admin-storage-providers': '/admin/storage-providers',
   'admin-storage-bindings': '/admin/storage-bindings',
+  'admin-audit': '/admin/audit',
+  'admin-maintenance': '/admin/maintenance',
+  'admin-quotas': '/admin/quotas',
+  'admin-labels': '/admin/labels',
+  'admin-spaces': '/admin/spaces',
+  'admin-download-packages': '/admin/download-packages',
 };
 
 const DEFAULT_SECTION: DriveSection = 'my-storage';

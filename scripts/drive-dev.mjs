@@ -19,8 +19,10 @@ import {
   resolveDevProfileId,
   resolveGatewayBind,
   resolveIamDevEnv,
+  IAM_APPLICATION_BOOTSTRAP_ENV,
   shouldAutostartGateway,
 } from './lib/drive-topology.mjs';
+import { mergeRepoDevBootstrapAccessTokenEnv } from '../../sdkwork-iam/scripts/dev/create-dev-bootstrap-access-token-env.mjs';
 
 const require = createRequire(import.meta.url);
 const http = require('http');
@@ -738,6 +740,7 @@ async function main() {
       SDKWORK_DRIVE_DEPLOYMENT_PROFILE: settings.deploymentProfile,
       VITE_DRIVE_PC_DEPLOYMENT_PROFILE: settings.deploymentProfile,
       SDKWORK_DRIVE_PROFILE_ID: profileId,
+      ...IAM_APPLICATION_BOOTSTRAP_ENV,
     });
 
     if (!settings.dryRun) {
@@ -756,18 +759,22 @@ async function main() {
     const iamDevEnv = resolveIamDevEnv(baseEnv, repoRoot);
     const iamDatabaseTarget = describeIamDatabaseTarget(iamDevEnv);
     const devServerProcess = createDevServerProcess({
-      env: {
-        ...baseEnv,
-        VITE_DRIVE_PC_DEV_SAME_ORIGIN_API: 'true',
-        SDKWORK_DRIVE_DEV_APP_API_PROXY_TARGET: apiGatewayBaseUrl,
-        SDKWORK_DRIVE_DEV_ADMIN_API_PROXY_TARGET: adminStorageApiBaseUrl,
-        VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL: apiGatewayBaseUrl,
-        VITE_DRIVE_PC_APP_API_BASE_URL: appApiBaseUrl,
-        VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL: apiGatewayBaseUrl,
-        VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL: appApiBaseUrl,
-        VITE_DRIVE_PC_BACKEND_API_BASE_URL: adminStorageApiBaseUrl,
-        VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL: adminStorageApiBaseUrl,
-      },
+      env: mergeRepoDevBootstrapAccessTokenEnv({
+        repoRoot,
+        manifestPath: 'apps/sdkwork-drive-pc/sdkwork.app.config.json',
+        env: {
+          ...baseEnv,
+          VITE_DRIVE_PC_DEV_SAME_ORIGIN_API: 'true',
+          SDKWORK_DRIVE_DEV_APP_API_PROXY_TARGET: apiGatewayBaseUrl,
+          SDKWORK_DRIVE_DEV_ADMIN_API_PROXY_TARGET: adminStorageApiBaseUrl,
+          VITE_DRIVE_PC_PLATFORM_API_GATEWAY_HTTP_URL: apiGatewayBaseUrl,
+          VITE_DRIVE_PC_APP_API_BASE_URL: appApiBaseUrl,
+          VITE_DRIVE_PC_APPBASE_APP_API_BASE_URL: apiGatewayBaseUrl,
+          VITE_DRIVE_PC_DRIVE_APP_API_BASE_URL: appApiBaseUrl,
+          VITE_DRIVE_PC_BACKEND_API_BASE_URL: adminStorageApiBaseUrl,
+          VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL: adminStorageApiBaseUrl,
+        },
+      }),
       target: settings.target,
     });
 

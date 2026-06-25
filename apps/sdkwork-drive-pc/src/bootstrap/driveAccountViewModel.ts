@@ -1,8 +1,10 @@
 import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
-import type {
-  DriveStorageSummary,
-  SessionSnapshot,
-  SessionStore,
+import {
+  clearOsSecureSessionStorage,
+  type DriveStorageSummary,
+  type SdkworkAuthRuntimeConfig,
+  type SessionSnapshot,
+  type SessionStore,
 } from 'sdkwork-drive-pc-core';
 
 export interface DriveAccountViewModel {
@@ -68,16 +70,24 @@ export function createDriveAccountViewModel(
   return account;
 }
 
-export function signOutDriveAccount(
+export async function signOutDriveAccount(
   session: SessionStore,
-): void {
+  options?: {
+    tokenStorage?: SdkworkAuthRuntimeConfig['tokenStorage'];
+  },
+): Promise<void> {
   session.clearSession();
-  clearPersistedDriveRuntimeState();
+  await clearPersistedDriveRuntimeState(options?.tokenStorage);
 }
 
-function clearPersistedDriveRuntimeState(): void {
+async function clearPersistedDriveRuntimeState(
+  tokenStorage?: SdkworkAuthRuntimeConfig['tokenStorage'],
+): Promise<void> {
   if (typeof window === 'undefined') {
     return;
+  }
+  if (tokenStorage === 'os-secure-storage') {
+    await clearOsSecureSessionStorage();
   }
   const keys = [
     'sdkwork-drive-pc-session',

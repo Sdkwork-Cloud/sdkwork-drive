@@ -12,4 +12,4 @@ This directory owns the technical architecture Canon for the repository.
 - Every shard `MUST` be linked from `TECH_ARCHITECTURE.md`.
 - Do not create competing architecture roots such as `docs/architecture/TECH_ARCHITECTURE.md`; that path is retired and redirect-only.
 
-See `DOCUMENTATION_SPEC.md` section 2.2.
+See `../../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2.2.

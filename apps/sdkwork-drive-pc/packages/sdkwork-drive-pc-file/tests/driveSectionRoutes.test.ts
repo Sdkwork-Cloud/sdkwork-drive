@@ -13,6 +13,12 @@ describe('drive section routes', () => {
     expect(driveSectionToPath('my-storage')).toBe('/my-storage');
     expect(driveSectionToPath('recent')).toBe('/recent');
     expect(driveSectionToPath('admin-storage-providers')).toBe('/admin/storage-providers');
+    expect(driveSectionToPath('admin-audit')).toBe('/admin/audit');
+    expect(driveSectionToPath('admin-maintenance')).toBe('/admin/maintenance');
+    expect(driveSectionToPath('admin-quotas')).toBe('/admin/quotas');
+    expect(driveSectionToPath('admin-labels')).toBe('/admin/labels');
+    expect(driveSectionToPath('admin-spaces')).toBe('/admin/spaces');
+    expect(driveSectionToPath('admin-download-packages')).toBe('/admin/download-packages');
   });
 
   it('maps dynamic space sections to /spaces/:id paths', () => {
@@ -23,6 +29,12 @@ describe('drive section routes', () => {
   it('resolves paths back to section ids', () => {
     expect(drivePathToSection('/recent')).toBe('recent');
     expect(drivePathToSection('/admin/storage-bindings')).toBe('admin-storage-bindings');
+    expect(drivePathToSection('/admin/audit')).toBe('admin-audit');
+    expect(drivePathToSection('/admin/maintenance')).toBe('admin-maintenance');
+    expect(drivePathToSection('/admin/quotas')).toBe('admin-quotas');
+    expect(drivePathToSection('/admin/labels')).toBe('admin-labels');
+    expect(drivePathToSection('/admin/spaces')).toBe('admin-spaces');
+    expect(drivePathToSection('/admin/download-packages')).toBe('admin-download-packages');
     expect(drivePathToSection('/spaces/space-kb-engineering')).toBe('space-kb-engineering');
     expect(drivePathToSection('/')).toBe('my-storage');
   });

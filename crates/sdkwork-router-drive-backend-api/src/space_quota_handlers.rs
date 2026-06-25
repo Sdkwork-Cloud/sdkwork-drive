@@ -1,15 +1,19 @@
-use crate::dto::{ListSpacesQuery, QuotaQuery, QuotaResponse, SpaceListResponse};
-use crate::error::{map_service_error, ProblemDetail};
+use crate::audit::record_audit_event;
+use sdkwork_drive_contract::drive::domain_events::admin_audit;
+use crate::dto::{ListSpacesQuery, QuotaQuery, QuotaResponse, SpaceListResponse, UpdateQuotaPolicyRequest};
+use crate::error::{map_service_error, validation_problem, ProblemDetail};
 use crate::mappers::map_space;
 use crate::state::BackendState;
 use crate::tenant_context::authenticated_tenant_id;
+use crate::validators::require_non_empty_text;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Extension;
 use axum::Json;
 use sdkwork_drive_security::DriveAppContext;
 use sdkwork_drive_workspace_service::application::quota_service::{
-    DriveQuotaService, GetTenantQuotaSummaryCommand,
+    ClearTenantQuotaPolicyCommand, DriveQuotaService, GetTenantQuotaSummaryCommand,
+    UpsertTenantQuotaPolicyCommand,
 };
 use sdkwork_drive_workspace_service::application::space_service::{
     DriveSpaceService, ListSpacesCommand,
@@ -44,9 +48,15 @@ pub(crate) async fn list_quotas(
     Query(_query): Query<QuotaQuery>,
 ) -> Result<Json<QuotaResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = authenticated_tenant_id(&app_context);
-    let service = DriveQuotaService::new(SqlQuotaStore::new(state.pool));
+    let service = DriveQuotaService::new(SqlQuotaStore::new(state.pool.clone()));
     let summary = service
-        .get_tenant_quota_summary(GetTenantQuotaSummaryCommand { tenant_id })
+        .get_tenant_quota_summary(GetTenantQuotaSummaryCommand {
+            tenant_id: tenant_id.clone(),
+        })
+        .await
+        .map_err(map_service_error)?;
+    let quota_bytes = service
+        .resolve_effective_max_bytes(&tenant_id)
         .await
         .map_err(map_service_error)?;
 
@@ -54,5 +64,72 @@ pub(crate) async fn list_quotas(
         tenant_id: summary.tenant_id,
         total_bytes: summary.total_bytes,
         object_count: summary.object_count,
+        quota_bytes,
+    }))
+}
+
+pub(crate) async fn update_quota_policy(
+    State(state): State<BackendState>,
+    Extension(app_context): Extension<DriveAppContext>,
+    Json(payload): Json<UpdateQuotaPolicyRequest>,
+) -> Result<Json<QuotaResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = authenticated_tenant_id(&app_context);
+    let operator_id = require_non_empty_text(payload.operator_id, "operatorId")?;
+    let service = DriveQuotaService::new(SqlQuotaStore::new(state.pool.clone()));
+
+    if payload.clear_tenant_policy.unwrap_or(false) {
+        service
+            .clear_tenant_quota_policy(ClearTenantQuotaPolicyCommand {
+                tenant_id: tenant_id.clone(),
+            })
+            .await
+            .map_err(map_service_error)?;
+    } else if let Some(quota_bytes) = payload.quota_bytes {
+        if quota_bytes <= 0 {
+            return Err(validation_problem(
+                "quotaBytes must be greater than 0 when updating tenant quota policy",
+            ));
+        }
+        service
+            .upsert_tenant_quota_policy(UpsertTenantQuotaPolicyCommand {
+                tenant_id: tenant_id.clone(),
+                max_bytes: Some(quota_bytes),
+                operator_id: operator_id.clone(),
+            })
+            .await
+            .map_err(map_service_error)?;
+    } else {
+        return Err(validation_problem(
+            "either quotaBytes or clearTenantPolicy must be provided",
+        ));
+    }
+
+    record_audit_event(
+        &state,
+        admin_audit::quota::UPDATED,
+        "tenant_quota",
+        &tenant_id,
+        &operator_id,
+        None,
+        None,
+    )
+    .await?;
+
+    let summary = service
+        .get_tenant_quota_summary(GetTenantQuotaSummaryCommand {
+            tenant_id: tenant_id.clone(),
+        })
+        .await
+        .map_err(map_service_error)?;
+    let quota_bytes = service
+        .resolve_effective_max_bytes(&tenant_id)
+        .await
+        .map_err(map_service_error)?;
+
+    Ok(Json(QuotaResponse {
+        tenant_id: summary.tenant_id,
+        total_bytes: summary.total_bytes,
+        object_count: summary.object_count,
+        quota_bytes,
     }))
 }

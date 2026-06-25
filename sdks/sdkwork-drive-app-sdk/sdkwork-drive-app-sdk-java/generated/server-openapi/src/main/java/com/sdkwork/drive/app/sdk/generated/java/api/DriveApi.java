@@ -344,11 +344,13 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<DeleteSpaceResponse>() {});
     }
 
-    public NodeListResponse nodesList(String spaceId, String parentNodeId, Integer pageSize, String pageToken) throws Exception {
+    public NodeListResponse nodesList(String spaceId, String parentNodeId, Integer pageSize, String pageToken, String sortBy, String sortOrder) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("parentNodeId", parentNodeId, "form", true, false, null),
             new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
-            new QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
+            new QueryParameterSpec("pageToken", pageToken, "form", true, false, null),
+            new QueryParameterSpec("sortBy", sortBy, "form", true, false, null),
+            new QueryParameterSpec("sortOrder", sortOrder, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/spaces/" + serializePathParameter(spaceId, new PathParameterSpec("spaceId", "simple", false)) + "/nodes"), query));
         return client.convertValue(raw, new TypeReference<NodeListResponse>() {});

@@ -2,6 +2,13 @@
 
 SDKWork Drive PC is the renderer application and desktop composition layer for the Drive desktop client. It follows `DESKTOP_APP_ARCHITECTURE_SPEC.md`: the root app stays thin, product UI lives in feature packages, remote business access is routed through the generated Drive App SDK wrapper, and native capabilities are isolated in a Tauri desktop package.
 
+## Documentation
+
+- [docs/README.md](docs/README.md)
+- [docs/product/prd/PRD.md](docs/product/prd/PRD.md)
+- [docs/architecture/tech/TECH_ARCHITECTURE.md](docs/architecture/tech/TECH_ARCHITECTURE.md)
+- Repository docs: [../../docs/README.md](../../docs/README.md)
+
 ## Package Shape
 
 ```text
@@ -16,6 +23,9 @@ apps/sdkwork-drive-pc/
     sdkwork-drive-pc-commons/    shared UI components and i18n
     sdkwork-drive-pc-transfer/   transfer feature UI
     sdkwork-drive-pc-types/      shared Drive UI/domain types
+    sdkwork-drive-pc-admin-core/ admin SDK wrappers (storage + backend)
+    sdkwork-drive-pc-admin-storage-providers/ storage provider admin UI
+    sdkwork-drive-pc-admin-operations/ backend operations admin UI
 ```
 
 ## Runtime Boundary
@@ -35,7 +45,7 @@ apps/sdkwork-drive-pc/
 - Embedding applications that already own IAM should consume Drive packages directly and either omit `DriveAuthGate` or pass `integrationMode="host-managed"`. They should not mount `apps/sdkwork-drive-pc/src/App.tsx`, because that file is the standalone shell.
 - Drive core and feature packages do not depend on `@sdkwork/auth-pc-react` or `@sdkwork/appbase-pc-react`; those packages belong to the top-level host shell.
 
-Detailed standalone versus embeddable rules are documented in `../../docs/drive-iam-integration-standard.md`.
+Detailed standalone versus embeddable rules are documented in [../../docs/architecture/tech/TECH-drive-iam-integration-standard.md](../../docs/architecture/tech/TECH-drive-iam-integration-standard.md).
 
 ## Configuration
 
@@ -74,6 +84,12 @@ Storage provider, bucket, object, and default binding management use the
 stable `@sdkwork/drive-admin-storage-sdk` facade through the shared PC core
 wrapper. Those management operations require the Admin Storage API at
 `VITE_DRIVE_PC_DRIVE_ADMIN_STORAGE_API_BASE_URL`.
+
+Tenant operations administration (audit logs, maintenance sweeps, quota policy,
+labels, spaces, and download packages) uses `@sdkwork/drive-backend-sdk` through
+`sdkwork-drive-pc-admin-operations` and `sdkwork-drive-pc-admin-core`. Configure
+the backend API base URL with `VITE_DRIVE_PC_BACKEND_API_BASE_URL` (defaults to the
+admin storage gateway when unset).
 
 There is no renderer-local file data mode. When the backend is unavailable, the
 renderer should surface the real App SDK error instead of replacing Drive data
@@ -145,8 +161,8 @@ Public exports are declared in `specs/component.spec.json` under `contracts.publ
 ### Required SDK Surface
 
 Required SDK dependencies are declared in `specs/component.spec.json` under
-`contracts.sdkDependencies`, including appbase app SDK, Drive app SDK, and Drive
-admin storage SDK dependencies.
+`contracts.sdkDependencies`, including appbase app SDK, Drive app SDK, Drive
+admin storage SDK, and Drive backend SDK dependencies.
 
 ### Configuration
 

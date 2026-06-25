@@ -16,8 +16,8 @@ where
             "additional_bytes must be greater than or equal to 0".to_string(),
         ));
     }
-    let policy = TenantQuotaPolicy::from_env();
-    let Some(max_bytes) = policy.max_bytes else {
+    let max_bytes = resolve_effective_max_bytes(store, tenant_id).await?;
+    let Some(max_bytes) = max_bytes else {
         return Ok(());
     };
     let summary = store.summarize_tenant_quota(tenant_id).await?;
@@ -28,4 +28,17 @@ where
         )));
     }
     Ok(())
+}
+
+async fn resolve_effective_max_bytes<S>(
+    store: &S,
+    tenant_id: &str,
+) -> Result<Option<i64>, DriveServiceError>
+where
+    S: DriveQuotaStore,
+{
+    if let Some(policy) = store.get_tenant_quota_policy(tenant_id).await? {
+        return Ok(policy.max_bytes);
+    }
+    Ok(TenantQuotaPolicy::from_env().max_bytes)
 }

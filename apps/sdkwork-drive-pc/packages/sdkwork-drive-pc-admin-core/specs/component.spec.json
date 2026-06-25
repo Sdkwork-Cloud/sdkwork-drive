@@ -96,7 +96,8 @@
       ".",
       "./auth/adminAccess",
       "./runtime/driveRuntime",
-      "./sdk/driveAdminStorageSdkClient"
+      "./sdk/driveAdminStorageSdkClient",
+      "./sdk/driveBackendSdkClient"
     ],
     "runtimeEntrypoints": [],
     "routeManifest": null,
@@ -105,21 +106,33 @@
     "configKeys": [],
     "sdkDependencies": [
       {
-        "workspace": "sdkwork-drive",
-        "sdkFamily": "@sdkwork/drive-admin-storage-sdk",
+        "workspace": "sdkwork-drive-admin-storage-sdk",
         "role": "drive-admin-storage-capability",
         "required": true,
         "dependencyMode": "consumer-sdk",
         "apiPrefix": "/backend/v3/api",
-        "apiAuthority": "sdkwork-drive.admin-storage",
+        "apiAuthority": "sdkwork-drive.admin.storage",
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
           "typescript": "@sdkwork/drive-admin-storage-sdk"
         }
+      },
+      {
+        "workspace": "sdkwork-drive-backend-sdk",
+        "role": "drive-backend-capability",
+        "required": true,
+        "dependencyMode": "consumer-sdk",
+        "apiPrefix": "/backend/v3/api",
+        "apiAuthority": "sdkwork-drive.backend",
+        "generatedTransportImportPolicy": "forbidden",
+        "packageByLanguage": {
+          "typescript": "@sdkwork/drive-backend-sdk"
+        }
       }
     ],
     "dependencyApiExports": [],
-    "dependencyApiSurfaces": []
+    "dependencyApiSurfaces": [],
+    "dependencyComposition": "../../../specs/dependency.composition.json"
   },
   "verification": {
     "commands": [

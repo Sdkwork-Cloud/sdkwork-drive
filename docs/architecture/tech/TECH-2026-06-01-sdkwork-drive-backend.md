@@ -1,4 +1,3 @@
-> Migrated from `docs/superpowers/plans/2026-06-01-sdkwork-drive-backend.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
 # SDKWork Drive Backend Implementation Plan
@@ -17,7 +16,7 @@
 
 - This plan implements backend only.
 - Frontend and `apps/*` runtime product screens are out of scope.
-- The design spec source is `docs/superpowers/specs/2026-06-01-sdkwork-drive-backend-design.md`.
+- The design spec source is `docs/architecture/tech/TECH-2026-06-01-sdkwork-drive-backend-design.md`.
 - Current workspace is not a git repo yet. Commit steps are still included; they execute after `git init` or after moving into a tracked workspace.
 
 ## File Structure Plan
@@ -197,7 +196,8 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     let app = std::fs::read_to_string("generated/openapi/drive-app-api.openapi.json").unwrap();
     let backend = std::fs::read_to_string("generated/openapi/drive-backend-api.openapi.json").unwrap();
     assert!(app.contains("/app/v3/api/drive/spaces"));
-    assert!(backend.contains("/backend/v3/api/drive/storage_providers"));
+    assert!(backend.contains("/backend/v3/api/drive/quotas"));
+    assert!(backend.contains("/backend/v3/api/drive/audit_events"));
     assert!(app.contains("\"operationId\": \"spaces.list\""));
 }
 ```

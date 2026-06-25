@@ -381,6 +381,49 @@ fn is_production_runtime_profile() -> bool {
         .unwrap_or(false)
 }
 
+/// Fail fast when production is configured without download-token signing secrets.
+pub fn ensure_production_download_token_signing_configured() -> Result<(), String> {
+    if !is_production_runtime_profile() {
+        return Ok(());
+    }
+
+    if std::env::var("SDKWORK_DRIVE_DOWNLOAD_TOKEN_HMAC_SECRET")
+        .ok()
+        .map(|value| !value.trim().is_empty())
+        .unwrap_or(false)
+    {
+        return Ok(());
+    }
+
+    for env_key in [
+        "SDKWORK_DRIVE_DOWNLOAD_TOKEN_HMAC_SECRETS_JSON",
+        "SDKWORK_DRIVE_JWT_HMAC_SECRETS_JSON",
+    ] {
+        if let Ok(raw) = std::env::var(env_key) {
+            let secrets: std::collections::BTreeMap<String, String> =
+                serde_json::from_str(raw.trim()).map_err(|error| {
+                    format!("{env_key} is invalid in production: {error}")
+                })?;
+            if secrets.values().any(|value| !value.trim().is_empty()) {
+                return Ok(());
+            }
+        }
+    }
+
+    if std::env::var("SDKWORK_DRIVE_JWT_HMAC_SECRET")
+        .ok()
+        .map(|value| !value.trim().is_empty())
+        .unwrap_or(false)
+    {
+        return Ok(());
+    }
+
+    Err(
+        "production runtime requires SDKWORK_DRIVE_DOWNLOAD_TOKEN_HMAC_SECRET or tenant-scoped download/JWT signing secrets"
+            .to_string(),
+    )
+}
+
 fn constant_time_eq(left: &str, right: &str) -> bool {
     if left.len() != right.len() {
         return false;

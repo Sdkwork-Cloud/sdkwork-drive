@@ -28,6 +28,11 @@ const DEFAULT_HOME_PATH = '/';
 const AUTH_BASE_PATH = '/auth';
 const AUTH_LOGIN_PATH = '/auth/login';
 
+export function isDriveShareLinkClaimPath(pathname: string): boolean {
+  const normalized = pathname.replace(/\/+$/, '') || '/';
+  return /^\/share\/[^/]+$/u.test(normalized);
+}
+
 export function hasDriveIamSession(session: SessionSnapshot): boolean {
   return Boolean(session.authToken && session.accessToken && session.context?.tenantId);
 }
@@ -92,6 +97,10 @@ export function resolveDriveAuthGateDecision({
       replace: true,
       to: sanitizeDriveAuthRedirect(redirect) || normalizeDrivePathname(homePath),
     };
+  }
+
+  if (isDriveShareLinkClaimPath(pathname)) {
+    return { kind: 'product-route' };
   }
 
   if (!hasSession) {

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  TRANSFER_INTERRUPTION_TRANSFER_RETRY,
+  TRANSFER_INTERRUPTION_UPLOAD_NATIVE_RETRY,
+  TRANSFER_INTERRUPTION_UPLOAD_RESELECT,
+  formatTransferInterruptionMessage,
   formatTransferJobProgressDetail,
   formatTransferJobSpeedLabel,
   formatTransferJobTimeRemainingLabel,
@@ -18,6 +22,11 @@ const en = (key: string): string => {
     'transfer.saveCancelled': 'Save cancelled',
     'downloadManager.ready': 'Ready',
     'transfer.paused': 'Paused',
+    'transfer.uploadInterruptedNativeRetry':
+      'Upload was interrupted. Retry to continue with the same local file.',
+    'transfer.uploadInterruptedReselect':
+      'Upload was interrupted. Reselect the local file and retry.',
+    'transfer.transferInterruptedRetry': 'Transfer was interrupted. Retry to continue.',
   };
   return table[key] ?? key;
 };
@@ -61,5 +70,21 @@ describe('transferJobDisplay', () => {
         en,
       ),
     ).toBe('Paused');
+  });
+
+  it('maps interruption tokens to localized messages', () => {
+    expect(
+      formatTransferInterruptionMessage(TRANSFER_INTERRUPTION_UPLOAD_NATIVE_RETRY, en),
+    ).toBe('Upload was interrupted. Retry to continue with the same local file.');
+    expect(
+      formatTransferInterruptionMessage(TRANSFER_INTERRUPTION_UPLOAD_RESELECT, en),
+    ).toBe('Upload was interrupted. Reselect the local file and retry.');
+    expect(
+      formatTransferInterruptionMessage(TRANSFER_INTERRUPTION_TRANSFER_RETRY, en),
+    ).toBe('Transfer was interrupted. Retry to continue.');
+    expect(formatTransferInterruptionMessage('Network timeout', en)).toBe('Network timeout');
+    expect(formatTransferInterruptionMessage(undefined, en)).toBe(
+      'Transfer was interrupted. Retry to continue.',
+    );
   });
 });

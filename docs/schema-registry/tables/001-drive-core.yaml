@@ -190,3 +190,27 @@ tables:
           - parent_node_id
           - node_type
           - updated_at
+  - table: dr_drive_tenant_quota
+    domain: drive
+    description: Tenant-scoped storage quota policy override.
+    columns:
+      - name: tenant_id
+        type: varchar(64)
+      - name: max_bytes
+        type: bigint
+        nullable: true
+      - name: updated_by
+        type: varchar(128)
+      - name: updated_at
+        type: timestamptz
+      - name: version
+        type: bigint
+        constraints:
+          - "min: 1"
+    constraints:
+      - name: ck_dr_drive_tenant_quota_max_bytes
+        expression: "max_bytes IS NULL OR max_bytes > 0"
+        description: Tenant quota caps must be positive when configured.
+      - name: ck_dr_drive_tenant_quota_version
+        expression: "version >= 1"
+        description: Optimistic version floor for quota policy updates.

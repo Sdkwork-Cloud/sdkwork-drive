@@ -1,5 +1,5 @@
-# migrations
+# Migrations
 
-See `DOCUMENTATION_SPEC.md` section 2.
+Database migrations are owned by the repository database framework, not the PC renderer.
 
-See `DOCUMENTATION_SPEC.md` section 2.
+See [../../../../docs/migrations/README.md](../../../../docs/migrations/README.md).

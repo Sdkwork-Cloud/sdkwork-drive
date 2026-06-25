@@ -15,6 +15,9 @@ import {
   applyTransferFailure,
   buildNativeUploadJobFingerprint,
   createRetryFilesForDownloadJob,
+  downloadGrantFromJob,
+  isDownloadGrantStillValid,
+  pauseTransferJob,
   type DownloadJob,
 } from 'sdkwork-drive-pc-types';
 import { CreateSharedSpaceModal } from '../components/CreateSharedSpaceModal';
@@ -42,6 +45,7 @@ interface DrivePageProps {
   activeSection?: DriveSection;
   fileService: DriveFileService;
   storageSummary?: DriveStorageSummary;
+  storageSummaryUnavailable?: boolean;
   onOpenExternal?: (url: string) => Promise<void> | void;
   onOpenStorageSettings?: () => void;
   onSectionChange?: (section: DriveSection) => void;
@@ -129,6 +133,7 @@ export function DrivePage({
   activeSection: propActiveSection,
   fileService,
   storageSummary,
+  storageSummaryUnavailable = false,
   onOpenExternal,
   onOpenStorageSettings,
   onSectionChange,
@@ -441,6 +446,84 @@ export function DrivePage({
     downloadAbortControllersRef.current.delete(id);
     setDownloadJobs(prev => prev.map(j => j.id === id ? cancelTransferJob(j) : j));
   };
+  const runDownloadTransfer = (
+    job: DownloadJob,
+    downloadController: AbortController,
+    resumeExistingProgress = false,
+  ) => {
+    const grant = resumeExistingProgress ? downloadGrantFromJob(job) : undefined;
+    const prepareDownload =
+      resumeExistingProgress && grant && isDownloadGrantStillValid(job)
+        ? Promise.resolve(grant)
+        : (() => {
+            const retryFiles = createRetryFilesForDownloadJob(job);
+            return job.downloadKind === 'bundle' || retryFiles.length > 1 || retryFiles[0].type === 'folder'
+              ? fileService.createDownloadPackage(retryFiles, job.fileName, {
+                  signal: downloadController.signal,
+                })
+              : fileService.createDownloadUrl(retryFiles[0], {
+                  signal: downloadController.signal,
+                });
+          })();
+
+  prepareDownload
+      .then((download) => {
+        if (downloadAbortControllersRef.current.get(job.id) !== downloadController) {
+          return;
+        }
+        return runManagedDownloadTransfer({
+          job,
+          grant: download,
+          signal: downloadController.signal,
+          resumeExistingProgress,
+          onJobUpdate: (updater) => {
+            setDownloadJobs((prev) =>
+              prev.map((item) => (item.id === job.id ? updater(item) : item)),
+            );
+          },
+          onOpenExternal: onOpenExternal,
+          saveDownloadStream: hostDownloadStream,
+        });
+      })
+      .catch((err) => {
+        if (isDriveAbortError(err)) {
+          return;
+        }
+        if (downloadAbortControllersRef.current.get(job.id) !== downloadController) {
+          return;
+        }
+        setDownloadJobs(prev =>
+          prev.map(item =>
+            item.id === job.id
+              ? applyTransferFailure(item, err?.message || t('transfer.retryTransferFailed'))
+              : item,
+          ),
+        );
+      })
+      .finally(() => {
+        releaseDownloadAbortController(job.id, downloadController);
+      });
+  };
+  const handlePauseJob = (id: string) => {
+    const job = downloadJobs.find((item) => item.id === id);
+    if (!job || job.type !== 'download') {
+      return;
+    }
+    downloadAbortControllersRef.current.get(id)?.abort();
+    downloadAbortControllersRef.current.delete(id);
+    setDownloadJobs((prev) =>
+      prev.map((item) => (item.id === id ? pauseTransferJob(item) : item)),
+    );
+  };
+  const handleResumeJob = (id: string) => {
+    const job = downloadJobs.find((item) => item.id === id);
+    if (!job || job.type !== 'download' || job.status !== 'paused') {
+      return;
+    }
+    downloadAbortControllersRef.current.get(job.id)?.abort();
+    const downloadController = createDownloadAbortController(job.id);
+    runDownloadTransfer(job, downloadController, true);
+  };
   const handleRetryJob = (job: DownloadJob) => {
     if (job.type === 'upload') {
       const uploadSection = job.uploadSection;
@@ -676,51 +759,7 @@ export function DrivePage({
           : item,
       ),
     );
-
-    const prepareDownload = job.downloadKind === 'bundle' || retryFiles.length > 1 || retryFiles[0].type === 'folder'
-      ? fileService.createDownloadPackage(retryFiles, job.fileName, {
-          signal: downloadController.signal,
-        })
-      : fileService.createDownloadUrl(retryFiles[0], {
-          signal: downloadController.signal,
-        });
-
-    prepareDownload
-      .then((download) => {
-        if (downloadAbortControllersRef.current.get(job.id) !== downloadController) {
-          return;
-        }
-        return runManagedDownloadTransfer({
-          job,
-          grant: download,
-          signal: downloadController.signal,
-          onJobUpdate: (updater) => {
-            setDownloadJobs((prev) =>
-              prev.map((item) => (item.id === job.id ? updater(item) : item)),
-            );
-          },
-          onOpenExternal: onOpenExternal,
-          saveDownloadStream: hostDownloadStream,
-        });
-      })
-      .catch((err) => {
-        if (isDriveAbortError(err)) {
-          return;
-        }
-        if (downloadAbortControllersRef.current.get(job.id) !== downloadController) {
-          return;
-        }
-        setDownloadJobs(prev =>
-          prev.map(item =>
-            item.id === job.id
-              ? applyTransferFailure(item, err?.message || t('transfer.retryTransferFailed'))
-              : item,
-          ),
-        );
-      })
-      .finally(() => {
-        releaseDownloadAbortController(job.id, downloadController);
-      });
+    runDownloadTransfer(job, downloadController, false);
   };
 
   return (
@@ -764,6 +803,7 @@ export function DrivePage({
         sharedSpaces={sharedSpaces}
         knowledgeBaseSpaces={knowledgeBaseSpaces}
         storageSummary={storageSummary}
+        storageSummaryUnavailable={storageSummaryUnavailable}
         onAddSpaceClick={() => setIsCreateSpaceOpen(true)}
         onDeleteSpace={handleDeleteSpace}
         onOpenStorageSettings={onOpenStorageSettings}
@@ -776,6 +816,8 @@ export function DrivePage({
             onOpenDownload={onOpenExternal}
             onRetryJob={handleRetryJob}
             onCancelJob={handleCancelJob}
+            onPauseJob={handlePauseJob}
+            onResumeJob={handleResumeJob}
           />
         </React.Suspense>
       ) : (

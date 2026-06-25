@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::backend_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{AuditEventPage, CopyProviderObjectRequest, CreateStorageProviderRequest, DeleteStorageProviderResponse, DownloadPackagePage, ListSpacesResponse, ListStorageProvidersResponse, MaintenanceJobPage, OperatorRequest, ProviderBucket, ProviderBucketMutation, ProviderObject, ProviderObjectList, ProviderObjectMutation, QuotaSummary, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, StorageProvider, StorageProviderBinding, StorageProviderCapabilities, SweepObjectStoreRequest, SweepResponse, SweepUploadSessionsRequest, TestStorageProviderRequest, TestStorageProviderResponse, UpdateStorageProviderRequest};
+use crate::models::{AuditEventPage, DownloadPackagePage, ListSpacesResponse, MaintenanceJobPage, QuotaSummary, SweepObjectStoreRequest, SweepResponse, SweepUploadSessionsRequest, UpdateQuotaPolicyRequest};
 
 #[derive(Clone)]
 pub struct DriveApi {
@@ -66,6 +66,12 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
+    /// Update tenant quota policy
+    pub async fn quotas_update(&self, body: &UpdateQuotaPolicyRequest) -> Result<QuotaSummary, SdkworkError> {
+        let path = backend_path(&"/drive/quotas".to_string());
+        self.client.put(&path, Some(body), None, None, Some("application/json")).await
+    }
+
     pub async fn spaces_admin_list(&self, owner_subject_type: Option<&str>, owner_subject_id: Option<&str>) -> Result<ListSpacesResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("ownerSubjectType", owner_subject_type, "form", true, false, None),
@@ -73,117 +79,6 @@ impl DriveApi {
         ]);
         let path = append_query_string(backend_path(&"/drive/spaces".to_string()), &query);
         self.client.get(&path, None, None).await
-    }
-
-    pub async fn storage_provider_bindings_default_get(&self, space_id: Option<&str>, space_type: Option<&str>) -> Result<StorageProviderBinding, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
-            QueryParameterSpec::new("spaceType", space_type, "form", true, false, None),
-        ]);
-        let path = append_query_string(backend_path(&"/drive/storage_provider_bindings/default".to_string()), &query);
-        self.client.get(&path, None, None).await
-    }
-
-    pub async fn storage_provider_bindings_default_set(&self, body: &SetDefaultStorageProviderBindingRequest) -> Result<StorageProviderBinding, SdkworkError> {
-        let path = backend_path(&"/drive/storage_provider_bindings/default".to_string());
-        self.client.put(&path, Some(body), None, None, Some("application/json")).await
-    }
-
-    pub async fn storage_providers_list(&self, status: Option<&str>) -> Result<ListStorageProvidersResponse, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("status", status, "form", true, false, None),
-        ]);
-        let path = append_query_string(backend_path(&"/drive/storage_providers".to_string()), &query);
-        self.client.get(&path, None, None).await
-    }
-
-    pub async fn storage_providers_create(&self, body: &CreateStorageProviderRequest) -> Result<StorageProvider, SdkworkError> {
-        let path = backend_path(&"/drive/storage_providers".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
-    }
-
-    pub async fn storage_providers_update(&self, provider_id: &str, body: &UpdateStorageProviderRequest) -> Result<StorageProvider, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
-        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
-    }
-
-    pub async fn storage_providers_delete(&self, provider_id: &str, operator_id: &str) -> Result<DeleteStorageProviderResponse, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("operatorId", operator_id, "form", true, false, None),
-        ]);
-        let path = append_query_string(backend_path(&format!("/drive/storage_providers/{}", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false)))), &query);
-        self.client.delete(&path, None, None).await
-    }
-
-    pub async fn storage_providers_get(&self, provider_id: &str) -> Result<StorageProvider, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
-        self.client.get(&path, None, None).await
-    }
-
-    pub async fn storage_providers_activate(&self, provider_id: &str, body: &OperatorRequest) -> Result<StorageProvider, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}/activate", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
-    }
-
-    pub async fn storage_providers_capabilities_get(&self, provider_id: &str) -> Result<StorageProviderCapabilities, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}/capabilities", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
-        self.client.get(&path, None, None).await
-    }
-
-    pub async fn storage_providers_credentials_rotate(&self, provider_id: &str, body: &RotateStorageProviderCredentialRequest) -> Result<StorageProvider, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}/credentials/rotate", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
-    }
-
-    pub async fn storage_providers_deactivate(&self, provider_id: &str, body: &OperatorRequest) -> Result<StorageProvider, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}/deactivate", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
-    }
-
-    pub async fn storage_providers_test(&self, provider_id: &str, body: &TestStorageProviderRequest) -> Result<TestStorageProviderResponse, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}/test", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
-    }
-
-    pub async fn storage_providers_bucket_head(&self, provider_id: &str) -> Result<ProviderBucket, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}/bucket", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
-        self.client.get(&path, None, None).await
-    }
-
-    pub async fn storage_providers_bucket_create(&self, provider_id: &str) -> Result<ProviderBucketMutation, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}/bucket", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
-        self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
-    }
-
-    pub async fn storage_providers_bucket_delete(&self, provider_id: &str) -> Result<ProviderBucketMutation, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}/bucket", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
-        self.client.delete(&path, None, None).await
-    }
-
-    pub async fn storage_providers_objects_list(&self, provider_id: &str, prefix: Option<&str>, delimiter: Option<&str>, page_token: Option<&str>, page_size: Option<i64>) -> Result<ProviderObjectList, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("prefix", prefix, "form", true, false, None),
-            QueryParameterSpec::new("delimiter", delimiter, "form", true, false, None),
-            QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
-            QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
-        ]);
-        let path = append_query_string(backend_path(&format!("/drive/storage_providers/{}/objects", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false)))), &query);
-        self.client.get(&path, None, None).await
-    }
-
-    pub async fn storage_providers_objects_head(&self, provider_id: &str, object_key: &str) -> Result<ProviderObject, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}/objects/{}", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false)), serialize_path_parameter(object_key, PathParameterSpec::new("objectKey", "simple", false))));
-        self.client.get(&path, None, None).await
-    }
-
-    pub async fn storage_providers_objects_delete(&self, provider_id: &str, object_key: &str) -> Result<ProviderObjectMutation, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}/objects/{}", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false)), serialize_path_parameter(object_key, PathParameterSpec::new("objectKey", "simple", false))));
-        self.client.delete(&path, None, None).await
-    }
-
-    pub async fn storage_providers_objects_copy(&self, provider_id: &str, body: &CopyProviderObjectRequest) -> Result<ProviderObjectMutation, SdkworkError> {
-        let path = backend_path(&format!("/drive/storage_providers/{}/objects/copy", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     pub async fn download_packages_list(&self, state: Option<&str>, page: Option<i64>, page_size: Option<i64>) -> Result<DownloadPackagePage, SdkworkError> {
@@ -198,103 +93,6 @@ impl DriveApi {
 
 }
 
-struct PathParameterSpec<'a> {
-    name: &'a str,
-    style: &'a str,
-    explode: bool,
-}
-
-impl<'a> PathParameterSpec<'a> {
-    fn new(name: &'a str, style: &'a str, explode: bool) -> Self {
-        Self { name, style, explode }
-    }
-}
-
-fn serialize_path_parameter<T: serde::Serialize>(value: T, spec: PathParameterSpec<'_>) -> String {
-    let value = serde_json::to_value(value).unwrap_or(serde_json::Value::Null);
-    if value.is_null() {
-        return String::new();
-    }
-    let style = if spec.style.is_empty() { "simple" } else { spec.style };
-    match value {
-        serde_json::Value::Array(values) => serialize_path_array(spec.name, &values, style, spec.explode),
-        serde_json::Value::Object(values) => serialize_path_object(spec.name, &values, style, spec.explode),
-        value => format!("{}{}", path_primitive_prefix(spec.name, style), percent_encode(&primitive_to_string(&value))),
-    }
-}
-
-fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, explode: bool) -> String {
-    let serialized = values
-        .iter()
-        .filter(|value| !value.is_null())
-        .map(|value| percent_encode(&primitive_to_string(value)))
-        .collect::<Vec<_>>();
-    if serialized.is_empty() {
-        return path_prefix(name, style);
-    }
-    if style == "matrix" {
-        if explode {
-            return serialized.iter().map(|item| format!(";{}={}", name, item)).collect::<Vec<_>>().join("");
-        }
-        return format!(";{}={}", name, serialized.join(","));
-    }
-    let separator = if explode { "." } else { "," };
-    format!("{}{}", path_prefix(name, style), serialized.join(separator))
-}
-
-fn serialize_path_object(
-    name: &str,
-    values: &serde_json::Map<String, serde_json::Value>,
-    style: &str,
-    explode: bool,
-) -> String {
-    let mut entries = Vec::new();
-    let mut exploded = Vec::new();
-    for (key, value) in values {
-        if value.is_null() {
-            continue;
-        }
-        let escaped_key = percent_encode(key);
-        let escaped_value = percent_encode(&primitive_to_string(value));
-        if explode {
-            if style == "matrix" {
-                exploded.push(format!(";{}={}", escaped_key, escaped_value));
-            } else {
-                exploded.push(format!("{}={}", escaped_key, escaped_value));
-            }
-        } else {
-            entries.push(escaped_key);
-            entries.push(escaped_value);
-        }
-    }
-    if style == "matrix" {
-        if explode {
-            return exploded.join("");
-        }
-        return format!(";{}={}", name, entries.join(","));
-    }
-    if explode {
-        let separator = if style == "label" { "." } else { "," };
-        return format!("{}{}", path_prefix(name, style), exploded.join(separator));
-    }
-    format!("{}{}", path_prefix(name, style), entries.join(","))
-}
-
-fn path_prefix(name: &str, style: &str) -> String {
-    match style {
-        "label" => ".".to_string(),
-        "matrix" => format!(";{}", name),
-        _ => String::new(),
-    }
-}
-
-fn path_primitive_prefix(name: &str, style: &str) -> String {
-    if style == "matrix" {
-        format!(";{}=", name)
-    } else {
-        path_prefix(name, style)
-    }
-}
 
 
 struct QueryParameterSpec<'a> {

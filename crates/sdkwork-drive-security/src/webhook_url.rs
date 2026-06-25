@@ -1,6 +1,6 @@
 use std::net::IpAddr;
 
-/// Validates outbound webhook URLs to reduce SSRF risk (SECURITY_SPEC §3).
+/// Validates webhook URL syntax and host policy before DNS resolution.
 pub fn validate_webhook_https_url(address: &str) -> Result<&str, &'static str> {
     let trimmed = address.trim();
     if trimmed.is_empty() || trimmed.len() > 2048 {
@@ -21,6 +21,40 @@ pub fn validate_webhook_https_url(address: &str) -> Result<&str, &'static str> {
     let host = extract_webhook_host(authority).ok_or("address must be an https webhook URL")?;
     validate_webhook_host(host)?;
     Ok(trimmed)
+}
+
+/// Validates webhook URL syntax, host policy, and resolved IP addresses (SSRF hardening).
+pub async fn validate_webhook_https_url_for_dispatch(address: &str) -> Result<String, String> {
+    let trimmed = validate_webhook_https_url(address).map_err(str::to_string)?.to_string();
+    let authority = trimmed
+        .get(8..)
+        .and_then(|rest| rest.split(&['/', '?', '#'][..]).next())
+        .ok_or_else(|| "address must be an https webhook URL".to_string())?;
+    let host = extract_webhook_host(authority)
+        .ok_or_else(|| "address must be an https webhook URL".to_string())?;
+    resolve_and_validate_webhook_host(host).await?;
+    Ok(trimmed)
+}
+
+async fn resolve_and_validate_webhook_host(host: &str) -> Result<(), String> {
+    if host.parse::<IpAddr>().is_ok() {
+        return Ok(());
+    }
+
+    let mut resolved_any = false;
+    let lookup = tokio::net::lookup_host((host, 443))
+        .await
+        .map_err(|error| format!("webhook host DNS resolution failed: {error}"))?;
+    for socket_addr in lookup {
+        resolved_any = true;
+        if is_blocked_webhook_ip(socket_addr.ip()) {
+            return Err("address host resolves to a blocked network".to_string());
+        }
+    }
+    if !resolved_any {
+        return Err("webhook host did not resolve to any address".to_string());
+    }
+    Ok(())
 }
 
 fn extract_webhook_host(authority: &str) -> Option<&str> {

@@ -123,6 +123,7 @@ export function FileRowItem({
       className={`${FILE_LIST_ROW_CLASS} group select-none ${
         isSelected ? "is-selected" : ""
       }`}
+      style={{ contentVisibility: "auto", containIntrinsicSize: "0 52px" }}
     >
       {/* Checkbox Column */}
       <div className="flex items-center justify-center">

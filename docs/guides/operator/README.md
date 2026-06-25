@@ -2,4 +2,6 @@
 
 Deployment, monitoring, and incident response entrypoints.
 
-See `DOCUMENTATION_SPEC.md` section 2.
+- [Pre-launch checklist](./pre-launch-checklist.md)
+- [Production operations runbook](../../runbooks/drive-production-operations.md)
+- [Backup and disaster recovery runbook](../../runbooks/drive-backup-disaster-recovery.md)

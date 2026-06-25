@@ -12,6 +12,7 @@ interface FileSidebarProps {
   sharedSpaces?: SharedSpace[];
   knowledgeBaseSpaces?: KnowledgeBaseSpace[];
   storageSummary?: DriveStorageSummary;
+  storageSummaryUnavailable?: boolean;
   onAddSpaceClick?: () => void;
   onDeleteSpace?: (id: string) => void;
   onOpenStorageSettings?: () => void;
@@ -23,6 +24,7 @@ export function FileSidebar({
   sharedSpaces = [],
   knowledgeBaseSpaces = [],
   storageSummary,
+  storageSummaryUnavailable = false,
   onAddSpaceClick,
   onDeleteSpace,
   onOpenStorageSettings
@@ -138,7 +140,9 @@ export function FileSidebar({
           />
         </div>
         <div className="text-xs text-[#777] dark:text-[#999]">
-          {t('sidebar.storageUsed', { used: storageUsedLabel, total: storageTotalLabel })}
+          {storageSummaryUnavailable
+            ? t('sidebar.storageUnavailable')
+            : t('sidebar.storageUsed', { used: storageUsedLabel, total: storageTotalLabel })}
         </div>
         <button
           onClick={onOpenStorageSettings}

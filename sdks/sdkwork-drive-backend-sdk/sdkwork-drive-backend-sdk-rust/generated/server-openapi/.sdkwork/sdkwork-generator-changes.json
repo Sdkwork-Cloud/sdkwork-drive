@@ -9,10 +9,13 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-backend-sdk-generated-rust"
   },
-  "changeFingerprint": "b6f0b45001b91178fa780afbf6cf40bae844ad3423453098439c18a2b8c043d0",
+  "changeFingerprint": "0db2e945bd3dd1be0141f8a319d21ae713cd756efadd094ca6fbf2466b64d951",
   "changes": {
     "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [],
+    "updatedGeneratedFiles": [
+      "src/api/drive.rs",
+      "src/models/mod.rs"
+    ],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
@@ -23,7 +26,6 @@
       "README.md",
       "sdkwork-sdk.json",
       "src/api/base.rs",
-      "src/api/drive.rs",
       "src/api/labels.rs",
       "src/api/mod.rs",
       "src/api/paths.rs",
@@ -34,43 +36,44 @@
       "src/models/audit_event_page.rs",
       "src/models/audit_event.rs",
       "src/models/common.rs",
-      "src/models/copy_provider_object_request.rs",
       "src/models/create_label_request.rs",
-      "src/models/create_storage_provider_request.rs",
       "src/models/delete_label_response.rs",
-      "src/models/delete_storage_provider_response.rs",
       "src/models/download_package_page.rs",
       "src/models/download_package.rs",
       "src/models/drive_label.rs",
       "src/models/drive_space.rs",
       "src/models/label_list_response.rs",
       "src/models/list_spaces_response.rs",
-      "src/models/list_storage_providers_response.rs",
       "src/models/maintenance_job_page.rs",
       "src/models/maintenance_job.rs",
-      "src/models/mod.rs",
-      "src/models/operator_request.rs",
       "src/models/problem_detail.rs",
+      "src/models/quota_summary.rs",
+      "src/models/sweep_object_store_request.rs",
+      "src/models/sweep_response.rs",
+      "src/models/sweep_upload_sessions_request.rs",
+      "src/models/update_label_request.rs",
+      "src/models/update_quota_policy_request.rs"
+    ],
+    "deletedGeneratedFiles": [
+      "src/models/copy_provider_object_request.rs",
+      "src/models/create_storage_provider_request.rs",
+      "src/models/delete_storage_provider_response.rs",
+      "src/models/list_storage_providers_response.rs",
+      "src/models/operator_request.rs",
       "src/models/provider_bucket_mutation.rs",
       "src/models/provider_bucket.rs",
       "src/models/provider_object_list.rs",
       "src/models/provider_object_mutation.rs",
       "src/models/provider_object.rs",
-      "src/models/quota_summary.rs",
       "src/models/rotate_storage_provider_credential_request.rs",
       "src/models/set_default_storage_provider_binding_request.rs",
       "src/models/storage_provider_binding.rs",
       "src/models/storage_provider_capabilities.rs",
       "src/models/storage_provider.rs",
-      "src/models/sweep_object_store_request.rs",
-      "src/models/sweep_response.rs",
-      "src/models/sweep_upload_sessions_request.rs",
       "src/models/test_storage_provider_request.rs",
       "src/models/test_storage_provider_response.rs",
-      "src/models/update_label_request.rs",
       "src/models/update_storage_provider_request.rs"
     ],
-    "deletedGeneratedFiles": [],
     "scaffoldedFiles": [],
     "preservedScaffoldFiles": [
       "custom/README.md"
@@ -79,26 +82,99 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [],
-    "details": [],
-    "requiresVerification": false,
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+    "areas": [
+      "api-surface",
+      "models"
+    ],
+    "details": [
+      {
+        "area": "api-surface",
+        "paths": [
+          "src/api/drive.rs"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "src/models/copy_provider_object_request.rs",
+          "src/models/create_storage_provider_request.rs",
+          "src/models/delete_storage_provider_response.rs",
+          "src/models/list_storage_providers_response.rs",
+          "src/models/mod.rs",
+          "src/models/operator_request.rs",
+          "src/models/provider_bucket_mutation.rs",
+          "src/models/provider_bucket.rs",
+          "src/models/provider_object_list.rs",
+          "src/models/provider_object_mutation.rs",
+          "src/models/provider_object.rs",
+          "src/models/rotate_storage_provider_credential_request.rs",
+          "src/models/set_default_storage_provider_binding_request.rs",
+          "src/models/storage_provider_binding.rs",
+          "src/models/storage_provider_capabilities.rs",
+          "src/models/storage_provider.rs",
+          "src/models/test_storage_provider_request.rs",
+          "src/models/test_storage_provider_response.rs",
+          "src/models/update_storage_provider_request.rs"
+        ]
+      }
+    ],
+    "requiresVerification": true,
+    "summary": "Detected impact areas: api-surface, models. Verification is required."
   },
   "verificationPlan": {
-    "shouldRun": false,
-    "runPhase": "skip",
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
-    "steps": []
+    "shouldRun": true,
+    "runPhase": "now",
+    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "steps": [
+      {
+        "id": "check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-rust\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "rust",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action check"
+      },
+      {
+        "id": "build",
+        "title": "Unified package build",
+        "required": true,
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-rust\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "rust",
+          "--project-dir",
+          ".",
+          "--action",
+          "build"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action build"
+      }
+    ]
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "low",
-    "nextAction": "skip",
+    "riskLevel": "high",
+    "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
-      "no-actionable-changes"
+      "deleted-generated-files",
+      "manual-review-required",
+      "verification-required"
     ]
   },
   "preservedLegacyFiles": false

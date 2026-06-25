@@ -1,9 +1,8 @@
 use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
 use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_security::DriveAuthValidationPolicy;
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-use sdkwork_router_storage_backend_api::{build_router, build_router_with_pool_and_iam_policy};
+use sdkwork_router_storage_backend_api::{build_router, build_router_with_pool_and_iam};
 use sdkwork_web_core::{access_token_jwt, auth_token_jwt, encode_unsigned_test_jwt};
 use serde_json::{json, Value};
 use sqlx::any::AnyPoolOptions;
@@ -23,13 +22,71 @@ fn admin_auth_token(tenant: &str, user: &str) -> String {
         "user_id": user,
         "session_id": TEST_SESSION,
         "app_id": TEST_APP,
+        "organization_id": "100002",
+        "auth_level": "password",
+        "login_scope": "ORGANIZATION",
+        "permission_scope": "drive.storage.admin",
+    }))
+}
+
+fn admin_access_token(tenant: &str, user: &str) -> String {
+    encode_unsigned_test_jwt(json!({
+        "token_type": "access",
+        "tenant_id": tenant,
+        "user_id": user,
+        "session_id": TEST_SESSION,
+        "app_id": TEST_APP,
+        "organization_id": "100002",
+        "environment": "prod",
+        "deployment_mode": "saas",
+        "login_scope": "ORGANIZATION",
+        "permission_scope": "drive.storage.admin",
+    }))
+}
+
+fn admin_access_token_with_scope(tenant: &str, user: &str, permission_scope: &str) -> String {
+    encode_unsigned_test_jwt(json!({
+        "token_type": "access",
+        "tenant_id": tenant,
+        "user_id": user,
+        "session_id": TEST_SESSION,
+        "app_id": TEST_APP,
+        "organization_id": "100002",
+        "environment": "prod",
+        "deployment_mode": "saas",
+        "login_scope": "ORGANIZATION",
+        "permission_scope": permission_scope,
+    }))
+}
+
+fn admin_auth_token_with_scope(tenant: &str, user: &str, permission_scope: &str) -> String {
+    encode_unsigned_test_jwt(json!({
+        "token_type": "auth",
+        "tenant_id": tenant,
+        "user_id": user,
+        "session_id": TEST_SESSION,
+        "app_id": TEST_APP,
+        "organization_id": "100002",
+        "auth_level": "password",
+        "login_scope": "ORGANIZATION",
+        "permission_scope": permission_scope,
+    }))
+}
+
+fn personal_admin_auth_token(tenant: &str, user: &str) -> String {
+    encode_unsigned_test_jwt(json!({
+        "token_type": "auth",
+        "tenant_id": tenant,
+        "user_id": user,
+        "session_id": TEST_SESSION,
+        "app_id": TEST_APP,
         "auth_level": "password",
         "login_scope": "TENANT",
         "permission_scope": "drive.storage.admin",
     }))
 }
 
-fn admin_access_token(tenant: &str, user: &str) -> String {
+fn personal_admin_access_token(tenant: &str, user: &str) -> String {
     encode_unsigned_test_jwt(json!({
         "token_type": "access",
         "tenant_id": tenant,
@@ -217,6 +274,62 @@ async fn admin_storage_routes_validate_token_derived_app_context() {
     assert_ne!(allowed.status(), StatusCode::FORBIDDEN);
 }
 
+#[tokio::test]
+async fn admin_storage_routes_reject_personal_login_scope_session() {
+    let app = admin_storage_router_allowing_unsigned_context().await;
+
+    let personal_session = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/backend/v3/api/drive/storage/bindings")
+                .header(
+                    "authorization",
+                    format!("Bearer {}", personal_admin_auth_token("tenant-a", "admin-001")),
+                )
+                .header("access-token", personal_admin_access_token("tenant-a", "admin-001"))
+                .body(Body::empty())
+                .expect("request should be built"),
+        )
+        .await
+        .expect("protected request should be handled");
+    assert_problem(
+        personal_session,
+        StatusCode::FORBIDDEN,
+        "sdkwork.auth.forbidden",
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn admin_storage_routes_reject_audit_only_scope() {
+    let app = admin_storage_router_allowing_unsigned_context().await;
+    let audit_scope = "drive.audit.admin";
+
+    let denied = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/backend/v3/api/drive/storage/providers")
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        admin_auth_token_with_scope("tenant-a", "admin-001", audit_scope)
+                    ),
+                )
+                .header(
+                    "access-token",
+                    admin_access_token_with_scope("tenant-a", "admin-001", audit_scope),
+                )
+                .body(Body::empty())
+                .expect("request should be built"),
+        )
+        .await
+        .expect("protected request should be handled");
+    assert_problem(denied, StatusCode::FORBIDDEN, "sdkwork.auth.forbidden").await;
+}
+
 async fn admin_storage_router_allowing_unsigned_context() -> axum::Router {
     sqlx::any::install_default_drivers();
     let pool = AnyPoolOptions::new()
@@ -227,10 +340,7 @@ async fn admin_storage_router_allowing_unsigned_context() -> axum::Router {
     install_any_schema(&pool, DatabaseEngine::Sqlite)
         .await
         .expect("sqlite schema should be installed");
-    build_router_with_pool_and_iam_policy(
-        pool,
-        DriveAuthValidationPolicy::allow_unsigned_for_development(),
-    )
+    build_router_with_pool_and_iam(pool)
 }
 
 async fn assert_problem(response: axum::response::Response, status: StatusCode, code: &str) {
@@ -284,6 +394,15 @@ async fn assert_problem(response: axum::response::Response, status: StatusCode, 
                     .is_some_and(|value| value.contains("forbidden"))
                     || detail.contains("permission")
                     || detail.contains("admin")
+            );
+        }
+        "sdkwork.auth.forbidden" => {
+            assert!(
+                problem["type"]
+                    .as_str()
+                    .is_some_and(|value| value.contains("forbidden"))
+                    || detail.contains("login_scope TENANT")
+                    || detail.contains("permission")
             );
         }
         other => panic!("unexpected problem code `{other}`: {problem}"),

@@ -1,5 +1,5 @@
-# roadmap
+# Product Roadmap
 
-See `DOCUMENTATION_SPEC.md` section 2.
+Roadmap shards belong here when the PRD phases need dated delivery tracking beyond `docs/product/prd/PRD.md` section 7.
 
-See `DOCUMENTATION_SPEC.md` section 2.
+See `../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2.3.

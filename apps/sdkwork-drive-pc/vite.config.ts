@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
   const workspaceDependencyRoot = (dependencyId: string) =>
     path.resolve(repoRoot, '..', dependencyId);
   const appbaseRoot = process.env.SDKWORK_APPBASE_ROOT ?? workspaceDependencyRoot('sdkwork-appbase');
+  const iamRoot = process.env.SDKWORK_IAM_ROOT ?? workspaceDependencyRoot('sdkwork-iam');
   const sdkCommonsRoot = process.env.SDKWORK_SDK_COMMONS_ROOT ?? workspaceDependencyRoot('sdkwork-sdk-commons');
   const utilsRoot = process.env.SDKWORK_UTILS_ROOT ?? workspaceDependencyRoot('sdkwork-utils');
   const uiRoot = process.env.SDKWORK_UI_PC_REACT_ROOT
@@ -46,6 +47,10 @@ export default defineConfig(({ mode }) => {
           __dirname,
           'packages/sdkwork-drive-pc-admin-storage-providers/src',
         ),
+        'sdkwork-drive-pc-admin-operations': path.resolve(
+          __dirname,
+          'packages/sdkwork-drive-pc-admin-operations/src',
+        ),
         'sdkwork-drive-pc-core/config/runtimeConfig': path.resolve(
           __dirname,
           'packages/sdkwork-drive-pc-core/src/config/runtimeConfig.ts',
@@ -59,20 +64,20 @@ export default defineConfig(({ mode }) => {
           'packages/pc-react/foundation/sdkwork-appbase-pc-react/src/index.ts',
         ),
         '@sdkwork/auth-pc-react': path.resolve(
-          appbaseRoot,
-          'packages/pc-react/iam/sdkwork-auth-pc-react/src/index.ts',
+          iamRoot,
+          'apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/index.ts',
         ),
-        '@sdkwork/appbase-app-sdk': path.resolve(
-          appbaseRoot,
-          'sdks/sdkwork-appbase-app-sdk/sdkwork-appbase-app-sdk-typescript/generated/server-openapi/src/index.ts',
+        '@sdkwork/iam-app-sdk': path.resolve(
+          iamRoot,
+          'sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/generated/server-openapi/src/index.ts',
         ),
-        '@sdkwork/appbase-backend-sdk': path.resolve(
-          appbaseRoot,
-          'sdks/sdkwork-appbase-backend-sdk/sdkwork-appbase-backend-sdk-typescript/generated/server-openapi/src/index.ts',
+        '@sdkwork/iam-backend-sdk': path.resolve(
+          iamRoot,
+          'sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript/generated/server-openapi/src/index.ts',
         ),
         '@sdkwork/auth-runtime-pc-react': path.resolve(
-          appbaseRoot,
-          'packages/pc-react/iam/sdkwork-auth-runtime-pc-react/src/index.ts',
+          iamRoot,
+          'apps/sdkwork-iam-pc/packages/sdkwork-auth-runtime-pc-react/src/index.ts',
         ),
         '@sdkwork/drive-app-sdk': path.resolve(
           repoRoot,
@@ -81,6 +86,10 @@ export default defineConfig(({ mode }) => {
         '@sdkwork/drive-admin-storage-sdk': path.resolve(
           repoRoot,
           'sdks/sdkwork-drive-admin-storage-sdk/sdkwork-drive-admin-storage-sdk-typescript/src/index.ts',
+        ),
+        '@sdkwork/drive-backend-sdk': path.resolve(
+          repoRoot,
+          'sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/src/index.ts',
         ),
         '@sdkwork/core-pc-react': path.resolve(
           __dirname,
@@ -91,20 +100,20 @@ export default defineConfig(({ mode }) => {
           'packages/pc-react/foundation/sdkwork-i18n-pc-react/src/index.ts',
         ),
         '@sdkwork/iam-contracts': path.resolve(
-          appbaseRoot,
-          'packages/common/iam/sdkwork-iam-contracts/src/index.ts',
+          iamRoot,
+          'apps/sdkwork-iam-common/packages/sdkwork-iam-contracts/src/index.ts',
         ),
         '@sdkwork/iam-runtime': path.resolve(
-          appbaseRoot,
-          'packages/common/iam/sdkwork-iam-runtime/src/index.ts',
+          iamRoot,
+          'apps/sdkwork-iam-common/packages/sdkwork-iam-runtime/src/index.ts',
         ),
         '@sdkwork/iam-sdk-ports': path.resolve(
-          appbaseRoot,
-          'packages/common/iam/sdkwork-iam-sdk-ports/src/index.ts',
+          iamRoot,
+          'apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports/src/index.ts',
         ),
         '@sdkwork/iam-service': path.resolve(
-          appbaseRoot,
-          'packages/common/iam/sdkwork-iam-service/src/index.ts',
+          iamRoot,
+          'apps/sdkwork-iam-common/packages/sdkwork-iam-service/src/index.ts',
         ),
         '@sdkwork/runtime-bootstrap': path.resolve(
           appbaseRoot,

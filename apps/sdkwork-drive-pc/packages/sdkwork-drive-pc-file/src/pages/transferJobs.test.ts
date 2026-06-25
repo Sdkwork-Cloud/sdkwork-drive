@@ -6,6 +6,7 @@ import {
   canControlTransferJob,
   canPauseTransferJob,
   canResumeTransferJob,
+  pauseTransferJob,
   createDownloadJobForFiles,
   createRetryFilesForDownloadJob,
   createUploadJobForFile,
@@ -290,7 +291,7 @@ describe('drive transfer job helpers', () => {
     });
   });
 
-  it('does not expose pause and resume controls when there is no real SDK pause capability', () => {
+  it('supports download pause and resume when the grant is still valid', () => {
     const uploadJob = createUploadJobForFile(
       new File(['hello'], 'Roadmap.pdf', { type: 'application/pdf' }),
       {
@@ -298,17 +299,22 @@ describe('drive transfer job helpers', () => {
         fileId: 'temp-file',
       },
     );
-    const downloadJob = createDownloadJobForFiles([sourceFile], {
-      id: 'job-download',
-    });
-
-    expect(canCancelTransferJob(uploadJob)).toBe(true);
-    expect(canControlTransferJob(uploadJob)).toBe(true);
-    expect(canPauseTransferJob(uploadJob)).toBe(false);
+    const downloadJob = applyDownloadGrantToJob(
+      createDownloadJobForFiles([sourceFile], {
+        id: 'job-download',
+      }),
+      {
+        downloadUrl: 'https://example.test/file',
+        expiresAtEpochMs: Date.now() + 60_000,
+      },
+    );
+    const downloading = { ...downloadJob, status: 'downloading' as const };
+    expect(canPauseTransferJob(downloading)).toBe(true);
+    const paused = pauseTransferJob(downloading);
+    expect(paused.status).toBe('paused');
+    expect(canResumeTransferJob(paused)).toBe(true);
+    expect(canPauseTransferJob({ ...uploadJob, status: 'uploading' })).toBe(false);
     expect(canResumeTransferJob({ ...uploadJob, status: 'paused' })).toBe(false);
-    expect(canCancelTransferJob(downloadJob)).toBe(true);
-    expect(canPauseTransferJob(downloadJob)).toBe(false);
-    expect(canResumeTransferJob({ ...downloadJob, status: 'paused' })).toBe(false);
   });
 
   it('keeps uploads pending backend confirmation and completes with the real Drive node id', () => {

@@ -57,6 +57,21 @@ pub fn load_gateway_config(config_path: &Path) -> Result<GatewayFileConfig, Stri
 pub fn resolve_gateway_config(
     file_config: GatewayFileConfig,
 ) -> Result<ResolvedGatewayConfig, String> {
+    if file_config.service.environment.eq_ignore_ascii_case("production")
+        && file_config.cors.allow_any_origin
+    {
+        return Err(
+            "standalone gateway production profile must not enable cors.allowAnyOrigin".to_string(),
+        );
+    }
+
+    if is_production_runtime_profile() && file_config.cors.allow_any_origin {
+        return Err(
+            "SDKWORK_DRIVE_RUNTIME_PROFILE=production rejects cors.allowAnyOrigin on standalone gateway"
+                .to_string(),
+        );
+    }
+
     Ok(ResolvedGatewayConfig {
         service_name: file_config.service.name,
         environment: file_config.service.environment,
@@ -73,6 +88,13 @@ fn read_env_override(key: &str) -> Option<String> {
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
         .map(|value| value.trim_end_matches('/').to_string())
+}
+
+fn is_production_runtime_profile() -> bool {
+    std::env::var("SDKWORK_DRIVE_RUNTIME_PROFILE")
+        .ok()
+        .map(|value| value.trim().eq_ignore_ascii_case("production"))
+        .unwrap_or(false)
 }
 
 pub fn resolve_config_path(args: &[String]) -> Result<String, String> {

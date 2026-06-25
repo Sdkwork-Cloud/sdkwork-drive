@@ -346,11 +346,13 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn nodes_list(&self, space_id: &str, parent_node_id: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<NodeListResponse, SdkworkError> {
+    pub async fn nodes_list(&self, space_id: &str, parent_node_id: Option<&str>, page_size: Option<i64>, page_token: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<NodeListResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("parentNodeId", parent_node_id, "form", true, false, None),
             QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
             QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
+            QueryParameterSpec::new("sortBy", sort_by, "form", true, false, None),
+            QueryParameterSpec::new("sortOrder", sort_order, "form", true, false, None),
         ]);
         let path = append_query_string(app_path(&format!("/drive/spaces/{}/nodes", serialize_path_parameter(space_id, PathParameterSpec::new("spaceId", "simple", false)))), &query);
         self.client.get(&path, None, None).await

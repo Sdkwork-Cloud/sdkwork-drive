@@ -1,5 +1,5 @@
 # Archive
 
-Read-only retired documentation with stable links.
+Retired PC documentation only. Active Canon: [product/prd/PRD.md](../product/prd/PRD.md), [architecture/tech/TECH_ARCHITECTURE.md](../architecture/tech/TECH_ARCHITECTURE.md).
 
-See `DOCUMENTATION_SPEC.md` section 2.
+See [../../../sdkwork-specs/DOCUMENTATION_SPEC.md](../../../sdkwork-specs/DOCUMENTATION_SPEC.md) section 2.1 (Archive layer).

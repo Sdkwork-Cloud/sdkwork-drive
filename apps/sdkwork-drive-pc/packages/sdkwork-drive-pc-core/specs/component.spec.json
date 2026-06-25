@@ -121,7 +121,8 @@
       }
     ],
     "dependencyApiExports": [],
-    "dependencyApiSurfaces": []
+    "dependencyApiSurfaces": [],
+    "dependencyComposition": "../../../specs/dependency.composition.json"
   },
   "verification": {
     "commands": [

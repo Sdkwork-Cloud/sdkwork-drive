@@ -20,7 +20,7 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "5dc8830ce02b41c09a20bf2f8c75a07d3631e09dfe80904771d481955d892eac"
+      "sha256": "7c00016dc19c298e938dbba7d1174a4c8ac9433ea6c742a4f203193b5df4e551"
     },
     {
       "path": "api/labels.go",
@@ -91,24 +91,12 @@
       "sha256": "6e7e501a9c98d11b736cae0ee81c729da6273ebdb0fb0f2c15a0b13d6bce47c0"
     },
     {
-      "path": "types/copy_provider_object_request.go",
-      "sha256": "f44746d57b27f34cabc98a15e640682e489ede5518e4afd5a317dd7d4b8efaf9"
-    },
-    {
       "path": "types/create_label_request.go",
       "sha256": "565005a6b50673094a6a0146ce68c2eb42cdacea0ddb36429c0fb46305529f5a"
     },
     {
-      "path": "types/create_storage_provider_request.go",
-      "sha256": "0f07f024ba6904e9bd35db168c571f7d26be1ecc3bb90fd7640c859a37ef4dfb"
-    },
-    {
       "path": "types/delete_label_response.go",
       "sha256": "ef8d495be4b09ed05b623af382fd176a8ba33bb709309ad6e3b05b3e476fb7e8"
-    },
-    {
-      "path": "types/delete_storage_provider_response.go",
-      "sha256": "0350ac3fa9eb5c4ee976328c8091e320452efd963a6e1870ab17c3ca6e7dec7c"
     },
     {
       "path": "types/doc.go",
@@ -139,10 +127,6 @@
       "sha256": "b13ea4a2fe0513af56810c7d0d0e4109d2f8ed289b8df87e41b9be2eaa227cce"
     },
     {
-      "path": "types/list_storage_providers_response.go",
-      "sha256": "7a9b8a077a47770b0264882e19a068f3825950e634358152ab46da4fb61963da"
-    },
-    {
       "path": "types/maintenance_job_page.go",
       "sha256": "5348fca5d88999325b8fb428e227a5d960de995811a14668acd5a1f3303a858b"
     },
@@ -151,56 +135,12 @@
       "sha256": "8bc871cbf55a7b20914d02854f0dffdebed53a66d00b1ffb8317978035f25203"
     },
     {
-      "path": "types/operator_request.go",
-      "sha256": "9c8386626d55132489973ef60000941f7ebc4cc1715d98e2b7adf9ebe99b5dba"
-    },
-    {
       "path": "types/problem_detail.go",
       "sha256": "c9f6433fc4f77e2d5d7ef4b7e29b520c75e3fc03b609aad63211255a9a77dc72"
     },
     {
-      "path": "types/provider_bucket_mutation.go",
-      "sha256": "f41289a7e51a3a7a1817cedc232acde04de84b35bc76ff906d71036bfe19b879"
-    },
-    {
-      "path": "types/provider_bucket.go",
-      "sha256": "ff73361c4dbe11a7ea3304d83f201ae086a99abf6f667e7f2a8d86b72bede5a3"
-    },
-    {
-      "path": "types/provider_object_list.go",
-      "sha256": "5aeb83ad0541327e0102eaf2a578617696e5fa732a6018fa0f9514a953d49b21"
-    },
-    {
-      "path": "types/provider_object_mutation.go",
-      "sha256": "d68798278bec24696a26da337ddcd0b9d81c9e650da7234a75a0bc7fb2442f33"
-    },
-    {
-      "path": "types/provider_object.go",
-      "sha256": "a42cd47eb3d24c1d71346514fd7cdb2e930d11ce29467dbc30f87d452597a455"
-    },
-    {
       "path": "types/quota_summary.go",
-      "sha256": "70e6a0c56fc1753b16487c36ac140ef976885be62f23e1e3493abef559a93fbb"
-    },
-    {
-      "path": "types/rotate_storage_provider_credential_request.go",
-      "sha256": "af96845525b164a6643aa0a35253afee3a7b717f171938c87d7530a6ac0ca391"
-    },
-    {
-      "path": "types/set_default_storage_provider_binding_request.go",
-      "sha256": "4253b297a20af704364352a15c901e91c7ea6797dad4faf094429ff335ab1aac"
-    },
-    {
-      "path": "types/storage_provider_binding.go",
-      "sha256": "fe8045eae9d044cd7cd60330ad2c2f7271a5f5ed8d992fde0305c72a823aa958"
-    },
-    {
-      "path": "types/storage_provider_capabilities.go",
-      "sha256": "41935f3e39a271f7b1e5a4fc93d210803f5f1200bae91ecd740f8b33c90d5f62"
-    },
-    {
-      "path": "types/storage_provider.go",
-      "sha256": "5eb59d46b97c958e2b13a5063432fecf50e594d7b3b804e16cc85c94e67732de"
+      "sha256": "6734b19d613a32a77455165d8cc138540274e19f92499858fd9305e736f6e1fa"
     },
     {
       "path": "types/sweep_object_store_request.go",
@@ -215,20 +155,12 @@
       "sha256": "fe625b31c7dbe42a994dbbfb40bae5b918bcbd813e3401c3c2e181e1ef1cabfe"
     },
     {
-      "path": "types/test_storage_provider_request.go",
-      "sha256": "66749768f4e3006de57b8fabfea3108907fa6bde620d4bbe0198211fc8351aa9"
-    },
-    {
-      "path": "types/test_storage_provider_response.go",
-      "sha256": "14292a1ed7296953abe71686af4e65d642cacb5260e0dfc4c456b91c1e54da61"
-    },
-    {
       "path": "types/update_label_request.go",
       "sha256": "5a9365d21ac58cc039e2edf3b2c2cdc89c7613953fce9b0fb89826105809d8de"
     },
     {
-      "path": "types/update_storage_provider_request.go",
-      "sha256": "19fb80acd12061abdc4fda890b50ed99791f31874ef69de9c4a3c5311ded07af"
+      "path": "types/update_quota_policy_request.go",
+      "sha256": "3b4fbc1a697a1fefeaa9d50990ad6dc3c2ca625b16176d842063acf66ca80a90"
     }
   ],
   "scaffoldFiles": [
