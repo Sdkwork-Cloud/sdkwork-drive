@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-backend-sdk",
+    "version": "0.1.0",
+    "language": "typescript",
+    "sdkType": "backend",
+    "protocol": "http",
+    "packageName": "sdkwork-drive-backend-sdk-generated-typescript"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "78c6419400b988409d9393c2ecd85aa02dd6760f73edb3cc84cb28fefc51b41e"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "899087c23e670b6951a12a13490fd557f761c96d78fabfb7e58a37e367db889f"
+    },
+    {
+      "path": "bin/sdk-gen.bat",
+      "sha256": "1fa0948b506e5deecf73be9371db39a042e48555d018292334fa0004a897fcbe"
+    },
+    {
+      "path": "bin/sdk-gen.sh",
+      "sha256": "215c7192b3f5891efebd79d6e2938a520ac6c9c6eb6b64979371c1ee7a58fd3d"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7772b0d69824e6e2170e07e6e3edee05f681fc45940dd2a6405c71901ed4c7c6"
+    },
+    {
+      "path": "README.md",
+      "sha256": "10f103071573f62deedc145f3938741077e5a6f3a56afb0aafcef58e2b100cf9"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "5279b947a7bbe4513685361c45cb6c041b8383ee0380d78ef4f0de2ac35c1833"
+    },
+    {
+      "path": "src/api/base.ts",
+      "sha256": "02ad25e6bf331ff241ba387c2947ddf1900dd849038e08c2757416a3aa788a04"
+    },
+    {
+      "path": "src/api/drive.ts",
+      "sha256": "c6747e4389863560e394e18a68478d51a7e61a45e60981513b4f5ea5845f9600"
+    },
+    {
+      "path": "src/api/index.ts",
+      "sha256": "0d7bff0bc65fc2c84f4e7bfa7073a54625d375655c2a9ec5473b6fd688babb43"
+    },
+    {
+      "path": "src/api/labels.ts",
+      "sha256": "c2ef6c1add1e33efd3baae3b06cb15fdcb04b5ed32e6203f5a4c3a56d0534ee2"
+    },
+    {
+      "path": "src/api/paths.ts",
+      "sha256": "fb06a3db13e96bb5b349ddc1831aa6d350c17b09d05ea92a36438131140f666e"
+    },
+    {
+      "path": "src/auth/index.ts",
+      "sha256": "657fc63738bdcd61d83133120732a477dd127448cf2c51229b05d21f5e1f5c04"
+    },
+    {
+      "path": "src/http/client.ts",
+      "sha256": "1d339275acee6ec54660a32eb9effcc718ebf0992c5e9bfdb80a3452e0702137"
+    },
+    {
+      "path": "src/http/index.ts",
+      "sha256": "fc204fbe89750b9d25ecaffe41003e6ac243a1a895b65e65856202ab825d2dbe"
+    },
+    {
+      "path": "src/index.ts",
+      "sha256": "3a4a3f9c5ce1c5bf55baf261e7b648091cbef7ba2c30ea402dd15f3f37820956"
+    },
+    {
+      "path": "src/sdk.ts",
+      "sha256": "c44bcd5e315aaf507358b49cc5bce8325ef973320c57c6767e4fd2288951428a"
+    },
+    {
+      "path": "src/types/audit-event-page.ts",
+      "sha256": "fd9a3d42d3ae7de5c3030141ae7ee8cf100e651cdcef60c04b1ef227ab1e19ce"
+    },
+    {
+      "path": "src/types/audit-event.ts",
+      "sha256": "d50c920d103e7b276433ac08565222bbd70c97c2c28c1e26280b7d925053d13b"
+    },
+    {
+      "path": "src/types/common.ts",
+      "sha256": "351d721c3c6f48f4453f92276856105120d72eb8d2fa9cd28de8e3854bf10f6c"
+    },
+    {
+      "path": "src/types/create-label-request.ts",
+      "sha256": "8735c67233a3bfb1c6526dd87c56bfdcf921de7b2a702fcd0ecea05bb690509d"
+    },
+    {
+      "path": "src/types/delete-label-response.ts",
+      "sha256": "7993302dddc1e9b1e523e3873c560bbf0352ef3e95d878399b2d293a6e2af96f"
+    },
+    {
+      "path": "src/types/download-package-page.ts",
+      "sha256": "a6912373b26f6abeb1b2caac75879b6384d8fc403b7187c2052aa8bd38087135"
+    },
+    {
+      "path": "src/types/download-package.ts",
+      "sha256": "e10401066827ba96ea5967e54b766f473ed8ca93cec85c0c1d74da8bc731cc25"
+    },
+    {
+      "path": "src/types/drive-label.ts",
+      "sha256": "8533d37b2c32dfbbfcb228c8ebec6c303d05b2cedd8408ff2ab0fdbaf9478494"
+    },
+    {
+      "path": "src/types/drive-space.ts",
+      "sha256": "778a57ee672daa69fd99166dcc03c392e2ba6734c219da4c4b89f48aeb3d2c5a"
+    },
+    {
+      "path": "src/types/index.ts",
+      "sha256": "7c0b308b525ae0245dde6e902831269199d26b4a9bf722a2ab5e0ad30decb806"
+    },
+    {
+      "path": "src/types/label-list-response.ts",
+      "sha256": "97934c1b116c439ac3a37c284aef96a33e1d98ae0fffcb5ef77508d7f8118c7c"
+    },
+    {
+      "path": "src/types/list-spaces-response.ts",
+      "sha256": "eb76a4778f6b3373d8bfbee63f488352c9116010b6df45921888b0e004ac0483"
+    },
+    {
+      "path": "src/types/maintenance-job-page.ts",
+      "sha256": "a8b942ebc9702ea22fc567fff144d8d3a8c9277b7e1397284fc6771dd52940ee"
+    },
+    {
+      "path": "src/types/maintenance-job.ts",
+      "sha256": "d2e0f714656ea42a218caf7b1081e2c3d853d1f4a2eb1c5f0ddede60430e7522"
+    },
+    {
+      "path": "src/types/problem-detail.ts",
+      "sha256": "4ae6f09328af91c3ed4b2588db2df51c1a28964fda0d041118bcaa77d47dc30e"
+    },
+    {
+      "path": "src/types/quota-summary.ts",
+      "sha256": "15577f4a8931b187c9ae443d079b54fc2d06747596636724ef608e9c866b97f7"
+    },
+    {
+      "path": "src/types/sweep-object-store-request.ts",
+      "sha256": "7e4d7befceee706527a573d92a2120b9a219f8f1816f930c210a7880bd69b7e4"
+    },
+    {
+      "path": "src/types/sweep-response.ts",
+      "sha256": "1a9a504b4eb81064078dcd9630bc520d1b704a9b0cbb7123273e8cf2da257f67"
+    },
+    {
+      "path": "src/types/sweep-upload-sessions-request.ts",
+      "sha256": "2e8fa211510db9ada2b3b9c73367bf2a74af7e6de5ade7e2bc4577fe73093e8c"
+    },
+    {
+      "path": "src/types/update-label-request.ts",
+      "sha256": "28956c90d7ae897514056c260d6cfec1475c5c1a3596543e8bcbb6ff0471e536"
+    },
+    {
+      "path": "src/types/update-quota-policy-request.ts",
+      "sha256": "4b012da5940c852a9ecd181f724ec3154cc1e4ad261627f507769824e680393b"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "7c8a6c2b00fb208ec28e1e6045194487d1b3e563d6c44cef4783fd4fe0e8ffad"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/build-runtime.mjs",
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

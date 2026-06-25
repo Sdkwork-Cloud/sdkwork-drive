@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-backend-sdk",
+    "version": "0.1.0",
+    "language": "go",
+    "sdkType": "backend",
+    "protocol": "http",
+    "packageName": "sdkwork-drive-backend-sdk-generated-go"
+  },
+  "generatedFiles": [
+    {
+      "path": "api/base.go",
+      "sha256": "1ee6c1473b1880815f20b1ca043a6fa5b5f4a44a7c13bbc3041c06fd2678c4ea"
+    },
+    {
+      "path": "api/doc.go",
+      "sha256": "2c115ef3cebcb20ca6c8b90b43cd51fc3a0c34deb1c7b2dc86b1344004eabb60"
+    },
+    {
+      "path": "api/drive.go",
+      "sha256": "7c00016dc19c298e938dbba7d1174a4c8ac9433ea6c742a4f203193b5df4e551"
+    },
+    {
+      "path": "api/labels.go",
+      "sha256": "6affeb5ed4c9c06a3434dfb28b62965d1a5c8e0b5f3632725e4cf867f5da3778"
+    },
+    {
+      "path": "api/paths.go",
+      "sha256": "d837f8f1212389f20412298bed5f829cd35ee325e5b5d498c73bc2b1f7d399ea"
+    },
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "b86912c73f0f0e62915246690fbb006213bcaf7e612729a59403d5893903e003"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "bb05183d134a4057090fcc04e51d2e06d191d43a3e5e133f9451bd7552a961d7"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "doc.go",
+      "sha256": "8b747ffd2582b5214614dfe6d20fb85b81a4a9cb33c0193615caa6017abc0229"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "cf292e170af612f7740ce85efab11f3dbfbdbf44b70b06b91588a92aebca1adb"
+    },
+    {
+      "path": "http/client.go",
+      "sha256": "5574d28592e72078ae744ce20c0930fa7825b32ab3e2b18ed3de16652df50b0e"
+    },
+    {
+      "path": "http/doc.go",
+      "sha256": "cdceeffa0ab8c6242f870eea94598c9b5aa9047a38fa77baef08298ae69a74db"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "README.md",
+      "sha256": "61c3c8bca92fdf609880233b17ecbb5a0769ba9f12ac5783555b2a7104494209"
+    },
+    {
+      "path": "sdk.go",
+      "sha256": "91f09e5aaf82585db521b84f610b14456ecc450291e7636102594955c65056a6"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "506c7dbb9dfe97468935d985358fa614728468af3f26dfd1b694696a34a6634a"
+    },
+    {
+      "path": "types/audit_event_page.go",
+      "sha256": "9a35af18b1879719d5389ecd316613ce783616666c456cc9e54e5db439209241"
+    },
+    {
+      "path": "types/audit_event.go",
+      "sha256": "bed7eeb49cbadb938548a73dd96116123e860a25fee84c456c67fcb84360faef"
+    },
+    {
+      "path": "types/common.go",
+      "sha256": "6e7e501a9c98d11b736cae0ee81c729da6273ebdb0fb0f2c15a0b13d6bce47c0"
+    },
+    {
+      "path": "types/create_label_request.go",
+      "sha256": "565005a6b50673094a6a0146ce68c2eb42cdacea0ddb36429c0fb46305529f5a"
+    },
+    {
+      "path": "types/delete_label_response.go",
+      "sha256": "ef8d495be4b09ed05b623af382fd176a8ba33bb709309ad6e3b05b3e476fb7e8"
+    },
+    {
+      "path": "types/doc.go",
+      "sha256": "abce6187793ab87b568e277766d9dabca80c433549513af844de6b0e809b7b2b"
+    },
+    {
+      "path": "types/download_package_page.go",
+      "sha256": "3861c51cd916e3526caf9051cf893688022adefd83431d6e2825b1b8540eb390"
+    },
+    {
+      "path": "types/download_package.go",
+      "sha256": "8dcd94d76a8d61d2db74313af1f367d88b19edbbc749c4a08dfbee8e277092c6"
+    },
+    {
+      "path": "types/drive_label.go",
+      "sha256": "367614299baeac507919be7d11cd8a3fc9d572daa62fcebd512ae8d72da09ce9"
+    },
+    {
+      "path": "types/drive_space.go",
+      "sha256": "92fe376160513fb7ee43abf428b19dacd383dcc8bf44906ca81b537761be4a19"
+    },
+    {
+      "path": "types/label_list_response.go",
+      "sha256": "0d6c81d8512b103e643c687b83b3fe962e85a17e76a49011283bf2fcd5254c45"
+    },
+    {
+      "path": "types/list_spaces_response.go",
+      "sha256": "b13ea4a2fe0513af56810c7d0d0e4109d2f8ed289b8df87e41b9be2eaa227cce"
+    },
+    {
+      "path": "types/maintenance_job_page.go",
+      "sha256": "5348fca5d88999325b8fb428e227a5d960de995811a14668acd5a1f3303a858b"
+    },
+    {
+      "path": "types/maintenance_job.go",
+      "sha256": "8bc871cbf55a7b20914d02854f0dffdebed53a66d00b1ffb8317978035f25203"
+    },
+    {
+      "path": "types/problem_detail.go",
+      "sha256": "c9f6433fc4f77e2d5d7ef4b7e29b520c75e3fc03b609aad63211255a9a77dc72"
+    },
+    {
+      "path": "types/quota_summary.go",
+      "sha256": "6734b19d613a32a77455165d8cc138540274e19f92499858fd9305e736f6e1fa"
+    },
+    {
+      "path": "types/sweep_object_store_request.go",
+      "sha256": "51fa564ab33fa185ba9ae70b31a66d85ed6ac7acd9ba20f588ecd947f46df74f"
+    },
+    {
+      "path": "types/sweep_response.go",
+      "sha256": "d7e2eec380b4ad712f3fef4d3521fa5bbecdf3e63a4f1635a99a42b3ef525b89"
+    },
+    {
+      "path": "types/sweep_upload_sessions_request.go",
+      "sha256": "fe625b31c7dbe42a994dbbfb40bae5b918bcbd813e3401c3c2e181e1ef1cabfe"
+    },
+    {
+      "path": "types/update_label_request.go",
+      "sha256": "5a9365d21ac58cc039e2edf3b2c2cdc89c7613953fce9b0fb89826105809d8de"
+    },
+    {
+      "path": "types/update_quota_policy_request.go",
+      "sha256": "3b4fbc1a697a1fefeaa9d50990ad6dc3c2ca625b16176d842063acf66ca80a90"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

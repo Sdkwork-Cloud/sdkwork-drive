@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-admin-storage-sdk",
+    "version": "0.1.0",
+    "language": "rust",
+    "sdkType": "custom",
+    "protocol": "http",
+    "packageName": "sdkwork-drive-admin-storage-sdk-generated-rust"
+  },
+  "changeFingerprint": "0458daf4613601590fa1dfcc239dddf0fd4d263104522ea188526fc020755d73",
+  "changes": {
+    "createdGeneratedFiles": [],
+    "updatedGeneratedFiles": [],
+    "unchangedGeneratedFiles": [
+      "bin/publish-core.mjs",
+      "bin/publish.ps1",
+      "bin/publish.sh",
+      "Cargo.toml",
+      "CHANGELOG.md",
+      "LICENSE",
+      "README.md",
+      "sdkwork-sdk.json",
+      "src/api/base.rs",
+      "src/api/drive.rs",
+      "src/api/mod.rs",
+      "src/api/paths.rs",
+      "src/client.rs",
+      "src/http/client.rs",
+      "src/http/mod.rs",
+      "src/lib.rs",
+      "src/models/common.rs",
+      "src/models/copy_provider_object_request.rs",
+      "src/models/create_storage_provider_request.rs",
+      "src/models/delete_storage_provider_binding_response.rs",
+      "src/models/delete_storage_provider_response.rs",
+      "src/models/list_storage_providers_response.rs",
+      "src/models/mod.rs",
+      "src/models/operator_request.rs",
+      "src/models/problem_detail.rs",
+      "src/models/provider_bucket_list_item.rs",
+      "src/models/provider_bucket_list.rs",
+      "src/models/provider_bucket_mutation.rs",
+      "src/models/provider_bucket.rs",
+      "src/models/provider_object_list.rs",
+      "src/models/provider_object_mutation.rs",
+      "src/models/provider_object.rs",
+      "src/models/rotate_storage_provider_credential_request.rs",
+      "src/models/set_default_storage_provider_binding_request.rs",
+      "src/models/storage_provider_binding_list_response.rs",
+      "src/models/storage_provider_binding.rs",
+      "src/models/storage_provider_capabilities.rs",
+      "src/models/storage_provider.rs",
+      "src/models/test_storage_provider_request.rs",
+      "src/models/test_storage_provider_response.rs",
+      "src/models/update_storage_provider_request.rs"
+    ],
+    "deletedGeneratedFiles": [],
+    "scaffoldedFiles": [],
+    "preservedScaffoldFiles": [
+      "custom/README.md"
+    ],
+    "backedUpFiles": []
+  },
+  "impact": {
+    "schemaVersion": 1,
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+  },
+  "verificationPlan": {
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
+  },
+  "executionDecision": {
+    "schemaVersion": 1,
+    "riskLevel": "low",
+    "nextAction": "skip",
+    "requiresManualReview": false,
+    "applyRequiresExpectedFingerprint": false,
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "reasons": [
+      "no-actionable-changes"
+    ]
+  },
+  "preservedLegacyFiles": false
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "sdkName": "sdkwork-drive-admin-storage-sdk",
+  "sdkOwner": "sdkwork-drive",
+  "apiAuthority": "sdkwork-drive.admin.storage",
+  "sdkFamily": "sdkwork-drive-admin-storage-sdk",
+  "sdkType": "custom",
+  "apiPrefix": "/backend/v3/api",
+  "generationInputSpec": "../../target/drive-sdk-generator-input/sdkwork-drive-admin-storage-sdk/drive-admin-storage-api.openapi.json",
+  "generatedPackages": {
+    "typescript": {
+      "language": "typescript",
+      "packageName": "sdkwork-drive-admin-storage-sdk-generated-typescript",
+      "generatedOutput": "sdkwork-drive-admin-storage-sdk-typescript/generated/server-openapi"
+    },
+    "rust": {
+      "language": "rust",
+      "packageName": "sdkwork-drive-admin-storage-sdk-generated-rust",
+      "generatedOutput": "sdkwork-drive-admin-storage-sdk-rust/generated/server-openapi"
+    },
+    "java": {
+      "language": "java",
+      "packageName": "sdkwork-drive-admin-storage-sdk-generated-java",
+      "generatedOutput": "sdkwork-drive-admin-storage-sdk-java/generated/server-openapi"
+    },
+    "python": {
+      "language": "python",
+      "packageName": "sdkwork-drive-admin-storage-sdk-generated-python",
+      "generatedOutput": "sdkwork-drive-admin-storage-sdk-python/generated/server-openapi"
+    },
+    "go": {
+      "language": "go",
+      "packageName": "sdkwork-drive-admin-storage-sdk-generated-go",
+      "generatedOutput": "sdkwork-drive-admin-storage-sdk-go/generated/server-openapi"
+    }
+  },
+  "sdkDependencies": [
+    {
+      "workspace": "sdkwork-iam-backend-sdk",
+      "role": "appbase-backend-management-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "apiAuthority": "sdkwork-iam-backend-api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/iam-backend-sdk",
+        "rust": "sdkwork-iam-backend-sdk",
+        "java": "com.sdkwork:sdkwork-iam-backend-sdk",
+        "python": "sdkwork-iam-backend-sdk",
+        "go": "github.com/sdkwork/sdkwork-iam-backend-sdk"
+      }
+    }
+  ],
+  "generatorName": "sdkwork-sdk-generator",
+  "baseUrl": "http://127.0.0.1:18080",
+  "standardProfile": "sdkwork-drive-admin-storage-v3",
+  "fixedSdkVersion": "0.1.0",
+  "ownerOnlyOperationCount": 22,
+  "managedBy": "tools/drive_sdk_generator_runner.mjs"
+}

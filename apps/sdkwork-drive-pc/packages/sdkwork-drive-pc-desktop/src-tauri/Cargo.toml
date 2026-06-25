@@ -1,0 +1,22 @@
+[package]
+name = "sdkwork-drive-pc-desktop"
+version = "0.1.0"
+description = "SDKWork Drive PC desktop host shell."
+authors = ["SDKWork"]
+license = "SEE LICENSE IN LICENSE"
+edition = "2021"
+
+[workspace]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+keyring = "3"
+open = "5"
+rfd = "0.15"
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+tauri = { version = "2", features = [] }
+thiserror = "2"
+uuid = { version = "1", features = ["v4"] }

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "sdkName": "sdkwork-drive-sdk",
+  "sdkOwner": "sdkwork-drive",
+  "apiAuthority": "sdkwork-drive.open",
+  "sdkFamily": "sdkwork-drive-sdk",
+  "sdkType": "custom",
+  "apiPrefix": "/open/v3/api",
+  "generationInputSpec": "../../target/drive-sdk-generator-input/sdkwork-drive-sdk/drive-open-api.openapi.json",
+  "generatedPackages": {
+    "typescript": {
+      "language": "typescript",
+      "packageName": "sdkwork-drive-sdk-generated-typescript",
+      "generatedOutput": "sdkwork-drive-sdk-typescript/generated/server-openapi"
+    },
+    "rust": {
+      "language": "rust",
+      "packageName": "sdkwork-drive-sdk-generated-rust",
+      "generatedOutput": "sdkwork-drive-sdk-rust/generated/server-openapi"
+    },
+    "java": {
+      "language": "java",
+      "packageName": "sdkwork-drive-sdk-generated-java",
+      "generatedOutput": "sdkwork-drive-sdk-java/generated/server-openapi"
+    },
+    "python": {
+      "language": "python",
+      "packageName": "sdkwork-drive-sdk-generated-python",
+      "generatedOutput": "sdkwork-drive-sdk-python/generated/server-openapi"
+    },
+    "go": {
+      "language": "go",
+      "packageName": "sdkwork-drive-sdk-generated-go",
+      "generatedOutput": "sdkwork-drive-sdk-go/generated/server-openapi"
+    }
+  },
+  "sdkDependencies": [],
+  "generatorName": "sdkwork-sdk-generator",
+  "baseUrl": "http://127.0.0.1:18082",
+  "standardProfile": "sdkwork-drive-open-v3",
+  "fixedSdkVersion": "0.1.0",
+  "ownerOnlyOperationCount": 2,
+  "managedBy": "tools/drive_sdk_generator_runner.mjs"
+}

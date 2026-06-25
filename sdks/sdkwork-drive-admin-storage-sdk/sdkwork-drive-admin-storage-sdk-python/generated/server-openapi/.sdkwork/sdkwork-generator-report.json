@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "artifacts": {
+    "stateDir": ".sdkwork",
+    "manifestPath": ".sdkwork/sdkwork-generator-manifest.json",
+    "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
+    "executionReportPath": ".sdkwork/sdkwork-generator-report.json",
+    "manualBackupDir": ".sdkwork/manual-backups"
+  },
+  "status": "ok",
+  "mode": "apply",
+  "hasChanges": false,
+  "hasDestructiveChanges": false,
+  "changeFingerprint": "a720af3a9a5925726417520e8781fcd7670a51ee29d10ab78d8682c4d683261b",
+  "changeImpact": {
+    "schemaVersion": 1,
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+  },
+  "executionDecision": {
+    "schemaVersion": 1,
+    "riskLevel": "low",
+    "nextAction": "skip",
+    "requiresManualReview": false,
+    "applyRequiresExpectedFingerprint": false,
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "reasons": [
+      "no-actionable-changes"
+    ]
+  },
+  "executionHandoff": {
+    "schemaVersion": 1,
+    "summary": "No further commands are required.",
+    "steps": []
+  },
+  "verificationPlan": {
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
+  },
+  "sdk": {
+    "name": "sdkwork-drive-admin-storage-sdk",
+    "version": "0.1.0",
+    "language": "python",
+    "sdkType": "custom",
+    "protocol": "http",
+    "outputPath": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-python\\generated\\server-openapi",
+    "packageName": "sdkwork-drive-admin-storage-sdk-generated-python"
+  },
+  "versioning": {
+    "resolvedVersion": "0.1.0",
+    "localVersions": []
+  },
+  "stats": {
+    "totalFiles": 41,
+    "models": 23,
+    "apis": 1,
+    "types": 24
+  },
+  "warnings": [],
+  "syncSummary": {
+    "dryRun": false,
+    "controlPlaneEnabled": true,
+    "writtenFiles": 0,
+    "skippedScaffoldFiles": 1,
+    "skippedUnchangedGeneratedFiles": 40,
+    "deletedGeneratedFiles": 0,
+    "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
+    "changeFingerprint": "a720af3a9a5925726417520e8781fcd7670a51ee29d10ab78d8682c4d683261b",
+    "changes": {
+      "createdGeneratedFiles": [],
+      "updatedGeneratedFiles": [],
+      "unchangedGeneratedFiles": [
+        "bin/publish-core.mjs",
+        "bin/publish.ps1",
+        "bin/publish.sh",
+        "CHANGELOG.md",
+        "LICENSE",
+        "MANIFEST.in",
+        "pyproject.toml",
+        "README.md",
+        "requirements.txt",
+        "sdkwork_drive_admin_storage_sdk_generated_python/__init__.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/api/__init__.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/api/drive.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/client.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/http_client.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/__init__.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/copy_provider_object_request.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/create_storage_provider_request.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/delete_storage_provider_binding_response.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/delete_storage_provider_response.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/list_storage_providers_response.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/operator_request.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/problem_detail.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_bucket_list_item.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_bucket_list.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_bucket_mutation.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_bucket.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_object_list.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_object_mutation.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_object.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/rotate_storage_provider_credential_request.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/set_default_storage_provider_binding_request.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_provider_binding_list_response.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_provider_binding.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_provider_capabilities.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_provider.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/test_storage_provider_request.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/test_storage_provider_response.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/update_storage_provider_request.py",
+        "sdkwork-sdk.json",
+        "setup.py"
+      ],
+      "deletedGeneratedFiles": [],
+      "scaffoldedFiles": [],
+      "preservedScaffoldFiles": [
+        "custom/README.md"
+      ],
+      "backedUpFiles": []
+    },
+    "impact": {
+      "schemaVersion": 1,
+      "areas": [],
+      "details": [],
+      "requiresVerification": false,
+      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+    },
+    "verificationPlan": {
+      "shouldRun": false,
+      "runPhase": "skip",
+      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+      "steps": []
+    },
+    "executionDecision": {
+      "schemaVersion": 1,
+      "riskLevel": "low",
+      "nextAction": "skip",
+      "requiresManualReview": false,
+      "applyRequiresExpectedFingerprint": false,
+      "summary": "No actionable changes were detected. No apply or verification step is required.",
+      "reasons": [
+        "no-actionable-changes"
+      ]
+    },
+    "backedUpFiles": [],
+    "preservedLegacyFiles": false
+  }
+}

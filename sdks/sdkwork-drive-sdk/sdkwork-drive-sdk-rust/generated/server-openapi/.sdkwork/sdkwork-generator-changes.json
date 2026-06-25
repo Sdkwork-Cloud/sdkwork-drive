@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-sdk",
+    "version": "0.1.0",
+    "language": "rust",
+    "sdkType": "custom",
+    "protocol": "http",
+    "packageName": "sdkwork-drive-sdk-generated-rust"
+  },
+  "changeFingerprint": "4d00f80f35274e79aad9ac92d4c8c2558dc72ae7e6c32a5db1bad00371084b9a",
+  "changes": {
+    "createdGeneratedFiles": [],
+    "updatedGeneratedFiles": [],
+    "unchangedGeneratedFiles": [
+      "bin/publish-core.mjs",
+      "bin/publish.ps1",
+      "bin/publish.sh",
+      "Cargo.toml",
+      "CHANGELOG.md",
+      "LICENSE",
+      "README.md",
+      "sdkwork-sdk.json",
+      "src/api/base.rs",
+      "src/api/drive.rs",
+      "src/api/mod.rs",
+      "src/api/paths.rs",
+      "src/client.rs",
+      "src/http/client.rs",
+      "src/http/mod.rs",
+      "src/lib.rs",
+      "src/models/common.rs",
+      "src/models/create_open_download_url_request.rs",
+      "src/models/drive_open_share_link.rs",
+      "src/models/mod.rs",
+      "src/models/open_download_url_response.rs",
+      "src/models/open_node.rs",
+      "src/models/problem_detail.rs"
+    ],
+    "deletedGeneratedFiles": [],
+    "scaffoldedFiles": [],
+    "preservedScaffoldFiles": [
+      "custom/README.md"
+    ],
+    "backedUpFiles": []
+  },
+  "impact": {
+    "schemaVersion": 1,
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+  },
+  "verificationPlan": {
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
+  },
+  "executionDecision": {
+    "schemaVersion": 1,
+    "riskLevel": "low",
+    "nextAction": "skip",
+    "requiresManualReview": false,
+    "applyRequiresExpectedFingerprint": false,
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "reasons": [
+      "no-actionable-changes"
+    ]
+  },
+  "preservedLegacyFiles": false
+}

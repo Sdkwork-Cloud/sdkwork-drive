@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-admin-storage-sdk",
+    "version": "0.1.0",
+    "language": "rust",
+    "sdkType": "custom",
+    "protocol": "http",
+    "packageName": "sdkwork-drive-admin-storage-sdk-generated-rust"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "eb779f44a5ba8879a9d79c708d0ba4bd412221f102e4430b953f0449327827bf"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "ae8a89ddb314afce79fe910de28017951c3c31f24a67d72915c4153711173b23"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "a03848e22083bce7864c4b6021b368550e1affabe5953794510910e938f03543"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "README.md",
+      "sha256": "64bdbf5eb0ae94d6d2b50c2eda3012cd36293cab346f16cf689892a9cde6c52a"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "ed4bba0c1b61408b586a9ac702a95482813fe425aeda857f85fcfe50330aa541"
+    },
+    {
+      "path": "src/api/base.rs",
+      "sha256": "a8b95ac29c7daff5655ae2a5ed3e7eb3ff5e52f758c35f255433d97d2ac4035f"
+    },
+    {
+      "path": "src/api/drive.rs",
+      "sha256": "9d6df1645d6d41e40e8efcdb7ee3cd1553d0be61e8223f0aca28204f2528ab60"
+    },
+    {
+      "path": "src/api/mod.rs",
+      "sha256": "1990053e53dce4de844345882e6dd8dad454236d2b332fea9866c9dcfde3e1b2"
+    },
+    {
+      "path": "src/api/paths.rs",
+      "sha256": "7b99c257a69d3934ba6130049ed9e04a803ca3642fe77bdb7e98acb07e7b0424"
+    },
+    {
+      "path": "src/client.rs",
+      "sha256": "fb1639063917a02c80d4eacd4d08b2265d3aa32ab2d51d0723d1c465be6358a3"
+    },
+    {
+      "path": "src/http/client.rs",
+      "sha256": "1d30ef65ca14328e4c40fa82e89678a411bee8805498bcec516e9cf96dfe1bf4"
+    },
+    {
+      "path": "src/http/mod.rs",
+      "sha256": "fdf16d487ebd9180fb423d5630d4401ff18180721b86636dec085ad83940bb3d"
+    },
+    {
+      "path": "src/lib.rs",
+      "sha256": "015a6abfc4c3393df8f0e721cda37311295c0440ac8eb91d3145ae162d58b194"
+    },
+    {
+      "path": "src/models/common.rs",
+      "sha256": "fce0239d85066b1c42435ab8c96676ea2d5300e5dcb87c52fd3e33d29a603a5e"
+    },
+    {
+      "path": "src/models/copy_provider_object_request.rs",
+      "sha256": "72e8fb4cfbcaa2ef6f68703943fd7e3a0439d817c4778b2ca97ecb738a7ae5ab"
+    },
+    {
+      "path": "src/models/create_storage_provider_request.rs",
+      "sha256": "faa56d1e9ff6c232ddd7e6052d64b48f975d15afc589d1a905220337f9b41ce4"
+    },
+    {
+      "path": "src/models/delete_storage_provider_binding_response.rs",
+      "sha256": "1a2b87a451f41a925fe9ed9871c42510d3ec5ffabd6e663ec504d4d7c89e69d1"
+    },
+    {
+      "path": "src/models/delete_storage_provider_response.rs",
+      "sha256": "3789fbd21b557cef676e55fc12d1593ebcce073a23dcad87376dc8651c11ec6f"
+    },
+    {
+      "path": "src/models/list_storage_providers_response.rs",
+      "sha256": "86cbf944ebdf1e7133c41d7b68641b79053c3695d31e73c1fd2e6265f10ecb97"
+    },
+    {
+      "path": "src/models/mod.rs",
+      "sha256": "57b4cd51cb9fc594f3cdd455a13e680751387747dedebf29edc16ee1bde17aa6"
+    },
+    {
+      "path": "src/models/operator_request.rs",
+      "sha256": "8dce662b3867e130d6b062911c8d7c67d872c181ca50a38b16738a758e1bbbce"
+    },
+    {
+      "path": "src/models/problem_detail.rs",
+      "sha256": "6baa4dceb7426f91ab8fea59e81a684e7273b2f857aea4e15ea84af22a3fc0b2"
+    },
+    {
+      "path": "src/models/provider_bucket_list_item.rs",
+      "sha256": "ae227eb05e5be7c97041a40b32a0879e6ebd0ad0cb4f053d2fdc762b97383c4a"
+    },
+    {
+      "path": "src/models/provider_bucket_list.rs",
+      "sha256": "b33c10c18355c0d6643865a5bb179b56548eeecefccb73562346124eb81a0a12"
+    },
+    {
+      "path": "src/models/provider_bucket_mutation.rs",
+      "sha256": "8e1188a92f8beeb3fd41f21d8bb91c2eecc94fe0d45e2b84c5e0399b7c343706"
+    },
+    {
+      "path": "src/models/provider_bucket.rs",
+      "sha256": "83736fb9a48d609116467b6a49ce5c9f8a50b4c1c686d777757a2804a8a675c1"
+    },
+    {
+      "path": "src/models/provider_object_list.rs",
+      "sha256": "4a945a8b0dc9b4471d1997d172cff510910eacf39f16c251a15d098dafe05a39"
+    },
+    {
+      "path": "src/models/provider_object_mutation.rs",
+      "sha256": "92deb3458c38eaa931adbf77fe0bb9ae3ed1acc98051ccbbc18e0370b7ccc84e"
+    },
+    {
+      "path": "src/models/provider_object.rs",
+      "sha256": "4170ad1a0ad8131eb97aca99f5a57b0d4163e59a867c053aeeb421476a95de46"
+    },
+    {
+      "path": "src/models/rotate_storage_provider_credential_request.rs",
+      "sha256": "07ab7121f62511fe985324d4cfb3f822d7ffa69619dbc2e05f3a08504f61d312"
+    },
+    {
+      "path": "src/models/set_default_storage_provider_binding_request.rs",
+      "sha256": "9c4a2ed8fe5472fa474ab6e24eb0930f64ec851632981a9ef50c5e9046dc548e"
+    },
+    {
+      "path": "src/models/storage_provider_binding_list_response.rs",
+      "sha256": "aaaf713826b519371445d5cb64634eb260d0ec9e3db2b306d2ad4fb0982a972e"
+    },
+    {
+      "path": "src/models/storage_provider_binding.rs",
+      "sha256": "9e6b93614fcec3a5da95dcdb03d227dec6a6c281a067b287f91ea181d58f5c7c"
+    },
+    {
+      "path": "src/models/storage_provider_capabilities.rs",
+      "sha256": "62a764f963745eac03dec119603a5b0927a7a753361ee91dd9f882b665ac4e3f"
+    },
+    {
+      "path": "src/models/storage_provider.rs",
+      "sha256": "1063f5f0bacc6358a82954b8bd71d7099737ae9319004974beced359c183bf8b"
+    },
+    {
+      "path": "src/models/test_storage_provider_request.rs",
+      "sha256": "9050592a9399f547d7d37ca3da29f7206fdf7dfedc47d5dea5156e9b965ae782"
+    },
+    {
+      "path": "src/models/test_storage_provider_response.rs",
+      "sha256": "c852e5f262957a1e38e80aea6a83847e12dda7fe12a6aea5aec7bbaf9e01d130"
+    },
+    {
+      "path": "src/models/update_storage_provider_request.rs",
+      "sha256": "60b647be76a1156dab683018e63276f7dbaaa875ab1481ecbdcf4aa2a90d3fa7"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

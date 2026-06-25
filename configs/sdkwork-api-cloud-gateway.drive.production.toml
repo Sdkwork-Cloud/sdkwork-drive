@@ -1,0 +1,127 @@
+mode = "split"
+
+[service]
+name = "sdkwork-api-cloud-gateway"
+environment = "production"
+
+[server]
+bind = "0.0.0.0:3900"
+
+[[dependencySurfaces]]
+serviceId = "sdkwork-iam-app-api"
+workspace = "sdkwork-appbase"
+sdkFamily = "sdkwork-iam-app-sdk"
+apiAuthority = "sdkwork-iam-app-api"
+surface = "app"
+apiPrefix = "/app/v3/api"
+runtimeMode = "split-or-embedded"
+sameOriginAllowed = true
+executableExport = "sdkwork_router_iam_app_api::build_sdkwork_iam_app_api_router"
+cargoFeature = "foundation-appbase"
+cargoDependency = "sdkwork_router_iam_app_api"
+coverage = "appbase-iam-routes"
+requiredBaseUrlKey = "SDKWORK_APPBASE_APP_API_BASE_URL"
+
+[[dependencySurfaces]]
+serviceId = "sdkwork-drive-app-api"
+workspace = "sdkwork-drive"
+sdkFamily = "sdkwork-drive-app-sdk"
+apiAuthority = "sdkwork-drive-app-api"
+surface = "app"
+apiPrefix = "/app/v3/api/drive"
+runtimeMode = "split"
+sameOriginAllowed = true
+requiredBaseUrlKey = "SDKWORK_DRIVE_APP_API_BASE_URL"
+coverage = "drive-app-api-upstream-routes"
+
+[[dependencySurfaces]]
+serviceId = "sdkwork-drive-backend-api"
+workspace = "sdkwork-drive"
+sdkFamily = "sdkwork-drive-backend-sdk"
+apiAuthority = "sdkwork-drive.backend"
+surface = "backend"
+apiPrefix = "/backend/v3/api/drive"
+runtimeMode = "split"
+sameOriginAllowed = true
+requiredBaseUrlKey = "SDKWORK_DRIVE_BACKEND_API_BASE_URL"
+coverage = "drive-backend-api-upstream-routes"
+
+[[dependencySurfaces]]
+serviceId = "sdkwork-drive-open-api"
+workspace = "sdkwork-drive"
+sdkFamily = "sdkwork-drive-sdk"
+apiAuthority = "sdkwork-drive.open"
+surface = "open"
+apiPrefix = "/open/v3/api/drive"
+runtimeMode = "split"
+sameOriginAllowed = true
+requiredBaseUrlKey = "SDKWORK_DRIVE_OPEN_API_BASE_URL"
+coverage = "drive-open-api-upstream-routes"
+
+[[dependencySurfaces]]
+serviceId = "sdkwork-drive-admin-storage-api"
+workspace = "sdkwork-drive"
+sdkFamily = "sdkwork-drive-admin-storage-sdk"
+apiAuthority = "sdkwork-drive.admin.storage"
+surface = "admin"
+apiPrefix = "/admin/v3/api/drive"
+runtimeMode = "split"
+sameOriginAllowed = true
+requiredBaseUrlKey = "SDKWORK_DRIVE_ADMIN_STORAGE_API_BASE_URL"
+coverage = "drive-admin-storage-api-upstream-routes"
+
+[[upstreams]]
+serviceId = "sdkwork-drive-app-api"
+baseUrl = "http://sdkwork-drive-app-api:18080"
+
+[[upstreams]]
+serviceId = "sdkwork-drive-backend-api"
+baseUrl = "http://sdkwork-drive-backend-api:18081"
+
+[[upstreams]]
+serviceId = "sdkwork-drive-open-api"
+baseUrl = "http://sdkwork-drive-open-api:18082"
+
+[[upstreams]]
+serviceId = "sdkwork-drive-admin-storage-api"
+baseUrl = "http://sdkwork-drive-admin-storage-api:18083"
+
+[cors]
+allowAnyOrigin = false
+allowedOrigins = [
+  "https://api.sdkwork.com",
+  "https://apps.sdkwork.com",
+]
+
+[request]
+maxBodyBytes = 33554432
+timeoutMs = 120000
+
+[readiness]
+enabled = true
+checkUpstreams = true
+timeoutMs = 3000
+
+[observability]
+accessLogEnabled = true
+auditLogEnabled = true
+accessLogSampleRateBasisPoints = 10000
+auditLogSampleRateBasisPoints = 10000
+metricsEnabled = true
+metricsPath = "/metrics"
+tracingEnabled = false
+redactHeaders = ["authorization", "access-token", "cookie", "x-api-key", "set-cookie"]
+
+[security]
+allowedHosts = ["api.sdkwork.com", "apps.sdkwork.com"]
+trustedProxyCidrs = []
+secureHeadersEnabled = true
+maxHeaderBytes = 65536
+maxHeaderCount = 128
+rejectCredentialHeadersOnAnonymousAuthRoutes = true
+csrfGuardEnabled = true
+
+[traffic]
+rateLimitEnabled = true
+compatXRateLimitHeaders = true
+globalMaxInFlight = 2048

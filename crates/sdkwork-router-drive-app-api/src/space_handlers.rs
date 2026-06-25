@@ -1,0 +1,459 @@
+use crate::acl;
+use crate::app_context::DriveRequestContext;
+use crate::dto::*;
+use crate::error::{
+    map_service_error, problem,
+    service_error_kind, ProblemDetail,
+};
+use crate::ids::next_drive_id;
+use crate::mappers::*;
+use crate::space_repository::validate_space_exists;
+use crate::state::AppState;
+use axum::extract::Path;
+use axum::extract::Query;
+use axum::extract::State;
+use axum::http::StatusCode;
+use axum::Extension;
+use axum::Json;
+use sdkwork_drive_contract::drive::domain_events as drive_events;
+use sdkwork_drive_observability::{elapsed_ms, error_kinds, events, has_value, start_timer};
+use sdkwork_drive_workspace_service::application::space_lifecycle_service::{
+    BootstrapTeamSpaceCreatorAccessCommand, RetireSpaceContentsCommand,
+    SqlDriveSpaceLifecycleService,
+};
+use sdkwork_drive_workspace_service::application::space_service::{
+    CreateSpaceCommand, DeleteSpaceCommand, DriveSpaceService, GetSpaceCommand, UpdateSpaceCommand,
+};
+use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
+use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
+
+use crate::route_change::record_change;
+
+
+pub(crate) async fn list_spaces(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Query(query): Query<ListSpacesQuery>,
+) -> Result<Json<ListSpacesResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let started = start_timer();
+    let filter_has_owner_subject_type = has_value(&query.owner_subject_type);
+    let filter_has_owner_subject_id = has_value(&query.owner_subject_id);
+    let tenant_id = match ctx.resolve_tenant_id() {
+        Ok(tenant_id) => tenant_id,
+        Err(error) => {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_SPACES_LIST,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = error_kinds::VALIDATION,
+                filter_has_owner_subject_type = filter_has_owner_subject_type,
+                filter_has_owner_subject_id = filter_has_owner_subject_id
+            );
+            return Err(error);
+        }
+    };
+
+    let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
+    let listed = service
+        .list_spaces(
+            sdkwork_drive_workspace_service::application::space_service::ListSpacesCommand {
+                tenant_id: tenant_id.clone(),
+                owner_subject_type: query.owner_subject_type,
+                owner_subject_id: query.owner_subject_id,
+            },
+        )
+        .await
+        .map_err(map_service_error)?;
+    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let mut accessible = Vec::new();
+    for space in listed {
+        if acl::space_is_accessible_to_subject(
+            &state.pool,
+            &tenant_id,
+            &space.id,
+            &subject_type,
+            &subject_id,
+        )
+        .await?
+        {
+            accessible.push(space);
+        }
+    }
+    let latency_ms = elapsed_ms(started);
+    sdkwork_drive_observability::observe_route!(
+        event = events::APP_SPACES_LIST,
+        result = "ok",
+        latency_ms = latency_ms,
+        filter_has_owner_subject_type = filter_has_owner_subject_type,
+        filter_has_owner_subject_id = filter_has_owner_subject_id,
+        returned_items = accessible.len() as u64
+    );
+
+    Ok(Json(ListSpacesResponse {
+        items: accessible.into_iter().map(map_space_response).collect(),
+    }))
+}
+pub(crate) async fn create_space(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Json(payload): Json<CreateSpaceRequest>,
+) -> Result<(StatusCode, Json<CreateSpaceResponse>), (StatusCode, Json<ProblemDetail>)> {
+    let started = start_timer();
+    let space_type = match DriveSpaceType::try_from_str(payload.space_type.trim()) {
+        Some(space_type) => space_type,
+        None => {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_SPACES_CREATE,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = error_kinds::VALIDATION,
+                input_space_type = payload.space_type.as_str()
+            );
+            return Err(problem(
+                StatusCode::BAD_REQUEST,
+                "invalid space type",
+                "space_type is invalid",
+                "drive.validation.space_type_invalid",
+            ));
+        }
+    };
+
+    let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    ensure_create_space_owner_matches_caller(
+        &space_type,
+        payload.id.trim(),
+        &subject_type,
+        &subject_id,
+        payload.owner_subject_type.trim(),
+        payload.owner_subject_id.trim(),
+        ctx.organization_id.as_deref(),
+    )?;
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let tenant_id_for_bootstrap = tenant_id.clone();
+    let operator_id_for_bootstrap = operator_id.clone();
+    let created_result = service
+        .create_space(CreateSpaceCommand {
+            id: payload.id,
+            tenant_id,
+            owner_subject_type: payload.owner_subject_type,
+            owner_subject_id: payload.owner_subject_id,
+            display_name: payload.display_name,
+            space_type,
+            presentation_icon: payload.presentation_icon,
+            presentation_color: payload.presentation_color,
+            description: payload.description,
+            operator_id,
+        })
+        .await;
+    let created = match created_result {
+        Ok(created) => created,
+        Err(error) => {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_SPACES_CREATE,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = service_error_kind(&error)
+            );
+            return Err(map_service_error(error));
+        }
+    };
+    let latency_ms = elapsed_ms(started);
+    sdkwork_drive_observability::observe_route!(
+        event = events::APP_SPACES_CREATE,
+        result = "ok",
+        latency_ms = latency_ms,
+        space_type = created.space_type.as_str(),
+        lifecycle_status = created.lifecycle_status.as_str(),
+        version = created.version
+    );
+
+    record_change(
+        &state.pool,
+        &created.tenant_id,
+        &created.id,
+        None,
+        drive_events::space::CREATED,
+        &operator_id_for_bootstrap,
+    )
+    .await?;
+
+    if created.space_type == DriveSpaceType::Team {
+        SqlDriveSpaceLifecycleService::new(state.pool.clone())
+            .bootstrap_team_space_creator_access(BootstrapTeamSpaceCreatorAccessCommand {
+                tenant_id: tenant_id_for_bootstrap,
+                space_id: created.id.clone(),
+                creator_user_id: operator_id_for_bootstrap,
+                display_name: created.display_name.clone(),
+                root_folder_id: next_drive_id("folder"),
+            })
+            .await
+            .map_err(map_service_error)?;
+    }
+
+    Ok((StatusCode::CREATED, Json(map_space_response(created))))
+}
+pub(crate) async fn get_space(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Path(space_id): Path<String>,
+) -> Result<Json<CreateSpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let started = start_timer();
+    let tenant_id = match ctx.resolve_tenant_id() {
+        Ok(tenant_id) => tenant_id,
+        Err(error) => {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_SPACES_GET,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = error_kinds::VALIDATION,
+                space_id = space_id.as_str()
+            );
+            return Err(error);
+        }
+    };
+    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
+    acl::ensure_subject_space_scoped_reader(
+        &state.pool,
+        &tenant_id,
+        &space_id,
+        None,
+        &subject_type,
+        &subject_id,
+    )
+    .await?;
+    let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
+    let found = match service
+        .get_space(GetSpaceCommand {
+            tenant_id,
+            space_id: space_id.clone(),
+        })
+        .await
+    {
+        Ok(found) => found,
+        Err(error) => {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_SPACES_GET,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = service_error_kind(&error),
+                space_id = space_id.as_str()
+            );
+            return Err(map_service_error(error));
+        }
+    };
+
+    let response = map_space_response(found);
+    sdkwork_drive_observability::observe_route!(
+        event = events::APP_SPACES_GET,
+        result = "ok",
+        latency_ms = elapsed_ms(started),
+        space_id = response.id.as_str(),
+        space_type = response.space_type.as_str(),
+        lifecycle_status = response.lifecycle_status.as_str(),
+        version = response.version
+    );
+    Ok(Json(response))
+}
+pub(crate) async fn update_space(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Path(space_id): Path<String>,
+    Json(payload): Json<UpdateSpaceRequest>,
+) -> Result<Json<CreateSpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let started = start_timer();
+    let tenant_id = match ctx.resolve_tenant_id() {
+        Ok(tenant_id) => tenant_id,
+        Err(error) => {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_SPACES_UPDATE,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = error_kinds::VALIDATION,
+                space_id = space_id.as_str()
+            );
+            return Err(error);
+        }
+    };
+    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
+    acl::ensure_parent_writer(&state.pool, &ctx, &space_id, None).await?;
+    let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
+    let updated = match service
+        .update_space(UpdateSpaceCommand {
+            tenant_id: tenant_id.clone(),
+            space_id: space_id.clone(),
+            display_name: payload.display_name,
+            presentation_icon: payload.presentation_icon,
+            presentation_color: payload.presentation_color,
+            description: payload.description,
+            operator_id: operator_id.clone(),
+        })
+        .await
+    {
+        Ok(updated) => updated,
+        Err(error) => {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_SPACES_UPDATE,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = service_error_kind(&error),
+                space_id = space_id.as_str()
+            );
+            return Err(map_service_error(error));
+        }
+    };
+    record_change(
+        &state.pool,
+        &tenant_id,
+        &space_id,
+        None,
+        drive_events::space::UPDATED,
+        &operator_id,
+    )
+    .await?;
+
+    let response = map_space_response(updated);
+    sdkwork_drive_observability::observe_route!(
+        event = events::APP_SPACES_UPDATE,
+        result = "ok",
+        latency_ms = elapsed_ms(started),
+        space_id = response.id.as_str(),
+        lifecycle_status = response.lifecycle_status.as_str(),
+        version = response.version
+    );
+    Ok(Json(response))
+}
+pub(crate) async fn delete_space(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Path(space_id): Path<String>,
+    Query(query): Query<NodeMutationQuery>,
+) -> Result<Json<DeleteSpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let started = start_timer();
+    let tenant_id = match ctx.resolve_tenant_id() {
+        Ok(tenant_id) => tenant_id,
+        Err(error) => {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_SPACES_DELETE,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = error_kinds::VALIDATION,
+                space_id = space_id.as_str()
+            );
+            return Err(error);
+        }
+    };
+    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
+    acl::ensure_space_owner(&state.pool, &ctx, &space_id).await?;
+    let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
+    let deleted = match service
+        .delete_space(DeleteSpaceCommand {
+            tenant_id: tenant_id.clone(),
+            space_id: space_id.clone(),
+            operator_id: operator_id.clone(),
+        })
+        .await
+    {
+        Ok(deleted) => deleted,
+        Err(error) => {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_SPACES_DELETE,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = service_error_kind(&error),
+                space_id = space_id.as_str()
+            );
+            return Err(map_service_error(error));
+        }
+    };
+    let deleted_node_count = SqlDriveSpaceLifecycleService::new(state.pool.clone())
+        .retire_space_contents(RetireSpaceContentsCommand {
+            tenant_id: tenant_id.clone(),
+            space_id: space_id.clone(),
+            operator_id: operator_id.clone(),
+        })
+        .await
+        .map_err(map_service_error)?;
+    record_change(
+        &state.pool,
+        &tenant_id,
+        &space_id,
+        None,
+        drive_events::space::DELETED,
+        &operator_id,
+    )
+    .await?;
+
+    let response_space = map_space_response(deleted);
+    sdkwork_drive_observability::observe_route!(
+        event = events::APP_SPACES_DELETE,
+        result = "ok",
+        latency_ms = elapsed_ms(started),
+        space_id = response_space.id.as_str(),
+        lifecycle_status = response_space.lifecycle_status.as_str(),
+        version = response_space.version,
+        deleted_node_count = deleted_node_count
+    );
+    Ok(Json(DeleteSpaceResponse {
+        deleted: true,
+        space: response_space,
+        deleted_node_count,
+    }))
+}
+fn ensure_create_space_owner_matches_caller(
+    space_type: &DriveSpaceType,
+    space_id: &str,
+    subject_type: &str,
+    subject_id: &str,
+    owner_subject_type: &str,
+    owner_subject_id: &str,
+    organization_id: Option<&str>,
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    let owner_must_match_caller = matches!(
+        space_type,
+        DriveSpaceType::Personal | DriveSpaceType::GitRepository | DriveSpaceType::Rtc
+    );
+    if owner_must_match_caller
+        && (subject_type != owner_subject_type || subject_id != owner_subject_id)
+    {
+        return Err(acl::permission_denied_problem());
+    }
+
+    if *space_type == DriveSpaceType::Team {
+        let organization_id = organization_id
+            .map(str::trim)
+            .filter(|value| !value.is_empty() && *value != "0")
+            .ok_or_else(acl::permission_denied_problem)?;
+        match owner_subject_type {
+            "group" => {
+                if owner_subject_id != space_id.trim() {
+                    return Err(acl::permission_denied_problem());
+                }
+                if !space_id.starts_with(&format!("{organization_id}:"))
+                    && !space_id.starts_with(&format!("{organization_id}-"))
+                {
+                    return Err(acl::permission_denied_problem());
+                }
+            }
+            "organization" => {
+                if owner_subject_id != organization_id {
+                    return Err(acl::permission_denied_problem());
+                }
+            }
+            _ => {
+                return Err(problem(
+                    StatusCode::BAD_REQUEST,
+                    "validation failed",
+                    "team spaces must bind ownerSubjectType to group or organization",
+                    "drive.validation.space_owner_invalid",
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}

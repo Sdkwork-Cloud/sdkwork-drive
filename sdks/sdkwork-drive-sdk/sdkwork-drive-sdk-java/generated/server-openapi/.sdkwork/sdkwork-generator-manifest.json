@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "sdkwork-drive-sdk",
+    "version": "0.1.0",
+    "language": "java",
+    "sdkType": "custom",
+    "protocol": "http",
+    "packageName": "sdkwork-drive-sdk-generated-java"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "33394b9189a458f6b36bf7fd74815ea4b71a435083e0c428a9d3ca4673e28c3e"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "da4bd76701864b29d52b6b260c20f65305bcd4b9eea8696f7751b991f6aba345"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "pom.xml",
+      "sha256": "1c0886b5f159a5e1b9786189d04385850befaa8dd3689290cf0a0b6eb58b23a4"
+    },
+    {
+      "path": "README.md",
+      "sha256": "2513f0e87ef33ed292e4a73a74377c68414bc5617c0dc7c8b1e8f47e0372f698"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "aeea9ab91c466b02145def8e0e44e8faa69adff20e8b5cef1c19acb97a0e83f0"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/api/ApiPaths.java",
+      "sha256": "7adb6666ec841d968e801a900654aaaf69bb6697d24cc11a5832515b4ed8eb47"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/api/DriveApi.java",
+      "sha256": "7ef84587b0cca300345a0e4674d00272d2d9c80cadd8c8cd47b3e17d6438fe2f"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/api/package-info.java",
+      "sha256": "2993c6e162f78259b3566bdfee4924923124e526cb1b5ff6cef8b3cd78356cd7"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/http/HttpClient.java",
+      "sha256": "649a8c380c9317f203fd9efad9da3d9df16af908fece53ffc2237f028d57edb8"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/CreateOpenDownloadUrlRequest.java",
+      "sha256": "a7c58f527d3be0a0e0de8600dbb97c226457c7617ae026d390f77966ef9c3749"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/DriveOpenShareLink.java",
+      "sha256": "7d2c93a62184bd35379c4959f46229c176ac0e1ab94006101804f7f2a26fa6b8"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenDownloadUrlResponse.java",
+      "sha256": "91c50a1d36ced135444dec9b88c689f0b34e51b4ad6ca9c6aad354922fb56503"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenNode.java",
+      "sha256": "8e36006d996daa68b244b6372db17ec28335d11a195923e47eb6edbef3d1c81f"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/ProblemDetail.java",
+      "sha256": "170c902facf177a72ce3eaa0a918c18d307c074eb2b498567413572cb71866be"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/SdkworkCustomClient.java",
+      "sha256": "b3b5f93c82cd87031b93bd792d905f98f52b5bd86f3dc4f8ed150be6f8df3771"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}
