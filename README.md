@@ -51,10 +51,10 @@ Database policy and current runtime boundaries are documented in
 
 The local backend launch plan starts the four runtime API services together:
 
-- App API route crate: `sdkwork-router-drive-app-api` on `127.0.0.1:18080`.
-- Backend API route crate: `sdkwork-router-drive-backend-api` on `127.0.0.1:18081`.
-- Open API route crate: `sdkwork-router-drive-open-api` on `127.0.0.1:18082`.
-- Storage backend route crate: `sdkwork-router-storage-backend-api` on `127.0.0.1:18083`.
+- App API route crate: `sdkwork-routes-drive-app-api` on `127.0.0.1:18080`.
+- Backend API route crate: `sdkwork-routes-drive-backend-api` on `127.0.0.1:18081`.
+- Open API route crate: `sdkwork-routes-drive-open-api` on `127.0.0.1:18082`.
+- Storage backend route crate: `sdkwork-routes-storage-backend-api` on `127.0.0.1:18083`.
 
 Runtime services also accept `SDKWORK_DRIVE_CONFIG_FILE` pointing at a TOML file
 with a `[database]` section, for example `configs/drive.database.example.toml`.
@@ -91,8 +91,8 @@ runtime; Drive only consumes the host-provided SDKWork session projection.
 ```bash
 cargo test -p sdkwork-drive-contract
 cargo test -p sdkwork-drive-workspace-service
-cargo test -p sdkwork-router-drive-app-api
-cargo test -p sdkwork-router-drive-backend-api
+cargo test -p sdkwork-routes-drive-app-api
+cargo test -p sdkwork-routes-drive-backend-api
 ```
 
 ## OpenAPI And SDK Tooling
@@ -104,7 +104,7 @@ SDK family naming and app integration rules are documented in
 OpenAPI authority names still use `sdkwork-drive-open-api`,
 `sdkwork-drive-app-api`, and `sdkwork-drive-backend-api`; the dedicated storage
 administration authority uses `sdkwork-drive-admin-storage-api`. Runtime Rust
-route crates use the standard `sdkwork-router-<capability>-<surface>` package
+route crates use the standard `sdkwork-routes-<capability>-<surface>` package
 family under `crates/`.
 
 Check contracts and schema quality without running SDK generation:
@@ -183,3 +183,6 @@ Owner and lifecycle status are tracked in `specs/component.spec.json`.
 - [docs/product/prd/PRD.md](docs/product/prd/PRD.md)
 - [docs/architecture/tech/TECH_ARCHITECTURE.md](docs/architecture/tech/TECH_ARCHITECTURE.md)
 
+## Application Roots
+
+- [apps directory index](apps/README.md)

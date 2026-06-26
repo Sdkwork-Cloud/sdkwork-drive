@@ -71,7 +71,7 @@ The app upload session response also includes `objectKey` for diagnostics and lo
 
 ### Admin Storage API
 
-`crates/sdkwork-router-storage-backend-api` owns storage administration and uses `/backend/v3/api/drive/storage/...` routes:
+`crates/sdkwork-routes-storage-backend-api` owns storage administration and uses `/backend/v3/api/drive/storage/...` routes:
 
 - `GET|POST /backend/v3/api/drive/storage/providers`
 - `GET|PATCH|DELETE /backend/v3/api/drive/storage/providers/{providerId}`
@@ -99,7 +99,7 @@ fixtures rather than forged context headers.
 
 All admin-storage mutation routes must receive a real non-empty `operatorId` and record a Drive audit event. Provider and binding mutations carry `operatorId` in the JSON body except provider deletion, bucket create/delete, object delete, and default binding deletion, which use the required `operatorId` query parameter. Object copy carries `operatorId` in the request body. Low-level bucket and object audit events use the storage provider id as the audit resource id; object keys remain operational parameters, not audit resource identifiers.
 
-Future backend-admin route modules must follow the `crates/sdkwork-router-<capability>-backend-api` naming pattern, where `<capability>` is a bounded business capability such as `storage`, `audit`, `workspace`, `policy`, or `repair`. Each module must expose only its own backend-admin surface and reuse Drive service crates/contracts instead of duplicating Drive business logic.
+Future backend-admin route modules must follow the `crates/sdkwork-routes-<capability>-backend-api` naming pattern, where `<capability>` is a bounded business capability such as `storage`, `audit`, `workspace`, `policy`, or `repair`. Each module must expose only its own backend-admin surface and reuse Drive service crates/contracts instead of duplicating Drive business logic.
 
 The corresponding generated SDK family is `sdks/sdkwork-drive-admin-storage-sdk`, not `sdks/sdkwork-drive-admin-storage-api`. Its authority is `sdkwork-drive.admin.storage`, its OpenAPI input is `apis/backend-api/drive/drive-admin-storage-api.openapi.json`, and it exposes the storage administration operations through a dedicated client surface. Because the canonical `sdkwork-v3` backend generator profile is reserved for `/backend/v3/api`, this SDK uses generator type `custom` with Drive-local profile metadata `sdkwork-drive-admin-storage-v3`; it still declares dual-token security and appbase backend IAM dependency metadata.
 
@@ -152,7 +152,7 @@ Rules:
 - OpenDAL is opt-in plugin infrastructure, not the default production S3 path.
 - The admin storage crate exposes the optional Cargo feature `opendal-s3-plugin`; default builds do not enable it.
 - Runtime selection is explicit through `SDKWORK_DRIVE_ADMIN_STORAGE_OBJECT_STORE_ADAPTER`. The default value is `aws_sdk_s3`; `opendal_s3` is accepted only when the admin storage module is built with the `opendal-s3-plugin` feature.
-- Selecting `opendal_s3` affects filesystem-style object operations in `crates/sdkwork-router-storage-backend-api`; app/open/backend APIs and the Drive workspace service continue to use the full AWS SDK S3 adapter.
+- Selecting `opendal_s3` affects filesystem-style object operations in `crates/sdkwork-routes-storage-backend-api`; app/open/backend APIs and the Drive workspace service continue to use the full AWS SDK S3 adapter.
 - OpenDAL configuration must receive and enforce the persisted provider `strict_tls` value; it must reject `strict_tls=true` for `http://` endpoints just like the full AWS SDK S3 adapter.
 - The plugin adapts OpenDAL S3 to `DriveObjectStore` for filesystem-style object operations: put, head, delete, range read, list, copy, and presigned download where supported by OpenDAL.
 - It does not fake Drive multipart semantics. Drive multipart upload, upload-part presign, complete, and abort remain the responsibility of `sdkwork-drive-storage-s3`.
@@ -189,14 +189,14 @@ crates/
     src/infrastructure/sql/storage_provider_store.rs
     src/infrastructure/sql/upload_session_store.rs
     src/infrastructure/sql/storage_object_store.rs
-  sdkwork-router-drive-app-api/
+  sdkwork-routes-drive-app-api/
     src/lib.rs
-  sdkwork-router-drive-backend-api/
+  sdkwork-routes-drive-backend-api/
     src/lib.rs
-  sdkwork-router-storage-backend-api/
+  sdkwork-routes-storage-backend-api/
     src/lib.rs
     src/main.rs
-  sdkwork-router-<capability>-backend-api/
+  sdkwork-routes-<capability>-backend-api/
     src/lib.rs
     src/main.rs
 

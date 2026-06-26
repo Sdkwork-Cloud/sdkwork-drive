@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const testRoots = [
-  'crates/sdkwork-router-drive-app-api/tests',
-  'crates/sdkwork-router-drive-backend-api/tests',
+  'crates/sdkwork-routes-drive-app-api/tests',
+  'crates/sdkwork-routes-drive-backend-api/tests',
 ];
 
 function stripTenantIdQuery(uri) {

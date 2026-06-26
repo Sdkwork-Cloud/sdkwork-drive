@@ -4,7 +4,7 @@ Use this checklist before promoting Drive from controlled pilot to commercial GA
 
 ## Security and IAM
 
-- [ ] **required** Protected routers (`app-api`, `backend-api`, `open-api`, `admin-storage-api`) run with `IamDatabaseWebRequestContextResolver` via `wrap_router_with_web_framework_from_env`.
+- [ ] **required** Protected routers (`app-api`, `backend-api`, `open-api`, `admin-storage-api`) run with `IamWebRequestContextResolver` via `wrap_router_with_web_framework_from_env`.
 - [ ] **required** IAM signing keys and database credentials are mounted from secrets (`sdkwork-drive-iam`), not plaintext env files.
 - [ ] **required** Webhook outbox dispatch uses `validate_webhook_https_url_for_dispatch` (HTTPS, DNS resolution, no private IP targets).
 - [ ] **required** Install worker health endpoint binds to loopback (`127.0.0.1`) in production unless an explicit override is documented.

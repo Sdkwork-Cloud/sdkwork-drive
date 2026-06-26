@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const target = path.join(
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
-  'crates/sdkwork-router-drive-app-api/tests/command_routes.rs',
+  'crates/sdkwork-routes-drive-app-api/tests/command_routes.rs',
 );
 const lines = fs.readFileSync(target, 'utf8').split(/\r?\n/);
 let currentTenant = 'tenant-001';

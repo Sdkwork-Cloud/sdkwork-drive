@@ -4,6 +4,7 @@
 //! including request context extraction, response mapping, and middleware.
 
 pub mod context;
+pub mod infra;
 pub mod metrics;
 pub mod middleware;
 pub mod problem_correlation;

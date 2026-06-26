@@ -1,6 +1,6 @@
 //! ACL SQL predicates for list and change-feed queries.
 //!
-//! Keep in sync with `sdkwork-router-drive-app-api/src/acl_sql.rs`.
+//! Keep in sync with `sdkwork-routes-drive-app-api/src/acl_sql.rs`.
 
 const READER_SATISFYING_ROLES: &[&str] = &["owner", "writer", "commenter", "reader"];
 

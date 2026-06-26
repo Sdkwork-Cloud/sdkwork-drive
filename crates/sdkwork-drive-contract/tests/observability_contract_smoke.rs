@@ -46,8 +46,8 @@ fn observability_event_names_are_stable_across_code_and_spec() {
         std::fs::read_to_string(root.join("crates/sdkwork-drive-observability/src/lib.rs"))
             .expect("observability lib should exist");
     let backend_api =
-        read_rust_source_tree(root.join("crates/sdkwork-router-drive-backend-api/src"));
-    let app_api = read_rust_source_tree(root.join("crates/sdkwork-router-drive-app-api/src"));
+        read_rust_source_tree(root.join("crates/sdkwork-routes-drive-backend-api/src"));
+    let app_api = read_rust_source_tree(root.join("crates/sdkwork-routes-drive-app-api/src"));
     let spec = std::fs::read_to_string(
         root.join(
             "docs/architecture/tech/TECH-2026-06-01-drive-observability-event-dictionary.md",

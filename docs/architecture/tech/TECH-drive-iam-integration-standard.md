@@ -68,7 +68,7 @@ Admin-storage `/healthz` is public; `/backend/v3/api/drive/storage/*` is protect
 
 Production assembly paths for Drive HTTP routers must finalize with
 `wrap_router_with_web_framework_from_env`, which resolves sessions through
-`sdkwork_iam_web_adapter::iam_database_resolver_from_env()`.
+`sdkwork_iam_web_adapter::iam_web_request_context_resolver_from_env()`.
 
 Rules:
 

@@ -15,9 +15,9 @@ Current layout:
 - `sdkwork-drive-storage-s3/`: Native AWS SDK S3 storage provider.
 - `sdkwork-drive-test-support/`: Test utilities and fixtures.
 - `sdkwork-drive-workspace-service/`: Workspace service.
-- `sdkwork-router-drive-open-api/`: Open API route crate.
-- `sdkwork-router-drive-app-api/`: App API route crate.
-- `sdkwork-router-drive-backend-api/`: Backend API route crate.
-- `sdkwork-router-storage-backend-api/`: Storage backend API route crate.
+- `sdkwork-routes-drive-open-api/`: Open API route crate.
+- `sdkwork-routes-drive-app-api/`: App API route crate.
+- `sdkwork-routes-drive-backend-api/`: Backend API route crate.
+- `sdkwork-routes-storage-backend-api/`: Storage backend API route crate.
 - `sdkwork-drive-install-worker/`: Install worker.
 - `sdkwork-drive-standalone-gateway/`: Standalone gateway (embedded IAM + Drive API proxy loop).

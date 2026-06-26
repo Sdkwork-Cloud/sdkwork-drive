@@ -110,9 +110,9 @@
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "embedded",
-        "executableExport": "sdkwork_router_drive_app_api::build_router_with_pool_and_iam",
-        "cargoDependency": "sdkwork-router-drive-app-api",
-        "coverageEvidence": "crates/sdkwork-router-drive-app-api/src/routes.rs"
+        "executableExport": "sdkwork_routes_drive_app_api::build_router_with_pool_and_iam",
+        "cargoDependency": "sdkwork-routes-drive-app-api",
+        "coverageEvidence": "crates/sdkwork-routes-drive-app-api/src/routes.rs"
       },
       {
         "workspace": "sdkwork-drive",
@@ -121,9 +121,9 @@
         "surface": "backend-api",
         "apiPrefix": "/backend/v3/api",
         "runtimeMode": "embedded",
-        "executableExport": "sdkwork_router_drive_backend_api::build_router_with_pool_and_iam",
-        "cargoDependency": "sdkwork-router-drive-backend-api",
-        "coverageEvidence": "crates/sdkwork-router-drive-backend-api/src/routes.rs"
+        "executableExport": "sdkwork_routes_drive_backend_api::build_router_with_pool_and_iam",
+        "cargoDependency": "sdkwork-routes-drive-backend-api",
+        "coverageEvidence": "crates/sdkwork-routes-drive-backend-api/src/routes.rs"
       },
       {
         "workspace": "sdkwork-drive",
@@ -132,9 +132,9 @@
         "surface": "open-api",
         "apiPrefix": "/open/v3/api",
         "runtimeMode": "embedded",
-        "executableExport": "sdkwork_router_drive_open_api::build_router_with_pool",
-        "cargoDependency": "sdkwork-router-drive-open-api",
-        "coverageEvidence": "crates/sdkwork-router-drive-open-api/src/routes.rs"
+        "executableExport": "sdkwork_routes_drive_open_api::build_router_with_pool",
+        "cargoDependency": "sdkwork-routes-drive-open-api",
+        "coverageEvidence": "crates/sdkwork-routes-drive-open-api/src/routes.rs"
       },
       {
         "workspace": "sdkwork-drive",
@@ -143,9 +143,9 @@
         "surface": "backend-api",
         "apiPrefix": "/backend/v3/api",
         "runtimeMode": "embedded",
-        "executableExport": "sdkwork_router_storage_backend_api::build_router_with_pool",
-        "cargoDependency": "sdkwork-router-storage-backend-api",
-        "coverageEvidence": "crates/sdkwork-router-storage-backend-api/src/routes.rs"
+        "executableExport": "sdkwork_routes_storage_backend_api::build_router_with_pool",
+        "cargoDependency": "sdkwork-routes-storage-backend-api",
+        "coverageEvidence": "crates/sdkwork-routes-storage-backend-api/src/routes.rs"
       },
       {
         "workspace": "sdkwork-appbase",
@@ -154,9 +154,9 @@
         "surface": "app-api",
         "apiPrefix": "/auth",
         "runtimeMode": "embedded",
-        "executableExport": "sdkwork_router_iam_app_api::build_sdkwork_iam_app_api_router",
-        "cargoDependency": "sdkwork-router-iam-app-api",
-        "coverageEvidence": "../sdkwork-iam/crates/sdkwork-router-iam-app-api/src/routes.rs"
+        "executableExport": "sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router",
+        "cargoDependency": "sdkwork-routes-iam-app-api",
+        "coverageEvidence": "../sdkwork-iam/crates/sdkwork-routes-iam-app-api/src/routes.rs"
       }
     ]
   },

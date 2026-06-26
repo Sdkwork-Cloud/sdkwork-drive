@@ -51,8 +51,8 @@
 ### Services
 
 - Create: `crates/sdkwork-drive-workspace-service/`
-- Create: `crates/sdkwork-router-drive-app-api/`
-- Create: `crates/sdkwork-router-drive-backend-api/`
+- Create: `crates/sdkwork-routes-drive-app-api/`
+- Create: `crates/sdkwork-routes-drive-backend-api/`
 - Create: `crates/sdkwork-drive-install-worker/`
 
 ### Specs And Contracts
@@ -106,8 +106,8 @@ members = [
   "crates/sdkwork-drive-storage-s3",
   "crates/sdkwork-drive-test-support",
   "crates/sdkwork-drive-workspace-service",
-  "crates/sdkwork-router-drive-app-api",
-  "crates/sdkwork-router-drive-backend-api",
+  "crates/sdkwork-routes-drive-app-api",
+  "crates/sdkwork-routes-drive-backend-api",
   "crates/sdkwork-drive-install-worker",
 ]
 resolver = "2"
@@ -633,11 +633,11 @@ git commit -m "feat: implement upload and download services"
 ### Task 12: Implement App API Service And Contract Tests
 
 **Files:**
-- Create: `crates/sdkwork-router-drive-app-api/Cargo.toml`
-- Create: `crates/sdkwork-router-drive-app-api/src/main.rs`
-- Create: `crates/sdkwork-router-drive-app-api/src/lib.rs`
-- Create: `crates/sdkwork-router-drive-app-api/tests/drive_routes.rs`
-- Create: `crates/sdkwork-router-drive-app-api/tests/contract_routes.rs`
+- Create: `crates/sdkwork-routes-drive-app-api/Cargo.toml`
+- Create: `crates/sdkwork-routes-drive-app-api/src/main.rs`
+- Create: `crates/sdkwork-routes-drive-app-api/src/lib.rs`
+- Create: `crates/sdkwork-routes-drive-app-api/tests/drive_routes.rs`
+- Create: `crates/sdkwork-routes-drive-app-api/tests/contract_routes.rs`
 
 - [ ] **Step 1: Write failing app route tests**
 
@@ -650,7 +650,7 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cargo test -p sdkwork-router-drive-app-api`
+Run: `cargo test -p sdkwork-routes-drive-app-api`
 Expected: FAIL because router is not implemented.
 
 - [ ] **Step 3: Implement app router with workspace service injection**
@@ -663,13 +663,13 @@ Include:
 
 - [ ] **Step 4: Run tests to verify pass**
 
-Run: `cargo test -p sdkwork-router-drive-app-api`
+Run: `cargo test -p sdkwork-routes-drive-app-api`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/sdkwork-router-drive-app-api
+git add crates/sdkwork-routes-drive-app-api
 git commit -m "feat: add drive app api router and contract tests"
 ```
 
@@ -678,11 +678,11 @@ git commit -m "feat: add drive app api router and contract tests"
 ### Task 13: Implement Backend API Service And Contract Tests
 
 **Files:**
-- Create: `crates/sdkwork-router-drive-backend-api/Cargo.toml`
-- Create: `crates/sdkwork-router-drive-backend-api/src/main.rs`
-- Create: `crates/sdkwork-router-drive-backend-api/src/lib.rs`
-- Create: `crates/sdkwork-router-drive-backend-api/tests/backend_routes.rs`
-- Create: `crates/sdkwork-router-drive-backend-api/tests/storage_provider_routes.rs`
+- Create: `crates/sdkwork-routes-drive-backend-api/Cargo.toml`
+- Create: `crates/sdkwork-routes-drive-backend-api/src/main.rs`
+- Create: `crates/sdkwork-routes-drive-backend-api/src/lib.rs`
+- Create: `crates/sdkwork-routes-drive-backend-api/tests/backend_routes.rs`
+- Create: `crates/sdkwork-routes-drive-backend-api/tests/storage_provider_routes.rs`
 
 - [ ] **Step 1: Write failing backend route tests**
 
@@ -693,7 +693,7 @@ async fn backend_router_exposes_storage_provider_and_quota_routes() {}
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cargo test -p sdkwork-router-drive-backend-api`
+Run: `cargo test -p sdkwork-routes-drive-backend-api`
 Expected: FAIL because backend router is not implemented.
 
 - [ ] **Step 3: Implement backend router**
@@ -707,13 +707,13 @@ Include:
 
 - [ ] **Step 4: Run tests to verify pass**
 
-Run: `cargo test -p sdkwork-router-drive-backend-api`
+Run: `cargo test -p sdkwork-routes-drive-backend-api`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/sdkwork-router-drive-backend-api
+git add crates/sdkwork-routes-drive-backend-api
 git commit -m "feat: add drive backend api router and admin contracts"
 ```
 

@@ -23,10 +23,8 @@ sdkwork_drive_observability = { package = "sdkwork-drive-observability", path = 
 sqlx.workspace = true
 sdkwork_drive_security = { package = "sdkwork-drive-security", path = "../sdkwork-drive-security" }
 sdkwork_drive_workspace_service = { package = "sdkwork-drive-workspace-service", path = "../sdkwork-drive-workspace-service" }
-sdkwork_router_drive_app_api = { package = "sdkwork-router-drive-app-api", path = "../sdkwork-router-drive-app-api" }
-sdkwork_router_drive_backend_api = { package = "sdkwork-router-drive-backend-api", path = "../sdkwork-router-drive-backend-api" }
-sdkwork_router_drive_open_api = { package = "sdkwork-router-drive-open-api", path = "../sdkwork-router-drive-open-api" }
-sdkwork_router_storage_backend_api = { package = "sdkwork-router-storage-backend-api", path = "../sdkwork-router-storage-backend-api" }
-sdkwork_router_iam_app_api = { package = "sdkwork-router-iam-app-api", path = "../../../sdkwork-iam/crates/sdkwork-router-iam-app-api" }
+sdkwork-drive-gateway-assembly = { path = "../sdkwork-drive-gateway-assembly" }
+sdkwork_routes_storage_backend_api = { package = "sdkwork-routes-storage-backend-api", path = "../sdkwork-routes-storage-backend-api" }
+sdkwork_routes_iam_app_api = { package = "sdkwork-routes-iam-app-api", path = "../../../sdkwork-iam/crates/sdkwork-routes-iam-app-api" }
 sdkwork-iam-embedded-application-bootstrap = { path = "../../../sdkwork-iam/crates/sdkwork-iam-embedded-application-bootstrap" }
 sdkwork-iam-database-host = { path = "../../../sdkwork-iam/crates/sdkwork-iam-database-host" }

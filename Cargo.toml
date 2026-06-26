@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/sdkwork-drive-gateway-assembly",
     "crates/sdkwork-drive-contract",
     "crates/sdkwork-drive-config",
     "crates/sdkwork-drive-database-host",
@@ -13,10 +14,10 @@ members = [
     "crates/sdkwork-drive-test-support",
     "crates/sdkwork-drive-workspace-service",
     "crates/sdkwork-drive-uploader-service",
-    "crates/sdkwork-router-drive-open-api",
-    "crates/sdkwork-router-drive-app-api",
-    "crates/sdkwork-router-storage-backend-api",
-    "crates/sdkwork-router-drive-backend-api",
+    "crates/sdkwork-routes-drive-open-api",
+    "crates/sdkwork-routes-drive-app-api",
+    "crates/sdkwork-routes-storage-backend-api",
+    "crates/sdkwork-routes-drive-backend-api",
     "crates/sdkwork-drive-install-worker",
     "crates/sdkwork-drive-standalone-gateway",
 ]
@@ -69,10 +70,10 @@ sdkwork-drive-workspace-service = { path = "crates/sdkwork-drive-workspace-servi
 sdkwork-drive-uploader-service = { path = "crates/sdkwork-drive-uploader-service" }
 sdkwork-drive-install-worker = { path = "crates/sdkwork-drive-install-worker" }
 sdkwork-drive-standalone-gateway = { path = "crates/sdkwork-drive-standalone-gateway" }
-sdkwork-router-drive-open-api = { path = "crates/sdkwork-router-drive-open-api" }
-sdkwork-router-drive-app-api = { path = "crates/sdkwork-router-drive-app-api" }
-sdkwork-router-drive-backend-api = { path = "crates/sdkwork-router-drive-backend-api" }
-sdkwork-router-storage-backend-api = { path = "crates/sdkwork-router-storage-backend-api" }
+sdkwork-routes-drive-open-api = { path = "crates/sdkwork-routes-drive-open-api" }
+sdkwork-routes-drive-app-api = { path = "crates/sdkwork-routes-drive-app-api" }
+sdkwork-routes-drive-backend-api = { path = "crates/sdkwork-routes-drive-backend-api" }
+sdkwork-routes-storage-backend-api = { path = "crates/sdkwork-routes-storage-backend-api" }
 
 # SDKWork database dependencies
 sdkwork-database-config = { path = "../sdkwork-database/crates/sdkwork-database-config" }
@@ -88,6 +89,7 @@ sdkwork-id-core = { path = "../sdkwork-id/crates/sdkwork-id-core" }
 sdkwork-utils-rust = { path = "../sdkwork-utils/packages/sdkwork-utils-rust" }
 
 # SDKWork web framework dependencies
+sdkwork-web-bootstrap = { path = "../sdkwork-web-framework/crates/sdkwork-web-bootstrap" }
 sdkwork-web-core = { path = "../sdkwork-web-framework/crates/sdkwork-web-core" }
 sdkwork-web-axum = { path = "../sdkwork-web-framework/crates/sdkwork-web-axum" }
 sdkwork-web-contract = { path = "../sdkwork-web-framework/crates/sdkwork-web-contract" }

@@ -5,10 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const testFiles = [
-  'crates/sdkwork-router-drive-app-api/tests/command_routes.rs',
-  'crates/sdkwork-router-drive-app-api/tests/observability_routes.rs',
-  'crates/sdkwork-router-drive-app-api/tests/version_routes.rs',
-  'crates/sdkwork-router-drive-app-api/tests/drive_routes.rs',
+  'crates/sdkwork-routes-drive-app-api/tests/command_routes.rs',
+  'crates/sdkwork-routes-drive-app-api/tests/observability_routes.rs',
+  'crates/sdkwork-routes-drive-app-api/tests/version_routes.rs',
+  'crates/sdkwork-routes-drive-app-api/tests/drive_routes.rs',
 ];
 
 const TENANT_LITERAL = /'((?:tenant-[a-z0-9-]+))'/gi;
@@ -299,7 +299,7 @@ for (const relativeFile of testFiles) {
   let source = fs.readFileSync(absolutePath, 'utf8');
   source = ensureCommonModule(source);
   source = source.replace(
-    /use sdkwork_router_drive_app_api::build_router_with_pool;\n?/g,
+    /use sdkwork_routes_drive_app_api::build_router_with_pool;\n?/g,
     '',
   );
   source = source.replaceAll('build_router_with_pool(', 'common::test_router_with_pool(');

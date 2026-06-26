@@ -6,15 +6,15 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const rustDtoFiles = [
-  'crates/sdkwork-router-drive-app-api/src/dto.rs',
-  'crates/sdkwork-router-drive-backend-api/src/dto.rs',
-  'crates/sdkwork-router-storage-backend-api/src/dto.rs',
+  'crates/sdkwork-routes-drive-app-api/src/dto.rs',
+  'crates/sdkwork-routes-drive-backend-api/src/dto.rs',
+  'crates/sdkwork-routes-storage-backend-api/src/dto.rs',
 ];
 
 const rustHandlerFiles = [
-  'crates/sdkwork-router-drive-app-api/src/routes.rs',
-  'crates/sdkwork-router-drive-app-api/src/download_packages.rs',
-  'crates/sdkwork-router-storage-backend-api/src/binding_handlers.rs',
+  'crates/sdkwork-routes-drive-app-api/src/routes.rs',
+  'crates/sdkwork-routes-drive-app-api/src/download_packages.rs',
+  'crates/sdkwork-routes-storage-backend-api/src/binding_handlers.rs',
 ];
 
 function stripOptionalTenantIdFields(source) {
@@ -95,9 +95,9 @@ function walkTests(directory) {
 }
 
 for (const directory of [
-  path.join(repoRoot, 'crates/sdkwork-router-drive-app-api/tests'),
-  path.join(repoRoot, 'crates/sdkwork-router-drive-backend-api/tests'),
-  path.join(repoRoot, 'crates/sdkwork-router-storage-backend-api/tests'),
+  path.join(repoRoot, 'crates/sdkwork-routes-drive-app-api/tests'),
+  path.join(repoRoot, 'crates/sdkwork-routes-drive-backend-api/tests'),
+  path.join(repoRoot, 'crates/sdkwork-routes-storage-backend-api/tests'),
 ]) {
   if (fs.existsSync(directory)) {
     walkTests(directory);

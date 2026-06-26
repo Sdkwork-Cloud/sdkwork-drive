@@ -116,10 +116,10 @@
     ],
     "runtimeEntrypoints": [
       "crates/sdkwork-drive-standalone-gateway/src/main.rs",
-      "crates/sdkwork-router-drive-app-api/src/main.rs",
-      "crates/sdkwork-router-drive-backend-api/src/main.rs",
-      "crates/sdkwork-router-drive-open-api/src/main.rs",
-      "crates/sdkwork-router-storage-backend-api/src/main.rs",
+      "crates/sdkwork-routes-drive-app-api/src/main.rs",
+      "crates/sdkwork-routes-drive-backend-api/src/main.rs",
+      "crates/sdkwork-routes-drive-open-api/src/main.rs",
+      "crates/sdkwork-routes-storage-backend-api/src/main.rs",
       "crates/sdkwork-drive-install-worker/src/main.rs"
     ],
     "routeManifest": null,

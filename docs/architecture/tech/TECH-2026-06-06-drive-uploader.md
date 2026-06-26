@@ -6,7 +6,7 @@
 
 **Goal:** Build Drive Uploader end to end across the workspace Rust service, App API route crate, App SDK `client.uploader.*`, resumable upload metadata, retention cleanup metadata, and PC integration.
 
-**Architecture:** `sdkwork-drive-workspace-service` owns the uploader business core and persistence. `sdkwork-router-drive-app-api` exposes that core as `/app/v3/api/drive/uploader/*`. `sdkwork-drive-app-sdk` exposes high-level `client.uploader.*` methods backed by generated App API operations and composed TypeScript orchestration.
+**Architecture:** `sdkwork-drive-workspace-service` owns the uploader business core and persistence. `sdkwork-routes-drive-app-api` exposes that core as `/app/v3/api/drive/uploader/*`. `sdkwork-drive-app-sdk` exposes high-level `client.uploader.*` methods backed by generated App API operations and composed TypeScript orchestration.
 
 **Tech Stack:** Rust, sqlx, SQLite/Postgres schema, Axum App API, OpenAPI, SDKWork generated SDKs, TypeScript composed SDK layer, Vite React PC app.
 
@@ -73,9 +73,9 @@
 ### Task 5: App API Uploader Routes
 
 **Files:**
-- Modify: `crates/sdkwork-router-drive-app-api/src/lib.rs`
-- Modify: `crates/sdkwork-router-drive-app-api/tests/drive_routes.rs`
-- Modify: `crates/sdkwork-router-drive-app-api/tests/command_routes.rs`
+- Modify: `crates/sdkwork-routes-drive-app-api/src/lib.rs`
+- Modify: `crates/sdkwork-routes-drive-app-api/tests/drive_routes.rs`
+- Modify: `crates/sdkwork-routes-drive-app-api/tests/command_routes.rs`
 - Modify: `generated/openapi/drive-app-api.openapi.json`
 
 - [ ] Add route contract tests for uploader prepare, resume, part uploaded, complete, abort, get, list, and profiles.

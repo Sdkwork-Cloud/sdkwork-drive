@@ -14,12 +14,12 @@ Normative order:
 
 ## API Authority And SDK Family Mapping
 
-OpenAPI files keep the `*-api` naming because they describe runtime API authority. Runtime Rust route crates use the standard `sdkwork-router-<capability>-<surface>` naming:
+OpenAPI files keep the `*-api` naming because they describe runtime API authority. Runtime Rust route crates use the standard `sdkwork-routes-<capability>-<surface>` naming:
 
-- `crates/sdkwork-router-drive-open-api` -> `apis/open-api/drive/drive-open-api.openapi.json`
-- `crates/sdkwork-router-drive-app-api` -> `apis/app-api/drive/drive-app-api.openapi.json`
-- `crates/sdkwork-router-drive-backend-api` -> `apis/backend-api/drive/drive-backend-api.openapi.json`
-- `crates/sdkwork-router-storage-backend-api` -> `apis/backend-api/drive/drive-admin-storage-api.openapi.json`
+- `crates/sdkwork-routes-drive-open-api` -> `apis/open-api/drive/drive-open-api.openapi.json`
+- `crates/sdkwork-routes-drive-app-api` -> `apis/app-api/drive/drive-app-api.openapi.json`
+- `crates/sdkwork-routes-drive-backend-api` -> `apis/backend-api/drive/drive-backend-api.openapi.json`
+- `crates/sdkwork-routes-storage-backend-api` -> `apis/backend-api/drive/drive-admin-storage-api.openapi.json`
 
 Generated SDK families use `*-sdk` naming because they are consumable client SDK workspaces:
 
@@ -78,7 +78,7 @@ Forbidden SDK family directories:
 - `sdks/drive-backend-sdk`
 - `sdks/drive-admin-storage-sdk`
 
-`sdkwork-drive-open-api`, `sdkwork-drive-app-api`, `sdkwork-drive-backend-api`, and `sdkwork-drive-admin-storage-api` are valid only for OpenAPI authority naming, generated OpenAPI filenames, and API/SDK metadata. Runtime Rust packages use `sdkwork-router-*`. The API authority names are not valid SDK family names.
+`sdkwork-drive-open-api`, `sdkwork-drive-app-api`, `sdkwork-drive-backend-api`, and `sdkwork-drive-admin-storage-api` are valid only for OpenAPI authority naming, generated OpenAPI filenames, and API/SDK metadata. Runtime Rust packages use `sdkwork-routes-*`. The API authority names are not valid SDK family names.
 
 Forbidden SDK metadata and package values:
 
@@ -170,7 +170,7 @@ Canonical call path:
 ```text
 feature UI -> injected DriveFileService -> sdkwork-drive-pc-core service facade
   -> createDriveAppSdkClient -> sdks/sdkwork-drive-app-sdk/... composed operations + generated transport
-  -> crates/sdkwork-router-drive-app-api
+  -> crates/sdkwork-routes-drive-app-api
 ```
 
 Rules:

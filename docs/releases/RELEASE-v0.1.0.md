@@ -29,5 +29,5 @@ See [Commercial GA rollout plan](../engineering/plans/PLAN-2026-0625-commercial-
 
 - `pnpm verify`
 - `SDKWORK_RELEASE_VALIDATION=strict pnpm check:release-readiness`
-- `cargo test -p sdkwork-router-drive-backend-api --test iam_auth_guard`
-- `cargo test -p sdkwork-router-storage-backend-api --test iam_auth_guard`
+- `cargo test -p sdkwork-routes-drive-backend-api --test iam_auth_guard`
+- `cargo test -p sdkwork-routes-storage-backend-api --test iam_auth_guard`

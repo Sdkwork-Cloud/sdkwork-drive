@@ -2,8 +2,8 @@
 import re
 from pathlib import Path
 
-ROUTES = Path(__file__).resolve().parents[1] / "crates/sdkwork-router-drive-app-api/src/routes.rs"
-DOWNLOAD = Path(__file__).resolve().parents[1] / "crates/sdkwork-router-drive-app-api/src/download_packages.rs"
+ROUTES = Path(__file__).resolve().parents[1] / "crates/sdkwork-routes-drive-app-api/src/routes.rs"
+DOWNLOAD = Path(__file__).resolve().parents[1] / "crates/sdkwork-routes-drive-app-api/src/download_packages.rs"
 
 ROUTE_HANDLERS = {
     "list_spaces",

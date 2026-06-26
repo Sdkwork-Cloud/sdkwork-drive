@@ -7,7 +7,7 @@ source: platform
 updated: 2026-06-25
 problem: Drive production routers must validate IAM sessions through the IAM database resolver, harden webhook dispatch, and align deployment descriptors with SECURITY_SPEC and IAM_LOGIN_INTEGRATION_SPEC without leaving stale documentation.
 goals:
-  - Protected HTTP routers finalize with IamDatabaseWebRequestContextResolver in production assembly paths.
+  - Protected HTTP routers finalize with IamWebRequestContextResolver in production assembly paths.
   - Webhook outbox dispatch validates DNS-resolved addresses before egress.
   - Backend and admin-storage APIs expose in-process rate limiting with documented env keys.
   - Kubernetes, systemd, container, and runbook docs reflect current production defaults.
@@ -40,10 +40,10 @@ trace:
     - DEPLOYMENT_SPEC.md
     - DOCUMENTATION_SPEC.md
   components:
-    - crates/sdkwork-router-drive-app-api
-    - crates/sdkwork-router-drive-backend-api
-    - crates/sdkwork-router-drive-open-api
-    - crates/sdkwork-router-storage-backend-api
+    - crates/sdkwork-routes-drive-app-api
+    - crates/sdkwork-routes-drive-backend-api
+    - crates/sdkwork-routes-drive-open-api
+    - crates/sdkwork-routes-storage-backend-api
     - crates/sdkwork-drive-security
     - deployments/kubernetes/drive-services.yaml
 verification:

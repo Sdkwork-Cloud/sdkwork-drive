@@ -120,11 +120,11 @@ fn workspace_declares_expected_members() {
     let manifest = std::fs::read_to_string(manifest_path).expect("Cargo.toml must exist");
     assert!(manifest.contains("crates/sdkwork-drive-contract"));
     assert!(manifest.contains("crates/sdkwork-drive-workspace-service"));
-    assert!(manifest.contains("crates/sdkwork-router-drive-open-api"));
-    assert!(manifest.contains("crates/sdkwork-router-drive-app-api"));
-    assert!(manifest.contains("crates/sdkwork-router-drive-backend-api"));
+    assert!(manifest.contains("crates/sdkwork-routes-drive-open-api"));
+    assert!(manifest.contains("crates/sdkwork-routes-drive-app-api"));
+    assert!(manifest.contains("crates/sdkwork-routes-drive-backend-api"));
     assert!(manifest.contains("crates/sdkwork-drive-storage-opendal"));
-    assert!(manifest.contains("crates/sdkwork-router-storage-backend-api"));
+    assert!(manifest.contains("crates/sdkwork-routes-storage-backend-api"));
     assert!(!manifest.contains("services/"));
     assert!(!manifest.contains("services/sdkwork-drive-admin-api"));
     assert!(!manifest.contains("sdkwork-drive-product"));
@@ -233,9 +233,9 @@ fn opendal_storage_plugin_is_not_enabled_by_default_in_api_crates() {
     root.pop();
 
     for manifest in [
-        root.join("crates/sdkwork-router-drive-app-api/Cargo.toml"),
-        root.join("crates/sdkwork-router-drive-open-api/Cargo.toml"),
-        root.join("crates/sdkwork-router-drive-backend-api/Cargo.toml"),
+        root.join("crates/sdkwork-routes-drive-app-api/Cargo.toml"),
+        root.join("crates/sdkwork-routes-drive-open-api/Cargo.toml"),
+        root.join("crates/sdkwork-routes-drive-backend-api/Cargo.toml"),
     ] {
         let source = std::fs::read_to_string(&manifest)
             .unwrap_or_else(|error| panic!("{} must be readable: {error}", manifest.display()));
@@ -263,10 +263,10 @@ fn s3_architecture_document_defines_plugin_and_admin_storage_boundaries() {
         "opendal-s3-plugin",
         "SDKWORK_DRIVE_ADMIN_STORAGE_OBJECT_STORE_ADAPTER",
         "Bucket administration remains on the AWS SDK S3 adapter",
-        "crates/sdkwork-router-storage-backend-api",
+        "crates/sdkwork-routes-storage-backend-api",
         "/backend/v3/api/drive/storage/providers",
         "Volcengine TOS",
-        "sdkwork-router-storage-backend-api",
+        "sdkwork-routes-storage-backend-api",
     ] {
         assert!(
             doc.contains(required),
@@ -281,7 +281,7 @@ fn admin_storage_router_exposes_explicit_plugin_config_entrypoints() {
     root.pop();
     root.pop();
 
-    let source = read_rust_source_tree(root.join("crates/sdkwork-router-storage-backend-api/src"));
+    let source = read_rust_source_tree(root.join("crates/sdkwork-routes-storage-backend-api/src"));
 
     for required in [
         "pub struct AdminStorageConfig",
@@ -304,12 +304,12 @@ fn admin_storage_api_has_standalone_binary_entrypoint() {
     root.pop();
     root.pop();
 
-    let main_path = root.join("crates/sdkwork-router-storage-backend-api/src/main.rs");
+    let main_path = root.join("crates/sdkwork-routes-storage-backend-api/src/main.rs");
     let source = std::fs::read_to_string(&main_path)
         .unwrap_or_else(|error| panic!("{} must be readable: {error}", main_path.display()));
 
     for required in [
-        "sdkwork_router_storage_backend_api::build_router_with_database_config",
+        "sdkwork_routes_storage_backend_api::build_router_with_database_config",
         "sdkwork_drive_config::DatabaseConfig",
         r#""127.0.0.1:18083""#,
         "serve admin storage api",
@@ -327,7 +327,7 @@ fn admin_storage_opendal_dependency_is_optional_and_feature_gated() {
     root.pop();
     root.pop();
 
-    let manifest_path = root.join("crates/sdkwork-router-storage-backend-api/Cargo.toml");
+    let manifest_path = root.join("crates/sdkwork-routes-storage-backend-api/Cargo.toml");
     let manifest = std::fs::read_to_string(&manifest_path)
         .unwrap_or_else(|error| panic!("{} must be readable: {error}", manifest_path.display()));
 
@@ -417,10 +417,10 @@ fn drive_services_do_not_expose_application_local_iam_login_routes() {
     root.pop();
     let roots = [
         root.join("crates/sdkwork-drive-workspace-service/src"),
-        root.join("crates/sdkwork-router-drive-app-api/src"),
-        root.join("crates/sdkwork-router-drive-backend-api/src"),
-        root.join("crates/sdkwork-router-drive-open-api/src"),
-        root.join("crates/sdkwork-router-storage-backend-api/src"),
+        root.join("crates/sdkwork-routes-drive-app-api/src"),
+        root.join("crates/sdkwork-routes-drive-backend-api/src"),
+        root.join("crates/sdkwork-routes-drive-open-api/src"),
+        root.join("crates/sdkwork-routes-storage-backend-api/src"),
         root.join("crates/sdkwork-drive-http/src"),
         root.join("crates/sdkwork-drive-security/src"),
         root.join("crates/sdkwork-drive-observability/src"),

@@ -1,7 +1,7 @@
 # SDKWork Drive edge rate limiting (example)
 
 Use this pattern in front of multi-replica Drive HTTP services. In-process
-rate limiters in `sdkwork-router-drive-*` are a defense-in-depth layer only;
+rate limiters in `sdkwork-routes-drive-*` are a defense-in-depth layer only;
 edge limits must be enforced at the gateway for production HA deployments.
 
 ## Nginx (`limit_req`)

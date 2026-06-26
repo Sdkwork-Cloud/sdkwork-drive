@@ -1484,9 +1484,9 @@ describe('desktop architecture contract', () => {
     }
 
     for (const retiredName of [
-      'sdkwork-router-drive-open-api',
-      'sdkwork-router-drive-app-api',
-      'sdkwork-router-drive-backend-api',
+      'sdkwork-routes-drive-open-api',
+      'sdkwork-routes-drive-app-api',
+      'sdkwork-routes-drive-backend-api',
       'drive-open-sdk',
       'drive-app-sdk',
       'drive-backend-sdk',

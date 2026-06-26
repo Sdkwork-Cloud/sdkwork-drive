@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const target = path.join(
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
-  'crates/sdkwork-router-drive-app-api/tests/command_routes.rs',
+  'crates/sdkwork-routes-drive-app-api/tests/command_routes.rs',
 );
 let source = fs.readFileSync(target, 'utf8');
 const before = source;

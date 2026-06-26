@@ -77,8 +77,8 @@ Use a Rust modular monolith with clean component boundaries.
 
 The backend is deployable as services and reusable as crates:
 
-- `crates/sdkwork-router-drive-app-api` exposes user-facing `/app/v3/api`.
-- `crates/sdkwork-router-drive-backend-api` exposes operator `/backend/v3/api`.
+- `crates/sdkwork-routes-drive-app-api` exposes user-facing `/app/v3/api`.
+- `crates/sdkwork-routes-drive-backend-api` exposes operator `/backend/v3/api`.
 - `crates/sdkwork-drive-workspace-service` contains domain, application, ports, infrastructure, and API adapters.
 - `crates/*` expose reusable contracts, storage abstraction, HTTP helpers, security, config, observability, and test support.
 
@@ -114,10 +114,10 @@ sdkwork-drive/
     sdkwork-drive-storage-s3/
     sdkwork-drive-test-support/
     sdkwork-drive-workspace-service/
-    sdkwork-router-drive-app-api/
-    sdkwork-router-drive-backend-api/
-    sdkwork-router-drive-open-api/
-    sdkwork-router-storage-backend-api/
+    sdkwork-routes-drive-app-api/
+    sdkwork-routes-drive-backend-api/
+    sdkwork-routes-drive-open-api/
+    sdkwork-routes-storage-backend-api/
     sdkwork-drive-standalone-gateway/
     sdkwork-drive-install-worker/
   sdks/

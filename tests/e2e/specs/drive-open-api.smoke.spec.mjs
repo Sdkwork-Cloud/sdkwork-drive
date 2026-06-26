@@ -10,7 +10,7 @@ test.describe('Drive open-api production smoke', () => {
     expect(response.ok()).toBeTruthy();
     const body = await response.json();
     expect(body.status).toBe('ok');
-    expect(body.service).toBe('sdkwork-router-drive-open-api');
+    expect(body.service).toBe('sdkwork-routes-drive-open-api');
   });
 
   test('metrics exposes drive histogram when staging base URL is configured', async ({ request }) => {

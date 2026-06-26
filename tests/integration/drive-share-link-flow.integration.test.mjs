@@ -11,9 +11,9 @@ function read(relativePath) {
 
 const appOpenApi = read('apis/app-api/drive/drive-app-api.openapi.json');
 const openOpenApi = read('apis/open-api/drive/drive-open-api.openapi.json');
-const createShareLinkRoute = read('crates/sdkwork-router-drive-app-api/src/share_link_handlers.rs');
-const openHandlers = read('crates/sdkwork-router-drive-open-api/src/handlers.rs');
-const openRepository = read('crates/sdkwork-router-drive-open-api/src/repository.rs');
+const createShareLinkRoute = read('crates/sdkwork-routes-drive-app-api/src/share_link_handlers.rs');
+const openHandlers = read('crates/sdkwork-routes-drive-open-api/src/handlers.rs');
+const openRepository = read('crates/sdkwork-routes-drive-open-api/src/repository.rs');
 const shareLinkModal = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file/src/components/ShareLinkModal.tsx',
 );

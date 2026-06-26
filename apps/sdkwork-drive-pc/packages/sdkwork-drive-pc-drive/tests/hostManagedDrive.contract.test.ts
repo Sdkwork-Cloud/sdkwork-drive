@@ -48,4 +48,28 @@ describe('sdkwork-drive-pc-drive host module contract', () => {
     expect(combined).not.toMatch(/\bfetch\s*\(/);
     expect(combined).not.toContain('../../../src/index.css');
   });
+
+  it('supports host-managed language ports for embedding', () => {
+    const driveView = readFileSync(path.join(packageRoot, 'src', 'DriveView.tsx'), 'utf8');
+    const sdkPortsSource = readFileSync(path.join(packageRoot, 'src', 'sdkPorts.ts'), 'utf8');
+
+    expect(sdkPortsSource).toContain('resolveHostLanguage');
+    expect(sdkPortsSource).toContain('subscribeHostLanguage');
+    expect(driveView).toContain('subscribeHostLanguage');
+  });
+
+  it('ships workspace chrome layout rules through driveSurface.css', () => {
+    const driveSurface = readFileSync(
+      path.join(packageRoot, 'src', 'driveSurface.css'),
+      'utf8',
+    );
+    const workspaceChrome = readFileSync(
+      path.join(packageRoot, 'src', 'driveWorkspaceChrome.css'),
+      'utf8',
+    );
+
+    expect(driveSurface).toContain("@import './driveWorkspaceChrome.css'");
+    expect(workspaceChrome).toContain('.sdkwork-drive-file-list-header');
+    expect(workspaceChrome).toContain('.sdkwork-drive-file-header');
+  });
 });

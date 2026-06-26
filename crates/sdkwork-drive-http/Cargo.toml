@@ -9,7 +9,9 @@ http.workspace = true
 sdkwork-drive-config.workspace = true
 sdkwork-drive-observability.workspace = true
 sdkwork-drive-security.workspace = true
+sdkwork-web-bootstrap = { workspace = true, features = ["sqlx"] }
 sdkwork-web-core.workspace = true
+sqlx.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }

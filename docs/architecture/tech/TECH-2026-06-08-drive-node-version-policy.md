@@ -43,15 +43,15 @@
 ### Task 3: App API Route Compatibility
 
 **Files:**
-- Modify: `crates/sdkwork-router-drive-app-api/src/dto.rs`
-- Modify: `crates/sdkwork-router-drive-app-api/src/mappers.rs`
-- Modify: `crates/sdkwork-router-drive-app-api/src/routes.rs`
-- Test: `crates/sdkwork-router-drive-app-api/tests/drive_routes.rs` or `command_routes.rs`
+- Modify: `crates/sdkwork-routes-drive-app-api/src/dto.rs`
+- Modify: `crates/sdkwork-routes-drive-app-api/src/mappers.rs`
+- Modify: `crates/sdkwork-routes-drive-app-api/src/routes.rs`
+- Test: `crates/sdkwork-routes-drive-app-api/tests/drive_routes.rs` or `command_routes.rs`
 
 - [ ] Add failing route tests proving version ids come from `dr_drive_node_version` when present.
 - [ ] Insert logical versions during upload completion and archive extraction flows.
 - [ ] Update list/get/delete/restore version handlers to read logical versions first and keep storage-object fallback.
-- [ ] Run `cargo test -p sdkwork-router-drive-app-api version`.
+- [ ] Run `cargo test -p sdkwork-routes-drive-app-api version`.
 
 ### Task 4: Verification And Notes Handoff
 

@@ -27,29 +27,23 @@
       "corePackage": "sdkwork-drive-pc-admin-core",
       "sdkClients": [
         {
-          "id": "driveAdminStorage",
+          "id": "driveadminstorageOpen",
           "workspace": "sdkwork-drive-admin-storage-sdk",
           "surface": "backend-api",
           "credentialMode": "authenticated-backend-admin",
-          "nativePackage": "@sdkwork/drive-admin-storage-sdk",
           "role": "dependency",
-          "sdkDependencyRef": "sdkwork-drive-admin-storage-sdk",
-          "exportFrom": "sdkwork-drive-pc-admin-core/sdk"
+          "sdkDependencyRef": "sdkwork-drive-admin-storage-sdk"
         },
         {
           "id": "driveBackend",
           "workspace": "sdkwork-drive-backend-sdk",
           "surface": "backend-api",
           "credentialMode": "authenticated-backend-admin",
-          "nativePackage": "@sdkwork/drive-backend-sdk",
-          "role": "application-owned",
-          "exportFrom": "sdkwork-drive-pc-admin-core/sdk"
+          "role": "dependency",
+          "sdkDependencyRef": "sdkwork-drive-backend-sdk"
         }
       ],
-      "reusableModules": [
-        "sdkwork-drive-pc-admin-storage-providers",
-        "sdkwork-drive-pc-admin-operations"
-      ],
+      "reusableModules": [],
       "hostAdapters": [],
       "dependencyApiExports": [],
       "dependencyApiSurfaces": []
@@ -60,8 +54,8 @@
       "workspacePackages": [
         "sdkwork-drive-pc-core",
         "sdkwork-drive-pc-admin-core",
-        "sdkwork-drive-pc-admin-storage-providers",
         "sdkwork-drive-pc-admin-operations",
+        "sdkwork-drive-pc-admin-storage-providers",
         "sdkwork-drive-pc-commons",
         "sdkwork-drive-pc-desktop",
         "sdkwork-drive-pc-drive",

@@ -23,4 +23,4 @@ Several Drive route handlers returned SQL and infrastructure error strings throu
 
 ## Verification
 
-- `cargo test -p sdkwork-router-drive-app-api error::tests::internal_problem_does_not_expose_internal_detail_to_clients`
+- `cargo test -p sdkwork-routes-drive-app-api error::tests::internal_problem_does_not_expose_internal_detail_to_clients`

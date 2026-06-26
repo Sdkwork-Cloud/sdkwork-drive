@@ -23,5 +23,5 @@ Drive exposes tenant administration through `backend-api` and `admin-storage-api
 
 ## Verification
 
-- `cargo test -p sdkwork-router-drive-backend-api --test iam_auth_guard`
-- `cargo test -p sdkwork-router-storage-backend-api --test iam_auth_guard`
+- `cargo test -p sdkwork-routes-drive-backend-api --test iam_auth_guard`
+- `cargo test -p sdkwork-routes-storage-backend-api --test iam_auth_guard`

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import en from '../i18n/locales/en';
 import zh from '../i18n/locales/zh';
 import {
@@ -11,11 +11,42 @@ export type Language = 'en' | 'zh';
 
 const languages = { en, zh };
 
+function mapHostLanguage(value: string): Language {
+  const lower = value.toLowerCase();
+  if (lower === 'en' || lower.startsWith('en-')) {
+    return 'en';
+  }
+  if (lower === 'zh' || lower.startsWith('zh-')) {
+    return 'zh';
+  }
+  return 'zh';
+}
+
+function resolveStandaloneLanguage(
+  defaultLanguage: Language,
+  preferenceStorage?: PreferenceStorage,
+  storageKey?: string,
+): Language {
+  const saved = readPreference(preferenceStorage, storageKey ?? 'sdkwork-ui-language');
+  if (saved === 'en' || saved === 'zh') {
+    return saved;
+  }
+  if (typeof window !== 'undefined' && window.navigator) {
+    const browserLang = window.navigator.language.toLowerCase();
+    if (browserLang.startsWith('zh')) {
+      return 'zh';
+    }
+  }
+  return defaultLanguage;
+}
+
 interface LanguageProviderProps {
   children: React.ReactNode;
   defaultLanguage?: Language;
   preferenceStorage?: PreferenceStorage;
   storageKey?: string;
+  resolveHostLanguage?: () => string;
+  subscribeHostLanguage?: (listener: (language: string) => void) => () => void;
 }
 
 interface LanguageProviderState {
@@ -31,17 +62,25 @@ export function LanguageProvider({
   defaultLanguage = 'en',
   preferenceStorage,
   storageKey = 'sdkwork-ui-language',
+  resolveHostLanguage,
+  subscribeHostLanguage,
 }: LanguageProviderProps) {
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = readPreference(preferenceStorage, storageKey);
-    if (saved === 'en' || saved === 'zh') return saved;
-    // Auto detect from browser language if not set
-    if (typeof window !== 'undefined' && window.navigator) {
-      const browserLang = window.navigator.language.toLowerCase();
-      if (browserLang.startsWith('zh')) return 'zh';
+    if (resolveHostLanguage) {
+      return mapHostLanguage(resolveHostLanguage());
     }
-    return defaultLanguage;
+    return resolveStandaloneLanguage(defaultLanguage, preferenceStorage, storageKey);
   });
+
+  useEffect(() => {
+    if (!subscribeHostLanguage) {
+      return undefined;
+    }
+
+    return subscribeHostLanguage((nextLanguage) => {
+      setLanguageState(mapHostLanguage(nextLanguage));
+    });
+  }, [subscribeHostLanguage]);
 
   const setLanguage = (lang: Language) => {
     writePreference(preferenceStorage, storageKey, lang);

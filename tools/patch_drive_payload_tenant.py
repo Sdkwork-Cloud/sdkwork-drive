@@ -2,7 +2,7 @@
 import re
 from pathlib import Path
 
-ROUTES = Path(__file__).resolve().parents[1] / "crates/sdkwork-router-drive-app-api/src/routes.rs"
+ROUTES = Path(__file__).resolve().parents[1] / "crates/sdkwork-routes-drive-app-api/src/routes.rs"
 
 ROUTE_HANDLERS = {
     "create_file",

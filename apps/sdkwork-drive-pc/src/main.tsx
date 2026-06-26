@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { SdkworkSessionAuthBrowserRoot } from '@sdkwork/auth-pc-react';
 import App from './App.tsx';
 import { DriveErrorBoundaryShell } from './components/DriveErrorBoundaryShell.tsx';
 import { createDrivePcRuntime } from './bootstrap/createDrivePcRuntime';
@@ -28,11 +29,13 @@ async function bootstrapDrivePcApp(): Promise<void> {
         <ThemeProvider preferenceStorage={preferenceStorage}>
           <DrivePcPreferencesProvider preferenceStorage={preferenceStorage}>
             <DriveErrorBoundaryShell>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/*" element={<App runtime={runtime} />} />
-              </Routes>
-            </BrowserRouter>
+              <BrowserRouter>
+                <SdkworkSessionAuthBrowserRoot>
+                  <Routes>
+                    <Route path="/*" element={<App runtime={runtime} />} />
+                  </Routes>
+                </SdkworkSessionAuthBrowserRoot>
+              </BrowserRouter>
             </DriveErrorBoundaryShell>
           </DrivePcPreferencesProvider>
         </ThemeProvider>

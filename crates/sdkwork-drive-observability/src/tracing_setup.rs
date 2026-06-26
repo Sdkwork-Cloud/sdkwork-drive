@@ -98,8 +98,8 @@ mod tests {
     #[test]
     fn resolves_service_name_from_default() {
         assert_eq!(
-            resolve_service_name("sdkwork-router-drive-app-api"),
-            "sdkwork-router-drive-app-api"
+            resolve_service_name("sdkwork-routes-drive-app-api"),
+            "sdkwork-routes-drive-app-api"
         );
     }
 

@@ -18,7 +18,7 @@ Drive Uploader must expose three entry points backed by one business core:
 crates/sdkwork-drive-workspace-service::uploader
   Rust workspace service/component for server-side callers.
 
-crates/sdkwork-router-drive-app-api /app/v3/api/drive/uploader/*
+crates/sdkwork-routes-drive-app-api /app/v3/api/drive/uploader/*
   HTTP App API surface for browser, desktop, mobile, and other remote app
   clients.
 
@@ -210,7 +210,7 @@ Required verification for uploader implementation:
 
 ```powershell
 cargo test -p sdkwork-drive-workspace-service uploader_service sqlite_schema_contract maintenance_service
-cargo test -p sdkwork-router-drive-app-api uploader
+cargo test -p sdkwork-routes-drive-app-api uploader
 node tools/drive_sdk_generate.mjs --check --language typescript
 pnpm --dir apps/sdkwork-drive-pc test
 pnpm --dir apps/sdkwork-drive-pc typecheck

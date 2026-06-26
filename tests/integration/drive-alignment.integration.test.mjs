@@ -9,16 +9,16 @@ function read(relativePath) {
   return readFileSync(resolve(repoRoot, relativePath), 'utf8');
 }
 
-const assetsModule = read('crates/sdkwork-router-drive-app-api/src/assets.rs');
-const appRoutes = read('crates/sdkwork-router-drive-app-api/src/routes.rs');
+const assetsModule = read('crates/sdkwork-routes-drive-app-api/src/assets.rs');
+const appRoutes = read('crates/sdkwork-routes-drive-app-api/src/routes.rs');
 const uploaderServiceCrate = read('crates/sdkwork-drive-uploader-service/src/lib.rs');
 const fileBrowserSort = read('apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file/src/components/fileBrowserSort.ts');
-const openApiRoutes = read('crates/sdkwork-router-drive-open-api/src/routes.rs');
-const aclModule = read('crates/sdkwork-router-drive-app-api/src/acl.rs');
-const aclSqlModule = read('crates/sdkwork-router-drive-app-api/src/acl_sql.rs');
+const openApiRoutes = read('crates/sdkwork-routes-drive-open-api/src/routes.rs');
+const aclModule = read('crates/sdkwork-routes-drive-app-api/src/acl.rs');
+const aclSqlModule = read('crates/sdkwork-routes-drive-app-api/src/acl_sql.rs');
 const problemCorrelation = read('crates/sdkwork-drive-http/src/problem_correlation.rs');
 const traceIds = read('crates/sdkwork-drive-http/src/trace_ids.rs');
-const appState = read('crates/sdkwork-router-drive-app-api/src/state.rs');
+const appState = read('crates/sdkwork-routes-drive-app-api/src/state.rs');
 const downloadTransfer = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-core/src/transfer/downloadTransfer.ts',
 );
@@ -33,34 +33,34 @@ const transferJobs = read('apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-types
 const driveFileService = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-core/src/services/driveFileService.ts',
 );
-const appApiError = read('crates/sdkwork-router-drive-app-api/src/error.rs');
-const backendWebBootstrap = read('crates/sdkwork-router-drive-backend-api/src/web_bootstrap.rs');
+const appApiError = read('crates/sdkwork-routes-drive-app-api/src/error.rs');
+const backendWebBootstrap = read('crates/sdkwork-routes-drive-backend-api/src/web_bootstrap.rs');
 const observabilityMetrics = read('crates/sdkwork-drive-observability/src/metrics.rs');
-const shareLinkHandlers = read('crates/sdkwork-router-drive-app-api/src/share_link_handlers.rs');
-const permissionHandlers = read('crates/sdkwork-router-drive-app-api/src/permission_handlers.rs');
-const commentHandlers = read('crates/sdkwork-router-drive-app-api/src/comment_handlers.rs');
-const watchHandlers = read('crates/sdkwork-router-drive-app-api/src/watch_handlers.rs');
-const quotaHandlers = read('crates/sdkwork-router-drive-app-api/src/quota_handlers.rs');
-const trashHandlers = read('crates/sdkwork-router-drive-app-api/src/trash_handlers.rs');
-const libraryHandlers = read('crates/sdkwork-router-drive-app-api/src/library_handlers.rs');
-const nodeLifecycle = read('crates/sdkwork-router-drive-app-api/src/node_lifecycle.rs');
-const changeHandlers = read('crates/sdkwork-router-drive-app-api/src/change_handlers.rs');
-const searchHandlers = read('crates/sdkwork-router-drive-app-api/src/search_handlers.rs');
-const versionHandlers = read('crates/sdkwork-router-drive-app-api/src/version_handlers.rs');
-const metadataHandlers = read('crates/sdkwork-router-drive-app-api/src/metadata_handlers.rs');
-const spaceHandlers = read('crates/sdkwork-router-drive-app-api/src/space_handlers.rs');
-const nodeHandlers = read('crates/sdkwork-router-drive-app-api/src/node_handlers.rs');
-const uploadHandlers = read('crates/sdkwork-router-drive-app-api/src/upload_handlers.rs');
-const downloadHandlers = read('crates/sdkwork-router-drive-app-api/src/download_handlers.rs');
-const watchRepository = read('crates/sdkwork-router-drive-app-api/src/watch_repository.rs');
-const routeChange = read('crates/sdkwork-router-drive-app-api/src/route_change.rs');
+const shareLinkHandlers = read('crates/sdkwork-routes-drive-app-api/src/share_link_handlers.rs');
+const permissionHandlers = read('crates/sdkwork-routes-drive-app-api/src/permission_handlers.rs');
+const commentHandlers = read('crates/sdkwork-routes-drive-app-api/src/comment_handlers.rs');
+const watchHandlers = read('crates/sdkwork-routes-drive-app-api/src/watch_handlers.rs');
+const quotaHandlers = read('crates/sdkwork-routes-drive-app-api/src/quota_handlers.rs');
+const trashHandlers = read('crates/sdkwork-routes-drive-app-api/src/trash_handlers.rs');
+const libraryHandlers = read('crates/sdkwork-routes-drive-app-api/src/library_handlers.rs');
+const nodeLifecycle = read('crates/sdkwork-routes-drive-app-api/src/node_lifecycle.rs');
+const changeHandlers = read('crates/sdkwork-routes-drive-app-api/src/change_handlers.rs');
+const searchHandlers = read('crates/sdkwork-routes-drive-app-api/src/search_handlers.rs');
+const versionHandlers = read('crates/sdkwork-routes-drive-app-api/src/version_handlers.rs');
+const metadataHandlers = read('crates/sdkwork-routes-drive-app-api/src/metadata_handlers.rs');
+const spaceHandlers = read('crates/sdkwork-routes-drive-app-api/src/space_handlers.rs');
+const nodeHandlers = read('crates/sdkwork-routes-drive-app-api/src/node_handlers.rs');
+const uploadHandlers = read('crates/sdkwork-routes-drive-app-api/src/upload_handlers.rs');
+const downloadHandlers = read('crates/sdkwork-routes-drive-app-api/src/download_handlers.rs');
+const watchRepository = read('crates/sdkwork-routes-drive-app-api/src/watch_repository.rs');
+const routeChange = read('crates/sdkwork-routes-drive-app-api/src/route_change.rs');
 const bootstrapFailure = read('apps/sdkwork-drive-pc/src/bootstrap/renderBootstrapFailure.ts');
-const appTestCommon = read('crates/sdkwork-router-drive-app-api/tests/common/mod.rs');
+const appTestCommon = read('crates/sdkwork-routes-drive-app-api/tests/common/mod.rs');
 const fileSidebar = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file/src/components/FileSidebar.tsx',
 );
-const backendIamGuard = read('crates/sdkwork-router-drive-backend-api/tests/iam_auth_guard.rs');
-const storageIamGuard = read('crates/sdkwork-router-storage-backend-api/tests/iam_auth_guard.rs');
+const backendIamGuard = read('crates/sdkwork-routes-drive-backend-api/tests/iam_auth_guard.rs');
+const storageIamGuard = read('crates/sdkwork-routes-storage-backend-api/tests/iam_auth_guard.rs');
 const driveIamRuntimeTest = read('apps/sdkwork-drive-pc/src/bootstrap/driveIamRuntime.test.ts');
 const appShell = read('apps/sdkwork-drive-pc/src/App.tsx');
 const shareLinkModal = read(
@@ -119,7 +119,7 @@ assert.match(aclModule, /ensure_space_change_feed_reader/);
 assert.match(aclSqlModule, /reader_inherited_permission_exists_sql/);
 assert.match(aclSqlModule, /shared_with_me_visible_sql/);
 assert.match(appRoutes, /sdkwork_drive_http::problem_correlation::problem_correlation_middleware/);
-const backendRoutes = read('crates/sdkwork-router-drive-backend-api/src/routes.rs');
+const backendRoutes = read('crates/sdkwork-routes-drive-backend-api/src/routes.rs');
 assert.match(backendRoutes, /sdkwork_drive_http::problem_correlation::problem_correlation_middleware/);
 assert.match(problemCorrelation, /current_problem_correlation/);
 assert.match(traceIds, /resolve_trace_context/);
@@ -221,15 +221,15 @@ assert.match(downloadService, /SDKWORK_DRIVE_DOWNLOAD_TOKEN_HMAC_SECRETS_JSON/);
 assert.match(downloadService, /is_production_runtime_profile/);
 assert.match(downloadService, /SDKWORK_DRIVE_DOWNLOAD_TOKEN_HMAC_SECRET is required in production/);
 assert.doesNotMatch(downloadService, /dlv1_/);
-const webhookUrl = read('crates/sdkwork-router-drive-app-api/src/webhook_url.rs');
-const appValidators = read('crates/sdkwork-router-drive-app-api/src/validators.rs');
+const webhookUrl = read('crates/sdkwork-routes-drive-app-api/src/webhook_url.rs');
+const appValidators = read('crates/sdkwork-routes-drive-app-api/src/validators.rs');
 const jwtModule = read('crates/sdkwork-drive-security/src/jwt.rs');
 const securityWebhook = read('crates/sdkwork-drive-security/src/webhook_url.rs');
 const outboxDispatch = read(
   'crates/sdkwork-drive-workspace-service/src/infrastructure/outbox_dispatch.rs',
 );
-const appContext = read('crates/sdkwork-router-drive-app-api/src/app_context.rs');
-const collaborationRepo = read('crates/sdkwork-router-drive-app-api/src/collaboration_repository.rs');
+const appContext = read('crates/sdkwork-routes-drive-app-api/src/app_context.rs');
+const collaborationRepo = read('crates/sdkwork-routes-drive-app-api/src/collaboration_repository.rs');
 assert.match(securityWebhook, /validate_webhook_https_url/);
 assert.match(securityWebhook, /is_blocked_webhook_ip/);
 assert.match(webhookUrl, /sdkwork_drive_security::validate_webhook_https_url/);
@@ -377,9 +377,9 @@ assert.match(uploadHandlers, /record_uploader_part_uploaded/);
 assert.match(domainEvents, /admin_audit::/);
 assert.match(domainEvents, /drive\.storage_provider\.created/);
 assert.match(domainEvents, /drive\.maintenance\.object_sweep\.executed/);
-const labelHandlers = read('crates/sdkwork-router-drive-backend-api/src/label_handlers.rs');
+const labelHandlers = read('crates/sdkwork-routes-drive-backend-api/src/label_handlers.rs');
 const maintenanceHandlers = read(
-  'crates/sdkwork-router-drive-backend-api/src/maintenance_handlers.rs',
+  'crates/sdkwork-routes-drive-backend-api/src/maintenance_handlers.rs',
 );
 const backendOpenApi = read('apis/backend-api/drive/drive-backend-api.openapi.json');
 assert.match(labelHandlers, /admin_audit::label::/);
@@ -397,11 +397,11 @@ assert.match(
 assert.doesNotMatch(labelHandlers, /"label\.created"/);
 assert.doesNotMatch(maintenanceHandlers, /"maintenance\.object_sweep\.executed"/);
 assert.ok(
-  !existsSync('crates/sdkwork-router-drive-backend-api/src/storage_provider_handlers.rs'),
+  !existsSync('crates/sdkwork-routes-drive-backend-api/src/storage_provider_handlers.rs'),
   'legacy storage provider handlers must live only in drive-admin-storage-api',
 );
 assert.ok(
-  !existsSync('crates/sdkwork-router-drive-backend-api/src/storage_provider_binding_handlers.rs'),
+  !existsSync('crates/sdkwork-routes-drive-backend-api/src/storage_provider_binding_handlers.rs'),
   'legacy storage binding handlers must live only in drive-admin-storage-api',
 );
 assert.doesNotMatch(backendOpenApi, /"operationId": "storageProviders\.list"/);
@@ -415,10 +415,10 @@ assert.match(backendOpenApi, /"operationId": "maintenance\.abandonedUploadTaskSw
 assert.match(backendOpenApi, /expired_upload_content_sweep/);
 assert.match(backendOpenApi, /abandoned_upload_task_sweep/);
 const storageProviderHandlersStorage = read(
-  'crates/sdkwork-router-storage-backend-api/src/provider_handlers.rs',
+  'crates/sdkwork-routes-storage-backend-api/src/provider_handlers.rs',
 );
 const storageBindingHandlersStorage = read(
-  'crates/sdkwork-router-storage-backend-api/src/binding_handlers.rs',
+  'crates/sdkwork-routes-storage-backend-api/src/binding_handlers.rs',
 );
 assert.match(storageProviderHandlersStorage, /admin_audit::storage_provider::/);
 assert.match(storageBindingHandlersStorage, /admin_audit::storage_provider_binding::/);
@@ -504,7 +504,7 @@ assert.match(pcShareLinkUiSpec, /DRIVE_E2E_PC_BASE_URL/);
 assert.match(pcShareLinkUiSpec, /\/share\/\$\{encodeURIComponent\(shareClaimToken\)\}/);
 assert.match(pcShareLinkUiSpec, /sdkwork-drive-pc-session/);
 const crossApiE2e = read(
-  'crates/sdkwork-router-drive-app-api/tests/share_link_cross_api_e2e.rs',
+  'crates/sdkwork-routes-drive-app-api/tests/share_link_cross_api_e2e.rs',
 );
 assert.match(crossApiE2e, /share_link_create_via_app_api_and_resolve_via_open_api_with_access_code/);
 assert.match(crossApiE2e, /drive\.share_link\.access_code_invalid/);
@@ -619,7 +619,7 @@ assert.match(watchHandlers, /pub\(crate\) async fn stop_watch_channel/);
 assert.match(watchHandlers, /drive_events::watch_channel::STOPPED/);
 assert.match(watchRepository, /pub\(crate\) async fn insert_watch_channel/);
 assert.match(permissionHandlers, /pub\(crate\) async fn list_effective_permissions/);
-const nodeRepository = read('crates/sdkwork-router-drive-app-api/src/node_repository.rs');
+const nodeRepository = read('crates/sdkwork-routes-drive-app-api/src/node_repository.rs');
 assert.match(nodeRepository, /pub\(crate\) async fn resolve_node_path/);
 assert.match(commentHandlers, /pub\(crate\) async fn create_comment_reply/);
 assert.match(commentHandlers, /drive_events::comment_reply::DELETED/);
@@ -627,12 +627,12 @@ assert.match(spaceHandlers, /pub\(crate\) async fn list_spaces/);
 assert.match(nodeHandlers, /pub\(crate\) async fn create_folder/);
 assert.match(uploadHandlers, /pub\(crate\) async fn complete_upload_session/);
 assert.match(downloadHandlers, /pub\(crate\) async fn resolve_download_token/);
-assert.doesNotMatch(read('crates/sdkwork-router-drive-app-api/src/change_handlers.rs'), /sqlx::query/);
-assert.doesNotMatch(read('crates/sdkwork-router-drive-app-api/src/space_handlers.rs'), /sqlx::query/);
+assert.doesNotMatch(read('crates/sdkwork-routes-drive-app-api/src/change_handlers.rs'), /sqlx::query/);
+assert.doesNotMatch(read('crates/sdkwork-routes-drive-app-api/src/space_handlers.rs'), /sqlx::query/);
 assert.ok(existsSync('crates/sdkwork-drive-workspace-service/src/application/change_feed_service.rs'));
 assert.ok(existsSync('crates/sdkwork-drive-workspace-service/src/application/space_lifecycle_service.rs'));
 
-const backendQuotaHandlers = read('crates/sdkwork-router-drive-backend-api/src/space_quota_handlers.rs');
+const backendQuotaHandlers = read('crates/sdkwork-routes-drive-backend-api/src/space_quota_handlers.rs');
 const backendComposedOps = read(
   'sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/composed/operations.ts',
 );

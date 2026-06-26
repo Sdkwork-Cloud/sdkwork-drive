@@ -23,7 +23,7 @@ Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md
 
 ## 1. Architecture Overview
 
-SDKWork Drive is a contract-first file workspace with metadata/object separation. Rust HTTP routers expose app, backend, open, and admin-storage APIs. The PC client consumes generated SDK families only. Production authentication uses appbase IAM dual tokens validated through `IamDatabaseWebRequestContextResolver`.
+SDKWork Drive is a contract-first file workspace with metadata/object separation. Rust HTTP routers expose app, backend, open, and admin-storage APIs. The PC client consumes generated SDK families only. Production authentication uses appbase IAM dual tokens validated through `IamWebRequestContextResolver`.
 
 Deployment profiles:
 
@@ -45,10 +45,10 @@ Deployment profiles:
 
 | Module | Responsibility |
 | --- | --- |
-| `sdkwork-router-drive-app-api` | End-user file workspace HTTP surface |
-| `sdkwork-router-drive-backend-api` | Tenant admin operations: audit, maintenance, quotas, labels, spaces, download packages |
-| `sdkwork-router-drive-open-api` | Public share-link resolve/download |
-| `sdkwork-router-storage-backend-api` | Storage provider admin APIs |
+| `sdkwork-routes-drive-app-api` | End-user file workspace HTTP surface |
+| `sdkwork-routes-drive-backend-api` | Tenant admin operations: audit, maintenance, quotas, labels, spaces, download packages |
+| `sdkwork-routes-drive-open-api` | Public share-link resolve/download |
+| `sdkwork-routes-storage-backend-api` | Storage provider admin APIs |
 | `sdkwork-drive-workspace-service` | Domain logic, SQL, outbox, uploader orchestration |
 | `sdkwork-drive-install-worker` | Maintenance leader, outbox dispatch loop |
 | `sdkwork-drive-standalone-gateway` | Dev/all-in-one HTTP gateway |

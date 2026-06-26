@@ -149,7 +149,7 @@ fn structured_postgres_environment_url_encodes_connection_parts() {
 #[test]
 fn cli_database_url_overrides_structured_environment() {
     let args = vec![
-        "sdkwork-router-drive-app-api".to_string(),
+        "sdkwork-routes-drive-app-api".to_string(),
         "--database-url".to_string(),
         "sqlite://target/dev/cli.sqlite".to_string(),
     ];

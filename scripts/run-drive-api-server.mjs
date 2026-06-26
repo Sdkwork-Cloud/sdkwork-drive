@@ -405,22 +405,22 @@ function createPlan({ mode, env }) {
     {
       ...common,
       label: 'drive app-api router',
-      args: ['run', '-p', 'sdkwork-router-drive-app-api'],
+      args: ['run', '-p', 'sdkwork-routes-drive-app-api'],
     },
     {
       ...common,
       label: 'drive backend-api router',
-      args: ['run', '-p', 'sdkwork-router-drive-backend-api'],
+      args: ['run', '-p', 'sdkwork-routes-drive-backend-api'],
     },
     {
       ...common,
       label: 'drive open-api router',
-      args: ['run', '-p', 'sdkwork-router-drive-open-api'],
+      args: ['run', '-p', 'sdkwork-routes-drive-open-api'],
     },
     {
       ...common,
       label: 'drive storage backend router',
-      args: ['run', '-p', 'sdkwork-router-storage-backend-api'],
+      args: ['run', '-p', 'sdkwork-routes-storage-backend-api'],
     },
     {
       ...common,

@@ -218,7 +218,7 @@ fn drive_launch_plan_reports_database_engine_without_leaking_secrets() {
         "drive backend-api router: cargo",
         "drive open-api router: cargo",
         "drive storage backend router: cargo",
-        "sdkwork-router-storage-backend-api",
+        "sdkwork-routes-storage-backend-api",
     ] {
         assert!(
             stdout.contains(required_service),

@@ -2,10 +2,10 @@
 import fs from 'node:fs';
 
 const files = [
-  'crates/sdkwork-router-drive-app-api/tests/command_routes.rs',
-  'crates/sdkwork-router-drive-app-api/tests/observability_routes.rs',
-  'crates/sdkwork-router-drive-app-api/tests/version_routes.rs',
-  'crates/sdkwork-router-drive-app-api/tests/drive_routes.rs',
+  'crates/sdkwork-routes-drive-app-api/tests/command_routes.rs',
+  'crates/sdkwork-routes-drive-app-api/tests/observability_routes.rs',
+  'crates/sdkwork-routes-drive-app-api/tests/version_routes.rs',
+  'crates/sdkwork-routes-drive-app-api/tests/drive_routes.rs',
 ];
 
 for (const file of files) {
