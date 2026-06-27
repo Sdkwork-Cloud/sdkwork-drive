@@ -1,8 +1,8 @@
 use crate::archive::*;
 use crate::dto::*;
 use crate::error::{
-    internal_sql_error,
-    map_object_store_route_error, map_service_error, not_found_problem, problem, ProblemDetail,
+    internal_sql_error, map_object_store_route_error, map_service_error, not_found_problem,
+    problem, ProblemDetail,
 };
 use crate::ids::next_drive_id;
 use crate::mappers::*;
@@ -17,9 +17,7 @@ use crate::storage_keys::*;
 use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_contract::drive::domain_events as drive_events;
-use sdkwork_drive_storage_contract::{
-    DriveObjectLocator, DriveObjectStore, PutObjectRequest,
-};
+use sdkwork_drive_storage_contract::{DriveObjectLocator, DriveObjectStore, PutObjectRequest};
 use sdkwork_drive_workspace_service::domain::uploader::content_type_group_for;
 use sdkwork_drive_workspace_service::infrastructure::sql::node_head_metadata::file_extension_from_name;
 use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
@@ -45,7 +43,6 @@ pub(crate) fn folder_create_request_matches(
         && existing.node_name == node_name
         && existing.lifecycle_status != "deleted"
 }
-
 
 pub(crate) async fn validate_archive_extraction_plan(
     pool: &AnyPool,

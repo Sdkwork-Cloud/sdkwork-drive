@@ -49,9 +49,7 @@ fn observability_event_names_are_stable_across_code_and_spec() {
         read_rust_source_tree(root.join("crates/sdkwork-routes-drive-backend-api/src"));
     let app_api = read_rust_source_tree(root.join("crates/sdkwork-routes-drive-app-api/src"));
     let spec = std::fs::read_to_string(
-        root.join(
-            "docs/architecture/tech/TECH-2026-06-01-drive-observability-event-dictionary.md",
-        ),
+        root.join("docs/architecture/tech/TECH-drive-observability-event-dictionary.md"),
     )
     .expect("observability event dictionary spec should exist");
 

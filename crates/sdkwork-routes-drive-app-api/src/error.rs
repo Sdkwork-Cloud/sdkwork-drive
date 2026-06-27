@@ -247,8 +247,9 @@ mod tests {
 
     #[test]
     fn internal_problem_does_not_expose_internal_detail_to_clients() {
-        let (_, Json(problem)) =
-            internal_problem("insert dr_drive_node failed: duplicate key value violates unique constraint");
+        let (_, Json(problem)) = internal_problem(
+            "insert dr_drive_node failed: duplicate key value violates unique constraint",
+        );
         assert_eq!(problem.status, StatusCode::INTERNAL_SERVER_ERROR.as_u16());
         assert_eq!(problem.detail, "An unexpected error occurred.");
         assert_eq!(problem.code, "drive.internal_error");

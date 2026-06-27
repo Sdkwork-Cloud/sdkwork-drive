@@ -77,7 +77,7 @@ impl DriveNodeEntity {
     ///
     /// Uses a Snowflake ID generator with node_id=31 (drive service).
     pub fn generate_id() -> String {
-        use sdkwork_id_core::SnowflakeIdGenerator;
+        use sdkwork_database_id::SnowflakeIdGenerator;
         static GENERATOR: std::sync::OnceLock<SnowflakeIdGenerator> = std::sync::OnceLock::new();
         let gen = GENERATOR.get_or_init(|| {
             SnowflakeIdGenerator::new(31).expect("valid node_id for drive service")
@@ -86,7 +86,7 @@ impl DriveNodeEntity {
             Ok(id) => id.to_string(),
             Err(_) => {
                 // Fallback to UUID if Snowflake fails
-                use sdkwork_id_core::uuid_v4;
+                use sdkwork_database_id::uuid_v4;
                 uuid_v4()
             }
         }

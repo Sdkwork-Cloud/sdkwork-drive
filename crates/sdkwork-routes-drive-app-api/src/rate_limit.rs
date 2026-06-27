@@ -16,7 +16,8 @@ pub async fn app_api_rate_limit(request: Request<Body>, next: Next) -> Response 
     .await
 }
 
-fn app_api_rate_limit_state() -> &'static sdkwork_drive_http::middleware::rate_limit::SharedRateLimitState {
+fn app_api_rate_limit_state(
+) -> &'static sdkwork_drive_http::middleware::rate_limit::SharedRateLimitState {
     shared_rate_limit_state(|| {
         rate_limit_config_from_env(
             "SDKWORK_DRIVE_APP_API_RATE_LIMIT_WINDOW_SECONDS",

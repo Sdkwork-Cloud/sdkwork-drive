@@ -81,7 +81,7 @@ pub async fn build_router_with_database_config(
     Ok(build_protected_router_with_pool(pool).await)
 }
 
-fn build_router_with_state(state: BackendState, require_iam: bool) -> Router {
+fn build_business_router_layers(state: BackendState, require_iam: bool) -> Router {
     let mut drive_routes = Router::new()
         .route(
             "/backend/v3/api/drive/labels",
@@ -121,7 +121,9 @@ fn build_router_with_state(state: BackendState, require_iam: bool) -> Router {
             "/backend/v3/api/drive/quotas",
             get(list_quotas).put(update_quota_policy),
         )
-        .route_layer(middleware::from_fn(crate::rate_limit::backend_api_rate_limit));
+        .route_layer(middleware::from_fn(
+            crate::rate_limit::backend_api_rate_limit,
+        ));
 
     if require_iam {
         drive_routes = drive_routes
@@ -131,13 +133,36 @@ fn build_router_with_state(state: BackendState, require_iam: bool) -> Router {
             .route_layer(middleware::from_fn(drive_context_projection_guard));
     }
 
-    let router = mount_drive_infra_routes(
-        Router::new().merge(drive_routes).layer(middleware::from_fn(
-            sdkwork_drive_http::metrics::record_request_metrics,
-        )),
-        drive_service_router_config(&state.pool),
-    )
-    .with_state(state);
+    Router::new().merge(drive_routes).with_state(state)
+}
 
-    router
+fn build_router_with_state(state: BackendState, require_iam: bool) -> Router {
+    let pool = state.pool.clone();
+    mount_drive_infra_routes(
+        build_business_router_layers(state, require_iam),
+        drive_service_router_config(&pool),
+        Some("sdkwork-drive-backend-api"),
+    )
+    .layer(middleware::from_fn(
+        sdkwork_drive_http::metrics::record_request_metrics,
+    ))
+}
+
+/// Business router for multi-surface gateway assembly (infra mounted once by assembly).
+pub async fn gateway_mount_business(pool: AnyPool) -> Router {
+    build_gateway_business_router_with_pool(pool).await
+}
+
+/// Deprecated alias; prefer [`gateway_mount_business`].
+pub async fn build_gateway_business_router_with_pool(pool: AnyPool) -> Router {
+    let state = BackendState::new(pool);
+    let router = build_business_router_layers(state, true);
+    let router = crate::web_bootstrap::wrap_router_with_web_framework_from_env(router).await;
+    router.layer(middleware::from_fn(
+        sdkwork_drive_http::metrics::record_request_metrics,
+    ))
+}
+
+pub async fn gateway_mount(pool: sqlx::AnyPool) -> axum::Router {
+    build_protected_router_with_pool(pool).await
 }

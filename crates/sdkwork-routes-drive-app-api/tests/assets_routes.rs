@@ -117,7 +117,9 @@ async fn assets_create_bind_existing_node_and_support_collections_and_relations(
             "tenant-assets",
             "user-assets",
             "appbase",
-            Body::from(r#"{"driveNodeId":"file-asset-001","description":"catalog photo","tags":["hero"]}"#),
+            Body::from(
+                r#"{"driveNodeId":"file-asset-001","description":"catalog photo","tags":["hero"]}"#,
+            ),
         ))
         .await
         .expect("assets create should be handled");
@@ -190,7 +192,10 @@ async fn assets_create_bind_existing_node_and_support_collections_and_relations(
             .expect("archive body should be read"),
     )
     .expect("archive response should be json");
-    assert_eq!(archive_payload["lifecycleStatus"].as_str(), Some("archived"));
+    assert_eq!(
+        archive_payload["lifecycleStatus"].as_str(),
+        Some("archived")
+    );
 
     let archive_reason: Option<String> = sqlx::query_scalar(
         "SELECT property_value

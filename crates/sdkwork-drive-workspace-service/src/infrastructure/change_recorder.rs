@@ -57,7 +57,9 @@ async fn allocate_change_sequence(
     .fetch_one(&mut *connection)
     .await
     .map_err(|error| {
-        DriveServiceError::Internal(format!("allocate dr_drive_change_log sequence failed: {error}"))
+        DriveServiceError::Internal(format!(
+            "allocate dr_drive_change_log sequence failed: {error}"
+        ))
     })
 }
 

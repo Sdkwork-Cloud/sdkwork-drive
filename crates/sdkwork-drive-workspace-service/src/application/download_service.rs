@@ -401,9 +401,8 @@ pub fn ensure_production_download_token_signing_configured() -> Result<(), Strin
     ] {
         if let Ok(raw) = std::env::var(env_key) {
             let secrets: std::collections::BTreeMap<String, String> =
-                serde_json::from_str(raw.trim()).map_err(|error| {
-                    format!("{env_key} is invalid in production: {error}")
-                })?;
+                serde_json::from_str(raw.trim())
+                    .map_err(|error| format!("{env_key} is invalid in production: {error}"))?;
             if secrets.values().any(|value| !value.trim().is_empty()) {
                 return Ok(());
             }

@@ -1240,13 +1240,16 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
             content_type: "application/x-msdownload".to_string(),
             content_length: 128,
             checksum_sha256_hex:
-                "sha256:0000000000000000000000000000000000000000000000000000000000000000".to_string(),
+                "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                    .to_string(),
             uploaded_parts_count: 2,
             operator_id: "user-quarantine".to_string(),
         })
         .await
         .expect_err("blocked executable should be quarantined");
-    assert!(matches!(error, DriveServiceError::Validation(message) if message.contains("quarantined")));
+    assert!(
+        matches!(error, DriveServiceError::Validation(message) if message.contains("quarantined"))
+    );
 
     let node_lifecycle: String = sqlx::query_scalar(
         "SELECT lifecycle_status FROM dr_drive_node WHERE tenant_id=?1 AND id=?2",
@@ -1258,22 +1261,23 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
     .expect("quarantined node should exist");
     assert_eq!(node_lifecycle, "trashed");
 
-    let upload_item_status: (String, String) = sqlx::query_as(
-        "SELECT status, cleanup_status FROM dr_drive_upload_item WHERE id=?1",
-    )
-    .bind(&prepared.id)
-    .fetch_one(&pool)
-    .await
-    .expect("quarantined upload item should exist");
-    assert_eq!(upload_item_status, ("failed".to_string(), "failed".to_string()));
+    let upload_item_status: (String, String) =
+        sqlx::query_as("SELECT status, cleanup_status FROM dr_drive_upload_item WHERE id=?1")
+            .bind(&prepared.id)
+            .fetch_one(&pool)
+            .await
+            .expect("quarantined upload item should exist");
+    assert_eq!(
+        upload_item_status,
+        ("failed".to_string(), "failed".to_string())
+    );
 
-    let session_state: String = sqlx::query_scalar(
-        "SELECT state FROM dr_drive_upload_session WHERE id=?1",
-    )
-    .bind(&upload_session_id)
-    .fetch_one(&pool)
-    .await
-    .expect("quarantined upload session should exist");
+    let session_state: String =
+        sqlx::query_scalar("SELECT state FROM dr_drive_upload_session WHERE id=?1")
+            .bind(&upload_session_id)
+            .fetch_one(&pool)
+            .await
+            .expect("quarantined upload session should exist");
     assert_eq!(session_state, "aborted");
 
     let sensitive_operation: (String, String) = sqlx::query_as(

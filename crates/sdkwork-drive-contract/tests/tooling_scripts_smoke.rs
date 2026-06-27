@@ -837,8 +837,8 @@ fn schema_quality_gate_fails_when_storage_provider_kind_pattern_is_missing() {
 
     let admin_storage_raw = std::fs::read_to_string(&admin_storage_dst)
         .expect("admin storage openapi should be readable");
-    let mut admin_storage_json: serde_json::Value =
-        serde_json::from_str(&admin_storage_raw).expect("admin storage openapi should be valid json");
+    let mut admin_storage_json: serde_json::Value = serde_json::from_str(&admin_storage_raw)
+        .expect("admin storage openapi should be valid json");
     let provider_kind = admin_storage_json
         .get_mut("components")
         .and_then(|value| value.get_mut("schemas"))

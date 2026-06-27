@@ -60,9 +60,7 @@ impl DriveQuotaStore for SqlQuotaStore {
         .fetch_optional(&self.pool)
         .await
         .map_err(|error| {
-            DriveServiceError::Internal(format!(
-                "load dr_drive_tenant_quota failed: {error}"
-            ))
+            DriveServiceError::Internal(format!("load dr_drive_tenant_quota failed: {error}"))
         })?;
 
         Ok(row.map(|row| DriveTenantQuotaPolicy {
@@ -101,9 +99,7 @@ impl DriveQuotaStore for SqlQuotaStore {
         .execute(&self.pool)
         .await
         .map_err(|error| {
-            DriveServiceError::Internal(format!(
-                "upsert dr_drive_tenant_quota failed: {error}"
-            ))
+            DriveServiceError::Internal(format!("upsert dr_drive_tenant_quota failed: {error}"))
         })?;
 
         Ok(DriveTenantQuotaPolicy {
@@ -112,18 +108,13 @@ impl DriveQuotaStore for SqlQuotaStore {
         })
     }
 
-    async fn clear_tenant_quota_policy(
-        &self,
-        tenant_id: &str,
-    ) -> Result<(), DriveServiceError> {
+    async fn clear_tenant_quota_policy(&self, tenant_id: &str) -> Result<(), DriveServiceError> {
         sqlx::query("DELETE FROM dr_drive_tenant_quota WHERE tenant_id=$1")
             .bind(tenant_id)
             .execute(&self.pool)
             .await
             .map_err(|error| {
-                DriveServiceError::Internal(format!(
-                    "delete dr_drive_tenant_quota failed: {error}"
-                ))
+                DriveServiceError::Internal(format!("delete dr_drive_tenant_quota failed: {error}"))
             })?;
         Ok(())
     }

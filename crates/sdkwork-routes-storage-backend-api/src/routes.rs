@@ -37,8 +37,16 @@ pub async fn build_protected_router_with_pool_and_config(
     pool: AnyPool,
     config: AdminStorageConfig,
 ) -> Router {
-    let router = build_router_with_state(AdminStorageState::new(pool, config), true);
+    let router = build_business_router_inner(AdminStorageState::new(pool, config), true, None);
     crate::web_bootstrap::wrap_router_with_web_framework_from_env(router).await
+}
+
+/// Business-only admin storage router for platform collapsed ingress (no `/healthz` duplication).
+pub async fn build_gateway_business_router_with_pool_and_config(
+    pool: AnyPool,
+    config: AdminStorageConfig,
+) -> Router {
+    build_protected_router_with_pool_and_config(pool, config).await
 }
 
 pub fn build_router_with_pool_and_iam(pool: AnyPool) -> Router {
@@ -99,9 +107,7 @@ pub async fn build_router_with_database_config_and_admin_storage_config(
     admin_storage_config: AdminStorageConfig,
 ) -> Result<Router, Box<dyn std::error::Error + Send + Sync>> {
     let pool = connect_any_database_and_install_schema(config).await?;
-    Ok(
-        build_protected_router_with_pool_and_config(pool, admin_storage_config).await,
-    )
+    Ok(build_protected_router_with_pool_and_config(pool, admin_storage_config).await)
 }
 
 async fn build_router_with_database_url_config_parts(
@@ -109,9 +115,7 @@ async fn build_router_with_database_url_config_parts(
     admin_storage_config: AdminStorageConfig,
 ) -> Result<Router, sqlx::Error> {
     let pool = connect_any_database_and_install_schema(config).await?;
-    Ok(
-        build_protected_router_with_pool_and_config(pool, admin_storage_config).await,
-    )
+    Ok(build_protected_router_with_pool_and_config(pool, admin_storage_config).await)
 }
 
 fn admin_storage_config_error(error: String) -> Box<dyn std::error::Error + Send + Sync> {
@@ -120,9 +124,9 @@ fn admin_storage_config_error(error: String) -> Box<dyn std::error::Error + Send
 
 fn build_router_with_state(state: AdminStorageState, require_iam: bool) -> Router {
     if require_iam {
-        build_router_inner(state, true, None)
+        build_router_inner_with_infra(state, true, None)
     } else {
-        build_router_inner(
+        build_router_inner_with_infra(
             state,
             false,
             Some(crate::app_context::default_test_drive_request_context()),
@@ -131,7 +135,7 @@ fn build_router_with_state(state: AdminStorageState, require_iam: bool) -> Route
 }
 
 fn build_router_with_state_and_test_tenant(state: AdminStorageState, tenant_id: String) -> Router {
-    build_router_inner(
+    build_router_inner_with_infra(
         state,
         false,
         Some(crate::app_context::test_drive_request_context_with_tenant(
@@ -145,9 +149,19 @@ fn build_router_inner(
     require_iam: bool,
     test_context: Option<crate::app_context::DriveRequestContext>,
 ) -> Router {
+    build_business_router_inner(state, require_iam, test_context)
+}
+
+fn build_business_router_inner(
+    state: AdminStorageState,
+    require_iam: bool,
+    test_context: Option<crate::app_context::DriveRequestContext>,
+) -> Router {
     let mut drive_routes = crate::route_paths::storage_drive_routes("/admin/v3/api")
         .merge(crate::route_paths::storage_drive_routes("/backend/v3/api"))
-        .route_layer(middleware::from_fn(crate::rate_limit::admin_storage_api_rate_limit));
+        .route_layer(middleware::from_fn(
+            crate::rate_limit::admin_storage_api_rate_limit,
+        ));
 
     if require_iam {
         drive_routes = drive_routes
@@ -157,15 +171,12 @@ fn build_router_inner(
             .route_layer(middleware::from_fn(drive_context_projection_guard));
     }
 
-    let router = mount_drive_infra_routes(
-        Router::new()
-            .merge(drive_routes)
-            .layer(middleware::from_fn(
-                sdkwork_drive_http::metrics::record_request_metrics,
-            )),
-        drive_service_router_config(&state.pool),
-    )
-    .with_state(state);
+    let router = Router::new()
+        .merge(drive_routes)
+        .layer(middleware::from_fn(
+            sdkwork_drive_http::metrics::record_request_metrics,
+        ))
+        .with_state(state);
 
     if !require_iam {
         if let Some(ctx) = test_context {
@@ -174,4 +185,17 @@ fn build_router_inner(
     }
 
     router
+}
+
+fn build_router_inner_with_infra(
+    state: AdminStorageState,
+    require_iam: bool,
+    test_context: Option<crate::app_context::DriveRequestContext>,
+) -> Router {
+    let pool = state.pool.clone();
+    mount_drive_infra_routes(
+        build_business_router_inner(state, require_iam, test_context),
+        drive_service_router_config(&pool),
+        Some("sdkwork-drive-admin-storage-api"),
+    )
 }

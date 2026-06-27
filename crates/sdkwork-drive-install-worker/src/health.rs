@@ -11,7 +11,11 @@ pub async fn spawn_install_worker_health_server(
         .parse()
         .map_err(|error| format!("invalid install worker health bind `{bind}`: {error}"))?;
 
-    let app = mount_drive_infra_routes(axum::Router::new(), drive_service_router_config(&pool));
+    let app = mount_drive_infra_routes(
+        axum::Router::new(),
+        drive_service_router_config(&pool),
+        Some("sdkwork-drive-install-worker"),
+    );
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!(

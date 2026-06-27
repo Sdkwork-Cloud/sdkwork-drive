@@ -17,6 +17,7 @@ Documentation for SDKWork Drive follows `../sdkwork-specs/DOCUMENTATION_SPEC.md`
 - [TECH-drive-sdk-integration-standard.md](architecture/tech/TECH-drive-sdk-integration-standard.md)
 - [TECH-drive-topology-standard.md](architecture/tech/TECH-drive-topology-standard.md)
 - [TECH-drive-uploader-standard.md](architecture/tech/TECH-drive-uploader-standard.md)
+- [TECH-drive-observability-event-dictionary.md](architecture/tech/TECH-drive-observability-event-dictionary.md)
 - [TECH-database-architecture.md](architecture/tech/TECH-database-architecture.md)
 - [TECH-storage-s3-architecture.md](architecture/tech/TECH-storage-s3-architecture.md)
 

@@ -117,8 +117,10 @@ impl Scheduler {
                     engine,
                     "quota_recalculation",
                     || async move {
-                        match crate::maintenance::quota_recalculation::recalculate_quotas(&pool_for_task)
-                            .await
+                        match crate::maintenance::quota_recalculation::recalculate_quotas(
+                            &pool_for_task,
+                        )
+                        .await
                         {
                             Ok(result) => {
                                 tracing::info!(

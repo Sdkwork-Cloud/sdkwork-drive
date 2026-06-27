@@ -46,10 +46,7 @@ pub fn validate_share_link_access_code(access_code: &str) -> Result<(), DriveSer
     Ok(())
 }
 
-pub fn share_link_access_code_matches(
-    stored_hash: Option<&str>,
-    provided: Option<&str>,
-) -> bool {
+pub fn share_link_access_code_matches(stored_hash: Option<&str>, provided: Option<&str>) -> bool {
     let stored_hash = stored_hash.map(str::trim).filter(|value| !value.is_empty());
     let provided = provided.map(str::trim).filter(|value| !value.is_empty());
     match (stored_hash, provided) {
@@ -121,8 +118,14 @@ mod tests {
     #[test]
     fn share_link_access_code_requires_match_when_hash_is_configured() {
         let hash = super::drive_share_access_code_hash("1234");
-        assert!(super::share_link_access_code_matches(Some(&hash), Some("1234")));
-        assert!(!super::share_link_access_code_matches(Some(&hash), Some("5678")));
+        assert!(super::share_link_access_code_matches(
+            Some(&hash),
+            Some("1234")
+        ));
+        assert!(!super::share_link_access_code_matches(
+            Some(&hash),
+            Some("5678")
+        ));
         assert!(!super::share_link_access_code_matches(Some(&hash), None));
         assert!(super::share_link_access_code_matches(None, None));
         assert!(super::share_link_access_code_matches(None, Some("1234")));

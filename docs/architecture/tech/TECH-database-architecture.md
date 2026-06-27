@@ -2,7 +2,7 @@
 
 # SDKWork Drive Database Architecture
 
-SDKWork Drive follows the same database split used by `sdkwork-claw-router`:
+SDKWork Drive uses PostgreSQL for server deployments and SQLite for local lightweight mode.
 
 - PostgreSQL is the server, Docker, Kubernetes, and production target.
 - SQLite is the local/private lightweight mode and the fast in-memory test target.

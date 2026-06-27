@@ -419,11 +419,7 @@ where
             }
             UploadContentPolicyDecision::Quarantine => {
                 self.store
-                    .quarantine_blocked_upload_content(
-                        &tenant_id,
-                        &upload_item_id,
-                        &operator_id,
-                    )
+                    .quarantine_blocked_upload_content(&tenant_id, &upload_item_id, &operator_id)
                     .await?;
                 return Err(DriveServiceError::Validation(format!(
                     "upload quarantined by content policy for content type {}",

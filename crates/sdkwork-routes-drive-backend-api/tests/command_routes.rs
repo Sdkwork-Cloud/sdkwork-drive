@@ -512,7 +512,10 @@ async fn update_quota_policy_route_persists_tenant_cap_and_returns_quota_bytes()
         .fetch_optional(&pool_for_queries)
         .await
         .expect("tenant quota lookup should succeed");
-    assert!(cleared.is_none(), "tenant quota row should be removed after clear");
+    assert!(
+        cleared.is_none(),
+        "tenant quota row should be removed after clear"
+    );
 }
 
 #[tokio::test]
@@ -686,7 +689,10 @@ async fn list_audit_events_route_supports_request_and_trace_filters() {
         .as_array()
         .expect("items should be an array");
     assert_eq!(items.len(), 1);
-    assert_eq!(items[0]["action"].as_str(), Some("drive.storage_provider.tested"));
+    assert_eq!(
+        items[0]["action"].as_str(),
+        Some("drive.storage_provider.tested")
+    );
     assert_eq!(items[0]["requestId"].as_str(), Some("request-002"));
     assert_eq!(items[0]["traceId"].as_str(), Some("trace-002"));
 }
@@ -1519,4 +1525,3 @@ async fn maintenance_jobs_route_rejects_invalid_operator_id_filter() {
         payload["detail"]
     );
 }
-

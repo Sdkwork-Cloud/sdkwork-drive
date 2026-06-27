@@ -5,7 +5,8 @@ use crate::archive::*;
 use crate::archive_storage::read_archive_node_bytes;
 use crate::dto::*;
 use crate::error::{
-    internal_problem, internal_sql_error, is_unique_constraint_error, map_service_error, not_found_problem, problem, unique_node_insert_conflict_target, ProblemDetail,
+    internal_problem, internal_sql_error, is_unique_constraint_error, map_service_error,
+    not_found_problem, problem, unique_node_insert_conflict_target, ProblemDetail,
 };
 use crate::ids::next_drive_id;
 use crate::mappers::*;
@@ -28,10 +29,10 @@ use sdkwork_drive_workspace_service::infrastructure::sql::upload_session_store::
 use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
 use sqlx::Row;
 
-use crate::route_change::record_change;
-use crate::space_repository::ensure_git_repository_space_root_accepts_node_type;
 use crate::node_repository::resolve_node_path;
 use crate::node_support::*;
+use crate::route_change::record_change;
+use crate::space_repository::ensure_git_repository_space_root_accepts_node_type;
 use crate::upload_support::*;
 
 pub(crate) async fn list_nodes(
@@ -219,7 +220,10 @@ pub(crate) async fn create_folder(
         Some(client_id) => {
             if let Ok(existing) = find_node(&state.pool, &tenant_id, client_id).await {
                 if folder_create_request_matches(&existing, &payload, node_name) {
-                    return Ok((StatusCode::CREATED, Json(present_drive_node(&state.pool, &tenant_id, existing).await?)));
+                    return Ok((
+                        StatusCode::CREATED,
+                        Json(present_drive_node(&state.pool, &tenant_id, existing).await?),
+                    ));
                 }
                 return Err(problem(
                     StatusCode::CONFLICT,
@@ -280,7 +284,12 @@ pub(crate) async fn create_folder(
     )
     .await?;
 
-    let node = present_drive_node(&state.pool, &tenant_id, find_node(&state.pool, &tenant_id, &node_id).await?).await?;
+    let node = present_drive_node(
+        &state.pool,
+        &tenant_id,
+        find_node(&state.pool, &tenant_id, &node_id).await?,
+    )
+    .await?;
     Ok((StatusCode::CREATED, Json(node)))
 }
 pub(crate) async fn create_file(
@@ -589,7 +598,9 @@ pub(crate) async fn get_node(
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
-    Ok(Json(present_drive_node(&state.pool, &tenant_id, node).await?))
+    Ok(Json(
+        present_drive_node(&state.pool, &tenant_id, node).await?,
+    ))
 }
 pub(crate) async fn get_node_path(
     State(state): State<AppState>,
@@ -877,7 +888,14 @@ pub(crate) async fn update_node(
     )
     .await?;
 
-    Ok(Json(present_drive_node(&state.pool, &tenant_id, find_node(&state.pool, &tenant_id, &node_id).await?).await?))
+    Ok(Json(
+        present_drive_node(
+            &state.pool,
+            &tenant_id,
+            find_node(&state.pool, &tenant_id, &node_id).await?,
+        )
+        .await?,
+    ))
 }
 pub(crate) async fn move_node(
     State(state): State<AppState>,
@@ -965,7 +983,14 @@ pub(crate) async fn move_node(
         &operator_id,
     )
     .await?;
-    Ok(Json(present_drive_node(&state.pool, &tenant_id, find_node(&state.pool, &tenant_id, &node_id).await?).await?))
+    Ok(Json(
+        present_drive_node(
+            &state.pool,
+            &tenant_id,
+            find_node(&state.pool, &tenant_id, &node_id).await?,
+        )
+        .await?,
+    ))
 }
 pub(crate) async fn copy_node(
     State(state): State<AppState>,

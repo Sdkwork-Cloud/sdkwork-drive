@@ -89,6 +89,10 @@ async fn backend_router_exposes_operations_and_quota_routes() {
             )
             .await
             .unwrap_or_else(|error| panic!("{uri} should be handled: {error}"));
-        assert_ne!(response.status(), StatusCode::NOT_FOUND, "{uri} must be routed");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "{uri} must be routed"
+        );
     }
 }

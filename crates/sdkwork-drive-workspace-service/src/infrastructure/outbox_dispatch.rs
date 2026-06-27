@@ -47,8 +47,7 @@ pub fn ensure_domain_outbox_dispatcher(pool: AnyPool) {
             .and_then(|value| value.trim().parse::<u64>().ok())
             .filter(|value| *value > 0)
             .unwrap_or(15);
-        let mut interval =
-            tokio::time::interval(std::time::Duration::from_secs(interval_secs));
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(interval_secs));
         interval.tick().await;
         loop {
             interval.tick().await;
@@ -235,9 +234,7 @@ async fn mark_outbox_event_attempt_failed(
     .bind(attempt_count)
     .execute(pool)
     .await
-    .map_err(|update_error| {
-        format!("update failed domain outbox event failed: {update_error}")
-    })?;
+    .map_err(|update_error| format!("update failed domain outbox event failed: {update_error}"))?;
     Ok(())
 }
 

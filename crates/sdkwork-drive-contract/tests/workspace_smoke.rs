@@ -400,9 +400,8 @@ fn observability_event_dictionary_spec_exists() {
     let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     root.pop();
     root.pop();
-    let spec_path = root.join(
-        "docs/architecture/tech/TECH-2026-06-01-drive-observability-event-dictionary.md",
-    );
+    let spec_path =
+        root.join("docs/architecture/tech/TECH-drive-observability-event-dictionary.md");
     let spec = std::fs::read_to_string(spec_path)
         .expect("observability event dictionary spec should exist");
     assert!(spec.contains("sdkwork.drive"));
@@ -482,9 +481,10 @@ fn production_gateway_template_declares_all_drive_split_services() {
     root.pop();
     root.pop();
 
-    let config =
-        std::fs::read_to_string(root.join("configs/sdkwork-api-cloud-gateway.drive.production.toml"))
-            .expect("production gateway template should exist");
+    let config = std::fs::read_to_string(
+        root.join("configs/sdkwork-api-cloud-gateway.drive.production.toml"),
+    )
+    .expect("production gateway template should exist");
 
     for required in [
         "serviceId = \"sdkwork-drive-app-api\"",

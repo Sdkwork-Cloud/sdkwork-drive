@@ -2,8 +2,8 @@ use std::time::Instant;
 
 pub const OBSERVABILITY_TARGET: &str = "sdkwork.drive";
 
-pub mod metrics;
 pub mod latency_histogram;
+pub mod metrics;
 pub mod tracing_setup;
 
 pub use tracing_setup::init_tracing;
@@ -25,7 +25,8 @@ pub mod events {
     pub const APP_SPACES_DELETE: &str = "drive.app.spaces.delete";
     pub const APP_UPLOAD_SESSIONS_CREATE: &str = "drive.app.upload_sessions.create";
     pub const APP_UPLOADER_UPLOADS_PREPARE: &str = "drive.app.uploader.uploads.prepare";
-    pub const APP_UPLOADER_PART_MARK_UPLOADED: &str = "drive.app.uploader.uploads.parts.mark_uploaded";
+    pub const APP_UPLOADER_PART_MARK_UPLOADED: &str =
+        "drive.app.uploader.uploads.parts.mark_uploaded";
     pub const APP_DOWNLOAD_URLS_CREATE: &str = "drive.app.download_urls.create";
     pub const APP_DOWNLOAD_TOKENS_RESOLVE: &str = "drive.app.download_tokens.resolve";
 }

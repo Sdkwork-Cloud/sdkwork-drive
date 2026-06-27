@@ -38,12 +38,7 @@ impl RateLimitState {
         if buckets.len() >= MAX_RATE_LIMIT_BUCKETS && !buckets.contains_key(key) {
             if let Some(oldest_key) = buckets
                 .iter()
-                .min_by_key(|(_, entries)| {
-                    entries
-                        .first()
-                        .copied()
-                        .unwrap_or_else(Instant::now)
-                })
+                .min_by_key(|(_, entries)| entries.first().copied().unwrap_or_else(Instant::now))
                 .map(|(bucket_key, _)| bucket_key.clone())
             {
                 buckets.remove(&oldest_key);
@@ -93,7 +88,9 @@ fn rate_limit_trust_proxy_enabled() -> bool {
         .unwrap_or(false)
 }
 
-pub fn shared_rate_limit_state(init: impl FnOnce() -> RateLimitConfig) -> &'static SharedRateLimitState {
+pub fn shared_rate_limit_state(
+    init: impl FnOnce() -> RateLimitConfig,
+) -> &'static SharedRateLimitState {
     static STATE: OnceLock<SharedRateLimitState> = OnceLock::new();
     STATE.get_or_init(|| SharedRateLimitState(RateLimitState::new(init())))
 }

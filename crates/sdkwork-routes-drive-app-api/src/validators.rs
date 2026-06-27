@@ -103,7 +103,9 @@ pub(crate) fn parse_nodes_list_order_clause(
         ("type", false) => {
             Ok("node_type ASC, COALESCE(head_content_type_group, '') ASC, node_name ASC")
         }
-        ("type", true) => Ok("node_type ASC, COALESCE(head_content_type_group, '') DESC, node_name ASC"),
+        ("type", true) => {
+            Ok("node_type ASC, COALESCE(head_content_type_group, '') DESC, node_name ASC")
+        }
         _ => Err(problem(
             StatusCode::BAD_REQUEST,
             "validation failed",

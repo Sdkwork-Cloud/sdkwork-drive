@@ -68,8 +68,5 @@ pub async fn wrap_router_with_web_framework_from_env(router: Router) -> Router {
 
 /// Dev/test helper when callers need a synchronous open-api web framework layer.
 pub fn wrap_router_with_dev_open_api_web_framework(router: Router) -> Router {
-    wrap_router_with_web_framework(
-        DefaultOpenApiWebRequestContextResolver::default(),
-        router,
-    )
+    wrap_router_with_web_framework(DefaultOpenApiWebRequestContextResolver::default(), router)
 }

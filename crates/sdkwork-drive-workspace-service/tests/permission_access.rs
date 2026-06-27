@@ -26,7 +26,7 @@ async fn inherited_folder_writer_allows_child_upload_permission_check() {
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-         ) VALUES ('space-1', 'tenant-1', 'user', 'owner-1', 'personal', 'Personal', 'active', 1, 'owner-1', 'owner-1')",
+         ) VALUES ('space-1', '100001', 'user', 'owner-1', 'personal', 'Personal', 'active', 1, 'owner-1', 'owner-1')",
     )
     .execute(&pool)
     .await
@@ -36,8 +36,8 @@ async fn inherited_folder_writer_allows_child_upload_permission_check() {
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             lifecycle_status, content_state, version, created_by, updated_by
          ) VALUES
-         ('folder-1', 'tenant-1', 'space-1', NULL, 'folder', 'Root', 'active', 'ready', 1, 'owner-1', 'owner-1'),
-         ('file-1', 'tenant-1', 'space-1', 'folder-1', 'file', 'Doc', 'active', 'ready', 1, 'owner-1', 'owner-1')",
+         ('folder-1', '100001', 'space-1', NULL, 'folder', 'Root', 'active', 'ready', 1, 'owner-1', 'owner-1'),
+         ('file-1', '100001', 'space-1', 'folder-1', 'file', 'Doc', 'active', 'ready', 1, 'owner-1', 'owner-1')",
     )
     .execute(&pool)
     .await
@@ -46,7 +46,7 @@ async fn inherited_folder_writer_allows_child_upload_permission_check() {
     let service = SqlDrivePermissionService::new(pool.clone());
     service
         .grant_node_permission(GrantDriveNodePermissionCommand {
-            tenant_id: "tenant-1".to_string(),
+            tenant_id: "100001".to_string(),
             node_id: "folder-1".to_string(),
             subject_type: "user".to_string(),
             subject_id: "writer-1".to_string(),
@@ -58,7 +58,7 @@ async fn inherited_folder_writer_allows_child_upload_permission_check() {
 
     let child_access = service
         .resolve_effective_node_access(ResolveEffectiveNodeAccessCommand {
-            tenant_id: "tenant-1".to_string(),
+            tenant_id: "100001".to_string(),
             space_id: "space-1".to_string(),
             node_id: "file-1".to_string(),
             subject_type: "user".to_string(),
@@ -82,7 +82,7 @@ async fn unrelated_subject_has_no_effective_access() {
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-         ) VALUES ('space-1', 'tenant-1', 'user', 'owner-1', 'personal', 'Personal', 'active', 1, 'owner-1', 'owner-1')",
+         ) VALUES ('space-1', '100001', 'user', 'owner-1', 'personal', 'Personal', 'active', 1, 'owner-1', 'owner-1')",
     )
     .execute(&pool)
     .await
@@ -91,7 +91,7 @@ async fn unrelated_subject_has_no_effective_access() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             lifecycle_status, content_state, version, created_by, updated_by
-         ) VALUES ('file-1', 'tenant-1', 'space-1', NULL, 'file', 'Doc', 'active', 'ready', 1, 'owner-1', 'owner-1')",
+         ) VALUES ('file-1', '100001', 'space-1', NULL, 'file', 'Doc', 'active', 'ready', 1, 'owner-1', 'owner-1')",
     )
     .execute(&pool)
     .await
@@ -100,7 +100,7 @@ async fn unrelated_subject_has_no_effective_access() {
     let service = SqlDrivePermissionService::new(pool);
     let access = service
         .resolve_effective_node_access(ResolveEffectiveNodeAccessCommand {
-            tenant_id: "tenant-1".to_string(),
+            tenant_id: "100001".to_string(),
             space_id: "space-1".to_string(),
             node_id: "file-1".to_string(),
             subject_type: "user".to_string(),
@@ -120,7 +120,7 @@ async fn commenter_role_does_not_grant_writer_access() {
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-         ) VALUES ('space-1', 'tenant-1', 'user', 'owner-1', 'personal', 'Personal', 'active', 1, 'owner-1', 'owner-1')",
+         ) VALUES ('space-1', '100001', 'user', 'owner-1', 'personal', 'Personal', 'active', 1, 'owner-1', 'owner-1')",
     )
     .execute(&pool)
     .await
@@ -129,7 +129,7 @@ async fn commenter_role_does_not_grant_writer_access() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             lifecycle_status, content_state, version, created_by, updated_by
-         ) VALUES ('file-1', 'tenant-1', 'space-1', NULL, 'file', 'Doc', 'active', 'ready', 1, 'owner-1', 'owner-1')",
+         ) VALUES ('file-1', '100001', 'space-1', NULL, 'file', 'Doc', 'active', 'ready', 1, 'owner-1', 'owner-1')",
     )
     .execute(&pool)
     .await
@@ -138,7 +138,7 @@ async fn commenter_role_does_not_grant_writer_access() {
     let service = SqlDrivePermissionService::new(pool.clone());
     service
         .grant_node_permission(GrantDriveNodePermissionCommand {
-            tenant_id: "tenant-1".to_string(),
+            tenant_id: "100001".to_string(),
             node_id: "file-1".to_string(),
             subject_type: "user".to_string(),
             subject_id: "commenter-1".to_string(),
@@ -150,7 +150,7 @@ async fn commenter_role_does_not_grant_writer_access() {
 
     let access = service
         .resolve_effective_node_access(ResolveEffectiveNodeAccessCommand {
-            tenant_id: "tenant-1".to_string(),
+            tenant_id: "100001".to_string(),
             space_id: "space-1".to_string(),
             node_id: "file-1".to_string(),
             subject_type: "user".to_string(),
@@ -171,7 +171,7 @@ async fn trashed_node_direct_reader_permission_resolves_for_acl_checks() {
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-         ) VALUES ('space-1', 'tenant-1', 'user', 'owner-1', 'personal', 'Personal', 'active', 1, 'owner-1', 'owner-1')",
+         ) VALUES ('space-1', '100001', 'user', 'owner-1', 'personal', 'Personal', 'active', 1, 'owner-1', 'owner-1')",
     )
     .execute(&pool)
     .await
@@ -180,7 +180,7 @@ async fn trashed_node_direct_reader_permission_resolves_for_acl_checks() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             lifecycle_status, content_state, version, created_by, updated_by
-         ) VALUES ('file-trashed', 'tenant-1', 'space-1', NULL, 'file', 'Trashed', 'trashed', 'ready', 1, 'owner-1', 'owner-1')",
+         ) VALUES ('file-trashed', '100001', 'space-1', NULL, 'file', 'Trashed', 'trashed', 'ready', 1, 'owner-1', 'owner-1')",
     )
     .execute(&pool)
     .await
@@ -189,7 +189,7 @@ async fn trashed_node_direct_reader_permission_resolves_for_acl_checks() {
     let service = SqlDrivePermissionService::new(pool.clone());
     service
         .grant_node_permission(GrantDriveNodePermissionCommand {
-            tenant_id: "tenant-1".to_string(),
+            tenant_id: "100001".to_string(),
             node_id: "file-trashed".to_string(),
             subject_type: "user".to_string(),
             subject_id: "reviewer-1".to_string(),
@@ -201,7 +201,7 @@ async fn trashed_node_direct_reader_permission_resolves_for_acl_checks() {
 
     let access = service
         .resolve_effective_node_access(ResolveEffectiveNodeAccessCommand {
-            tenant_id: "tenant-1".to_string(),
+            tenant_id: "100001".to_string(),
             space_id: "space-1".to_string(),
             node_id: "file-trashed".to_string(),
             subject_type: "user".to_string(),

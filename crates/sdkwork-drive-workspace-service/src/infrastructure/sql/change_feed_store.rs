@@ -52,8 +52,7 @@ impl SqlChangeFeedStore {
         subject_id: &str,
         limit: i64,
     ) -> Result<Vec<DriveChangeRecord>, DriveServiceError> {
-        let reader_acl_predicate =
-            reader_inherited_permission_exists_sql("n", "$4", "$5");
+        let reader_acl_predicate = reader_inherited_permission_exists_sql("n", "$4", "$5");
         let rows = sqlx::query(&format!(
             "SELECT cl.sequence_no, cl.tenant_id, cl.space_id, cl.node_id, cl.event_type, cl.actor_id, cl.created_at
              FROM dr_drive_change_log cl

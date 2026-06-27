@@ -189,7 +189,7 @@ fn drive_launch_plan_reports_database_engine_without_leaking_secrets() {
     let output = run_node_command_in(
         &root,
         [
-            root.join("scripts/run-drive-api-server.mjs"),
+            root.join("scripts/run-drive-standalone-gateway.mjs"),
             PathBuf::from("plan"),
             PathBuf::from("--dev-env-file"),
             root.join(".env.postgres.example"),
@@ -253,7 +253,7 @@ fn drive_launch_plan_url_encodes_structured_postgres_fields() {
     let output = run_node_command_in(
         &root,
         [
-            root.join("scripts/run-drive-api-server.mjs"),
+            root.join("scripts/run-drive-standalone-gateway.mjs"),
             PathBuf::from("plan"),
             PathBuf::from("--dev-env-file"),
             env_file.clone(),
@@ -304,7 +304,7 @@ fn drive_launch_plan_rejects_legacy_database_aliases() {
     let output = run_node_command_in(
         &root,
         [
-            root.join("scripts/run-drive-api-server.mjs"),
+            root.join("scripts/run-drive-standalone-gateway.mjs"),
             PathBuf::from("plan"),
             PathBuf::from("--dev-env-file"),
             env_file.clone(),
@@ -332,7 +332,7 @@ fn drive_launch_plan_accepts_explicit_sqlite_database_url() {
     let output = run_node_command_in(
         &root,
         [
-            root.join("scripts/run-drive-api-server.mjs"),
+            root.join("scripts/run-drive-standalone-gateway.mjs"),
             PathBuf::from("plan"),
             PathBuf::from("--"),
             PathBuf::from("--database-url"),
@@ -363,10 +363,9 @@ fn drive_launch_plan_accepts_explicit_sqlite_database_url() {
 #[test]
 fn database_architecture_doc_records_runtime_boundary() {
     let root = workspace_root();
-    let doc = std::fs::read_to_string(
-        root.join("docs/architecture/tech/TECH-database-architecture.md"),
-    )
-    .expect("database architecture doc should exist");
+    let doc =
+        std::fs::read_to_string(root.join("docs/architecture/tech/TECH-database-architecture.md"))
+            .expect("database architecture doc should exist");
 
     for required in [
         "PostgreSQL is the server, Docker, Kubernetes, and production target",

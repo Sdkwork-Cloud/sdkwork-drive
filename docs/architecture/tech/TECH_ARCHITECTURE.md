@@ -7,19 +7,30 @@ Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md
 
 ## Document Map
 
-- [TECH-2026-06-01-drive-observability-event-dictionary.md](TECH-2026-06-01-drive-observability-event-dictionary.md)
-- [TECH-2026-06-01-sdkwork-drive-backend-design.md](TECH-2026-06-01-sdkwork-drive-backend-design.md)
-- [TECH-2026-06-01-sdkwork-drive-backend.md](TECH-2026-06-01-sdkwork-drive-backend.md)
-- [TECH-2026-06-06-drive-uploader.md](TECH-2026-06-06-drive-uploader.md)
-- [TECH-2026-06-08-drive-node-version-policy-design.md](TECH-2026-06-08-drive-node-version-policy-design.md)
-- [TECH-2026-06-08-drive-node-version-policy.md](TECH-2026-06-08-drive-node-version-policy.md)
-- [TECH-database-architecture.md](TECH-database-architecture.md)
+### Active standards
+
+- [TECH-drive-observability-event-dictionary.md](TECH-drive-observability-event-dictionary.md)
 - [TECH-drive-iam-integration-standard.md](TECH-drive-iam-integration-standard.md)
 - [TECH-drive-sdk-integration-standard.md](TECH-drive-sdk-integration-standard.md)
 - [TECH-drive-topology-standard.md](TECH-drive-topology-standard.md)
 - [TECH-drive-uploader-standard.md](TECH-drive-uploader-standard.md)
+- [TECH-database-architecture.md](TECH-database-architecture.md)
 - [TECH-storage-key-layout.md](TECH-storage-key-layout.md)
 - [TECH-storage-s3-architecture.md](TECH-storage-s3-architecture.md)
+
+### Feature-specific shards
+
+- [TECH-2026-06-06-drive-uploader.md](TECH-2026-06-06-drive-uploader.md)
+- [TECH-2026-06-08-drive-node-version-policy-design.md](TECH-2026-06-08-drive-node-version-policy-design.md)
+- [TECH-2026-06-08-drive-node-version-policy.md](TECH-2026-06-08-drive-node-version-policy.md)
+
+### Redirect stubs (stable links)
+
+- [TECH-2026-06-01-drive-observability-event-dictionary.md](TECH-2026-06-01-drive-observability-event-dictionary.md) → [TECH-drive-observability-event-dictionary.md](TECH-drive-observability-event-dictionary.md)
+- [TECH-2026-06-01-sdkwork-drive-backend-design.md](TECH-2026-06-01-sdkwork-drive-backend-design.md) → [archive](../../archive/tech/TECH-2026-06-01-sdkwork-drive-backend-design.md)
+- [TECH-2026-06-01-sdkwork-drive-backend.md](TECH-2026-06-01-sdkwork-drive-backend.md) → [archive](../../archive/tech/TECH-2026-06-01-sdkwork-drive-backend.md)
+
+Historical backend design and implementation plans live under [docs/archive/tech/](../../archive/tech/).
 
 ## 1. Architecture Overview
 

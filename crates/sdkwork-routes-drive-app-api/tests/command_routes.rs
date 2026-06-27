@@ -812,7 +812,10 @@ async fn list_nodes_sort_by_name_desc_orders_active_children() {
     .execute(&pool)
     .await
     .expect("parent folder should be seeded");
-    for (id, node_name) in [("file-sort-alpha", "alpha.txt"), ("file-sort-zeta", "zeta.txt")] {
+    for (id, node_name) in [
+        ("file-sort-alpha", "alpha.txt"),
+        ("file-sort-zeta", "zeta.txt"),
+    ] {
         sqlx::query(
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,

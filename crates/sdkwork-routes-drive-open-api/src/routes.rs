@@ -1,7 +1,9 @@
 use crate::handlers::{create_share_link_download_url, resolve_share_link};
 use crate::rate_limit::share_link_rate_limit;
 use crate::state::OpenState;
-use crate::web_bootstrap::{wrap_router_with_dev_open_api_web_framework, wrap_router_with_web_framework_from_env};
+use crate::web_bootstrap::{
+    wrap_router_with_dev_open_api_web_framework, wrap_router_with_web_framework_from_env,
+};
 use axum::middleware;
 use axum::routing::{get, post};
 use axum::Router;
@@ -46,7 +48,7 @@ pub async fn build_router_with_database_config(
     Ok(build_protected_router_with_pool(pool).await)
 }
 
-fn build_router_with_state(state: OpenState) -> Router {
+fn build_business_router_layers(state: OpenState) -> Router {
     let share_routes = Router::new()
         .route(
             "/open/v3/api/drive/share_links/{token}",
@@ -58,16 +60,41 @@ fn build_router_with_state(state: OpenState) -> Router {
         )
         .route_layer(middleware::from_fn(share_link_rate_limit));
 
+    Router::new()
+        .merge(share_routes)
+        .layer(middleware::from_fn(
+            sdkwork_drive_http::problem_correlation::problem_correlation_middleware,
+        ))
+        .with_state(state)
+}
+
+fn build_router_with_state(state: OpenState) -> Router {
+    let pool = state.pool.clone();
     mount_drive_infra_routes(
-        Router::new()
-            .merge(share_routes)
-            .layer(middleware::from_fn(
-                sdkwork_drive_http::problem_correlation::problem_correlation_middleware,
-            ))
-            .layer(middleware::from_fn(
-                sdkwork_drive_http::metrics::record_request_metrics,
-            )),
-        drive_service_router_config(&state.pool),
+        build_business_router_layers(state),
+        drive_service_router_config(&pool),
+        Some("sdkwork-drive-open-api"),
     )
-    .with_state(state)
+    .layer(middleware::from_fn(
+        sdkwork_drive_http::metrics::record_request_metrics,
+    ))
+}
+
+/// Business router for multi-surface gateway assembly (infra mounted once by assembly).
+pub async fn gateway_mount_business(pool: AnyPool) -> Router {
+    build_gateway_business_router_with_pool(pool).await
+}
+
+/// Deprecated alias; prefer [`gateway_mount_business`].
+pub async fn build_gateway_business_router_with_pool(pool: AnyPool) -> Router {
+    let state = OpenState::new(pool);
+    let router = build_business_router_layers(state);
+    let router = wrap_router_with_web_framework_from_env(router).await;
+    router.layer(middleware::from_fn(
+        sdkwork_drive_http::metrics::record_request_metrics,
+    ))
+}
+
+pub async fn gateway_mount(pool: sqlx::AnyPool) -> axum::Router {
+    build_protected_router_with_pool(pool).await
 }

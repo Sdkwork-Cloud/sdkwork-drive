@@ -2,6 +2,7 @@
 target/
 target-codex-test/
 **/target/
+**/src-tauri/target/
 
 # Node.js
 node_modules/
@@ -10,6 +11,13 @@ dist/
 *.log
 .npm-cache/
 .pnpm-store/
+.turbo/
+*.tsbuildinfo
+
+# Test artifacts (Playwright / coverage)
+test-results/
+playwright-report/
+coverage/
 
 # Environment files
 .env
@@ -55,4 +63,7 @@ sdks/**/.sdkwork/manual-backups/
 
 # Test artifacts
 *.test.tmp
-coverage/
+
+# SDKWork local runtime state
+.runtime/
+**/.runtime/

@@ -16,12 +16,7 @@ static HEALTH_SERVING: AtomicU64 = AtomicU64::new(1);
 static HTTP_REQUEST_ROUTE_LABELS: LazyLock<Mutex<HashMap<String, u64>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
-pub fn record_http_request_route_labels(
-    method: &str,
-    route: &str,
-    status: u16,
-    api_surface: &str,
-) {
+pub fn record_http_request_route_labels(method: &str, route: &str, status: u16, api_surface: &str) {
     let key = format!(
         "method=\"{method}\",route=\"{route}\",status=\"{status}\",api_surface=\"{api_surface}\""
     );

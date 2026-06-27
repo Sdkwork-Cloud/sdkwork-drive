@@ -55,17 +55,13 @@ pub async fn enforce_upload_content_policy(
 ) -> Result<(), DriveServiceError> {
     match evaluate_upload_content_policy(context) {
         UploadContentPolicyDecision::Allow => Ok(()),
-        UploadContentPolicyDecision::Block => {
-            Err(DriveServiceError::Validation(format!(
-                "upload blocked by content policy for content type {}",
-                context.content_type
-            )))
-        }
-        UploadContentPolicyDecision::Quarantine => {
-            Err(DriveServiceError::Validation(format!(
-                "upload quarantined by content policy for content type {}",
-                context.content_type
-            )))
-        }
+        UploadContentPolicyDecision::Block => Err(DriveServiceError::Validation(format!(
+            "upload blocked by content policy for content type {}",
+            context.content_type
+        ))),
+        UploadContentPolicyDecision::Quarantine => Err(DriveServiceError::Validation(format!(
+            "upload quarantined by content policy for content type {}",
+            context.content_type
+        ))),
     }
 }

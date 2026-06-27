@@ -1,8 +1,9 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    CreateWatchChannelRequest, DriveWatchChannelResponse, InsertWatchChannel, StopWatchChannelRequest,
-    StopWatchChannelResponse, WatchChannelListQuery, WatchChannelListResponse,
+    CreateWatchChannelRequest, DriveWatchChannelResponse, InsertWatchChannel,
+    StopWatchChannelRequest, StopWatchChannelResponse, WatchChannelListQuery,
+    WatchChannelListResponse,
 };
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::hashing::sha256_raw_hex;
@@ -12,9 +13,9 @@ use crate::route_change::record_change;
 use crate::space_repository::validate_space_exists;
 use crate::state::AppState;
 use crate::validators::{
-    normalize_optional_text, parse_page_request, require_body_value, validate_watch_channel_address,
-    validate_watch_channel_id, validate_watch_channel_type, validate_watch_expiration,
-    validate_watch_lifecycle_status, validate_watch_resource_type,
+    normalize_optional_text, parse_page_request, require_body_value,
+    validate_watch_channel_address, validate_watch_channel_id, validate_watch_channel_type,
+    validate_watch_expiration, validate_watch_lifecycle_status, validate_watch_resource_type,
 };
 use crate::watch_repository::{find_watch_channel, insert_watch_channel};
 use axum::extract::{Path, Query, State};

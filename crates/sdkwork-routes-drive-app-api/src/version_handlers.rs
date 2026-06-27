@@ -193,8 +193,12 @@ pub(crate) async fn restore_version(
         )
         .await?;
         return Ok(Json(
-            present_drive_node(&state.pool, &tenant_id, find_node(&state.pool, &tenant_id, &node_id).await?)
-                .await?,
+            present_drive_node(
+                &state.pool,
+                &tenant_id,
+                find_node(&state.pool, &tenant_id, &node_id).await?,
+            )
+            .await?,
         ));
     }
     let affected = sqlx::query(
@@ -225,8 +229,12 @@ pub(crate) async fn restore_version(
     )
     .await?;
     Ok(Json(
-        present_drive_node(&state.pool, &tenant_id, find_node(&state.pool, &tenant_id, &node_id).await?)
-            .await?,
+        present_drive_node(
+            &state.pool,
+            &tenant_id,
+            find_node(&state.pool, &tenant_id, &node_id).await?,
+        )
+        .await?,
     ))
 }
 pub(crate) async fn delete_version(

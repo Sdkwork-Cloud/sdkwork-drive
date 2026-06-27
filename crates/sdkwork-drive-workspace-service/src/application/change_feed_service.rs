@@ -69,10 +69,7 @@ impl SqlDriveChangeFeedService {
         command: QueryStartPageTokenCommand,
     ) -> Result<i64, DriveServiceError> {
         self.store
-            .query_start_page_token(
-                &command.tenant_id,
-                command.space_id.as_deref(),
-            )
+            .query_start_page_token(&command.tenant_id, command.space_id.as_deref())
             .await
     }
 }

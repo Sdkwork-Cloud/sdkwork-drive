@@ -202,43 +202,43 @@ DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'content_state'
+        WHERE table_schema = current_schema() AND table_name = 'dr_drive_node' AND column_name = 'content_state'
     ) THEN
         ALTER TABLE dr_drive_node ADD COLUMN content_state VARCHAR(32) NOT NULL DEFAULT 'empty';
     END IF;
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'file_extension'
+        WHERE table_schema = current_schema() AND table_name = 'dr_drive_node' AND column_name = 'file_extension'
     ) THEN
         ALTER TABLE dr_drive_node ADD COLUMN file_extension VARCHAR(64);
     END IF;
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'head_content_type'
+        WHERE table_schema = current_schema() AND table_name = 'dr_drive_node' AND column_name = 'head_content_type'
     ) THEN
         ALTER TABLE dr_drive_node ADD COLUMN head_content_type VARCHAR(255);
     END IF;
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'head_content_type_group'
+        WHERE table_schema = current_schema() AND table_name = 'dr_drive_node' AND column_name = 'head_content_type_group'
     ) THEN
         ALTER TABLE dr_drive_node ADD COLUMN head_content_type_group VARCHAR(64);
     END IF;
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'head_content_length'
+        WHERE table_schema = current_schema() AND table_name = 'dr_drive_node' AND column_name = 'head_content_length'
     ) THEN
         ALTER TABLE dr_drive_node ADD COLUMN head_content_length BIGINT;
     END IF;
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'head_version_no'
+        WHERE table_schema = current_schema() AND table_name = 'dr_drive_node' AND column_name = 'head_version_no'
     ) THEN
         ALTER TABLE dr_drive_node ADD COLUMN head_version_no BIGINT;
     END IF;
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'dr_drive_node' AND column_name = 'head_checksum_sha256_hex'
+        WHERE table_schema = current_schema() AND table_name = 'dr_drive_node' AND column_name = 'head_checksum_sha256_hex'
     ) THEN
         ALTER TABLE dr_drive_node ADD COLUMN head_checksum_sha256_hex VARCHAR(255);
     END IF;

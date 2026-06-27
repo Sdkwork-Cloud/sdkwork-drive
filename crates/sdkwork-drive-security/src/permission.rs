@@ -22,10 +22,9 @@ const BACKEND_CAPABILITY_PERMISSIONS: &[&str] = &[
 ];
 
 pub fn has_drive_admin_privilege(context: &DriveAppContext) -> bool {
-    context
-        .permission_scope
-        .iter()
-        .any(|scope| scope == DRIVE_BACKEND_ADMIN_WILDCARD || scope == DRIVE_STORAGE_ADMIN_PERMISSION)
+    context.permission_scope.iter().any(|scope| {
+        scope == DRIVE_BACKEND_ADMIN_WILDCARD || scope == DRIVE_STORAGE_ADMIN_PERMISSION
+    })
 }
 
 pub fn has_drive_admin_capability(context: &DriveAppContext, capability_permission: &str) -> bool {
@@ -56,20 +55,15 @@ pub fn drive_backend_operation_required_permission(operation_id: &str) -> Option
     }
 }
 
-pub fn can_invoke_drive_backend_operation(
-    context: &DriveAppContext,
-    operation_id: &str,
-) -> bool {
-    let Some(required_permission) = drive_backend_operation_required_permission(operation_id) else {
+pub fn can_invoke_drive_backend_operation(context: &DriveAppContext, operation_id: &str) -> bool {
+    let Some(required_permission) = drive_backend_operation_required_permission(operation_id)
+    else {
         return false;
     };
     has_drive_admin_capability(context, required_permission)
 }
 
-pub fn can_invoke_drive_storage_operation(
-    context: &DriveAppContext,
-    operation_id: &str,
-) -> bool {
+pub fn can_invoke_drive_storage_operation(context: &DriveAppContext, operation_id: &str) -> bool {
     let _ = operation_id;
     can_access_drive_storage_admin(context)
 }
@@ -119,8 +113,14 @@ mod tests {
     fn allows_drive_storage_admin_permission() {
         let context = context_with_scopes(&[DRIVE_STORAGE_ADMIN_PERMISSION]);
         assert!(can_access_drive_storage_admin(&context));
-        assert!(can_invoke_drive_backend_operation(&context, "auditEvents.list"));
-        assert!(can_invoke_drive_storage_operation(&context, "storageProviders.list"));
+        assert!(can_invoke_drive_backend_operation(
+            &context,
+            "auditEvents.list"
+        ));
+        assert!(can_invoke_drive_storage_operation(
+            &context,
+            "storageProviders.list"
+        ));
     }
 
     #[test]
@@ -133,23 +133,41 @@ mod tests {
     fn rejects_missing_admin_permission() {
         let context = context_with_scopes(&["drive.read"]);
         assert!(!can_access_any_drive_admin_surface(&context));
-        assert!(!can_invoke_drive_backend_operation(&context, "auditEvents.list"));
+        assert!(!can_invoke_drive_backend_operation(
+            &context,
+            "auditEvents.list"
+        ));
     }
 
     #[test]
     fn audit_scope_allows_audit_but_not_quota_or_storage() {
         let context = context_with_scopes(&[DRIVE_AUDIT_ADMIN_PERMISSION]);
-        assert!(can_invoke_drive_backend_operation(&context, "auditEvents.list"));
-        assert!(!can_invoke_drive_backend_operation(&context, "quotas.summary"));
-        assert!(!can_invoke_drive_storage_operation(&context, "storageProviders.list"));
+        assert!(can_invoke_drive_backend_operation(
+            &context,
+            "auditEvents.list"
+        ));
+        assert!(!can_invoke_drive_backend_operation(
+            &context,
+            "quotas.summary"
+        ));
+        assert!(!can_invoke_drive_storage_operation(
+            &context,
+            "storageProviders.list"
+        ));
         assert!(can_access_any_drive_admin_surface(&context));
     }
 
     #[test]
     fn quota_scope_allows_quota_but_not_audit() {
         let context = context_with_scopes(&[DRIVE_QUOTA_ADMIN_PERMISSION]);
-        assert!(can_invoke_drive_backend_operation(&context, "quotas.update"));
-        assert!(!can_invoke_drive_backend_operation(&context, "auditEvents.list"));
+        assert!(can_invoke_drive_backend_operation(
+            &context,
+            "quotas.update"
+        ));
+        assert!(!can_invoke_drive_backend_operation(
+            &context,
+            "auditEvents.list"
+        ));
     }
 
     #[test]

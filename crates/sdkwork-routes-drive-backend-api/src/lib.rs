@@ -29,7 +29,3 @@ pub use web_bootstrap::{
 pub fn gateway_route_manifest() -> sdkwork_web_core::HttpRouteManifest {
     backend_route_manifest()
 }
-
-pub async fn gateway_mount(pool: sqlx::AnyPool) -> axum::Router {
-    build_protected_router_with_pool(pool).await
-}

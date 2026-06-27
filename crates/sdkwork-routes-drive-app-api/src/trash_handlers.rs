@@ -2,8 +2,8 @@ use crate::acl;
 use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    DriveNodeResponse, EmptyTrashRequest, EmptyTrashResponse, NodeCommandRequest,
-    NodeListResponse, NodeViewQuery,
+    DriveNodeResponse, EmptyTrashRequest, EmptyTrashResponse, NodeCommandRequest, NodeListResponse,
+    NodeViewQuery,
 };
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::mappers::map_node_row;
@@ -27,7 +27,15 @@ pub(crate) async fn trash_node(
     Path(node_id): Path<String>,
     Json(payload): Json<NodeCommandRequest>,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    set_node_lifecycle(state, &ctx, node_id, payload, "trashed", drive_events::node::TRASHED).await
+    set_node_lifecycle(
+        state,
+        &ctx,
+        node_id,
+        payload,
+        "trashed",
+        drive_events::node::TRASHED,
+    )
+    .await
 }
 pub(crate) async fn restore_trashed_node(
     State(state): State<AppState>,
@@ -35,7 +43,15 @@ pub(crate) async fn restore_trashed_node(
     Path(node_id): Path<String>,
     Json(payload): Json<NodeCommandRequest>,
 ) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    set_node_lifecycle(state, &ctx, node_id, payload, "active", drive_events::node::RESTORED).await
+    set_node_lifecycle(
+        state,
+        &ctx,
+        node_id,
+        payload,
+        "active",
+        drive_events::node::RESTORED,
+    )
+    .await
 }
 pub(crate) async fn list_trashed_nodes(
     State(state): State<AppState>,

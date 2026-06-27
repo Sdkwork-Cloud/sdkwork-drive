@@ -1,12 +1,12 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    ASSET_NODE_SELECT_COLUMNS, AssetActionRequest, AssetCollectionItemResponse,
-    AssetCollectionPageResponse, AssetCollectionResponse, AssetItemResponse, AssetPageResponse,
-    AssetRelationResponse, CreateAssetCollectionItemRequest, CreateAssetCollectionRequest,
-    CreateAssetRelationRequest, CreateAssetRequest, DeleteAssetCollectionItemResponse,
-    DeleteAssetRelationResponse, ListAssetCollectionsQuery, ListAssetsQuery, MediaResourceResponse,
-    PageRequest, UpdateAssetRequest,
+    AssetActionRequest, AssetCollectionItemResponse, AssetCollectionPageResponse,
+    AssetCollectionResponse, AssetItemResponse, AssetPageResponse, AssetRelationResponse,
+    CreateAssetCollectionItemRequest, CreateAssetCollectionRequest, CreateAssetRelationRequest,
+    CreateAssetRequest, DeleteAssetCollectionItemResponse, DeleteAssetRelationResponse,
+    ListAssetCollectionsQuery, ListAssetsQuery, MediaResourceResponse, PageRequest,
+    UpdateAssetRequest, ASSET_NODE_SELECT_COLUMNS,
 };
 use crate::error::{
     internal_sql_error, is_unique_constraint_error, not_found_problem, problem, ProblemDetail,
@@ -16,9 +16,7 @@ use crate::ids::next_drive_id;
 use crate::mappers::map_node_row;
 use crate::node_repository::{find_active_node, find_node};
 use crate::state::AppState;
-use crate::validators::{
-    normalize_optional_text, require_non_empty_text, validate_page_size_i64,
-};
+use crate::validators::{normalize_optional_text, require_non_empty_text, validate_page_size_i64};
 use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
@@ -27,8 +25,8 @@ use axum::Extension;
 use axum::Json;
 use sdkwork_drive_contract::drive::domain_events as drive_events;
 use sdkwork_drive_contract::{
-    build_drive_backed_media_resource, BuildDriveBackedMediaResourceInput, DriveNodeId, DriveSpaceId,
-    DriveUri,
+    build_drive_backed_media_resource, BuildDriveBackedMediaResourceInput, DriveNodeId,
+    DriveSpaceId, DriveUri,
 };
 use sdkwork_drive_workspace_service::infrastructure::change_recorder::{
     self, RecordDriveChangeCommand,
@@ -142,10 +140,7 @@ pub(crate) async fn list_assets(
         .map(|row| asset_item_from_node_row(&row, None, None, None, false))
         .collect();
 
-    Ok(Json(AssetPageResponse {
-        items,
-        next_cursor,
-    }))
+    Ok(Json(AssetPageResponse { items, next_cursor }))
 }
 
 pub(crate) async fn create_asset(
@@ -155,20 +150,13 @@ pub(crate) async fn create_asset(
 ) -> Result<(StatusCode, Json<AssetItemResponse>), (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(None)?;
-    let organization_id = normalize_optional_text(payload.organization_id)
-        .or_else(|| ctx.organization_id.clone());
+    let organization_id =
+        normalize_optional_text(payload.organization_id).or_else(|| ctx.organization_id.clone());
 
     let node = if let Some(drive_node_id) = normalize_optional_text(payload.drive_node_id) {
         let node = find_active_node(&state.pool, &tenant_id, &drive_node_id).await?;
         ensure_asset_eligible_node(&node)?;
-        acl::ensure_ctx_node_role(
-            &state.pool,
-            &ctx,
-            &node.space_id,
-            &node.id,
-            "reader",
-        )
-        .await?;
+        acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node.id, "reader").await?;
         node
     } else if let Some(virtual_reference) = payload.virtual_reference.clone() {
         create_virtual_reference_asset_node(
@@ -241,7 +229,13 @@ pub(crate) async fn create_asset(
         .await?;
     }
 
-    let item = load_asset_item(&state.pool, &tenant_id, &node.id, organization_id.as_deref()).await?;
+    let item = load_asset_item(
+        &state.pool,
+        &tenant_id,
+        &node.id,
+        organization_id.as_deref(),
+    )
+    .await?;
     Ok((StatusCode::CREATED, Json(item)))
 }
 
@@ -355,14 +349,7 @@ pub(crate) async fn archive_asset(
     Path(asset_id): Path<String>,
     Json(payload): Json<AssetActionRequest>,
 ) -> Result<Json<AssetItemResponse>, (StatusCode, Json<ProblemDetail>)> {
-    set_asset_archived_flag(
-        &state,
-        &ctx,
-        &asset_id,
-        true,
-        payload.reason.as_deref(),
-    )
-    .await
+    set_asset_archived_flag(&state, &ctx, &asset_id, true, payload.reason.as_deref()).await
 }
 
 pub(crate) async fn restore_asset(
@@ -416,10 +403,7 @@ pub(crate) async fn list_asset_collections(
         })
         .collect::<Vec<_>>();
     let next_cursor = next_asset_cursor(&mut items, page);
-    Ok(Json(AssetCollectionPageResponse {
-        items,
-        next_cursor,
-    }))
+    Ok(Json(AssetCollectionPageResponse { items, next_cursor }))
 }
 
 pub(crate) async fn create_asset_collection(
@@ -433,13 +417,14 @@ pub(crate) async fn create_asset_collection(
     let title = require_non_empty_text(payload.title, "title")?;
     let catalog = ensure_asset_catalog_anchor(&state.pool, &tenant_id, &user_id, &ctx).await?;
     let collection_id = next_drive_id("acol");
-    let visibility = normalize_optional_text(payload.visibility).unwrap_or_else(|| "private".to_string());
+    let visibility =
+        normalize_optional_text(payload.visibility).unwrap_or_else(|| "private".to_string());
     validate_asset_visibility(&visibility)?;
     let collection_type =
         normalize_optional_text(payload.collection_type).unwrap_or_else(|| "manual".to_string());
     let now = current_timestamp_text();
-    let organization_id = normalize_optional_text(payload.organization_id)
-        .or_else(|| ctx.organization_id.clone());
+    let organization_id =
+        normalize_optional_text(payload.organization_id).or_else(|| ctx.organization_id.clone());
     let body = json!({
         "id": collection_id,
         "tenantId": tenant_id,
@@ -464,8 +449,9 @@ pub(crate) async fn create_asset_collection(
         &operator_id,
     )
     .await?;
-    let collection = parse_collection_from_property(&tenant_id, &user_id, &property_key, &body.to_string())
-        .ok_or_else(|| not_found_problem("collection not found"))?;
+    let collection =
+        parse_collection_from_property(&tenant_id, &user_id, &property_key, &body.to_string())
+            .ok_or_else(|| not_found_problem("collection not found"))?;
     Ok((StatusCode::CREATED, Json(collection)))
 }
 
@@ -625,8 +611,10 @@ pub(crate) async fn create_asset_relation(
 
     Ok((
         StatusCode::CREATED,
-        Json(parse_relation_from_property(&property_key, &body.to_string())
-            .ok_or_else(|| not_found_problem("relation not found"))?),
+        Json(
+            parse_relation_from_property(&property_key, &body.to_string())
+                .ok_or_else(|| not_found_problem("relation not found"))?,
+        ),
     ))
 }
 
@@ -910,7 +898,8 @@ async fn load_asset_item(
 
     let mut item = asset_item_from_node_row(&node_row, description, tags, visibility, archived);
     item.organization_id = organization_id.map(str::to_string);
-    if let Some(user_id) = load_space_owner_user_id(pool, tenant_id, &node_row.node.space_id).await?
+    if let Some(user_id) =
+        load_space_owner_user_id(pool, tenant_id, &node_row.node.space_id).await?
     {
         item.user_id = Some(user_id);
     }
@@ -965,16 +954,14 @@ async fn load_asset_property_json(
     let Some(raw) = load_asset_property_text(pool, tenant_id, node_id, property_key).await? else {
         return Ok(None);
     };
-    serde_json::from_str(&raw)
-        .map(Some)
-        .map_err(|error| {
-            problem(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "internal error",
-                format!("asset property json is invalid: {error}"),
-                "drive.internal_error",
-            )
-        })
+    serde_json::from_str(&raw).map(Some).map_err(|error| {
+        problem(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal error",
+            format!("asset property json is invalid: {error}"),
+            "drive.internal_error",
+        )
+    })
 }
 
 async fn clear_asset_property(
@@ -1032,8 +1019,15 @@ async fn upsert_asset_property(
     .execute(pool)
     .await
     .map_err(internal_sql_error("upsert asset property failed"))?;
-    record_change(pool, tenant_id, space_id, Some(node_id), drive_events::node_property::SET, operator_id)
-        .await
+    record_change(
+        pool,
+        tenant_id,
+        space_id,
+        Some(node_id),
+        drive_events::node_property::SET,
+        operator_id,
+    )
+    .await
 }
 
 fn build_node_property_id(
@@ -1097,7 +1091,10 @@ async fn set_asset_archived_flag(
             &operator_id,
         )
         .await?;
-        if let Some(reason) = archive_reason.map(str::trim).filter(|value| !value.is_empty()) {
+        if let Some(reason) = archive_reason
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
             upsert_asset_property(
                 &state.pool,
                 &tenant_id,
@@ -1194,14 +1191,13 @@ async fn update_node_scene(
     scene: &str,
     operator_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-    let space_id: String = sqlx::query_scalar(
-        "SELECT space_id FROM dr_drive_node WHERE tenant_id=$1 AND id=$2",
-    )
-    .bind(tenant_id)
-    .bind(node_id)
-    .fetch_one(pool)
-    .await
-    .map_err(internal_sql_error("load node space_id failed"))?;
+    let space_id: String =
+        sqlx::query_scalar("SELECT space_id FROM dr_drive_node WHERE tenant_id=$1 AND id=$2")
+            .bind(tenant_id)
+            .bind(node_id)
+            .fetch_one(pool)
+            .await
+            .map_err(internal_sql_error("load node space_id failed"))?;
     sqlx::query(
         "UPDATE dr_drive_node
          SET scene=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
@@ -1232,14 +1228,13 @@ async fn update_node_source(
     source: &str,
     operator_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-    let space_id: String = sqlx::query_scalar(
-        "SELECT space_id FROM dr_drive_node WHERE tenant_id=$1 AND id=$2",
-    )
-    .bind(tenant_id)
-    .bind(node_id)
-    .fetch_one(pool)
-    .await
-    .map_err(internal_sql_error("load node space_id failed"))?;
+    let space_id: String =
+        sqlx::query_scalar("SELECT space_id FROM dr_drive_node WHERE tenant_id=$1 AND id=$2")
+            .bind(tenant_id)
+            .bind(node_id)
+            .fetch_one(pool)
+            .await
+            .map_err(internal_sql_error("load node space_id failed"))?;
     sqlx::query(
         "UPDATE dr_drive_node
          SET source=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
@@ -1308,16 +1303,17 @@ async fn create_virtual_reference_asset_node(
         })
         .unwrap_or("virtual-asset");
     let node_id = next_drive_id("vref");
-    let scene_value = scene
-        .or_else(|| virtual_reference.get("sourceDomain").and_then(Value::as_str));
-    let source_value: Option<String> = source
-        .map(str::to_string)
-        .or_else(|| {
-            virtual_reference
-                .get("sourceResourceType")
-                .and_then(Value::as_str)
-                .map(|resource_type| format!("external:{resource_type}"))
-        });
+    let scene_value = scene.or_else(|| {
+        virtual_reference
+            .get("sourceDomain")
+            .and_then(Value::as_str)
+    });
+    let source_value: Option<String> = source.map(str::to_string).or_else(|| {
+        virtual_reference
+            .get("sourceResourceType")
+            .and_then(Value::as_str)
+            .map(|resource_type| format!("external:{resource_type}"))
+    });
 
     sqlx::query(
         "INSERT INTO dr_drive_node (
@@ -1536,7 +1532,10 @@ async fn load_collection_for_user(
         .ok_or_else(|| not_found_problem("collection not found"))
 }
 
-fn parse_relation_from_property(property_key: &str, property_value: &str) -> Option<AssetRelationResponse> {
+fn parse_relation_from_property(
+    property_key: &str,
+    property_value: &str,
+) -> Option<AssetRelationResponse> {
     if !property_key.starts_with(RELATION_KEY_PREFIX) {
         return None;
     }
@@ -1553,7 +1552,10 @@ fn parse_relation_from_property(property_key: &str, property_value: &str) -> Opt
             .get("relatedAssetId")
             .and_then(Value::as_str)
             .map(str::to_string),
-        relation_type: payload.get("relationType").and_then(Value::as_str)?.to_string(),
+        relation_type: payload
+            .get("relationType")
+            .and_then(Value::as_str)?
+            .to_string(),
         source_domain: payload
             .get("sourceDomain")
             .and_then(Value::as_str)
@@ -1611,10 +1613,7 @@ async fn find_collection_item_property_key(
 }
 
 fn build_collection_item_id(collection_id: &str, asset_id: &str) -> String {
-    let digest = sha256_raw_hex_separated(&[
-        collection_id.as_bytes(),
-        asset_id.as_bytes(),
-    ]);
+    let digest = sha256_raw_hex_separated(&[collection_id.as_bytes(), asset_id.as_bytes()]);
     format!("acitem_{}", &digest[..24])
 }
 

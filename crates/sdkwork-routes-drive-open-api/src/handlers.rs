@@ -1,4 +1,7 @@
-use crate::dto::{CreateOpenDownloadUrlRequest, OpenDownloadUrlResponse, OpenShareLinkAccessQuery, OpenShareLinkResponse};
+use crate::dto::{
+    CreateOpenDownloadUrlRequest, OpenDownloadUrlResponse, OpenShareLinkAccessQuery,
+    OpenShareLinkResponse,
+};
 use crate::error::{map_service_error, problem, share_link_expired_problem, ProblemDetail};
 use crate::repository::{
     claim_share_link_download_slot, find_active_share_link, map_share_link_row,
@@ -18,7 +21,6 @@ use sdkwork_drive_storage_contract::{
     DriveObjectLocator, DriveObjectStore, PresignDownloadRequest,
 };
 use sdkwork_drive_workspace_service::DriveServiceError;
-use serde_json::json;
 use sqlx::Row;
 
 pub(crate) async fn resolve_share_link(
@@ -26,12 +28,7 @@ pub(crate) async fn resolve_share_link(
     Path(token): Path<String>,
     Query(query): Query<OpenShareLinkAccessQuery>,
 ) -> Result<Json<OpenShareLinkResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let row = find_active_share_link(
-        &state.pool,
-        &token,
-        query.access_code.as_deref(),
-    )
-    .await?;
+    let row = find_active_share_link(&state.pool, &token, query.access_code.as_deref()).await?;
     Ok(Json(map_share_link_row(&row)))
 }
 
@@ -40,12 +37,7 @@ pub(crate) async fn create_share_link_download_url(
     Path(token): Path<String>,
     Json(payload): Json<CreateOpenDownloadUrlRequest>,
 ) -> Result<(StatusCode, Json<OpenDownloadUrlResponse>), (StatusCode, Json<ProblemDetail>)> {
-    let row = find_active_share_link(
-        &state.pool,
-        &token,
-        payload.access_code.as_deref(),
-    )
-    .await?;
+    let row = find_active_share_link(&state.pool, &token, payload.access_code.as_deref()).await?;
     let share_id: String = row.get("share_id");
     let download_limit: Option<i64> = row.get("download_limit");
     let download_count: i64 = row.get("download_count");

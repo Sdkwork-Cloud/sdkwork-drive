@@ -79,5 +79,6 @@
       "description": "Generator-owned Go transport SDK for sdkwork-drive open API."
     }
   ],
+  "sdkDependencies": [],
   "sdkOwner": "sdkwork-drive"
 }

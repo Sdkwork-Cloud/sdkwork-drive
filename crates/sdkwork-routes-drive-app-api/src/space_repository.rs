@@ -82,4 +82,3 @@ pub(crate) async fn ensure_git_repository_space_root_accepts_node_type(
         None => Err(not_found_problem("space not found")),
     }
 }
-

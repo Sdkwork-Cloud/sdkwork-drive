@@ -178,17 +178,9 @@ Rules:
 - Feature packages do not call `fetch`, `axios`, generic HTTP helpers, or handwritten Drive API clients.
 - Feature packages do not assemble `Authorization`, `Access-Token`, or SDKWork AppContext headers.
 - The shared App SDK wrapper may project the current SDKWork IAM session into required transport headers.
-- `VITE_DRIVE_USE_LOCAL_DEMO_DATA` is an explicit UI/demo-only override. Its default is false.
-- Local standalone PC must not seed a local IAM-shaped session when
-  `VITE_DRIVE_USE_LOCAL_DEMO_DATA=false`; real App SDK mode requires real
-  appbase IAM login/session context.
-- Local-demo IAM-shaped sessions may exist only when
-  `VITE_DRIVE_USE_LOCAL_DEMO_DATA=true`, and that same runtime must route file
-  workflows to the local demo service. A `tenant-local-demo` or
-  `user-local-demo` session must never call the real Drive App SDK.
-- Runtime bootstrap must clear previously persisted local-demo sessions when
-  local demo data is disabled, so an old demo session cannot leak into real
-  backend integration.
+- `sdkwork-drive-pc-core` may use dedicated byte-transfer helpers (`uploadFetch`, `downloadFetch`) only for signed storage URLs returned by the generated App SDK; this is not a Drive metadata API bypass.
+- Local demo data mode (`VITE_DRIVE_USE_LOCAL_DEMO_DATA`) was removed. All production and standalone PC runtimes require real appbase IAM login; contract tests forbid reintroducing local-demo session routing.
+- Runtime bootstrap must not seed `tenant-local-demo` or `user-local-demo` sessions. Persisted demo sessions must be cleared on bootstrap when upgrading from legacy builds.
 
 ## Verification
 

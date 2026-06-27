@@ -8,9 +8,7 @@ use sdkwork_drive_observability::metrics;
 use tracing::Instrument;
 
 fn span_route_template(path: &str) -> &'static str {
-    if path.starts_with("/open/v3/api/drive/share_links/")
-        && path.ends_with("/download_url")
-    {
+    if path.starts_with("/open/v3/api/drive/share_links/") && path.ends_with("/download_url") {
         return "/open/v3/api/drive/share_links/{token}/download_url";
     }
     if path.starts_with("/open/v3/api/drive/share_links/") {

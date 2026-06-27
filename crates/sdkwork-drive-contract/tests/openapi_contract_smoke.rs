@@ -931,7 +931,11 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         "SetDefaultStorageProviderBindingRequest",
         "providerId",
     );
-    assert_schema_property_exists(&admin_storage_json, "StorageProviderBinding", "storageProvider");
+    assert_schema_property_exists(
+        &admin_storage_json,
+        "StorageProviderBinding",
+        "storageProvider",
+    );
     assert_schema_property_exists(&admin_storage_json, "ProviderBucketList", "items");
     assert_schema_property_exists(&admin_storage_json, "ProviderBucketListItem", "configured");
     assert_schema_property_exists(&backend_json, "DriveLabel", "labelKey");
@@ -1024,10 +1028,7 @@ fn assert_string_schema_pattern(schema: &Value, pattern: &str, name: &str) {
     );
 }
 
-fn assert_admin_storage_object_key_path_parameters_are_bounded(
-    admin_json: &Value,
-    pattern: &str,
-) {
+fn assert_admin_storage_object_key_path_parameters_are_bounded(admin_json: &Value, pattern: &str) {
     for method in ["get", "delete"] {
         let parameters = admin_json
             .pointer(&format!(

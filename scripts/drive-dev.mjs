@@ -517,7 +517,7 @@ function createCloudGatewayProcess({ env, gatewayWillStart }) {
     args: [
       'run',
       '-p',
-      'sdkwork-api-cloud-gateway-api-server',
+      'sdkwork-api-cloud-gateway',
       '--bin',
       'sdkwork-api-cloud-gateway',
       '--',

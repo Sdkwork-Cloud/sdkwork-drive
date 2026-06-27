@@ -22,8 +22,5 @@ pub trait DriveQuotaStore: Send + Sync {
         updated_by: &str,
     ) -> Result<DriveTenantQuotaPolicy, DriveServiceError>;
 
-    async fn clear_tenant_quota_policy(
-        &self,
-        tenant_id: &str,
-    ) -> Result<(), DriveServiceError>;
+    async fn clear_tenant_quota_policy(&self, tenant_id: &str) -> Result<(), DriveServiceError>;
 }

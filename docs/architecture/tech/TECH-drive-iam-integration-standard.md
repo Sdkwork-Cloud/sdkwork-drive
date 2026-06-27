@@ -112,11 +112,9 @@ Required behavior:
   a token-only session as a complete Drive login.
 - Profile-menu logout must call `runtime.service.auth.sessions.current.delete()`
   first and clear the Drive session in a finally block.
-- Local demo sessions are not part of the default standalone IAM contract. They
-  may be seeded only when the PC runtime explicitly enables
-  `VITE_DRIVE_USE_LOCAL_DEMO_DATA=true`; real backend modes require appbase IAM
-  login and must not send `tenant-local-demo` or `user-local-demo` context to
-  the generated Drive App SDK.
+- Local demo sessions are not supported. Real backend and standalone PC modes
+  require appbase IAM login and must not send `tenant-local-demo` or
+  `user-local-demo` context to the generated Drive App SDK.
 
 ### Host-Managed Mode
 

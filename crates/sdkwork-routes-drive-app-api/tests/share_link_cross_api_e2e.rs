@@ -43,20 +43,18 @@ async fn share_link_create_via_app_api_and_resolve_via_open_api_with_access_code
 
     let app_api = common::test_router_with_pool(pool.clone());
     let create_response = app_api
-        .oneshot(
-            common::authed_post_json(
-                "/app/v3/api/drive/nodes/node-cross-api/share_links",
-                "tenant-cross-api",
-                "user-owner",
-                "appbase",
-                r#"{
+        .oneshot(common::authed_post_json(
+            "/app/v3/api/drive/nodes/node-cross-api/share_links",
+            "tenant-cross-api",
+            "user-owner",
+            "appbase",
+            r#"{
                     "id":"share-cross-api",
                     "role":"reader",
                     "accessCode":"cross-e2e-code",
                     "operatorId":"user-owner"
                 }"#,
-            ),
-        )
+        ))
         .await
         .expect("create share link request should be handled");
     assert_eq!(create_response.status(), StatusCode::CREATED);
@@ -127,5 +125,8 @@ async fn share_link_create_via_app_api_and_resolve_via_open_api_with_access_code
     )
     .expect("resolve response should be json");
     assert_eq!(resolve_payload["accessCodeRequired"], true);
-    assert_eq!(resolve_payload["node"]["nodeName"].as_str(), Some("handoff.txt"));
+    assert_eq!(
+        resolve_payload["node"]["nodeName"].as_str(),
+        Some("handoff.txt")
+    );
 }

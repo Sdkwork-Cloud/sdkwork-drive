@@ -14,7 +14,6 @@ use config::{
     load_gateway_config, resolve_config_path, resolve_gateway_config, ResolvedGatewayConfig,
 };
 use sdkwork_drive_config::DatabaseConfig;
-use sdkwork_drive_http::infra::{drive_service_router_config, mount_drive_infra_routes};
 use sdkwork_drive_workspace_service::application::download_service::ensure_production_download_token_signing_configured;
 use sdkwork_drive_workspace_service::infrastructure::outbox_dispatch::ensure_domain_outbox_dispatcher;
 use sdkwork_drive_workspace_service::infrastructure::sql::connect_any_database_and_install_schema;
@@ -65,8 +64,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .map_err(|error| format!("failed to build embedded IAM router: {error}"))?;
     let admin_storage_config = AdminStorageConfig::from_env()
         .map_err(|error| format!("resolve admin storage config failed: {error}"))?;
-    let health_router =
-        mount_drive_infra_routes(Router::new(), drive_service_router_config(&pool));
     let application =
         sdkwork_drive_gateway_assembly::assemble_application_router(pool.clone()).await;
     let admin_storage_router = Arc::new(EmbeddedServiceState {
@@ -75,7 +72,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     });
 
     let app = Router::new()
-        .merge(health_router)
         .merge(application.router)
         .route(
             "/backend/v3/api/drive/storage/{*rest}",

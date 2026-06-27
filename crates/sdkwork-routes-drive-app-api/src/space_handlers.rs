@@ -1,10 +1,7 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::*;
-use crate::error::{
-    map_service_error, problem,
-    service_error_kind, ProblemDetail,
-};
+use crate::error::{map_service_error, problem, service_error_kind, ProblemDetail};
 use crate::ids::next_drive_id;
 use crate::mappers::*;
 use crate::space_repository::validate_space_exists;
@@ -28,7 +25,6 @@ use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
 
 use crate::route_change::record_change;
-
 
 pub(crate) async fn list_spaces(
     State(state): State<AppState>,

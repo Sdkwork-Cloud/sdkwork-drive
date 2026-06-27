@@ -285,9 +285,15 @@ async fn admin_storage_routes_reject_personal_login_scope_session() {
                 .uri("/backend/v3/api/drive/storage/bindings")
                 .header(
                     "authorization",
-                    format!("Bearer {}", personal_admin_auth_token("tenant-a", "admin-001")),
+                    format!(
+                        "Bearer {}",
+                        personal_admin_auth_token("tenant-a", "admin-001")
+                    ),
                 )
-                .header("access-token", personal_admin_access_token("tenant-a", "admin-001"))
+                .header(
+                    "access-token",
+                    personal_admin_access_token("tenant-a", "admin-001"),
+                )
                 .body(Body::empty())
                 .expect("request should be built"),
         )

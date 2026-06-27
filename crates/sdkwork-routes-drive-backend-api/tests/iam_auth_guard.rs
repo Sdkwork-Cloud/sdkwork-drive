@@ -3,7 +3,7 @@ use http::{Method, Request, StatusCode};
 use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_routes_drive_backend_api::{build_router, build_router_with_pool_and_iam};
-use sdkwork_web_core::{encode_unsigned_test_jwt};
+use sdkwork_web_core::encode_unsigned_test_jwt;
 use serde_json::{json, Value};
 use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
@@ -247,7 +247,10 @@ async fn backend_routes_reject_personal_login_scope_session() {
                     "authorization",
                     format!("Bearer {}", personal_auth_token("tenant-a", "admin-001")),
                 )
-                .header("access-token", personal_access_token("tenant-a", "admin-001"))
+                .header(
+                    "access-token",
+                    personal_access_token("tenant-a", "admin-001"),
+                )
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -274,9 +277,15 @@ async fn backend_routes_enforce_per_operation_admin_scopes() {
                 .uri("/backend/v3/api/drive/audit_events")
                 .header(
                     "authorization",
-                    format!("Bearer {}", auth_token_with_scope("tenant-a", "admin-001", audit_scope)),
+                    format!(
+                        "Bearer {}",
+                        auth_token_with_scope("tenant-a", "admin-001", audit_scope)
+                    ),
                 )
-                .header("access-token", access_token_with_scope("tenant-a", "admin-001", audit_scope))
+                .header(
+                    "access-token",
+                    access_token_with_scope("tenant-a", "admin-001", audit_scope),
+                )
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -291,15 +300,26 @@ async fn backend_routes_enforce_per_operation_admin_scopes() {
                 .uri("/backend/v3/api/drive/quotas")
                 .header(
                     "authorization",
-                    format!("Bearer {}", auth_token_with_scope("tenant-a", "admin-001", audit_scope)),
+                    format!(
+                        "Bearer {}",
+                        auth_token_with_scope("tenant-a", "admin-001", audit_scope)
+                    ),
                 )
-                .header("access-token", access_token_with_scope("tenant-a", "admin-001", audit_scope))
+                .header(
+                    "access-token",
+                    access_token_with_scope("tenant-a", "admin-001", audit_scope),
+                )
                 .body(Body::empty())
                 .expect("request should be built"),
         )
         .await
         .expect("quota request should be handled");
-    assert_problem(quota_denied, StatusCode::FORBIDDEN, "sdkwork.auth.forbidden").await;
+    assert_problem(
+        quota_denied,
+        StatusCode::FORBIDDEN,
+        "sdkwork.auth.forbidden",
+    )
+    .await;
 }
 
 async fn backend_router_allowing_unsigned_context() -> axum::Router {

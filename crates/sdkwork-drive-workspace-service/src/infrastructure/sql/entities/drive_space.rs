@@ -67,7 +67,7 @@ impl_entity_string_pk!(
 impl DriveSpaceEntity {
     /// Generate a new unique ID using the SDKWork ID generator.
     pub fn generate_id() -> String {
-        use sdkwork_id_core::SnowflakeIdGenerator;
+        use sdkwork_database_id::SnowflakeIdGenerator;
         static GENERATOR: std::sync::OnceLock<SnowflakeIdGenerator> = std::sync::OnceLock::new();
         let gen = GENERATOR.get_or_init(|| {
             SnowflakeIdGenerator::new(31).expect("valid node_id for drive service")
@@ -75,7 +75,7 @@ impl DriveSpaceEntity {
         match gen.generate() {
             Ok(id) => id.to_string(),
             Err(_) => {
-                use sdkwork_id_core::uuid_v4;
+                use sdkwork_database_id::uuid_v4;
                 uuid_v4()
             }
         }

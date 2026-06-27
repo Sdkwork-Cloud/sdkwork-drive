@@ -2,8 +2,8 @@ use crate::acl;
 use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    FavoriteNodeQuery, FavoriteNodeRequest, FavoriteNodeResponse, NodeListResponse,
-    NodeViewQuery, SubjectNodeViewQuery,
+    FavoriteNodeQuery, FavoriteNodeRequest, FavoriteNodeResponse, NodeListResponse, NodeViewQuery,
+    SubjectNodeViewQuery,
 };
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::mappers::map_node_row;
@@ -13,9 +13,7 @@ use crate::route_change::record_change;
 use crate::space_repository::validate_space_exists;
 use crate::state::AppState;
 use crate::time::current_epoch_ms;
-use crate::validators::{
-    normalize_optional_text, parse_page_request, validate_subject_type,
-};
+use crate::validators::{normalize_optional_text, parse_page_request, validate_subject_type};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};

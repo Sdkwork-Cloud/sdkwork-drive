@@ -57,7 +57,10 @@ pub fn load_gateway_config(config_path: &Path) -> Result<GatewayFileConfig, Stri
 pub fn resolve_gateway_config(
     file_config: GatewayFileConfig,
 ) -> Result<ResolvedGatewayConfig, String> {
-    if file_config.service.environment.eq_ignore_ascii_case("production")
+    if file_config
+        .service
+        .environment
+        .eq_ignore_ascii_case("production")
         && file_config.cors.allow_any_origin
     {
         return Err(

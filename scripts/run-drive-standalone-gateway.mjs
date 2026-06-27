@@ -81,7 +81,7 @@ function startGatewayProcess(env) {
   const args = [
     'run',
     '-p',
-    'sdkwork-api-cloud-gateway-api-server',
+    'sdkwork-api-cloud-gateway',
     '--bin',
     'sdkwork-api-cloud-gateway',
     '--',
@@ -486,7 +486,7 @@ function spawnPlan(plan) {
 }
 
 function printHelp() {
-  console.log(`Usage: node scripts/run-drive-api-server.mjs [server|plan] [--dev-env-file .env.postgres] [-- --database-url <url>]
+  console.log(`Usage: node scripts/run-drive-standalone-gateway.mjs [server|plan] [--dev-env-file .env.postgres] [-- --database-url <url>]
 
 Database policy:
   pnpm dev          uses PostgreSQL via .env.postgres

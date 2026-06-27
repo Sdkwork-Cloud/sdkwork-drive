@@ -25,7 +25,9 @@ pub fn validate_webhook_https_url(address: &str) -> Result<&str, &'static str> {
 
 /// Validates webhook URL syntax, host policy, and resolved IP addresses (SSRF hardening).
 pub async fn validate_webhook_https_url_for_dispatch(address: &str) -> Result<String, String> {
-    let trimmed = validate_webhook_https_url(address).map_err(str::to_string)?.to_string();
+    let trimmed = validate_webhook_https_url(address)
+        .map_err(str::to_string)?
+        .to_string();
     let authority = trimmed
         .get(8..)
         .and_then(|rest| rest.split(&['/', '?', '#'][..]).next())

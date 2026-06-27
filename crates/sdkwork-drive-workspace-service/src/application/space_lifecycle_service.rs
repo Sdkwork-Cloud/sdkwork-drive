@@ -98,11 +98,7 @@ impl SqlDriveSpaceLifecycleService {
         command: RetireSpaceContentsCommand,
     ) -> Result<i64, DriveServiceError> {
         self.lifecycle_store
-            .retire_space_contents(
-                &command.tenant_id,
-                &command.space_id,
-                &command.operator_id,
-            )
+            .retire_space_contents(&command.tenant_id, &command.space_id, &command.operator_id)
             .await
     }
 }

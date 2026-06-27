@@ -27,7 +27,7 @@ pub(crate) async fn record_audit_event(
     let audit_service = DriveAuditService::new(SqlAuditStore::new(state.pool.clone()));
     audit_service
         .record_event(RecordAuditEventCommand {
-            tenant_id: "platform".to_string(),
+            tenant_id: "0".to_string(),
             action: action.to_string(),
             resource_type: resource_type.to_string(),
             resource_id: resource_id.to_string(),

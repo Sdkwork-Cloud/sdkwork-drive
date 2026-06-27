@@ -1,14 +1,13 @@
 use crate::dto::*;
 use crate::error::{
-    internal_sql_error,
-    map_object_store_route_error, map_service_error, not_found_problem, problem, ProblemDetail,
+    internal_sql_error, map_object_store_route_error, map_service_error, not_found_problem,
+    problem, ProblemDetail,
 };
 use crate::hashing::sha256_hex;
 use crate::ids::next_drive_id;
 use crate::object_store::{
-    build_s3_object_store_for_provider,
-    find_active_storage_provider_by_bucket, find_storage_provider_by_id,
-    missing_signing_provider_error, require_active_storage_provider,
+    build_s3_object_store_for_provider, find_active_storage_provider_by_bucket,
+    find_storage_provider_by_id, missing_signing_provider_error, require_active_storage_provider,
     unsupported_signing_provider_error,
 };
 use crate::state::AppState;
@@ -30,7 +29,6 @@ use sqlx::AnyConnection;
 use sqlx::AnyPool;
 use sqlx::Row;
 use std::collections::BTreeMap;
-
 
 pub(crate) async fn resolve_storage_target(
     pool: &AnyPool,
