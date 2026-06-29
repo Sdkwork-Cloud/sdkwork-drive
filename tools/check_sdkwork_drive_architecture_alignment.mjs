@@ -198,6 +198,20 @@ assert(
   'Tauri local_upload must format checksums via sdkwork-utils-rust::hex_encode',
 );
 
+const pcCommonsFormatBytes = readText(
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons/src/utils/formatDriveBytes.ts',
+);
+assert(
+  pcCommonsFormatBytes.includes("@sdkwork/utils"),
+  'sdkwork-drive-pc-commons formatDriveBytes must delegate to @sdkwork/utils',
+);
+assert(
+  !readText(
+    'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-storage-providers/src/utils/providerKindConfig.ts',
+  ).includes('export function formatBytes'),
+  'providerKindConfig must not re-export formatBytes; use formatDriveBytes from sdkwork-drive-pc-commons',
+);
+
 const workflow = JSON.parse(readText('sdkwork.workflow.json'));
 const dependencyIds = new Set((workflow.dependencies || []).map((dependency) => dependency.id));
 for (const dependencyId of [

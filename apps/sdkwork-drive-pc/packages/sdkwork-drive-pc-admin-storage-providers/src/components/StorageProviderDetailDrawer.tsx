@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
 import type { StorageProviderAdminService } from '../services/storageProviderAdminService';
 import type { StorageProviderBindingView, StorageProviderBucketView, StorageProviderCapabilitiesView, StorageProviderView } from '../types/storageProviderAdminTypes';
-import { getProviderKindMeta, HEALTH_STATUS_CONFIG, formatBytes } from '../utils/providerKindConfig';
+import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
+import { getProviderKindMeta, HEALTH_STATUS_CONFIG } from '../utils/providerKindConfig';
 import { formatMutationError } from '../utils/mutationError';
 import { SECONDARY_BUTTON_CLASS, PRIMARY_BUTTON_CLASS, BADGE_BASE_CLASS } from '../utils/uiPrimitives';
 import { useTranslation } from '../hooks/useTranslation';
@@ -255,7 +256,7 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
                 {objects.map((obj) => (
                   <div key={obj.key} className="grid grid-cols-[1fr_80px_120px_60px] gap-2 border-t px-3 py-1.5 text-xs hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800">
                     <span className="truncate">{obj.isFolder ? <button onClick={() => loadObjects(obj.key)} className="text-blue-600 hover:underline">📁 {obj.key.split('/').filter(Boolean).pop()}/</button> : <span>📄 {obj.key.split('/').pop()}</span>}</span>
-                    <span className="text-right text-neutral-500">{obj.isFolder ? '-' : formatBytes(obj.sizeBytes)}</span>
+                    <span className="text-right text-neutral-500">{obj.isFolder ? '-' : formatDriveBytes(obj.sizeBytes)}</span>
                     <span className="text-right text-neutral-400">{obj.lastModified || '-'}</span>
                     <span className="text-right">{!obj.isFolder && <button onClick={() => deleteObject(obj.key)} className="text-red-600 hover:text-red-800">{t('del')}</button>}</span>
                   </div>

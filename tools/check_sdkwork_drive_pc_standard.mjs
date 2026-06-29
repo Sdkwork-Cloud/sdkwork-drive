@@ -479,6 +479,43 @@ assertNoLocalByteFormatters();
 assertStandardRuntimeConfig();
 assertNoSdkTransportBypass();
 assertStandardIamRuntime();
+assertNoDuplicateFormatBytesHelpers();
+
+function assertNoDuplicateFormatBytesHelpers() {
+  const forbiddenPattern = /export function formatBytes\s*\(/u;
+  const appRootPath = path.join(repoRoot, 'apps', 'sdkwork-drive-pc');
+  const allowedRelativePath = 'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons/src/utils/formatDriveBytes.ts';
+
+  function walk(directory) {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || entry.name === 'dist') {
+        continue;
+      }
+      const absolutePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        walk(absolutePath);
+        continue;
+      }
+      if (!entry.name.endsWith('.ts') && !entry.name.endsWith('.tsx')) {
+        continue;
+      }
+      const relativePath = path.relative(repoRoot, absolutePath).split(path.sep).join('/');
+      if (relativePath === allowedRelativePath) {
+        continue;
+      }
+      const source = readFileSync(absolutePath, 'utf8');
+      if (forbiddenPattern.test(source)) {
+        fail(
+          `${relativePath} must not export formatBytes; use formatDriveBytes from sdkwork-drive-pc-commons (@sdkwork/utils)`,
+        );
+      }
+    }
+  }
+
+  if (existsSync(appRootPath)) {
+    walk(appRootPath);
+  }
+}
 
 function assertRepositoryDocsStandard() {
   const docsChecker = path.join(repoRoot, '..', 'sdkwork-specs', 'tools', 'check-repository-docs-standard.mjs');

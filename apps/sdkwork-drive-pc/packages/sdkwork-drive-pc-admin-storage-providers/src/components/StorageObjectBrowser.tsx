@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import type { StorageProviderAdminService } from '../services/storageProviderAdminService';
 import type { StorageProviderObjectView, StorageProviderView } from '../types/storageProviderAdminTypes';
-import { formatBytes } from '../utils/providerKindConfig';
+import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
 import { formatMutationError } from '../utils/mutationError';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -19,7 +19,7 @@ export function StorageObjectBrowser({ provider, service }: StorageObjectBrowser
   const [pageToken, setPageToken] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
-  const formatSize = formatBytes;
+  const formatSize = formatDriveBytes;
 
   const loadObjects = useCallback(async (prefix: string, token?: string) => {
     setLoading(true);

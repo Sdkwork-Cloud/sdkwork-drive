@@ -1,5 +1,4 @@
 import type { StorageProviderHealthStatus, StorageProviderKind } from '../types/storageProviderAdminTypes';
-import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
 
 export interface ProviderRegion {
   value: string;
@@ -524,10 +523,6 @@ export const HEALTH_STATUS_CONFIG: Record<StorageProviderHealthStatus, {
     textClass: 'text-red-700 dark:text-red-300',
   },
 };
-
-export function formatBytes(bytes?: number): string {
-  return formatDriveBytes(bytes);
-}
 
 export function formatRelativeTime(epochMs?: number): string {
   if (!epochMs) return 'never';

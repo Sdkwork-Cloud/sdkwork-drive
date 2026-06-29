@@ -1,7 +1,6 @@
 use crate::error::{validation_problem, ProblemDetail};
 use axum::http::StatusCode;
 use axum::Json;
-use sdkwork_drive_workspace_service::DriveServiceError;
 
 pub(crate) fn decode_object_key(raw: &str) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
     let mut decoded = String::with_capacity(raw.len());
@@ -145,20 +144,6 @@ pub(crate) fn require_non_empty_text(
         return Err(validation_problem(format!("{field_name} is required")));
     }
     Ok(trimmed)
-}
-
-#[allow(dead_code)]
-pub(crate) fn require_tenant_id(tenant_id: Option<String>) -> Result<String, DriveServiceError> {
-    let tenant_id = tenant_id
-        .ok_or_else(|| DriveServiceError::Validation("tenant_id is required".to_string()))?
-        .trim()
-        .to_string();
-    if tenant_id.is_empty() {
-        return Err(DriveServiceError::Validation(
-            "tenant_id is required".to_string(),
-        ));
-    }
-    Ok(tenant_id)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
