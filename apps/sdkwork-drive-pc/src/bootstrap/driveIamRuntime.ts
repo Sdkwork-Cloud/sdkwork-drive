@@ -320,8 +320,8 @@ function toDriveSessionContext(context: IamAppContext): SessionAppContextSnapsho
     authLevel: context.authLevel,
     dataScope: [...context.dataScope],
     permissionScope: [...context.permissionScope],
-    actorId: context.userId,
-    actorKind: 'user',
+    actorId: context.actorId || context.userId,
+    actorKind: context.actorKind || 'user',
   };
 }
 

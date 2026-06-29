@@ -1,4 +1,4 @@
-use crate::error::{map_service_error, problem, ProblemDetail};
+use crate::error::{map_service_error, problem, ProblemDetail, SdkWorkResultCode};
 use crate::validators::normalize_optional_text;
 use axum::http::StatusCode;
 use axum::Json;
@@ -66,7 +66,7 @@ fn context_conflict(detail: &str) -> (StatusCode, Json<ProblemDetail>) {
         StatusCode::FORBIDDEN,
         "forbidden",
         detail,
-        "sdkwork.auth.context_conflict",
+        SdkWorkResultCode::TenantAccessDenied,
     )
 }
 

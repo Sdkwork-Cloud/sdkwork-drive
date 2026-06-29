@@ -116,7 +116,7 @@ async fn backend_production_routes_require_valid_dual_tokens() {
     assert_problem(
         missing_credentials,
         StatusCode::UNAUTHORIZED,
-        "sdkwork.auth.missing_access_token",
+        40101,
     )
     .await;
 
@@ -138,7 +138,7 @@ async fn backend_production_routes_require_valid_dual_tokens() {
     assert_problem(
         missing_access,
         StatusCode::UNAUTHORIZED,
-        "sdkwork.auth.missing_access_token",
+        40101,
     )
     .await;
 
@@ -157,7 +157,7 @@ async fn backend_production_routes_require_valid_dual_tokens() {
     assert_problem(
         invalid_credentials,
         StatusCode::UNAUTHORIZED,
-        "sdkwork.auth.invalid_credentials",
+        40103,
     )
     .await;
 }
@@ -185,7 +185,7 @@ async fn backend_routes_validate_token_derived_app_context() {
     assert_problem(
         tenant_conflict,
         StatusCode::FORBIDDEN,
-        "sdkwork.auth.context_conflict",
+        40301,
     )
     .await;
 
@@ -211,7 +211,7 @@ async fn backend_routes_validate_token_derived_app_context() {
     assert_problem(
         operator_conflict,
         StatusCode::FORBIDDEN,
-        "sdkwork.auth.context_conflict",
+        40303,
     )
     .await;
 
@@ -259,7 +259,7 @@ async fn backend_routes_reject_personal_login_scope_session() {
     assert_problem(
         personal_session,
         StatusCode::FORBIDDEN,
-        "sdkwork.auth.forbidden",
+        40301,
     )
     .await;
 }
@@ -317,7 +317,7 @@ async fn backend_routes_enforce_per_operation_admin_scopes() {
     assert_problem(
         quota_denied,
         StatusCode::FORBIDDEN,
-        "sdkwork.auth.forbidden",
+        40301,
     )
     .await;
 }
@@ -335,59 +335,15 @@ async fn backend_router_allowing_unsigned_context() -> axum::Router {
     build_router_with_pool_and_iam(pool)
 }
 
-async fn assert_problem(response: axum::response::Response, status: StatusCode, code: &str) {
+async fn assert_problem(response: axum::response::Response, status: StatusCode, code: i64) {
     assert_eq!(response.status(), status);
     let body = to_bytes(response.into_body(), usize::MAX)
         .await
         .expect("problem body should be readable");
     let problem: Value = serde_json::from_slice(&body).expect("problem body should be json");
     assert_eq!(problem["status"], status.as_u16());
-    if let Some(code_value) = problem.get("code").and_then(Value::as_str) {
-        assert_eq!(code_value, code);
-        assert!(problem["requestId"]
-            .as_str()
-            .is_some_and(|value| !value.is_empty()));
-        assert!(problem["traceId"]
-            .as_str()
-            .is_some_and(|value| !value.is_empty()));
-        return;
-    }
-
-    let detail = problem["detail"].as_str().unwrap_or_default();
-    match code {
-        "sdkwork.auth.missing_auth_token" => {
-            assert!(detail.contains("Authorization") || detail.contains("authorization"));
-        }
-        "sdkwork.auth.missing_access_token" => {
-            assert!(detail.contains("Access-Token") || detail.contains("access"));
-        }
-        "sdkwork.auth.invalid_credentials" => {
-            assert!(
-                problem["type"]
-                    .as_str()
-                    .is_some_and(|value| value.contains("invalid-credentials"))
-                    || detail.contains("claim")
-                    || detail.contains("credential")
-            );
-        }
-        "sdkwork.auth.context_conflict" => {
-            assert!(
-                problem["type"]
-                    .as_str()
-                    .is_some_and(|value| value.contains("forbidden"))
-                    || detail.contains("match")
-                    || detail.contains("conflict")
-            );
-        }
-        "sdkwork.auth.forbidden" => {
-            assert!(
-                problem["type"]
-                    .as_str()
-                    .is_some_and(|value| value.contains("forbidden"))
-                    || detail.contains("login_scope TENANT")
-                    || detail.contains("permission")
-            );
-        }
-        other => panic!("unexpected problem code `{other}`: {problem}"),
-    }
+    assert_eq!(problem["code"].as_i64(), Some(code));
+    assert!(problem["traceId"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
 }

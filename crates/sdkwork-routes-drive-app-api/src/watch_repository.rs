@@ -1,8 +1,7 @@
 use crate::dto::{DriveWatchChannelResponse, InsertWatchChannel};
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, not_found_problem, problem,
-    ProblemDetail,
-};
+    ProblemDetail, SdkWorkResultCode};
 use crate::mappers::map_watch_channel_row;
 use axum::http::StatusCode;
 use axum::Json;
@@ -61,7 +60,7 @@ pub(crate) async fn insert_watch_channel(
             StatusCode::CONFLICT,
             "conflict",
             "watch channel id already exists",
-            "drive.conflict",
+            SdkWorkResultCode::Conflict,
         )),
         Err(error) => Err(internal_problem(format!(
             "insert dr_drive_watch_channel failed: {error}"

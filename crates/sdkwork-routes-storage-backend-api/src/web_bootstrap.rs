@@ -148,12 +148,18 @@ where
             "drive storage backend-api public prefixes must not cover protected manifest routes",
         );
 
+    let environment = sdkwork_drive_http::web_framework::resolve_drive_web_environment_from_process_env();
+    let security_policy =
+        sdkwork_drive_http::web_framework::drive_service_security_policy(&environment);
+
     WebFrameworkLayer::new(resolver)
         .with_profile(WebRequestContextProfile {
             gateway_api_prefixes: drive_admin_storage_gateway_api_prefixes(),
             public_path_prefixes: drive_admin_storage_public_path_prefixes(),
+            environment,
             ..WebRequestContextProfile::default()
         })
+        .with_security_policy(security_policy)
         .with_route_manifest(route_manifest)
         .with_tenant_isolation_policy(Arc::new(EnforcePrincipalTenantIsolationPolicy))
         .with_domain_injector(Arc::new(DriveAdminStorageContextInjector))

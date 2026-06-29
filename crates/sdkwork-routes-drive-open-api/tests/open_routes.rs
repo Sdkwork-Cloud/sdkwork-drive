@@ -9,6 +9,13 @@ use sqlx::any::AnyPoolOptions;
 use sqlx::AnyPool;
 use tower::util::ServiceExt;
 
+fn envelope_item<'a>(payload: &'a serde_json::Value) -> &'a serde_json::Value {
+    payload
+        .get("data")
+        .and_then(|data| data.get("item"))
+        .unwrap_or_else(|| panic!("expected SdkWorkApiResponse data.item, got {payload}"))
+}
+
 #[test]
 fn open_route_manifest_declares_public_share_link_operations() {
     let manifest = open_route_manifest();
@@ -140,10 +147,12 @@ async fn open_share_link_resolves_and_creates_download_url_without_exposing_toke
             .expect("resolve response body should be read"),
     )
     .expect("resolve response json should be valid");
-    assert_eq!(resolve_payload["node"]["id"], "node-open");
-    assert_eq!(resolve_payload["node"]["nodeName"], "public.pdf");
+    assert_eq!(resolve_payload["code"].as_i64(), Some(0));
+    let resolve_item = envelope_item(&resolve_payload);
+    assert_eq!(resolve_item["node"]["id"], "node-open");
+    assert_eq!(resolve_item["node"]["nodeName"], "public.pdf");
     assert!(
-        resolve_payload.get("tokenHash").is_none(),
+        resolve_item.get("tokenHash").is_none(),
         "public response must not expose token hash"
     );
 
@@ -167,15 +176,16 @@ async fn open_share_link_resolves_and_creates_download_url_without_exposing_toke
             .expect("download response body should be read"),
     )
     .expect("download response json should be valid");
-    assert!(download_payload["downloadUrl"]
+    let download_item = envelope_item(&download_payload);
+    assert!(download_item["downloadUrl"]
         .as_str()
         .expect("downloadUrl should be a string")
         .contains("http://127.0.0.1:9000/bucket-open/objects/node-open/v1.pdf"));
-    assert!(download_payload["downloadUrl"]
+    assert!(download_item["downloadUrl"]
         .as_str()
         .expect("downloadUrl should be a string")
         .contains("X-Amz-Signature="));
-    assert_eq!(download_payload["method"], "GET");
+    assert_eq!(download_item["method"], "GET");
 
     let download_count: i64 = sqlx::query_scalar(
         "SELECT download_count FROM dr_drive_node_share_link WHERE id='share-open'",
@@ -324,7 +334,7 @@ async fn open_share_link_download_reads_object_from_its_bound_provider_when_buck
             .expect("download response body should be read"),
     )
     .expect("download response json should be valid");
-    let download_url = payload["downloadUrl"]
+    let download_url = envelope_item(&payload)["downloadUrl"]
         .as_str()
         .expect("downloadUrl should be a string");
     assert!(
@@ -483,7 +493,7 @@ async fn open_share_link_download_uses_explicit_cloud_s3_provider_kinds_with_s3_
                 .expect("response body should be read"),
         )
         .expect("response json should be valid");
-        let download_url = payload["downloadUrl"]
+        let download_url = envelope_item(&payload)["downloadUrl"]
             .as_str()
             .expect("downloadUrl should be present");
         assert!(
@@ -602,7 +612,7 @@ async fn open_share_link_download_requires_active_object_store_provider() {
             .expect("download response body should be read"),
     )
     .expect("download response json should be valid");
-    assert_eq!(payload["code"], "drive.conflict");
+    assert_eq!(payload["code"], 40901);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be a string")
@@ -699,7 +709,7 @@ async fn open_share_link_download_requires_active_storage_object() {
             .expect("download response body should be read"),
     )
     .expect("download response json should be valid");
-    assert_eq!(payload["code"], "drive.not_found");
+    assert_eq!(payload["code"], 40401);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be a string")
@@ -962,7 +972,7 @@ async fn open_share_link_download_rejects_ttl_outside_contract_before_consuming_
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["code"], "drive.validation.failed");
+    assert_eq!(payload["code"], 40001);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be a string")
@@ -1095,7 +1105,7 @@ async fn open_share_link_download_treats_subsecond_remaining_share_ttl_as_expire
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["code"], "drive.share_link.expired");
+    assert_eq!(payload["code"], 41001);
 
     let download_count: i64 = sqlx::query_scalar(
         "SELECT download_count FROM dr_drive_node_share_link WHERE id='share-open-short-ttl'",
@@ -1189,7 +1199,7 @@ async fn open_share_link_requires_valid_access_code_when_configured() {
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["accessCodeRequired"], true);
+    assert_eq!(envelope_item(&payload)["accessCodeRequired"], true);
 }
 
 #[tokio::test]

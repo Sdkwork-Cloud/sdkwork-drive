@@ -1,5 +1,5 @@
 use crate::dto::DriveNodeResponse;
-use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail};
+use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
 use crate::mappers::map_node_row;
 use crate::space_repository::validate_space_exists;
 use axum::http::StatusCode;
@@ -57,7 +57,7 @@ pub(crate) async fn collect_node_subtree(
                 StatusCode::CONFLICT,
                 "conflict",
                 "node hierarchy exceeds maximum lifecycle depth",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             ));
         }
 
@@ -82,7 +82,7 @@ pub(crate) async fn collect_node_subtree(
                     StatusCode::CONFLICT,
                     "conflict",
                     "node hierarchy contains a cycle",
-                    "drive.conflict",
+                    SdkWorkResultCode::Conflict,
                 ));
             }
             queue.push_back((child.id.clone(), depth + 1));
@@ -113,6 +113,6 @@ pub(crate) async fn resolve_node_path(
         StatusCode::CONFLICT,
         "conflict",
         "node parent chain exceeds maximum depth",
-        "drive.conflict",
+        SdkWorkResultCode::Conflict,
     ))
 }

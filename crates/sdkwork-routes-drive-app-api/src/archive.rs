@@ -1,6 +1,6 @@
 use crate::constants::{ARCHIVE_MAX_ENTRIES, ARCHIVE_MAX_TOTAL_UNCOMPRESSED_BYTES};
 use crate::dto::{ArchiveEntryResponse, DriveNodeResponse, SafeArchivePath};
-use crate::error::{internal_problem, problem, ProblemDetail};
+use crate::error::{internal_problem, problem, ProblemDetail, SdkWorkResultCode};
 use crate::hashing::sha256_hex;
 use axum::http::StatusCode;
 use axum::Json;
@@ -29,7 +29,7 @@ pub(crate) fn validate_archive_source_node(
         StatusCode::BAD_REQUEST,
         "validation failed",
         "archiveEntries can only be used with file nodes",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 
@@ -130,7 +130,7 @@ fn map_zip_archive_error(error: zip::result::ZipError) -> (StatusCode, Json<Prob
         StatusCode::BAD_REQUEST,
         "validation failed",
         format!("ZIP archive cannot be inspected: {error}"),
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     )
 }
 
@@ -148,7 +148,7 @@ fn archive_limit_problem(detail: &str) -> (StatusCode, Json<ProblemDetail>) {
         StatusCode::BAD_REQUEST,
         "validation failed",
         detail,
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     )
 }
 
@@ -170,7 +170,7 @@ fn safe_archive_path_from_enclosed(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "ZIP archive contains an unsafe entry path",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     };
     let mut segments = Vec::new();
@@ -201,7 +201,7 @@ pub(crate) fn unsafe_archive_path_problem() -> (StatusCode, Json<ProblemDetail>)
         StatusCode::BAD_REQUEST,
         "validation failed",
         "ZIP archive contains an unsafe entry path",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     )
 }
 

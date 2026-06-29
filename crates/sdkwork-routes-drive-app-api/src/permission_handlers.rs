@@ -7,8 +7,7 @@ use crate::dto::{
 };
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, not_found_problem, problem,
-    ProblemDetail,
-};
+    ProblemDetail, SdkWorkResultCode};
 use crate::mappers::map_permission_row;
 use crate::node_repository::{find_active_node, find_node, resolve_node_path};
 use crate::route_change::record_change;
@@ -181,7 +180,7 @@ pub(crate) async fn create_permission(
                 StatusCode::CONFLICT,
                 "conflict",
                 "permission already exists for node subject",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             );
         }
         internal_problem(format!("insert dr_drive_node_permission failed: {error}"))

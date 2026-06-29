@@ -1,4 +1,4 @@
-use crate::error::{problem, ProblemDetail};
+use crate::error::{problem, ProblemDetail, SdkWorkResultCode};
 use crate::validators::{normalize_optional_text, require_query_value, validate_subject_type};
 use axum::http::StatusCode;
 use axum::Json;
@@ -14,6 +14,7 @@ pub(crate) struct DriveRequestContext {
     pub(crate) actor_id: String,
     pub(crate) subject_type: String,
     pub(crate) subject_id: String,
+    #[allow(dead_code)]
     pub(crate) request_id: String,
     pub(crate) trace_id: String,
     from_token: bool,
@@ -40,21 +41,15 @@ impl DriveRequestContext {
         status: StatusCode,
         title: &str,
         detail: impl Into<String>,
-        code: &str,
+        code: SdkWorkResultCode,
     ) -> (StatusCode, Json<ProblemDetail>) {
         let ids = sdkwork_drive_http::problem_correlation::current_problem_correlation();
-        let request_id =
-            if ids.request_id == sdkwork_drive_http::problem_correlation::UNSET_REQUEST_ID {
-                self.request_id.as_str()
-            } else {
-                ids.request_id.as_str()
-            };
         let trace_id = if ids.trace_id == sdkwork_drive_http::problem_correlation::UNSET_TRACE_ID {
             self.trace_id.as_str()
         } else {
             ids.trace_id.as_str()
         };
-        crate::error::problem_with_ids(status, title, detail, code, request_id, trace_id)
+        crate::error::problem_with_ids(status, title, detail, code, trace_id)
     }
 
     pub(crate) fn resolve_tenant_id(&self) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
@@ -65,7 +60,7 @@ impl DriveRequestContext {
                 StatusCode::UNAUTHORIZED,
                 "unauthorized",
                 "verified WebRequestContext is required",
-                "sdkwork.auth.missing_request_context",
+                SdkWorkResultCode::AuthenticationRequired,
             ))
         }
     }
@@ -81,7 +76,7 @@ impl DriveRequestContext {
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "operatorId is required",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             )),
             None => Ok("operator-unset".to_string()),
         }
@@ -199,7 +194,7 @@ impl DriveRequestContext {
             StatusCode::FORBIDDEN,
             "forbidden",
             detail,
-            "sdkwork.auth.context_conflict",
+            SdkWorkResultCode::TenantAccessDenied,
         )
     }
 }

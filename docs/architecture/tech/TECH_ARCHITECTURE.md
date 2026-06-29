@@ -2,7 +2,7 @@
 
 Status: active
 Owner: SDKWork maintainers
-Updated: 2026-06-25
+Updated: 2026-06-29
 Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md
 
 ## Document Map
@@ -90,6 +90,7 @@ See repository `AGENTS.md` dictionary. Generated SDK output lives under `sdks/` 
 
 ## 7. Deployment And Runtime Topology
 
+- Deploy contract: `deployments/deploy.yaml` per `SDKWORK_DEPLOY_SPEC.md` (validated by `pnpm deploy:validate` and `check-deploy-standard.mjs`)
 - Cloud reference manifest: `deployments/kubernetes/drive-services.yaml`
 - Container build descriptors: `deployments/docker/`
 - Systemd units: `deployments/systemd/`
@@ -113,6 +114,9 @@ Cloud operators must set `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` o
 ## 9. Verification
 
 - `pnpm verify`
+- `pnpm check` (includes `api:envelope:check`, `api:schema:check`, `deploy:validate`, architecture alignment)
+- `pnpm api:envelope:check`
+- `pnpm api:schema:check`
 - `pnpm deploy:validate`
 - `pnpm check:architecture-alignment`
 - `pnpm check:docs-standard`

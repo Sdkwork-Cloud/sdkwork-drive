@@ -1,8 +1,7 @@
 use crate::dto::*;
 use crate::error::{
     internal_sql_error, map_object_store_route_error, map_service_error, not_found_problem,
-    problem, ProblemDetail,
-};
+    problem, ProblemDetail, SdkWorkResultCode};
 use crate::hashing::sha256_hex;
 use crate::ids::next_drive_id;
 use crate::object_store::{
@@ -67,7 +66,7 @@ pub(crate) async fn resolve_storage_target(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 message,
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             )
         })?;
     let object_key =
@@ -184,7 +183,7 @@ pub(crate) async fn resolve_default_provider_target(
         StatusCode::BAD_REQUEST,
         "validation failed",
         "bucket is required when no default storage provider binding exists",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 pub(crate) async fn read_node_content_state(
@@ -302,7 +301,7 @@ pub(crate) async fn ensure_upload_session_id_available(
             StatusCode::CONFLICT,
             "conflict",
             "upload session id already exists",
-            "drive.conflict",
+            SdkWorkResultCode::Conflict,
         ));
     }
     Ok(())
@@ -500,13 +499,13 @@ pub(crate) fn validate_mutable_upload_session(
                 "upload session cannot be modified from {} state",
                 upload_session.state
             ),
-            "drive.conflict",
+            SdkWorkResultCode::Conflict,
         )),
         _ => Err(problem(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "upload session state is invalid",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         )),
     }
 }
@@ -528,7 +527,7 @@ pub(crate) async fn plan_completed_storage_object_insert(
             StatusCode::CONFLICT,
             "conflict",
             "upload session storage object version does not match next file version",
-            "drive.conflict",
+            SdkWorkResultCode::Conflict,
         ));
     }
     let id = format!("{}-v{}", upload_session.id, version_no);
@@ -549,7 +548,7 @@ pub(crate) async fn plan_completed_storage_object_insert(
             StatusCode::CONFLICT,
             "conflict",
             "storage object id already exists",
-            "drive.conflict",
+            SdkWorkResultCode::Conflict,
         ));
     }
 
@@ -576,7 +575,7 @@ pub(crate) async fn plan_completed_storage_object_insert(
             StatusCode::CONFLICT,
             "conflict",
             "active storage object locator already exists",
-            "drive.conflict",
+            SdkWorkResultCode::Conflict,
         ));
     }
 
@@ -593,7 +592,7 @@ pub(crate) fn parse_storage_object_version_no_from_key(
             StatusCode::CONFLICT,
             "conflict",
             "upload session object key is not a standard Drive storage key",
-            "drive.conflict",
+            SdkWorkResultCode::Conflict,
         )
     };
     let standard_object_key = standard_storage_object_key_suffix(object_key).ok_or_else(invalid)?;
@@ -652,7 +651,7 @@ pub(crate) fn validate_completed_multipart_parts(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "parts are required",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     if parts.len() > 10_000 {
@@ -660,7 +659,7 @@ pub(crate) fn validate_completed_multipart_parts(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "parts must contain at most 10000 items",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
 
@@ -671,7 +670,7 @@ pub(crate) fn validate_completed_multipart_parts(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "partNo must be between 1 and 10000",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             ));
         }
         if part.etag.trim().is_empty() {
@@ -679,7 +678,7 @@ pub(crate) fn validate_completed_multipart_parts(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "etag is required for every part",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             ));
         }
         if part.part_no <= previous_part_no {
@@ -687,7 +686,7 @@ pub(crate) fn validate_completed_multipart_parts(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "parts must be sorted by ascending unique partNo",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             ));
         }
         previous_part_no = part.part_no;
@@ -753,7 +752,7 @@ pub(crate) async fn claim_upload_session_completion(
             StatusCode::CONFLICT,
             "conflict",
             "upload session completion is already in progress or no longer mutable",
-            "drive.conflict",
+            SdkWorkResultCode::Conflict,
         ));
     }
     Ok(())

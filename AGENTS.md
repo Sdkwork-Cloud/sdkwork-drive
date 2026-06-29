@@ -47,6 +47,7 @@ Read `sdkwork.app.config.json` only when the task touches Drive application beha
 - [docs/README.md](docs/README.md)
 - [docs/product/prd/PRD.md](docs/product/prd/PRD.md)
 - [docs/architecture/tech/TECH_ARCHITECTURE.md](docs/architecture/tech/TECH_ARCHITECTURE.md)
+- [docs/reviews/FULL_CODE_REVIEW_REPORT.md](docs/reviews/FULL_CODE_REVIEW_REPORT.md) — 全面审查报告（含修复状态）
 
 ## Spec Resolution Order
 
@@ -80,6 +81,8 @@ Language-specific specs are on-demand; do not load Rust, Java, TypeScript, and f
 
 Read `../sdkwork-specs/CODE_STYLE_SPEC.md` and `../sdkwork-specs/NAMING_SPEC.md` before code changes. Use `sdkwork-utils-rust` and `@sdkwork/utils` for shared utility helpers instead of duplicating string, bytes, datetime, validation, id, or crypto logic locally. Generated SDK transport output is changed only through source contracts, generator inputs, or approved composed facades.
 
+Build scripts, dev runners, and `pnpm clean` must follow `CODE_STYLE_SPEC.md` §7 (Build Source Integrity And Self-Healing). Git-tracked build-critical source files must be verified before builds and self-healed from git when missing; `clean` must not delete them.
+
 ## Build, Test, and Verification
 
 Use canonical root package scripts from `PNPM_SCRIPT_SPEC.md`:
@@ -88,6 +91,7 @@ Use canonical root package scripts from `PNPM_SCRIPT_SPEC.md`:
 - `pnpm dev:browser` and `pnpm dev:desktop`: same PostgreSQL standalone defaults for development orchestration.
 - `pnpm dev:browser:sqlite` or `pnpm dev:desktop:sqlite`: explicit SQLite development variants.
 - `pnpm build`, `pnpm test`, `pnpm check`, `pnpm verify`, `pnpm clean`: standard root lifecycle commands.
+- `pnpm check` includes `api:envelope:check`, `api:schema:check`, `deploy:validate`, and architecture/database alignment gates.
 - `pnpm check:pnpm-script-standard`: validate package script standardization.
 - `pnpm check:docs-standard`: validate repository documentation Canon layout.
 - `pnpm check:agent-workflow-standard`: validate AGENTS and GitHub packaging workflow standardization.
@@ -97,6 +101,39 @@ Run the narrowest relevant check first, then broader verification when API contr
 ## Agent Execution Rules
 
 Use the convention dictionary before broad source loading. Follow dynamic progressive loading: nearest AGENTS, relevant manifests/specs, task-specific root standards, then implementation. Do not preserve legacy aliases or local guidance blocks when root SDKWork standards already govern the behavior. Do not replace generated SDK integration with raw HTTP. Record exact verification commands and important outputs before reporting completion.
+
+## HTTP API Response Envelope
+
+All L2+ `app-api`, `backend-api`, and SDKWork-owned business `open-api` HTTP contracts `MUST` follow `API_SPEC.md` section 4.5, section 14, and section 15:
+
+- **Input:** typed request bodies, section 14.1 list/search/command input, `SdkWorkListQuery`, and `q` for free-text search.
+- **Success output:** `SdkWorkApiResponse` with `{ "code": 0, "data": <payload>, "traceId": "<server-uuid>" }`.
+- **Error output:** HTTP 4xx/5xx `application/problem+json` (`ProblemDetail`) with numeric `code` and `traceId`.
+- Success `code` is numeric `int32`; HTTP 2xx JSON bodies `MUST` use `0` only. REST semantics remain on HTTP status (`201`, `202`, etc.).
+- Platform error codes are numeric non-zero values per section 15.3 (`40001`, `40101`, `40401`, …).
+- Single resource: `data.item`
+- Lists: `data.items` + `data.pageInfo` (`PageInfo.mode` is `offset` or `cursor`)
+- Commands: `data.accepted` plus optional `resourceId` / `status`
+- Async accept (`202`): `data.operationId`, `data.status`, optional `pollUrl`
+
+Vendor compatibility `open-api` routes that mirror upstream tool or provider wire (for example OpenAI `/v1/*`, Claude Code, Codex) `MAY` opt out only when every exempt operation declares `x-sdkwork-wire-protocol: external` and `x-sdkwork-external-protocol-id` per `API_SPEC.md` section 4.5.2. SDKWork-owned business `open-api` operations `MUST NOT` opt out.
+
+Errors `MUST` use HTTP 4xx/5xx with `application/problem+json` (`ProblemDetail`) including required numeric `code` and `traceId`. Business failures `MUST NOT` use HTTP 2xx with non-zero `code`, string wire codes, `success`, or human `message`.
+
+Forbidden legacy envelopes and fields: `PlusApiResult`, `AppbaseApiResult`, `StoreApiResult`, `SdkWorkResponse`, per-domain `*ApiResult`, wire field `requestId`, bare domain DTOs at the HTTP root, and top-level `{ items, pageInfo, traceId }` without `data`.
+
+Handlers `MUST` serialize success and map errors through `sdkwork-web-framework` response mapping. Generated HTTP SDKs (`--standard-profile sdkwork-v3`) unwrap `data` by default and expose typed numeric `ProblemDetail.code` / `traceId` on errors; use `.raw` when the full envelope is required.
+
+Before completing API contract, SDK generation, or frontend service work, run:
+
+```bash
+pnpm api:envelope:check
+pnpm api:schema:check
+```
+
+Or the full gate: `pnpm check` (includes both checks).
+
+Authority: `sdkwork-specs/API_SPEC.md` section 4.5 and sections 14–16, `SDK_SPEC.md` section 4.2, `FRONTEND_SPEC.md`, `MIGRATION_SPEC.md` section 4.2.
 
 ## Human Review Rules
 

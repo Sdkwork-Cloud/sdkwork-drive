@@ -139,11 +139,17 @@ where
         .validate_public_path_prefixes(&drive_backend_public_path_prefixes())
         .expect("drive backend-api public prefixes must not cover protected manifest routes");
 
+    let environment = sdkwork_drive_http::web_framework::resolve_drive_web_environment_from_process_env();
+    let security_policy =
+        sdkwork_drive_http::web_framework::drive_service_security_policy(&environment);
+
     WebFrameworkLayer::new(resolver)
         .with_profile(WebRequestContextProfile {
             public_path_prefixes: drive_backend_public_path_prefixes(),
+            environment,
             ..WebRequestContextProfile::default()
         })
+        .with_security_policy(security_policy)
         .with_route_manifest(route_manifest)
         .with_tenant_isolation_policy(Arc::new(EnforcePrincipalTenantIsolationPolicy))
         .with_authorization_policy(Arc::new(DriveBackendAuthorizationPolicy))

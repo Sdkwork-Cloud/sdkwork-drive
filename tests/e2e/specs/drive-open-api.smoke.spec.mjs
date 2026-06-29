@@ -39,7 +39,7 @@ test.describe('Drive open-api production smoke', () => {
     expect(denied.status()).toBe(403);
     expect(denied.headers()['x-trace-id']).toBe('e2e-staging-trace-001');
     const deniedBody = await denied.json();
-    expect(deniedBody.code).toBe('drive.share_link.access_code_invalid');
+    expect(deniedBody.code).toBe(40301);
     expect(typeof deniedBody.traceId).toBe('string');
     expect(deniedBody.traceId.length).toBeGreaterThan(0);
 

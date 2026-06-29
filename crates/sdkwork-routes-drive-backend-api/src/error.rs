@@ -1,28 +1,22 @@
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_drive_http::api_problem::{
+    map_auth_error as shared_map_auth_error, problem as shared_problem, SdkWorkProblemDetail,
+};
 use sdkwork_drive_observability::error_kinds;
 use sdkwork_drive_security::DriveAuthError;
 use sdkwork_drive_workspace_service::DriveServiceError;
-use serde::Serialize;
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ProblemDetail {
-    r#type: String,
-    title: String,
-    status: u16,
-    detail: String,
-    code: String,
-    trace_id: String,
-    request_id: String,
-}
+pub(crate) type ProblemDetail = SdkWorkProblemDetail;
+
+pub(crate) use sdkwork_drive_http::api_problem::SdkWorkResultCode;
 
 pub(crate) fn validation_problem(detail: impl Into<String>) -> (StatusCode, Json<ProblemDetail>) {
     problem(
         StatusCode::BAD_REQUEST,
         "validation failed",
         detail,
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     )
 }
 
@@ -37,7 +31,7 @@ pub(crate) fn internal_problem(detail: impl Into<String>) -> (StatusCode, Json<P
         StatusCode::INTERNAL_SERVER_ERROR,
         "internal error",
         "An unexpected error occurred.",
-        "drive.internal_error",
+        SdkWorkResultCode::InternalError,
     )
 }
 
@@ -60,7 +54,7 @@ pub(crate) fn not_found_problem(detail: impl Into<String>) -> (StatusCode, Json<
         StatusCode::NOT_FOUND,
         "not found",
         detail,
-        "drive.not_found",
+        SdkWorkResultCode::NotFound,
     )
 }
 
@@ -68,26 +62,26 @@ pub(crate) fn map_service_error(error: DriveServiceError) -> (StatusCode, Json<P
     match error {
         DriveServiceError::Validation(detail) => {
             let code = if detail.starts_with("provider_kind is invalid;") {
-                "drive.validation.provider_kind_invalid"
+                SdkWorkResultCode::InvalidParameter
             } else {
-                "drive.validation.failed"
+                SdkWorkResultCode::ValidationError
             };
             problem(StatusCode::BAD_REQUEST, "validation failed", detail, code)
         }
         DriveServiceError::Conflict(detail) => {
-            problem(StatusCode::CONFLICT, "conflict", detail, "drive.conflict")
+            problem(StatusCode::CONFLICT, "conflict", detail, SdkWorkResultCode::Conflict)
         }
         DriveServiceError::NotFound(detail) => problem(
             StatusCode::NOT_FOUND,
             "not found",
             detail,
-            "drive.not_found",
+            SdkWorkResultCode::NotFound,
         ),
         DriveServiceError::PermissionDenied(detail) => problem(
             StatusCode::FORBIDDEN,
             "permission denied",
             detail,
-            "drive.permission_denied",
+            SdkWorkResultCode::PermissionRequired,
         ),
         DriveServiceError::Internal(detail) => {
             tracing::error!(
@@ -99,7 +93,7 @@ pub(crate) fn map_service_error(error: DriveServiceError) -> (StatusCode, Json<P
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "internal error",
                 "An unexpected error occurred.",
-                "drive.internal_error",
+                SdkWorkResultCode::InternalError,
             )
         }
     }
@@ -119,35 +113,11 @@ pub(crate) fn problem(
     status: StatusCode,
     title: &str,
     detail: impl Into<String>,
-    code: &str,
+    code: SdkWorkResultCode,
 ) -> (StatusCode, Json<ProblemDetail>) {
-    let ids = sdkwork_drive_http::problem_correlation::current_problem_correlation();
-    (
-        status,
-        Json(ProblemDetail {
-            r#type: "about:blank".to_string(),
-            title: title.to_string(),
-            status: status.as_u16(),
-            detail: detail.into(),
-            code: code.to_string(),
-            trace_id: ids.trace_id,
-            request_id: ids.request_id,
-        }),
-    )
+    shared_problem(status, title, detail, code)
 }
 
 pub(crate) fn map_auth_error(error: DriveAuthError) -> (StatusCode, Json<ProblemDetail>) {
-    let status = StatusCode::from_u16(error.status).unwrap_or(StatusCode::UNAUTHORIZED);
-    (
-        status,
-        Json(ProblemDetail {
-            r#type: "about:blank".to_string(),
-            title: error.title.to_string(),
-            status: error.status,
-            detail: error.detail,
-            code: error.code.to_string(),
-            trace_id: error.trace_id,
-            request_id: error.request_id,
-        }),
-    )
+    shared_map_auth_error(error)
 }

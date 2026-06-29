@@ -228,7 +228,7 @@ async fn backend_label_list_rejects_page_size_outside_contract() {
             .expect("error body should be readable"),
     )
     .expect("error body should be valid json");
-    assert_eq!(payload["code"], "drive.validation.failed");
+    assert_eq!(payload["code"], 40001);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
@@ -746,7 +746,7 @@ async fn list_audit_events_route_rejects_invalid_identifier_filters() {
                 .expect("response body should be readable"),
         )
         .expect("response body should be valid json");
-        assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+        assert_eq!(payload["code"].as_i64(), Some(40001));
         assert!(
             payload["detail"]
                 .as_str()
@@ -1249,7 +1249,7 @@ async fn list_download_packages_rejects_page_and_page_size_outside_contract() {
                 .expect("error body should be readable"),
         )
         .expect("error body should be valid json");
-        assert_eq!(payload["code"], "drive.validation.failed", "{uri}");
+        assert_eq!(payload["code"], 40001, "{uri}");
     }
 }
 
@@ -1476,7 +1476,7 @@ async fn maintenance_routes_reject_invalid_request_id_with_bad_request() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
     assert!(
         payload["detail"]
             .as_str()
@@ -1516,7 +1516,7 @@ async fn maintenance_jobs_route_rejects_invalid_operator_id_filter() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
     assert!(
         payload["detail"]
             .as_str()

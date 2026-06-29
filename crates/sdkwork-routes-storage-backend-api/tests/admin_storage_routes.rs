@@ -434,7 +434,7 @@ async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
             .expect("patch provider bucket conflict response body should be read"),
     )
     .expect("patch provider bucket conflict response should be json");
-    assert_eq!(patch_bucket_payload["code"], "drive.conflict");
+    assert_eq!(patch_bucket_payload["code"], 40901);
     assert!(patch_bucket_payload["detail"]
         .as_str()
         .is_some_and(|detail| detail.contains("bucket cannot be changed")));
@@ -463,7 +463,7 @@ async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
             .expect("patch provider conflict response body should be read"),
     )
     .expect("patch provider conflict response should be json");
-    assert_eq!(patch_payload["code"], "drive.conflict");
+    assert_eq!(patch_payload["code"], 40901);
     assert!(patch_payload["detail"]
         .as_str()
         .is_some_and(|detail| detail.contains("storage provider has active bindings")));
@@ -485,7 +485,7 @@ async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
             .expect("delete provider conflict response body should be read"),
     )
     .expect("delete provider conflict response should be json");
-    assert_eq!(payload["code"], "drive.conflict");
+    assert_eq!(payload["code"], 40901);
     assert!(payload["detail"]
         .as_str()
         .is_some_and(|detail| detail.contains("storage provider has active bindings")));
@@ -574,7 +574,7 @@ async fn admin_storage_activate_rejects_deleted_provider() {
             .expect("rotate deleted provider conflict response body should be read"),
     )
     .expect("rotate deleted provider conflict response should be json");
-    assert_eq!(rotate_payload["code"], "drive.conflict");
+    assert_eq!(rotate_payload["code"], 40901);
     assert!(rotate_payload["detail"]
         .as_str()
         .is_some_and(|detail| detail.contains("deleted storage provider cannot be modified")));
@@ -597,7 +597,7 @@ async fn admin_storage_activate_rejects_deleted_provider() {
             .expect("activate deleted provider conflict response body should be read"),
     )
     .expect("activate deleted provider conflict response should be json");
-    assert_eq!(payload["code"], "drive.conflict");
+    assert_eq!(payload["code"], 40901);
     assert!(payload["detail"]
         .as_str()
         .is_some_and(|detail| detail.contains("deleted storage provider cannot be reactivated")));
@@ -662,7 +662,7 @@ async fn admin_storage_binding_rejects_invalid_storage_root_prefix() {
             .expect("invalid binding response body should be read"),
     )
     .expect("invalid binding response should be json");
-    assert_eq!(payload["code"], "drive.validation.failed");
+    assert_eq!(payload["code"], 40001);
     assert!(payload["detail"]
         .as_str()
         .is_some_and(|detail| detail.contains("storageRootPrefix")));

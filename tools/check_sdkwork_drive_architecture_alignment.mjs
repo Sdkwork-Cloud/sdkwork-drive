@@ -109,6 +109,26 @@ assert(
   '.github/workflows/package.yml must exist',
 );
 
+const packageJson = JSON.parse(readText('package.json'));
+assert(
+  packageJson.scripts?.['api:envelope:check'],
+  'package.json must declare api:envelope:check per API_SPEC.md §15',
+);
+assert(
+  packageJson.scripts?.['api:schema:check'],
+  'package.json must declare api:schema:check for OpenAPI ProblemDetail and schema contracts',
+);
+assert(
+  packageJson.scripts?.check?.includes('api:envelope:check'),
+  'pnpm check must include api:envelope:check',
+);
+assert(
+  packageJson.scripts?.check?.includes('api:schema:check'),
+  'pnpm check must include api:schema:check',
+);
+
+assert(fs.existsSync(path.join(repoRoot, 'deployments/deploy.yaml')), 'deployments/deploy.yaml must exist per SDKWORK_DEPLOY_SPEC.md');
+
 const cargoToml = readText('Cargo.toml');
 assert(cargoToml.includes('sdkwork-database-config'), 'Cargo.toml must declare sdkwork-database-config');
 assert(cargoToml.includes('sdkwork-database-sqlx'), 'Cargo.toml must declare sdkwork-database-sqlx');
@@ -149,6 +169,33 @@ const workspaceServiceCargo = readText('crates/sdkwork-drive-workspace-service/C
 assert(
   workspaceServiceCargo.includes('sdkwork-utils-rust.workspace = true'),
   'sdkwork-drive-workspace-service must depend on sdkwork-utils-rust',
+);
+assert(
+  !workspaceServiceCargo.includes('sha2.workspace = true'),
+  'sdkwork-drive-workspace-service must use sdkwork-utils-rust instead of direct sha2',
+);
+assert(
+  !readText('crates/sdkwork-drive-security/Cargo.toml').includes('sha2.workspace = true'),
+  'sdkwork-drive-security must use sdkwork-utils-rust instead of direct sha2',
+);
+
+const tauriCargo = readText(
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-desktop/src-tauri/Cargo.toml',
+);
+assert(
+  tauriCargo.includes('sdkwork-utils-rust'),
+  'Tauri desktop host must depend on sdkwork-utils-rust for shared crypto helpers',
+);
+assert(
+  tauriCargo.includes('serde_json'),
+  'Tauri desktop host must declare serde_json for secure session persistence',
+);
+const localUpload = readText(
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-desktop/src-tauri/src/local_upload.rs',
+);
+assert(
+  localUpload.includes('sdkwork_utils_rust::hex_encode'),
+  'Tauri local_upload must format checksums via sdkwork-utils-rust::hex_encode',
 );
 
 const workflow = JSON.parse(readText('sdkwork.workflow.json'));

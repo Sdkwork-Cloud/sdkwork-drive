@@ -1,4 +1,4 @@
-use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail};
+use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
 use axum::http::StatusCode;
 use axum::Json;
 use sqlx::AnyPool;
@@ -76,7 +76,7 @@ pub(crate) async fn ensure_git_repository_space_root_accepts_node_type(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "git repository space root accepts only repository directories",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         )),
         Some(_) => Ok(()),
         None => Err(not_found_problem("space not found")),

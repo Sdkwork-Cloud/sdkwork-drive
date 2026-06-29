@@ -31,6 +31,7 @@ Documentation for SDKWork Drive follows `../sdkwork-specs/DOCUMENTATION_SPEC.md`
 
 | Document | Path |
 | --- | --- |
+| Evidence and review | [reviews/FULL_CODE_REVIEW_REPORT.md](reviews/FULL_CODE_REVIEW_REPORT.md) |
 | Pre-launch checklist | [guides/operator/pre-launch-checklist.md](guides/operator/pre-launch-checklist.md) |
 | Operator guide index | [guides/operator/README.md](guides/operator/README.md) |
 | Releases and GA promotion | [releases/README.md](releases/README.md) |
@@ -43,6 +44,9 @@ Drive is **Beta / DRAFT** for catalog publication. Code and verification gates p
 ## Verification
 
 - `pnpm verify`
+- `pnpm check` (includes API envelope, OpenAPI schema quality gate, deploy.yaml, database framework, architecture alignment)
+- `pnpm api:envelope:check`
+- `pnpm api:schema:check`
 - `pnpm deploy:validate`
 - `pnpm check:docs-standard`
 

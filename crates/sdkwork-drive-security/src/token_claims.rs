@@ -15,6 +15,7 @@ pub struct ResolvedDualTokenContext {
     pub auth_level: String,
     pub data_scope: Vec<String>,
     pub permission_scope: Vec<String>,
+    pub actor_id: String,
     pub actor_kind: String,
     pub device_id: Option<String>,
 }
@@ -67,8 +68,20 @@ pub fn resolve_dual_token_context(
 
     let actor_kind = auth
         .subject_type
-        .or(access.subject_type)
-        .unwrap_or_else(|| "user".to_string());
+        .as_deref()
+        .or(access.subject_type.as_deref())
+        .unwrap_or("user")
+        .to_string();
+
+    // actor_id resolves in priority order: access-token subject > auth-token subject > user_id
+    let actor_id = access
+        .metadata
+        .get("subject_id")
+        .or_else(|| access.metadata.get("actor_id"))
+        .or_else(|| auth.metadata.get("subject_id"))
+        .or_else(|| auth.metadata.get("actor_id"))
+        .cloned()
+        .unwrap_or_else(|| auth.user_id.clone());
 
     Ok(ResolvedDualTokenContext {
         tenant_id: access.tenant_id,
@@ -89,6 +102,7 @@ pub fn resolve_dual_token_context(
         } else {
             access.permission_scope
         },
+        actor_id,
         actor_kind,
         device_id: optional_claim(&access.metadata, "device_id")
             .or_else(|| optional_claim(&auth.metadata, "device_id")),
@@ -424,6 +438,7 @@ mod tests {
 
         assert_eq!(context.tenant_id, "tenant-a");
         assert_eq!(context.user_id, "user-001");
+        assert_eq!(context.actor_id, "user-001");
         assert_eq!(context.actor_kind, "user");
     }
 

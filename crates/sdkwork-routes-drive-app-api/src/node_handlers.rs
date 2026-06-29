@@ -7,6 +7,7 @@ use crate::dto::*;
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, map_service_error,
     not_found_problem, problem, unique_node_insert_conflict_target, ProblemDetail,
+    SdkWorkResultCode,
 };
 use crate::ids::next_drive_id;
 use crate::mappers::*;
@@ -180,7 +181,7 @@ pub(crate) async fn create_folder(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "nodeName is required",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     validate_space_exists(&state.pool, &tenant_id, &payload.space_id).await?;
@@ -229,7 +230,7 @@ pub(crate) async fn create_folder(
                     StatusCode::CONFLICT,
                     "conflict",
                     "node id already exists",
-                    "drive.conflict",
+                    SdkWorkResultCode::Conflict,
                 ));
             }
             ensure_node_id_available(&state.pool, client_id).await?;
@@ -269,7 +270,7 @@ pub(crate) async fn create_folder(
             } else {
                 "node name already exists in parent"
             };
-            return problem(StatusCode::CONFLICT, "conflict", detail, "drive.conflict");
+            return problem(StatusCode::CONFLICT, "conflict", detail, SdkWorkResultCode::Conflict);
         }
         internal_problem(format!("insert dr_drive_node failed: {error}"))
     })?;
@@ -310,7 +311,7 @@ pub(crate) async fn create_file(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "id, nodeName, uploadSessionId, and idempotencyKey are required",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     validate_optional_future_epoch_ms(Some(payload.expires_at_epoch_ms), "expiresAtEpochMs")?;
@@ -409,7 +410,7 @@ pub(crate) async fn create_file(
                 StatusCode::CONFLICT,
                 "conflict",
                 "node name already exists in parent",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             );
         }
         internal_problem(format!("insert file dr_drive_node failed: {error}"))
@@ -486,7 +487,7 @@ pub(crate) async fn create_shortcut(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "id, nodeName, and targetNodeId are required",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     validate_space_exists(&state.pool, &tenant_id, &payload.space_id).await?;
@@ -518,7 +519,7 @@ pub(crate) async fn create_shortcut(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "targetNodeId cannot be the shortcut node",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     if target.space_id != payload.space_id {
@@ -526,7 +527,7 @@ pub(crate) async fn create_shortcut(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "targetNodeId must reference a node in the same space",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     acl::ensure_ctx_node_role(&state.pool, &ctx, &target.space_id, &target.id, "reader").await?;
@@ -562,7 +563,7 @@ pub(crate) async fn create_shortcut(
                 StatusCode::CONFLICT,
                 "conflict",
                 "node name already exists in parent",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             );
         }
         internal_problem(format!("insert shortcut dr_drive_node failed: {error}"))
@@ -756,7 +757,7 @@ pub(crate) async fn extract_archive_entries(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "entryPaths did not match any file entries in archive",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     validate_archive_extraction_plan(
@@ -824,7 +825,7 @@ pub(crate) async fn update_node(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "parentNodeId cannot be the updated node",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     validate_target_parent(
@@ -914,7 +915,7 @@ pub(crate) async fn move_node(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "targetParentNodeId cannot be the moved node",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     validate_target_parent(
@@ -1003,7 +1004,7 @@ pub(crate) async fn copy_node(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "id is required",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
 
@@ -1082,7 +1083,7 @@ pub(crate) async fn copy_node(
                 StatusCode::CONFLICT,
                 "conflict",
                 "node name already exists in parent",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             );
         }
         internal_problem(format!("copy dr_drive_node failed: {error}"))

@@ -1,5 +1,5 @@
 use crate::dto::PageRequest;
-use crate::error::{problem, ProblemDetail};
+use crate::error::{problem, ProblemDetail, SdkWorkResultCode};
 use crate::time::current_epoch_ms;
 use axum::http::StatusCode;
 use axum::Json;
@@ -20,7 +20,7 @@ pub(crate) fn require_body_value(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} is required"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     };
     let trimmed = raw.trim().to_string();
@@ -29,7 +29,7 @@ pub(crate) fn require_body_value(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} is required"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(trimmed)
@@ -45,7 +45,7 @@ pub(crate) fn require_non_empty_text(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} is required"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(trimmed)
@@ -68,7 +68,7 @@ pub(crate) fn parse_page_request(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "pageToken is invalid",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             )
         })?,
         None => 0,
@@ -78,7 +78,7 @@ pub(crate) fn parse_page_request(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "pageToken is invalid",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(PageRequest { limit, offset })
@@ -110,7 +110,7 @@ pub(crate) fn parse_nodes_list_order_clause(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "sortBy is invalid",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         )),
     }
 }
@@ -136,7 +136,7 @@ pub(crate) fn parse_change_page_request(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "pageToken is invalid",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             )
         })?,
         None => cursor.unwrap_or(0),
@@ -146,7 +146,7 @@ pub(crate) fn parse_change_page_request(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "pageToken is invalid",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(PageRequest { limit, offset })
@@ -162,7 +162,7 @@ pub(crate) fn validate_permission_role(
         StatusCode::BAD_REQUEST,
         "validation failed",
         "permission role is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 
@@ -176,7 +176,7 @@ pub(crate) fn validate_share_link_role(
         StatusCode::BAD_REQUEST,
         "validation failed",
         "share link role is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 
@@ -192,7 +192,7 @@ pub(crate) fn validate_share_link_token(
             StatusCode::BAD_REQUEST,
             "validation failed",
             &message,
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(())
@@ -207,7 +207,7 @@ pub(crate) fn validate_optional_non_negative_i64(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must be greater than or equal to 0"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(())
@@ -222,7 +222,7 @@ pub(crate) fn validate_optional_future_epoch_ms(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must be in the future"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(())
@@ -241,7 +241,7 @@ pub(crate) fn validate_requested_ttl_seconds(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must be between {min_seconds} and {max_seconds} seconds"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(ttl_seconds)
@@ -257,7 +257,7 @@ pub(crate) fn validate_content_type<'a>(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must be a trimmed MIME type up to 255 characters"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     let Some((type_part, subtype_part)) = trimmed.split_once('/') else {
@@ -265,7 +265,7 @@ pub(crate) fn validate_content_type<'a>(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must be a valid MIME type"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     };
     if !is_mime_token(type_part) || !is_mime_token(subtype_part) {
@@ -273,7 +273,7 @@ pub(crate) fn validate_content_type<'a>(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must be a valid MIME type"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(trimmed)
@@ -313,7 +313,7 @@ pub(crate) fn validate_sha256_checksum<'a>(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must use sha256:<64 lowercase hex characters>"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     };
     if trimmed != value
@@ -326,7 +326,7 @@ pub(crate) fn validate_sha256_checksum<'a>(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must use sha256:<64 lowercase hex characters>"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(trimmed)
@@ -345,7 +345,7 @@ pub(crate) fn validate_page_size_i64(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must be between {min_value} and {max_value}"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(page_size)
@@ -361,7 +361,7 @@ pub(crate) fn validate_object_key(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must be at most 1024 UTF-8 bytes"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     if trimmed.as_bytes().contains(&0) {
@@ -369,7 +369,7 @@ pub(crate) fn validate_object_key(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must not contain NUL bytes"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     if trimmed.starts_with('/') || trimmed.ends_with('/') {
@@ -377,7 +377,7 @@ pub(crate) fn validate_object_key(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must not start or end with slash"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     for segment in trimmed.split('/') {
@@ -386,7 +386,7 @@ pub(crate) fn validate_object_key(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 format!("{field_name} must not contain empty or period-only path segments"),
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             ));
         }
     }
@@ -403,7 +403,7 @@ pub(crate) fn validate_subject_type(
         StatusCode::BAD_REQUEST,
         "validation failed",
         "subjectType is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 
@@ -421,7 +421,7 @@ pub(crate) fn validate_node_property_key(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "propertyKey is invalid",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(trimmed)
@@ -438,7 +438,7 @@ pub(crate) fn validate_node_property_visibility(
         StatusCode::BAD_REQUEST,
         "validation failed",
         "visibility is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 
@@ -456,7 +456,7 @@ pub(crate) fn validate_label_key(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "labelKey is invalid",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(trimmed)
@@ -476,7 +476,7 @@ pub(crate) fn validate_watch_channel_id(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "id is invalid",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(trimmed)
@@ -490,7 +490,7 @@ pub(crate) fn validate_watch_channel_address(
             StatusCode::BAD_REQUEST,
             "validation failed",
             detail,
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         )
     })
 }
@@ -506,7 +506,7 @@ pub(crate) fn validate_watch_channel_type(
         StatusCode::BAD_REQUEST,
         "validation failed",
         "channelType is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 
@@ -521,7 +521,7 @@ pub(crate) fn validate_watch_resource_type(
         StatusCode::BAD_REQUEST,
         "validation failed",
         "resourceType is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 
@@ -536,7 +536,7 @@ pub(crate) fn validate_watch_lifecycle_status(
         StatusCode::BAD_REQUEST,
         "validation failed",
         "lifecycleStatus is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 
@@ -548,7 +548,7 @@ pub(crate) fn validate_watch_expiration(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "expirationEpochMs must be in the future",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(())

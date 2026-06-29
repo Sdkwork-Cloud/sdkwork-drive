@@ -84,7 +84,21 @@ export function createSessionStore(
       storage.removeItem(storageKey);
       return;
     }
-    storage.setItem(storageKey, JSON.stringify(snapshot));
+
+    // Persist only what is necessary for session recovery:
+    // - authToken and accessToken for API calls
+    // - refreshToken (when available) for silent re-authentication
+    // - context for tenant/org discovery without an extra API round-trip
+    const persisted: SessionSnapshot = {
+      ...(snapshot.authToken ? { authToken: snapshot.authToken } : {}),
+      ...(snapshot.accessToken ? { accessToken: snapshot.accessToken } : {}),
+      ...(snapshot.refreshToken ? { refreshToken: snapshot.refreshToken } : {}),
+      ...(snapshot.sessionId ? { sessionId: snapshot.sessionId } : {}),
+      ...(snapshot.context ? { context: snapshot.context } : {}),
+      ...(snapshot.user ? { user: snapshot.user } : {}),
+      updatedAt: snapshot.updatedAt,
+    };
+    storage.setItem(storageKey, JSON.stringify(persisted));
   };
 
   return {

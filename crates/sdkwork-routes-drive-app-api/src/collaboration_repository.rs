@@ -1,8 +1,7 @@
 use crate::dto::{CommentRecord, CommentReplyRecord, ShareLinkRecord};
 use crate::error::{
     internal_sql_error, not_found_problem, problem, share_link_download_limit_problem,
-    share_link_expired_problem, ProblemDetail,
-};
+    share_link_expired_problem, ProblemDetail, SdkWorkResultCode};
 use crate::mappers::{map_comment_reply_row, map_comment_row, map_share_link_record};
 use crate::time::current_epoch_ms;
 use axum::http::StatusCode;
@@ -188,7 +187,7 @@ async fn map_share_link_download_slot_failure(
         StatusCode::CONFLICT,
         "conflict",
         "share link download slot changed concurrently",
-        "drive.conflict",
+        SdkWorkResultCode::Conflict,
     ))
 }
 

@@ -1552,7 +1552,7 @@ async fn create_upload_session_rejects_existing_session_id_before_storage_side_e
             .expect("conflict response should be read"),
     )
     .expect("conflict response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.conflict"));
+    assert_eq!(payload["code"].as_i64(), Some(40901));
 
     let upload_session_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -1902,7 +1902,7 @@ async fn create_upload_session_rejects_past_expiration_before_storage_side_effec
             .expect("create upload session error response should be read"),
     )
     .expect("create upload session error response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
     assert!(payload["detail"]
         .as_str()
         .unwrap_or_default()
@@ -2030,7 +2030,7 @@ async fn create_upload_session_rejects_empty_idempotency_key_before_storage_side
             .expect("validation response should be read"),
     )
     .expect("validation response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
 
     let upload_session_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -2331,7 +2331,7 @@ async fn create_upload_session_requires_active_object_store_provider() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["code"], "drive.conflict");
+    assert_eq!(payload["code"], 40901);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be a string")
@@ -3939,7 +3939,7 @@ async fn presign_upload_part_rejects_ttl_outside_contract_before_object_store_ca
             .expect("error body should be readable"),
     )
     .expect("error body should be valid json");
-    assert_eq!(payload["code"], "drive.validation.failed");
+    assert_eq!(payload["code"], 40001);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
@@ -4108,7 +4108,7 @@ async fn upload_session_presign_rejects_when_persisted_provider_is_disabled() {
             .expect("presign error body should be readable"),
     )
     .expect("presign error body should be valid json");
-    assert_eq!(payload["code"], "drive.conflict");
+    assert_eq!(payload["code"], 40901);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
@@ -4435,7 +4435,7 @@ async fn complete_upload_session_rejects_metadata_conflict_before_object_store_c
             .expect("conflict response body should be read"),
     )
     .expect("conflict response json should be valid");
-    assert_eq!(payload["code"].as_str(), Some("drive.conflict"));
+    assert_eq!(payload["code"].as_i64(), Some(40901));
 
     let requests = captured_requests
         .lock()
@@ -4632,7 +4632,7 @@ async fn complete_upload_session_rejects_storage_version_drift_before_object_sto
             .expect("conflict response body should be read"),
     )
     .expect("conflict response json should be valid");
-    assert_eq!(payload["code"].as_str(), Some("drive.conflict"));
+    assert_eq!(payload["code"].as_i64(), Some(40901));
 
     let requests = captured_requests
         .lock()
@@ -6058,7 +6058,7 @@ async fn app_dr_drive_upload_session_abort_rejects_terminal_sessions_without_obj
             .expect("abort terminal response body should be read"),
     )
     .expect("abort terminal response json should be valid");
-    assert_eq!(payload["code"], "drive.conflict");
+    assert_eq!(payload["code"], 40901);
 
     let delete_calls = captured_requests
         .lock()
@@ -6155,7 +6155,7 @@ async fn presign_upload_part_requires_active_object_store_provider() {
             .expect("error body should be readable"),
     )
     .expect("error body should be valid json");
-    assert_eq!(payload["code"], "drive.conflict");
+    assert_eq!(payload["code"], 40901);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
@@ -6261,7 +6261,7 @@ async fn complete_upload_session_rejects_invalid_multipart_parts() {
             .expect("complete response body should be read"),
     )
     .expect("complete response json should be valid");
-    assert_eq!(payload["code"], "drive.validation.failed");
+    assert_eq!(payload["code"], 40001);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be a string")
@@ -6415,7 +6415,7 @@ async fn upload_session_mutations_reject_trashed_node_before_storage_side_effect
                     .expect("not found response should be read"),
             )
             .expect("not found response should be valid json");
-            assert_eq!(payload["code"].as_str(), Some("drive.not_found"), "{name}");
+            assert_eq!(payload["code"].as_i64(), Some(40401), "{name}");
         }
     }
 
@@ -6590,7 +6590,7 @@ async fn complete_upload_session_rejects_invalid_object_metadata_before_storage_
             .expect("complete response body should be read"),
     )
     .expect("complete response json should be valid");
-    assert_eq!(payload["code"], "drive.validation.failed");
+    assert_eq!(payload["code"], 40001);
     let detail = payload["detail"]
         .as_str()
         .expect("detail should be a string");
@@ -7112,7 +7112,7 @@ async fn create_download_url_rejects_ttl_outside_contract() {
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["code"], "drive.validation.failed");
+    assert_eq!(payload["code"], 40001);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
@@ -7223,7 +7223,7 @@ async fn resolve_download_token_requires_active_object_store_provider() {
             .expect("error body should be readable"),
     )
     .expect("error body should be valid json");
-    assert_eq!(payload["code"], "drive.conflict");
+    assert_eq!(payload["code"], 40901);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
@@ -8429,7 +8429,7 @@ async fn extract_archive_entries_rejects_any_target_conflict_before_partial_side
             .expect("archive extract conflict response should be read"),
     )
     .expect("archive extract conflict response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.conflict"));
+    assert_eq!(payload["code"].as_i64(), Some(40901));
 
     let readme_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -8548,7 +8548,7 @@ async fn create_download_package_rejects_ttl_outside_contract_before_writing_pac
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["code"], "drive.validation.failed");
+    assert_eq!(payload["code"], 40001);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
@@ -8720,7 +8720,7 @@ async fn create_download_package_rejects_empty_node_selection() {
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
     assert!(payload["detail"]
         .as_str()
         .is_some_and(|detail| detail.contains("nodeIds")));
@@ -8787,7 +8787,7 @@ async fn create_download_package_rejects_trashed_selected_node_before_reading_ob
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
     assert!(payload["detail"]
         .as_str()
         .is_some_and(|detail| detail.contains("active files or folders")));
@@ -8922,7 +8922,7 @@ async fn create_download_package_rejects_folder_expansion_above_file_limit_befor
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
     assert!(payload["detail"]
         .as_str()
         .is_some_and(|detail| detail.contains("at most 500 files")));
@@ -9086,7 +9086,7 @@ async fn resolve_download_package_treats_subsecond_remaining_ttl_as_expired() {
             .expect("error body should be read"),
     )
     .expect("error response should be valid json");
-    assert_eq!(payload["code"], "drive.download_package.expired");
+    assert_eq!(payload["code"], 41001);
     assert!(
         captured_requests
             .lock()
@@ -9302,7 +9302,7 @@ async fn resolve_download_token_rejects_node_after_it_is_moved_to_trash() {
             .expect("resolve error body should be read"),
     )
     .expect("resolve error response should be valid json");
-    assert_eq!(payload["code"], "drive.not_found");
+    assert_eq!(payload["code"], 40401);
 }
 
 #[tokio::test]
@@ -9799,7 +9799,7 @@ async fn assert_git_repository_root_directory_error(response: Response) {
             .expect("git repository root validation response should be read"),
     )
     .expect("git repository root validation response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
     assert!(
         payload["detail"]
             .as_str()
@@ -9914,7 +9914,7 @@ async fn create_file_rejects_existing_node_id_before_storage_side_effects() {
             .expect("conflict response should be read"),
     )
     .expect("conflict response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.conflict"));
+    assert_eq!(payload["code"].as_i64(), Some(40901));
 
     let upload_session_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -10045,7 +10045,7 @@ async fn create_file_rejects_past_expiration_before_storage_side_effects() {
             .expect("expired file response should be read"),
     )
     .expect("expired file response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
     assert!(payload["detail"]
         .as_str()
         .unwrap_or_default()
@@ -10594,7 +10594,7 @@ async fn empty_trash_rejects_missing_or_deleted_explicit_space_before_deleting_n
                 .expect("empty trash response should be read"),
         )
         .expect("empty trash response should be valid json");
-        assert_eq!(payload["code"].as_str(), Some("drive.not_found"));
+        assert_eq!(payload["code"].as_i64(), Some(40401));
     }
 
     let remaining_trashed_count: i64 = sqlx::query_scalar(
@@ -11029,7 +11029,7 @@ async fn app_dr_drive_node_share_link_create_rejects_negative_download_limit_bef
             .expect("share link validation response should be read"),
     )
     .expect("share link validation response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
 
     let stored_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1) FROM dr_drive_node_share_link WHERE tenant_id='tenant-share-validation'",
@@ -11192,7 +11192,7 @@ async fn app_dr_drive_node_share_link_create_rejects_past_expiration_before_data
             .expect("share link expiration validation response should be read"),
     )
     .expect("share link expiration validation response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
 
     let stored_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1) FROM dr_drive_node_share_link WHERE tenant_id='tenant-share-expired-create'",
@@ -11283,7 +11283,7 @@ async fn app_dr_drive_node_share_link_update_rejects_past_expiration_before_data
             .expect("share link expiration update validation response should be read"),
     )
     .expect("share link expiration update validation response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
 
     let stored_expires_at: Option<i64> = sqlx::query_scalar(
         "SELECT expires_at_epoch_ms FROM dr_drive_node_share_link WHERE id='share-expired-update'",
@@ -11366,8 +11366,8 @@ async fn app_dr_drive_node_permission_create_rejects_invalid_dictionaries_before
     )
     .expect("invalid subject response should be valid json");
     assert_eq!(
-        invalid_subject_payload["code"].as_str(),
-        Some("drive.validation.failed")
+        invalid_subject_payload["code"].as_i64(),
+        Some(40001)
     );
 
     let invalid_role_response = app
@@ -11408,8 +11408,8 @@ async fn app_dr_drive_node_permission_create_rejects_invalid_dictionaries_before
     )
     .expect("invalid role response should be valid json");
     assert_eq!(
-        invalid_role_payload["code"].as_str(),
-        Some("drive.validation.failed")
+        invalid_role_payload["code"].as_i64(),
+        Some(40001)
     );
 
     let permission_count: i64 = sqlx::query_scalar("SELECT COUNT(1) FROM dr_drive_node_permission")
@@ -13082,7 +13082,7 @@ async fn app_drive_changes_rejects_page_size_outside_contract() {
             .expect("error body should be readable"),
     )
     .expect("error body should be valid json");
-    assert_eq!(payload["code"], "drive.validation.failed");
+    assert_eq!(payload["code"], 40001);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
@@ -14027,7 +14027,7 @@ async fn app_drive_list_routes_reject_page_size_outside_contract() {
             .expect("error body should be readable"),
     )
     .expect("error body should be valid json");
-    assert_eq!(payload["code"], "drive.validation.failed");
+    assert_eq!(payload["code"], 40001);
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
@@ -14964,7 +14964,7 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
                     .expect("not found response should be read"),
             )
             .expect("not found response should be valid json");
-            assert_eq!(payload["code"].as_str(), Some("drive.not_found"), "{name}");
+            assert_eq!(payload["code"].as_i64(), Some(40401), "{name}");
         }
     }
     assert_eq!(
@@ -15148,7 +15148,7 @@ async fn app_drive_metadata_deletes_reject_trashed_nodes_without_side_effects() 
                     .expect("not found response should be read"),
             )
             .expect("not found response should be valid json");
-            assert_eq!(payload["code"].as_str(), Some("drive.not_found"), "{name}");
+            assert_eq!(payload["code"].as_i64(), Some(40401), "{name}");
         }
     }
 
@@ -15522,7 +15522,7 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
                     .expect("not found response should be read"),
             )
             .expect("not found response should be valid json");
-            assert_eq!(payload["code"].as_str(), Some("drive.not_found"), "{name}");
+            assert_eq!(payload["code"].as_i64(), Some(40401), "{name}");
         }
     }
     assert_eq!(
@@ -17220,7 +17220,7 @@ async fn app_dr_drive_watch_channel_create_rejects_past_expiration_before_databa
             .expect("watch validation response should be read"),
     )
     .expect("watch validation response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+    assert_eq!(payload["code"].as_i64(), Some(40001));
 
     let stored_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1) FROM dr_drive_watch_channel WHERE tenant_id='tenant-watch-validation'",
@@ -17307,7 +17307,7 @@ async fn app_dr_drive_watch_node_rejects_trashed_node_before_creating_channel() 
             .expect("watch response should be read"),
     )
     .expect("watch response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.not_found"));
+    assert_eq!(payload["code"].as_i64(), Some(40401));
 
     let watch_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -17411,7 +17411,7 @@ async fn app_drive_share_link_routes_enforce_acl_roles() {
                 .expect("denied share link response should be read"),
         )
         .expect("denied share link response should be valid json");
-        assert_eq!(payload["code"].as_str(), Some("drive.permission_denied"));
+        assert_eq!(payload["code"].as_i64(), Some(40301));
     }
 
     let create_denied_before_reader = app
@@ -18311,7 +18311,7 @@ async fn app_drive_legacy_download_url_route_enforces_reader_acl() {
             .expect("denied download url response should be read"),
     )
     .expect("denied download url response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.permission_denied"));
+    assert_eq!(payload["code"].as_i64(), Some(40301));
 }
 
 #[tokio::test]
@@ -18360,7 +18360,7 @@ async fn app_drive_changes_require_space_id() {
                 .expect("changes missing space response should be read"),
         )
         .expect("changes missing space response should be valid json");
-        assert_eq!(payload["code"].as_str(), Some("drive.validation.failed"));
+        assert_eq!(payload["code"].as_i64(), Some(40001));
         assert_eq!(payload["detail"].as_str(), Some("spaceId is required"));
     }
 }
@@ -19825,8 +19825,8 @@ async fn drive_problem_responses_include_correlation_ids() {
             .expect("correlation response should be read"),
     )
     .expect("correlation response should be valid json");
-    assert_eq!(payload["code"].as_str(), Some("drive.not_found"));
-    assert!(payload["requestId"]
+    assert_eq!(payload["code"].as_i64(), Some(40401));
+    assert!(payload["traceId"]
         .as_str()
         .is_some_and(|value| !value.is_empty() && value != "request-unset"));
     assert!(payload["traceId"]

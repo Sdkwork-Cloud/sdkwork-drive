@@ -1,7 +1,7 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{DriveNodeResponse, NodeCommandRequest};
-use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail};
+use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
 use crate::metadata_repository::present_drive_node;
 use crate::node_repository::{collect_node_subtree, find_node};
 use crate::route_change::record_change;
@@ -103,7 +103,7 @@ pub(crate) async fn ensure_restorable_subtree(
                     StatusCode::CONFLICT,
                     "conflict",
                     "parent node must be active before restore",
-                    "drive.conflict",
+                    SdkWorkResultCode::Conflict,
                 ));
             }
             continue;
@@ -124,7 +124,7 @@ pub(crate) async fn ensure_restorable_subtree(
                 StatusCode::CONFLICT,
                 "conflict",
                 "parent node must be active before restore",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             ));
         };
         let parent_space_id: String = row.get("space_id");
@@ -138,7 +138,7 @@ pub(crate) async fn ensure_restorable_subtree(
                 StatusCode::CONFLICT,
                 "conflict",
                 "parent node must be active before restore",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             ));
         }
     }

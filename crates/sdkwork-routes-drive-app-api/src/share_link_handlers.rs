@@ -10,8 +10,7 @@ use crate::dto::{
 };
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, map_service_error,
-    not_found_problem, problem, ProblemDetail,
-};
+    not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
 use crate::mappers::map_share_link_row;
 use crate::node_repository::find_active_node;
 use crate::route_change::record_change;
@@ -152,7 +151,7 @@ pub(crate) async fn create_share_link(
                 StatusCode::CONFLICT,
                 "conflict",
                 "share token already exists",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             );
         }
         internal_problem(format!("insert dr_drive_node_share_link failed: {error}"))

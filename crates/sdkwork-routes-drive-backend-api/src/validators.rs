@@ -1,5 +1,5 @@
 use crate::dto::OffsetPage;
-use crate::error::{problem, ProblemDetail};
+use crate::error::{problem, ProblemDetail, SdkWorkResultCode};
 use axum::http::StatusCode;
 use axum::Json;
 
@@ -19,7 +19,7 @@ pub(crate) fn require_non_empty_text(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} is required"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(trimmed)
@@ -36,7 +36,7 @@ pub(crate) fn parse_offset_page(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "pageToken is invalid",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             )
         })?,
         None => 0,
@@ -46,7 +46,7 @@ pub(crate) fn parse_offset_page(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "pageToken is invalid",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(OffsetPage { limit, offset })
@@ -65,7 +65,7 @@ pub(crate) fn validate_page_size_i64(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must be between {min_value} and {max_value}"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(page_size)
@@ -84,7 +84,7 @@ pub(crate) fn validate_page_u32(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must be between {min_value} and {max_value}"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(page)
@@ -103,7 +103,7 @@ pub(crate) fn validate_page_size_u32(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("{field_name} must be between {min_value} and {max_value}"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(page_size)
@@ -128,7 +128,7 @@ pub(crate) fn validate_lifecycle_status(
         StatusCode::BAD_REQUEST,
         "validation failed",
         "lifecycleStatus is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 
@@ -142,7 +142,7 @@ pub(crate) fn validate_download_package_state(
         StatusCode::BAD_REQUEST,
         "validation failed",
         "state is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 
@@ -160,7 +160,7 @@ pub(crate) fn validate_label_key(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "labelKey is invalid",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(trimmed)
@@ -179,6 +179,6 @@ pub(crate) fn validate_label_color(color: &str) -> Result<&str, (StatusCode, Jso
         StatusCode::BAD_REQUEST,
         "validation failed",
         "color is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }

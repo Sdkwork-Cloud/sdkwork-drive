@@ -1,4 +1,4 @@
-use crate::error::{map_auth_error, problem, ProblemDetail};
+use crate::error::{map_auth_error, problem, ProblemDetail, SdkWorkResultCode};
 use axum::body::{to_bytes, Body};
 use axum::http::{header, Request, StatusCode};
 use axum::middleware::Next;
@@ -34,7 +34,7 @@ pub(crate) async fn drive_context_projection_guard(
                     StatusCode::PAYLOAD_TOO_LARGE,
                     "request body too large",
                     format!("request body could not be read: {error}"),
-                    "drive.request.body_too_large",
+                    SdkWorkResultCode::PayloadTooLarge,
                 )
             })?;
         if !bytes.is_empty() {
@@ -43,7 +43,7 @@ pub(crate) async fn drive_context_projection_guard(
                     StatusCode::BAD_REQUEST,
                     "invalid request body",
                     format!("request body must be valid JSON: {error}"),
-                    "drive.request.invalid_json",
+                    SdkWorkResultCode::MalformedRequest,
                 )
             })?;
             validate_json_context_projection(&body_json, &context).map_err(map_auth_error)?;

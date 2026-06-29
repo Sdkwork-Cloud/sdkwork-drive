@@ -11,8 +11,7 @@ use crate::dto::{
 };
 use crate::error::{
     internal_problem, internal_sql_error, map_object_store_route_error, map_service_error,
-    not_found_problem, problem, ProblemDetail,
-};
+    not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
 use crate::hashing::{sha256_raw_hex_separated, tenant_shard_prefix};
 use crate::mappers::map_node_row;
 use crate::node_repository::find_node;
@@ -92,7 +91,7 @@ pub(crate) async fn create_download_package(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "nodeIds must resolve to at least one active file",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         )
     })?;
     let bucket = first_file.bucket.clone();
@@ -200,7 +199,7 @@ pub(crate) async fn resolve_download_package_url(
             StatusCode::CONFLICT,
             "conflict",
             "download package is not ready",
-            "drive.conflict",
+            SdkWorkResultCode::Conflict,
         ));
     }
     if package.expires_at_epoch_ms <= current_epoch_ms() {
@@ -236,7 +235,7 @@ fn normalize_download_package_node_ids(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "nodeIds must contain at least one node id",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     if node_ids.len() > 200 {
@@ -244,7 +243,7 @@ fn normalize_download_package_node_ids(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "nodeIds must contain at most 200 node ids",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     let mut seen = BTreeSet::new();
@@ -256,7 +255,7 @@ fn normalize_download_package_node_ids(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "nodeIds must not contain empty values",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             ));
         }
         if seen.insert(trimmed.clone()) {
@@ -268,7 +267,7 @@ fn normalize_download_package_node_ids(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "nodeIds must contain at least one node id",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(normalized)
@@ -296,7 +295,7 @@ async fn collect_download_package_files(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "nodeIds can only reference active files or folders",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             ));
         }
         match node.node_type.as_str() {
@@ -332,7 +331,7 @@ async fn collect_download_package_files(
                     StatusCode::BAD_REQUEST,
                     "validation failed",
                     "shortcut nodes must be resolved before package download",
-                    "drive.validation.failed",
+                    SdkWorkResultCode::ValidationError,
                 ));
             }
             _ => {
@@ -340,7 +339,7 @@ async fn collect_download_package_files(
                     StatusCode::BAD_REQUEST,
                     "validation failed",
                     "nodeIds can only reference active files or folders",
-                    "drive.validation.failed",
+                    SdkWorkResultCode::ValidationError,
                 ));
             }
         }
@@ -356,7 +355,7 @@ fn validate_download_package_manifest(
             StatusCode::BAD_REQUEST,
             "validation failed",
             format!("download package can include at most {DOWNLOAD_PACKAGE_MAX_FILES} files"),
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
 
@@ -367,7 +366,7 @@ fn validate_download_package_manifest(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "contentLength must not be negative",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             ));
         }
         total_bytes = total_bytes
@@ -377,7 +376,7 @@ fn validate_download_package_manifest(
                     StatusCode::BAD_REQUEST,
                     "validation failed",
                     "download package total bytes overflow",
-                    "drive.validation.failed",
+                    SdkWorkResultCode::ValidationError,
                 )
             })?;
         if total_bytes > DOWNLOAD_PACKAGE_MAX_TOTAL_BYTES {
@@ -387,7 +386,7 @@ fn validate_download_package_manifest(
                 format!(
                     "download package total bytes must be at most {DOWNLOAD_PACKAGE_MAX_TOTAL_BYTES}"
                 ),
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             ));
         }
     }
@@ -414,7 +413,7 @@ async fn list_folder_descendant_files(
                 StatusCode::CONFLICT,
                 "conflict",
                 "folder hierarchy exceeds maximum package depth",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             ));
         }
         let rows = sqlx::query(&format!(
@@ -565,7 +564,7 @@ async fn stream_file_into_zip<W: Write + std::io::Seek>(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "contentLength must not be negative",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     writer
@@ -762,7 +761,7 @@ fn download_package_expired_problem() -> (StatusCode, Json<ProblemDetail>) {
         StatusCode::GONE,
         "download package expired",
         "download package has expired",
-        "drive.download_package.expired",
+        SdkWorkResultCode::Gone,
     )
 }
 

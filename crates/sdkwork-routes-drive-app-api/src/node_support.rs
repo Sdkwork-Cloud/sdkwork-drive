@@ -2,8 +2,7 @@ use crate::archive::*;
 use crate::dto::*;
 use crate::error::{
     internal_sql_error, map_object_store_route_error, map_service_error, not_found_problem,
-    problem, ProblemDetail,
-};
+    problem, ProblemDetail, SdkWorkResultCode};
 use crate::ids::next_drive_id;
 use crate::mappers::*;
 use crate::node_repository::find_node;
@@ -150,7 +149,7 @@ pub(crate) fn archive_extraction_target_conflict_problem() -> (StatusCode, Json<
         StatusCode::CONFLICT,
         "conflict",
         "archive extraction target conflicts with an existing node",
-        "drive.conflict",
+        SdkWorkResultCode::Conflict,
     )
 }
 pub(crate) async fn ensure_archive_parent_folders(
@@ -177,7 +176,7 @@ pub(crate) async fn ensure_archive_parent_folders(
                     StatusCode::CONFLICT,
                     "conflict",
                     "archive extraction path conflicts with an existing file",
-                    "drive.conflict",
+                    SdkWorkResultCode::Conflict,
                 ));
             }
             current_parent = Some(existing.id);
@@ -430,7 +429,7 @@ pub(crate) async fn validate_target_parent(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "targetParentNodeId must reference an active folder",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(())
@@ -453,7 +452,7 @@ pub(crate) async fn ensure_target_parent_is_not_descendant(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "targetParentNodeId cannot reference a descendant of the moved node",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             ));
         }
         if !visited.insert(cursor.clone()) {
@@ -461,7 +460,7 @@ pub(crate) async fn ensure_target_parent_is_not_descendant(
                 StatusCode::CONFLICT,
                 "conflict",
                 "node hierarchy contains a cycle",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             ));
         }
 
@@ -523,7 +522,7 @@ pub(crate) fn validate_create_file_idempotent_replay(
         StatusCode::CONFLICT,
         "conflict",
         "idempotencyKey already belongs to a different file creation request",
-        "drive.conflict",
+        SdkWorkResultCode::Conflict,
     ))
 }
 pub(crate) async fn ensure_no_live_name_conflict(
@@ -559,7 +558,7 @@ pub(crate) async fn ensure_no_live_name_conflict(
             StatusCode::CONFLICT,
             "conflict",
             "node name already exists in parent",
-            "drive.conflict",
+            SdkWorkResultCode::Conflict,
         ));
     }
     Ok(())
@@ -582,7 +581,7 @@ pub(crate) async fn ensure_node_id_available(
             StatusCode::CONFLICT,
             "conflict",
             "node id already exists",
-            "drive.conflict",
+            SdkWorkResultCode::Conflict,
         ));
     }
     Ok(())

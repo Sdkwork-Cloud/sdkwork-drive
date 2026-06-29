@@ -146,7 +146,7 @@ export function FileGridItem({
           </button>
 
           <div className="transition-transform duration-200 group-hover/iconcontainer:scale-110">
-            <FileIcon type={file.type} mimeType={file.mimeType} color={(file as any).color} />
+            <FileIcon type={file.type} mimeType={file.mimeType} color={file.color} />
           </div>
         </div>
         

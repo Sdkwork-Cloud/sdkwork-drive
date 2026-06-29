@@ -724,7 +724,9 @@ function createSdkBackedDriveFileService(
 ): DriveFileService {
   const favoriteNodeIds = new Set<string>();
   const favoriteIdsApiCache = new Map<string, Set<string>>();
+  const MAX_FAVORITE_CACHE_ENTRIES = 50;
   const folderColorCache = new Map<string, string | null>();
+  const MAX_FOLDER_COLOR_CACHE = 500;
   const knownFiles = new Map<string, DriveFile>();
   const KNOWN_FILES_CACHE_LIMIT = 2_000;
   const personalSpaceIds = new Map<string, string>();
@@ -741,6 +743,13 @@ function createSdkBackedDriveFileService(
   };
 
   const rememberFolderColor = (folderId: string, color: string | null | undefined): void => {
+    // Evict oldest entry when at capacity.
+    if (folderColorCache.size >= MAX_FOLDER_COLOR_CACHE && !folderColorCache.has(folderId)) {
+      const oldestKey = folderColorCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        folderColorCache.delete(oldestKey);
+      }
+    }
     if (color && color.trim()) {
       folderColorCache.set(folderId, color);
       return;
@@ -956,6 +965,14 @@ function createSdkBackedDriveFileService(
         favoriteNodeIds.add(id);
       }
       return new Set(cachedFavoriteIds);
+    }
+
+    // Evict oldest entry when at capacity.
+    if (favoriteIdsApiCache.size >= MAX_FAVORITE_CACHE_ENTRIES) {
+      const oldestKey = favoriteIdsApiCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        favoriteIdsApiCache.delete(oldestKey);
+      }
     }
 
     const favoriteIds = new Set<string>();

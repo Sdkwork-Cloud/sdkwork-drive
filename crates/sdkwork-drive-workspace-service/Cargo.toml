@@ -24,8 +24,6 @@ serde_json = { workspace = true }
 chrono = { version = "0.4", features = ["serde"] }
 reqwest.workspace = true
 uuid = { version = "1", features = ["v4"] }
-hmac.workspace = true
-sha2.workspace = true
 
 [dev-dependencies]
 sdkwork-drive-storage-local.workspace = true

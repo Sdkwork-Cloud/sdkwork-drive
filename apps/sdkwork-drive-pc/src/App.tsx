@@ -38,6 +38,7 @@ import {
   type SdkworkAuthAppearanceConfig,
   type SdkworkAuthRuntimeConfig,
 } from './bootstrap/driveAuthConfig';
+import type { SdkworkIamAuthRoutesProps } from './bootstrap/sdkworkAuthPcReactShim';
 
 const ADMIN_SECTION_ACCESS_KEYS: Record<string, keyof DriveAdminSectionAccess> = {
   'admin-storage-providers': 'storageProviders',
@@ -316,19 +317,19 @@ function DriveAppbaseAuthRouteHost({
 }: {
   getRuntime: () => DriveIamRuntime;
 }) {
-  const props = {
+  const authProps: SdkworkIamAuthRoutesProps = {
     appearance: resolveDriveAuthAppearance(),
     basePath: '/auth',
     getRuntime,
     homePath: '/',
     locale: resolveDriveAuthLocale(),
     runtimeConfig: resolveDriveAuthRuntimeConfig(),
-    viewportMode: 'fixed' as const,
+    viewportMode: 'fixed',
   };
 
   return (
     <React.Suspense fallback={<DriveAuthRoutesFallback />}>
-      <SdkworkIamAuthRoutes {...props as any} />
+      <SdkworkIamAuthRoutes {...authProps} />
     </React.Suspense>
   );
 }

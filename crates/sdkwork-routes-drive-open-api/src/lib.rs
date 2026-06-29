@@ -6,6 +6,7 @@ mod handlers;
 mod http_route_manifest;
 mod rate_limit;
 mod repository;
+mod response;
 mod routes;
 mod state;
 mod storage;

@@ -9,8 +9,7 @@ use crate::dto::{
     UpdateAssetRequest, ASSET_NODE_SELECT_COLUMNS,
 };
 use crate::error::{
-    internal_sql_error, is_unique_constraint_error, not_found_problem, problem, ProblemDetail,
-};
+    internal_sql_error, is_unique_constraint_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
 use crate::hashing::sha256_raw_hex_separated;
 use crate::ids::next_drive_id;
 use crate::mappers::map_node_row;
@@ -175,7 +174,7 @@ pub(crate) async fn create_asset(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "driveNodeId or virtualReference is required",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     };
 
@@ -214,7 +213,7 @@ pub(crate) async fn create_asset(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 format!("tags payload is invalid: {error}"),
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             )
         })?;
         upsert_asset_property(
@@ -305,7 +304,7 @@ pub(crate) async fn update_asset(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 format!("tags payload is invalid: {error}"),
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             )
         })?;
         upsert_asset_property(
@@ -657,7 +656,7 @@ pub(crate) async fn asset_upload_not_implemented() -> (StatusCode, Json<serde_js
             "title": "not implemented",
             "status": 501,
             "detail": "legacy asset upload endpoints are not available; use Drive uploader APIs",
-            "code": "drive.not_implemented"
+            "code": SdkWorkResultCode::InternalError.as_i32()
         })),
     )
 }
@@ -670,7 +669,7 @@ pub(crate) async fn asset_method_not_allowed() -> (StatusCode, Json<serde_json::
             "title": "not implemented",
             "status": 501,
             "detail": "Drive assets API method is not available on this route",
-            "code": "drive.not_implemented"
+            "code": SdkWorkResultCode::InternalError.as_i32()
         })),
     )
 }
@@ -692,7 +691,7 @@ fn parse_asset_page_request(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "cursor is invalid",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             )
         })?,
         None => 0,
@@ -702,7 +701,7 @@ fn parse_asset_page_request(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "cursor is invalid",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(PageRequest { limit, offset })
@@ -733,7 +732,7 @@ fn ensure_asset_eligible_node(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "node type is not eligible for global assets",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     if node.lifecycle_status == "deleted" {
@@ -959,7 +958,7 @@ async fn load_asset_property_json(
             StatusCode::INTERNAL_SERVER_ERROR,
             "internal error",
             format!("asset property json is invalid: {error}"),
-            "drive.internal_error",
+            SdkWorkResultCode::InternalError,
         )
     })
 }
@@ -1284,7 +1283,7 @@ async fn create_virtual_reference_asset_node(
                     StatusCode::BAD_REQUEST,
                     "validation failed",
                     "virtualReference.driveSpaceId or a personal space is required",
-                    "drive.validation.failed",
+                    SdkWorkResultCode::ValidationError,
                 )
             })?
     };
@@ -1336,7 +1335,7 @@ async fn create_virtual_reference_asset_node(
                 StatusCode::CONFLICT,
                 "conflict",
                 "node id already exists",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             );
         }
         crate::error::internal_problem(format!("insert virtual_reference dr_drive_node failed: {error}"))
@@ -1390,7 +1389,7 @@ async fn ensure_asset_catalog_anchor(
                 StatusCode::NOT_FOUND,
                 "not found",
                 "personal space is required for asset collections",
-                "drive.not_found",
+                SdkWorkResultCode::NotFound,
             )
         })?;
     acl::ensure_parent_writer(pool, ctx, &space_id, None).await?;
@@ -1625,7 +1624,7 @@ fn validate_asset_visibility(visibility: &str) -> Result<(), (StatusCode, Json<P
         StatusCode::BAD_REQUEST,
         "validation failed",
         "visibility is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 
@@ -1645,7 +1644,7 @@ fn validate_relation_type(relation_type: &str) -> Result<(), (StatusCode, Json<P
         StatusCode::BAD_REQUEST,
         "validation failed",
         "relationType is invalid",
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     ))
 }
 

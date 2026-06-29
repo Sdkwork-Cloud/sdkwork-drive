@@ -161,7 +161,7 @@ export function FileRowItem({
           <FileIcon
             type={file.type}
             mimeType={file.mimeType}
-            color={(file as any).color}
+            color={file.color}
           />
         </div>
 

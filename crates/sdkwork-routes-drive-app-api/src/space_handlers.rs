@@ -1,7 +1,7 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::*;
-use crate::error::{map_service_error, problem, service_error_kind, ProblemDetail};
+use crate::error::{map_service_error, problem, service_error_kind, ProblemDetail, SdkWorkResultCode};
 use crate::ids::next_drive_id;
 use crate::mappers::*;
 use crate::space_repository::validate_space_exists;
@@ -109,7 +109,7 @@ pub(crate) async fn create_space(
                 StatusCode::BAD_REQUEST,
                 "invalid space type",
                 "space_type is invalid",
-                "drive.validation.space_type_invalid",
+                SdkWorkResultCode::InvalidParameter,
             ));
         }
     };
@@ -445,7 +445,7 @@ fn ensure_create_space_owner_matches_caller(
                     StatusCode::BAD_REQUEST,
                     "validation failed",
                     "team spaces must bind ownerSubjectType to group or organization",
-                    "drive.validation.space_owner_invalid",
+                    SdkWorkResultCode::InvalidParameter,
                 ));
             }
         }

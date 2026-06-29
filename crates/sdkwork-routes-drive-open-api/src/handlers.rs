@@ -1,8 +1,8 @@
 use crate::dto::{
-    CreateOpenDownloadUrlRequest, OpenDownloadUrlResponse, OpenShareLinkAccessQuery,
-    OpenShareLinkResponse,
+    CreateOpenDownloadUrlRequest, OpenDownloadUrlResponse,     OpenShareLinkAccessQuery,
 };
-use crate::error::{map_service_error, problem, share_link_expired_problem, ProblemDetail};
+use crate::error::{map_service_error, problem, share_link_expired_problem, ProblemDetail, SdkWorkResultCode};
+use crate::response::{created_resource, success_resource};
 use crate::repository::{
     claim_share_link_download_slot, find_active_share_link, map_share_link_row,
     release_share_link_download_slot,
@@ -27,16 +27,16 @@ pub(crate) async fn resolve_share_link(
     State(state): State<OpenState>,
     Path(token): Path<String>,
     Query(query): Query<OpenShareLinkAccessQuery>,
-) -> Result<Json<OpenShareLinkResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<impl axum::response::IntoResponse, (StatusCode, Json<ProblemDetail>)> {
     let row = find_active_share_link(&state.pool, &token, query.access_code.as_deref()).await?;
-    Ok(Json(map_share_link_row(&row)))
+    Ok(success_resource(map_share_link_row(&row)))
 }
 
 pub(crate) async fn create_share_link_download_url(
     State(state): State<OpenState>,
     Path(token): Path<String>,
     Json(payload): Json<CreateOpenDownloadUrlRequest>,
-) -> Result<(StatusCode, Json<OpenDownloadUrlResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<impl axum::response::IntoResponse, (StatusCode, Json<ProblemDetail>)> {
     let row = find_active_share_link(&state.pool, &token, payload.access_code.as_deref()).await?;
     let share_id: String = row.get("share_id");
     let download_limit: Option<i64> = row.get("download_limit");
@@ -47,7 +47,7 @@ pub(crate) async fn create_share_link_download_url(
                 StatusCode::TOO_MANY_REQUESTS,
                 "download limit exceeded",
                 "share link download limit exceeded",
-                "drive.share_link.download_limit_exceeded",
+                SdkWorkResultCode::RateLimitExceeded,
             ));
         }
     }
@@ -115,14 +115,11 @@ pub(crate) async fn create_share_link_download_url(
         }
     };
 
-    Ok((
-        StatusCode::CREATED,
-        Json(OpenDownloadUrlResponse {
-            download_url: signed.url,
-            expires_at_epoch_ms: signed.expires_at_epoch_ms,
-            method: signed.method,
-        }),
-    ))
+    Ok(created_resource(OpenDownloadUrlResponse {
+        download_url: signed.url,
+        expires_at_epoch_ms: signed.expires_at_epoch_ms,
+        method: signed.method,
+    }))
 }
 
 fn validate_requested_ttl_seconds(
@@ -134,7 +131,7 @@ fn validate_requested_ttl_seconds(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "requestedTtlSeconds must be between 1 and 3600 seconds",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     Ok(ttl_seconds)

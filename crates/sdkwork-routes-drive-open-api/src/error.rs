@@ -1,26 +1,18 @@
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_drive_http::api_problem::{problem as shared_problem, SdkWorkProblemDetail};
 use sdkwork_drive_workspace_service::DriveServiceError;
-use serde::Serialize;
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ProblemDetail {
-    r#type: String,
-    title: String,
-    status: u16,
-    detail: String,
-    code: String,
-    trace_id: String,
-    request_id: String,
-}
+pub(crate) use sdkwork_drive_http::api_problem::SdkWorkResultCode;
+
+pub(crate) type ProblemDetail = SdkWorkProblemDetail;
 
 pub(crate) fn share_link_expired_problem() -> (StatusCode, Json<ProblemDetail>) {
     problem(
         StatusCode::GONE,
         "share link expired",
         "share link expired",
-        "drive.share_link.expired",
+        SdkWorkResultCode::Gone,
     )
 }
 
@@ -29,7 +21,7 @@ pub(crate) fn share_link_access_code_problem() -> (StatusCode, Json<ProblemDetai
         StatusCode::FORBIDDEN,
         "access code required",
         "share link access code is missing or invalid",
-        "drive.share_link.access_code_invalid",
+        SdkWorkResultCode::PermissionRequired,
     )
 }
 
@@ -47,7 +39,7 @@ pub(crate) fn internal_sql_error(
             StatusCode::INTERNAL_SERVER_ERROR,
             "internal error",
             "An unexpected error occurred.",
-            "drive.internal_error",
+            SdkWorkResultCode::InternalError,
         )
     }
 }
@@ -58,22 +50,22 @@ pub(crate) fn map_service_error(error: DriveServiceError) -> (StatusCode, Json<P
             StatusCode::BAD_REQUEST,
             "validation failed",
             detail,
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ),
         DriveServiceError::Conflict(detail) => {
-            problem(StatusCode::CONFLICT, "conflict", detail, "drive.conflict")
+            problem(StatusCode::CONFLICT, "conflict", detail, SdkWorkResultCode::Conflict)
         }
         DriveServiceError::NotFound(detail) => problem(
             StatusCode::NOT_FOUND,
             "not found",
             detail,
-            "drive.not_found",
+            SdkWorkResultCode::NotFound,
         ),
         DriveServiceError::PermissionDenied(detail) => problem(
             StatusCode::FORBIDDEN,
             "permission denied",
             detail,
-            "drive.permission_denied",
+            SdkWorkResultCode::PermissionRequired,
         ),
         DriveServiceError::Internal(detail) => {
             tracing::error!(
@@ -85,7 +77,7 @@ pub(crate) fn map_service_error(error: DriveServiceError) -> (StatusCode, Json<P
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "internal error",
                 "An unexpected error occurred.",
-                "drive.internal_error",
+                SdkWorkResultCode::InternalError,
             )
         }
     }
@@ -95,19 +87,7 @@ pub(crate) fn problem(
     status: StatusCode,
     title: &str,
     detail: impl Into<String>,
-    code: &str,
+    code: SdkWorkResultCode,
 ) -> (StatusCode, Json<ProblemDetail>) {
-    let ids = sdkwork_drive_http::problem_correlation::current_problem_correlation();
-    (
-        status,
-        Json(ProblemDetail {
-            r#type: "about:blank".to_string(),
-            title: title.to_string(),
-            status: status.as_u16(),
-            detail: detail.into(),
-            code: code.to_string(),
-            trace_id: ids.trace_id,
-            request_id: ids.request_id,
-        }),
-    )
+    shared_problem(status, title, detail, code)
 }

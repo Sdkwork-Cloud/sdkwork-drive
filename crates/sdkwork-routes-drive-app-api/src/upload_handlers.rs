@@ -3,8 +3,7 @@ use crate::app_context::DriveRequestContext;
 use crate::dto::*;
 use crate::error::{
     internal_problem, internal_sql_error, map_service_error, not_found_problem, problem,
-    service_error_kind, ProblemDetail,
-};
+    service_error_kind, ProblemDetail, SdkWorkResultCode};
 use crate::node_repository::find_active_node;
 use crate::object_store::{AppDownloadSigner, UploadPartSignCommand};
 use crate::state::AppState;
@@ -56,7 +55,7 @@ pub(crate) async fn create_upload_session(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "idempotencyKey is required",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     validate_optional_future_epoch_ms(Some(payload.expires_at_epoch_ms), "expiresAtEpochMs")?;
@@ -69,7 +68,7 @@ pub(crate) async fn create_upload_session(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "nodeId must reference an active file",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, node_id, "writer").await?;
@@ -198,7 +197,7 @@ pub(crate) async fn presign_upload_part(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "partNo must be between 1 and 10000",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     let upload_session = find_upload_session(&state.pool, &tenant_id, &upload_session_id).await?;
@@ -210,7 +209,7 @@ pub(crate) async fn presign_upload_part(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "uploadId must not be empty",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             ));
         }
         if upload_id != upload_session.storage_upload_id {
@@ -218,7 +217,7 @@ pub(crate) async fn presign_upload_part(
                 StatusCode::CONFLICT,
                 "conflict",
                 "uploadId does not match upload session storage upload id",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             ));
         }
     }
@@ -288,7 +287,7 @@ pub(crate) async fn complete_upload_session(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "contentLength must be greater than or equal to 0",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
 
@@ -302,7 +301,7 @@ pub(crate) async fn complete_upload_session(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
                 "uploadId must not be empty",
-                "drive.validation.failed",
+                SdkWorkResultCode::ValidationError,
             ));
         }
         if upload_id != upload_session.storage_upload_id {
@@ -310,7 +309,7 @@ pub(crate) async fn complete_upload_session(
                 StatusCode::CONFLICT,
                 "conflict",
                 "uploadId does not match upload session storage upload id",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             ));
         }
     }

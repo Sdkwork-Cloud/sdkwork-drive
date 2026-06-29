@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use sdkwork_utils_rust::hex_encode;
 use std::collections::HashSet;
 use std::fs::{self, File};
 use std::io::{Read, Seek, SeekFrom};
@@ -120,12 +121,8 @@ pub fn checksum_local_upload_file(
     }
 
     let digest = hasher.finalize();
-    let hex = digest
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect::<String>();
     Ok(LocalUploadChecksumResponse {
-        checksum_sha256_hex: format!("sha256:{hex}"),
+        checksum_sha256_hex: format!("sha256:{}", hex_encode(digest.as_slice())),
     })
 }
 

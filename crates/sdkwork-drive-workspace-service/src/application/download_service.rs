@@ -2,12 +2,9 @@ use crate::ports::storage_object_store::{
     DownloadSignCommand, DriveDownloadSigner, DriveStorageObjectStore,
 };
 use crate::DriveServiceError;
-use hmac::{Hmac, Mac};
-use sha2::Sha256;
+use sdkwork_utils_rust::{hmac_sha256, secure_compare};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
-
-type HmacSha256 = Hmac<Sha256>;
 
 const DOWNLOAD_TOKEN_PREFIX: &str = "dlv2_";
 const DEV_DOWNLOAD_TOKEN_SECRET: &str = "sdkwork-drive-dev-download-token-secret";
@@ -280,7 +277,7 @@ fn parse_download_token_with_key(
 
     let expected_signature =
         sign_download_token_payload(signing_key, &tenant_id, &node_id, expires_at_epoch_ms)?;
-    if !constant_time_eq(signature, &expected_signature) {
+    if !secure_compare(signature, &expected_signature) {
         return Err(DriveServiceError::Validation(
             "download token signature is invalid".to_string(),
         ));
@@ -300,11 +297,12 @@ fn sign_download_token_payload(
     expires_at_epoch_ms: i64,
 ) -> Result<String, DriveServiceError> {
     let payload = format!("{tenant_id}\n{node_id}\n{expires_at_epoch_ms}");
-    let mut mac = HmacSha256::new_from_slice(signing_key.as_bytes()).map_err(|_| {
-        DriveServiceError::Internal("download token signing key is invalid".to_string())
-    })?;
-    mac.update(payload.as_bytes());
-    Ok(hex_encode_bytes(&mac.finalize().into_bytes()))
+    if signing_key.trim().is_empty() {
+        return Err(DriveServiceError::Internal(
+            "download token signing key is invalid".to_string(),
+        ));
+    }
+    Ok(hmac_sha256(payload.as_bytes(), signing_key.as_bytes()))
 }
 
 fn resolve_download_token_signing_key(tenant_id: &str) -> Result<String, DriveServiceError> {
@@ -423,26 +421,12 @@ pub fn ensure_production_download_token_signing_configured() -> Result<(), Strin
     )
 }
 
-fn constant_time_eq(left: &str, right: &str) -> bool {
-    if left.len() != right.len() {
-        return false;
-    }
-    left.bytes()
-        .zip(right.bytes())
-        .fold(0u8, |acc, (a, b)| acc | (a ^ b))
-        == 0
-}
-
 fn encode_hex(value: &str) -> String {
     value
         .as_bytes()
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect()
-}
-
-fn hex_encode_bytes(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 fn decode_hex(encoded: &str) -> Result<String, DriveServiceError> {

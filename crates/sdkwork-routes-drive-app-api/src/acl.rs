@@ -1,6 +1,6 @@
 use crate::app_context::DriveRequestContext;
 use crate::dto::{ChangeResponse, DriveWatchChannelResponse, PageRequest};
-use crate::error::{internal_sql_error, map_service_error, problem, ProblemDetail};
+use crate::error::{internal_sql_error, map_service_error, problem, ProblemDetail, SdkWorkResultCode};
 use crate::node_repository::find_node;
 use axum::http::StatusCode;
 use axum::Json;
@@ -118,7 +118,7 @@ pub(crate) fn permission_denied_problem() -> (StatusCode, Json<ProblemDetail>) {
         StatusCode::FORBIDDEN,
         "permission denied",
         "subject does not have required access to the drive node",
-        "drive.permission_denied",
+        SdkWorkResultCode::PermissionRequired,
     )
 }
 
@@ -432,7 +432,7 @@ pub(crate) async fn ensure_watch_channel_role(
             StatusCode::INTERNAL_SERVER_ERROR,
             "internal error",
             "watch channel is missing space scope",
-            "drive.internal_error",
+            SdkWorkResultCode::InternalError,
         )
     })?;
     if required_role == "reader" || required_role == "commenter" {

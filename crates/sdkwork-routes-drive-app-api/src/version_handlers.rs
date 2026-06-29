@@ -4,7 +4,7 @@ use crate::dto::{
     DeleteVersionResponse, DriveNodeResponse, FileVersionResponse, NodeCommandRequest,
     NodeMutationQuery, PageQuery, VersionListResponse,
 };
-use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail};
+use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
 use crate::mappers::map_file_version_row;
 use crate::metadata_repository::present_drive_node;
 use crate::node_repository::{find_active_node, find_node};
@@ -279,7 +279,7 @@ pub(crate) async fn delete_version(
                     StatusCode::CONFLICT,
                     "conflict",
                     "cannot delete the only active version",
-                    "drive.conflict",
+                    SdkWorkResultCode::Conflict,
                 ));
             }
         }
@@ -361,7 +361,7 @@ pub(crate) async fn delete_version(
                 StatusCode::CONFLICT,
                 "conflict",
                 "cannot delete the only active version",
-                "drive.conflict",
+                SdkWorkResultCode::Conflict,
             ));
         }
     }

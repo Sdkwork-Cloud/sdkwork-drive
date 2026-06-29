@@ -1,4 +1,5 @@
 use http::{HeaderMap, Uri};
+use sdkwork_utils_rust::SdkWorkResultCode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -39,7 +40,7 @@ pub struct DriveAuthError {
     pub status: u16,
     pub title: &'static str,
     pub detail: String,
-    pub code: &'static str,
+    pub code: i32,
     pub request_id: String,
     pub trace_id: String,
 }
@@ -60,7 +61,7 @@ pub fn validate_drive_app_context(
             401,
             "unauthorized",
             "Authorization bearer token is required",
-            "sdkwork.auth.missing_auth_token",
+            SdkWorkResultCode::AuthenticationRequired,
             &request_id,
             &trace_id,
         ));
@@ -70,7 +71,7 @@ pub fn validate_drive_app_context(
         headers,
         ACCESS_TOKEN_HEADER,
         "Access-Token header is required",
-        "sdkwork.auth.missing_access_token",
+        SdkWorkResultCode::AuthenticationRequired,
         &request_id,
         &trace_id,
     )?;
@@ -79,7 +80,7 @@ pub fn validate_drive_app_context(
             401,
             "unauthorized",
             "Access-Token header is required",
-            "sdkwork.auth.missing_access_token",
+            SdkWorkResultCode::AuthenticationRequired,
             &request_id,
             &trace_id,
         ));
@@ -99,7 +100,9 @@ pub fn validate_drive_app_context(
         auth_level: Some(resolved.auth_level),
         data_scope: resolved.data_scope,
         permission_scope: resolved.permission_scope,
-        actor_id: resolved.user_id,
+        // actor_id should come from the resolved token's actor_subject or user_id
+        // for proper impersonation audit trail support.
+        actor_id: resolved.actor_id,
         actor_kind: resolved.actor_kind,
         device_id: resolved.device_id,
         request_id,
@@ -151,7 +154,7 @@ fn map_token_claims_error(
             401,
             "unauthorized",
             format!("{field} claim is required in SDKWork dual-token credentials"),
-            "sdkwork.auth.invalid_credentials",
+            SdkWorkResultCode::InvalidToken,
             request_id,
             trace_id,
         ),
@@ -159,7 +162,7 @@ fn map_token_claims_error(
             401,
             "unauthorized",
             detail,
-            "sdkwork.auth.invalid_credentials",
+            SdkWorkResultCode::InvalidToken,
             request_id,
             trace_id,
         ),
@@ -167,7 +170,7 @@ fn map_token_claims_error(
             403,
             "forbidden",
             detail,
-            "sdkwork.auth.context_conflict",
+            SdkWorkResultCode::TenantAccessDenied,
             request_id,
             trace_id,
         ),
@@ -290,7 +293,7 @@ fn context_conflict(detail: impl Into<String>, context: &DriveAppContext) -> Dri
         status: 403,
         title: "forbidden",
         detail: detail.into(),
-        code: "sdkwork.auth.context_conflict",
+        code: SdkWorkResultCode::TenantAccessDenied.as_i32(),
         request_id: context.request_id.clone(),
         trace_id: context.trace_id.clone(),
     }
@@ -306,7 +309,7 @@ fn bearer_token(
             401,
             "unauthorized",
             "Authorization bearer token is required",
-            "sdkwork.auth.missing_auth_token",
+            SdkWorkResultCode::AuthenticationRequired,
             request_id,
             trace_id,
         ));
@@ -316,7 +319,7 @@ fn bearer_token(
             401,
             "unauthorized",
             "Authorization header must use Bearer token transport",
-            "sdkwork.auth.invalid_auth_token",
+            SdkWorkResultCode::InvalidToken,
             request_id,
             trace_id,
         ));
@@ -328,7 +331,7 @@ fn required_header(
     headers: &HeaderMap,
     name: &str,
     detail: &str,
-    code: &'static str,
+    code: SdkWorkResultCode,
     request_id: &str,
     trace_id: &str,
 ) -> Result<String, DriveAuthError> {
@@ -441,7 +444,7 @@ fn auth_error(
     status: u16,
     title: &'static str,
     detail: impl Into<String>,
-    code: &'static str,
+    code: SdkWorkResultCode,
     request_id: &str,
     trace_id: &str,
 ) -> DriveAuthError {
@@ -449,7 +452,7 @@ fn auth_error(
         status,
         title,
         detail: detail.into(),
-        code,
+        code: code.as_i32(),
         request_id: request_id.to_string(),
         trace_id: trace_id.to_string(),
     }
@@ -526,7 +529,7 @@ mod tests {
         .expect_err("tenant conflict should fail");
 
         assert_eq!(error.status, 403);
-        assert_eq!(error.code, "sdkwork.auth.context_conflict");
+        assert_eq!(error.code, SdkWorkResultCode::TenantAccessDenied.as_i32());
     }
 
     #[test]
@@ -552,7 +555,7 @@ mod tests {
         .expect_err("subject conflict should fail");
 
         assert_eq!(error.status, 403);
-        assert_eq!(error.code, "sdkwork.auth.context_conflict");
+        assert_eq!(error.code, SdkWorkResultCode::TenantAccessDenied.as_i32());
     }
 
     #[test]

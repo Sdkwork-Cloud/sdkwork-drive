@@ -1,3 +1,22 @@
+//! Rate limiting middleware with pluggable backends.
+//!
+//! Provides:
+//! - `InMemoryRateLimitBackend`: local process-only, suitable for single-instance deployments.
+//! - `redis_rate_limit`: Redis sorted-set sliding window for multi-instance deployments
+//!   (requires `redis-rate-limit` feature and `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`).
+//! - `RateLimitConfig`: unified configuration loaded once from environment variables.
+//!
+//! Configuration environment variables (shared across all rate-limit consumers):
+//!
+//! | Variable | Default | Description |
+//! |---|---|---|
+//! | `SDKWORK_DRIVE_RATE_LIMIT_ENABLED` | `true` | Master toggle |
+//! | `SDKWORK_DRIVE_RATE_LIMIT_BACKEND` | `"memory"` | `"memory"` or `"redis"` |
+//! | `SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL` | — | Redis URL (required when backend=redis) |
+//! | `SDKWORK_DRIVE_RATE_LIMIT_DEFAULT_WINDOW_SECONDS` | `60` | Default sliding window |
+//! | `SDKWORK_DRIVE_RATE_LIMIT_DEFAULT_MAX_REQUESTS` | `600` | Default max requests per window |
+//! | `SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY` | `false` | Trust `x-forwarded-for` / `x-real-ip` |
+
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
@@ -8,20 +27,81 @@ use std::time::{Duration, Instant};
 
 const MAX_RATE_LIMIT_BUCKETS: usize = 10_000;
 
+/// Unified rate-limit configuration, loaded once from environment variables.
 #[derive(Debug, Clone, Copy)]
 pub struct RateLimitConfig {
+    pub enabled: bool,
     pub window: Duration,
     pub max_requests: u32,
+    pub trust_proxy: bool,
 }
 
-struct RateLimitState {
+impl RateLimitConfig {
+    /// Load configuration from environment variables with unified prefix.
+    ///
+    /// Individual surfaces can override `window` and `max_requests` via their own
+    /// env vars (e.g. `SDKWORK_DRIVE_APP_API_RATE_LIMIT_WINDOW_SECONDS`), falling
+    /// back to the shared defaults.
+    pub fn from_env_with_overrides(
+        window_env: &str,
+        max_env: &str,
+        default_window_seconds: u64,
+        default_max_requests: u32,
+    ) -> Self {
+        let enabled = Self::env_bool("SDKWORK_DRIVE_RATE_LIMIT_ENABLED", true);
+        let window_seconds = std::env::var(window_env)
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .filter(|v| *v > 0)
+            .or_else(|| {
+                std::env::var("SDKWORK_DRIVE_RATE_LIMIT_DEFAULT_WINDOW_SECONDS")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .filter(|v| *v > 0)
+            })
+            .unwrap_or(default_window_seconds);
+        let max_requests = std::env::var(max_env)
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .filter(|v| *v > 0)
+            .or_else(|| {
+                std::env::var("SDKWORK_DRIVE_RATE_LIMIT_DEFAULT_MAX_REQUESTS")
+                    .ok()
+                    .and_then(|v| v.parse::<u32>().ok())
+                    .filter(|v| *v > 0)
+            })
+            .unwrap_or(default_max_requests);
+        let trust_proxy = Self::env_bool("SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY", false);
+
+        Self {
+            enabled,
+            window: Duration::from_secs(window_seconds),
+            max_requests,
+            trust_proxy,
+        }
+    }
+
+    fn env_bool(key: &str, default: bool) -> bool {
+        std::env::var(key)
+            .ok()
+            .map(|v| {
+                let v = v.trim().to_ascii_lowercase();
+                v == "1" || v == "true" || v == "on" || v == "yes"
+            })
+            .unwrap_or(default)
+    }
+}
+
+/// In-process sliding-window rate-limit backend.
+///
+/// **Limitation**: state is per-process. Multi-instance deployments should use
+/// a Redis backend via the `redis` feature flag.
+struct InMemoryRateLimitBackend {
     config: RateLimitConfig,
     buckets: Mutex<HashMap<String, Vec<Instant>>>,
 }
 
-pub struct SharedRateLimitState(RateLimitState);
-
-impl RateLimitState {
+impl InMemoryRateLimitBackend {
     fn new(config: RateLimitConfig) -> Self {
         Self {
             config,
@@ -30,22 +110,32 @@ impl RateLimitState {
     }
 
     fn allow(&self, key: &str) -> bool {
+        if !self.config.enabled {
+            return true;
+        }
+
         let now = Instant::now();
         let mut buckets = match self.buckets.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
+
+        // Evict oldest bucket when at capacity and key is new.
         if buckets.len() >= MAX_RATE_LIMIT_BUCKETS && !buckets.contains_key(key) {
             if let Some(oldest_key) = buckets
                 .iter()
-                .min_by_key(|(_, entries)| entries.first().copied().unwrap_or_else(Instant::now))
-                .map(|(bucket_key, _)| bucket_key.clone())
+                .min_by_key(|(_, entries)| {
+                    entries.first().copied().unwrap_or_else(Instant::now)
+                })
+                .map(|(bk, _)| bk.clone())
             {
                 buckets.remove(&oldest_key);
             }
         }
+
         let entries = buckets.entry(key.to_string()).or_default();
         entries.retain(|seen| now.duration_since(*seen) <= self.config.window);
+
         if entries.len() as u32 >= self.config.max_requests {
             return false;
         }
@@ -54,8 +144,54 @@ impl RateLimitState {
     }
 }
 
+/// Shared rate-limit state (singleton per config).
+pub struct SharedRateLimitState {
+    backend: InMemoryRateLimitBackend,
+    backend_type: &'static str,
+}
+
+fn resolve_rate_limit_backend_type() -> &'static str {
+    static BACKEND: OnceLock<&'static str> = OnceLock::new();
+    BACKEND.get_or_init(|| {
+        #[cfg(feature = "redis-rate-limit")]
+        {
+            if std::env::var("SDKWORK_DRIVE_RATE_LIMIT_BACKEND")
+                .ok()
+                .map(|value| value.trim().to_ascii_lowercase())
+                .as_deref()
+                == Some("redis")
+            {
+                return "redis";
+            }
+        }
+        "memory"
+    })
+}
+
+/// Resolve or create a shared rate-limit state for a given config initialiser.
+pub fn shared_rate_limit_state(
+    init: impl FnOnce() -> RateLimitConfig,
+) -> &'static SharedRateLimitState {
+    static STATE: OnceLock<SharedRateLimitState> = OnceLock::new();
+    STATE.get_or_init(|| {
+        let config = init();
+        let backend_type = resolve_rate_limit_backend_type();
+        SharedRateLimitState {
+            backend: InMemoryRateLimitBackend::new(config),
+            backend_type,
+        }
+    })
+}
+
+/// Extract the client IP/identity from the request for rate-limit key derivation.
 pub fn rate_limit_client_key(request: &Request<Body>, fallback: &str) -> String {
-    if rate_limit_trust_proxy_enabled() {
+    // Check the config via a lazy static to avoid re-parsing env vars on every request.
+    static TRUST_PROXY: OnceLock<bool> = OnceLock::new();
+    let trust_proxy = *TRUST_PROXY.get_or_init(|| {
+        RateLimitConfig::env_bool("SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY", false)
+    });
+
+    if trust_proxy {
         if let Some(real_ip) = request
             .headers()
             .get("x-real-ip")
@@ -78,23 +214,7 @@ pub fn rate_limit_client_key(request: &Request<Body>, fallback: &str) -> String 
         .unwrap_or_else(|| fallback.to_string())
 }
 
-fn rate_limit_trust_proxy_enabled() -> bool {
-    std::env::var("SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY")
-        .ok()
-        .map(|value| {
-            let value = value.trim().to_ascii_lowercase();
-            value == "1" || value == "true" || value == "on" || value == "yes"
-        })
-        .unwrap_or(false)
-}
-
-pub fn shared_rate_limit_state(
-    init: impl FnOnce() -> RateLimitConfig,
-) -> &'static SharedRateLimitState {
-    static STATE: OnceLock<SharedRateLimitState> = OnceLock::new();
-    STATE.get_or_init(|| SharedRateLimitState(RateLimitState::new(init())))
-}
-
+/// Sliding-window rate-limit middleware.
 pub async fn sliding_window_rate_limit(
     state: &'static SharedRateLimitState,
     request: Request<Body>,
@@ -103,31 +223,38 @@ pub async fn sliding_window_rate_limit(
 ) -> Response {
     let client_key = rate_limit_client_key(&request, "direct-client");
     let key = format!("{client_key}:{}", request.uri().path());
-    if !state.0.allow(&key) {
+    let allowed = if state.backend_type == "redis" {
+        #[cfg(feature = "redis-rate-limit")]
+        {
+            super::redis_rate_limit::redis_allow(&key, &state.config).await
+        }
+        #[cfg(not(feature = "redis-rate-limit"))]
+        {
+            state.backend.allow(&key)
+        }
+    } else {
+        state.backend.allow(&key)
+    };
+    if !allowed {
         sdkwork_drive_observability::metrics::record_http_rate_limited();
         return (StatusCode::TOO_MANY_REQUESTS, message).into_response();
     }
     next.run(request).await
 }
 
+/// Convenience: build `RateLimitConfig` from env with default overrides.
+///
+/// Prefer this over manual `RateLimitConfig::from_env_with_overrides()` calls.
 pub fn rate_limit_config_from_env(
     window_env: &str,
     max_env: &str,
     default_window_seconds: u64,
     default_max_requests: u32,
 ) -> RateLimitConfig {
-    let window_seconds = std::env::var(window_env)
-        .ok()
-        .and_then(|value| value.parse::<u64>().ok())
-        .filter(|value| *value > 0)
-        .unwrap_or(default_window_seconds);
-    let max_requests = std::env::var(max_env)
-        .ok()
-        .and_then(|value| value.parse::<u32>().ok())
-        .filter(|value| *value > 0)
-        .unwrap_or(default_max_requests);
-    RateLimitConfig {
-        window: Duration::from_secs(window_seconds),
-        max_requests,
-    }
+    RateLimitConfig::from_env_with_overrides(
+        window_env,
+        max_env,
+        default_window_seconds,
+        default_max_requests,
+    )
 }

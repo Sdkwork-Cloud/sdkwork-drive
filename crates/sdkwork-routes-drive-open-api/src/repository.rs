@@ -1,5 +1,5 @@
 use crate::dto::{OpenNodeResponse, OpenShareLinkResponse};
-use crate::error::{internal_sql_error, problem, share_link_access_code_problem, ProblemDetail};
+use crate::error::{internal_sql_error, problem, share_link_access_code_problem, ProblemDetail, SdkWorkResultCode};
 use crate::time::now_epoch_ms;
 use axum::http::StatusCode;
 use axum::Json;
@@ -57,7 +57,7 @@ pub(crate) async fn find_active_share_link(
             StatusCode::NOT_FOUND,
             "not found",
             "share link not found",
-            "drive.not_found",
+            SdkWorkResultCode::NotFound,
         ));
     };
 
@@ -68,7 +68,7 @@ pub(crate) async fn find_active_share_link(
                 StatusCode::GONE,
                 "share link expired",
                 "share link expired",
-                "drive.share_link.expired",
+                SdkWorkResultCode::Gone,
             ));
         }
     }
@@ -132,7 +132,7 @@ async fn map_share_link_claim_failure(
             StatusCode::NOT_FOUND,
             "not found",
             "share link not found",
-            "drive.not_found",
+            SdkWorkResultCode::NotFound,
         ));
     };
 
@@ -142,7 +142,7 @@ async fn map_share_link_claim_failure(
             StatusCode::NOT_FOUND,
             "not found",
             "share link not found",
-            "drive.not_found",
+            SdkWorkResultCode::NotFound,
         ));
     }
     let expires_at_epoch_ms: Option<i64> = row.get("expires_at_epoch_ms");
@@ -152,7 +152,7 @@ async fn map_share_link_claim_failure(
                 StatusCode::GONE,
                 "share link expired",
                 "share link expired",
-                "drive.share_link.expired",
+                SdkWorkResultCode::Gone,
             ));
         }
     }
@@ -163,7 +163,7 @@ async fn map_share_link_claim_failure(
             StatusCode::TOO_MANY_REQUESTS,
             "download limit exceeded",
             "share link download limit exceeded",
-            "drive.share_link.download_limit_exceeded",
+            SdkWorkResultCode::RateLimitExceeded,
         ));
     }
 
@@ -171,7 +171,7 @@ async fn map_share_link_claim_failure(
         StatusCode::CONFLICT,
         "conflict",
         "share link download slot changed concurrently",
-        "drive.conflict",
+        SdkWorkResultCode::Conflict,
     ))
 }
 

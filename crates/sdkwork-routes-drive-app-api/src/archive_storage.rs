@@ -2,8 +2,7 @@ use crate::archive::{is_supported_archive_content, validate_archive_source_node}
 use crate::dto::ActiveStorageObjectRef;
 use crate::error::{
     internal_sql_error, map_object_store_route_error, map_service_error, not_found_problem,
-    problem, ProblemDetail,
-};
+    problem, ProblemDetail, SdkWorkResultCode};
 use crate::node_repository::find_node;
 use crate::object_store::{
     build_s3_object_store_for_provider, find_storage_provider_by_id,
@@ -33,7 +32,7 @@ pub(crate) async fn read_archive_node_bytes(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "archiveEntries can only be used with ZIP archive files",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     let provider = find_storage_provider_by_id(&state.pool, &object_ref.storage_provider_id)
@@ -93,7 +92,7 @@ async fn read_full_storage_object(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "contentLength must not be negative",
-            "drive.validation.failed",
+            SdkWorkResultCode::ValidationError,
         ));
     }
     if object_ref.content_length == 0 {

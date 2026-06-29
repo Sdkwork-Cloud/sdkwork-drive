@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * Validates deployment descriptor presence for SDKWork Drive.
- * Governed by DEPLOYMENT_SPEC.md.
+ * Governed by DEPLOYMENT_SPEC.md and SDKWORK_DEPLOY_SPEC.md.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateDeploy } from '../../sdkwork-specs/tools/deploy/validate.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const failures = [];
@@ -24,6 +25,21 @@ function requirePath(relativePath, reason) {
   const absolutePath = path.join(repoRoot, relativePath);
   if (!fs.existsSync(absolutePath)) {
     failures.push(`${relativePath} is required (${reason})`);
+  }
+}
+
+requirePath('deployments/deploy.yaml', 'SDKWORK_DEPLOY_SPEC.md deployctl contract');
+
+const deployResult = validateDeploy(
+  repoRoot,
+  process.env.SDKWORK_DRIVE_PROFILE_ID ?? process.env.SDKWORK_DEPLOY_PROFILE,
+);
+for (const warning of deployResult.warnings ?? []) {
+  console.warn(`[deploy-validate] warning: ${warning}`);
+}
+if (!deployResult.ok) {
+  for (const error of deployResult.errors ?? []) {
+    failures.push(`deploy.yaml: ${error}`);
   }
 }
 

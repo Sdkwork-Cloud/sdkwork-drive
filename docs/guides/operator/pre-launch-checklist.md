@@ -33,8 +33,11 @@ Run from repository root before go-live:
 ```bash
 pnpm check
 pnpm verify
+pnpm api:envelope:check
+pnpm api:schema:check
 pnpm deploy:validate
 pnpm check:architecture-alignment
+node ../sdkwork-specs/tools/check-deploy-standard.mjs
 ```
 
 ## Admin Operations Smoke (required)

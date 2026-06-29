@@ -68,7 +68,7 @@ describe('sdkwork-drive-pc-drive host module contract', () => {
       'utf8',
     );
 
-    expect(driveSurface).toContain("@import './driveWorkspaceChrome.css'");
+    expect(driveSurface).toContain('@import "./driveWorkspaceChrome.css"');
     expect(workspaceChrome).toContain('.sdkwork-drive-file-list-header');
     expect(workspaceChrome).toContain('.sdkwork-drive-file-header');
   });

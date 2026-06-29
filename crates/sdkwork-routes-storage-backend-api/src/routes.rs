@@ -1,10 +1,8 @@
 use crate::auth::drive_context_projection_guard;
 use crate::config::AdminStorageConfig;
-use crate::handlers::*;
 use crate::state::AdminStorageState;
 use crate::web_bootstrap::wrap_router_with_web_framework;
 use axum::middleware;
-use axum::routing::get;
 use axum::{Extension, Router};
 use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_http::infra::{drive_service_router_config, mount_drive_infra_routes};
@@ -37,7 +35,11 @@ pub async fn build_protected_router_with_pool_and_config(
     pool: AnyPool,
     config: AdminStorageConfig,
 ) -> Router {
-    let router = build_business_router_inner(AdminStorageState::new(pool, config), true, None);
+    let router = build_router_inner_with_infra(
+        AdminStorageState::new(pool, config),
+        true,
+        None,
+    );
     crate::web_bootstrap::wrap_router_with_web_framework_from_env(router).await
 }
 
@@ -46,7 +48,8 @@ pub async fn build_gateway_business_router_with_pool_and_config(
     pool: AnyPool,
     config: AdminStorageConfig,
 ) -> Router {
-    build_protected_router_with_pool_and_config(pool, config).await
+    let router = build_business_router_inner(AdminStorageState::new(pool, config), true, None);
+    crate::web_bootstrap::wrap_router_with_web_framework_from_env(router).await
 }
 
 pub fn build_router_with_pool_and_iam(pool: AnyPool) -> Router {
@@ -142,14 +145,6 @@ fn build_router_with_state_and_test_tenant(state: AdminStorageState, tenant_id: 
             tenant_id,
         )),
     )
-}
-
-fn build_router_inner(
-    state: AdminStorageState,
-    require_iam: bool,
-    test_context: Option<crate::app_context::DriveRequestContext>,
-) -> Router {
-    build_business_router_inner(state, require_iam, test_context)
 }
 
 fn build_business_router_inner(

@@ -4,6 +4,7 @@ use sqlx::any::AnyPoolOptions;
 use sqlx::AnyPool;
 use sqlx::Executor;
 
+use sdkwork_database_config::claw_database::postgres_url_with_search_path;
 use sdkwork_drive_config::{DatabaseConfig, DatabaseEngine};
 
 const SQLITE_CORE_SQL: &str = include_str!("sqlite_core.sql");
@@ -99,8 +100,21 @@ async fn upgrade_sqlite_dr_drive_domain_outbox_pending_dispatch_index(
     Ok(())
 }
 
+fn drive_database_config_with_unified_postgres_search_path(
+    config: &DatabaseConfig,
+) -> Result<DatabaseConfig, sqlx::Error> {
+    if config.engine() != DatabaseEngine::Postgresql {
+        return Ok(config.clone());
+    }
+
+    let url = postgres_url_with_search_path(config.url(), "SDKWORK_DRIVE");
+    DatabaseConfig::from_url_with_max_connections(url.as_str(), config.max_connections())
+        .map_err(|error| sqlx::Error::Configuration(error.to_string().into()))
+}
+
 pub async fn connect_any_database(config: &DatabaseConfig) -> Result<AnyPool, sqlx::Error> {
     sqlx::any::install_default_drivers();
+    let config = drive_database_config_with_unified_postgres_search_path(config)?;
     AnyPoolOptions::new()
         .max_connections(config.max_connections())
         .acquire_timeout(Duration::from_secs(30))
@@ -113,10 +127,11 @@ pub async fn connect_any_database(config: &DatabaseConfig) -> Result<AnyPool, sq
 pub async fn connect_any_database_and_install_schema(
     config: &DatabaseConfig,
 ) -> Result<AnyPool, sqlx::Error> {
-    let pool = connect_any_database(config).await?;
+    let config = drive_database_config_with_unified_postgres_search_path(config)?;
+    let pool = connect_any_database(&config).await?;
     match config.engine() {
         DatabaseEngine::Postgresql => {
-            crate::bootstrap::bootstrap_drive_database_for_config(config)
+            crate::bootstrap::bootstrap_drive_database_for_config(&config)
                 .await
                 .map_err(|error| sqlx::Error::Configuration(error.into()))?;
         }

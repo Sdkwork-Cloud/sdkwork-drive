@@ -1,46 +1,41 @@
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_drive_http::api_problem::{
+    problem as shared_problem,
+    problem_with_trace_id as shared_problem_with_trace_id, SdkWorkProblemDetail,
+};
 use sdkwork_drive_observability::error_kinds;
 use sdkwork_drive_storage_contract::{DriveObjectStoreError, DriveObjectStoreErrorKind};
 use sdkwork_drive_workspace_service::DriveServiceError;
-use serde::Serialize;
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ProblemDetail {
-    r#type: String,
-    title: String,
-    status: u16,
-    detail: String,
-    code: String,
-    trace_id: String,
-    request_id: String,
-}
+pub(crate) use sdkwork_drive_http::api_problem::SdkWorkResultCode;
+
+pub(crate) type ProblemDetail = SdkWorkProblemDetail;
 
 pub(crate) fn map_service_error(error: DriveServiceError) -> (StatusCode, Json<ProblemDetail>) {
     match error {
         DriveServiceError::Validation(detail) => {
             let code = if detail.starts_with("provider_kind is invalid;") {
-                "drive.validation.provider_kind_invalid"
+                SdkWorkResultCode::InvalidParameter
             } else {
-                "drive.validation.failed"
+                SdkWorkResultCode::ValidationError
             };
             problem(StatusCode::BAD_REQUEST, "validation failed", detail, code)
         }
         DriveServiceError::Conflict(detail) => {
-            problem(StatusCode::CONFLICT, "conflict", detail, "drive.conflict")
+            problem(StatusCode::CONFLICT, "conflict", detail, SdkWorkResultCode::Conflict)
         }
         DriveServiceError::NotFound(detail) => problem(
             StatusCode::NOT_FOUND,
             "not found",
             detail,
-            "drive.not_found",
+            SdkWorkResultCode::NotFound,
         ),
         DriveServiceError::PermissionDenied(detail) => problem(
             StatusCode::FORBIDDEN,
             "permission denied",
             detail,
-            "drive.permission_denied",
+            SdkWorkResultCode::PermissionRequired,
         ),
         DriveServiceError::Internal(detail) => {
             tracing::error!(
@@ -52,7 +47,7 @@ pub(crate) fn map_service_error(error: DriveServiceError) -> (StatusCode, Json<P
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "internal error",
                 "An unexpected error occurred.",
-                "drive.internal_error",
+                SdkWorkResultCode::InternalError,
             )
         }
     }
@@ -66,7 +61,7 @@ pub(crate) fn map_download_token_error(
             StatusCode::GONE,
             "download token expired",
             detail,
-            "drive.download_token.expired",
+            SdkWorkResultCode::Gone,
         ),
         other => map_service_error(other),
     }
@@ -77,7 +72,7 @@ pub(crate) fn share_link_expired_problem() -> (StatusCode, Json<ProblemDetail>) 
         StatusCode::GONE,
         "share link expired",
         "share link expired",
-        "drive.share_link.expired",
+        SdkWorkResultCode::Gone,
     )
 }
 
@@ -86,7 +81,7 @@ pub(crate) fn share_link_download_limit_problem() -> (StatusCode, Json<ProblemDe
         StatusCode::TOO_MANY_REQUESTS,
         "download limit exceeded",
         "share link download limit exceeded",
-        "drive.share_link.download_limit_exceeded",
+        SdkWorkResultCode::RateLimitExceeded,
     )
 }
 
@@ -101,7 +96,7 @@ pub(crate) fn internal_problem(detail: impl Into<String>) -> (StatusCode, Json<P
         StatusCode::INTERNAL_SERVER_ERROR,
         "internal error",
         "An unexpected error occurred.",
-        "drive.internal_error",
+        SdkWorkResultCode::InternalError,
     )
 }
 
@@ -119,7 +114,22 @@ pub(crate) fn internal_sql_error(
     }
 }
 
+/// Checks whether a `sqlx::Error` is a unique-constraint violation.
+///
+/// Uses the sqlx `Error::as_database_error()` API when available, falling back
+/// to error message inspection for engines that do not provide structured codes.
 pub(crate) fn is_unique_constraint_error(error: &sqlx::Error) -> bool {
+    if let Some(database_error) = error.as_database_error() {
+        if let Some(code) = database_error.code() {
+            if code.as_ref() == "23505" {
+                return true;
+            }
+        }
+        if let Some(constraint) = database_error.constraint() {
+            return !constraint.is_empty();
+        }
+    }
+
     let message = error.to_string();
     message.contains("UNIQUE constraint failed")
         || message.contains("duplicate key value violates unique constraint")
@@ -128,6 +138,16 @@ pub(crate) fn is_unique_constraint_error(error: &sqlx::Error) -> bool {
 pub(crate) fn unique_node_insert_conflict_target(error: &sqlx::Error) -> &'static str {
     if !is_unique_constraint_error(error) {
         return "unknown";
+    }
+
+    if let Some(database_error) = error.as_database_error() {
+        if let Some(constraint) = database_error.constraint() {
+            return match constraint.as_ref() {
+                "dr_drive_node_pkey" | "ux_dr_drive_node_pkey" => "id",
+                "ux_dr_drive_node_root_name_live" | "ux_dr_drive_node_child_name_live" => "name",
+                _ => "unknown",
+            };
+        }
     }
 
     let message = error.to_string();
@@ -157,7 +177,7 @@ pub(crate) fn not_found_problem(detail: impl Into<String>) -> (StatusCode, Json<
         StatusCode::NOT_FOUND,
         "not found",
         detail,
-        "drive.not_found",
+        SdkWorkResultCode::NotFound,
     )
 }
 
@@ -166,7 +186,7 @@ pub(crate) fn validation_problem(detail: impl Into<String>) -> (StatusCode, Json
         StatusCode::BAD_REQUEST,
         "validation failed",
         detail,
-        "drive.validation.failed",
+        SdkWorkResultCode::ValidationError,
     )
 }
 
@@ -194,32 +214,19 @@ pub(crate) fn problem(
     status: StatusCode,
     title: &str,
     detail: impl Into<String>,
-    code: &str,
+    code: SdkWorkResultCode,
 ) -> (StatusCode, Json<ProblemDetail>) {
-    let ids = sdkwork_drive_http::problem_correlation::current_problem_correlation();
-    problem_with_ids(status, title, detail, code, &ids.request_id, &ids.trace_id)
+    shared_problem(status, title, detail, code)
 }
 
 pub(crate) fn problem_with_ids(
     status: StatusCode,
     title: &str,
     detail: impl Into<String>,
-    code: &str,
-    request_id: &str,
+    code: SdkWorkResultCode,
     trace_id: &str,
 ) -> (StatusCode, Json<ProblemDetail>) {
-    (
-        status,
-        Json(ProblemDetail {
-            r#type: "about:blank".to_string(),
-            title: title.to_string(),
-            status: status.as_u16(),
-            detail: detail.into(),
-            code: code.to_string(),
-            trace_id: trace_id.to_string(),
-            request_id: request_id.to_string(),
-        }),
-    )
+    shared_problem_with_trace_id(status, title, detail, code, trace_id)
 }
 
 pub(crate) fn map_object_store_error(error: DriveObjectStoreError) -> DriveServiceError {
@@ -244,21 +251,21 @@ pub(crate) fn map_object_store_route_error(
 mod tests {
     use super::*;
     use axum::http::StatusCode;
+    use sdkwork_drive_http::problem_correlation::{
+        current_problem_correlation, with_problem_correlation, ProblemCorrelationIds,
+        UNSET_REQUEST_ID, UNSET_TRACE_ID,
+    };
 
     #[test]
     fn internal_problem_does_not_expose_internal_detail_to_clients() {
         let (_, Json(problem)) = internal_problem(
             "insert dr_drive_node failed: duplicate key value violates unique constraint",
         );
-        assert_eq!(problem.status, StatusCode::INTERNAL_SERVER_ERROR.as_u16());
-        assert_eq!(problem.detail, "An unexpected error occurred.");
-        assert_eq!(problem.code, "drive.internal_error");
+        let json = serde_json::to_value(problem).expect("serialize problem");
+        assert_eq!(json["status"], StatusCode::INTERNAL_SERVER_ERROR.as_u16());
+        assert_eq!(json["detail"], "An unexpected error occurred.");
+        assert_eq!(json["code"], SdkWorkResultCode::InternalError.as_i32());
     }
-
-    use sdkwork_drive_http::problem_correlation::{
-        current_problem_correlation, with_problem_correlation, ProblemCorrelationIds,
-        UNSET_REQUEST_ID, UNSET_TRACE_ID,
-    };
 
     #[test]
     fn problem_uses_task_local_correlation_ids_when_scoped() {
@@ -272,7 +279,7 @@ mod tests {
                             StatusCode::BAD_REQUEST,
                             "validation failed",
                             "detail",
-                            "drive.validation.failed",
+                            SdkWorkResultCode::ValidationError,
                         );
                         (status, problem)
                     },
@@ -282,8 +289,8 @@ mod tests {
 
         let (status, problem) = result;
         assert_eq!(status, StatusCode::BAD_REQUEST);
-        assert_eq!(problem.request_id, "request-test");
-        assert_eq!(problem.trace_id, "trace-test");
+        let json = serde_json::to_value(problem).expect("serialize problem");
+        assert_eq!(json["traceId"], "trace-test");
         let ids = current_problem_correlation();
         assert_eq!(ids.request_id, UNSET_REQUEST_ID);
         assert_eq!(ids.trace_id, UNSET_TRACE_ID);

@@ -281,11 +281,24 @@ function assertProblemDetailSchema(document, label) {
     fail(`${label} missing components.schemas.ProblemDetail`);
   }
   const properties = document.components.schemas.ProblemDetail.properties || {};
-  const requiredProperties = ["type", "title", "status", "detail", "code", "traceId", "requestId"];
+  const requiredProperties = ["type", "title", "status", "code", "traceId"];
   for (const propertyName of requiredProperties) {
     if (!properties[propertyName]) {
       fail(`${label} ProblemDetail missing property: ${propertyName}`);
     }
+  }
+  if (properties.requestId) {
+    fail(`${label} ProblemDetail must not declare legacy requestId (use traceId per API_SPEC.md §15)`);
+  }
+  const codeSchema = properties.code;
+  const codeType =
+    codeSchema?.$ref?.endsWith("/SdkWorkPlatformErrorCode") ? "integer" : codeSchema?.type;
+  if (codeType !== "integer") {
+    fail(`${label} ProblemDetail.code must be numeric int32 (SdkWorkPlatformErrorCode)`);
+  }
+  const traceIdSchema = properties.traceId;
+  if (traceIdSchema?.type !== "string") {
+    fail(`${label} ProblemDetail.traceId must be a string`);
   }
 }
 

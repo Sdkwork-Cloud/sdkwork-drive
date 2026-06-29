@@ -7,7 +7,7 @@ use axum::{
     extract::{Request, State},
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing::{any, get},
+    routing::any,
     Router,
 };
 use config::{
@@ -23,6 +23,10 @@ use sdkwork_routes_storage_backend_api::{
 };
 use tower::ServiceExt;
 use tower_http::cors::{Any, CorsLayer};
+
+/// Maximum request body size: 32 MB.
+/// Requests exceeding this limit receive a 413 Payload Too Large response.
+const MAX_REQUEST_BODY_BYTES: usize = 32 * 1024 * 1024;
 
 #[derive(Clone)]
 struct EmbeddedServiceState {
@@ -73,6 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let app = Router::new()
         .merge(application.router)
+        .layer(axum::extract::DefaultBodyLimit::max(MAX_REQUEST_BODY_BYTES))
         .route(
             "/backend/v3/api/drive/storage/{*rest}",
             any(dispatch_embedded).with_state(admin_storage_router.clone()),

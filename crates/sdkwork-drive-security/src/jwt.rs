@@ -1,12 +1,11 @@
 use crate::policy::DriveAuthValidationPolicy;
 use crate::token_claims::{decode_base64url, parse_json_claims, TokenClaimsError};
-use hmac::{Hmac, Mac};
 use jsonwebtoken::{decode, Algorithm, Validation};
+use sdkwork_utils_rust::verify_hmac_sha256_base64url;
+#[cfg(test)]
+use sdkwork_utils_rust::hmac_sha256_base64url;
 use serde_json::Value;
-use sha2::Sha256;
 use std::collections::BTreeMap;
-
-type HmacSha256 = Hmac<Sha256>;
 
 pub fn is_jwt_format(raw: &str) -> bool {
     if raw.contains('=') || raw.starts_with('{') {
@@ -41,24 +40,20 @@ pub fn verify_jwt_hmac_claims(
     }
 
     let kid = jwt_header_kid(header_b64);
+    // Use a generic error message that does not reveal whether the kid is configured.
     let secret = policy
         .resolve_jwt_hmac_secret(kid.as_deref())
         .ok_or_else(|| {
             TokenClaimsError::InvalidCredentials(
-                "JWT signing key id is not configured for Drive auth".to_string(),
+                "JWT signature verification failed".to_string(),
             )
         })?;
 
     let signing_input = format!("{header_b64}.{payload_b64}");
-    let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).map_err(|_| {
-        TokenClaimsError::InvalidCredentials("JWT HMAC secret is invalid".to_string())
-    })?;
-    mac.update(signing_input.as_bytes());
-    let expected = mac.finalize().into_bytes();
     let actual = decode_base64url(signature_b64).ok_or_else(|| {
         TokenClaimsError::InvalidCredentials("JWT signature is not valid base64url".to_string())
     })?;
-    if actual.len() != expected.len() || !constant_time_eq(&actual, expected.as_slice()) {
+    if !verify_hmac_sha256_base64url(signing_input.as_bytes(), secret.as_bytes(), &actual) {
         return Err(TokenClaimsError::InvalidCredentials(
             "JWT signature verification failed".to_string(),
         ));
@@ -104,9 +99,10 @@ pub fn verify_jwt_jwks_claims(
     }
 
     let kid = jwt_header_kid(header_b64);
+    // Use a generic error message that does not reveal whether the kid is configured.
     let decoding_key = policy.resolve_jwt_jwks_key(kid.as_deref()).ok_or_else(|| {
         TokenClaimsError::InvalidCredentials(
-            "JWT signing key id is not configured in Drive JWKS".to_string(),
+            "JWT signature verification failed".to_string(),
         )
     })?;
 
@@ -167,6 +163,10 @@ fn jwt_header_kid(header_b64: &str) -> Option<String> {
         .map(ToString::to_string)
 }
 
+/// Maximum allowed clock skew (in seconds) between servers.
+/// Tokens with `exp` within this range from `now` may still be accepted.
+const JWT_CLOCK_SKEW_LEEWAY_SECONDS: i64 = 30;
+
 fn validate_jwt_expiry(claims: &BTreeMap<String, String>) -> Result<(), TokenClaimsError> {
     let Some(exp) = claims.get("exp") else {
         return Err(TokenClaimsError::InvalidCredentials(
@@ -182,7 +182,10 @@ fn validate_jwt_expiry(claims: &BTreeMap<String, String>) -> Result<(), TokenCla
             TokenClaimsError::InvalidCredentials(format!("system clock error: {error}"))
         })?
         .as_secs() as i64;
-    if exp <= now {
+    // Allow clock skew up to JWT_CLOCK_SKEW_LEEWAY_SECONDS so that
+    // tokens issued by a server with a slightly faster clock are not
+    // rejected prematurely.
+    if exp <= now - JWT_CLOCK_SKEW_LEEWAY_SECONDS {
         return Err(TokenClaimsError::InvalidCredentials(
             "JWT exp claim is in the past".to_string(),
         ));
@@ -217,14 +220,6 @@ fn validate_jwt_tenant_kid_binding(
     Ok(())
 }
 
-fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
-    let mut diff = 0u8;
-    for (left_byte, right_byte) in left.iter().zip(right.iter()) {
-        diff |= left_byte ^ right_byte;
-    }
-    diff == 0
-}
-
 #[cfg(test)]
 pub fn encode_test_jwt_hmac(payload_json: &str, secret: &str) -> String {
     encode_test_jwt_hmac_with_kid(payload_json, secret, None)
@@ -242,9 +237,7 @@ pub fn encode_test_jwt_hmac_with_kid(
     };
     let payload = encode_base64url(payload_json);
     let signing_input = format!("{header}.{payload}");
-    let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).expect("test secret");
-    mac.update(signing_input.as_bytes());
-    let signature = encode_base64url_bytes(&mac.finalize().into_bytes());
+    let signature = hmac_sha256_base64url(signing_input.as_bytes(), secret.as_bytes());
     format!("{signing_input}.{signature}")
 }
 

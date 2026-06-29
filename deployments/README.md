@@ -7,6 +7,7 @@ SDKWork Drive. It is the deployment boundary governed by
 
 ## Allowed Content
 
+- `deployments/deploy.yaml` per `SDKWORK_DEPLOY_SPEC.md` (deployctl / SDKWork Deploy Server contract).
 - Dockerfile and container build descriptors under `deployments/docker/`.
 - Container packaging notes under `deployments/container/`.
 - Kubernetes manifests and Helm charts.
@@ -21,13 +22,13 @@ SDKWork Drive. It is the deployment boundary governed by
 
 ## Related Specs
 
-- `../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md`
 - `../sdkwork-specs/DEPLOYMENT_SPEC.md`
+- `../sdkwork-specs/SDKWORK_DEPLOY_SPEC.md`
 - `../sdkwork-specs/APP_RUNTIME_TOPOLOGY_SPEC.md`
 
 ## Verification
 
-- `pnpm deploy:validate` (validate deployment descriptors)
+- `pnpm deploy:validate` (validates `deployments/deploy.yaml` + Kubernetes/systemd descriptors)
 
 ## Cloud deployment notes
 

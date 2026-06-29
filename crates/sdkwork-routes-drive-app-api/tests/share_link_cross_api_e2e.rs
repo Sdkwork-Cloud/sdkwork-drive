@@ -100,10 +100,7 @@ async fn share_link_create_via_app_api_and_resolve_via_open_api_with_access_code
         denied_payload["traceId"].as_str(),
         Some("e2e-cross-api-trace-001")
     );
-    assert_eq!(
-        denied_payload["code"].as_str(),
-        Some("drive.share_link.access_code_invalid")
-    );
+    assert_eq!(denied_payload["code"].as_i64(), Some(40301));
 
     let allowed = open_api
         .oneshot(
@@ -124,9 +121,12 @@ async fn share_link_create_via_app_api_and_resolve_via_open_api_with_access_code
             .expect("resolve response should be read"),
     )
     .expect("resolve response should be json");
-    assert_eq!(resolve_payload["accessCodeRequired"], true);
+    let resolve_item = resolve_payload["data"]["item"]
+        .as_object()
+        .expect("resolve response should expose data.item");
+    assert_eq!(resolve_item["accessCodeRequired"], true);
     assert_eq!(
-        resolve_payload["node"]["nodeName"].as_str(),
+        resolve_item["node"]["nodeName"].as_str(),
         Some("handoff.txt")
     );
 }

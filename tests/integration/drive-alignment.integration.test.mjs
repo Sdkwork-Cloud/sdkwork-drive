@@ -103,7 +103,7 @@ const officeModule = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file/src/components/preview-modules/OfficeModule.tsx',
 );
 
-assert.match(assetsModule, /drive\.not_implemented/);
+assert.match(assetsModule, /SdkWorkResultCode::InternalError/);
 assert.match(assetsModule, /StatusCode::NOT_IMPLEMENTED/);
 assert.match(assetsModule, /use Drive uploader APIs/);
 assert.match(assetsModule, /global\.asset\.archived/);
@@ -114,7 +114,7 @@ assert.match(nodeHandlers, /present_drive_node/);
 assert.match(quotaHandlers, /resolve_effective_max_bytes/);
 
 assert.match(aclModule, /subject_has_any_space_permission_grant/);
-assert.match(aclModule, /drive\.permission_denied/);
+assert.match(aclModule, /SdkWorkResultCode::PermissionRequired/);
 assert.match(aclModule, /ensure_space_change_feed_reader/);
 assert.match(aclSqlModule, /reader_inherited_permission_exists_sql/);
 assert.match(aclSqlModule, /shared_with_me_visible_sql/);
@@ -143,7 +143,7 @@ assert.match(spaceHandlers, /ensure_create_space_owner_matches_caller/);
 assert.match(spaceHandlers, /bootstrap_team_space_creator_access/);
 assert.match(spaceHandlers, /ownerSubjectType to group or organization/);
 assert.match(appTestCommon, /auth_token_for_organization/);
-assert.match(spaceHandlers, /drive\.validation\.space_owner_invalid/);
+assert.match(spaceHandlers, /SdkWorkResultCode::InvalidParameter/);
 assert.match(shareLinkHandlers, /claim_share_link/);
 assert.match(spaceHandlers, /acl::space_is_accessible_to_subject/);
 assert.match(spaceHandlers, /acl::ensure_space_owner/);
@@ -507,14 +507,14 @@ const crossApiE2e = read(
   'crates/sdkwork-routes-drive-app-api/tests/share_link_cross_api_e2e.rs',
 );
 assert.match(crossApiE2e, /share_link_create_via_app_api_and_resolve_via_open_api_with_access_code/);
-assert.match(crossApiE2e, /drive\.share_link\.access_code_invalid/);
+assert.match(crossApiE2e, /40301/);
 assert.match(crossApiE2e, /x-trace-id/);
 const driveFileServiceTest = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-core/src/services/driveFileService.test.ts',
 );
 assert.match(driveFileServiceTest, /creates share links with extraction codes/);
 assert.match(driveFileServiceTest, /accessCode: 'extract-42'/);
-assert.match(playwrightSmoke, /drive\.share_link\.access_code_invalid/);
+assert.match(playwrightSmoke, /40301/);
 
 const postgresMigration0002Up = read(
   'database/migrations/postgres/0002_drive_outbox_pending_dispatch_index.up.sql',
@@ -524,6 +524,7 @@ const postgresMigration0002Down = read(
 );
 const installWorkerLeader = read('crates/sdkwork-drive-install-worker/src/maintenance/leader.rs');
 const installWorkerHealth = read('crates/sdkwork-drive-install-worker/src/health.rs');
+const driveHttpInfra = read('crates/sdkwork-drive-http/src/infra.rs');
 const osSecureSessionStorage = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-core/src/session/osSecureSessionStorage.ts',
 );
@@ -544,9 +545,11 @@ assert.match(postgresMigration0002Up, /WHERE delivery_status = 'pending'/);
 assert.match(postgresMigration0002Down, /DROP INDEX IF EXISTS ix_dr_drive_domain_outbox_pending_dispatch/);
 assert.match(installWorkerLeader, /pg_try_advisory_lock/);
 assert.match(installWorkerLeader, /pg_advisory_unlock/);
-assert.match(installWorkerHealth, /SELECT 1/);
-assert.match(installWorkerHealth, /"database": "ok"/);
-assert.match(installWorkerHealth, /SERVICE_UNAVAILABLE/);
+assert.match(installWorkerHealth, /mount_drive_infra_routes/);
+assert.match(installWorkerHealth, /drive_service_router_config/);
+assert.match(driveHttpInfra, /SELECT 1/);
+assert.match(driveHttpInfra, /AnyPoolReadinessCheck/);
+assert.match(driveHttpInfra, /\/readyz/);
 assert.match(osSecureSessionStorage, /read_secure_session_snapshot/);
 assert.match(osSecureSessionStorage, /write_secure_session_value/);
 assert.match(sessionSecureStore, /keyring::Entry/);
