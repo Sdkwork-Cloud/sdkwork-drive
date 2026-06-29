@@ -46,5 +46,9 @@
     "sdkwork",
     "drive",
     "backend-sdk"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

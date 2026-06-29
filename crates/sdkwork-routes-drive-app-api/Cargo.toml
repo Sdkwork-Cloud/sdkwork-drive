@@ -32,4 +32,4 @@ tempfile.workspace = true
 zip.workspace = true
 
 [dev-dependencies]
-sdkwork-routes-drive-open-api = { path = "../sdkwork-routes-drive-open-api" }
+sdkwork-routes-drive-open-api.workspace = true

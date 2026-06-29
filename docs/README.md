@@ -32,7 +32,8 @@ Documentation for SDKWork Drive follows `../sdkwork-specs/DOCUMENTATION_SPEC.md`
 | Document | Path |
 | --- | --- |
 | Evidence and review | [reviews/FULL_CODE_REVIEW_REPORT.md](reviews/FULL_CODE_REVIEW_REPORT.md) |
-| Pre-launch checklist | [guides/operator/pre-launch-checklist.md](guides/operator/pre-launch-checklist.md) |
+| Controlled pilot | [guides/operator/pilot-deployment.md](guides/operator/pilot-deployment.md) |
+| Pre-launch checklist (GA) | [guides/operator/pre-launch-checklist.md](guides/operator/pre-launch-checklist.md) |
 | Operator guide index | [guides/operator/README.md](guides/operator/README.md) |
 | Releases and GA promotion | [releases/README.md](releases/README.md) |
 | Changelog index | [changelogs/README.md](changelogs/README.md) |
@@ -43,11 +44,12 @@ Drive is **Beta / DRAFT** for catalog publication. Code and verification gates p
 
 ## Verification
 
-- `pnpm verify`
-- `pnpm check` (includes API envelope, OpenAPI schema quality gate, deploy.yaml, database framework, architecture alignment)
+- `pnpm verify` (includes `check:app-composition`)
+- `pnpm check` — full merge gate: app composition, Rust workspace, architecture/dependency/SDK/PC/docs/pnpm/agent standards, release readiness, IAM bootstrap audit, deploy/topology/gateway assembly, database framework, API envelope and schema
 - `pnpm api:envelope:check`
 - `pnpm api:schema:check`
 - `pnpm deploy:validate`
+- `pnpm gateway:assembly:validate`
 - `pnpm check:docs-standard`
 
 Legacy root-level filenames under `docs/` redirect to the TECH shards above. Do not add new content outside the canon paths.

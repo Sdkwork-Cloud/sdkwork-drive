@@ -8,6 +8,23 @@ Release notes and promotion evidence for SDKWork Drive follow `../../sdkwork-spe
 | --- | --- | --- | --- |
 | STABLE | 0.1.0 | BETA / DRAFT | Merge and verification gates pass; GA blocked on signing, catalog CDN, and multi-platform artifact evidence |
 
+## CI release workflow
+
+Package and multi-platform artifacts via GitHub Actions:
+
+1. Open **Actions → Package Application** (`.github/workflows/package.yml`).
+2. Run **workflow_dispatch** with platform/architecture filters, or push a semver tag (`v*`).
+3. Workflow uses `sdkwork.workflow.json` targets (web, Windows zip, macOS dmg, Linux appimage, container OCI).
+4. After CI success, materialize evidence locally or in CI:
+
+```bash
+pnpm release:evidence
+pnpm release:validate
+SDKWORK_RELEASE_VALIDATION=strict pnpm check:release-readiness
+```
+
+Pilot deployment steps: [pilot-deployment.md](../guides/operator/pilot-deployment.md).
+
 ## GA promotion checklist
 
 Before setting `publish.status` to `ACTIVE` in `sdkwork.app.config.json`:

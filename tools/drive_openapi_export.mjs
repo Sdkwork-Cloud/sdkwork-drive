@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -8,6 +9,63 @@ const require = createRequire(import.meta.url);
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(scriptDir, "..");
+
+const YAML_PACKAGE_VERSION = "2.8.0";
+
+function yamlModulePath(baseDir) {
+  return path.join(baseDir, "node_modules", "yaml", "package.json");
+}
+
+function loadYamlModuleFrom(baseDir) {
+  const packageJsonPath = yamlModulePath(baseDir);
+  if (!existsSync(packageJsonPath)) {
+    return null;
+  }
+  return createRequire(packageJsonPath)("yaml");
+}
+
+function ensureYamlModule() {
+  const candidates = [
+    workspaceRoot,
+    path.join(workspaceRoot, ".pnpm-tooling"),
+  ];
+  for (const baseDir of candidates) {
+    const yamlModule = loadYamlModuleFrom(baseDir);
+    if (yamlModule) {
+      return yamlModule;
+    }
+  }
+
+  const toolingRoot = path.join(workspaceRoot, ".pnpm-tooling");
+  mkdirSync(toolingRoot, { recursive: true });
+  writeFileSync(
+    path.join(toolingRoot, "package.json"),
+    `${JSON.stringify(
+      {
+        name: "sdkwork-drive-tooling-deps",
+        private: true,
+        dependencies: {
+          yaml: YAML_PACKAGE_VERSION,
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  writeFileSync(path.join(toolingRoot, ".npmrc"), "workspaces=false\n");
+  execSync("npm install --no-package-lock --ignore-scripts", {
+    cwd: toolingRoot,
+    stdio: "inherit",
+  });
+
+  const yamlModule = loadYamlModuleFrom(toolingRoot);
+  if (!yamlModule) {
+    throw new Error(
+      `unable to resolve yaml@${YAML_PACKAGE_VERSION}; run pnpm install at the repository root`,
+    );
+  }
+  return yamlModule;
+}
 
 const HTTP_METHODS = new Set([
   "get",
@@ -270,7 +328,7 @@ function readOpenapiDocument(filePath, label) {
 
 function parseYamlOpenapi(raw, label) {
   try {
-    const { parse } = require("yaml");
+    const { parse } = ensureYamlModule();
     const parsed = parse(raw);
     if (!parsed || typeof parsed !== "object") {
       fail(`invalid YAML in ${label}: expected an object document`);

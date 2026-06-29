@@ -91,7 +91,7 @@ Use canonical root package scripts from `PNPM_SCRIPT_SPEC.md`:
 - `pnpm dev:browser` and `pnpm dev:desktop`: same PostgreSQL standalone defaults for development orchestration.
 - `pnpm dev:browser:sqlite` or `pnpm dev:desktop:sqlite`: explicit SQLite development variants.
 - `pnpm build`, `pnpm test`, `pnpm check`, `pnpm verify`, `pnpm clean`: standard root lifecycle commands.
-- `pnpm check` includes `api:envelope:check`, `api:schema:check`, `deploy:validate`, and architecture/database alignment gates.
+- `pnpm check` includes `check:app-composition`, `api:envelope:check`, `api:schema:check`, `deploy:validate`, `topology:validate`, `gateway:assembly:validate`, database framework validation, and architecture/dependency/SDK/PC alignment gates.
 - `pnpm check:pnpm-script-standard`: validate package script standardization.
 - `pnpm check:docs-standard`: validate repository documentation Canon layout.
 - `pnpm check:agent-workflow-standard`: validate AGENTS and GitHub packaging workflow standardization.
@@ -127,11 +127,8 @@ Handlers `MUST` serialize success and map errors through `sdkwork-web-framework`
 Before completing API contract, SDK generation, or frontend service work, run:
 
 ```bash
-pnpm api:envelope:check
-pnpm api:schema:check
+node <sdkwork-specs>/tools/check-api-response-envelope.mjs --workspace <workspace-root>
 ```
-
-Or the full gate: `pnpm check` (includes both checks).
 
 Authority: `sdkwork-specs/API_SPEC.md` section 4.5 and sections 14–16, `SDK_SPEC.md` section 4.2, `FRONTEND_SPEC.md`, `MIGRATION_SPEC.md` section 4.2.
 

@@ -73,7 +73,7 @@
           "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/icon-1024.png",
           "stagedChecksumAlgorithm": "SHA-256",
           "stagedChecksum": "c1e82f5f8e535e870d64fab14b8df9c60d890f3232758bf36cec724e4eba91a1",
-          "catalogMediaStagedAt": "2026-06-24T07:56:39.445Z"
+          "catalogMediaStagedAt": "2026-06-29T09:26:13.076Z"
         }
       },
       "platform": []
@@ -103,7 +103,7 @@
           "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/desktop_windows-screenshot.png",
           "stagedChecksumAlgorithm": "SHA-256",
           "stagedChecksum": "878e85a25e9358068b35e81add3f4ea2e2ca31a891864183f6548de317634c78",
-          "catalogMediaStagedAt": "2026-06-24T07:56:39.445Z"
+          "catalogMediaStagedAt": "2026-06-29T09:26:13.076Z"
         }
       }
     ],
@@ -130,7 +130,7 @@
           "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/preview-cover.png",
           "stagedChecksumAlgorithm": "SHA-256",
           "stagedChecksum": "1727302af4e20b3ee22e5ee569a7113fda90aebc70cc9153fe2f0b8183d5d499",
-          "catalogMediaStagedAt": "2026-06-24T07:56:39.445Z"
+          "catalogMediaStagedAt": "2026-06-29T09:26:13.076Z"
         }
       }
     ],

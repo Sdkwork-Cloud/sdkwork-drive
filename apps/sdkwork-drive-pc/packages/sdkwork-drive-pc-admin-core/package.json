@@ -36,7 +36,8 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit --project ../../tsconfig.json"
+    "typecheck": "tsc --noEmit --project ../../tsconfig.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@sdkwork/drive-admin-storage-sdk": "workspace:*",
@@ -46,5 +47,8 @@
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.6"
   }
 }

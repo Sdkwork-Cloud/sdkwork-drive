@@ -9,3 +9,7 @@ pub use bootstrap::{assemble_application_business_router, assemble_application_r
 pub fn assembly_route_count() -> usize {
     generated::ROUTE_CRATE_COUNT
 }
+
+pub fn assembly_route_packages() -> &'static [&'static str] {
+    generated::ROUTE_CRATE_PACKAGES
+}

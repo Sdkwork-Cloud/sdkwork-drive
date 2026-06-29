@@ -52,6 +52,10 @@
     "react-dom": "^19.0.0"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit --project ../../tsconfig.json"
+    "typecheck": "tsc --noEmit --project ../../tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.6"
   }
 }

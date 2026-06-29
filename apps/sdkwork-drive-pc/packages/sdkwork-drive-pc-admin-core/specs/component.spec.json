@@ -115,7 +115,9 @@
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
           "typescript": "@sdkwork/drive-admin-storage-sdk"
-        }
+        },
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
       },
       {
         "workspace": "sdkwork-drive-backend-sdk",
@@ -127,12 +129,13 @@
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
           "typescript": "@sdkwork/drive-backend-sdk"
-        }
+        },
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
       }
     ],
     "dependencyApiExports": [],
-    "dependencyApiSurfaces": [],
-    "dependencyComposition": "../../../specs/dependency.composition.json"
+    "dependencyApiSurfaces": []
   },
   "verification": {
     "commands": [

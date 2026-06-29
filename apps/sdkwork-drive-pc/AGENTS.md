@@ -116,11 +116,8 @@ Handlers `MUST` serialize success and map errors through `sdkwork-web-framework`
 Before completing API contract, SDK generation, or frontend service work, run:
 
 ```bash
-pnpm api:envelope:check
-pnpm api:schema:check
+node <sdkwork-specs>/tools/check-api-response-envelope.mjs --workspace <workspace-root>
 ```
-
-Or from repository root: `pnpm check` (includes both checks).
 
 Authority: `sdkwork-specs/API_SPEC.md` section 4.5 and sections 14–16, `SDK_SPEC.md` section 4.2, `FRONTEND_SPEC.md`, `MIGRATION_SPEC.md` section 4.2.
 

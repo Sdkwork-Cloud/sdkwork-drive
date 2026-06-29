@@ -2,7 +2,7 @@
 
 > 更新日期: 2026-06-29  
 > 审查标准: sdkwork-specs 全栈规范  
-> 状态: **代码与规范对齐完成 — 可进入受控试点部署；商业化 GA 需完成第五节发布运营项**
+> 状态: **代码对齐完成 — 可进入受控试点；商业化 GA 见 pilot-deployment / pre-launch / releases**
 
 ---
 
@@ -18,7 +18,8 @@
 | API 输入/输出契约 | ✅ | `pnpm api:envelope:check` + `pnpm api:schema:check` |
 | 部署契约 | ✅ | `deployments/deploy.yaml` + `pnpm deploy:validate` |
 | Drive 上传高内聚 | ✅ | `pnpm check:app-sdk-consumers` |
-| 打包 / 拓扑 / 发布 | ✅ | `pnpm topology:validate` + `sdkwork.workflow.json` |
+| Native composition（import 闭包） | ✅ | `pnpm check:app-composition` |
+| 打包 / 拓扑 / 发布 | ✅ | `pnpm topology:validate` + `pnpm gateway:assembly:validate` + `sdkwork.workflow.json` |
 
 ---
 
@@ -54,8 +55,8 @@ sdks/                          → OpenAPI 权威 → 生成 SDK 家族（禁止
 
 | 条件 | 状态 |
 |------|:----:|
-| `pnpm check` 全量门禁 | ✅ |
-| `cargo check --workspace` | ✅ |
+| `pnpm check` 全量门禁 | ✅ 含 `check:app-composition`、`gateway:assembly:validate` |
+| `cargo check --workspace` | ✅ workspace 依赖协议（无 crate 内 path 重声明） |
 | API envelope + schema quality gate | ✅ |
 | `deployments/deploy.yaml` 校验 | ✅ |
 | PostgreSQL lifecycle 迁移 | ✅ |
@@ -76,6 +77,7 @@ pnpm verify
 pnpm api:envelope:check
 pnpm api:schema:check
 pnpm deploy:validate
+pnpm gateway:assembly:validate
 pnpm check:architecture-alignment
 ```
 
@@ -83,13 +85,13 @@ pnpm check:architecture-alignment
 
 ## 四、商业化 GA 前发布运营项
 
-应用尚未上线。以下项由 CI/发布流程完成，通过 `SDKWORK_RELEASE_VALIDATION=strict pnpm check:release-readiness` 强制：
+应用尚未上线。代码对齐已结案；运营项见 [pilot-deployment.md](../guides/operator/pilot-deployment.md) 与 [releases/README.md](../releases/README.md)。
 
 | 项 | 说明 |
 |----|------|
 | 制品签名 | CI 配置 `security.signatureRequired` 与受保护签名凭据 |
 | 桌面跨平台包 | macOS DMG / Linux AppImage checksum 在目标 runner 生成 |
-| Catalog 媒体 | CDN 上传 icon/screenshot/preview；`generatedPlaceholder` 必须为 false |
+| Catalog 媒体 CDN | 本地已 staging（`pnpm release:catalog-media`）；需上传 CDN 并清除 `catalogMediaDeferred` |
 | K8s 生产 digest | 替换 `REPLACE_WITH_RELEASE_DIGEST` 为不可变 digest |
 | `publish.status` | 仅在签名与 catalog 门禁通过后设为 `ACTIVE` |
 
@@ -107,4 +109,4 @@ pnpm check:architecture-alignment
 
 ---
 
-*本报告描述当前对齐状态；历史迭代记录见 git changelog 与 REQ-2026-0003。*
+*本报告描述当前对齐状态；变更记录见 git history 与 REQ-2026-0003（status: done）。*

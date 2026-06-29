@@ -28,6 +28,9 @@ edition = "2021"
 version = "0.1.0"
 
 [workspace.dependencies]
+sdkwork_routes_iam_app_api = { path = "../sdkwork-iam/crates/sdkwork-routes-iam-app-api", package = "sdkwork-routes-iam-app-api" }
+sdkwork-iam-database-host = { path = "../sdkwork-iam/crates/sdkwork-iam-database-host" }
+sdkwork-iam-embedded-application-bootstrap = { path = "../sdkwork-iam/crates/sdkwork-iam-embedded-application-bootstrap" }
 anyhow = "1.0"
 async-trait = "0.1"
 axum = { version = "0.8", features = ["macros"] }
@@ -67,6 +70,7 @@ sdkwork-drive-test-support = { path = "crates/sdkwork-drive-test-support" }
 sdkwork-drive-workspace-service = { path = "crates/sdkwork-drive-workspace-service" }
 sdkwork-drive-uploader-service = { path = "crates/sdkwork-drive-uploader-service" }
 sdkwork-drive-install-worker = { path = "crates/sdkwork-drive-install-worker" }
+sdkwork-drive-gateway-assembly = { path = "crates/sdkwork-drive-gateway-assembly" }
 sdkwork-drive-standalone-gateway = { path = "crates/sdkwork-drive-standalone-gateway" }
 sdkwork-routes-drive-open-api = { path = "crates/sdkwork-routes-drive-open-api" }
 sdkwork-routes-drive-app-api = { path = "crates/sdkwork-routes-drive-app-api" }
@@ -92,5 +96,3 @@ sdkwork-web-core = { path = "../sdkwork-web-framework/crates/sdkwork-web-core" }
 sdkwork-web-axum = { path = "../sdkwork-web-framework/crates/sdkwork-web-axum" }
 sdkwork-web-contract = { path = "../sdkwork-web-framework/crates/sdkwork-web-contract" }
 sdkwork-iam-web-adapter = { path = "../sdkwork-iam/crates/sdkwork-iam-web-adapter" }
-sdkwork-iam-embedded-application-bootstrap = { path = "../sdkwork-iam/crates/sdkwork-iam-embedded-application-bootstrap" }
-sdkwork-iam-database-host = { path = "../sdkwork-iam/crates/sdkwork-iam-database-host" }

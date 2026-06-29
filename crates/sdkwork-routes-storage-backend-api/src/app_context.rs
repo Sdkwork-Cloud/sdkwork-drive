@@ -6,12 +6,9 @@ use sdkwork_drive_security::DriveAppContext;
 use sdkwork_drive_workspace_service::DriveServiceError;
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub(crate) struct DriveRequestContext {
     pub(crate) tenant_id: String,
     pub(crate) actor_id: String,
-    pub(crate) subject_type: String,
-    pub(crate) subject_id: String,
     from_token: bool,
     test_mode: bool,
 }
@@ -21,8 +18,6 @@ impl DriveRequestContext {
         Self {
             tenant_id: app_context.tenant_id.clone(),
             actor_id: app_context.actor_id.clone(),
-            subject_type: app_context.actor_kind.clone(),
-            subject_id: app_context.user_id.clone(),
             from_token: true,
             test_mode: false,
         }
@@ -75,8 +70,6 @@ pub(crate) fn default_test_drive_request_context() -> DriveRequestContext {
     DriveRequestContext {
         tenant_id: "tenant-storage".to_string(),
         actor_id: "admin-storage".to_string(),
-        subject_type: "user".to_string(),
-        subject_id: "admin-storage".to_string(),
         from_token: false,
         test_mode: true,
     }
@@ -87,8 +80,6 @@ pub(crate) fn test_drive_request_context_with_tenant(tenant_id: String) -> Drive
     DriveRequestContext {
         tenant_id,
         actor_id: "admin-storage".to_string(),
-        subject_type: "user".to_string(),
-        subject_id: "admin-storage".to_string(),
         from_token: false,
         test_mode: true,
     }

@@ -101,6 +101,24 @@ function assertPnpmWorkspaceOnlyProtocol(relativePath) {
   }
 }
 
+function collectWorkspaceCrateCargoTomlFiles() {
+  const files = [];
+  const cratesRoot = path.join(repoRoot, 'crates');
+  if (!fs.existsSync(cratesRoot)) {
+    return files;
+  }
+  for (const entry of fs.readdirSync(cratesRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const cargoToml = path.join('crates', entry.name, 'Cargo.toml');
+    if (fs.existsSync(path.join(repoRoot, cargoToml))) {
+      files.push(cargoToml.replace(/\\/g, '/'));
+    }
+  }
+  return files;
+}
+
 function assertCargoWorkspaceOnlyProtocol(relativePath) {
   if (!relativePath.endsWith('Cargo.toml')) {
     return;
@@ -111,11 +129,36 @@ function assertCargoWorkspaceOnlyProtocol(relativePath) {
   const text = readText(relativePath);
   const pathMatches = [...text.matchAll(/path\s*=\s*"((?:\.\.\/)+sdkwork-[A-Za-z0-9-]+[^"]*)"/g)];
   for (const match of pathMatches) {
-    const path = match[1];
+    const dependencyPath = match[1];
     assert(
       false,
-      `${relativePath} must not redeclare cross-workspace SDKWork source path "${path}"; declare it in root [workspace.dependencies] and consume with \`crate_name.workspace = true\``,
+      `${relativePath} must not redeclare SDKWork source path "${dependencyPath}"; declare it in root [workspace.dependencies] and consume with \`crate_name.workspace = true\``,
     );
+  }
+}
+
+function assertRootCargoWorkspaceDependencies() {
+  const text = readText('Cargo.toml');
+  assert(
+    !text.includes('../../../sdkwork-'),
+    'Cargo.toml must use ../sdkwork-* sibling paths from repository root, not ../../../sdkwork-*',
+  );
+  const section = text.split('[workspace.dependencies]')[1];
+  if (!section) {
+    failures.push('Cargo.toml must declare [workspace.dependencies]');
+    return;
+  }
+  const keys = [];
+  for (const line of section.split('\n')) {
+    const match = line.match(/^([A-Za-z0-9_-]+)\s*=/);
+    if (match) {
+      keys.push(match[1]);
+    }
+  }
+  const seen = new Set();
+  for (const key of keys) {
+    assert(!seen.has(key), `Cargo.toml [workspace.dependencies] has duplicate key ${key}`);
+    seen.add(key);
   }
 }
 
@@ -164,11 +207,15 @@ function assertDocumentation() {
 }
 
 assertDependencyDeclaration();
+assertRootCargoWorkspaceDependencies();
 assertNoLocalMaterializer();
 assertWorkflowRefs();
 for (const relativePath of sourceDependencyFiles) {
   assertNativeDependencyFile(relativePath);
   assertPnpmWorkspaceOnlyProtocol(relativePath);
+  assertCargoWorkspaceOnlyProtocol(relativePath);
+}
+for (const relativePath of collectWorkspaceCrateCargoTomlFiles()) {
   assertCargoWorkspaceOnlyProtocol(relativePath);
 }
 assertDocumentation();

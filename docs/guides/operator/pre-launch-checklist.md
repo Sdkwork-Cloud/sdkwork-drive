@@ -36,6 +36,7 @@ pnpm verify
 pnpm api:envelope:check
 pnpm api:schema:check
 pnpm deploy:validate
+pnpm gateway:assembly:validate
 pnpm check:architecture-alignment
 node ../sdkwork-specs/tools/check-deploy-standard.mjs
 ```
@@ -54,6 +55,7 @@ With a tenant admin session (`drive.storage.admin`, `drive.*`, or a granular `dr
 
 ## Related Documents
 
+- [Controlled pilot deployment](./pilot-deployment.md) — run before this GA checklist
 - [Production operations runbook](../../runbooks/drive-production-operations.md)
 - [Audit investigation runbook](../../runbooks/drive-audit-investigation.md)
 - [Backup and disaster recovery runbook](../../runbooks/drive-backup-disaster-recovery.md)
