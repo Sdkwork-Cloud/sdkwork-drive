@@ -1,5 +1,10 @@
 ﻿@import "tailwindcss";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src";
+@source "../packages/sdkwork-drive-pc-drive/src";
+@source "../packages/sdkwork-drive-pc-file/src";
+@source "../packages/sdkwork-drive-pc-transfer/src";
+@source "../packages/sdkwork-drive-pc-commons/src";
+@source "../packages/sdkwork-drive-pc-core/src";
 
 @variant dark (&:is(.dark *));
 
