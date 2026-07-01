@@ -199,6 +199,8 @@ export function FileBrowser({
     return sortDriveFiles(files, sortBy, sortOrder);
   }, [files, sortBy, sortOrder, serverSideSort]);
 
+  const currentLoadScope = `${activeSection}\u0000${debouncedSearchQuery}\u0000${currentFolderId ?? ""}`;
+
   const listRowHeight = preferences.compactMode ? 40 : 48;
   const gridColumns = useFileBrowserGridColumns(viewMode === "grid");
   const virtualRowHeight =
@@ -214,6 +216,7 @@ export function FileBrowser({
     itemCount: sortedFiles.length,
     itemHeight: virtualRowHeight,
     columns: virtualColumns,
+    resetKey: currentLoadScope,
   });
 
   const visibleListFiles = React.useMemo(
@@ -244,7 +247,6 @@ export function FileBrowser({
   ]);
 
   const [breadcrumbFiles, setBreadcrumbFiles] = useState<DriveFile[]>([]);
-  const currentLoadScope = `${activeSection}\u0000${debouncedSearchQuery}\u0000${currentFolderId ?? ""}`;
   const loadAbortControllerRef = React.useRef<AbortController | null>(null);
   const fileWriteAbortControllersRef = React.useRef(new Map<string, AbortController>());
   const createFolderInFlightRef = React.useRef(false);

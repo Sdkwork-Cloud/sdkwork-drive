@@ -10,7 +10,7 @@
     "yaml": "^2.8.0"
   },
   "dependencies": {
-    "@sdkwork/app-topology": "workspace:*"
+    "@sdkwork/app-topology": "file:../sdkwork-app-topology"
   },
   "scripts": {
     "dev": "pnpm dev:browser",
@@ -64,7 +64,7 @@
     "db:seed": "cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . seed",
     "db:status": "cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . status",
     "db:validate": "node ../sdkwork-specs/tools/check-database-framework-standard.mjs --root .",
-    "db:materialize:contract": "node ../sdkwork-specs/tools/materialize-database-contract-from-baseline.mjs --root . --baseline database/ddl/baseline/postgres/0001_drive_legacy_baseline.sql --module-id drive --owner drive-platform --prefixes drive_ --engines postgres",
+    "db:materialize:contract": "node ../sdkwork-specs/tools/materialize-database-contract-from-baseline.mjs --root . --baseline database/ddl/baseline/postgres/0001_drive_baseline.sql --module-id drive --owner drive-platform --prefixes drive_ --engines postgres",
     "db:bootstrap": "cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . bootstrap",
     "db:drift": "cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . drift",
     "db:drift:check": "cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . drift-check",

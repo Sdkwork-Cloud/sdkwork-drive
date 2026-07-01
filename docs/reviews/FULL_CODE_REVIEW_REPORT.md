@@ -1,6 +1,6 @@
 # SDKWork Drive 标准对齐审查报告
 
-> 更新日期: 2026-06-29  
+> 更新日期: 2026-06-30  
 > 审查标准: sdkwork-specs 全栈规范  
 > 状态: **代码对齐完成 — 可进入受控试点；商业化 GA 见 pilot-deployment / pre-launch / releases**
 
@@ -13,7 +13,7 @@
 | sdkwork-specs 仓库字典 | ✅ | `pnpm check:architecture-alignment` |
 | sdkwork-web-framework | ✅ | 四个 `*-api` route crate + `web_bootstrap.rs` + IAM resolver |
 | sdkwork-database | ✅ | `database/` 资产 + `pnpm db:validate` |
-| sdkwork-utils | ✅ | Rust `sdkwork-utils-rust`；前端 `@sdkwork/utils` 经 `formatDriveBytes` 统一 |
+| sdkwork-utils | ✅ | Rust `sdkwork-utils-rust`；TS `@sdkwork/utils`（PC + App SDK uploader） |
 | sdkwork-discovery | ⏭️ 不适用 | 纯 HTTP 架构，无 RPC |
 | API 输入/输出契约 | ✅ | `pnpm api:envelope:check` + `pnpm api:schema:check` |
 | 部署契约 | ✅ | `deployments/deploy.yaml` + `pnpm deploy:validate` |
@@ -45,18 +45,36 @@ sdks/                          → OpenAPI 权威 → 生成 SDK 家族（禁止
 
 ### Drive 上传边界
 
-- **客户端**: `createDriveUploaderClient` → `client.uploader.*`
+- **客户端**: `createDriveUploaderClient` → `client.uploader.*`（composed SDK 使用 `@sdkwork/utils` 做 hex/uuid）
 - **服务端 Rust**: `sdkwork_drive_workspace_service::uploader`（禁止 HTTP 回环）
 - **App API**: `/app/v3/api/drive/uploader/*` 作为 HTTP 适配层
 
+### 环境变量策略
+
+Drive 应用 repository 的 `.env.postgres.example` 仅暴露 `SDKWORK_DRIVE_DATABASE_*` 前缀。运行时 `sdkwork-database-config` 可按 workspace 统一 profile 回退解析；示例文件不得包含已废弃的 `SDKWORK_CLAW_DATABASE_*` 前缀。
+
 ---
 
-## 三、生产上线门禁
+## 三、2026-06-30 技术债务清理
+
+| 项 | 处理 |
+|----|------|
+| `.env.postgres.example` 含废弃 `SDKWORK_CLAW_DATABASE_*` | 已移除，恢复 architecture alignment |
+| `sdkwork-drive-http` 遗留 `SuccessResponse` / 旧 `ProblemDetail` | 已删除；唯一权威为 `api_problem.rs` |
+| App SDK uploader 内联 hex/uuid | 已迁移至 `@sdkwork/utils`（`hexEncode`、`uuid`） |
+| 架构门禁防回归 | `check_sdkwork_drive_architecture_alignment.mjs` 断言禁止恢复 legacy HTTP 模块与内联 hex |
+| README 文档链接 | 已指向 TECH shard 规范路径；验证章节含 `pnpm check` / `pnpm verify` |
+| REQ-2026-0003 | 已更新 2026-06-30 验收项 |
+
+---
+
+## 四、生产上线门禁
 
 | 条件 | 状态 |
 |------|:----:|
-| `pnpm check` 全量门禁 | ✅ 含 `check:app-composition`、`gateway:assembly:validate` |
-| `cargo check --workspace` | ✅ workspace 依赖协议（无 crate 内 path 重声明） |
+| `pnpm check` 全量门禁 | ✅ 含回归断言（legacy HTTP 模块、utils uploader） |
+| `pnpm verify` | ✅ |
+| `cargo check --workspace` | ✅ |
 | API envelope + schema quality gate | ✅ |
 | `deployments/deploy.yaml` 校验 | ✅ |
 | PostgreSQL lifecycle 迁移 | ✅ |
@@ -83,7 +101,7 @@ pnpm check:architecture-alignment
 
 ---
 
-## 四、商业化 GA 前发布运营项
+## 五、商业化 GA 前发布运营项
 
 应用尚未上线。代码对齐已结案；运营项见 [pilot-deployment.md](../guides/operator/pilot-deployment.md) 与 [releases/README.md](../releases/README.md)。
 
@@ -99,7 +117,7 @@ pnpm check:architecture-alignment
 
 ---
 
-## 五、后续能力演进（非阻塞）
+## 六、后续能力演进（非阻塞）
 
 | 项 | 触发条件 | 规范 |
 |----|----------|------|
@@ -109,4 +127,4 @@ pnpm check:architecture-alignment
 
 ---
 
-*本报告描述当前对齐状态；变更记录见 git history 与 REQ-2026-0003（status: done）。*
+*本报告描述当前对齐状态。REQ-2026-0003（pre-launch debt cleanup）已结案。*

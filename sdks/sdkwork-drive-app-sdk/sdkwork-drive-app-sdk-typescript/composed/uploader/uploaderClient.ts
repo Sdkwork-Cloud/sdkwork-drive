@@ -1,3 +1,4 @@
+import { hexEncode, uuid as createUuid } from "@sdkwork/utils";
 import { DEFAULT_UPLOADER_CHUNK_SIZE_BYTES, inferUploaderContentType, inferUploaderFileName, planUploaderParts } from "./uploadPlanner";
 import { createInMemoryUploaderStateStore } from "./uploadStateStore";
 import type {
@@ -38,11 +39,7 @@ interface NormalizedReplaceNodeContentRequest extends DriveUploaderReplaceNodeCo
 }
 
 function makeUploaderId(prefix: string): string {
-  const randomUuid = globalThis.crypto?.randomUUID?.();
-  if (randomUuid) {
-    return `${prefix}-${randomUuid}`;
-  }
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}-${createUuid()}`;
 }
 
 function defaultFileFingerprint(fileName: string, contentType: string, contentLength: number): string {
@@ -82,10 +79,7 @@ async function sha256Checksum(file: DriveUploaderBlobLike): Promise<string> {
   }
 
   const digest = await globalThis.crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-  const hex = Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-  return `sha256:${hex}`;
+  return `sha256:${hexEncode(new Uint8Array(digest))}`;
 }
 
 function etagFromResponse(response: Response): string {

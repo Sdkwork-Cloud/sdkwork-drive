@@ -1,4 +1,5 @@
 # sdkwork-drive
+repository-kind: application
 
 Rust backend workspace for SDKWork Drive.
 
@@ -47,7 +48,7 @@ pnpm topology:plan                    # Render the local launch plan without sta
 ```
 
 Database policy and current runtime boundaries are documented in
-`docs/database-architecture.md`.
+[docs/architecture/tech/TECH-database-architecture.md](docs/architecture/tech/TECH-database-architecture.md).
 
 The local backend launch plan starts the four runtime API services together:
 
@@ -67,7 +68,7 @@ routes. Login/session UX and transport are owned by SDKWork appbase; Drive
 consumes the resulting SDKWork dual-token session. AppContext is derived server-side from
 verified token claims, not from client projection headers.
 Drive-specific standalone and embeddable IAM boundaries are documented in
-`docs/drive-iam-integration-standard.md`.
+[docs/architecture/tech/TECH-drive-iam-integration-standard.md](docs/architecture/tech/TECH-drive-iam-integration-standard.md).
 
 Protected app, backend, and admin storage routes require:
 
@@ -89,6 +90,8 @@ runtime; Drive only consumes the host-provided SDKWork session projection.
 ## Core Verification
 
 ```bash
+pnpm check
+pnpm verify
 cargo test -p sdkwork-drive-contract
 cargo test -p sdkwork-drive-workspace-service
 cargo test -p sdkwork-routes-drive-app-api
@@ -98,7 +101,7 @@ cargo test -p sdkwork-routes-drive-backend-api
 ## OpenAPI And SDK Tooling
 
 SDK family naming and app integration rules are documented in
-`docs/drive-sdk-integration-standard.md`. The canonical SDK families are
+[docs/architecture/tech/TECH-drive-sdk-integration-standard.md](docs/architecture/tech/TECH-drive-sdk-integration-standard.md). The canonical SDK families are
 `sdkwork-drive-sdk`, `sdkwork-drive-app-sdk`,
 `sdkwork-drive-backend-sdk`, and `sdkwork-drive-admin-storage-sdk`.
 OpenAPI authority names still use `sdkwork-drive-open-api`,
@@ -171,6 +174,8 @@ Extension points are limited to declared public exports, runtime entrypoints, SD
 
 ### Verification
 
+- `pnpm check`
+- `pnpm verify`
 - `pnpm test`
 
 ### Owner And Status

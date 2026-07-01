@@ -31,7 +31,8 @@
     }
   },
   "dependencies": {
-    "@sdkwork/sdk-common": "^1.0.3"
+    "@sdkwork/sdk-common": "^1.0.3",
+    "@sdkwork/utils": "workspace:*"
   },
   "peerDependencies": {
     "@sdkwork/iam-app-sdk": "workspace:*"

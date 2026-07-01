@@ -4,7 +4,10 @@ use sdkwork_database_lifecycle::{lifecycle_options_from_env, LifecycleOrchestrat
 use sdkwork_database_spi::{DatabaseAssetProvider, DatabaseManifest, DefaultDatabaseModule};
 use sdkwork_database_sqlx::{create_pool_from_config, DatabasePool};
 
-use crate::{resolve_app_root_for_bootstrap, DriveDatabaseHost};
+use crate::{
+    ensure_drive_database_host_installed, installed_drive_database_host, resolve_app_root_for_bootstrap,
+    DriveDatabaseHost,
+};
 
 pub async fn bootstrap_drive_database(pool: DatabasePool) -> Result<DriveDatabaseHost, String> {
     let app_root = resolve_app_root_for_bootstrap();
@@ -30,10 +33,14 @@ pub async fn bootstrap_drive_database(pool: DatabasePool) -> Result<DriveDatabas
             .map_err(|error| format!("drive database migrate failed: {error}"))?;
     }
 
-    Ok(DriveDatabaseHost { pool, module })
+    Ok(ensure_drive_database_host_installed(DriveDatabaseHost { pool, module }).as_ref().clone())
 }
 
 pub async fn bootstrap_drive_database_from_env() -> Result<DriveDatabaseHost, String> {
+    if let Some(host) = installed_drive_database_host() {
+        return Ok(host.as_ref().clone());
+    }
+
     let _ = dotenvy::dotenv();
     let config = sdkwork_database_config::DatabaseConfig::from_env("DRIVE")
         .map_err(|error| format!("read drive database config failed: {error}"))?;

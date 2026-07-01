@@ -11,6 +11,10 @@ pub use sdkwork_drive_database_host::{
 pub async fn bootstrap_drive_database_for_config(
     config: &DriveDatabaseConfig,
 ) -> Result<DriveDatabaseHost, String> {
+    if let Some(host) = sdkwork_drive_database_host::installed_drive_database_host() {
+        return Ok(host.as_ref().clone());
+    }
+
     let sdk_config = drive_database_config_to_sdkwork(config)?;
     let pool = create_pool_from_config(sdk_config)
         .await

@@ -57,6 +57,7 @@ configs/*.local.toml
 *.pdb
 *.dll
 *.so
+generated/
 
 # Generated SDK manual backup artifacts
 sdks/**/.sdkwork/manual-backups/
@@ -68,3 +69,14 @@ sdks/**/.sdkwork/manual-backups/
 # SDKWork local runtime state
 .runtime/
 **/.runtime/
+!.env.postgres.example
+**/dist/
+**/.pnpm-store/
+**/.sdkwork/local/
+**/.sdkwork/secrets/
+**/.sdkwork/cache/
+**/.sdkwork/tmp/
+**/.sdkwork/dart/pub-cache/
+**/.sdkwork/sdkwork-generator-changes.json
+**/.sdkwork/sdkwork-generator-manifest.json
+**/.sdkwork/sdkwork-generator-report.json

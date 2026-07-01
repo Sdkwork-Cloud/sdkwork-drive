@@ -9,8 +9,6 @@ pub mod infra;
 pub mod metrics;
 pub mod middleware;
 pub mod problem_correlation;
-pub mod problem_detail;
-pub mod response;
 pub mod server;
 pub mod trace_ids;
 pub mod web_app_context;

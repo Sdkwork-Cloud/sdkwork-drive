@@ -516,12 +516,7 @@ assert.match(driveFileServiceTest, /creates share links with extraction codes/);
 assert.match(driveFileServiceTest, /accessCode: 'extract-42'/);
 assert.match(playwrightSmoke, /40301/);
 
-const postgresMigration0002Up = read(
-  'database/migrations/postgres/0002_drive_outbox_pending_dispatch_index.up.sql',
-);
-const postgresMigration0002Down = read(
-  'database/migrations/postgres/0002_drive_outbox_pending_dispatch_index.down.sql',
-);
+const driveBaseline = read('database/ddl/baseline/postgres/0001_drive_baseline.sql');
 const installWorkerLeader = read('crates/sdkwork-drive-install-worker/src/maintenance/leader.rs');
 const installWorkerHealth = read('crates/sdkwork-drive-install-worker/src/health.rs');
 const driveHttpInfra = read('crates/sdkwork-drive-http/src/infra.rs');
@@ -540,9 +535,8 @@ const fileRowItem = read(
 );
 const productionReadinessReq = read('docs/product/requirements/REQ-2026-0001-production-readiness.md');
 const prdDoc = read('docs/product/prd/PRD.md');
-assert.match(postgresMigration0002Up, /ix_dr_drive_domain_outbox_pending_dispatch/);
-assert.match(postgresMigration0002Up, /WHERE delivery_status = 'pending'/);
-assert.match(postgresMigration0002Down, /DROP INDEX IF EXISTS ix_dr_drive_domain_outbox_pending_dispatch/);
+assert.match(driveBaseline, /ix_dr_drive_domain_outbox_pending_dispatch/);
+assert.match(driveBaseline, /WHERE delivery_status = 'pending'/);
 assert.match(installWorkerLeader, /pg_try_advisory_lock/);
 assert.match(installWorkerLeader, /pg_advisory_unlock/);
 assert.match(installWorkerHealth, /mount_drive_infra_routes/);

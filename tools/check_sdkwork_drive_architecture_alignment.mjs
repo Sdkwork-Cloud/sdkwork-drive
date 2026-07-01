@@ -139,6 +139,51 @@ assert(cargoToml.includes('sdkwork-web-axum'), 'Cargo.toml must declare sdkwork-
 assert(cargoToml.includes('sdkwork-iam-web-adapter'), 'Cargo.toml must declare sdkwork-iam-web-adapter');
 assert(!cargoToml.includes('sdkwork-discovery'), 'sdkwork-discovery is not required until RPC services exist');
 
+const retiredHttpModules = [
+  'crates/sdkwork-drive-http/src/response.rs',
+  'crates/sdkwork-drive-http/src/problem_detail.rs',
+];
+for (const module of retiredHttpModules) {
+  assert(
+    !fs.existsSync(path.join(repoRoot, module)),
+    `${module} legacy envelope module must not exist; use api_problem.rs per API_SPEC.md §15`,
+  );
+}
+
+const driveHttpLib = readText('crates/sdkwork-drive-http/src/lib.rs');
+assert(
+  driveHttpLib.includes('pub mod api_problem'),
+  'sdkwork-drive-http must expose api_problem module',
+);
+assert(
+  !driveHttpLib.includes('pub mod problem_detail'),
+  'sdkwork-drive-http must not expose legacy problem_detail module',
+);
+assert(
+  !driveHttpLib.includes('pub mod response'),
+  'sdkwork-drive-http must not expose legacy response module',
+);
+
+const appSdkPackage = readJson(
+  'sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/package.json',
+);
+assert(
+  appSdkPackage?.dependencies?.['@sdkwork/utils'],
+  '@sdkwork/drive-app-sdk must depend on @sdkwork/utils for composed helpers',
+);
+
+const uploaderClient = readText(
+  'sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/composed/uploader/uploaderClient.ts',
+);
+assert(
+  uploaderClient.includes('@sdkwork/utils'),
+  'uploaderClient must import shared helpers from @sdkwork/utils',
+);
+assert(
+  !uploaderClient.includes('.toString(16).padStart(2, "0")'),
+  'uploaderClient must not inline SHA-256 hex formatting; use @sdkwork/utils hexEncode',
+);
+
 const pnpmWorkspace = readText('pnpm-workspace.yaml');
 assert(
   pnpmWorkspace.includes('sdkwork-utils/packages/sdkwork-utils-typescript'),

@@ -1,4 +1,5 @@
 import type { DriveUploaderBlobLike } from '@sdkwork/drive-app-sdk';
+import { hexEncode, uuid as createUuid } from '@sdkwork/utils';
 import {
   canCreateDriveFolderInSection,
   canUploadDriveFileToSection,
@@ -419,13 +420,14 @@ function randomHex(bytesLength: number): string | undefined {
   }
 
   globalThis.crypto.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return hexEncode(bytes);
 }
 
 function makeId(prefix: string): string {
-  const randomUuid = globalThis.crypto?.randomUUID?.();
-  if (randomUuid) {
-    return `${prefix}-${randomUuid}`;
+  try {
+    return `${prefix}-${createUuid()}`;
+  } catch {
+    // Fall back to a random hex suffix when the runtime lacks UUID support.
   }
 
   const randomHexValue = randomHex(16);

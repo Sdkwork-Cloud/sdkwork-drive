@@ -1,3 +1,4 @@
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use sqlx::any::AnyPoolOptions;
@@ -9,6 +10,18 @@ use sdkwork_drive_config::{DatabaseConfig, DatabaseEngine};
 
 const SQLITE_CORE_SQL: &str = include_str!("sqlite_core.sql");
 const POSTGRES_CORE_SQL: &str = include_str!("postgres_core.sql");
+
+static DRIVE_ANY_POOL: OnceLock<AnyPool> = OnceLock::new();
+
+fn installed_drive_any_pool() -> Option<AnyPool> {
+    DRIVE_ANY_POOL.get().cloned()
+}
+
+fn install_drive_any_pool(pool: AnyPool) -> Result<(), sqlx::Error> {
+    DRIVE_ANY_POOL
+        .set(pool)
+        .map_err(|_| sqlx::Error::Configuration("drive runtime pool already installed".into()))
+}
 
 pub async fn install_sqlite_schema<'c, E>(executor: E) -> Result<(), sqlx::Error>
 where
@@ -113,20 +126,29 @@ fn drive_database_config_with_unified_postgres_search_path(
 }
 
 pub async fn connect_any_database(config: &DatabaseConfig) -> Result<AnyPool, sqlx::Error> {
+    if let Some(pool) = installed_drive_any_pool() {
+        return Ok(pool);
+    }
+
     sqlx::any::install_default_drivers();
     let config = drive_database_config_with_unified_postgres_search_path(config)?;
-    AnyPoolOptions::new()
+    let pool = AnyPoolOptions::new()
         .max_connections(config.max_connections())
         .acquire_timeout(Duration::from_secs(30))
         .idle_timeout(Duration::from_secs(600))
         .max_lifetime(Duration::from_secs(1800))
         .connect(config.url())
-        .await
+        .await?;
+    Ok(pool)
 }
 
 pub async fn connect_any_database_and_install_schema(
     config: &DatabaseConfig,
 ) -> Result<AnyPool, sqlx::Error> {
+    if let Some(pool) = installed_drive_any_pool() {
+        return Ok(pool);
+    }
+
     let config = drive_database_config_with_unified_postgres_search_path(config)?;
     let pool = connect_any_database(&config).await?;
     match config.engine() {
@@ -139,5 +161,6 @@ pub async fn connect_any_database_and_install_schema(
             install_any_schema(&pool, config.engine()).await?;
         }
     }
+    install_drive_any_pool(pool.clone())?;
     Ok(pool)
 }
