@@ -516,6 +516,19 @@ assert.match(driveFileServiceTest, /creates share links with extraction codes/);
 assert.match(driveFileServiceTest, /accessCode: 'extract-42'/);
 assert.match(playwrightSmoke, /40301/);
 
+const outboxDispatch = read('crates/sdkwork-drive-workspace-service/src/infrastructure/outbox_dispatch.rs');
+const downloadTransfer = read(
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-core/src/transfer/downloadTransfer.ts',
+);
+const databaseManifest = read('database/database.manifest.json');
+assert.match(outboxDispatch, /FOR UPDATE SKIP LOCKED/);
+assert.match(outboxDispatch, /DatabaseEngine::Sqlite/);
+assert.match(downloadTransfer, /assertInMemoryDownloadWithinLimit/);
+assert.match(downloadTransfer, /64 \* 1024 \* 1024/);
+assert.match(databaseManifest, /"sqlite"/);
+assert.match(databaseManifest, /"postgres"/);
+read('database/migrations/postgres/0002_drive_outbox_pending_dispatch_index.up.sql');
+read('database/migrations/sqlite/0002_drive_outbox_pending_dispatch_index.up.sql');
 const driveBaseline = read('database/ddl/baseline/postgres/0001_drive_baseline.sql');
 const installWorkerLeader = read('crates/sdkwork-drive-install-worker/src/maintenance/leader.rs');
 const installWorkerHealth = read('crates/sdkwork-drive-install-worker/src/health.rs');

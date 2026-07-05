@@ -275,6 +275,37 @@ describe('downloadTransfer', () => {
     expect(snapshots.at(-1)?.errorMessage).toContain('opened the source URL');
   });
 
+  it('rejects in-memory downloads larger than the configured byte limit', async () => {
+    const oversizedChunk = new Uint8Array(64 * 1024 * 1024 + 1);
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(oversizedChunk);
+            controller.close();
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            'content-type': 'application/octet-stream',
+          },
+        },
+      ),
+    );
+    const job = createDownloadJobForFiles([sourceFile], { id: 'job-oom' });
+
+    await expect(
+      executeDownloadTransfer(
+        job,
+        {
+          signedSourceUrl: 'https://storage.example.test/file-001',
+        },
+        { fetchImpl },
+      ),
+    ).rejects.toThrow(/too large for in-memory handling/);
+  });
+
   it('requests a byte range when resuming an interrupted download', async () => {
     const payload = new Uint8Array([1, 2, 3, 4]);
     const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) =>

@@ -7,6 +7,36 @@ use sqlx::any::AnyPoolOptions;
 use sqlx::Row;
 use tower::util::ServiceExt;
 
+fn envelope_page_info(payload: &serde_json::Value) -> &serde_json::Value {
+    payload
+        .pointer("/data/pageInfo")
+        .or_else(|| payload.get("pageInfo"))
+        .expect("response should expose pageInfo in data.pageInfo or pageInfo")
+}
+
+fn envelope_items(payload: &serde_json::Value) -> &serde_json::Value {
+    if let Some(items) = payload.pointer("/data/items") {
+        return items;
+    }
+    payload
+        .get("items")
+        .expect("response should expose list items in data.items or items")
+}
+
+fn envelope_next_page_token(payload: &serde_json::Value) -> Option<String> {
+    payload
+        .pointer("/data/pageInfo/nextCursor")
+        .or_else(|| payload.get("pageInfo").and_then(|info| info.get("nextCursor")))
+        .and_then(|value| value.as_str())
+        .map(str::to_string)
+        .or_else(|| {
+            payload
+                .get("nextPageToken")
+                .and_then(|value| value.as_str())
+                .map(str::to_string)
+        })
+}
+
 async fn fetch_backend_paged_items(
     app: axum::Router,
     uri: &str,
@@ -28,11 +58,11 @@ async fn fetch_backend_paged_items(
             .expect("paged backend response should be read"),
     )
     .expect("paged backend response should be valid json");
-    let items = payload["items"]
+    let items = envelope_items(&payload)
         .as_array()
         .expect("items should be an array")
         .clone();
-    let next_page_token = payload["nextPageToken"].as_str().map(ToString::to_string);
+    let next_page_token = envelope_next_page_token(&payload);
     (items, next_page_token)
 }
 
@@ -301,7 +331,7 @@ async fn list_spaces_backend_route_returns_tenant_filtered_result() {
     )
     .expect("response body should be valid json");
     assert_eq!(
-        payload["items"]
+        envelope_items(&payload)
             .as_array()
             .expect("items should be an array")
             .len(),
@@ -595,11 +625,11 @@ async fn list_audit_events_route_supports_filters_and_pagination() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["page"].as_u64(), Some(1));
-    assert_eq!(payload["pageSize"].as_u64(), Some(1));
-    assert_eq!(payload["total"].as_i64(), Some(2));
+    assert_eq!(envelope_page_info(&payload)["page"].as_i64(), Some(1));
+    assert_eq!(envelope_page_info(&payload)["pageSize"].as_i64(), Some(1));
+    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("2"));
     assert_eq!(
-        payload["items"]
+        envelope_items(&payload)
             .as_array()
             .expect("items should be an array")
             .len(),
@@ -684,8 +714,8 @@ async fn list_audit_events_route_supports_request_and_trace_filters() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["total"].as_i64(), Some(1));
-    let items = payload["items"]
+    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("1"));
+    let items = envelope_items(&payload)
         .as_array()
         .expect("items should be an array");
     assert_eq!(items.len(), 1);
@@ -1065,10 +1095,10 @@ async fn list_maintenance_jobs_route_supports_filters_and_pagination() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["page"].as_u64(), Some(1));
-    assert_eq!(payload["pageSize"].as_u64(), Some(1));
-    assert_eq!(payload["total"].as_i64(), Some(1));
-    let items = payload["items"]
+    assert_eq!(envelope_page_info(&payload)["page"].as_i64(), Some(1));
+    assert_eq!(envelope_page_info(&payload)["pageSize"].as_i64(), Some(1));
+    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("1"));
+    let items = envelope_items(&payload)
         .as_array()
         .expect("items should be an array");
     assert_eq!(items.len(), 1);
@@ -1194,10 +1224,10 @@ async fn list_download_packages_route_supports_filters_and_pagination() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["page"].as_u64(), Some(1));
-    assert_eq!(payload["pageSize"].as_u64(), Some(1));
-    assert_eq!(payload["total"].as_i64(), Some(1));
-    let items = payload["items"]
+    assert_eq!(envelope_page_info(&payload)["page"].as_i64(), Some(1));
+    assert_eq!(envelope_page_info(&payload)["pageSize"].as_i64(), Some(1));
+    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("1"));
+    let items = envelope_items(&payload)
         .as_array()
         .expect("items should be an array");
     assert_eq!(items.len(), 1);
@@ -1310,8 +1340,8 @@ async fn maintenance_routes_record_failed_jobs_with_request_and_trace() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["total"].as_i64(), Some(1));
-    let items = payload["items"]
+    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("1"));
+    let items = envelope_items(&payload)
         .as_array()
         .expect("items should be an array");
     assert_eq!(items.len(), 1);
@@ -1400,8 +1430,8 @@ async fn maintenance_upload_sweep_failure_records_failed_job_and_audit() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["total"].as_i64(), Some(1));
-    let items = payload["items"]
+    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("1"));
+    let items = envelope_items(&payload)
         .as_array()
         .expect("items should be an array");
     assert_eq!(items.len(), 1);

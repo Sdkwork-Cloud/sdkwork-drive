@@ -1381,3 +1381,18 @@ CREATE TABLE IF NOT EXISTS dr_drive_domain_outbox (
 
 CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending
     ON dr_drive_domain_outbox (delivery_status, created_at);
+CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending_dispatch
+    ON dr_drive_domain_outbox (attempt_count, created_at)
+    WHERE delivery_status = 'pending';
+
+CREATE TABLE IF NOT EXISTS dr_drive_tenant_quota (
+    tenant_id VARCHAR(64) PRIMARY KEY,
+    max_bytes BIGINT,
+    updated_by VARCHAR(128) NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    version BIGINT NOT NULL DEFAULT 1,
+    CONSTRAINT ck_dr_drive_tenant_quota_version
+        CHECK (version >= 1),
+    CONSTRAINT ck_dr_drive_tenant_quota_max_bytes
+        CHECK (max_bytes IS NULL OR max_bytes > 0)
+);

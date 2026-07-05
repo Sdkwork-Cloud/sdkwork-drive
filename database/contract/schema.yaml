@@ -6,6 +6,7 @@ owner_team: drive-platform
 compliance_level: L2
 engines:
   - postgres
+  - sqlite
 table_prefix: dr_
 tables:
   - name: dr_drive_space

@@ -52,7 +52,7 @@ async fn version_routes_prefer_logical_node_version_ids() {
     )
     .expect("version list response should be valid json");
     assert_eq!(
-        list_payload["items"][0]["id"].as_str(),
+        common::envelope_items(&list_payload)[0]["id"].as_str(),
         Some("version-node-001-v2")
     );
 

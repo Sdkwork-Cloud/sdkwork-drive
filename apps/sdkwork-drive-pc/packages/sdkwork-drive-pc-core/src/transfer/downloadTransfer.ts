@@ -19,7 +19,17 @@ export interface ExecuteDownloadTransferResult {
   fileName: string;
 }
 
-const MAX_FALLBACK_BLOB_BYTES = 64 * 1024 * 1024;
+const MAX_IN_MEMORY_DOWNLOAD_BYTES = 64 * 1024 * 1024;
+
+function formatInMemoryDownloadLimitError(receivedBytes: number): string {
+  return `Download response is too large for in-memory handling (${receivedBytes} bytes; limit ${MAX_IN_MEMORY_DOWNLOAD_BYTES}). Use a browser that supports streamed save or the desktop client.`;
+}
+
+function assertInMemoryDownloadWithinLimit(receivedBytes: number): void {
+  if (receivedBytes > MAX_IN_MEMORY_DOWNLOAD_BYTES) {
+    throw new Error(formatInMemoryDownloadLimitError(receivedBytes));
+  }
+}
 
 export interface SaveDownloadStreamAdapter {
   begin(fileName: string): Promise<string | null>;
@@ -165,11 +175,7 @@ async function streamResponseBodyToSession(
   const reader = response.body?.getReader();
   if (!reader) {
     const blob = await response.blob();
-    if (blob.size > MAX_FALLBACK_BLOB_BYTES) {
-      throw new Error(
-        `Download response is too large for in-memory fallback (${blob.size} bytes).`,
-      );
-    }
+    assertInMemoryDownloadWithinLimit(blob.size);
     await streamAdapter.writeChunk(sessionId, new Uint8Array(await blob.arrayBuffer()));
     onProgress?.(
       resumeFromBytes + blob.size,
@@ -219,6 +225,7 @@ export async function executeDownloadTransfer(
   const reader = response.body?.getReader();
   if (!reader) {
     const blob = await response.blob();
+    assertInMemoryDownloadWithinLimit(resumeFromBytes + blob.size);
     options.onProgress?.(
       resumeFromBytes + blob.size,
       expectedTotal || resumeFromBytes + blob.size,
@@ -236,8 +243,9 @@ export async function executeDownloadTransfer(
     if (done) {
       break;
     }
-    chunks.push(value);
     receivedBytes += value.byteLength;
+    assertInMemoryDownloadWithinLimit(resumeFromBytes + receivedBytes);
+    chunks.push(value);
     options.onProgress?.(
       resumeFromBytes + receivedBytes,
       expectedTotal || resumeFromBytes + receivedBytes,
@@ -367,8 +375,7 @@ export async function runManagedDownloadTransfer(
   try {
     const activeJob = resumeExistingProgress ? job : applyDownloadGrantToJob(job, grant);
     const streamAdapter =
-      saveDownloadStream ??
-      (!saveDownload ? await createBrowserDownloadStreamAdapter(activeJob.fileName) : undefined);
+      saveDownloadStream ?? (await createBrowserDownloadStreamAdapter(activeJob.fileName));
 
     if (streamAdapter) {
       const receivedBytes = await executeDownloadToStream(activeJob, grant, streamAdapter, {

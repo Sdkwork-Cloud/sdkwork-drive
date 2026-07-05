@@ -163,3 +163,25 @@ fn core_registry_matches_runtime_dr_drive_space_and_node_columns() {
         );
     }
 }
+
+#[test]
+fn governed_database_migrations_exist_for_postgres_and_sqlite() {
+    for path in [
+        "database/migrations/postgres/0002_drive_outbox_pending_dispatch_index.up.sql",
+        "database/migrations/postgres/0002_drive_outbox_pending_dispatch_index.down.sql",
+        "database/migrations/postgres/0003_drive_tenant_quota.up.sql",
+        "database/migrations/postgres/0003_drive_tenant_quota.down.sql",
+        "database/migrations/sqlite/0002_drive_outbox_pending_dispatch_index.up.sql",
+        "database/migrations/sqlite/0002_drive_outbox_pending_dispatch_index.down.sql",
+        "database/migrations/sqlite/0003_drive_tenant_quota.up.sql",
+        "database/migrations/sqlite/0003_drive_tenant_quota.down.sql",
+    ] {
+        read_workspace_file(path);
+    }
+
+    let manifest = read_workspace_file("database/database.manifest.json");
+    assert!(
+        manifest.contains("\"sqlite\"") && manifest.contains("\"postgres\""),
+        "database manifest must declare postgres and sqlite engines"
+    );
+}

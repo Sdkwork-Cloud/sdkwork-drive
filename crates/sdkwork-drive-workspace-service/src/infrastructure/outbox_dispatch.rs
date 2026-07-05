@@ -1,6 +1,8 @@
+use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_observability::metrics;
 use serde_json::json;
 use sqlx::{AnyPool, Row};
+use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 const MAX_OUTBOX_ATTEMPTS: i32 = 10;
@@ -91,10 +93,12 @@ pub async fn dispatch_pending_outbox_events(
         .map_err(|error| format!("build outbox webhook client failed: {error}"))?;
 
     let mut result = DomainOutboxDispatchResult::default();
+    let mut processed_in_batch = HashSet::new();
     for _ in 0..OUTBOX_BATCH_SIZE {
-        let Some(claimed) = claim_next_pending_outbox_event(pool).await? else {
+        let Some(claimed) = claim_next_pending_outbox_event(pool, &processed_in_batch).await? else {
             break;
         };
+        processed_in_batch.insert(claimed.outbox_id.clone());
 
         result.processed += 1;
         if claimed.attempt_count > MAX_OUTBOX_ATTEMPTS {
@@ -165,23 +169,47 @@ struct ClaimedOutboxEvent {
 
 async fn claim_next_pending_outbox_event(
     pool: &AnyPool,
+    exclude_ids: &HashSet<String>,
 ) -> Result<Option<ClaimedOutboxEvent>, String> {
-    let row = sqlx::query(
-        "UPDATE dr_drive_domain_outbox
-         SET attempt_count = attempt_count + 1
-         WHERE id = (
-           SELECT id
-           FROM dr_drive_domain_outbox
-           WHERE delivery_status = 'pending' AND attempt_count < $1
-           ORDER BY created_at ASC
-           LIMIT 1
-           FOR UPDATE SKIP LOCKED
-         )
-         RETURNING id, tenant_id, space_id, node_id, event_type, actor_id, sequence_no, attempt_count",
-    )
-    .bind(MAX_OUTBOX_ATTEMPTS)
-    .fetch_optional(pool)
-    .await
+    let engine = resolve_pool_database_engine(pool).await?;
+    let exclude_clause = build_outbox_claim_exclude_clause(exclude_ids);
+    let row = match engine {
+        DatabaseEngine::Postgresql => {
+            sqlx::query(&format!(
+                "UPDATE dr_drive_domain_outbox
+                 SET attempt_count = attempt_count + 1
+                 WHERE id = (
+                   SELECT id
+                   FROM dr_drive_domain_outbox
+                   WHERE delivery_status = 'pending' AND attempt_count < $1{exclude_clause}
+                   ORDER BY created_at ASC
+                   LIMIT 1
+                   FOR UPDATE SKIP LOCKED
+                 )
+                 RETURNING id, tenant_id, space_id, node_id, event_type, actor_id, sequence_no, attempt_count",
+            ))
+            .bind(MAX_OUTBOX_ATTEMPTS)
+            .fetch_optional(pool)
+            .await
+        }
+        DatabaseEngine::Sqlite => {
+            sqlx::query(&format!(
+                "UPDATE dr_drive_domain_outbox
+                 SET attempt_count = attempt_count + 1
+                 WHERE id = (
+                   SELECT id
+                   FROM dr_drive_domain_outbox
+                   WHERE delivery_status = 'pending' AND attempt_count < $1{exclude_clause}
+                   ORDER BY created_at ASC
+                   LIMIT 1
+                 )
+                 RETURNING id, tenant_id, space_id, node_id, event_type, actor_id, sequence_no, attempt_count",
+            ))
+            .bind(MAX_OUTBOX_ATTEMPTS)
+            .fetch_optional(pool)
+            .await
+        }
+    }
     .map_err(|error| format!("claim pending domain outbox event failed: {error}"))?;
 
     let Some(row) = row else {
@@ -319,6 +347,34 @@ async fn dispatch_outbox_event(
     }
 
     Ok(())
+}
+
+fn build_outbox_claim_exclude_clause(exclude_ids: &HashSet<String>) -> String {
+    if exclude_ids.is_empty() {
+        return String::new();
+    }
+    let quoted = exclude_ids
+        .iter()
+        .map(|id| format!("'{id}'"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!(" AND id NOT IN ({quoted})")
+}
+
+async fn resolve_pool_database_engine(pool: &AnyPool) -> Result<DatabaseEngine, String> {
+    if let Some(engine) = crate::infrastructure::sql::installed_database_engine() {
+        return Ok(engine);
+    }
+
+    let sqlite_version = sqlx::query_scalar::<_, String>("SELECT sqlite_version()")
+        .fetch_optional(pool)
+        .await
+        .map_err(|error| format!("probe sqlite_version failed: {error}"))?;
+    if sqlite_version.is_some() {
+        return Ok(DatabaseEngine::Sqlite);
+    }
+
+    Ok(DatabaseEngine::Postgresql)
 }
 
 #[cfg(test)]

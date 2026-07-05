@@ -576,6 +576,11 @@ tables:
         columns:
           - delivery_status
           - created_at
+      - name: ix_dr_drive_domain_outbox_pending_dispatch
+        columns:
+          - attempt_count
+          - created_at
+        partial: "delivery_status = 'pending'"
   - table: dr_drive_audit_event
     domain: drive
     description: Append-only drive audit events.

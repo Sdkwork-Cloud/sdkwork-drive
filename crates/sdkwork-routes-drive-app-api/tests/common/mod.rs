@@ -144,3 +144,22 @@ pub fn envelope_items(payload: &serde_json::Value) -> &serde_json::Value {
         .get("items")
         .expect("response should expose list items in data.items or items")
 }
+
+pub fn envelope_page_info(payload: &serde_json::Value) -> Option<&serde_json::Value> {
+    payload
+        .pointer("/data/pageInfo")
+        .or_else(|| payload.get("pageInfo"))
+}
+
+pub fn envelope_next_page_token(payload: &serde_json::Value) -> Option<String> {
+    envelope_page_info(payload)
+        .and_then(|page_info| page_info.get("nextCursor"))
+        .and_then(|value| value.as_str())
+        .map(str::to_string)
+        .or_else(|| {
+            payload
+                .get("nextPageToken")
+                .and_then(|value| value.as_str())
+                .map(str::to_string)
+        })
+}

@@ -12,15 +12,22 @@ const SQLITE_CORE_SQL: &str = include_str!("sqlite_core.sql");
 const POSTGRES_CORE_SQL: &str = include_str!("postgres_core.sql");
 
 static DRIVE_ANY_POOL: OnceLock<AnyPool> = OnceLock::new();
+static DRIVE_INSTALLED_ENGINE: OnceLock<DatabaseEngine> = OnceLock::new();
+
+pub fn installed_database_engine() -> Option<DatabaseEngine> {
+    DRIVE_INSTALLED_ENGINE.get().copied()
+}
 
 fn installed_drive_any_pool() -> Option<AnyPool> {
     DRIVE_ANY_POOL.get().cloned()
 }
 
-fn install_drive_any_pool(pool: AnyPool) -> Result<(), sqlx::Error> {
+fn install_drive_runtime(pool: AnyPool, engine: DatabaseEngine) -> Result<(), sqlx::Error> {
     DRIVE_ANY_POOL
         .set(pool)
-        .map_err(|_| sqlx::Error::Configuration("drive runtime pool already installed".into()))
+        .map_err(|_| sqlx::Error::Configuration("drive runtime pool already installed".into()))?;
+    let _ = DRIVE_INSTALLED_ENGINE.set(engine);
+    Ok(())
 }
 
 pub async fn install_sqlite_schema<'c, E>(executor: E) -> Result<(), sqlx::Error>
@@ -67,10 +74,9 @@ async fn upgrade_sqlite_dr_drive_node_head_columns(pool: &AnyPool) -> Result<(),
     ];
 
     for (column_name, column_ddl) in COLUMNS {
-        let exists: i64 = sqlx::query_scalar(
-            "SELECT COUNT(1) FROM pragma_table_info('dr_drive_node') WHERE name = ?",
-        )
-        .bind(column_name)
+        let exists: i64 = sqlx::query_scalar(&format!(
+            "SELECT COUNT(1) FROM pragma_table_info('dr_drive_node') WHERE name = '{column_name}'"
+        ))
         .fetch_one(pool)
         .await?;
         if exists == 0 {
@@ -87,9 +93,8 @@ async fn upgrade_sqlite_dr_drive_node_share_link_access_code_column(
     pool: &AnyPool,
 ) -> Result<(), sqlx::Error> {
     let exists: i64 = sqlx::query_scalar(
-        "SELECT COUNT(1) FROM pragma_table_info('dr_drive_node_share_link') WHERE name = ?",
+        "SELECT COUNT(1) FROM pragma_table_info('dr_drive_node_share_link') WHERE name = 'access_code_hash'",
     )
-    .bind("access_code_hash")
     .fetch_one(pool)
     .await?;
     if exists == 0 {
@@ -161,6 +166,6 @@ pub async fn connect_any_database_and_install_schema(
             install_any_schema(&pool, config.engine()).await?;
         }
     }
-    install_drive_any_pool(pool.clone())?;
+    install_drive_runtime(pool.clone(), config.engine())?;
     Ok(pool)
 }

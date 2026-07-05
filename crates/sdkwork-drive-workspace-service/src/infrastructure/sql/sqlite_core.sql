@@ -1213,3 +1213,6 @@ CREATE TABLE IF NOT EXISTS dr_drive_domain_outbox (
 
 CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending
     ON dr_drive_domain_outbox (delivery_status, created_at);
+CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending_dispatch
+    ON dr_drive_domain_outbox (attempt_count, created_at)
+    WHERE delivery_status = 'pending';

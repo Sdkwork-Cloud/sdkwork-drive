@@ -47,6 +47,18 @@ Supported runtime database engines are PostgreSQL and SQLite only. Enabling `sql
 
 Direct SQL in request handlers is still allowed for narrow API-specific read models, but shared business persistence must be implemented through workspace-service store ports. New SQL must be validated against both PostgreSQL and SQLite semantics before being exposed through `pnpm dev` or `pnpm dev:sqlite`.
 
+## Lifecycle And Migrations
+
+`database/database.manifest.json` declares both `postgres` and `sqlite` engines. Governed assets live under:
+
+- `database/ddl/baseline/{engine}/0001_drive_baseline.sql` — greenfield snapshot
+- `database/migrations/{engine}/0002_*` — outbox pending-dispatch partial index
+- `database/migrations/{engine}/0003_*` — tenant quota policy table
+
+PostgreSQL production upgrades run through `pnpm db:migrate` (`sdkwork-database-cli`). SQLite local mode installs `sqlite_core.sql` at runtime and applies incremental boot upgrades for legacy files when required.
+
+Domain outbox claim uses `FOR UPDATE SKIP LOCKED` on PostgreSQL and a single-writer-safe claim on SQLite. Multi-instance cloud deployments must run outbox dispatch from `sdkwork-drive-install-worker` with `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` on API pods.
+
 ## Schema Rules
 
 - Every installed table and index must be listed in `docs/schema-registry/tables/*.yaml`.

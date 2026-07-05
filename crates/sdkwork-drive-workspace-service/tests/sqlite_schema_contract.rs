@@ -212,6 +212,7 @@ async fn sqlite_installer_creates_special_space_profile_tables() {
         "ux_dr_drive_change_log_space_sequence",
         "ix_dr_drive_change_log_tenant_space_created",
         "ix_dr_drive_domain_outbox_pending",
+        "ix_dr_drive_domain_outbox_pending_dispatch",
         "ix_dr_drive_audit_event_tenant_created",
         "ix_dr_drive_audit_event_resource",
         "ix_dr_drive_audit_event_action_created",

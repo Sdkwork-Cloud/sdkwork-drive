@@ -712,7 +712,7 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
             .expect("list nodes valid parent response should be read"),
     )
     .expect("list nodes valid parent response should be valid json");
-    let ids = valid_payload["items"]
+    let ids = common::envelope_items(&valid_payload)
         .as_array()
         .expect("list node items should be an array")
         .iter()
@@ -858,7 +858,7 @@ async fn list_nodes_sort_by_name_desc_orders_active_children() {
             .expect("sorted list response should be read"),
     )
     .expect("sorted list response should be valid json");
-    let names = payload["items"]
+    let names = common::envelope_items(&payload)
         .as_array()
         .expect("sorted list items should be an array")
         .iter()
@@ -943,7 +943,7 @@ async fn list_nodes_includes_ui_folder_color_from_node_properties() {
             .expect("list nodes response body should be read"),
     )
     .expect("list nodes response json should be valid");
-    assert_eq!(payload["items"][0]["folderColor"].as_str(), Some("emerald"));
+    assert_eq!(common::envelope_items(&payload)[0]["folderColor"].as_str(), Some("emerald"));
 }
 
 #[tokio::test]
@@ -1035,7 +1035,7 @@ async fn recent_search_and_favorite_routes_hide_uploading_nodes_until_ready() {
                 .expect("visibility response should be read"),
         )
         .expect("visibility response should be valid json");
-        let ids = payload["items"]
+        let ids = common::envelope_items(&payload)
             .as_array()
             .expect("items should be an array")
             .iter()
@@ -5258,7 +5258,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             .expect("changes response body should be read"),
     )
     .expect("changes response json should be valid");
-    let events = changes_payload["items"]
+    let events = common::envelope_items(&changes_payload)
         .as_array()
         .expect("changes items should be an array")
         .iter()
@@ -5497,7 +5497,7 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
             .expect("search deleted child response should be read"),
     )
     .expect("search deleted child response should be valid json");
-    assert_eq!(search_payload["items"].as_array().unwrap().len(), 0);
+    assert_eq!(common::envelope_items(&search_payload).as_array().unwrap().len(), 0);
 }
 
 #[tokio::test]
@@ -5683,7 +5683,7 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
             .expect("search trashed child response should be read"),
     )
     .expect("search trashed child response should be valid json");
-    assert_eq!(search_payload["items"].as_array().unwrap().len(), 0);
+    assert_eq!(common::envelope_items(&search_payload).as_array().unwrap().len(), 0);
 }
 
 #[tokio::test]
@@ -7823,7 +7823,7 @@ async fn create_download_package_for_multiple_files_writes_zip_archive_and_retur
     assert!(payload["archiveObjectKey"]
         .as_str()
         .is_some_and(|value| value.contains("/download-packages/")));
-    let items = payload["items"]
+    let items = common::envelope_items(&payload)
         .as_array()
         .expect("items should be present");
     assert_eq!(items.len(), 2);
@@ -8074,7 +8074,7 @@ async fn list_archive_entries_reads_zip_contents_from_drive_storage() {
             .expect("archive entries response should be read"),
     )
     .expect("archive entries response should be valid json");
-    let items = payload["items"]
+    let items = common::envelope_items(&payload)
         .as_array()
         .expect("archive entries should include items");
     assert_eq!(items.len(), 3);
@@ -8150,7 +8150,7 @@ async fn extract_archive_entries_creates_drive_nodes_and_writes_objects_to_defau
     )
     .expect("archive extract response should be valid json");
     assert_eq!(payload["extractedCount"].as_i64(), Some(1));
-    let items = payload["items"]
+    let items = common::envelope_items(&payload)
         .as_array()
         .expect("archive extract response should include items");
     assert_eq!(items.len(), 1);
@@ -8648,9 +8648,9 @@ async fn create_download_package_reads_files_from_multiple_storage_buckets() {
     .expect("response json should be valid");
     assert_eq!(payload["state"].as_str(), Some("ready"));
     assert_eq!(payload["fileCount"].as_i64(), Some(2));
-    assert_eq!(payload["items"][0]["bucket"].as_str(), Some("bucket-s3"));
+    assert_eq!(common::envelope_items(&payload)[0]["bucket"].as_str(), Some("bucket-s3"));
     assert_eq!(
-        payload["items"][1]["bucket"].as_str(),
+        common::envelope_items(&payload)[1]["bucket"].as_str(),
         Some("bucket-s3-alt")
     );
 
@@ -8992,7 +8992,7 @@ async fn create_download_package_expands_selected_folder_descendants() {
     assert_eq!(payload["fileCount"].as_i64(), Some(1));
     assert_eq!(payload["totalBytes"].as_i64(), Some(12));
     assert_eq!(
-        payload["items"][0]["archivePath"].as_str(),
+        common::envelope_items(&payload)[0]["archivePath"].as_str(),
         Some("Project/folder-child.txt")
     );
 
@@ -9751,11 +9751,11 @@ async fn fetch_paged_items_as(
             .expect("paged response should be read"),
     )
     .expect("paged response should be valid json");
-    let items = payload["items"]
+    let items = common::envelope_items(&payload)
         .as_array()
         .expect("items should be an array")
         .clone();
-    let next_page_token = payload["nextPageToken"].as_str().map(ToString::to_string);
+    let next_page_token = common::envelope_next_page_token(&payload);
     (items, next_page_token)
 }
 
@@ -10509,7 +10509,7 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
             .expect("changes response body should be readable"),
     )
     .expect("changes response body should be valid json");
-    let events = changes_payload["items"]
+    let events = common::envelope_items(&changes_payload)
         .as_array()
         .expect("changes items should be an array")
         .iter()
@@ -10771,7 +10771,7 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
             .expect("list nodes response body should be read"),
     )
     .expect("list nodes response json should be valid");
-    assert_eq!(list_payload["items"][0]["id"], "node-core-folder");
+    assert_eq!(common::envelope_items(&list_payload)[0]["id"], "node-core-folder");
 
     let permission_response = app
         .clone()
@@ -10919,7 +10919,7 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
             .expect("search response body should be read"),
     )
     .expect("search response json should be valid");
-    assert_eq!(search_payload["items"][0]["id"], "node-core-folder");
+    assert_eq!(common::envelope_items(&search_payload)[0]["id"], "node-core-folder");
 
     let changes_response = app
         .oneshot(
@@ -10949,7 +10949,7 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
             .expect("changes response body should be read"),
     )
     .expect("changes response json should be valid");
-    let events = changes_payload["items"]
+    let events = common::envelope_items(&changes_payload)
         .as_array()
         .expect("changes items should be an array")
         .iter()
@@ -11609,7 +11609,7 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
             .expect("list spaces response should be read"),
     )
     .expect("list spaces response should be valid json");
-    assert_eq!(list_payload["items"].as_array().unwrap().len(), 0);
+    assert_eq!(common::envelope_items(&list_payload).as_array().unwrap().len(), 0);
 
     let get_deleted_response = app
         .clone()
@@ -11678,7 +11678,7 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
             .expect("changes response should be read"),
     )
     .expect("changes response should be valid json");
-    let events = changes_payload["items"]
+    let events = common::envelope_items(&changes_payload)
         .as_array()
         .expect("changes items should be an array")
         .iter()
@@ -11876,19 +11876,19 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
     )
     .expect("share link list response should be valid json");
     assert_eq!(
-        share_list_payload["items"][0]["id"].as_str(),
+        common::envelope_items(&share_list_payload)[0]["id"].as_str(),
         Some("share-gov")
     );
     assert_eq!(
-        share_list_payload["items"][0]["role"].as_str(),
+        common::envelope_items(&share_list_payload)[0]["role"].as_str(),
         Some("reader")
     );
     assert!(
-        share_list_payload["items"][0].get("token").is_none(),
+        common::envelope_items(&share_list_payload)[0].get("token").is_none(),
         "share link list response must not expose raw token"
     );
     assert!(
-        share_list_payload["items"][0].get("tokenHash").is_none(),
+        common::envelope_items(&share_list_payload)[0].get("tokenHash").is_none(),
         "share link list response must not expose token hash"
     );
 
@@ -12050,7 +12050,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
     )
     .expect("share link list after revoke response should be valid json");
     assert_eq!(
-        share_list_after_revoke_payload["items"]
+        common::envelope_items(&share_list_after_revoke_payload)
             .as_array()
             .expect("share links should be an array")
             .len(),
@@ -12186,7 +12186,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
             .expect("changes response should be read"),
     )
     .expect("changes response should be valid json");
-    let events = changes_payload["items"]
+    let events = common::envelope_items(&changes_payload)
         .as_array()
         .expect("changes items should be an array")
         .iter()
@@ -12328,14 +12328,12 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             .expect("comment list response should be read"),
     )
     .expect("comment list response should be valid json");
-    assert_eq!(first_page_payload["items"].as_array().unwrap().len(), 1);
+    assert_eq!(common::envelope_items(&first_page_payload).as_array().unwrap().len(), 1);
     assert_eq!(
-        first_page_payload["items"][0]["id"].as_str(),
+        common::envelope_items(&first_page_payload)[0]["id"].as_str(),
         Some("comment-two")
     );
-    let next_page_token = first_page_payload["nextPageToken"]
-        .as_str()
-        .expect("comment list should expose nextPageToken");
+    let next_page_token = common::envelope_next_page_token(&first_page_payload).expect("comment list should expose nextPageToken");
 
     let second_page = app
         .clone()
@@ -12369,10 +12367,10 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
     )
     .expect("comment second page response should be valid json");
     assert_eq!(
-        second_page_payload["items"][0]["id"].as_str(),
+        common::envelope_items(&second_page_payload)[0]["id"].as_str(),
         Some("comment-one")
     );
-    assert!(second_page_payload["nextPageToken"].is_null());
+    assert!(common::envelope_next_page_token(&second_page_payload).is_none());
 
     let comment_detail = app
         .clone()
@@ -12519,13 +12517,13 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             .expect("reply list response should be read"),
     )
     .expect("reply list response should be valid json");
-    assert_eq!(replies_payload["items"].as_array().unwrap().len(), 1);
+    assert_eq!(common::envelope_items(&replies_payload).as_array().unwrap().len(), 1);
     assert_eq!(
-        replies_payload["items"][0]["id"].as_str(),
+        common::envelope_items(&replies_payload)[0]["id"].as_str(),
         Some("reply-one")
     );
     assert!(
-        replies_payload["nextPageToken"].as_str().is_some(),
+        common::envelope_next_page_token(&replies_payload).is_some(),
         "reply list should expose nextPageToken when more rows exist"
     );
 
@@ -12734,7 +12732,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             .expect("changes response should be read"),
     )
     .expect("changes response should be valid json");
-    let events = changes_payload["items"]
+    let events = common::envelope_items(&changes_payload)
         .as_array()
         .expect("changes items should be an array")
         .iter()
@@ -12852,13 +12850,13 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
             .expect("changes first page response should be read"),
     )
     .expect("changes first page response should be valid json");
-    assert_eq!(first_page_payload["items"].as_array().unwrap().len(), 1);
+    assert_eq!(common::envelope_items(&first_page_payload).as_array().unwrap().len(), 1);
     assert_eq!(
-        first_page_payload["items"][0]["sequenceNo"].as_i64(),
+        common::envelope_items(&first_page_payload)[0]["sequenceNo"].as_i64(),
         Some(1)
     );
-    assert_eq!(first_page_payload["nextPageToken"].as_str(), Some("1"));
-    assert_eq!(first_page_payload["nextCursor"].as_i64(), Some(1));
+    assert_eq!(common::envelope_next_page_token(&first_page_payload).as_deref(), Some("1"));
+    assert_eq!(common::envelope_next_page_token(&first_page_payload).as_deref(), Some("1"));
 
     let second_page = app
         .clone()
@@ -12889,15 +12887,14 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
             .expect("changes second page response should be read"),
     )
     .expect("changes second page response should be valid json");
-    let second_page_sequences = second_page_payload["items"]
+    let second_page_sequences = common::envelope_items(&second_page_payload)
         .as_array()
         .expect("changes second page items should be an array")
         .iter()
         .map(|item| item["sequenceNo"].as_i64().unwrap_or_default())
         .collect::<Vec<_>>();
     assert_eq!(second_page_sequences, vec![2, 3]);
-    assert!(second_page_payload["nextPageToken"].is_null());
-    assert_eq!(second_page_payload["nextCursor"].as_i64(), Some(3));
+    assert!(common::envelope_next_page_token(&second_page_payload).is_none());
 }
 
 #[tokio::test]
@@ -13014,7 +13011,7 @@ async fn app_drive_changes_validate_explicit_space_filter() {
             .expect("deleted changes response should be read"),
     )
     .expect("deleted changes response should be valid json");
-    let events = deleted_history_payload["items"]
+    let events = common::envelope_items(&deleted_history_payload)
         .as_array()
         .expect("deleted changes items should be an array")
         .iter()
@@ -13263,7 +13260,7 @@ async fn app_dr_drive_node_path_route_returns_ordered_breadcrumbs() {
             .expect("node path response should be read"),
     )
     .expect("node path response should be valid json");
-    let ids = path_payload["items"]
+    let ids = common::envelope_items(&path_payload)
         .as_array()
         .expect("path items should be an array")
         .iter()
@@ -13475,9 +13472,9 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             .expect("trash response should be read"),
     )
     .expect("trash response should be valid json");
-    assert_eq!(trash_payload["items"].as_array().unwrap().len(), 1);
+    assert_eq!(common::envelope_items(&trash_payload).as_array().unwrap().len(), 1);
     assert_eq!(
-        trash_payload["items"][0]["id"].as_str(),
+        common::envelope_items(&trash_payload)[0]["id"].as_str(),
         Some("node-trashed")
     );
 
@@ -13510,7 +13507,7 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             .expect("recent response should be read"),
     )
     .expect("recent response should be valid json");
-    let recent_ids = recent_payload["items"]
+    let recent_ids = common::envelope_items(&recent_payload)
         .as_array()
         .expect("recent items should be an array")
         .iter()
@@ -13554,8 +13551,8 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             .expect("shared response should be read"),
     )
     .expect("shared response should be valid json");
-    assert_eq!(shared_payload["items"].as_array().unwrap().len(), 3);
-    let shared_ids = shared_payload["items"]
+    assert_eq!(common::envelope_items(&shared_payload).as_array().unwrap().len(), 3);
+    let shared_ids = common::envelope_items(&shared_payload)
         .as_array()
         .expect("shared items should be an array")
         .iter()
@@ -13599,9 +13596,9 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             .expect("favorites response should be read"),
     )
     .expect("favorites response should be valid json");
-    assert_eq!(favorites_payload["items"].as_array().unwrap().len(), 1);
+    assert_eq!(common::envelope_items(&favorites_payload).as_array().unwrap().len(), 1);
     assert_eq!(
-        favorites_payload["items"][0]["id"].as_str(),
+        common::envelope_items(&favorites_payload)[0]["id"].as_str(),
         Some("node-favorite")
     );
 
@@ -13710,7 +13707,7 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             .expect("changes response should be read"),
     )
     .expect("changes response should be valid json");
-    let events = changes_payload["items"]
+    let events = common::envelope_items(&changes_payload)
         .as_array()
         .expect("changes items should be an array")
         .iter()
@@ -17488,7 +17485,7 @@ async fn app_drive_share_link_routes_enforce_acl_roles() {
             .expect("allowed share link list response should be read"),
     )
     .expect("allowed share link list response should be valid json");
-    let ids = list_payload["items"]
+    let ids = common::envelope_items(&list_payload)
         .as_array()
         .expect("share links should be an array")
         .iter()
@@ -17651,7 +17648,7 @@ async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_r
             .expect("search first page response should be read"),
     )
     .expect("search first page response should be valid json");
-    let first_items = first_payload["items"]
+    let first_items = common::envelope_items(&first_payload)
         .as_array()
         .expect("search items should be an array");
     assert_eq!(first_items.len(), 1);
@@ -17666,9 +17663,7 @@ async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_r
         first_id != "node-search-hidden",
         "search must not leak nodes without reader access"
     );
-    let next_page_token = first_payload["nextPageToken"]
-        .as_str()
-        .expect("search first page should expose nextPageToken when more visible rows exist");
+    let next_page_token = common::envelope_next_page_token(&first_payload).expect("search first page should expose nextPageToken when more visible rows exist");
 
     let second_response = app
         .oneshot(
@@ -17700,7 +17695,7 @@ async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_r
             .expect("search second page response should be read"),
     )
     .expect("search second page response should be valid json");
-    let second_items = second_payload["items"]
+    let second_items = common::envelope_items(&second_payload)
         .as_array()
         .expect("second search items should be an array");
     assert_eq!(second_items.len(), 1);
@@ -17712,7 +17707,7 @@ async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_r
         second_id == "node-search-visible-a" || second_id == "node-search-visible-b",
         "second search page must remain ACL-filtered"
     );
-    assert!(second_payload["nextPageToken"].is_null());
+    assert!(common::envelope_next_page_token(&second_payload).is_none());
 }
 
 #[tokio::test]
@@ -17834,7 +17829,7 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
             .expect("list response should be read"),
     )
     .expect("list response should be valid json");
-    let first_items = first_payload["items"]
+    let first_items = common::envelope_items(&first_payload)
         .as_array()
         .expect("list items should be an array");
     let listed_ids = first_items
@@ -17848,7 +17843,7 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
     assert!(listed_ids.iter().any(|id| *id == "node-list-visible-a"));
     assert!(listed_ids.iter().any(|id| *id == "node-list-visible-b"));
     assert!(listed_ids.iter().any(|id| *id == "folder-list-acl-anchor"));
-    assert!(first_payload["nextPageToken"].is_null());
+    assert!(common::envelope_next_page_token(&first_payload).is_none());
 
     let paged_response = app
         .clone()
@@ -17879,7 +17874,7 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
             .expect("list first page response should be read"),
     )
     .expect("list first page response should be valid json");
-    let paged_items = paged_payload["items"]
+    let paged_items = common::envelope_items(&paged_payload)
         .as_array()
         .expect("paged list items should be an array");
     assert_eq!(paged_items.len(), 1);
@@ -17887,9 +17882,7 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
         .as_str()
         .expect("list item id should be present");
     assert_ne!(first_id, "node-list-hidden");
-    let next_page_token = paged_payload["nextPageToken"]
-        .as_str()
-        .expect("list first page should expose nextPageToken when more visible rows exist");
+    let next_page_token = common::envelope_next_page_token(&paged_payload).expect("list first page should expose nextPageToken when more visible rows exist");
 
     let second_response = app
         .clone()
@@ -17922,7 +17915,7 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
             .expect("list second page response should be read"),
     )
     .expect("list second page response should be valid json");
-    let second_items = second_payload["items"]
+    let second_items = common::envelope_items(&second_payload)
         .as_array()
         .expect("second list items should be an array");
     assert_eq!(second_items.len(), 1);
@@ -18530,12 +18523,10 @@ async fn app_drive_change_feed_skips_nodes_without_reader_acl_and_paginates_visi
     )
     .expect("change feed first page response should be valid json");
     assert_eq!(
-        first_page_payload["items"][0]["nodeId"].as_str(),
+        common::envelope_items(&first_page_payload)[0]["nodeId"].as_str(),
         Some("node-change-visible-a")
     );
-    let next_page_token = first_page_payload["nextPageToken"]
-        .as_str()
-        .expect("change feed should expose nextPageToken");
+    let next_page_token = common::envelope_next_page_token(&first_page_payload).expect("change feed should expose nextPageToken");
 
     let second_page = app
         .oneshot(
@@ -18567,7 +18558,7 @@ async fn app_drive_change_feed_skips_nodes_without_reader_acl_and_paginates_visi
             .expect("change feed second page response should be read"),
     )
     .expect("change feed second page response should be valid json");
-    let visible_node_ids = second_page_payload["items"]
+    let visible_node_ids = common::envelope_items(&second_page_payload)
         .as_array()
         .expect("change feed items should be array")
         .iter()
@@ -18777,7 +18768,7 @@ async fn app_drive_shared_with_me_includes_inherited_and_share_link_nodes() {
             .expect("shared with me response should be read"),
     )
     .expect("shared with me response should be valid json");
-    let ids = payload["items"]
+    let ids = common::envelope_items(&payload)
         .as_array()
         .expect("shared with me items should be an array")
         .iter()
@@ -18905,7 +18896,7 @@ async fn app_drive_space_routes_enforce_acl_roles() {
             .expect("list spaces response should be read"),
     )
     .expect("list spaces response should be valid json");
-    assert_eq!(list_payload["items"].as_array().unwrap().len(), 0);
+    assert_eq!(common::envelope_items(&list_payload).as_array().unwrap().len(), 0);
 }
 
 #[tokio::test]
@@ -19272,7 +19263,7 @@ async fn app_drive_create_team_space_bootstraps_creator_owner_access() {
             .expect("list spaces response should be read"),
     )
     .expect("list spaces response should be json");
-    let space_ids = payload["items"]
+    let space_ids = common::envelope_items(&payload)
         .as_array()
         .expect("items array")
         .iter()
@@ -19476,7 +19467,7 @@ async fn app_drive_create_team_space_allows_organization_owner_matching_token() 
             .expect("list spaces response should be read"),
     )
     .expect("list spaces response should be json");
-    let space_ids = payload["items"]
+    let space_ids = common::envelope_items(&payload)
         .as_array()
         .expect("items array")
         .iter()
@@ -19655,7 +19646,7 @@ async fn app_drive_claim_share_link_grants_access_and_lists_in_shared_with_me() 
             .expect("shared with me response should be read"),
     )
     .expect("shared with me response should be valid json");
-    let ids = shared_payload["items"]
+    let ids = common::envelope_items(&shared_payload)
         .as_array()
         .expect("shared with me items should be an array")
         .iter()
