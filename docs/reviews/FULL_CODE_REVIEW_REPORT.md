@@ -34,7 +34,8 @@
 | `database.manifest.json` 缺 sqlite | 声明 `postgres` + `sqlite`；`contract/schema.yaml` 同步 |
 | PC 文件浏览器服务端排序 | `starred`/`shared`/`recent`/`trash` 根视图启用 server-side sort；测试与实现对齐 |
 | Backend admin 列表 SdkWorkPageData | audit/maintenance/downloadPackages 使用 `success_offset_list_page`；PC admin 经 `@sdkwork/utils` 归一化分页 |
-| ShareLinkModal / fileBrowser 测试 | ShareLinkModal 改为契约测试；fileBrowser server-side sort 测试与实现对齐 |
+| ShareLinkModal / fileBrowser 测试 | ShareLinkModal 契约测试；fileBrowser server-side sort 与实现对齐 |
+| `drive-alignment.integration.test.mjs` 重复声明 | 移除重复 `const`；`list_spaces` 断言对齐 workspace-service SQL 分页 |
 
 ---
 

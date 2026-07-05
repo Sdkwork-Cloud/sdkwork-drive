@@ -355,7 +355,7 @@ fn build_outbox_claim_exclude_clause(exclude_ids: &HashSet<String>) -> String {
     }
     let quoted = exclude_ids
         .iter()
-        .map(|id| format!("'{id}'"))
+        .map(|id| format!("'{}'", id.replace('\'', "''")))
         .collect::<Vec<_>>()
         .join(", ");
     format!(" AND id NOT IN ({quoted})")
@@ -391,5 +391,15 @@ mod tests {
     #[test]
     fn no_active_watch_channels_error_is_stable() {
         assert_eq!(NO_ACTIVE_WATCH_CHANNELS_ERROR, "no_active_watch_channels");
+    }
+
+    #[test]
+    fn outbox_claim_exclude_clause_escapes_single_quotes() {
+        let mut exclude = HashSet::new();
+        exclude.insert("outbox-'quoted".to_string());
+        assert_eq!(
+            build_outbox_claim_exclude_clause(&exclude),
+            " AND id NOT IN ('outbox-''quoted')"
+        );
     }
 }
