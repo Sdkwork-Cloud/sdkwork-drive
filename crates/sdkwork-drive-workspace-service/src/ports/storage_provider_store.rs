@@ -46,6 +46,8 @@ pub trait DriveStorageProviderStore: Send + Sync {
     async fn list_storage_providers(
         &self,
         status: Option<&str>,
+        offset: i64,
+        limit: i64,
     ) -> Result<Vec<DriveStorageProvider>, DriveServiceError>;
 
     async fn find_storage_provider(

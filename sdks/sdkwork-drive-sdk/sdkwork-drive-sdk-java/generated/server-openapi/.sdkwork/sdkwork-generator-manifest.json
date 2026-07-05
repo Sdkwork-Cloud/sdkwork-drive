@@ -36,11 +36,11 @@
     },
     {
       "path": "README.md",
-      "sha256": "2513f0e87ef33ed292e4a73a74377c68414bc5617c0dc7c8b1e8f47e0372f698"
+      "sha256": "6d206f6e9816705b2f7db7d4f1d0053ad79c04f95e9f4a708e41215beeb95bd9"
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "aeea9ab91c466b02145def8e0e44e8faa69adff20e8b5cef1c19acb97a0e83f0"
+      "sha256": "e2174a8c5685f1efcdc13ea20e3d000f955f0dda60124dfc06b3988c0171e1a0"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/api/ApiPaths.java",
@@ -48,7 +48,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/api/DriveApi.java",
-      "sha256": "7ef84587b0cca300345a0e4674d00272d2d9c80cadd8c8cd47b3e17d6438fe2f"
+      "sha256": "98ca59e94e4210e10c297da0e4f484e42153ece4ca8325eb02cdcf88e8d36d86"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/api/package-info.java",
@@ -67,6 +67,14 @@
       "sha256": "7d2c93a62184bd35379c4959f46229c176ac0e1ab94006101804f7f2a26fa6b8"
     },
     {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/FieldError.java",
+      "sha256": "20ee4b51de5b882331cef0de4d8558ed6b807cde40dd830acaf231de4471873f"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenDownloadUrlCreateResponse.java",
+      "sha256": "2284667153a5446d95e6147a46415af567045f732840678f5a8ad2cd92e53429"
+    },
+    {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenDownloadUrlResponse.java",
       "sha256": "91c50a1d36ced135444dec9b88c689f0b34e51b4ad6ca9c6aad354922fb56503"
     },
@@ -75,8 +83,24 @@
       "sha256": "8e36006d996daa68b244b6372db17ec28335d11a195923e47eb6edbef3d1c81f"
     },
     {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenShareLinkResolveResponse.java",
+      "sha256": "68cc6da236d3ada75c1f9e2e3a0318b7d660e5233a60a6ab1b43d14b4844d85b"
+    },
+    {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/ProblemDetail.java",
-      "sha256": "170c902facf177a72ce3eaa0a918c18d307c074eb2b498567413572cb71866be"
+      "sha256": "5cd9b433079c7bee3c81b992dff5a843f10606fac5d37c602aaf9640bc470542"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/SdkWorkApiResponse.java",
+      "sha256": "ae41bd1860c6b751a520bdddeabdefb9babaa5dc4aaef2b9f42f0bfe064d6fc1"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/SdkWorkResourceData.java",
+      "sha256": "36c28144e2aa2adcc4d437276c878864aa9896fbb4dfbd8edbac12bc4dcdc162"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/SdkWorkResourceResponse.java",
+      "sha256": "d5c7f668bba0274f002afde4e5f7023a0f2372950a7c8c819f2ca7c2c862bc5a"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/SdkworkCustomClient.java",

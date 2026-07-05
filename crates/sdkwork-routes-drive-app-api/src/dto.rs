@@ -347,12 +347,16 @@ pub(crate) struct ExtractArchiveEntriesResponse {
 pub(crate) struct ListSpacesQuery {
     pub(crate) owner_subject_type: Option<String>,
     pub(crate) owner_subject_id: Option<String>,
+    pub(crate) page_size: Option<i64>,
+    pub(crate) page_token: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListSpacesResponse {
     pub(crate) items: Vec<CreateSpaceResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) next_page_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -464,6 +468,8 @@ pub(crate) struct NodeViewQuery {
     pub(crate) parent_node_id: Option<String>,
     pub(crate) page_size: Option<i64>,
     pub(crate) page_token: Option<String>,
+    pub(crate) sort_by: Option<String>,
+    pub(crate) sort_order: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -474,6 +480,8 @@ pub(crate) struct SubjectNodeViewQuery {
     pub(crate) space_id: Option<String>,
     pub(crate) page_size: Option<i64>,
     pub(crate) page_token: Option<String>,
+    pub(crate) sort_by: Option<String>,
+    pub(crate) sort_order: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

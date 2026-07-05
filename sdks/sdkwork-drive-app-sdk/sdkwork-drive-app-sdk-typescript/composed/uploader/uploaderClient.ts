@@ -1,4 +1,4 @@
-import { hexEncode, uuid as createUuid } from "@sdkwork/utils";
+import { hexEncode, uuid as createUuid, Sha256Hasher } from "@sdkwork/utils";
 import { DEFAULT_UPLOADER_CHUNK_SIZE_BYTES, inferUploaderContentType, inferUploaderFileName, planUploaderParts } from "./uploadPlanner";
 import { createInMemoryUploaderStateStore } from "./uploadStateStore";
 import type {
@@ -73,13 +73,26 @@ async function readUploadPartBody(
   return file.slice(offsetBytes, offsetBytes + sizeBytes, contentType);
 }
 
+const UPLOADER_CHECKSUM_CHUNK_BYTES = 4 * 1024 * 1024;
+
 async function sha256Checksum(file: DriveUploaderBlobLike): Promise<string> {
-  if (!globalThis.crypto?.subtle) {
-    throw new Error("Web Crypto SHA-256 support is required for Drive uploader completion.");
+  const hasher = new Sha256Hasher();
+  if (file.size === 0) {
+    return `sha256:${hexEncode(hasher.digest())}`;
   }
 
-  const digest = await globalThis.crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-  return `sha256:${hexEncode(new Uint8Array(digest))}`;
+  for (let offset = 0; offset < file.size; offset += UPLOADER_CHECKSUM_CHUNK_BYTES) {
+    const length = Math.min(UPLOADER_CHECKSUM_CHUNK_BYTES, file.size - offset);
+    if (file.readRange) {
+      const bytes = await file.readRange(offset, length);
+      hasher.update(new Uint8Array(bytes));
+      continue;
+    }
+    const blob = file.slice(offset, offset + length, file.type);
+    hasher.update(new Uint8Array(await blob.arrayBuffer()));
+  }
+
+  return `sha256:${hexEncode(hasher.digest())}`;
 }
 
 function etagFromResponse(response: Response): string {

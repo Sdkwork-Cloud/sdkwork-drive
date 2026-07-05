@@ -120,8 +120,8 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
       {buckets.length > 0 && (
         <div className="mt-4 rounded border dark:border-neutral-700">
           {buckets.map((bucket) => (
-            <div key={bucket.name} className="flex items-center justify-between border-b px-3 py-2 text-xs dark:border-neutral-800">
-              <span>{bucket.name}</span>
+            <div key={bucket.bucket} className="flex items-center justify-between border-b px-3 py-2 text-xs dark:border-neutral-800">
+              <span>{bucket.bucket}</span>
               {bucket.creationDate && <span className="text-neutral-400">{bucket.creationDate}</span>}
             </div>
           ))}

@@ -19,6 +19,8 @@ export interface ExecuteDownloadTransferResult {
   fileName: string;
 }
 
+const MAX_FALLBACK_BLOB_BYTES = 64 * 1024 * 1024;
+
 export interface SaveDownloadStreamAdapter {
   begin(fileName: string): Promise<string | null>;
   writeChunk(sessionId: string, chunk: Uint8Array): Promise<void>;
@@ -163,6 +165,11 @@ async function streamResponseBodyToSession(
   const reader = response.body?.getReader();
   if (!reader) {
     const blob = await response.blob();
+    if (blob.size > MAX_FALLBACK_BLOB_BYTES) {
+      throw new Error(
+        `Download response is too large for in-memory fallback (${blob.size} bytes).`,
+      );
+    }
     await streamAdapter.writeChunk(sessionId, new Uint8Array(await blob.arrayBuffer()));
     onProgress?.(
       resumeFromBytes + blob.size,

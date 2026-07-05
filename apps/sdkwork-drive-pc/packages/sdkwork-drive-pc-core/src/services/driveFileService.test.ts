@@ -913,7 +913,7 @@ describe('drive file service', () => {
     });
   });
 
-  it('paginates remote node lists so large real spaces are complete', async () => {
+  it('returns only the first page from listFiles for remote node lists', async () => {
     const requests: DriveAppSdkRequest[] = [];
     const appSdkClient = attachUploader({
       metadata: {} as DriveAppSdkClient['metadata'],
@@ -928,25 +928,43 @@ describe('drive file service', () => {
         }
         if (request.operationId === 'nodes.list' && request.query?.pageToken === 'node-page-2') {
           return {
-            items: [
-              {
-                ...fileNode,
-                id: 'file-page-2',
-                nodeName: 'Second page.pdf',
+            data: {
+              items: [
+                {
+                  ...fileNode,
+                  id: 'file-page-2',
+                  nodeName: 'Second page.pdf',
+                },
+              ],
+              pageInfo: {
+                mode: 'cursor',
+                pageSize: 200,
+                hasMore: false,
               },
-            ],
+            },
+            code: 0,
+            traceId: 'trace-page-2',
           };
         }
         if (request.operationId === 'nodes.list') {
           return {
-            items: [
-              {
-                ...fileNode,
-                id: 'file-page-1',
-                nodeName: 'First page.pdf',
+            data: {
+              items: [
+                {
+                  ...fileNode,
+                  id: 'file-page-1',
+                  nodeName: 'First page.pdf',
+                },
+              ],
+              pageInfo: {
+                mode: 'cursor',
+                pageSize: 200,
+                hasMore: true,
+                nextCursor: 'node-page-2',
               },
-            ],
-            nextPageToken: 'node-page-2',
+            },
+            code: 0,
+            traceId: 'trace-page-1',
           };
         }
         return {};
@@ -959,10 +977,10 @@ describe('drive file service', () => {
 
     const files = await service.listFiles('my-storage');
 
-    expect(files.map((file) => file.id)).toEqual(['file-page-1', 'file-page-2']);
+    expect(files.map((file) => file.id)).toEqual(['file-page-1']);
     expect(
       requests.filter((request) => request.operationId === 'nodes.list').map((request) => request.query?.pageToken),
-    ).toEqual([undefined, 'node-page-2']);
+    ).toEqual([undefined]);
   });
 
   it('keeps observed remote nodes available for transfer retry lookup across workspace refreshes', async () => {
@@ -2562,15 +2580,24 @@ describe('drive file service', () => {
           items: [gitRepositorySpaceNode],
         },
         'nodes.list': {
-          items: [
-            {
-              id: 'repo-001',
-              spaceId: 'space-git-repository-001',
-              nodeType: 'folder',
-              nodeName: 'sdkwork-drive',
+          data: {
+            items: [
+              {
+                id: 'repo-001',
+                spaceId: 'space-git-repository-001',
+                nodeType: 'folder',
+                nodeName: 'sdkwork-drive',
+              },
+            ],
+            pageInfo: {
+              mode: 'cursor',
+              pageSize: 50,
+              hasMore: true,
+              nextCursor: 'node-page-2',
             },
-          ],
-          nextPageToken: 'node-page-2',
+          },
+          code: 0,
+          traceId: 'trace-apps-page',
         },
         'favorites.list': { items: [] },
       },

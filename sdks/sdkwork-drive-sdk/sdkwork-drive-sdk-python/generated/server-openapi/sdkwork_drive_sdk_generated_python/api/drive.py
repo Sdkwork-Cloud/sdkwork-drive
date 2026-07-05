@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import CreateOpenDownloadUrlRequest, DriveOpenShareLink, OpenDownloadUrlResponse
+from ..models import CreateOpenDownloadUrlRequest, OpenDownloadUrlCreateResponse, OpenShareLinkResolveResponse
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -191,11 +191,11 @@ class DriveApi:
     def __init__(self, client: HttpClient):
         self._client = client
 
-    def open_share_links_resolve(self, token: str, access_code: Optional[str] = None) -> DriveOpenShareLink:
+    def open_share_links_resolve(self, token: str, access_code: Optional[str] = None) -> OpenShareLinkResolveResponse:
         query = build_query_string([
             {'name': 'accessCode', 'value': access_code, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/open/v3/api/drive/share_links/{serialize_path_parameter(token, {'name': 'token', 'style': 'simple', 'explode': False})}", query), skip_auth=True)
 
-    def open_share_links_download_urls_create(self, token: str, body: Optional[CreateOpenDownloadUrlRequest] = None) -> OpenDownloadUrlResponse:
+    def open_share_links_download_urls_create(self, token: str, body: Optional[CreateOpenDownloadUrlRequest] = None) -> OpenDownloadUrlCreateResponse:
         return self._client.post(f"/open/v3/api/drive/share_links/{serialize_path_parameter(token, {'name': 'token', 'style': 'simple', 'explode': False})}/download_url", json=body, skip_auth=True)

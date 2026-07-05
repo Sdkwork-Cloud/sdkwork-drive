@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": false,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "b48d81e85518cf3cdf562dfa6a84c02b9e86199a4e3ba1f97cde357d419eac4a",
+  "changeFingerprint": "eccd07fa4dd0882556faa290f8c87bd7d6f563993b7334e324c8d8e618808f37",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [],
@@ -56,8 +56,8 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 24,
-    "models": 5,
+    "totalFiles": 31,
+    "models": 12,
     "apis": 1,
     "types": 0
   },
@@ -67,10 +67,10 @@
     "controlPlaneEnabled": true,
     "writtenFiles": 0,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 23,
+    "skippedUnchangedGeneratedFiles": 30,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "b48d81e85518cf3cdf562dfa6a84c02b9e86199a4e3ba1f97cde357d419eac4a",
+    "changeFingerprint": "eccd07fa4dd0882556faa290f8c87bd7d6f563993b7334e324c8d8e618808f37",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [],
@@ -95,9 +95,16 @@
         "types/create_open_download_url_request.go",
         "types/doc.go",
         "types/drive_open_share_link.go",
+        "types/field_error.go",
+        "types/open_download_url_create_response.go",
         "types/open_download_url_response.go",
         "types/open_node.go",
-        "types/problem_detail.go"
+        "types/open_share_link_resolve_response.go",
+        "types/problem_detail.go",
+        "types/sdk_work_api_response.go",
+        "types/sdk_work_platform_error_code.go",
+        "types/sdk_work_resource_data.go",
+        "types/sdk_work_resource_response.go"
       ],
       "deletedGeneratedFiles": [],
       "scaffoldedFiles": [],

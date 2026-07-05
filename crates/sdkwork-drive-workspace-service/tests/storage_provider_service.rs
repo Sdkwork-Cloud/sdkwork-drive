@@ -63,7 +63,11 @@ async fn create_and_list_storage_providers_with_status_filter() {
         .expect("disabled provider should be created");
 
     let all_items = service
-        .list_storage_providers(ListStorageProvidersCommand { status: None })
+        .list_storage_providers(ListStorageProvidersCommand {
+            status: None,
+            offset: 0,
+            limit: 201,
+        })
         .await
         .expect("list all providers should succeed");
     assert_eq!(all_items.len(), 2);
@@ -71,6 +75,8 @@ async fn create_and_list_storage_providers_with_status_filter() {
     let active_items = service
         .list_storage_providers(ListStorageProvidersCommand {
             status: Some("active".to_string()),
+            offset: 0,
+            limit: 201,
         })
         .await
         .expect("list active providers should succeed");
@@ -204,7 +210,11 @@ async fn update_test_and_delete_storage_provider_flow() {
     assert!(deleted.deleted);
 
     let all_items = service
-        .list_storage_providers(ListStorageProvidersCommand { status: None })
+        .list_storage_providers(ListStorageProvidersCommand {
+            status: None,
+            offset: 0,
+            limit: 201,
+        })
         .await
         .expect("list should succeed");
     assert_eq!(all_items.len(), 1);
@@ -213,6 +223,8 @@ async fn update_test_and_delete_storage_provider_flow() {
     let deleted_items = service
         .list_storage_providers(ListStorageProvidersCommand {
             status: Some("deleted".to_string()),
+            offset: 0,
+            limit: 201,
         })
         .await
         .expect("deleted list should succeed");

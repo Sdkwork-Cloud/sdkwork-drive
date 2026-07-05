@@ -42,10 +42,7 @@ import {
   sortDriveFiles,
   type FileBrowserSortField,
 } from "./fileBrowserSort";
-import {
-  fetchRemainingFileBrowserPages,
-  isDefaultFileBrowserSort,
-} from "./fileBrowserPageFetcher";
+import { isDefaultFileBrowserSort } from "./fileBrowserPageFetcher";
 import { supportsServerSideFileBrowserSort } from "./fileBrowserSortSupport";
 import { useFileBrowserVirtualWindow } from "./useFileBrowserVirtualWindow";
 import {
@@ -138,17 +135,6 @@ export function FileBrowser({
 
   const [sortBy, setSortBy] = useState<FileBrowserSortField>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const sortFetchAbortRef = useRef<AbortController | null>(null);
-  const filesRef = useRef<DriveFile[]>([]);
-  const nextPageTokenRef = useRef<string | undefined>(undefined);
-
-  useEffect(() => {
-    filesRef.current = files;
-  }, [files]);
-
-  useEffect(() => {
-    nextPageTokenRef.current = nextPageToken;
-  }, [nextPageToken]);
 
   const handleSort = (field: FileBrowserSortField) => {
     if (sortBy === field) {
@@ -824,71 +810,6 @@ export function FileBrowser({
     debouncedSearchQuery,
     sortBy,
     sortOrder,
-  ]);
-
-  useEffect(() => {
-    if (serverSideSort) {
-      return;
-    }
-    if (isDefaultFileBrowserSort(sortBy, sortOrder)) {
-      return;
-    }
-    if (loading || loadingMore || !nextPageToken) {
-      return;
-    }
-
-    const controller = new AbortController();
-    sortFetchAbortRef.current?.abort();
-    sortFetchAbortRef.current = controller;
-    setLoadingMore(true);
-
-    void fetchRemainingFileBrowserPages({
-      fileService,
-      activeSection,
-      searchQuery: debouncedSearchQuery,
-      parentId: currentFolderId,
-      pageSize: FILE_BROWSER_PAGE_SIZE,
-      initialFiles: filesRef.current,
-      initialNextPageToken: nextPageTokenRef.current,
-      signal: controller.signal,
-    })
-      .then((result) => {
-        if (controller.signal.aborted) {
-          return;
-        }
-        setFiles(result.files);
-        setNextPageToken(result.nextPageToken);
-      })
-      .catch((err: unknown) => {
-        if (isDriveAbortError(err)) {
-          return;
-        }
-        triggerToast(
-          err instanceof Error ? err.message : t("fileBrowser.loadMoreFailed"),
-          "err",
-        );
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setLoadingMore(false);
-        }
-      });
-
-    return () => {
-      controller.abort();
-    };
-  }, [
-    activeSection,
-    currentFolderId,
-    debouncedSearchQuery,
-    fileService,
-    loading,
-    loadingMore,
-    nextPageToken,
-    sortBy,
-    sortOrder,
-    serverSideSort,
-    t,
   ]);
 
   useEffect(() => {
@@ -1726,12 +1647,7 @@ export function FileBrowser({
                       <div className="flex items-center gap-2.5">
                         <div className="w-4 h-4 rounded-full border-2 border-blue-500/30 border-t-blue-600 animate-spin" />
                         <span className="font-medium tracking-wide">
-                          {!serverSideSort &&
-                          !isDefaultFileBrowserSort(sortBy, sortOrder) &&
-                          nextPageToken &&
-                          loadingMore
-                            ? t("fileBrowser.loadingAllForSort")
-                            : t("fileBrowser.loadingMore")}
+                          {t("fileBrowser.loadingMore")}
                         </span>
                       </div>
                       <button

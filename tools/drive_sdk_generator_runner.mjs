@@ -271,6 +271,33 @@ function collectReachableComponentRefs(openapiDocument) {
   return reachable;
 }
 
+const OPENAPI_ENVELOPE_SCHEMA_NAMES = [
+  "ProblemDetail",
+  "SdkWorkApiResponse",
+  "SdkWorkResourceData",
+  "SdkWorkPageData",
+  "SdkWorkCommandData",
+  "SdkWorkPlatformErrorCode",
+  "SdkWorkResourceResponse",
+  "SdkWorkListResponse",
+  "SdkWorkCommandResponse",
+  "PageInfo",
+];
+
+function preserveOpenApiEnvelopeSchemas(sourceDocument, ownerDocument) {
+  const sourceSchemas = sourceDocument.components?.schemas;
+  if (!sourceSchemas || typeof sourceSchemas !== "object") {
+    return;
+  }
+  ownerDocument.components = ownerDocument.components || {};
+  ownerDocument.components.schemas = ownerDocument.components.schemas || {};
+  for (const schemaName of OPENAPI_ENVELOPE_SCHEMA_NAMES) {
+    if (sourceSchemas[schemaName]) {
+      ownerDocument.components.schemas[schemaName] = cloneJson(sourceSchemas[schemaName]);
+    }
+  }
+}
+
 function pruneUnusedSchemas(openapiDocument) {
   const schemas = openapiDocument.components?.schemas;
   if (!schemas || typeof schemas !== "object") {
@@ -314,8 +341,9 @@ function pruneUnusedTags(openapiDocument) {
   );
 }
 
-function toOwnerOnlyOpenApi(openapiDocument) {
+export function toOwnerOnlyOpenApi(openapiDocument) {
   const ownerOnlyDocument = cloneJson(openapiDocument);
+  preserveOpenApiEnvelopeSchemas(openapiDocument, ownerOnlyDocument);
   for (const [pathKey, pathItem] of Object.entries(ownerOnlyDocument.paths || {})) {
     if (!pathItem || typeof pathItem !== "object") {
       continue;
@@ -334,6 +362,7 @@ function toOwnerOnlyOpenApi(openapiDocument) {
   }
   pruneUnusedTags(ownerOnlyDocument);
   pruneUnusedSchemas(ownerOnlyDocument);
+  preserveOpenApiEnvelopeSchemas(openapiDocument, ownerOnlyDocument);
   return ownerOnlyDocument;
 }
 

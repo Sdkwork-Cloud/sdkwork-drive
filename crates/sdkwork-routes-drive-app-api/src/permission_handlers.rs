@@ -1,15 +1,15 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    CreatePermissionRequest, EffectivePermissionListResponse, EffectivePermissionResponse,
-    NodeMutationQuery, PageQuery, PermissionListResponse, PermissionResponse,
-    UpdatePermissionRequest,
+    CreatePermissionRequest, EffectivePermissionResponse, NodeMutationQuery, PageQuery,
+    PermissionResponse, UpdatePermissionRequest,
 };
+use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, not_found_problem, problem,
     ProblemDetail, SdkWorkResultCode};
 use crate::mappers::map_permission_row;
-use crate::node_repository::{find_active_node, find_node, resolve_node_path};
+use crate::node_repository::{find_active_node, find_node};
 use crate::route_change::record_change;
 use crate::state::AppState;
 use crate::validators::{
@@ -20,14 +20,13 @@ use axum::http::StatusCode;
 use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
 use serde_json::json;
-use std::collections::BTreeSet;
 
 pub(crate) async fn list_permissions(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<PageQuery>,
-) -> Result<Json<PermissionListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<PermissionResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -49,10 +48,7 @@ pub(crate) async fn list_permissions(
     let mut items = rows.iter().map(map_permission_row).collect::<Vec<_>>();
     let next_page_token = next_page_token(&mut items, page);
 
-    Ok(Json(PermissionListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn get_permission(
@@ -85,39 +81,57 @@ pub(crate) async fn list_effective_permissions(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<PageQuery>,
-) -> Result<Json<EffectivePermissionListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<EffectivePermissionResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
-    let node_path = resolve_node_path(&state.pool, &tenant_id, &node_id).await?;
-    let mut items = Vec::<EffectivePermissionResponse>::new();
-    let mut seen_principals = BTreeSet::<(String, String)>::new();
 
-    for node in node_path.iter().rev() {
-        let rows = sqlx::query(
-            "SELECT id, tenant_id, node_id, subject_type, subject_id, role, inherited, lifecycle_status, version
-             FROM dr_drive_node_permission
-             WHERE tenant_id=$1 AND node_id=$2 AND lifecycle_status='active'
-             ORDER BY subject_type ASC, subject_id ASC, id ASC",
+    let rows = sqlx::query(
+        "WITH RECURSIVE node_path AS (
+            SELECT id, parent_node_id, 0 AS depth
+            FROM dr_drive_node
+            WHERE tenant_id=$1 AND id=$2
+            UNION ALL
+            SELECT current_node.id, current_node.parent_node_id, node_path.depth + 1
+            FROM dr_drive_node current_node
+            INNER JOIN node_path ON current_node.id = node_path.parent_node_id
+            WHERE current_node.tenant_id=$1
+        ),
+        effective_permissions AS (
+            SELECT permission_row.id, permission_row.tenant_id, permission_row.node_id,
+                   permission_row.subject_type, permission_row.subject_id, permission_row.role,
+                   permission_row.inherited, permission_row.lifecycle_status, permission_row.version,
+                   node_path.depth,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY permission_row.subject_type, permission_row.subject_id
+                       ORDER BY node_path.depth ASC, permission_row.id ASC
+                   ) AS principal_rank
+            FROM dr_drive_node_permission permission_row
+            INNER JOIN node_path ON permission_row.node_id = node_path.id
+            WHERE permission_row.tenant_id=$1
+              AND permission_row.lifecycle_status='active'
         )
-        .bind(&tenant_id)
-        .bind(&node.id)
-        .fetch_all(&state.pool)
-        .await
-        .map_err(internal_sql_error("list effective dr_drive_node_permission failed"))?;
+        SELECT id, tenant_id, node_id, subject_type, subject_id, role, inherited, lifecycle_status, version
+        FROM effective_permissions
+        WHERE principal_rank = 1
+        ORDER BY depth ASC, subject_type ASC, subject_id ASC, id ASC
+        LIMIT $3 OFFSET $4",
+    )
+    .bind(&tenant_id)
+    .bind(&node_id)
+    .bind(page.limit + 1)
+    .bind(page.offset)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(internal_sql_error("list effective dr_drive_node_permission failed"))?;
 
-        for row in rows {
-            let permission = map_permission_row(&row);
-            let principal_key = (
-                permission.subject_type.clone(),
-                permission.subject_id.clone(),
-            );
-            if !seen_principals.insert(principal_key) {
-                continue;
-            }
+    let mut page_items = rows
+        .iter()
+        .map(|row| {
+            let permission = map_permission_row(row);
             let inherited = permission.node_id != node_id;
-            items.push(EffectivePermissionResponse {
+            EffectivePermissionResponse {
                 id: permission.id,
                 tenant_id: permission.tenant_id,
                 target_node_id: node_id.clone(),
@@ -129,21 +143,12 @@ pub(crate) async fn list_effective_permissions(
                 inherited_from_node_id: inherited.then_some(permission.node_id),
                 lifecycle_status: permission.lifecycle_status,
                 version: permission.version,
-            });
-        }
-    }
-
-    let mut page_items = items
-        .into_iter()
-        .skip(page.offset as usize)
-        .take((page.limit + 1) as usize)
+            }
+        })
         .collect::<Vec<_>>();
     let next_page_token = next_page_token(&mut page_items, page);
 
-    Ok(Json(EffectivePermissionListResponse {
-        items: page_items,
-        next_page_token,
-    }))
+    Ok(success_list_page_simple(page_items, page, next_page_token))
 }
 
 pub(crate) async fn create_permission(

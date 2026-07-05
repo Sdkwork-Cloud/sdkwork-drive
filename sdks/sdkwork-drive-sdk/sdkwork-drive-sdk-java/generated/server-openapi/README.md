@@ -39,7 +39,7 @@ public class Main {
         String token = "token";
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("accessCode", "ok");
-        DriveOpenShareLink result = client.getDrive().openShareLinksResolve(token, params);
+        OpenShareLinkResolveResponse result = client.getDrive().openShareLinksResolve(token, params);
         System.out.println(result);
     }
 }
@@ -95,7 +95,7 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 String token = "token";
 Map<String, Object> params = new LinkedHashMap<>();
 params.put("accessCode", "ok");
-DriveOpenShareLink result = client.getDrive().openShareLinksResolve(token, params);
+OpenShareLinkResolveResponse result = client.getDrive().openShareLinksResolve(token, params);
 System.out.println(result);
 ```
 
@@ -106,7 +106,7 @@ try {
     String token = "token";
     Map<String, Object> params = new LinkedHashMap<>();
     params.put("accessCode", "ok");
-    DriveOpenShareLink result = client.getDrive().openShareLinksResolve(token, params);
+    OpenShareLinkResolveResponse result = client.getDrive().openShareLinksResolve(token, params);
     System.out.println(result);
 } catch (Exception e) {
     System.err.println("Error: " + e.getMessage());

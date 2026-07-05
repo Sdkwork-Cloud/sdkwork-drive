@@ -337,6 +337,8 @@ async fn list_spaces_supports_tenant_and_owner_filters() {
             tenant_id: "tenant-001".to_string(),
             owner_subject_type: None,
             owner_subject_id: None,
+            offset: 0,
+            limit: 201,
         })
         .await
         .expect("tenant space list should succeed");
@@ -347,6 +349,8 @@ async fn list_spaces_supports_tenant_and_owner_filters() {
             tenant_id: "tenant-001".to_string(),
             owner_subject_type: Some("user".to_string()),
             owner_subject_id: Some("user-002".to_string()),
+            offset: 0,
+            limit: 201,
         })
         .await
         .expect("owner space list should succeed");
@@ -429,6 +433,8 @@ async fn space_service_get_update_and_delete_manage_space_lifecycle() {
             tenant_id: "tenant-lifecycle".to_string(),
             owner_subject_type: None,
             owner_subject_id: None,
+            offset: 0,
+            limit: 201,
         })
         .await
         .expect("space list should succeed");
@@ -491,6 +497,8 @@ async fn sql_drive_space_service_exposes_space_operations_without_callers_using_
             tenant_id: "tenant-knowledge".to_string(),
             owner_subject_type: Some("app".to_string()),
             owner_subject_id: Some("sdkwork-knowledgebase:space-uuid-001".to_string()),
+            offset: 0,
+            limit: 201,
         })
         .await
         .expect("knowledge spaces should be listed through SQL workspace service");

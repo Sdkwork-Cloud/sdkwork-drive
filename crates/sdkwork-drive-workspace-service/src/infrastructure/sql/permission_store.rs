@@ -272,16 +272,28 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
         command: ListDriveNodePermissionsCommand,
     ) -> Result<DriveNodePermissionList, DriveServiceError> {
         let page_size = command.page_size.unwrap_or(50).min(200) as i64;
+        let offset = match command.page_token.as_deref() {
+            Some(raw) if !raw.trim().is_empty() => raw.trim().parse::<i64>().map_err(|_| {
+                DriveServiceError::Validation("page_token is invalid".to_string())
+            })?,
+            _ => 0,
+        };
+        if offset < 0 {
+            return Err(DriveServiceError::Validation(
+                "page_token is invalid".to_string(),
+            ));
+        }
         let rows = sqlx::query(
             "SELECT id, node_id, subject_type, subject_id, role \
              FROM dr_drive_node_permission \
              WHERE tenant_id = $1 AND node_id = $2 AND lifecycle_status = 'active' \
              ORDER BY created_at \
-             LIMIT $3",
+             LIMIT $3 OFFSET $4",
         )
         .bind(&command.tenant_id)
         .bind(&command.node_id)
         .bind(page_size + 1)
+        .bind(offset)
         .fetch_all(&self.pool)
         .await
         .map_err(|error| {
@@ -302,7 +314,7 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
             .collect::<Vec<_>>();
 
         let next_page_token = if has_more {
-            items.last().map(|item| item.id.clone())
+            Some((offset + page_size).to_string())
         } else {
             None
         };

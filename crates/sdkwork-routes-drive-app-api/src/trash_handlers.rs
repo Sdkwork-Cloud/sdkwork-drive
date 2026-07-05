@@ -2,9 +2,9 @@ use crate::acl;
 use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    DriveNodeResponse, EmptyTrashRequest, EmptyTrashResponse, NodeCommandRequest, NodeListResponse,
-    NodeViewQuery,
+    DriveNodeResponse, EmptyTrashRequest, EmptyTrashResponse, NodeCommandRequest, NodeViewQuery,
 };
+use crate::response::DriveNodeListHttpResponse;
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::mappers::map_node_row;
 use crate::metadata_repository::present_node_list;
@@ -13,7 +13,7 @@ use crate::node_repository::find_node;
 use crate::route_change::record_change;
 use crate::space_repository::validate_space_exists;
 use crate::state::AppState;
-use crate::validators::{normalize_optional_text, parse_page_request};
+use crate::validators::{normalize_optional_text, parse_page_request, resolve_node_list_order_by};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
@@ -57,9 +57,15 @@ pub(crate) async fn list_trashed_nodes(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<NodeViewQuery>,
-) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveNodeListHttpResponse, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
+    let order_by = resolve_node_list_order_by(
+        query.sort_by.clone(),
+        query.sort_order.clone(),
+        "updated_at DESC, id ASC",
+    )?;
+    let order_by_for_fetch = order_by.clone();
     let parent_node_id = normalize_optional_text(query.parent_node_id);
     let space_id = normalize_optional_text(query.space_id);
     let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
@@ -102,6 +108,7 @@ pub(crate) async fn list_trashed_nodes(
                     let tenant_id = tenant_id_for_fetch.clone();
                     let space_id = space_id.clone();
                     let parent_node_id = parent_node_id_for_fetch.clone();
+                    let order_by = order_by_for_fetch.clone();
                     async move {
                         let rows = if let Some(parent_node_id) = parent_node_id.as_deref() {
                             sqlx::query(&format!(
@@ -111,7 +118,7 @@ pub(crate) async fn list_trashed_nodes(
                                    AND space_id=$2
                                    AND lifecycle_status='trashed'
                                    AND parent_node_id=$3
-                                 ORDER BY updated_at DESC, id ASC
+                                 ORDER BY {order_by}
                                  LIMIT $4 OFFSET $5",
                             ))
                             .bind(&tenant_id)
@@ -128,7 +135,7 @@ pub(crate) async fn list_trashed_nodes(
                                  WHERE tenant_id=$1
                                    AND space_id=$2
                                    AND lifecycle_status='trashed'
-                                 ORDER BY updated_at DESC, id ASC
+                                 ORDER BY {order_by}
                                  LIMIT $3 OFFSET $4",
                             ))
                             .bind(&tenant_id)
@@ -156,6 +163,7 @@ pub(crate) async fn list_trashed_nodes(
                     let subject_type = subject_type_for_fetch.clone();
                     let subject_id = subject_id_for_fetch.clone();
                     let reader_acl_predicate = reader_acl_predicate.clone();
+                    let order_by = order_by_for_fetch.clone();
                     async move {
                         let rows = sqlx::query(&format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
@@ -165,7 +173,7 @@ pub(crate) async fn list_trashed_nodes(
                                AND lifecycle_status='trashed'
                                AND parent_node_id=$3
                                AND ({reader_acl_predicate})
-                             ORDER BY updated_at DESC, id ASC
+                             ORDER BY {order_by}
                              LIMIT $6 OFFSET $7",
                         ))
                         .bind(&tenant_id)
@@ -194,6 +202,7 @@ pub(crate) async fn list_trashed_nodes(
                     let subject_type = subject_type_for_fetch.clone();
                     let subject_id = subject_id_for_fetch.clone();
                     let reader_acl_predicate = reader_acl_predicate.clone();
+                    let order_by = order_by_for_fetch.clone();
                     async move {
                         let rows = sqlx::query(&format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
@@ -202,7 +211,7 @@ pub(crate) async fn list_trashed_nodes(
                                AND space_id=$2
                                AND lifecycle_status='trashed'
                                AND ({reader_acl_predicate})
-                             ORDER BY updated_at DESC, id ASC
+                             ORDER BY {order_by}
                              LIMIT $5 OFFSET $6",
                         ))
                         .bind(&tenant_id)
@@ -223,17 +232,19 @@ pub(crate) async fn list_trashed_nodes(
         };
         (items, next_page_token, false)
     } else {
-        acl::paginate_reader_visible_items(
-            &state.pool,
-            &tenant_id,
-            &subject_type,
-            &subject_id,
+        let reader_acl_predicate =
+            acl_sql::node_reader_visible_sql("dr_drive_node", "$2", "$3");
+        let (items, next_page_token) = acl::paginate_offset_limited_items(
             page,
             move |scan_offset, batch_limit| {
                 let pool = pool.clone();
                 let tenant_id = tenant_id_for_fetch.clone();
                 let space_id = space_id_for_fetch.clone();
                 let parent_node_id = parent_node_id_for_fetch.clone();
+                let subject_type = subject_type_for_fetch.clone();
+                let subject_id = subject_id_for_fetch.clone();
+                let reader_acl_predicate = reader_acl_predicate.clone();
+                let order_by = order_by_for_fetch.clone();
                 async move {
                     let rows = if let Some(space_id) = space_id.as_deref() {
                         if let Some(parent_node_id) = parent_node_id.as_deref() {
@@ -244,12 +255,15 @@ pub(crate) async fn list_trashed_nodes(
                                    AND space_id=$2
                                    AND lifecycle_status='trashed'
                                    AND parent_node_id=$3
-                                 ORDER BY updated_at DESC, id ASC
-                                 LIMIT $4 OFFSET $5",
+                                   AND ({reader_acl_predicate})
+                                 ORDER BY {order_by}
+                                 LIMIT $6 OFFSET $7",
                             ))
                             .bind(&tenant_id)
                             .bind(space_id)
                             .bind(parent_node_id)
+                            .bind(&subject_type)
+                            .bind(&subject_id)
                             .bind(batch_limit as i64)
                             .bind(scan_offset)
                             .fetch_all(&pool)
@@ -259,11 +273,14 @@ pub(crate) async fn list_trashed_nodes(
                                 "SELECT {NODE_API_SELECT_COLUMNS}
                                  FROM dr_drive_node
                                  WHERE tenant_id=$1 AND space_id=$2 AND lifecycle_status='trashed'
-                                 ORDER BY updated_at DESC, id ASC
-                                 LIMIT $3 OFFSET $4",
+                                   AND ({reader_acl_predicate})
+                                 ORDER BY {order_by}
+                                 LIMIT $5 OFFSET $6",
                             ))
                             .bind(&tenant_id)
                             .bind(space_id)
+                            .bind(&subject_type)
+                            .bind(&subject_id)
                             .bind(batch_limit as i64)
                             .bind(scan_offset)
                             .fetch_all(&pool)
@@ -276,11 +293,14 @@ pub(crate) async fn list_trashed_nodes(
                              WHERE tenant_id=$1
                                AND lifecycle_status='trashed'
                                AND parent_node_id=$2
-                             ORDER BY updated_at DESC, id ASC
-                             LIMIT $3 OFFSET $4",
+                               AND ({reader_acl_predicate})
+                             ORDER BY {order_by}
+                             LIMIT $5 OFFSET $6",
                         ))
                         .bind(&tenant_id)
                         .bind(parent_node_id)
+                        .bind(&subject_type)
+                        .bind(&subject_id)
                         .bind(batch_limit as i64)
                         .bind(scan_offset)
                         .fetch_all(&pool)
@@ -290,10 +310,13 @@ pub(crate) async fn list_trashed_nodes(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                              FROM dr_drive_node
                              WHERE tenant_id=$1 AND lifecycle_status='trashed'
-                             ORDER BY updated_at DESC, id ASC
-                             LIMIT $2 OFFSET $3",
+                               AND ({reader_acl_predicate})
+                             ORDER BY {order_by}
+                             LIMIT $4 OFFSET $5",
                         ))
                         .bind(&tenant_id)
+                        .bind(&subject_type)
+                        .bind(&subject_id)
                         .bind(batch_limit as i64)
                         .bind(scan_offset)
                         .fetch_all(&pool)
@@ -304,21 +327,20 @@ pub(crate) async fn list_trashed_nodes(
                 }
             },
             map_node_row,
-            |item| (item.space_id.clone(), item.id.clone()),
         )
-        .await?
+        .await?;
+        (items, next_page_token, false)
     };
 
-    Ok(Json(
-        present_node_list(
-            &state.pool,
-            &tenant_id,
-            items,
-            next_page_token,
-            incomplete_page,
-        )
-        .await?,
-    ))
+    present_node_list(
+        &state.pool,
+        &tenant_id,
+        items,
+        page,
+        next_page_token,
+        incomplete_page,
+    )
+    .await
 }
 pub(crate) async fn empty_trash(
     State(state): State<AppState>,

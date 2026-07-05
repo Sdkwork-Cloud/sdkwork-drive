@@ -1,11 +1,12 @@
 use crate::audit::record_storage_provider_audit;
 use crate::dto::{
-    CopyProviderObjectRequest, ListProviderObjectsQuery, OperatorQuery, ProviderObjectListResponse,
-    ProviderObjectMutationResponse, ProviderObjectResponse,
+    CopyProviderObjectRequest, ListProviderObjectsQuery, OperatorQuery, ProviderObjectMutationResponse,
+    ProviderObjectResponse,
 };
 use crate::error::{map_object_store_route_error, ProblemDetail};
 use crate::object_store::build_object_store_for_provider;
 use crate::provider_lookup::get_active_provider;
+use crate::response::{success_cursor_list_page, StorageListHttpResponse};
 use crate::state::AdminStorageState;
 use crate::validators::{
     decode_object_key, require_query_operator_id, validate_object_delimiter, validate_object_key,
@@ -24,7 +25,7 @@ pub(crate) async fn list_storage_provider_objects(
     State(state): State<AdminStorageState>,
     Path(provider_id): Path<String>,
     Query(query): Query<ListProviderObjectsQuery>,
-) -> Result<Json<ProviderObjectListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StorageListHttpResponse<ProviderObjectResponse>, (StatusCode, Json<ProblemDetail>)> {
     let max_keys = validate_page_size_u16(query.page_size, 100, 1, 1000, "pageSize")?;
     let prefix = validate_object_prefix(query.prefix, "prefix")?;
     let delimiter = validate_object_delimiter(query.delimiter, "delimiter")?;
@@ -55,13 +56,11 @@ pub(crate) async fn list_storage_provider_objects(
             last_modified_epoch_ms: item.last_modified_epoch_ms,
         })
         .collect();
-    Ok(Json(ProviderObjectListResponse {
-        provider_id,
-        bucket: result.bucket,
-        prefix: result.prefix,
+    Ok(success_cursor_list_page(
         items,
-        next_page_token: result.next_continuation_token,
-    }))
+        i32::from(max_keys),
+        result.next_continuation_token,
+    ))
 }
 
 pub(crate) async fn head_storage_provider_object(

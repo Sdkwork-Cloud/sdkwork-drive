@@ -239,7 +239,7 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
                 <button onClick={deleteBucket} disabled={loading} className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50">{t('deleteBucket')}</button>
                 <button onClick={loadBuckets} disabled={loading} className={SECONDARY_BUTTON_CLASS}>{t('listAll')}</button>
               </div>
-              {buckets.length > 0 && <div className="rounded-md border dark:border-neutral-700">{buckets.map((b) => <div key={b.name} className={`flex items-center justify-between border-b px-3 py-2 text-xs dark:border-neutral-800 ${b.configured ? 'bg-blue-50 dark:bg-blue-950/20' : ''}`}><span>{b.name}{b.configured && <span className="ml-2 text-blue-600">({t('configured')})</span>}</span>{b.creationDate && <span className="text-neutral-400">{b.creationDate}</span>}</div>)}</div>}
+              {buckets.length > 0 && <div className="rounded-md border dark:border-neutral-700">{buckets.map((b) => <div key={b.bucket} className={`flex items-center justify-between border-b px-3 py-2 text-xs dark:border-neutral-800 ${b.configured ? 'bg-blue-50 dark:bg-blue-950/20' : ''}`}><span>{b.bucket}{b.configured && <span className="ml-2 text-blue-600">({t('configured')})</span>}</span>{b.creationDate && <span className="text-neutral-400">{b.creationDate}</span>}</div>)}</div>}
             </div>
           )}
 

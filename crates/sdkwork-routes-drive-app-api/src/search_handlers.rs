@@ -1,7 +1,8 @@
 use crate::acl;
 use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
-use crate::dto::{NodeListResponse, SearchQuery};
+use crate::dto::SearchQuery;
+use crate::response::DriveNodeListHttpResponse;
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::mappers::map_node_row;
 use crate::metadata_repository::present_node_list;
@@ -17,7 +18,7 @@ pub(crate) async fn search_nodes(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<SearchQuery>,
-) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveNodeListHttpResponse, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let needle = format!("%{}%", query.q.unwrap_or_default().trim());
@@ -124,28 +125,32 @@ pub(crate) async fn search_nodes(
             };
             (items, next_page_token, false)
         } else {
-            acl::paginate_reader_visible_items(
-                &state.pool,
-                &tenant_id,
-                &subject_type,
-                &subject_id,
+            let reader_acl_predicate =
+                acl_sql::node_reader_visible_sql("dr_drive_node", "$2", "$3");
+            let (items, next_page_token) = acl::paginate_offset_limited_items(
                 page,
                 move |scan_offset, batch_limit| {
                     let pool = pool.clone();
                     let tenant_id = tenant_id_for_fetch.clone();
                     let needle = needle_for_fetch.clone();
+                    let subject_type = subject_type_for_fetch.clone();
+                    let subject_id = subject_id_for_fetch.clone();
+                    let reader_acl_predicate = reader_acl_predicate.clone();
                     async move {
                         let rows = sqlx::query(&format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                          FROM dr_drive_node
                          WHERE tenant_id=$1
-                           AND node_name LIKE $2
+                           AND node_name LIKE $4
                            AND lifecycle_status='active'
                            AND content_state='ready'
+                           AND ({reader_acl_predicate})
                          ORDER BY updated_at DESC, id ASC
-                         LIMIT $3 OFFSET $4",
+                         LIMIT $5 OFFSET $6",
                         ))
                         .bind(&tenant_id)
+                        .bind(&subject_type)
+                        .bind(&subject_id)
                         .bind(&needle)
                         .bind(batch_limit as i64)
                         .bind(scan_offset)
@@ -156,19 +161,18 @@ pub(crate) async fn search_nodes(
                     }
                 },
                 map_node_row,
-                |item| (item.space_id.clone(), item.id.clone()),
             )
-            .await?
+            .await?;
+            (items, next_page_token, false)
         };
 
-    Ok(Json(
-        present_node_list(
-            &state.pool,
-            &tenant_id,
-            items,
-            next_page_token,
-            incomplete_page,
-        )
-        .await?,
-    ))
+    present_node_list(
+        &state.pool,
+        &tenant_id,
+        items,
+        page,
+        next_page_token,
+        incomplete_page,
+    )
+    .await
 }

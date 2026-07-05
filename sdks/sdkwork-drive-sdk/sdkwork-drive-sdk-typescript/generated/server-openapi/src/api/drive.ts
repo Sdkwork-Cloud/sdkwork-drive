@@ -1,7 +1,7 @@
 import { customApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { CreateOpenDownloadUrlRequest, DriveOpenShareLink, OpenDownloadUrlResponse } from '../types';
+import type { CreateOpenDownloadUrlRequest, OpenDownloadUrlCreateResponse, OpenShareLinkResolveResponse } from '../types';
 
 
 export interface DriveOpenShareLinksResolveParams {
@@ -15,15 +15,15 @@ export class DriveApi {
     this.client = client;
   }
 
-async openShareLinksResolve(token: string, params?: DriveOpenShareLinksResolveParams): Promise<DriveOpenShareLink> {
+async openShareLinksResolve(token: string, params?: DriveOpenShareLinksResolveParams): Promise<OpenShareLinkResolveResponse> {
     const query = buildQueryString([
       { name: 'accessCode', value: params?.accessCode, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<DriveOpenShareLink>(appendQueryString(customApiPath(`/drive/share_links/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}`), query), { method: 'GET' as any, skipAuth: true });
+    return this.client.request<OpenShareLinkResolveResponse>(appendQueryString(customApiPath(`/drive/share_links/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}`), query), { method: 'GET' as any, skipAuth: true });
   }
 
-async openShareLinksDownloadUrlsCreate(token: string, body?: CreateOpenDownloadUrlRequest): Promise<OpenDownloadUrlResponse> {
-    return this.client.request<OpenDownloadUrlResponse>(customApiPath(`/drive/share_links/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}/download_url`), { method: 'POST' as any, body, contentType: 'application/json', skipAuth: true });
+async openShareLinksDownloadUrlsCreate(token: string, body?: CreateOpenDownloadUrlRequest): Promise<OpenDownloadUrlCreateResponse> {
+    return this.client.request<OpenDownloadUrlCreateResponse>(customApiPath(`/drive/share_links/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}/download_url`), { method: 'POST' as any, body, contentType: 'application/json', skipAuth: true });
   }
 }
 

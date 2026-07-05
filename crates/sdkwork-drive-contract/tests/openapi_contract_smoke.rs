@@ -106,7 +106,6 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(app.contains("\"operationId\": \"nodes.delete\""));
     assert!(app.contains("\"operationId\": \"nodes.downloadUrls.create\""));
     assert!(app.contains("\"incompletePage\""));
-    assert!(app.contains("\"drive\",\n              \"external_url\""));
     assert!(app.contains("\"uri\""));
     assert!(app.contains("\"operationId\": \"trash.move\""));
     assert!(app.contains("\"operationId\": \"trash.restore\""));
@@ -261,6 +260,8 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     let open_json: Value = serde_json::from_str(&open).expect("open openapi must be valid json");
     assert_all_paths_start_with(&open_json, "/open/v3/api/drive/");
     let app_json: Value = serde_json::from_str(&app).expect("app openapi must be valid json");
+    assert_schema_property_enum_contains(&app_json, "MediaResource", "source", "drive");
+    assert_schema_property_enum_contains(&app_json, "MediaResource", "source", "external_url");
     assert_all_paths_start_with(&app_json, "/app/v3/api/");
     assert_dual_token_security_contract_for_prefix(
         &app_json,

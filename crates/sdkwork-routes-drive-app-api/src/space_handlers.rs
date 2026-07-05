@@ -6,6 +6,8 @@ use crate::ids::next_drive_id;
 use crate::mappers::*;
 use crate::space_repository::validate_space_exists;
 use crate::state::AppState;
+use crate::validators::{next_page_token, normalize_optional_text, parse_page_request};
+use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
@@ -19,7 +21,8 @@ use sdkwork_drive_workspace_service::application::space_lifecycle_service::{
     SqlDriveSpaceLifecycleService,
 };
 use sdkwork_drive_workspace_service::application::space_service::{
-    CreateSpaceCommand, DeleteSpaceCommand, DriveSpaceService, GetSpaceCommand, UpdateSpaceCommand,
+    CreateSpaceCommand, DeleteSpaceCommand, DriveSpaceService, GetSpaceCommand,
+    ListAccessibleSpacesCommand, UpdateSpaceCommand,
 };
 use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
@@ -30,7 +33,7 @@ pub(crate) async fn list_spaces(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<ListSpacesQuery>,
-) -> Result<Json<ListSpacesResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<CreateSpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
     let filter_has_owner_subject_type = has_value(&query.owner_subject_type);
     let filter_has_owner_subject_id = has_value(&query.owner_subject_id);
@@ -49,32 +52,36 @@ pub(crate) async fn list_spaces(
         }
     };
 
-    let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
-    let listed = service
-        .list_spaces(
-            sdkwork_drive_workspace_service::application::space_service::ListSpacesCommand {
-                tenant_id: tenant_id.clone(),
-                owner_subject_type: query.owner_subject_type,
-                owner_subject_id: query.owner_subject_id,
-            },
-        )
-        .await
-        .map_err(map_service_error)?;
+    let page = parse_page_request(query.page_size, query.page_token)?;
     let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
-    let mut accessible = Vec::new();
-    for space in listed {
-        if acl::space_is_accessible_to_subject(
-            &state.pool,
-            &tenant_id,
-            &space.id,
-            &subject_type,
-            &subject_id,
-        )
-        .await?
-        {
-            accessible.push(space);
-        }
-    }
+    let owner_subject_type = normalize_optional_text(query.owner_subject_type);
+    let owner_subject_id = normalize_optional_text(query.owner_subject_id);
+    let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
+    let spaces = service
+        .list_accessible_spaces(ListAccessibleSpacesCommand {
+            tenant_id: tenant_id.clone(),
+            viewer_subject_type: subject_type,
+            viewer_subject_id: subject_id,
+            owner_subject_type,
+            owner_subject_id,
+            offset: page.offset,
+            limit: page.limit + 1,
+        })
+        .await
+        .map_err(|error| {
+            sdkwork_drive_observability::observe_route!(
+                event = events::APP_SPACES_LIST,
+                result = "err",
+                latency_ms = elapsed_ms(started),
+                error_kind = service_error_kind(&error),
+                filter_has_owner_subject_type = filter_has_owner_subject_type,
+                filter_has_owner_subject_id = filter_has_owner_subject_id
+            );
+            map_service_error(error)
+        })?;
+
+    let mut items = spaces.into_iter().map(map_space_response).collect::<Vec<_>>();
+    let next_page_token = next_page_token(&mut items, page);
     let latency_ms = elapsed_ms(started);
     sdkwork_drive_observability::observe_route!(
         event = events::APP_SPACES_LIST,
@@ -82,12 +89,10 @@ pub(crate) async fn list_spaces(
         latency_ms = latency_ms,
         filter_has_owner_subject_type = filter_has_owner_subject_type,
         filter_has_owner_subject_id = filter_has_owner_subject_id,
-        returned_items = accessible.len() as u64
+        returned_items = items.len() as u64
     );
 
-    Ok(Json(ListSpacesResponse {
-        items: accessible.into_iter().map(map_space_response).collect(),
-    }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 pub(crate) async fn create_space(
     State(state): State<AppState>,

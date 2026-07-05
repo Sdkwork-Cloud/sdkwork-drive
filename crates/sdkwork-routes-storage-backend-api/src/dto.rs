@@ -51,6 +51,8 @@ pub(crate) struct RotateStorageProviderCredentialRequest {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListStorageProvidersQuery {
     pub(crate) status: Option<String>,
+    pub(crate) page_size: Option<i64>,
+    pub(crate) page_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -84,6 +86,8 @@ pub(crate) struct ListStorageProviderBindingsQuery {
     pub(crate) space_id: Option<String>,
     pub(crate) provider_id: Option<String>,
     pub(crate) lifecycle_status: Option<String>,
+    pub(crate) page_size: Option<i64>,
+    pub(crate) page_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -102,6 +106,13 @@ pub(crate) struct SetDefaultStorageProviderBindingRequest {
     pub(crate) provider_id: String,
     pub(crate) storage_root_prefix: Option<String>,
     pub(crate) operator_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ListProviderBucketsQuery {
+    pub(crate) page_size: Option<i64>,
+    pub(crate) page_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -178,7 +189,7 @@ pub(crate) struct ProviderBucketResponse {
     pub(crate) exists: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ProviderBucketListItemResponse {
     pub(crate) bucket: String,
@@ -260,4 +271,10 @@ pub(crate) struct StorageProviderBindingListResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct DeleteStorageProviderBindingResponse {
     pub(crate) deleted: bool,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct OffsetPage {
+    pub(crate) limit: i64,
+    pub(crate) offset: i64,
 }

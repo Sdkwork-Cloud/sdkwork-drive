@@ -8,7 +8,9 @@ use crate::provider_lookup::get_provider;
 use crate::provider_mappers::{
     map_storage_provider, map_storage_provider_capabilities, parse_storage_provider_kind,
 };
+use crate::response::{success_list_page_simple, StorageListHttpResponse};
 use crate::state::AdminStorageState;
+use crate::validators::{next_page_token, parse_offset_page};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
@@ -27,18 +29,23 @@ use serde_json::json;
 pub(crate) async fn list_storage_providers(
     State(state): State<AdminStorageState>,
     Query(query): Query<ListStorageProvidersQuery>,
-) -> Result<Json<StorageProviderListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StorageListHttpResponse<StorageProviderResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let page = parse_offset_page(query.page_size, query.page_token)?;
     let service =
         DriveStorageProviderService::new(SqlStorageProviderStore::new(state.pool.clone()));
-    let providers = service
+    let mut items = service
         .list_storage_providers(ListStorageProvidersCommand {
             status: query.status,
+            offset: page.offset,
+            limit: page.limit + 1,
         })
         .await
-        .map_err(map_service_error)?;
-    Ok(Json(StorageProviderListResponse {
-        items: providers.into_iter().map(map_storage_provider).collect(),
-    }))
+        .map_err(map_service_error)?
+        .into_iter()
+        .map(map_storage_provider)
+        .collect::<Vec<_>>();
+    let next_page_token = next_page_token(&mut items, page);
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn create_storage_provider(

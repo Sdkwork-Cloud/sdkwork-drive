@@ -30,6 +30,7 @@ mod object_store;
 mod permission_handlers;
 mod quota_handlers;
 mod rate_limit;
+mod response;
 mod route_change;
 mod routes;
 mod search_handlers;

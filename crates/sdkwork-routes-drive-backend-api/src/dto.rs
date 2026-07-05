@@ -205,6 +205,8 @@ pub(crate) struct DownloadPackagePageResponse {
 pub(crate) struct ListSpacesQuery {
     pub(crate) owner_subject_type: Option<String>,
     pub(crate) owner_subject_id: Option<String>,
+    pub(crate) page_size: Option<i64>,
+    pub(crate) page_token: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

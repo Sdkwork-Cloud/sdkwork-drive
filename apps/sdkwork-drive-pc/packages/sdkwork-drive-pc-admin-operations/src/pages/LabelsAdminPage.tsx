@@ -70,7 +70,7 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
         signal,
       });
       setLabels((current) => (append ? [...current, ...result.items] : result.items));
-      setNextPageToken(result.nextPageToken ?? null);
+      setNextPageToken(result.pageInfo?.nextCursor ?? result.nextPageToken ?? null);
     } catch (err) {
       if (!isAbortError(err)) setError(t('noticeLoadFailed'));
     } finally {

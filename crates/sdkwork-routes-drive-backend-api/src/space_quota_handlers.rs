@@ -1,12 +1,11 @@
 use crate::audit::record_audit_event;
-use crate::dto::{
-    ListSpacesQuery, QuotaQuery, QuotaResponse, SpaceListResponse, UpdateQuotaPolicyRequest,
-};
+use crate::dto::{ListSpacesQuery, QuotaQuery, QuotaResponse, UpdateQuotaPolicyRequest};
 use crate::error::{map_service_error, validation_problem, ProblemDetail};
 use crate::mappers::map_space;
+use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::state::BackendState;
 use crate::tenant_context::authenticated_tenant_id;
-use crate::validators::require_non_empty_text;
+use crate::validators::{next_page_token, parse_offset_page, require_non_empty_text};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Extension;
@@ -27,21 +26,26 @@ pub(crate) async fn list_spaces(
     State(state): State<BackendState>,
     Extension(app_context): Extension<DriveAppContext>,
     Query(query): Query<ListSpacesQuery>,
-) -> Result<Json<SpaceListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<crate::dto::SpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = authenticated_tenant_id(&app_context);
+    let page = parse_offset_page(query.page_size, query.page_token)?;
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool));
-    let items = service
+    let mut items = service
         .list_spaces(ListSpacesCommand {
             tenant_id,
             owner_subject_type: query.owner_subject_type,
             owner_subject_id: query.owner_subject_id,
+            offset: page.offset,
+            limit: page.limit + 1,
         })
         .await
-        .map_err(map_service_error)?;
+        .map_err(map_service_error)?
+        .into_iter()
+        .map(map_space)
+        .collect::<Vec<_>>();
+    let next_page_token = next_page_token(&mut items, page);
 
-    Ok(Json(SpaceListResponse {
-        items: items.into_iter().map(map_space).collect(),
-    }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn list_quotas(

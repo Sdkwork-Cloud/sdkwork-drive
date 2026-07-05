@@ -2,9 +2,10 @@ use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
     ApplyNodeLabelRequest, DeleteNodePropertyQuery, DeleteNodePropertyResponse, NodeLabelListQuery,
-    NodeLabelListResponse, NodeLabelResponse, NodePropertyListQuery, NodePropertyListResponse,
-    NodePropertyResponse, RemoveNodeLabelQuery, RemoveNodeLabelResponse, SetNodePropertyRequest,
+    NodeLabelResponse, NodePropertyListQuery, NodePropertyResponse, RemoveNodeLabelQuery,
+    RemoveNodeLabelResponse, SetNodePropertyRequest,
 };
+use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::hashing::sha256_raw_hex_separated;
 use crate::mappers::{map_node_label_row, map_node_property_row};
@@ -26,7 +27,7 @@ pub(crate) async fn list_node_properties(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<NodePropertyListQuery>,
-) -> Result<Json<NodePropertyListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<NodePropertyResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -77,10 +78,7 @@ pub(crate) async fn list_node_properties(
 
     let mut items = rows.iter().map(map_node_property_row).collect::<Vec<_>>();
     let next_page_token = next_page_token(&mut items, page);
-    Ok(Json(NodePropertyListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 pub(crate) async fn set_node_property(
     State(state): State<AppState>,
@@ -206,7 +204,7 @@ pub(crate) async fn list_node_labels(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<NodeLabelListQuery>,
-) -> Result<Json<NodeLabelListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<NodeLabelResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -270,10 +268,7 @@ pub(crate) async fn list_node_labels(
     .map_err(internal_sql_error("list dr_drive_node_label failed"))?;
     let mut items = rows.iter().map(map_node_label_row).collect::<Vec<_>>();
     let next_page_token = next_page_token(&mut items, page);
-    Ok(Json(NodeLabelListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 pub(crate) async fn apply_node_label(
     State(state): State<AppState>,

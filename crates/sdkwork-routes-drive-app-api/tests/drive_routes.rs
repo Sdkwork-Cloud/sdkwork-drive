@@ -350,5 +350,6 @@ async fn app_forbidden_asset_upload_routes_return_not_implemented_problem_detail
         .expect("assets response should be valid json");
         assert_eq!(payload["code"].as_i64(), Some(50001));
         assert_eq!(payload["status"].as_i64(), Some(501));
+        assert!(payload["traceId"].as_str().is_some());
     }
 }

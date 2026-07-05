@@ -85,6 +85,8 @@ impl DriveStorageProviderStore for SqlStorageProviderStore {
     async fn list_storage_providers(
         &self,
         status: Option<&str>,
+        offset: i64,
+        limit: i64,
     ) -> Result<Vec<DriveStorageProvider>, DriveServiceError> {
         let rows = match status {
             Some(status_value) if !status_value.trim().is_empty() => sqlx::query(
@@ -93,9 +95,12 @@ impl DriveStorageProviderStore for SqlStorageProviderStore {
                         status, version
                      FROM dr_drive_storage_provider
                      WHERE status=$1
-                     ORDER BY id ASC",
+                     ORDER BY id ASC
+                     LIMIT $2 OFFSET $3",
             )
             .bind(status_value.trim())
+            .bind(limit)
+            .bind(offset)
             .fetch_all(&self.pool)
             .await
             .map_err(|error| {
@@ -108,8 +113,11 @@ impl DriveStorageProviderStore for SqlStorageProviderStore {
                         strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
                         status, version
                      FROM dr_drive_storage_provider
-                     ORDER BY id ASC",
+                     ORDER BY id ASC
+                     LIMIT $1 OFFSET $2",
             )
+            .bind(limit)
+            .bind(offset)
             .fetch_all(&self.pool)
             .await
             .map_err(|error| {

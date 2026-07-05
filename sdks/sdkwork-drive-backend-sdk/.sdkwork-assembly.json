@@ -8,7 +8,6 @@
   "derivedSpecs": {
     "default": "../../apis/backend-api/drive/drive-backend-api.openapi.json"
   },
-  "apiAuthority": "sdkwork-drive.backend",
   "discoverySurface": {
     "sdkTarget": "backend",
     "apiPrefix": "/backend/v3/api",
@@ -32,7 +31,9 @@
       "consumerSurface": {
         "primaryClient": "SdkworkDriveBackendClient",
         "apiPrefix": "/backend/v3/api"
-      }
+      },
+      "consumerPackageName": "@sdkwork/drive-backend-sdk",
+      "transportPackageName": "sdkwork-drive-backend-sdk-generated-typescript"
     },
     {
       "language": "rust",
@@ -80,6 +81,7 @@
     }
   ],
   "sdkOwner": "sdkwork-drive",
+  "apiAuthority": "sdkwork-drive.backend",
   "sdkDependencies": [
     {
       "workspace": "sdkwork-iam-backend-sdk",

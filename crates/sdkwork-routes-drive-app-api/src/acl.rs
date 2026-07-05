@@ -26,34 +26,6 @@ impl ReaderPaginationAclCache {
         }
     }
 
-    async fn subject_can_read_node(
-        &mut self,
-        pool: &AnyPool,
-        tenant_id: &str,
-        space_id: &str,
-        node_id: &str,
-        subject_type: &str,
-        subject_id: &str,
-    ) -> Result<bool, (StatusCode, Json<ProblemDetail>)> {
-        if self
-            .is_space_owner(pool, tenant_id, space_id, subject_type, subject_id)
-            .await?
-        {
-            return Ok(true);
-        }
-        Ok(ensure_subject_role(
-            pool,
-            tenant_id,
-            space_id,
-            node_id,
-            subject_type,
-            subject_id,
-            "reader",
-        )
-        .await
-        .is_ok())
-    }
-
     async fn is_space_owner(
         &mut self,
         pool: &AnyPool,
@@ -458,91 +430,6 @@ pub(crate) async fn ensure_node_ids_role(
         ensure_ctx_node_role(pool, ctx, &node.space_id, node_id, required_role).await?;
     }
     Ok(())
-}
-
-pub(crate) async fn paginate_reader_visible_items<T, F, Fut>(
-    pool: &AnyPool,
-    tenant_id: &str,
-    subject_type: &str,
-    subject_id: &str,
-    page: crate::dto::PageRequest,
-    mut fetch_batch: F,
-    map_row: fn(&AnyRow) -> T,
-    node_scope: fn(&T) -> (String, String),
-) -> Result<(Vec<T>, Option<String>, bool), (StatusCode, Json<ProblemDetail>)>
-where
-    F: FnMut(i64, usize) -> Fut,
-    Fut: Future<Output = Result<Vec<AnyRow>, (StatusCode, Json<ProblemDetail>)>>,
-{
-    let batch_limit = (page.limit + 1) as usize;
-    let max_scan_rows = (page.limit.saturating_mul(20).max(page.limit + 1)) as usize;
-    let mut items = Vec::new();
-    let mut scan_offset = page.offset;
-    let mut scanned_rows = 0usize;
-    let mut has_more_in_db = false;
-    let mut acl_cache = ReaderPaginationAclCache::new();
-
-    while (items.len() as i64) <= page.limit && scanned_rows < max_scan_rows {
-        let rows = fetch_batch(scan_offset, batch_limit).await?;
-        if rows.is_empty() {
-            has_more_in_db = false;
-            break;
-        }
-
-        scanned_rows += rows.len();
-        scan_offset += rows.len() as i64;
-        has_more_in_db = rows.len() == batch_limit;
-
-        for row in rows {
-            let item = map_row(&row);
-            let (space_id, node_id) = node_scope(&item);
-            if acl_cache
-                .subject_can_read_node(
-                    pool,
-                    tenant_id,
-                    &space_id,
-                    &node_id,
-                    subject_type,
-                    subject_id,
-                )
-                .await?
-            {
-                items.push(item);
-                if (items.len() as i64) > page.limit {
-                    break;
-                }
-            }
-        }
-
-        if (items.len() as i64) > page.limit {
-            break;
-        }
-    }
-
-    let scan_budget_exhausted = scanned_rows >= max_scan_rows && has_more_in_db;
-    if scan_budget_exhausted {
-        tracing::warn!(
-            target: "sdkwork.drive",
-            event = "drive.acl.pagination_scan_budget_exhausted",
-            tenant_id = %tenant_id,
-            scanned_rows,
-            max_scan_rows,
-            visible_items = items.len(),
-            "ACL pagination scan budget exhausted before filling the requested page"
-        );
-    }
-
-    let next_page_token = if (items.len() as i64) > page.limit {
-        let overflow = items.len() - page.limit as usize;
-        items.truncate(page.limit as usize);
-        Some((scan_offset - overflow as i64).to_string())
-    } else if has_more_in_db {
-        Some(scan_offset.to_string())
-    } else {
-        None
-    };
-
-    Ok((items, next_page_token, scan_budget_exhausted))
 }
 
 pub(crate) async fn paginate_cursor_limited_changes<F, Fut>(

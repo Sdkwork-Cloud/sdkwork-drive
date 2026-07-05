@@ -111,6 +111,48 @@ pub(crate) fn validate_page_size_u16(
     Ok(page_size)
 }
 
+pub(crate) fn parse_offset_page(
+    page_size: Option<i64>,
+    page_token: Option<String>,
+) -> Result<crate::dto::OffsetPage, (StatusCode, Json<ProblemDetail>)> {
+    let limit = validate_page_size_i64(page_size, 200, 1, 200, "pageSize")?;
+    let offset = match normalize_optional_text(page_token) {
+        Some(raw) => raw.parse::<i64>().map_err(|_| {
+            validation_problem("pageToken is invalid")
+        })?,
+        None => 0,
+    };
+    if offset < 0 {
+        return Err(validation_problem("pageToken is invalid"));
+    }
+    Ok(crate::dto::OffsetPage { limit, offset })
+}
+
+pub(crate) fn validate_page_size_i64(
+    value: Option<i64>,
+    default_value: i64,
+    min_value: i64,
+    max_value: i64,
+    field_name: &str,
+) -> Result<i64, (StatusCode, Json<ProblemDetail>)> {
+    let page_size = value.unwrap_or(default_value);
+    if page_size < min_value || page_size > max_value {
+        return Err(validation_problem(format!(
+            "{field_name} must be between {min_value} and {max_value}"
+        )));
+    }
+    Ok(page_size)
+}
+
+pub(crate) fn next_page_token<T>(items: &mut Vec<T>, page: crate::dto::OffsetPage) -> Option<String> {
+    if items.len() as i64 > page.limit {
+        items.pop();
+        Some((page.offset + page.limit).to_string())
+    } else {
+        None
+    }
+}
+
 pub(crate) fn validate_storage_binding_lifecycle_status(
     status: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {

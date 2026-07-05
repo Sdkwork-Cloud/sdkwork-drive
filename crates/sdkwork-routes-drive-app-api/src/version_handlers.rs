@@ -2,8 +2,9 @@ use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
     DeleteVersionResponse, DriveNodeResponse, FileVersionResponse, NodeCommandRequest,
-    NodeMutationQuery, PageQuery, VersionListResponse,
+    NodeMutationQuery, PageQuery,
 };
+use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
 use crate::mappers::map_file_version_row;
 use crate::metadata_repository::present_drive_node;
@@ -22,7 +23,7 @@ pub(crate) async fn list_versions(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<PageQuery>,
-) -> Result<Json<VersionListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<FileVersionResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -79,10 +80,7 @@ pub(crate) async fn list_versions(
     let mut items = rows.iter().map(map_file_version_row).collect::<Vec<_>>();
     let next_page_token = next_page_token(&mut items, page);
 
-    Ok(Json(VersionListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 pub(crate) async fn get_version(
     State(state): State<AppState>,

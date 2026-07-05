@@ -73,7 +73,8 @@ async fn assets_list_and_get_expose_drive_nodes_as_global_assets() {
             .expect("assets list body should be read"),
     )
     .expect("assets list should be json");
-    let items = list_payload["items"]
+    assert_eq!(list_payload["code"], 0);
+    let items = list_payload["data"]["items"]
         .as_array()
         .expect("assets list should include items");
     assert_eq!(items.len(), 1);

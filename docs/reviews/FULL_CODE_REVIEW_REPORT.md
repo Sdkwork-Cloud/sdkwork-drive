@@ -1,8 +1,8 @@
 # SDKWork Drive 标准对齐审查报告
 
-> 更新日期: 2026-06-30  
+> 更新日期: 2026-07-05  
 > 审查标准: sdkwork-specs 全栈规范  
-> 状态: **代码对齐完成 — 可进入受控试点；商业化 GA 见 pilot-deployment / pre-launch / releases**
+> 状态: **代码与门禁对齐完成 — 可进入受控试点；商业化 GA 见 pilot-deployment / pre-launch / releases**
 
 ---
 
@@ -13,58 +13,44 @@
 | sdkwork-specs 仓库字典 | ✅ | `pnpm check:architecture-alignment` |
 | sdkwork-web-framework | ✅ | 四个 `*-api` route crate + `web_bootstrap.rs` + IAM resolver |
 | sdkwork-database | ✅ | `database/` 资产 + `pnpm db:validate` |
-| sdkwork-utils | ✅ | Rust `sdkwork-utils-rust`；TS `@sdkwork/utils`（PC + App SDK uploader） |
-| sdkwork-discovery | ⏭️ 不适用 | 纯 HTTP 架构，无 RPC |
-| API 输入/输出契约 | ✅ | `pnpm api:envelope:check` + `pnpm api:schema:check` |
+| sdkwork-utils | ✅ | Rust `sdkwork-utils-rust`；TS `@sdkwork/utils`（含 `Sha256Hasher` 流式摘要） |
+| API 输入/输出契约 | ✅ | `pnpm api:envelope:check`（含 generator input 物化）+ `pnpm api:schema:check` |
+| 分页（PAGINATION_SPEC） | ✅ | `node ../sdkwork-specs/tools/check-pagination.mjs --workspace .` |
 | 部署契约 | ✅ | `deployments/deploy.yaml` + `pnpm deploy:validate` |
 | Drive 上传高内聚 | ✅ | `pnpm check:app-sdk-consumers` |
-| Native composition（import 闭包） | ✅ | `pnpm check:app-composition` |
-| 打包 / 拓扑 / 发布 | ✅ | `pnpm topology:validate` + `pnpm gateway:assembly:validate` + `sdkwork.workflow.json` |
+| Native composition | ✅ | `pnpm check:app-composition` |
+| 打包 / 拓扑 / 发布 | ✅ | `pnpm topology:validate` + `pnpm gateway:assembly:validate` |
 
 ---
 
-## 二、架构快照
+## 二、2026-07-05 技术债务清理
+
+| 项 | 处理 |
+|----|------|
+| `api:envelope:check` 因 `target/drive-sdk-generator-input` 缺 envelope 失败 | `materialize_drive_sdk_generator_input.mjs` 在门禁前物化 owner-only OpenAPI 并保留 SdkWorkApiResponse 组件 |
+| Legacy assets 501 非标准 ProblemDetail | 改为 `problem()` + `traceId`（RFC 9457） |
+| 浏览器/桌面大文件上传 checksum OOM | `@sdkwork/utils` `Sha256Hasher` 分块摘要；uploader 不再整文件 `arrayBuffer()` |
+| 文件浏览器为排序批量拉取最多 500 条 | 移除 `fetchRemainingFileBrowserPages`；`recent`/`trash`/`nodes.list` 服务端 `sortBy`/`sortOrder` |
+| Assets 列表 `pageSize` 上限 100 | 对齐规范上限 **200** |
+| 下载无 stream reader 回退 OOM | 64MB 内存回退上限 |
+| `favorites.list` / `sharedWithMe.list` 服务端排序 | `resolve_aliased_node_list_order_by` + SQL `ORDER BY`；文件浏览器 `starred`/`shared` 根视图启用 `serverSideSort` |
+| Admin `storageProviders.buckets.list` 非标准响应 | 对齐 `SdkWorkApiResponse` + `data.items`/`data.pageInfo`；`pageSize`/`pageToken` 查询参数；前端 `bucket` 字段映射 |
+| `space_handlers` 内联 SQL（Phase 8） | `list_accessible_spaces` 下沉至 workspace-service；路由层不再含 `sqlx::query` |
+| `.env.postgres.example` 废弃 `SDKWORK_CLAW_DATABASE_*` | 仅保留 `SDKWORK_DRIVE_DATABASE_*` 规范键 |
+| `sdks/sdkwork-drive-sdk/.sdkwork-assembly.json` 缺失 | 从 `sdk-manifest.json` 物化 assembly 元数据（`sdkDependencies: []`） |
+| 集成测试仍断言扁平 `items` | `assets_routes` / `admin_storage_routes` / `command_routes` spaces list 改为断言 `code` + `data.items` |
+
+---
+
+## 三、架构快照
 
 ```
 apps/sdkwork-drive-pc          → @sdkwork/drive-app-sdk（上传/下载，禁止 raw HTTP）
 crates/sdkwork-routes-*-api    → sdkwork-web-framework + IamWebRequestContextResolver
 crates/sdkwork-drive-workspace-service → sdkwork-database-repository + uploader 业务核心
-database/                      → sdkwork-database-cli 生命周期（migrate/seed/drift）
-deployments/deploy.yaml        → SDKWORK_DEPLOY_SPEC 多 profile 契约
-sdks/                          → OpenAPI 权威 → 生成 SDK 家族（禁止手改生成物）
+database/                      → sdkwork-database-cli 生命周期
+sdks/                          → OpenAPI 权威 → 生成 SDK（composed facade 消费入口）
 ```
-
-### 框架依赖矩阵
-
-| 框架 | 接入点 | 规范 |
-|------|--------|------|
-| sdkwork-web-framework | `sdkwork-web-axum` + `web_bootstrap.rs` | WEB_FRAMEWORK_SPEC |
-| sdkwork-database | `sdkwork-drive-database-host` + `database.manifest.json` | DATABASE_FRAMEWORK_SPEC |
-| sdkwork-utils | `sdkwork-utils-rust` / `@sdkwork/utils` | CODE_STYLE_SPEC |
-| sdkwork-iam-web-adapter | `IamWebRequestContextResolver` | IAM_LOGIN_INTEGRATION_SPEC |
-
-### Drive 上传边界
-
-- **客户端**: `createDriveUploaderClient` → `client.uploader.*`（composed SDK 使用 `@sdkwork/utils` 做 hex/uuid）
-- **服务端 Rust**: `sdkwork_drive_workspace_service::uploader`（禁止 HTTP 回环）
-- **App API**: `/app/v3/api/drive/uploader/*` 作为 HTTP 适配层
-
-### 环境变量策略
-
-Drive 应用 repository 的 `.env.postgres.example` 仅暴露 `SDKWORK_DRIVE_DATABASE_*` 前缀。运行时 `sdkwork-database-config` 可按 workspace 统一 profile 回退解析；示例文件不得包含已废弃的 `SDKWORK_CLAW_DATABASE_*` 前缀。
-
----
-
-## 三、2026-06-30 技术债务清理
-
-| 项 | 处理 |
-|----|------|
-| `.env.postgres.example` 含废弃 `SDKWORK_CLAW_DATABASE_*` | 已移除，恢复 architecture alignment |
-| `sdkwork-drive-http` 遗留 `SuccessResponse` / 旧 `ProblemDetail` | 已删除；唯一权威为 `api_problem.rs` |
-| App SDK uploader 内联 hex/uuid | 已迁移至 `@sdkwork/utils`（`hexEncode`、`uuid`） |
-| 架构门禁防回归 | `check_sdkwork_drive_architecture_alignment.mjs` 断言禁止恢复 legacy HTTP 模块与内联 hex |
-| README 文档链接 | 已指向 TECH shard 规范路径；验证章节含 `pnpm check` / `pnpm verify` |
-| REQ-2026-0003 | 已更新 2026-06-30 验收项 |
 
 ---
 
@@ -72,20 +58,18 @@ Drive 应用 repository 的 `.env.postgres.example` 仅暴露 `SDKWORK_DRIVE_DAT
 
 | 条件 | 状态 |
 |------|:----:|
-| `pnpm check` 全量门禁 | ✅ 含回归断言（legacy HTTP 模块、utils uploader） |
+| `pnpm check` 全量门禁 | ✅ 含 `api:envelope:check` 物化步骤 |
 | `pnpm verify` | ✅ |
-| `cargo check --workspace` | ✅ |
 | API envelope + schema quality gate | ✅ |
-| `deployments/deploy.yaml` 校验 | ✅ |
 | PostgreSQL lifecycle 迁移 | ✅ |
 | 多实例 Redis 限流（可选） | ✅ `redis-rate-limit` feature |
 
 ### 部署要点
 
-1. 多实例限流：`cargo build --features redis-rate-limit`，设置 `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`
-2. 生产下载令牌：配置 `SDKWORK_DRIVE_DOWNLOAD_TOKEN_HMAC_SECRET` 或租户级 JSON 密钥
-3. Cloud 分服务：API Pod 设置 `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false`
-4. 公共入口域名：`drive.sdkwork.com`（见 `deployments/deploy.yaml` expose）
+1. 多实例限流：`SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`
+2. 生产下载令牌：配置 `SDKWORK_DRIVE_DOWNLOAD_TOKEN_HMAC_SECRET`
+3. Cloud 分服务：`SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false`
+4. 上传内容策略生产：`SDKWORK_DRIVE_UPLOAD_CONTENT_POLICY_MODE=enforce`
 
 ### 验证命令
 
@@ -94,37 +78,35 @@ pnpm check
 pnpm verify
 pnpm api:envelope:check
 pnpm api:schema:check
+node ../sdkwork-specs/tools/check-pagination.mjs --workspace .
+node ../sdkwork-specs/tools/check-app-sdk-consumer-imports.mjs --workspace .
 pnpm deploy:validate
-pnpm gateway:assembly:validate
-pnpm check:architecture-alignment
 ```
 
 ---
 
-## 五、商业化 GA 前发布运营项
+## 五、商业化 GA 前运营项（代码外）
 
-应用尚未上线。代码对齐已结案；运营项见 [pilot-deployment.md](../guides/operator/pilot-deployment.md) 与 [releases/README.md](../releases/README.md)。
+应用尚未上线。代码对齐已结案；运营项见 [pre-launch-checklist.md](../guides/operator/pre-launch-checklist.md)。
 
 | 项 | 说明 |
 |----|------|
-| 制品签名 | CI 配置 `security.signatureRequired` 与受保护签名凭据 |
-| 桌面跨平台包 | macOS DMG / Linux AppImage checksum 在目标 runner 生成 |
-| Catalog 媒体 CDN | 本地已 staging（`pnpm release:catalog-media`）；需上传 CDN 并清除 `catalogMediaDeferred` |
-| K8s 生产 digest | 替换 `REPLACE_WITH_RELEASE_DIGEST` 为不可变 digest |
-| `publish.status` | 仅在签名与 catalog 门禁通过后设为 `ACTIVE` |
-
-详见 [pre-launch-checklist.md](../guides/operator/pre-launch-checklist.md) 与 [releases/README.md](../releases/README.md)。
+| 制品签名 | CI 配置 `security.signatureRequired` |
+| Catalog 媒体 CDN | 清除 `catalogMediaDeferred`，上传真实 icon/screenshot |
+| K8s 生产 digest | 替换 `REPLACE_WITH_RELEASE_DIGEST` |
+| `publish.status` | 签名与 catalog 通过后设为 `ACTIVE` |
+| Admin smoke / staging e2e | pre-launch checklist 人工验收 |
 
 ---
 
 ## 六、后续能力演进（非阻塞）
 
-| 项 | 触发条件 | 规范 |
-|----|----------|------|
-| RPC + sdkwork-discovery | 引入 gRPC 服务 | RPC_FRAMEWORK_SPEC + DISCOVERY_SPEC |
-| 上传 AV 扫描 | 生产内容安全需求 | `upload_content_policy` 扩展点 |
-| 前端按钮级权限 | 细粒度 UI 控制 | IMF 角色 + APP_PERMISSION_COMPOSITION_SPEC |
+| 项 | 触发条件 |
+|----|----------|
+| 上传 AV 扫描 | 生产内容安全需求 |
+| 桌面 delta sync | PRD 后续阶段 |
+| Azure Blob 适配器 | 具体客户需求 |
 
 ---
 
-*本报告描述当前对齐状态。REQ-2026-0003（pre-launch debt cleanup）已结案。*
+*本报告反映 2026-07-05 对齐状态。REQ-2026-0003（pre-launch debt cleanup）代码项已结案；GA 运营项仍待执行。*

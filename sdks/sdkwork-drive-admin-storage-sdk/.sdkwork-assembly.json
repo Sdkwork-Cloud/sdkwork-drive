@@ -1,7 +1,8 @@
 {
   "workspace": "sdkwork-drive-admin-storage-sdk",
-  "sdkOwner": "sdkwork-drive",
-  "apiAuthority": "sdkwork-drive.admin.storage",
+  "title": "sdkwork-drive-admin-storage-sdk",
+  "apiVersion": "0.1.0",
+  "openapiVersion": "3.1.2",
   "authoritySpec": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json",
   "generationInputSpec": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json",
   "derivedSpecs": {
@@ -15,24 +16,6 @@
     ],
     "manualTransports": []
   },
-  "sdkDependencies": [
-    {
-      "workspace": "sdkwork-iam-backend-sdk",
-      "role": "appbase-backend-management-capability",
-      "required": true,
-      "dependencyMode": "consumer-sdk",
-      "apiPrefix": "/backend/v3/api",
-      "apiAuthority": "sdkwork-iam-backend-api",
-      "generatedTransportImportPolicy": "forbidden",
-      "packageByLanguage": {
-        "typescript": "@sdkwork/iam-backend-sdk",
-        "rust": "sdkwork-iam-backend-sdk",
-        "java": "com.sdkwork:sdkwork-iam-backend-sdk",
-        "python": "sdkwork-iam-backend-sdk",
-        "go": "github.com/sdkwork/sdkwork-iam-backend-sdk"
-      }
-    }
-  ],
   "languages": [
     {
       "language": "typescript",
@@ -43,7 +26,9 @@
       "manifestPath": "sdkwork-drive-admin-storage-sdk-typescript/generated/server-openapi/package.json",
       "name": "@sdkwork-internal/sdkwork-drive-admin-storage-sdk-generated",
       "version": "0.1.0",
-      "description": "Generator-owned TypeScript transport SDK for sdkwork-drive-admin-storage-sdk."
+      "description": "Generator-owned TypeScript transport SDK for sdkwork-drive-admin-storage-sdk.",
+      "consumerPackageName": "@sdkwork/drive-admin-storage-sdk",
+      "transportPackageName": "sdkwork-drive-admin-storage-sdk-generated-typescript"
     },
     {
       "language": "rust",
@@ -88,6 +73,26 @@
       "name": "github.com/sdkwork/sdkwork-drive-admin-storage-sdk-generated",
       "version": "0.1.0",
       "description": "Generator-owned Go transport SDK for sdkwork-drive-admin-storage-sdk."
+    }
+  ],
+  "sdkOwner": "sdkwork-drive",
+  "apiAuthority": "sdkwork-drive.admin.storage",
+  "sdkDependencies": [
+    {
+      "workspace": "sdkwork-iam-backend-sdk",
+      "role": "appbase-backend-management-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "apiAuthority": "sdkwork-iam-backend-api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/iam-backend-sdk",
+        "rust": "sdkwork-iam-backend-sdk",
+        "java": "com.sdkwork:sdkwork-iam-backend-sdk",
+        "python": "sdkwork-iam-backend-sdk",
+        "go": "github.com/sdkwork/sdkwork-iam-backend-sdk"
+      }
     }
   ]
 }

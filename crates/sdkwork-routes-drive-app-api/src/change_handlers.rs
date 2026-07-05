@@ -1,8 +1,9 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    ChangeListResponse, ChangeResponse, ChangesQuery, StartPageTokenQuery, StartPageTokenResponse,
+    ChangeResponse, ChangesQuery, StartPageTokenQuery, StartPageTokenResponse,
 };
+use crate::response::{success_cursor_list_page, DriveListHttpResponse};
 use crate::error::{map_service_error, ProblemDetail};
 use crate::space_repository::{validate_space_exists, validate_space_exists_for_change_history};
 use crate::state::AppState;
@@ -19,7 +20,7 @@ pub(crate) async fn list_changes(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<ChangesQuery>,
-) -> Result<Json<ChangeListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<ChangeResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_change_page_request(query.page_size, query.page_token, query.cursor)?;
     let space_id = require_query_value(query.space_id, "spaceId")?;
@@ -71,12 +72,7 @@ pub(crate) async fn list_changes(
             }
         })
         .await?;
-    let next_cursor = items.last().map(|item| item.sequence_no);
-    Ok(Json(ChangeListResponse {
-        items,
-        next_cursor,
-        next_page_token,
-    }))
+    Ok(success_cursor_list_page(items, page.limit as i32, next_page_token))
 }
 
 pub(crate) async fn get_changes_start_page_token(

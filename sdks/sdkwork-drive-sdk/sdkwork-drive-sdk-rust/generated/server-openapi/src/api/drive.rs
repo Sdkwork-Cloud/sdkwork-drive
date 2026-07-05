@@ -5,7 +5,7 @@ use reqwest::Method;
 use crate::api::paths::custom_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{CreateOpenDownloadUrlRequest, DriveOpenShareLink, OpenDownloadUrlResponse};
+use crate::models::{CreateOpenDownloadUrlRequest, OpenDownloadUrlCreateResponse, OpenShareLinkResolveResponse};
 
 #[derive(Clone)]
 pub struct DriveApi {
@@ -17,7 +17,7 @@ impl DriveApi {
         Self { client }
     }
 
-    pub async fn open_share_links_resolve(&self, token: &str, access_code: Option<&str>) -> Result<DriveOpenShareLink, SdkworkError> {
+    pub async fn open_share_links_resolve(&self, token: &str, access_code: Option<&str>) -> Result<OpenShareLinkResolveResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("accessCode", access_code, "form", true, false, None),
         ]);
@@ -25,7 +25,7 @@ impl DriveApi {
         self.client.request_method(Method::GET, &path, Option::<&serde_json::Value>::None, None, None, None, true).await
     }
 
-    pub async fn open_share_links_download_urls_create(&self, token: &str, body: &CreateOpenDownloadUrlRequest) -> Result<OpenDownloadUrlResponse, SdkworkError> {
+    pub async fn open_share_links_download_urls_create(&self, token: &str, body: &CreateOpenDownloadUrlRequest) -> Result<OpenDownloadUrlCreateResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/share_links/{}/download_url", serialize_path_parameter(token, PathParameterSpec::new("token", "simple", false))));
         self.client.request_method(Method::POST, &path, Some(body), None, None, Some("application/json"), true).await
     }

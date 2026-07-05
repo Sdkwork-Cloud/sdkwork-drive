@@ -81,6 +81,8 @@ impl DriveSpaceStore for SqlSpaceStore {
         tenant_id: &str,
         owner_subject_type: Option<&str>,
         owner_subject_id: Option<&str>,
+        offset: i64,
+        limit: i64,
     ) -> Result<Vec<DriveSpace>, DriveServiceError> {
         let rows = match (owner_subject_type, owner_subject_id) {
             (Some(owner_type), Some(owner_id)) => sqlx::query(&format!(
@@ -90,11 +92,14 @@ impl DriveSpaceStore for SqlSpaceStore {
                       AND owner_subject_type=$2
                       AND owner_subject_id=$3
                       AND lifecycle_status='active'
-                    ORDER BY id ASC",
+                    ORDER BY id ASC
+                    LIMIT $4 OFFSET $5",
             ))
             .bind(tenant_id)
             .bind(owner_type)
             .bind(owner_id)
+            .bind(limit)
+            .bind(offset)
             .fetch_all(&self.pool)
             .await
             .map_err(|error| {
@@ -105,14 +110,83 @@ impl DriveSpaceStore for SqlSpaceStore {
                     FROM dr_drive_space
                     WHERE tenant_id=$1
                       AND lifecycle_status='active'
-                    ORDER BY id ASC",
+                    ORDER BY id ASC
+                    LIMIT $2 OFFSET $3",
             ))
             .bind(tenant_id)
+            .bind(limit)
+            .bind(offset)
             .fetch_all(&self.pool)
             .await
             .map_err(|error| {
                 DriveServiceError::Internal(format!(
                     "list dr_drive_space by tenant failed: {error}"
+                ))
+            })?,
+        };
+
+        rows.iter().map(map_row_to_space).collect()
+    }
+
+    async fn list_accessible_spaces(
+        &self,
+        tenant_id: &str,
+        viewer_subject_type: &str,
+        viewer_subject_id: &str,
+        owner_subject_type: Option<&str>,
+        owner_subject_id: Option<&str>,
+        offset: i64,
+        limit: i64,
+    ) -> Result<Vec<DriveSpace>, DriveServiceError> {
+        use crate::infrastructure::sql::acl_predicate::space_accessible_to_subject_sql;
+
+        let space_accessible_predicate =
+            space_accessible_to_subject_sql("dr_drive_space", "$2", "$3");
+        let rows = match (owner_subject_type, owner_subject_id) {
+            (Some(owner_type), Some(owner_id)) => sqlx::query(&format!(
+                "SELECT {SPACE_SELECT_COLUMNS}
+                 FROM dr_drive_space
+                 WHERE tenant_id=$1
+                   AND owner_subject_type=$4
+                   AND owner_subject_id=$5
+                   AND lifecycle_status='active'
+                   AND ({space_accessible_predicate})
+                 ORDER BY id ASC
+                 LIMIT $6 OFFSET $7",
+            ))
+            .bind(tenant_id)
+            .bind(viewer_subject_type)
+            .bind(viewer_subject_id)
+            .bind(owner_type)
+            .bind(owner_id)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "list accessible dr_drive_space by owner failed: {error}"
+                ))
+            })?,
+            _ => sqlx::query(&format!(
+                "SELECT {SPACE_SELECT_COLUMNS}
+                 FROM dr_drive_space
+                 WHERE tenant_id=$1
+                   AND lifecycle_status='active'
+                   AND ({space_accessible_predicate})
+                 ORDER BY id ASC
+                 LIMIT $4 OFFSET $5",
+            ))
+            .bind(tenant_id)
+            .bind(viewer_subject_type)
+            .bind(viewer_subject_id)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "list accessible dr_drive_space by tenant failed: {error}"
                 ))
             })?,
         };

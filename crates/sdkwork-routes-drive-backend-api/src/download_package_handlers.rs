@@ -1,12 +1,14 @@
-use crate::dto::{DownloadPackagePageResponse, ListDownloadPackagesQuery};
+use crate::dto::{DownloadPackageItemResponse, ListDownloadPackagesQuery};
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::mappers::map_download_package_row;
+use crate::response::{success_offset_list_page, DriveListHttpResponse};
 use crate::state::BackendState;
 use crate::tenant_context::authenticated_tenant_id;
 use crate::validators::{
     normalize_optional_text, validate_download_package_state, validate_page_size_u32,
     validate_page_u32,
 };
+use sdkwork_utils_rust::OffsetListPageParams;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Extension;
@@ -17,7 +19,7 @@ pub(crate) async fn list_download_packages(
     State(state): State<BackendState>,
     Extension(app_context): Extension<DriveAppContext>,
     Query(query): Query<ListDownloadPackagesQuery>,
-) -> Result<Json<DownloadPackagePageResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<DownloadPackageItemResponse>, (StatusCode, Json<ProblemDetail>)> {
     let page = validate_page_u32(query.page, 1, 1, 10_000, "page")?;
     let page_size = validate_page_size_u32(query.page_size, 50, 1, 100, "pageSize")?;
     let offset = i64::from(page - 1) * i64::from(page_size);
@@ -94,10 +96,13 @@ pub(crate) async fn list_download_packages(
     }
     .map_err(internal_sql_error("list dr_drive_download_package failed"))?;
 
-    Ok(Json(DownloadPackagePageResponse {
-        items: rows.iter().map(map_download_package_row).collect(),
-        page,
-        page_size,
+    Ok(success_offset_list_page(
+        rows.iter().map(map_download_package_row).collect(),
         total,
-    }))
+        OffsetListPageParams {
+            page: i64::from(page),
+            page_size: i64::from(page_size),
+            offset,
+        },
+    ))
 }

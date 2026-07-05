@@ -41,7 +41,7 @@ pub(crate) async fn list_nodes(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(space_id): Path<String>,
     Query(query): Query<ListNodesQuery>,
-) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<crate::response::DriveNodeListHttpResponse, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let parent_node_id = normalize_optional_text(query.parent_node_id);
@@ -157,16 +157,15 @@ pub(crate) async fn list_nodes(
         (items, next_page_token, false)
     };
 
-    Ok(Json(
-        present_node_list(
-            &state.pool,
-            &tenant_id,
-            items,
-            next_page_token,
-            incomplete_page,
-        )
-        .await?,
-    ))
+    present_node_list(
+        &state.pool,
+        &tenant_id,
+        items,
+        page,
+        next_page_token,
+        incomplete_page,
+    )
+    .await
 }
 pub(crate) async fn create_folder(
     State(state): State<AppState>,

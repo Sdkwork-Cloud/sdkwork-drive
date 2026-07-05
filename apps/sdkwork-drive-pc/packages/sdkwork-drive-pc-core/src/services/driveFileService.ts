@@ -256,6 +256,7 @@ export interface CreateDriveFileServiceOptions {
 type JsonRecord = Record<string, unknown>;
 
 const DEFAULT_PAGE_SIZE = 200;
+const MAX_SPACES_LIST_PAGES = 20;
 const DEFAULT_DOWNLOAD_TTL_SECONDS = 300;
 const FOLDER_COLOR_PROPERTY_KEY = 'ui.folderColor';
 const PDF_SIGNATURE_PROPERTY_KEY = 'workflow.pdfSignature';
@@ -364,9 +365,20 @@ function requiredBooleanField(source: JsonRecord, label: string, ...keys: string
   return value;
 }
 
+function responseListPayload(response: unknown): JsonRecord {
+  if (isRecord(response) && isRecord(response.data)) {
+    return response.data;
+  }
+  return isRecord(response) ? response : {};
+}
+
 function extractItems(response: unknown): unknown[] {
   if (Array.isArray(response)) {
     return response;
+  }
+  const payload = responseListPayload(response);
+  if (Array.isArray(payload.items)) {
+    return payload.items;
   }
   if (isRecord(response) && Array.isArray(response.items)) {
     return response.items;
@@ -375,7 +387,16 @@ function extractItems(response: unknown): unknown[] {
 }
 
 function nextPageTokenFrom(response: unknown): string | undefined {
-  return stringField(isRecord(response) ? response : {}, 'nextPageToken', 'next_page_token');
+  const payload = responseListPayload(response);
+  const pageInfo = isRecord(payload.pageInfo) ? payload.pageInfo : undefined;
+  if (pageInfo) {
+    const nextCursor = stringField(pageInfo, 'nextCursor', 'next_cursor');
+    if (nextCursor) {
+      return nextCursor;
+    }
+  }
+  return stringField(payload, 'nextPageToken', 'next_page_token')
+    || stringField(isRecord(response) ? response : {}, 'nextPageToken', 'next_page_token');
 }
 
 function fileTypeFromNode(node: JsonRecord): DriveFile['type'] {
@@ -787,16 +808,17 @@ function createSdkBackedDriveFileService(
     }
 
     try {
-      const properties = await requestPaginatedItems({
+      const properties = await requestPageItems({
         operationId: 'nodeProperties.list',
         signal: options.signal,
         pathParams: { nodeId: folderId },
         query: {
           visibility: 'private',
-          pageSize: DEFAULT_PAGE_SIZE,
         },
+      }, {
+        pageSize: DEFAULT_PAGE_SIZE,
       });
-      const property = properties.find((item) => {
+      const property = properties.items.find((item) => {
         const record = isRecord(item) ? item : {};
         const key = stringField(record, 'propertyKey', 'property_key');
         return key === FOLDER_COLOR_PROPERTY_KEY || key === 'folderColor';
@@ -865,7 +887,11 @@ function createSdkBackedDriveFileService(
     };
   };
 
-  const requestPaginatedItems = async (request: DriveAppSdkRequest): Promise<unknown[]> => {
+  const requestAllPageItemsWithCap = async (
+    request: DriveAppSdkRequest,
+    options: { maxPages?: number; pageSize?: number } = {},
+  ): Promise<unknown[]> => {
+    const maxPages = options.maxPages ?? MAX_SPACES_LIST_PAGES;
     const items: unknown[] = [];
     const seenPageTokens = new Set<string>();
     let pageToken =
@@ -874,17 +900,14 @@ function createSdkBackedDriveFileService(
       seenPageTokens.add(pageToken);
     }
 
-    for (;;) {
-      const response = await sdkRequest<unknown>({
-        ...request,
-        query: {
-          ...request.query,
-          pageToken,
-        },
+    for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+      const page = await requestPageItems(request, {
+        pageToken,
+        pageSize: options.pageSize ?? DEFAULT_PAGE_SIZE,
       });
-      items.push(...extractItems(response));
+      items.push(...page.items);
 
-      const nextPageToken = nextPageTokenFrom(response);
+      const nextPageToken = page.nextPageToken;
       if (!nextPageToken) {
         return items;
       }
@@ -894,6 +917,8 @@ function createSdkBackedDriveFileService(
       seenPageTokens.add(nextPageToken);
       pageToken = nextPageToken;
     }
+
+    return items;
   };
 
   const mapDecoratedNode = async (
@@ -978,13 +1003,14 @@ function createSdkBackedDriveFileService(
     }
 
     const favoriteIds = new Set<string>();
-    const items = await requestPaginatedItems({
+    const { items } = await requestPageItems({
       operationId: 'favorites.list',
       signal: options.signal,
       query: {
         spaceId,
-        pageSize: DEFAULT_PAGE_SIZE,
       },
+    }, {
+      pageSize: DEFAULT_PAGE_SIZE,
     });
     for (const item of items) {
       const record = isRecord(item) ? item : {};
@@ -1005,12 +1031,11 @@ function createSdkBackedDriveFileService(
     }
 
     spacesCatalogFetch = (async () => {
-      const response = await sdkRequest<unknown>({
+      const items = await requestAllPageItemsWithCap({
         operationId: 'spaces.list',
         signal: options.signal,
         query: {},
       });
-      const items = extractItems(response);
       sharedSpacesCache = items
         .filter(isTeamSpace)
         .map((item) => responseToSharedSpace(item));
@@ -1115,34 +1140,11 @@ function createSdkBackedDriveFileService(
     return spaceId;
   };
 
-  const listFolderChildren = async (
-    parentId: string,
-    identity: RemoteIdentity,
-    options: DriveFileReadOptions & { starred?: boolean } = {},
-  ): Promise<DriveFile[]> => {
-    const spaceId = await resolveNodeSpaceId(parentId, identity, options);
-    const items = await requestPaginatedItems({
-      operationId: 'nodes.list',
-      signal: options?.signal,
-      pathParams: { spaceId },
-      query: {
-        parentNodeId: parentId,
-        pageSize: DEFAULT_PAGE_SIZE,
-      },
-    });
-    const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
-    return mapNodeList(items, identity, {
-      starred: options.starred,
-      favoriteIds,
-      signal: options?.signal,
-    });
-  };
-
   const listOwnedSpaces = async (
     identity: RemoteIdentity,
     options: DriveFileReadOptions = {},
-  ): Promise<unknown[]> => {
-    const response = await sdkRequest<unknown>({
+  ): Promise<unknown[]> =>
+    requestAllPageItemsWithCap({
       operationId: 'spaces.list',
       signal: options.signal,
       query: {
@@ -1150,8 +1152,6 @@ function createSdkBackedDriveFileService(
         ownerSubjectId: identity.userId,
       },
     });
-    return extractItems(response);
-  };
 
   const ownerSpaceCacheKey = (identity: RemoteIdentity): string =>
     `${identity.tenantId}:${identity.subjectType}:${identity.userId}`;
@@ -1323,31 +1323,6 @@ function createSdkBackedDriveFileService(
     return files;
   };
 
-  const listFilesFromSpaces = async (
-    spaceIds: string[],
-    identity: RemoteIdentity,
-    parentId?: string | null,
-    options: DriveFileReadOptions = {},
-  ): Promise<DriveFile[]> => {
-    const files = await Promise.all(
-      spaceIds.map(async (spaceId) => {
-        const items = await requestPaginatedItems({
-          operationId: 'nodes.list',
-          signal: options.signal,
-          pathParams: { spaceId },
-          query: {
-            parentNodeId: parentId || undefined,
-            pageSize: DEFAULT_PAGE_SIZE,
-          },
-        });
-        const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
-        return mapNodeList(items, identity, { favoriteIds, signal: options.signal });
-      }),
-    );
-
-    return files.flat();
-  };
-
   const discardIncompleteUploadNode = async (
     nodeId: string | undefined,
     identity: RemoteIdentity,
@@ -1511,7 +1486,7 @@ function createSdkBackedDriveFileService(
 
   const service: DriveFileService = {
     async getAllWorkspaceFiles(options) {
-      await service.listFiles('my-storage', undefined, undefined, options);
+      await service.listFilesPage('my-storage', undefined, undefined, options);
       return Array.from(knownFiles.values());
     },
     async listMoveCopyDestinationFolders(sourceFiles, section, options) {
@@ -1535,14 +1510,15 @@ function createSdkBackedDriveFileService(
 
       while (queue.length > 0) {
         const parentId = queue.shift();
-        const items = await requestPaginatedItems({
+        const { items } = await requestPageItems({
           operationId: 'nodes.list',
           signal: options?.signal,
           pathParams: { spaceId },
           query: {
             parentNodeId: parentId || undefined,
-            pageSize: DEFAULT_PAGE_SIZE,
           },
+        }, {
+          pageSize: DEFAULT_PAGE_SIZE,
         });
         const mapped = await mapNodeList(items, identity, {
           parentId,
@@ -1583,105 +1559,8 @@ function createSdkBackedDriveFileService(
       return files;
     },
     async listFiles(section, searchQuery, parentId, options) {
-      const identity = resolveIdentity(getSession);
-
-      if (searchQuery) {
-        if (section === 'computers') {
-          return listLocalComputerFiles(searchQuery, parentId, identity, options);
-        }
-
-        let spaceId: string | undefined;
-        if (section === APP_SECTION_ID) {
-          const spaceIds = await resolveSectionSpaceIds(section, identity, options);
-          spaceId = spaceIds[0];
-        } else if (!VIEW_SECTIONS.has(section)) {
-          spaceId = await resolvePrimarySpaceId(section, identity, options);
-        }
-
-        const items = await requestPaginatedItems({
-          operationId: 'search.query',
-          signal: options?.signal,
-          query: {
-            q: searchQuery,
-            ...(spaceId ? { spaceId } : {}),
-            pageSize: DEFAULT_PAGE_SIZE,
-          },
-        });
-        const favoriteIds = spaceId
-          ? await listFavoriteNodeIds(identity, spaceId, options)
-          : await listFavoriteNodeIds(identity, undefined, options);
-        return mapNodeList(items, identity, { parentId, favoriteIds, signal: options?.signal });
-      }
-
-      if (section === 'recent') {
-        if (parentId) {
-          return listFolderChildren(parentId, identity, options);
-        }
-        const items = await requestPaginatedItems({
-          operationId: 'recent.list',
-          signal: options?.signal,
-          query: {
-            pageSize: DEFAULT_PAGE_SIZE,
-          },
-        });
-        const favoriteIds = await listFavoriteNodeIds(identity, undefined, options);
-        return mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
-      }
-      if (section === 'starred') {
-        if (parentId) {
-          return listFolderChildren(parentId, identity, { ...options, starred: true });
-        }
-        const items = await requestPaginatedItems({
-          operationId: 'favorites.list',
-          signal: options?.signal,
-          query: {
-            pageSize: DEFAULT_PAGE_SIZE,
-          },
-        });
-        return mapNodeList(items, identity, { starred: true, signal: options?.signal });
-      }
-      if (section === 'shared') {
-        if (parentId) {
-          return listFolderChildren(parentId, identity, options);
-        }
-        const items = await requestPaginatedItems({
-          operationId: 'sharedWithMe.list',
-          signal: options?.signal,
-          query: {
-            pageSize: DEFAULT_PAGE_SIZE,
-          },
-        });
-        const favoriteIds = await listFavoriteNodeIds(identity, undefined, options);
-        return mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
-      }
-      if (section === 'computers') {
-        return listLocalComputerFiles(searchQuery, parentId, identity, options);
-      }
-      if (section === APP_SECTION_ID) {
-        const spaceIds = await resolveSectionSpaceIds(section, identity, options);
-        return listFilesFromSpaces(spaceIds, identity, parentId, options);
-      }
-      if (section === 'trash') {
-        const items = await requestPaginatedItems({
-          operationId: 'trash.list',
-          signal: options?.signal,
-          query: await resolveTrashListQuery(parentId, identity, options),
-        });
-        return mapNodeList(items, identity, { signal: options?.signal });
-      }
-
-      const spaceId = await resolvePrimarySpaceId(section, identity, options);
-      const items = await requestPaginatedItems({
-        operationId: 'nodes.list',
-        signal: options?.signal,
-        pathParams: { spaceId },
-        query: {
-          parentNodeId: parentId || undefined,
-          pageSize: DEFAULT_PAGE_SIZE,
-        },
-      });
-      const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
-      return mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
+      const page = await service.listFilesPage(section, searchQuery, parentId, options);
+      return page.files;
     },
     async listFilesPage(section, searchQuery, parentId, options) {
       const identity = resolveIdentity(getSession);
@@ -1758,16 +1637,9 @@ function createSdkBackedDriveFileService(
         return { files, nextPageToken };
       }
       if (section === 'computers') {
-        const allFiles = await listLocalComputerFiles(searchQuery, parentId, identity, options);
-        const pageSize = pageOptions.pageSize ?? DEFAULT_PAGE_SIZE;
-        const startOffset = options?.pageToken ? Number(options.pageToken) : 0;
-        const safeStart = Number.isFinite(startOffset) && startOffset >= 0 ? startOffset : 0;
-        const files = allFiles.slice(safeStart, safeStart + pageSize);
-        const nextOffset = safeStart + pageSize;
-        return {
-          files,
-          nextPageToken: nextOffset < allFiles.length ? String(nextOffset) : undefined,
-        };
+        // Local directories are bounded host reads; host-level pagination belongs in the desktop package.
+        const files = await listLocalComputerFiles(searchQuery, parentId, identity, options);
+        return { files };
       }
       if (section === APP_SECTION_ID) {
         const spaceIds = await resolveSectionSpaceIds(section, identity, options);

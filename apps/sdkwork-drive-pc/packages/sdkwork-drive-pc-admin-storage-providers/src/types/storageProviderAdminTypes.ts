@@ -106,7 +106,7 @@ export interface SetDefaultStorageProviderBindingInput {
 }
 
 export interface StorageProviderBucketListItemView {
-  name: string;
+  bucket: string;
   configured: boolean;
   creationDate?: string;
 }

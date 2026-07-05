@@ -5,6 +5,8 @@
   "language": "go",
   "sdkType": "custom",
   "packageName": "sdkwork-drive-sdk-generated-go",
+  "transportPackageName": "sdkwork-drive-sdk-generated-go",
+  "consumerPackageName": "@sdkwork/drive-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

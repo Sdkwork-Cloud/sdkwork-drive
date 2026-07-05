@@ -47,6 +47,7 @@ pub struct ListDriveNodePermissionsCommand {
     pub tenant_id: String,
     pub node_id: String,
     pub page_size: Option<u32>,
+    pub page_token: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

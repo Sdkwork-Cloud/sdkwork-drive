@@ -1,13 +1,14 @@
 use crate::audit::record_storage_provider_audit;
 use crate::dto::{
-    OperatorQuery, ProviderBucketListItemResponse, ProviderBucketListResponse,
+    ListProviderBucketsQuery, OperatorQuery, ProviderBucketListItemResponse,
     ProviderBucketMutationResponse, ProviderBucketResponse,
 };
 use crate::error::{map_object_store_route_error, ProblemDetail};
 use crate::object_store::build_full_s3_object_store_for_provider;
 use crate::provider_lookup::get_active_provider;
+use crate::response::{success_list_page_simple, StorageListHttpResponse};
 use crate::state::AdminStorageState;
-use crate::validators::require_query_operator_id;
+use crate::validators::{next_page_token, parse_offset_page, require_query_operator_id};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
@@ -39,7 +40,10 @@ pub(crate) async fn head_storage_provider_bucket(
 pub(crate) async fn list_storage_provider_buckets(
     State(state): State<AdminStorageState>,
     Path(provider_id): Path<String>,
-) -> Result<Json<ProviderBucketListResponse>, (StatusCode, Json<ProblemDetail>)> {
+    Query(query): Query<ListProviderBucketsQuery>,
+) -> Result<StorageListHttpResponse<ProviderBucketListItemResponse>, (StatusCode, Json<ProblemDetail>)>
+{
+    let page = parse_offset_page(query.page_size, query.page_token)?;
     let provider = get_active_provider(&state, &provider_id).await?;
     let configured_bucket = provider.bucket.clone();
     let object_store = build_full_s3_object_store_for_provider(&provider).await?;
@@ -47,7 +51,7 @@ pub(crate) async fn list_storage_provider_buckets(
         .list_buckets(ListBucketsRequest)
         .await
         .map_err(map_object_store_route_error)?;
-    let items = result
+    let all_items: Vec<ProviderBucketListItemResponse> = result
         .items
         .into_iter()
         .map(|item| ProviderBucketListItemResponse {
@@ -56,11 +60,16 @@ pub(crate) async fn list_storage_provider_buckets(
             creation_date_epoch_ms: item.creation_date_epoch_ms,
         })
         .collect();
-    Ok(Json(ProviderBucketListResponse {
-        provider_id,
-        configured_bucket,
-        items,
-    }))
+    let start = page.offset as usize;
+    let take = (page.limit as usize).saturating_add(1);
+    let end = (start + take).min(all_items.len());
+    let mut items = if start >= all_items.len() {
+        Vec::new()
+    } else {
+        all_items[start..end].to_vec()
+    };
+    let next_page_token = next_page_token(&mut items, page);
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn create_storage_provider_bucket(

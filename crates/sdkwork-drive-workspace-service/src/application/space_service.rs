@@ -44,6 +44,13 @@ impl SqlDriveSpaceService {
         self.service.list_spaces(command).await
     }
 
+    pub async fn list_accessible_spaces(
+        &self,
+        command: ListAccessibleSpacesCommand,
+    ) -> Result<Vec<DriveSpace>, DriveServiceError> {
+        self.service.list_accessible_spaces(command).await
+    }
+
     pub async fn get_space(
         &self,
         command: GetSpaceCommand,
@@ -160,7 +167,45 @@ where
         }
 
         self.store
-            .list_spaces(command.tenant_id.trim(), owner_type, owner_id)
+            .list_spaces(
+                command.tenant_id.trim(),
+                owner_type,
+                owner_id,
+                command.offset,
+                command.limit,
+            )
+            .await
+    }
+
+    pub async fn list_accessible_spaces(
+        &self,
+        command: ListAccessibleSpacesCommand,
+    ) -> Result<Vec<DriveSpace>, DriveServiceError> {
+        let tenant_id = require_non_empty(command.tenant_id, "tenant_id")?;
+        let viewer_subject_type =
+            require_non_empty(command.viewer_subject_type, "viewer_subject_type")?;
+        let viewer_subject_id =
+            require_non_empty(command.viewer_subject_id, "viewer_subject_id")?;
+        let owner_type = command.owner_subject_type.as_deref();
+        let owner_id = command.owner_subject_id.as_deref();
+        if (owner_type.is_some() && owner_id.is_none())
+            || (owner_type.is_none() && owner_id.is_some())
+        {
+            return Err(DriveServiceError::Validation(
+                "owner_subject_type and owner_subject_id must be provided together".to_string(),
+            ));
+        }
+
+        self.store
+            .list_accessible_spaces(
+                &tenant_id,
+                &viewer_subject_type,
+                &viewer_subject_id,
+                owner_type,
+                owner_id,
+                command.offset,
+                command.limit,
+            )
             .await
     }
 
@@ -229,6 +274,19 @@ pub struct ListSpacesCommand {
     pub tenant_id: String,
     pub owner_subject_type: Option<String>,
     pub owner_subject_id: Option<String>,
+    pub offset: i64,
+    pub limit: i64,
+}
+
+#[derive(Debug, Clone)]
+pub struct ListAccessibleSpacesCommand {
+    pub tenant_id: String,
+    pub viewer_subject_type: String,
+    pub viewer_subject_id: String,
+    pub owner_subject_type: Option<String>,
+    pub owner_subject_id: Option<String>,
+    pub offset: i64,
+    pub limit: i64,
 }
 
 fn require_non_empty(value: String, field_name: &str) -> Result<String, DriveServiceError> {

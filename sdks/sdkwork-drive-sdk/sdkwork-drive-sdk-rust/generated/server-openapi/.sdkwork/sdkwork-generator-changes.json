@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-sdk-generated-rust"
   },
-  "changeFingerprint": "4d00f80f35274e79aad9ac92d4c8c2558dc72ae7e6c32a5db1bad00371084b9a",
+  "changeFingerprint": "d45653393717e0f4b07b56668fc1ce137abb2c19fd449114d3bec89e063ffa54",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [],
@@ -33,10 +33,16 @@
       "src/models/common.rs",
       "src/models/create_open_download_url_request.rs",
       "src/models/drive_open_share_link.rs",
+      "src/models/field_error.rs",
       "src/models/mod.rs",
+      "src/models/open_download_url_create_response.rs",
       "src/models/open_download_url_response.rs",
       "src/models/open_node.rs",
-      "src/models/problem_detail.rs"
+      "src/models/open_share_link_resolve_response.rs",
+      "src/models/problem_detail.rs",
+      "src/models/sdk_work_api_response.rs",
+      "src/models/sdk_work_resource_data.rs",
+      "src/models/sdk_work_resource_response.rs"
     ],
     "deletedGeneratedFiles": [],
     "scaffoldedFiles": [],

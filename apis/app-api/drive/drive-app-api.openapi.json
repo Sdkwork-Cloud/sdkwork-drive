@@ -452,6 +452,33 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "owner",
+                "lastModified",
+                "size",
+                "type"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
           }
         ],
         "responses": {
@@ -5355,6 +5382,33 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "owner",
+                "lastModified",
+                "size",
+                "type"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
           }
         ],
         "responses": {
@@ -6031,6 +6085,33 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "owner",
+                "lastModified",
+                "size",
+                "type"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
             }
           }
         ],
@@ -6764,6 +6845,33 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "owner",
+                "lastModified",
+                "size",
+                "type"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
             }
           }
         ],
@@ -15126,6 +15234,10 @@
       "MediaResource": {
         "type": "object",
         "additionalProperties": false,
+        "required": [
+          "kind",
+          "source"
+        ],
         "properties": {
           "id": {
             "type": "string"
@@ -15136,11 +15248,10 @@
               "image",
               "video",
               "audio",
+              "voice",
               "document",
               "archive",
-              "file",
-              "folder",
-              "generated",
+              "model",
               "other"
             ]
           },
@@ -15154,17 +15265,31 @@
               "generated"
             ]
           },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "publicUrl": {
+            "type": "string",
+            "format": "uri"
+          },
           "uri": {
             "type": "string"
           },
-          "fileName": {
+          "objectBlobId": {
             "type": "string"
+          },
+          "fileName": {
+            "type": "string",
+            "maxLength": 512
           },
           "mimeType": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 256
           },
           "sizeBytes": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^[0-9]+$"
           },
           "checksum": {
             "type": "object",
@@ -15178,40 +15303,147 @@
               }
             }
           },
-          "url": {
-            "type": "string"
-          },
-          "mediaResourceId": {
-            "type": "string",
-            "description": "Legacy alias for id."
-          },
-          "mediaType": {
-            "type": "string",
-            "description": "Legacy alias for kind."
-          },
-          "contentType": {
-            "type": "string",
-            "description": "Legacy alias for mimeType."
-          },
           "width": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "minimum": 0
           },
           "height": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "minimum": 0
           },
-          "durationMs": {
-            "type": "integer",
-            "format": "int64"
+          "durationSeconds": {
+            "type": "number",
+            "minimum": 0
           },
-          "checksumSha256": {
+          "altText": {
             "type": "string",
-            "description": "Legacy checksum field."
+            "maxLength": 512
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "poster": {
+            "$ref": "#/components/schemas/MediaResource"
+          },
+          "thumbnails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaResource"
+            }
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaResource"
+            }
+          },
+          "access": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "private",
+                  "tenant",
+                  "organization",
+                  "public",
+                  "signed"
+                ]
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "visibility"
+            ]
+          },
+          "ai": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "provenance": {
+                "type": "string",
+                "enum": [
+                  "uploaded",
+                  "generated",
+                  "edited",
+                  "imported"
+                ]
+              },
+              "provider": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "promptId": {
+                "type": "string"
+              },
+              "generationTaskId": {
+                "type": "string"
+              },
+              "sourceMediaIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "seed": {
+                "type": "string"
+              },
+              "moderationStatus": {
+                "type": "string",
+                "enum": [
+                  "unknown",
+                  "pending",
+                  "approved",
+                  "rejected",
+                  "blocked"
+                ]
+              },
+              "safetyLabels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "metadata": {
             "type": "object",
             "additionalProperties": true
+          },
+          "mediaResourceId": {
+            "type": "string",
+            "deprecated": true,
+            "description": "Legacy alias for id."
+          },
+          "mediaType": {
+            "type": "string",
+            "deprecated": true,
+            "description": "Legacy alias for kind."
+          },
+          "contentType": {
+            "type": "string",
+            "deprecated": true,
+            "description": "Legacy alias for mimeType."
+          },
+          "durationMs": {
+            "type": "integer",
+            "format": "int64",
+            "deprecated": true,
+            "description": "Legacy duration field. Use durationSeconds."
+          },
+          "checksumSha256": {
+            "type": "string",
+            "deprecated": true,
+            "description": "Legacy checksum field. Use checksum."
           }
         }
       },

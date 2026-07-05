@@ -1,13 +1,15 @@
 use crate::acl;
+use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    AssetActionRequest, AssetCollectionItemResponse, AssetCollectionPageResponse,
-    AssetCollectionResponse, AssetItemResponse, AssetPageResponse, AssetRelationResponse,
-    CreateAssetCollectionItemRequest, CreateAssetCollectionRequest, CreateAssetRelationRequest,
-    CreateAssetRequest, DeleteAssetCollectionItemResponse, DeleteAssetRelationResponse,
-    ListAssetCollectionsQuery, ListAssetsQuery, MediaResourceResponse, PageRequest,
-    UpdateAssetRequest, ASSET_NODE_SELECT_COLUMNS,
+    AssetActionRequest, AssetCollectionItemResponse, AssetCollectionResponse,
+    AssetItemResponse, AssetRelationResponse, CreateAssetCollectionItemRequest,
+    CreateAssetCollectionRequest, CreateAssetRelationRequest, CreateAssetRequest,
+    DeleteAssetCollectionItemResponse, DeleteAssetRelationResponse, ListAssetCollectionsQuery,
+    ListAssetsQuery, MediaResourceResponse, PageRequest, UpdateAssetRequest,
+    ASSET_NODE_SELECT_COLUMNS,
 };
+use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{
     internal_sql_error, is_unique_constraint_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
 use crate::hashing::sha256_raw_hex_separated;
@@ -56,7 +58,7 @@ pub(crate) async fn list_assets(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<ListAssetsQuery>,
-) -> Result<Json<AssetPageResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<AssetItemResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_asset_page_request(query.page_size, query.cursor)?;
     let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
@@ -66,22 +68,25 @@ pub(crate) async fn list_assets(
 
     let pool = state.pool.clone();
     let tenant_id_for_fetch = tenant_id.clone();
+    let subject_type_for_fetch = subject_type.clone();
+    let subject_id_for_fetch = subject_id.clone();
     let kind_filter_for_fetch = kind_filter.clone();
     let source_type_filter_for_fetch = source_type_filter.clone();
     let needle_for_fetch = needle.clone();
+    let reader_acl_predicate =
+        acl_sql::node_reader_visible_sql("dr_drive_node", "$2", "$3");
 
-    let (rows, next_cursor, _) = acl::paginate_reader_visible_items(
-        &state.pool,
-        &tenant_id,
-        &subject_type,
-        &subject_id,
+    let (rows, next_page_token) = acl::paginate_offset_limited_items(
         page,
         move |scan_offset, batch_limit| {
             let pool = pool.clone();
             let tenant_id = tenant_id_for_fetch.clone();
+            let subject_type = subject_type_for_fetch.clone();
+            let subject_id = subject_id_for_fetch.clone();
             let kind_filter = kind_filter_for_fetch.clone();
             let source_type_filter = source_type_filter_for_fetch.clone();
             let needle = needle_for_fetch.clone();
+            let reader_acl_predicate = reader_acl_predicate.clone();
             async move {
                 let mut sql = format!(
                     "SELECT {ASSET_NODE_SELECT_COLUMNS}
@@ -89,9 +94,10 @@ pub(crate) async fn list_assets(
                      WHERE tenant_id=$1
                        AND node_type IN ('file', 'virtual_reference')
                        AND lifecycle_status='active'
-                       AND content_state IN ('ready', 'empty')"
+                       AND content_state IN ('ready', 'empty')
+                       AND ({reader_acl_predicate})"
                 );
-                let mut bind_index = 2_u8;
+                let mut bind_index = 4_u8;
                 if kind_filter.is_some() {
                     sql.push_str(&format!(" AND head_content_type_group=${bind_index}"));
                     bind_index += 1;
@@ -110,7 +116,10 @@ pub(crate) async fn list_assets(
                     bind_index + 1
                 ));
 
-                let mut query = sqlx::query(&sql).bind(&tenant_id);
+                let mut query = sqlx::query(&sql)
+                    .bind(&tenant_id)
+                    .bind(&subject_type)
+                    .bind(&subject_id);
                 if let Some(kind) = kind_filter.as_deref() {
                     query = query.bind(map_asset_kind_to_content_group(kind));
                 }
@@ -130,7 +139,6 @@ pub(crate) async fn list_assets(
             }
         },
         map_asset_node_row,
-        |item| (item.node.space_id.clone(), item.node.id.clone()),
     )
     .await?;
 
@@ -139,7 +147,7 @@ pub(crate) async fn list_assets(
         .map(|row| asset_item_from_node_row(&row, None, None, None, false))
         .collect();
 
-    Ok(Json(AssetPageResponse { items, next_cursor }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn create_asset(
@@ -364,7 +372,7 @@ pub(crate) async fn list_asset_collections(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<ListAssetCollectionsQuery>,
-) -> Result<Json<AssetCollectionPageResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<AssetCollectionResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let user_id = ctx.user_id.clone();
     let page = parse_asset_page_request(query.page_size, query.cursor)?;
@@ -401,8 +409,8 @@ pub(crate) async fn list_asset_collections(
             parse_collection_from_property(&tenant_id, &user_id, &key, &value)
         })
         .collect::<Vec<_>>();
-    let next_cursor = next_asset_cursor(&mut items, page);
-    Ok(Json(AssetCollectionPageResponse { items, next_cursor }))
+    let next_page_token = next_asset_cursor(&mut items, page);
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn create_asset_collection(
@@ -648,29 +656,21 @@ pub(crate) async fn delete_asset_relation(
     }))
 }
 
-pub(crate) async fn asset_upload_not_implemented() -> (StatusCode, Json<serde_json::Value>) {
-    (
+pub(crate) async fn asset_upload_not_implemented() -> (StatusCode, Json<ProblemDetail>) {
+    problem(
         StatusCode::NOT_IMPLEMENTED,
-        Json(json!({
-            "type": "about:blank",
-            "title": "not implemented",
-            "status": 501,
-            "detail": "legacy asset upload endpoints are not available; use Drive uploader APIs",
-            "code": SdkWorkResultCode::InternalError.as_i32()
-        })),
+        "not implemented",
+        "legacy asset upload endpoints are not available; use Drive uploader APIs",
+        SdkWorkResultCode::InternalError,
     )
 }
 
-pub(crate) async fn asset_method_not_allowed() -> (StatusCode, Json<serde_json::Value>) {
-    (
+pub(crate) async fn asset_method_not_allowed() -> (StatusCode, Json<ProblemDetail>) {
+    problem(
         StatusCode::NOT_IMPLEMENTED,
-        Json(json!({
-            "type": "about:blank",
-            "title": "not implemented",
-            "status": 501,
-            "detail": "Drive assets API method is not available on this route",
-            "code": SdkWorkResultCode::InternalError.as_i32()
-        })),
+        "not implemented",
+        "Drive assets API method is not available on this route",
+        SdkWorkResultCode::InternalError,
     )
 }
 
@@ -684,7 +684,7 @@ fn parse_asset_page_request(
     page_size: Option<i64>,
     cursor: Option<String>,
 ) -> Result<PageRequest, (StatusCode, Json<ProblemDetail>)> {
-    let limit = validate_page_size_i64(page_size, 100, 1, 100, "pageSize")?;
+    let limit = validate_page_size_i64(page_size, 200, 1, 200, "pageSize")?;
     let offset = match normalize_optional_text(cursor) {
         Some(raw) => raw.parse::<i64>().map_err(|_| {
             problem(
@@ -745,9 +745,10 @@ fn map_asset_kind_to_content_group(kind: &str) -> &str {
     match kind.trim().to_ascii_lowercase().as_str() {
         "image" => "image",
         "video" => "video",
-        "audio" => "audio",
+        "audio" | "voice" => "audio",
         "document" => "document",
         "model" => "binary",
+        "archive" | "file" => "binary",
         _ => kind,
     }
 }
@@ -768,7 +769,9 @@ fn derive_asset_kind(node: &crate::dto::DriveNodeResponse) -> String {
         "video" => "video",
         "audio" => "audio",
         "document" | "text" => "document",
-        "binary" | "archive" => "file",
+        "model" => "model",
+        "archive" => "file",
+        "binary" => "file",
         _ => "other",
     }
     .to_string()

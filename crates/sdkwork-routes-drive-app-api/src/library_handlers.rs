@@ -2,9 +2,10 @@ use crate::acl;
 use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    FavoriteNodeQuery, FavoriteNodeRequest, FavoriteNodeResponse, NodeListResponse, NodeViewQuery,
+    FavoriteNodeQuery, FavoriteNodeRequest, FavoriteNodeResponse, NodeViewQuery,
     SubjectNodeViewQuery,
 };
+use crate::response::DriveNodeListHttpResponse;
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::mappers::map_node_row;
 use crate::metadata_repository::present_node_list;
@@ -13,7 +14,10 @@ use crate::route_change::record_change;
 use crate::space_repository::validate_space_exists;
 use crate::state::AppState;
 use crate::time::current_epoch_ms;
-use crate::validators::{normalize_optional_text, parse_page_request, validate_subject_type};
+use crate::validators::{
+    normalize_optional_text, parse_page_request, resolve_aliased_node_list_order_by,
+    resolve_node_list_order_by, validate_subject_type,
+};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
@@ -26,9 +30,15 @@ pub(crate) async fn list_recent_nodes(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<NodeViewQuery>,
-) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveNodeListHttpResponse, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
+    let order_by = resolve_node_list_order_by(
+        query.sort_by.clone(),
+        query.sort_order.clone(),
+        "updated_at DESC, id ASC",
+    )?;
+    let order_by_for_fetch = order_by.clone();
     let space_id = normalize_optional_text(query.space_id);
     let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
     if let Some(space_id) = space_id.as_deref() {
@@ -58,6 +68,7 @@ pub(crate) async fn list_recent_nodes(
                     let pool = pool.clone();
                     let tenant_id = tenant_id_for_fetch.clone();
                     let space_id = space_id.clone();
+                    let order_by = order_by_for_fetch.clone();
                     async move {
                         let rows = sqlx::query(&format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
@@ -66,7 +77,7 @@ pub(crate) async fn list_recent_nodes(
                                AND space_id=$2
                                AND lifecycle_status='active'
                                AND content_state='ready'
-                             ORDER BY updated_at DESC, id ASC
+                             ORDER BY {order_by}
                              LIMIT $3 OFFSET $4",
                         ))
                         .bind(&tenant_id)
@@ -92,6 +103,7 @@ pub(crate) async fn list_recent_nodes(
                     let subject_type = subject_type_for_fetch.clone();
                     let subject_id = subject_id_for_fetch.clone();
                     let reader_acl_predicate = reader_acl_predicate.clone();
+                    let order_by = order_by_for_fetch.clone();
                     async move {
                         let rows = sqlx::query(&format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
@@ -101,7 +113,7 @@ pub(crate) async fn list_recent_nodes(
                                AND lifecycle_status='active'
                                AND content_state='ready'
                                AND ({reader_acl_predicate})
-                             ORDER BY updated_at DESC, id ASC
+                             ORDER BY {order_by}
                              LIMIT $5 OFFSET $6",
                         ))
                         .bind(&tenant_id)
@@ -122,15 +134,17 @@ pub(crate) async fn list_recent_nodes(
         };
         (items, next_page_token, false)
     } else {
-        acl::paginate_reader_visible_items(
-            &state.pool,
-            &tenant_id,
-            &subject_type,
-            &subject_id,
+        let reader_acl_predicate =
+            acl_sql::node_reader_visible_sql("dr_drive_node", "$2", "$3");
+        let (items, next_page_token) = acl::paginate_offset_limited_items(
             page,
             move |scan_offset, batch_limit| {
                 let pool = pool.clone();
                 let tenant_id = tenant_id_for_fetch.clone();
+                let subject_type = subject_type_for_fetch.clone();
+                let subject_id = subject_id_for_fetch.clone();
+                let reader_acl_predicate = reader_acl_predicate.clone();
+                let order_by = order_by_for_fetch.clone();
                 async move {
                     let rows = sqlx::query(&format!(
                         "SELECT {NODE_API_SELECT_COLUMNS}
@@ -138,10 +152,13 @@ pub(crate) async fn list_recent_nodes(
                          WHERE tenant_id=$1
                            AND lifecycle_status='active'
                            AND content_state='ready'
-                         ORDER BY updated_at DESC, id ASC
-                         LIMIT $2 OFFSET $3",
+                           AND ({reader_acl_predicate})
+                         ORDER BY {order_by}
+                         LIMIT $4 OFFSET $5",
                     ))
                     .bind(&tenant_id)
+                    .bind(&subject_type)
+                    .bind(&subject_id)
                     .bind(batch_limit as i64)
                     .bind(scan_offset)
                     .fetch_all(&pool)
@@ -151,30 +168,36 @@ pub(crate) async fn list_recent_nodes(
                 }
             },
             map_node_row,
-            |item| (item.space_id.clone(), item.id.clone()),
         )
-        .await?
+        .await?;
+        (items, next_page_token, false)
     };
 
-    Ok(Json(
-        present_node_list(
-            &state.pool,
-            &tenant_id,
-            items,
-            next_page_token,
-            incomplete_page,
-        )
-        .await?,
-    ))
+    present_node_list(
+        &state.pool,
+        &tenant_id,
+        items,
+        page,
+        next_page_token,
+        incomplete_page,
+    )
+    .await
 }
 pub(crate) async fn list_shared_with_me(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<SubjectNodeViewQuery>,
-) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveNodeListHttpResponse, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
+    let order_by = resolve_aliased_node_list_order_by(
+        query.sort_by.clone(),
+        query.sort_order.clone(),
+        "n",
+        "n.updated_at DESC, n.id ASC",
+    )?;
+    let order_by_for_fetch = order_by.clone();
     let space_id = normalize_optional_text(query.space_id);
     if let Some(space_id) = space_id.as_deref() {
         validate_space_exists(&state.pool, &tenant_id, space_id).await?;
@@ -204,9 +227,7 @@ pub(crate) async fn list_shared_with_me(
         )
         .await?
         {
-            return Ok(Json(
-                present_node_list(&state.pool, &tenant_id, Vec::new(), None, false).await?,
-            ));
+            return present_node_list(&state.pool, &tenant_id, Vec::new(), page, None, false).await;
         }
     }
 
@@ -224,6 +245,7 @@ pub(crate) async fn list_shared_with_me(
                 let subject_type = subject_type_for_fetch.clone();
                 let subject_id = subject_id_for_fetch.clone();
                 let shared_with_me_predicate = shared_with_me_predicate_for_space.clone();
+                let order_by = order_by_for_fetch.clone();
                 async move {
                     let rows = sqlx::query(&format!(
                         "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
@@ -233,7 +255,7 @@ pub(crate) async fn list_shared_with_me(
                            AND n.lifecycle_status='active'
                            AND n.content_state='ready'
                            AND {shared_with_me_predicate}
-                         ORDER BY n.updated_at DESC, n.id ASC
+                         ORDER BY {order_by}
                          LIMIT $6 OFFSET $7",
                     ))
                     .bind(&tenant_id)
@@ -261,6 +283,7 @@ pub(crate) async fn list_shared_with_me(
                 let subject_type = subject_type_for_fetch.clone();
                 let subject_id = subject_id_for_fetch.clone();
                 let shared_with_me_predicate = shared_with_me_predicate_for_tenant.clone();
+                let order_by = order_by_for_fetch.clone();
                 async move {
                     let rows = sqlx::query(&format!(
                         "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
@@ -269,7 +292,7 @@ pub(crate) async fn list_shared_with_me(
                            AND n.lifecycle_status='active'
                            AND n.content_state='ready'
                            AND {shared_with_me_predicate}
-                         ORDER BY n.updated_at DESC, n.id ASC
+                         ORDER BY {order_by}
                          LIMIT $5 OFFSET $6",
                     ))
                     .bind(&tenant_id)
@@ -289,18 +312,23 @@ pub(crate) async fn list_shared_with_me(
         .await?
     };
 
-    Ok(Json(
-        present_node_list(&state.pool, &tenant_id, items, next_page_token, false).await?,
-    ))
+    present_node_list(&state.pool, &tenant_id, items, page, next_page_token, false).await
 }
 pub(crate) async fn list_favorite_nodes(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<SubjectNodeViewQuery>,
-) -> Result<Json<NodeListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveNodeListHttpResponse, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
     let page = parse_page_request(query.page_size, query.page_token)?;
+    let order_by = resolve_aliased_node_list_order_by(
+        query.sort_by.clone(),
+        query.sort_order.clone(),
+        "n",
+        "f.updated_at DESC, n.id ASC",
+    )?;
+    let order_by_for_fetch = order_by.clone();
     let space_id = normalize_optional_text(query.space_id);
     if let Some(space_id) = space_id.as_deref() {
         validate_space_exists(&state.pool, &tenant_id, space_id).await?;
@@ -338,6 +366,7 @@ pub(crate) async fn list_favorite_nodes(
                     let space_id = space_id.clone();
                     let subject_type = subject_type_for_fetch.clone();
                     let subject_id = subject_id_for_fetch.clone();
+                    let order_by = order_by_for_fetch.clone();
                     async move {
                         let rows = sqlx::query(&format!(
                             "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
@@ -352,7 +381,7 @@ pub(crate) async fn list_favorite_nodes(
                                AND f.subject_type=$3
                                AND f.subject_id=$4
                                AND f.lifecycle_status='active'
-                             ORDER BY f.updated_at DESC, n.id ASC
+                             ORDER BY {order_by}
                              LIMIT $5 OFFSET $6",
                         ))
                         .bind(&tenant_id)
@@ -380,6 +409,7 @@ pub(crate) async fn list_favorite_nodes(
                     let subject_type = subject_type_for_fetch.clone();
                     let subject_id = subject_id_for_fetch.clone();
                     let reader_acl_predicate = reader_acl_predicate.clone();
+                    let order_by = order_by_for_fetch.clone();
                     async move {
                         let rows = sqlx::query(&format!(
                             "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
@@ -395,7 +425,7 @@ pub(crate) async fn list_favorite_nodes(
                                AND f.subject_id=$4
                                AND f.lifecycle_status='active'
                                AND ({reader_acl_predicate})
-                             ORDER BY f.updated_at DESC, n.id ASC
+                             ORDER BY {order_by}
                              LIMIT $5 OFFSET $6",
                         ))
                         .bind(&tenant_id)
@@ -416,17 +446,16 @@ pub(crate) async fn list_favorite_nodes(
         };
         (items, next_page_token, false)
     } else {
-        acl::paginate_reader_visible_items(
-            &state.pool,
-            &tenant_id,
-            &subject_type,
-            &subject_id,
+        let reader_acl_predicate = acl_sql::node_reader_visible_sql("n", "$2", "$3");
+        let (items, next_page_token) = acl::paginate_offset_limited_items(
             page,
             move |scan_offset, batch_limit| {
                 let pool = pool.clone();
                 let tenant_id = tenant_id_for_fetch.clone();
                 let subject_type = subject_type_for_fetch.clone();
                 let subject_id = subject_id_for_fetch.clone();
+                let reader_acl_predicate = reader_acl_predicate.clone();
+                let order_by = order_by_for_fetch.clone();
                 async move {
                     let rows = sqlx::query(&format!(
                         "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
@@ -440,7 +469,8 @@ pub(crate) async fn list_favorite_nodes(
                            AND f.subject_type=$2
                            AND f.subject_id=$3
                            AND f.lifecycle_status='active'
-                         ORDER BY f.updated_at DESC, n.id ASC
+                           AND ({reader_acl_predicate})
+                         ORDER BY {order_by}
                          LIMIT $4 OFFSET $5",
                     ))
                     .bind(&tenant_id)
@@ -455,21 +485,20 @@ pub(crate) async fn list_favorite_nodes(
                 }
             },
             map_node_row,
-            |item| (item.space_id.clone(), item.id.clone()),
         )
-        .await?
+        .await?;
+        (items, next_page_token, false)
     };
 
-    Ok(Json(
-        present_node_list(
-            &state.pool,
-            &tenant_id,
-            items,
-            next_page_token,
-            incomplete_page,
-        )
-        .await?,
-    ))
+    present_node_list(
+        &state.pool,
+        &tenant_id,
+        items,
+        page,
+        next_page_token,
+        incomplete_page,
+    )
+    .await
 }
 pub(crate) async fn set_favorite(
     State(state): State<AppState>,

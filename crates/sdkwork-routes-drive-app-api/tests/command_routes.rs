@@ -6706,14 +6706,15 @@ async fn list_spaces_route_returns_tenant_scoped_items() {
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
+    assert_eq!(payload["code"], 0);
     assert_eq!(
-        payload["items"]
+        payload["data"]["items"]
             .as_array()
             .expect("items should be array")
             .len(),
         1
     );
-    assert_eq!(payload["items"][0]["id"].as_str(), Some("space-001"));
+    assert_eq!(payload["data"]["items"][0]["id"].as_str(), Some("space-001"));
 }
 
 #[tokio::test]
@@ -18985,7 +18986,8 @@ async fn app_drive_list_spaces_includes_collaborator_granted_team_space() {
             .expect("list spaces response should be read"),
     )
     .expect("list spaces response should be valid json");
-    let ids = payload["items"]
+    assert_eq!(payload["code"], 0);
+    let ids = payload["data"]["items"]
         .as_array()
         .expect("items should be an array")
         .iter()

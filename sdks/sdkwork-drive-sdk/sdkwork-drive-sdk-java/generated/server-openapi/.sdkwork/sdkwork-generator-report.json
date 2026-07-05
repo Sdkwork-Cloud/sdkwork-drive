@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": false,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "5e9730475575b67522a7cdc2751ebc3280b3764315283aa78a010b3230e0ccf0",
+  "changeFingerprint": "c5f77e18f17d7578fee1799c2cda2c6411dc8f552cb2ae73a0cbef0fa73da14b",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [],
@@ -56,8 +56,8 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 19,
-    "models": 5,
+    "totalFiles": 25,
+    "models": 11,
     "apis": 1,
     "types": 0
   },
@@ -67,10 +67,10 @@
     "controlPlaneEnabled": true,
     "writtenFiles": 0,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 18,
+    "skippedUnchangedGeneratedFiles": 24,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "5e9730475575b67522a7cdc2751ebc3280b3764315283aa78a010b3230e0ccf0",
+    "changeFingerprint": "c5f77e18f17d7578fee1799c2cda2c6411dc8f552cb2ae73a0cbef0fa73da14b",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [],
@@ -89,9 +89,15 @@
         "src/main/java/com/sdkwork/drive/sdk/generated/java/http/HttpClient.java",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/model/CreateOpenDownloadUrlRequest.java",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/model/DriveOpenShareLink.java",
+        "src/main/java/com/sdkwork/drive/sdk/generated/java/model/FieldError.java",
+        "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenDownloadUrlCreateResponse.java",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenDownloadUrlResponse.java",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenNode.java",
+        "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenShareLinkResolveResponse.java",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/model/ProblemDetail.java",
+        "src/main/java/com/sdkwork/drive/sdk/generated/java/model/SdkWorkApiResponse.java",
+        "src/main/java/com/sdkwork/drive/sdk/generated/java/model/SdkWorkResourceData.java",
+        "src/main/java/com/sdkwork/drive/sdk/generated/java/model/SdkWorkResourceResponse.java",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/SdkworkCustomClient.java"
       ],
       "deletedGeneratedFiles": [],

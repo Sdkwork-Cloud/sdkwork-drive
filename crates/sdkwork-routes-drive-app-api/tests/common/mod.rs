@@ -135,3 +135,12 @@ pub fn authed_post_json(
         .body(body.into())
         .expect("authed post request should be built")
 }
+
+pub fn envelope_items(payload: &serde_json::Value) -> &serde_json::Value {
+    if let Some(items) = payload.pointer("/data/items") {
+        return items;
+    }
+    payload
+        .get("items")
+        .expect("response should expose list items in data.items or items")
+}

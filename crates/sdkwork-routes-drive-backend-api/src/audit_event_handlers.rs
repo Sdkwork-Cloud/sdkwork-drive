@@ -1,7 +1,9 @@
-use crate::dto::{AuditEventItemResponse, AuditEventPageResponse, ListAuditEventsQuery};
+use crate::dto::{AuditEventItemResponse, ListAuditEventsQuery};
 use crate::error::{map_service_error, service_error_kind, ProblemDetail};
+use crate::response::{success_offset_list_page, DriveListHttpResponse};
 use crate::state::BackendState;
 use crate::tenant_context::authenticated_tenant_id;
+use sdkwork_utils_rust::OffsetListPageParams;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Extension;
@@ -17,7 +19,7 @@ pub(crate) async fn list_audit_events(
     State(state): State<BackendState>,
     Extension(app_context): Extension<DriveAppContext>,
     Query(query): Query<ListAuditEventsQuery>,
-) -> Result<Json<AuditEventPageResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<AuditEventItemResponse>, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
     let tenant_id = Some(authenticated_tenant_id(&app_context));
     let filter_has_tenant_id = true;
@@ -75,8 +77,8 @@ pub(crate) async fn list_audit_events(
         returned_items = page.items.len() as u64
     );
 
-    Ok(Json(AuditEventPageResponse {
-        items: page
+    Ok(success_offset_list_page(
+        page
             .items
             .into_iter()
             .map(|item| AuditEventItemResponse {
@@ -91,8 +93,11 @@ pub(crate) async fn list_audit_events(
                 created_at: item.created_at,
             })
             .collect(),
-        page: page.page,
-        page_size: page.page_size,
-        total: page.total,
-    }))
+        page.total,
+        OffsetListPageParams {
+            page: i64::from(page.page),
+            page_size: i64::from(page.page_size),
+            offset: i64::from(page.page - 1) * i64::from(page.page_size),
+        },
+    ))
 }

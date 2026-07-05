@@ -1,10 +1,11 @@
 use crate::acl;
+use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
     CreateWatchChannelRequest, DriveWatchChannelResponse, InsertWatchChannel,
     StopWatchChannelRequest, StopWatchChannelResponse, WatchChannelListQuery,
-    WatchChannelListResponse,
 };
+use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::hashing::sha256_raw_hex;
 use crate::mappers::map_watch_channel_row;
@@ -133,7 +134,7 @@ pub(crate) async fn list_watch_channels(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<WatchChannelListQuery>,
-) -> Result<Json<WatchChannelListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<DriveWatchChannelResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let lifecycle_status = validate_watch_lifecycle_status(
@@ -146,97 +147,78 @@ pub(crate) async fn list_watch_channels(
         Some(resource_type) => Some(validate_watch_resource_type(&resource_type)?.to_string()),
         None => None,
     };
+    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
 
     let pool = state.pool.clone();
     let tenant_id_for_fetch = tenant_id.clone();
     let lifecycle_status_for_fetch = lifecycle_status.clone();
     let resource_type_for_fetch = resource_type.clone();
-    let batch_limit = (page.limit + 1) as usize;
-    let max_scan_rows = (page.limit.saturating_mul(20).max(page.limit + 1)) as usize;
-    let mut items = Vec::new();
-    let mut scan_offset = page.offset;
-    let mut scanned_rows = 0usize;
-    let mut has_more_in_db = false;
+    let subject_type_for_fetch = subject_type.clone();
+    let subject_id_for_fetch = subject_id.clone();
+    let reader_visible_predicate =
+        acl_sql::watch_channel_reader_visible_sql("dr_drive_watch_channel", "$2", "$3");
 
-    while (items.len() as i64) <= page.limit && scanned_rows < max_scan_rows {
-        let rows = if let Some(resource_type) = resource_type_for_fetch.as_deref() {
-            sqlx::query(
-                "SELECT id, tenant_id, space_id, node_id, resource_type, resource_id,
-                        channel_type, address, expiration_epoch_ms, lifecycle_status, version
-                 FROM dr_drive_watch_channel
-                 WHERE tenant_id=$1
-                   AND lifecycle_status=$2
-                   AND resource_type=$3
-                 ORDER BY created_at ASC, id ASC
-                 LIMIT $4 OFFSET $5",
-            )
-            .bind(&tenant_id_for_fetch)
-            .bind(&lifecycle_status_for_fetch)
-            .bind(resource_type)
-            .bind(batch_limit as i64)
-            .bind(scan_offset)
-            .fetch_all(&pool)
-            .await
-        } else {
-            sqlx::query(
-                "SELECT id, tenant_id, space_id, node_id, resource_type, resource_id,
-                        channel_type, address, expiration_epoch_ms, lifecycle_status, version
-                 FROM dr_drive_watch_channel
-                 WHERE tenant_id=$1
-                   AND lifecycle_status=$2
-                 ORDER BY created_at ASC, id ASC
-                 LIMIT $3 OFFSET $4",
-            )
-            .bind(&tenant_id_for_fetch)
-            .bind(&lifecycle_status_for_fetch)
-            .bind(batch_limit as i64)
-            .bind(scan_offset)
-            .fetch_all(&pool)
-            .await
-        }
-        .map_err(internal_sql_error("list dr_drive_watch_channel failed"))?;
-
-        if rows.is_empty() {
-            has_more_in_db = false;
-            break;
-        }
-
-        scanned_rows += rows.len();
-        scan_offset += rows.len() as i64;
-        has_more_in_db = rows.len() == batch_limit;
-
-        for row in rows {
-            let item = map_watch_channel_row(&row);
-            if acl::ensure_watch_channel_role(&state.pool, &ctx, &item, "reader")
-                .await
-                .is_ok()
-            {
-                items.push(item);
-                if (items.len() as i64) > page.limit {
-                    break;
+    let (items, next_page_token) = acl::paginate_offset_limited_items(
+        page,
+        move |scan_offset, batch_limit| {
+            let pool = pool.clone();
+            let tenant_id = tenant_id_for_fetch.clone();
+            let lifecycle_status = lifecycle_status_for_fetch.clone();
+            let resource_type = resource_type_for_fetch.clone();
+            let subject_type = subject_type_for_fetch.clone();
+            let subject_id = subject_id_for_fetch.clone();
+            let reader_visible_predicate = reader_visible_predicate.clone();
+            async move {
+                let rows = if let Some(resource_type) = resource_type.as_deref() {
+                    sqlx::query(&format!(
+                        "SELECT id, tenant_id, space_id, node_id, resource_type, resource_id,
+                                channel_type, address, expiration_epoch_ms, lifecycle_status, version
+                         FROM dr_drive_watch_channel
+                         WHERE tenant_id=$1
+                           AND lifecycle_status=$4
+                           AND resource_type=$5
+                           AND ({reader_visible_predicate})
+                         ORDER BY created_at ASC, id ASC
+                         LIMIT $6 OFFSET $7",
+                    ))
+                    .bind(&tenant_id)
+                    .bind(&subject_type)
+                    .bind(&subject_id)
+                    .bind(&lifecycle_status)
+                    .bind(resource_type)
+                    .bind(batch_limit as i64)
+                    .bind(scan_offset)
+                    .fetch_all(&pool)
+                    .await
+                } else {
+                    sqlx::query(&format!(
+                        "SELECT id, tenant_id, space_id, node_id, resource_type, resource_id,
+                                channel_type, address, expiration_epoch_ms, lifecycle_status, version
+                         FROM dr_drive_watch_channel
+                         WHERE tenant_id=$1
+                           AND lifecycle_status=$4
+                           AND ({reader_visible_predicate})
+                         ORDER BY created_at ASC, id ASC
+                         LIMIT $5 OFFSET $6",
+                    ))
+                    .bind(&tenant_id)
+                    .bind(&subject_type)
+                    .bind(&subject_id)
+                    .bind(&lifecycle_status)
+                    .bind(batch_limit as i64)
+                    .bind(scan_offset)
+                    .fetch_all(&pool)
+                    .await
                 }
+                .map_err(internal_sql_error("list dr_drive_watch_channel failed"))?;
+                Ok(rows)
             }
-        }
+        },
+        map_watch_channel_row,
+    )
+    .await?;
 
-        if (items.len() as i64) > page.limit {
-            break;
-        }
-    }
-
-    let next_page_token = if (items.len() as i64) > page.limit {
-        let overflow = items.len() - page.limit as usize;
-        items.truncate(page.limit as usize);
-        Some((scan_offset - overflow as i64).to_string())
-    } else if has_more_in_db {
-        Some(scan_offset.to_string())
-    } else {
-        None
-    };
-
-    Ok(Json(WatchChannelListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn get_watch_channel(

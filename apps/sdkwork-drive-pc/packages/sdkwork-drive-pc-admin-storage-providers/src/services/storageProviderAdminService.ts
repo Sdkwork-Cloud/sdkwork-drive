@@ -281,7 +281,7 @@ export function createStorageProviderAdminService({
         const record = recordOf(item);
         const creationDateEpochMs = numberField(record, 'creationDateEpochMs');
         return {
-          name: stringField(record, 'name') ?? '',
+          bucket: stringField(record, 'bucket') ?? '',
           configured: booleanField(record, 'configured') ?? false,
           creationDate: creationDateEpochMs
             ? new Date(creationDateEpochMs).toLocaleDateString()

@@ -2,10 +2,10 @@ use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::collaboration_repository::{find_comment, find_comment_reply};
 use crate::dto::{
-    CommentListResponse, CommentReplyListResponse, CommentReplyResponse, CommentResponse,
-    CreateCommentReplyRequest, CreateCommentRequest, NodeMutationQuery, PageQuery,
-    UpdateCommentReplyRequest, UpdateCommentRequest,
+    CommentReplyResponse, CommentResponse, CreateCommentReplyRequest, CreateCommentRequest,
+    NodeMutationQuery, PageQuery, UpdateCommentReplyRequest, UpdateCommentRequest,
 };
+use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{internal_sql_error, not_found_problem, ProblemDetail};
 use crate::mappers::{map_comment_reply_row, map_comment_row};
 use crate::node_repository::{find_active_node, find_node};
@@ -25,7 +25,7 @@ pub(crate) async fn list_comments(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<PageQuery>,
-) -> Result<Json<CommentListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<CommentResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -51,10 +51,7 @@ pub(crate) async fn list_comments(
         .map(CommentResponse::from)
         .collect::<Vec<_>>();
     let next_page_token = next_page_token(&mut items, page);
-    Ok(Json(CommentListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn get_comment(
@@ -228,7 +225,7 @@ pub(crate) async fn list_comment_replies(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
     Query(query): Query<PageQuery>,
-) -> Result<Json<CommentReplyListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<CommentReplyResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -258,10 +255,7 @@ pub(crate) async fn list_comment_replies(
         .map(CommentReplyResponse::from)
         .collect::<Vec<_>>();
     let next_page_token = next_page_token(&mut items, page);
-    Ok(Json(CommentReplyListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn get_comment_reply(

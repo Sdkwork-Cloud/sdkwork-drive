@@ -20,7 +20,7 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "e1df684af83f151db51263d20b6918cb580573a06d456f4d399d51004acb284b"
+      "sha256": "373521d54c13e1d7136e1c96f6c449d364ad834a021ebae659ac09b231675cf4"
     },
     {
       "path": "api/paths.go",
@@ -72,7 +72,7 @@
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "befd7656bd5a151d1e0c15e340fc68ef84d2659312a8fdf790acb1fc1d81125e"
+      "sha256": "2f7cac51cd54a1d94646d90c81ca05db1652bc0abdd5f8930a5d4b6beaee9f31"
     },
     {
       "path": "types/common.go",
@@ -91,6 +91,14 @@
       "sha256": "e5fd830f677a100bbd8f08a81b17e8c69686dc9ce77f91e952e319d28d666904"
     },
     {
+      "path": "types/field_error.go",
+      "sha256": "8575bfc9ee6b3ddf91724c774a813b582d26f54092c78f2048173add7155fd17"
+    },
+    {
+      "path": "types/open_download_url_create_response.go",
+      "sha256": "694b2e217defeb75f2881ccd417c16c35e887f480fb766898c7a2b6ef3fac90b"
+    },
+    {
       "path": "types/open_download_url_response.go",
       "sha256": "f539b7d81f2443100313723006af9da9b924f2c9f1cfd43756f47d24c0d30ba6"
     },
@@ -99,8 +107,28 @@
       "sha256": "d6392be84b52c950167b969f6a8e4d2737678e16179ef28d8e90c70e03b1b3f0"
     },
     {
+      "path": "types/open_share_link_resolve_response.go",
+      "sha256": "829d34e2ab23f067ab6080ba9f9452b518a9d3dbc96e7697f7fcd23a998df45a"
+    },
+    {
       "path": "types/problem_detail.go",
-      "sha256": "c9f6433fc4f77e2d5d7ef4b7e29b520c75e3fc03b609aad63211255a9a77dc72"
+      "sha256": "cbec1aee3ada4dd415105d10f12f5211ad5c709beb43903f14e0e0f7c945e561"
+    },
+    {
+      "path": "types/sdk_work_api_response.go",
+      "sha256": "5db6f23abcb089d1d69ea0b883363a56d40249fedbc148c1873d5e1a1035b908"
+    },
+    {
+      "path": "types/sdk_work_platform_error_code.go",
+      "sha256": "6b6ca36f06dc0804cf6429312f6c6352017e0b119d9a77e81d5eb7bc36bdb092"
+    },
+    {
+      "path": "types/sdk_work_resource_data.go",
+      "sha256": "63de7a9fff9c0b683c1e3f50d53d8b50128732347f4b480bbb5dee6da57e1287"
+    },
+    {
+      "path": "types/sdk_work_resource_response.go",
+      "sha256": "0f08181bbc0578265fd0987c4c7cff522a7f8693a0fe36483ea431566481deaf"
     }
   ],
   "scaffoldFiles": [

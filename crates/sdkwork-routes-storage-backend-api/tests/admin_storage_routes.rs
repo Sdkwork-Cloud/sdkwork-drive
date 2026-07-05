@@ -767,15 +767,16 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
             .expect("list bindings response body should be read"),
     )
     .expect("list bindings response should be json");
-    assert_eq!(list_payload["items"].as_array().unwrap().len(), 2);
-    assert_eq!(list_payload["items"][0]["bindingScope"], "space");
-    assert_eq!(list_payload["items"][0]["spaceId"], "space-admin-a");
+    assert_eq!(list_payload["code"], 0);
+    assert_eq!(list_payload["data"]["items"].as_array().unwrap().len(), 2);
+    assert_eq!(list_payload["data"]["items"][0]["bindingScope"], "space");
+    assert_eq!(list_payload["data"]["items"][0]["spaceId"], "space-admin-a");
     assert_eq!(
-        list_payload["items"][0]["storageProvider"]["providerKind"],
+        list_payload["data"]["items"][0]["storageProvider"]["providerKind"],
         "aliyun_oss"
     );
-    assert_eq!(list_payload["items"][1]["bindingScope"], "tenant");
-    assert_eq!(list_payload["items"][1]["spaceId"], serde_json::Value::Null);
+    assert_eq!(list_payload["data"]["items"][1]["bindingScope"], "tenant");
+    assert_eq!(list_payload["data"]["items"][1]["spaceId"], serde_json::Value::Null);
 
     let filtered_response = app
         .clone()
@@ -795,9 +796,10 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
             .expect("filtered bindings response body should be read"),
     )
     .expect("filtered bindings response should be json");
-    assert_eq!(filtered_payload["items"].as_array().unwrap().len(), 1);
+    assert_eq!(filtered_payload["code"], 0);
+    assert_eq!(filtered_payload["data"]["items"].as_array().unwrap().len(), 1);
     assert_eq!(
-        filtered_payload["items"][0]["providerId"],
+        filtered_payload["data"]["items"][0]["providerId"],
         "provider-space-default"
     );
 
@@ -900,16 +902,17 @@ async fn admin_storage_provider_bucket_routes_list_account_buckets() {
     );
     let payload: serde_json::Value =
         serde_json::from_slice(&body).expect("bucket list response should be json");
-    assert_eq!(payload["providerId"], "provider-bucket-list-s3");
-    assert_eq!(payload["items"].as_array().unwrap().len(), 2);
-    assert_eq!(payload["items"][0]["bucket"], "bucket-admin");
-    assert_eq!(payload["items"][0]["configured"], true);
+    assert_eq!(payload["code"], 0);
+    let items = payload["data"]["items"].as_array().expect("bucket list items");
+    assert_eq!(items.len(), 2);
+    assert_eq!(items[0]["bucket"], "bucket-admin");
+    assert_eq!(items[0]["configured"], true);
     assert_eq!(
-        payload["items"][0]["creationDateEpochMs"],
+        items[0]["creationDateEpochMs"],
         1780531200000_i64
     );
-    assert_eq!(payload["items"][1]["bucket"], "bucket-archive");
-    assert_eq!(payload["items"][1]["configured"], false);
+    assert_eq!(items[1]["bucket"], "bucket-archive");
+    assert_eq!(items[1]["configured"], false);
 
     let captured = captured_requests
         .lock()
@@ -984,8 +987,9 @@ async fn admin_storage_bucket_and_object_routes_use_configured_s3_store() {
             .expect("object list response body should be read"),
     )
     .expect("object list response should be json");
-    assert_eq!(list_payload["items"][0]["objectKey"], "objects/file-a.bin");
-    assert_eq!(list_payload["items"][0]["contentLength"], 128);
+    assert_eq!(list_payload["code"], 0);
+    assert_eq!(list_payload["data"]["items"][0]["objectKey"], "objects/file-a.bin");
+    assert_eq!(list_payload["data"]["items"][0]["contentLength"], 128);
 
     let head_response = app
         .clone()
@@ -1281,8 +1285,8 @@ async fn admin_storage_bucket_admin_uses_full_s3_adapter_even_when_object_plugin
             .expect("bucket list response body should be read"),
     )
     .expect("bucket list response should be json");
-    assert_eq!(payload["configuredBucket"], "bucket-admin");
-    assert_eq!(payload["items"].as_array().unwrap().len(), 2);
+    assert_eq!(payload["code"], 0);
+    assert_eq!(payload["data"]["items"].as_array().unwrap().len(), 2);
 
     let requests = captured_requests
         .lock()
@@ -1886,5 +1890,6 @@ async fn admin_storage_legacy_admin_prefix_remains_compatible() {
             .expect("legacy list providers response body should be read"),
     )
     .expect("legacy list providers response should be json");
-    assert!(payload["items"].is_array());
+    assert_eq!(payload["code"], 0);
+    assert!(payload["data"]["items"].is_array());
 }

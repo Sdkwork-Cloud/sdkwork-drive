@@ -3,18 +3,19 @@ use crate::audit::record_audit_event;
 use crate::dto::{
     DefaultStorageProviderBindingQuery, DeleteDefaultStorageProviderBindingQuery,
     DeleteStorageProviderBindingResponse, ListStorageProviderBindingsQuery,
-    SetDefaultStorageProviderBindingRequest, StorageProviderBindingListResponse,
-    StorageProviderBindingResponse,
+    SetDefaultStorageProviderBindingRequest, StorageProviderBindingResponse,
 };
 use crate::error::{map_service_error, not_found_binding_problem, ProblemDetail};
 use crate::provider_lookup::get_provider;
 use crate::provider_mappers::map_storage_provider;
+use crate::response::{success_list_page_simple, StorageListHttpResponse};
 use crate::state::AdminStorageState;
 use crate::validators::{
-    default_storage_provider_binding_id, normalize_optional_text, normalize_storage_root_prefix,
-    require_non_empty_text, resolve_storage_provider_binding_target,
-    storage_provider_binding_purpose, storage_provider_binding_scope,
-    validate_storage_binding_lifecycle_status, StorageProviderBindingTarget,
+    default_storage_provider_binding_id, next_page_token, normalize_optional_text,
+    normalize_storage_root_prefix, parse_offset_page, require_non_empty_text,
+    resolve_storage_provider_binding_target, storage_provider_binding_purpose,
+    storage_provider_binding_scope, validate_storage_binding_lifecycle_status,
+    StorageProviderBindingTarget,
 };
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -42,8 +43,9 @@ pub(crate) async fn list_storage_provider_bindings(
     State(state): State<AdminStorageState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<ListStorageProviderBindingsQuery>,
-) -> Result<Json<StorageProviderBindingListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StorageListHttpResponse<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
+    let page = parse_offset_page(query.page_size, query.page_token)?;
     let space_id = normalize_optional_text(query.space_id);
     let provider_id = normalize_optional_text(query.provider_id);
     let lifecycle_status =
@@ -65,12 +67,15 @@ pub(crate) async fn list_storage_provider_bindings(
              ELSE 2
            END ASC,
            COALESCE(space_id, purpose, '') ASC,
-           id ASC",
+           id ASC
+         LIMIT $5 OFFSET $6",
     )
     .bind(&tenant_id)
     .bind(&lifecycle_status)
     .bind(space_id.as_deref())
     .bind(provider_id.as_deref())
+    .bind(page.limit + 1)
+    .bind(page.offset)
     .fetch_all(&state.pool)
     .await
     .map_err(|error| {
@@ -83,7 +88,8 @@ pub(crate) async fn list_storage_provider_bindings(
     for row in rows {
         items.push(map_storage_provider_binding_row(&state, &row).await?);
     }
-    Ok(Json(StorageProviderBindingListResponse { items }))
+    let next_page_token = next_page_token(&mut items, page);
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn set_default_storage_provider_binding(

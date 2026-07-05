@@ -24,6 +24,8 @@ pub struct CreateStorageProviderCommand {
 #[derive(Debug, Clone)]
 pub struct ListStorageProvidersCommand {
     pub status: Option<String>,
+    pub offset: i64,
+    pub limit: i64,
 }
 
 #[derive(Debug, Clone)]
@@ -332,7 +334,9 @@ where
             Some(status) if !status.trim().is_empty() => Some(normalize_status(status)?),
             _ => None,
         };
-        self.store.list_storage_providers(status.as_deref()).await
+        self.store
+            .list_storage_providers(status.as_deref(), command.offset, command.limit)
+            .await
     }
 
     pub async fn get_storage_provider(

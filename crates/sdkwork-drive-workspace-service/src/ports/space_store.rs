@@ -31,6 +31,19 @@ pub trait DriveSpaceStore: Send + Sync {
         tenant_id: &str,
         owner_subject_type: Option<&str>,
         owner_subject_id: Option<&str>,
+        offset: i64,
+        limit: i64,
+    ) -> Result<Vec<DriveSpace>, DriveServiceError>;
+
+    async fn list_accessible_spaces(
+        &self,
+        tenant_id: &str,
+        viewer_subject_type: &str,
+        viewer_subject_id: &str,
+        owner_subject_type: Option<&str>,
+        owner_subject_id: Option<&str>,
+        offset: i64,
+        limit: i64,
     ) -> Result<Vec<DriveSpace>, DriveServiceError>;
 
     async fn get_space(

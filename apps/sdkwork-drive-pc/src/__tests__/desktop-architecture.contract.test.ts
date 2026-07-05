@@ -115,9 +115,9 @@ describe('desktop architecture contract', () => {
     expect(coreSource).not.toContain("from '@sdkwork/drive-admin-storage-sdk'");
     expect(adminCoreSource).toContain("from '@sdkwork/drive-admin-storage-sdk'");
     expect(adminCoreSource).toContain("from '@sdkwork/drive-backend-sdk'");
-    expect(coreSource).not.toContain('sdkwork-drive-app-sdk-typescript/generated/server-openapi');
+    expect(coreSource).not.toContain('sdkwork-drive-app-sdk-typescript/src/index.ts');
     expect(coreSource).not.toContain('sdkwork-drive-app-sdk-typescript/composed/');
-    expect(adminCoreSource).not.toContain('sdkwork-drive-admin-storage-sdk-typescript/generated/server-openapi');
+    expect(adminCoreSource).not.toContain('sdkwork-drive-admin-storage-sdk-typescript/src/index.ts');
     expect(adminCoreSource).not.toContain('sdkwork-drive-admin-storage-sdk-typescript/composed/');
     expect(coreSource).toContain('createDriveAppSdkClient');
     expect(adminCoreSource).toContain('createDriveAdminStorageSdkClient');

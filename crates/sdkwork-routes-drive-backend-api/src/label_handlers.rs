@@ -1,10 +1,11 @@
 use crate::audit::record_label_audit;
 use crate::dto::{
-    CreateLabelRequest, DeleteLabelResponse, LabelListQuery, LabelListResponse, LabelMutationQuery,
-    LabelResponse, UpdateLabelRequest,
+    CreateLabelRequest, DeleteLabelResponse, LabelListQuery, LabelMutationQuery, LabelResponse,
+    UpdateLabelRequest,
 };
 use crate::error::{internal_sql_error, not_found_problem, ProblemDetail};
 use crate::mappers::map_label_row;
+use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::state::BackendState;
 use crate::tenant_context::authenticated_tenant_id;
 use crate::validators::{
@@ -22,7 +23,7 @@ pub(crate) async fn list_labels(
     State(state): State<BackendState>,
     Extension(app_context): Extension<DriveAppContext>,
     Query(query): Query<LabelListQuery>,
-) -> Result<Json<LabelListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<LabelResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = authenticated_tenant_id(&app_context);
     let page = parse_offset_page(query.page_size, query.page_token)?;
     let lifecycle_status =
@@ -46,10 +47,7 @@ pub(crate) async fn list_labels(
     .map_err(internal_sql_error("list dr_drive_label failed"))?;
     let mut items = rows.iter().map(map_label_row).collect::<Vec<_>>();
     let next_page_token = next_page_token(&mut items, page);
-    Ok(Json(LabelListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn get_label(

@@ -72,6 +72,12 @@ export interface LabelView {
 export interface LabelListView {
   items: LabelView[];
   nextPageToken?: string | null;
+  pageInfo?: {
+    mode?: 'offset' | 'cursor';
+    pageSize?: number;
+    hasMore?: boolean;
+    nextCursor?: string | null;
+  };
 }
 
 export interface DriveSpaceAdminView {

@@ -1,4 +1,4 @@
-use crate::dto::{LabelSummaryResponse, NodeLabelResponse, NodeListResponse, NodePropertyResponse};
+use crate::dto::{LabelSummaryResponse, NodeLabelResponse, NodePropertyResponse};
 use crate::error::{internal_sql_error, not_found_problem, ProblemDetail};
 use crate::mappers::{map_label_summary_row, map_node_label_row, map_node_property_row};
 use axum::http::StatusCode;
@@ -76,15 +76,20 @@ pub(crate) async fn present_node_list(
     pool: &AnyPool,
     tenant_id: &str,
     mut items: Vec<crate::dto::DriveNodeResponse>,
+    page: crate::dto::PageRequest,
     next_page_token: Option<String>,
     incomplete_page: bool,
-) -> Result<NodeListResponse, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    axum::Json<sdkwork_utils_rust::SdkWorkApiResponse<crate::response::DriveListPageData<crate::dto::DriveNodeResponse>>>,
+    (axum::http::StatusCode, axum::Json<crate::error::ProblemDetail>),
+> {
     enrich_drive_nodes_with_folder_colors(pool, tenant_id, &mut items).await?;
-    Ok(NodeListResponse {
+    Ok(crate::response::success_list_page(
         items,
+        page,
         next_page_token,
         incomplete_page,
-    })
+    ))
 }
 
 async fn load_ui_folder_colors_for_nodes(

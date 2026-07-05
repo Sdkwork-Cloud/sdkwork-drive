@@ -69,11 +69,11 @@ export default defineConfig(({ mode }) => {
         ),
         '@sdkwork/iam-app-sdk': path.resolve(
           iamRoot,
-          'sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/generated/server-openapi/src/index.ts',
+          'sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts',
         ),
         '@sdkwork/iam-backend-sdk': path.resolve(
           iamRoot,
-          'sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript/generated/server-openapi/src/index.ts',
+          'sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript/src/index.ts',
         ),
         '@sdkwork/auth-runtime-pc-react': path.resolve(
           iamRoot,

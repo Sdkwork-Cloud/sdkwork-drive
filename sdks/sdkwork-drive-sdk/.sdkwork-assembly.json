@@ -8,7 +8,6 @@
   "derivedSpecs": {
     "default": "../../apis/open-api/drive/drive-open-api.openapi.json"
   },
-  "apiAuthority": "sdkwork-drive.open",
   "discoverySurface": {
     "sdkTarget": "custom",
     "apiPrefix": "/open/v3/api",
@@ -18,6 +17,7 @@
     ],
     "manualTransports": []
   },
+  "sdkDependencies": [],
   "languages": [
     {
       "language": "typescript",
@@ -31,7 +31,9 @@
       "description": "Generator-owned TypeScript transport SDK for sdkwork-drive open API.",
       "consumerSurface": {
         "primaryClient": "SdkworkDriveOpenClient",
-        "apiPrefix": "/open/v3/api"
+        "apiPrefix": "/open/v3/api",
+        "publicPackage": "@sdkwork/drive-sdk",
+        "composedPath": "sdkwork-drive-sdk-typescript/src"
       }
     },
     {
@@ -79,6 +81,6 @@
       "description": "Generator-owned Go transport SDK for sdkwork-drive open API."
     }
   ],
-  "sdkDependencies": [],
-  "sdkOwner": "sdkwork-drive"
+  "sdkOwner": "sdkwork-drive",
+  "apiAuthority": "sdkwork-drive.open"
 }

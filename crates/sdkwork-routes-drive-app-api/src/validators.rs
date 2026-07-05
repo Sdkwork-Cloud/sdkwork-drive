@@ -115,6 +115,46 @@ pub(crate) fn parse_nodes_list_order_clause(
     }
 }
 
+pub(crate) fn resolve_node_list_order_by(
+    sort_by: Option<String>,
+    sort_order: Option<String>,
+    default_clause: &'static str,
+) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
+    if sort_by.is_none() && sort_order.is_none() {
+        return Ok(default_clause.to_string());
+    }
+    Ok(parse_nodes_list_order_clause(sort_by, sort_order)?.to_string())
+}
+
+pub(crate) fn qualify_nodes_list_order_clause(clause: &str, node_alias: &str) -> String {
+    clause
+        .replace("node_type", &format!("{node_alias}.node_type"))
+        .replace("node_name", &format!("{node_alias}.node_name"))
+        .replace("created_by", &format!("{node_alias}.created_by"))
+        .replace("updated_at", &format!("{node_alias}.updated_at"))
+        .replace(
+            "head_content_length",
+            &format!("{node_alias}.head_content_length"),
+        )
+        .replace(
+            "head_content_type_group",
+            &format!("{node_alias}.head_content_type_group"),
+        )
+}
+
+pub(crate) fn resolve_aliased_node_list_order_by(
+    sort_by: Option<String>,
+    sort_order: Option<String>,
+    node_alias: &str,
+    default_clause: &str,
+) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
+    if sort_by.is_none() && sort_order.is_none() {
+        return Ok(default_clause.to_string());
+    }
+    let clause = parse_nodes_list_order_clause(sort_by, sort_order)?;
+    Ok(qualify_nodes_list_order_clause(clause, node_alias))
+}
+
 pub(crate) fn next_page_token<T>(items: &mut Vec<T>, page: PageRequest) -> Option<String> {
     if items.len() as i64 > page.limit {
         items.pop();

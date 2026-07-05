@@ -5,9 +5,9 @@ use crate::collaboration_repository::{
 };
 use crate::dto::{
     apply_optional_i64_patch, ClaimShareLinkResponse, CreateShareLinkRequest,
-    CreateShareLinkResponse, NodeMutationQuery, PageQuery, ShareLinkListResponse,
-    ShareLinkResponse, UpdateShareLinkRequest,
+    CreateShareLinkResponse, NodeMutationQuery, PageQuery, ShareLinkResponse, UpdateShareLinkRequest,
 };
+use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, map_service_error,
     not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
@@ -39,7 +39,7 @@ pub(crate) async fn list_share_links(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<PageQuery>,
-) -> Result<Json<ShareLinkListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<ShareLinkResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -62,10 +62,7 @@ pub(crate) async fn list_share_links(
     let mut items = rows.iter().map(map_share_link_row).collect::<Vec<_>>();
     let next_page_token = next_page_token(&mut items, page);
 
-    Ok(Json(ShareLinkListResponse {
-        items,
-        next_page_token,
-    }))
+    Ok(success_list_page_simple(items, page, next_page_token))
 }
 
 pub(crate) async fn get_share_link(

@@ -12,6 +12,7 @@ mod label_handlers;
 mod maintenance_handlers;
 mod mappers;
 mod rate_limit;
+mod response;
 mod routes;
 mod space_quota_handlers;
 mod state;

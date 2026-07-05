@@ -1,8 +1,4 @@
 import type { DriveFile } from 'sdkwork-drive-pc-types';
-import type { DriveFileService } from 'sdkwork-drive-pc-core';
-import type { DriveSection } from '../pages/DrivePage';
-
-export const FILE_BROWSER_SORT_FETCH_CAP = 500;
 
 export function isDefaultFileBrowserSort(
   sortBy: string,
@@ -24,51 +20,4 @@ export function mergeUniqueDriveFiles(
     }
   }
   return merged;
-}
-
-export async function fetchRemainingFileBrowserPages({
-  fileService,
-  activeSection,
-  searchQuery,
-  parentId,
-  pageSize,
-  initialFiles,
-  initialNextPageToken,
-  signal,
-}: {
-  fileService: DriveFileService;
-  activeSection: DriveSection;
-  searchQuery: string;
-  parentId: string | null;
-  pageSize: number;
-  initialFiles: readonly DriveFile[];
-  initialNextPageToken?: string;
-  signal?: AbortSignal;
-}): Promise<{ files: DriveFile[]; nextPageToken?: string }> {
-  let merged = [...initialFiles];
-  let nextPageToken = initialNextPageToken;
-
-  while (nextPageToken && merged.length < FILE_BROWSER_SORT_FETCH_CAP) {
-    if (signal?.aborted) {
-      throw signal.reason ?? new DOMException('Aborted', 'AbortError');
-    }
-
-    const page = await fileService.listFilesPage(
-      activeSection,
-      searchQuery,
-      parentId,
-      {
-        signal,
-        pageSize,
-        pageToken: nextPageToken,
-      },
-    );
-    merged = mergeUniqueDriveFiles(merged, page.files);
-    nextPageToken = page.nextPageToken;
-  }
-
-  return {
-    files: merged,
-    nextPageToken,
-  };
 }
