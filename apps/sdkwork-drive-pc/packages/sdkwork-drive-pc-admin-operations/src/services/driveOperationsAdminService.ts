@@ -19,6 +19,7 @@ import type {
   StartMaintenanceSweepInput,
   UpdateQuotaPolicyInput,
 } from '../types/driveOperationsAdminTypes';
+import { normalizeBackendOffsetListPage } from '../utils/normalizeBackendOffsetListPage';
 
 const MAINTENANCE_SWEEP_OPERATIONS: Record<
   MaintenanceJobType,
@@ -63,7 +64,7 @@ export function createDriveOperationsAdminService({
 }: DriveOperationsAdminServiceOptions): DriveOperationsAdminService {
   return {
     async listAuditEvents(query = {}) {
-      return backendSdkClient.request<AuditEventPageView>({
+      const payload = await backendSdkClient.request<AuditEventPageView>({
         operationId: 'auditEvents.list',
         query: {
           action: query.action,
@@ -76,10 +77,11 @@ export function createDriveOperationsAdminService({
         },
         signal: query.signal,
       });
+      return normalizeBackendOffsetListPage(payload);
     },
 
     async listMaintenanceJobs(query = {}) {
-      return backendSdkClient.request<MaintenanceJobPageView>({
+      const payload = await backendSdkClient.request<MaintenanceJobPageView>({
         operationId: 'maintenance.jobs.list',
         query: {
           jobType: query.jobType,
@@ -90,6 +92,7 @@ export function createDriveOperationsAdminService({
         },
         signal: query.signal,
       });
+      return normalizeBackendOffsetListPage(payload);
     },
 
     async startMaintenanceSweep({ jobType, dryRun, limit }) {
@@ -184,7 +187,7 @@ export function createDriveOperationsAdminService({
     },
 
     async listDownloadPackages(query = {}) {
-      return backendSdkClient.request<DownloadPackagePageView>({
+      const payload = await backendSdkClient.request<DownloadPackagePageView>({
         operationId: 'downloadPackages.list',
         query: {
           state: query.state,
@@ -193,6 +196,7 @@ export function createDriveOperationsAdminService({
         },
         signal: query.signal,
       });
+      return normalizeBackendOffsetListPage(payload);
     },
   };
 }

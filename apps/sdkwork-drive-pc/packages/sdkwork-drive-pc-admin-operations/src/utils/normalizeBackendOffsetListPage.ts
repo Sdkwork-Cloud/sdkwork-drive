@@ -1,0 +1,42 @@
+import { DEFAULT_LIST_PAGE_SIZE, type PageInfo } from '@sdkwork/utils';
+
+export type BackendOffsetListWire<T> = {
+  items: T[];
+  pageInfo?: PageInfo;
+  page?: number;
+  pageSize?: number;
+  total?: number;
+};
+
+export interface BackendOffsetListPage<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+function parseTotalItems(totalItems: PageInfo['totalItems'], fallback?: number): number {
+  if (totalItems != null && totalItems.trim() !== '') {
+    const parsed = Number(totalItems);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return fallback ?? 0;
+}
+
+/** Map SdkWorkApiResponse offset list payloads into admin table pagination state. */
+export function normalizeBackendOffsetListPage<T>(
+  payload: BackendOffsetListWire<T>,
+): BackendOffsetListPage<T> {
+  const page = payload.pageInfo?.page ?? payload.page ?? 1;
+  const pageSize = payload.pageInfo?.pageSize ?? payload.pageSize ?? DEFAULT_LIST_PAGE_SIZE;
+  const total = parseTotalItems(payload.pageInfo?.totalItems, payload.total ?? payload.items.length);
+
+  return {
+    items: payload.items,
+    page,
+    pageSize,
+    total,
+  };
+}

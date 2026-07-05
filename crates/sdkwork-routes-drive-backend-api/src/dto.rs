@@ -86,15 +86,6 @@ pub(crate) struct AuditEventItemResponse {
     pub(crate) created_at: String,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct AuditEventPageResponse {
-    pub(crate) items: Vec<AuditEventItemResponse>,
-    pub(crate) page: u32,
-    pub(crate) page_size: u32,
-    pub(crate) total: i64,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SweepObjectStoreRequest {
@@ -152,15 +143,6 @@ pub(crate) struct MaintenanceJobItemResponse {
     pub(crate) created_at: String,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct MaintenanceJobPageResponse {
-    pub(crate) items: Vec<MaintenanceJobItemResponse>,
-    pub(crate) page: u32,
-    pub(crate) page_size: u32,
-    pub(crate) total: i64,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListDownloadPackagesQuery {
@@ -189,15 +171,6 @@ pub(crate) struct DownloadPackageItemResponse {
     pub(crate) updated_by: String,
     pub(crate) created_at: String,
     pub(crate) updated_at: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct DownloadPackagePageResponse {
-    pub(crate) items: Vec<DownloadPackageItemResponse>,
-    pub(crate) page: u32,
-    pub(crate) page_size: u32,
-    pub(crate) total: i64,
 }
 
 #[derive(Debug, Deserialize)]

@@ -12,9 +12,17 @@ export interface AuditEventView {
 
 export interface AuditEventPageView {
   items: AuditEventView[];
-  page: number;
-  pageSize: number;
-  total: number;
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  pageInfo?: {
+    mode?: 'offset' | 'cursor';
+    page?: number;
+    pageSize?: number;
+    totalItems?: string;
+    totalPages?: number;
+    hasMore?: boolean;
+  };
 }
 
 export type MaintenanceJobType =
@@ -40,9 +48,17 @@ export interface MaintenanceJobView {
 
 export interface MaintenanceJobPageView {
   items: MaintenanceJobView[];
-  page: number;
-  pageSize: number;
-  total: number;
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  pageInfo?: {
+    mode?: 'offset' | 'cursor';
+    page?: number;
+    pageSize?: number;
+    totalItems?: string;
+    totalPages?: number;
+    hasMore?: boolean;
+  };
 }
 
 export interface MaintenanceSweepResultView {
@@ -117,9 +133,17 @@ export interface DownloadPackageView {
 
 export interface DownloadPackagePageView {
   items: DownloadPackageView[];
-  page: number;
-  pageSize: number;
-  total: number;
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  pageInfo?: {
+    mode?: 'offset' | 'cursor';
+    page?: number;
+    pageSize?: number;
+    totalItems?: string;
+    totalPages?: number;
+    hasMore?: boolean;
+  };
 }
 
 export interface ListAuditEventsQuery {

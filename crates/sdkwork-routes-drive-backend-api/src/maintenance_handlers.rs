@@ -1,10 +1,12 @@
 use crate::audit::record_maintenance_audit;
 use crate::dto::{
-    ListMaintenanceJobsQuery, MaintenanceJobItemResponse, MaintenanceJobPageResponse,
+    ListMaintenanceJobsQuery, MaintenanceJobItemResponse,
     SweepObjectStoreRequest, SweepResponse, SweepUploadSessionsRequest,
 };
 use crate::error::{map_service_error, service_error_kind, ProblemDetail};
+use crate::response::{success_offset_list_page, DriveListHttpResponse};
 use crate::state::BackendState;
+use sdkwork_utils_rust::OffsetListPageParams;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Json;
@@ -320,7 +322,7 @@ pub(crate) async fn sweep_abandoned_upload_tasks(
 pub(crate) async fn list_maintenance_jobs(
     State(state): State<BackendState>,
     Query(query): Query<ListMaintenanceJobsQuery>,
-) -> Result<Json<MaintenanceJobPageResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<DriveListHttpResponse<MaintenanceJobItemResponse>, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
     let filter_has_job_type = has_value(&query.job_type);
     let filter_has_status = has_value(&query.status);
@@ -365,8 +367,8 @@ pub(crate) async fn list_maintenance_jobs(
         returned_items = page.items.len() as u64
     );
 
-    Ok(Json(MaintenanceJobPageResponse {
-        items: page
+    Ok(success_offset_list_page(
+        page
             .items
             .into_iter()
             .map(|item| MaintenanceJobItemResponse {
@@ -385,8 +387,11 @@ pub(crate) async fn list_maintenance_jobs(
                 created_at: item.created_at,
             })
             .collect(),
-        page: page.page,
-        page_size: page.page_size,
-        total: page.total,
-    }))
+        page.total,
+        OffsetListPageParams {
+            page: i64::from(page.page),
+            page_size: i64::from(page.page_size),
+            offset: i64::from(page.page.saturating_sub(1)) * i64::from(page.page_size),
+        },
+    ))
 }

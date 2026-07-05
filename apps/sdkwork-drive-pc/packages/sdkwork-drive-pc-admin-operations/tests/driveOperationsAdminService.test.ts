@@ -15,9 +15,12 @@ describe('driveOperationsAdminService', () => {
         operatorId: 'user-001',
         createdAt: '2026-06-25T00:00:00.000Z',
       }],
-      page: 1,
-      pageSize: 25,
-      total: 1,
+      pageInfo: {
+        mode: 'offset',
+        page: 1,
+        pageSize: 25,
+        totalItems: '1',
+      },
     }));
     const backendSdkClient = {
       request,

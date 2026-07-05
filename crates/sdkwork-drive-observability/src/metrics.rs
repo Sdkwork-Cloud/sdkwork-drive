@@ -10,7 +10,7 @@ static HTTP_REQUEST_ERRORS_TOTAL: AtomicU64 = AtomicU64::new(0);
 static HTTP_RATE_LIMITED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static DOMAIN_OUTBOX_PENDING_TOTAL: AtomicU64 = AtomicU64::new(0);
 static DOMAIN_OUTBOX_DELIVERED_TOTAL: AtomicU64 = AtomicU64::new(0);
-static CONTENT_SCAN_PENDING_TOTAL: AtomicU64 = AtomicU64::new(0);
+static UPLOAD_CONTENT_POLICY_EVALUATED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static UPLOADER_PART_UPLOADED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static HEALTH_SERVING: AtomicU64 = AtomicU64::new(1);
 static HTTP_REQUEST_ROUTE_LABELS: LazyLock<Mutex<HashMap<String, u64>>> =
@@ -54,8 +54,8 @@ pub fn record_outbox_delivered() {
     DOMAIN_OUTBOX_DELIVERED_TOTAL.fetch_add(1, Ordering::Relaxed);
 }
 
-pub fn record_content_scan_pending() {
-    CONTENT_SCAN_PENDING_TOTAL.fetch_add(1, Ordering::Relaxed);
+pub fn record_upload_content_policy_evaluated() {
+    UPLOAD_CONTENT_POLICY_EVALUATED_TOTAL.fetch_add(1, Ordering::Relaxed);
 }
 
 pub fn set_health_serving(serving: bool) {
@@ -83,9 +83,9 @@ pub fn render_prometheus(service: &str) -> String {
          # HELP drive_domain_outbox_delivered_total Domain outbox events delivered successfully.\n\
          # TYPE drive_domain_outbox_delivered_total counter\n\
          drive_domain_outbox_delivered_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
-         # HELP drive_content_scan_pending_total Uploads evaluated by MIME upload content policy.\n\
-         # TYPE drive_content_scan_pending_total counter\n\
-         drive_content_scan_pending_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
+         # HELP drive_upload_content_policy_evaluated_total Uploads evaluated by MIME upload content policy.\n\
+         # TYPE drive_upload_content_policy_evaluated_total counter\n\
+         drive_upload_content_policy_evaluated_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
          # HELP drive_uploader_part_uploaded_total Uploader multipart parts marked uploaded.\n\
          # TYPE drive_uploader_part_uploaded_total counter\n\
          drive_uploader_part_uploaded_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
@@ -97,7 +97,7 @@ pub fn render_prometheus(service: &str) -> String {
         HTTP_RATE_LIMITED_TOTAL.load(Ordering::Relaxed),
         DOMAIN_OUTBOX_PENDING_TOTAL.load(Ordering::Relaxed),
         DOMAIN_OUTBOX_DELIVERED_TOTAL.load(Ordering::Relaxed),
-        CONTENT_SCAN_PENDING_TOTAL.load(Ordering::Relaxed),
+        UPLOAD_CONTENT_POLICY_EVALUATED_TOTAL.load(Ordering::Relaxed),
         UPLOADER_PART_UPLOADED_TOTAL.load(Ordering::Relaxed),
         HEALTH_SERVING.load(Ordering::Relaxed),
     );

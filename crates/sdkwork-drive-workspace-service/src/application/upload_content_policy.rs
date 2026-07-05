@@ -27,7 +27,7 @@ pub fn evaluate_upload_content_policy(
         return UploadContentPolicyDecision::Allow;
     }
 
-    metrics::record_content_scan_pending();
+    metrics::record_upload_content_policy_evaluated();
     if !is_blocked_upload_content_type(&context.content_type) {
         return UploadContentPolicyDecision::Allow;
     }
