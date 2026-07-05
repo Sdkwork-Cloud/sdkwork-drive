@@ -15,6 +15,7 @@ const uiRoot = process.env.SDKWORK_UI_PC_REACT_ROOT
 
 export default defineConfig({
   resolve: {
+    dedupe: ['react', 'react-dom'],
     alias: {
       react: path.resolve(__dirname, 'node_modules/react'),
       'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),

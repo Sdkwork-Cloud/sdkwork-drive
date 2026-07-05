@@ -1,8 +1,18 @@
 import { DEFAULT_LIST_PAGE_SIZE, type PageInfo } from '@sdkwork/utils';
 
+/** Wire shape from backend SDK before admin table normalization. */
+export type BackendOffsetListPageInfoWire = {
+  mode?: PageInfo['mode'];
+  page?: number;
+  pageSize?: number;
+  totalItems?: PageInfo['totalItems'];
+  totalPages?: number;
+  hasMore?: boolean;
+};
+
 export type BackendOffsetListWire<T> = {
   items: T[];
-  pageInfo?: PageInfo;
+  pageInfo?: BackendOffsetListPageInfoWire;
   page?: number;
   pageSize?: number;
   total?: number;

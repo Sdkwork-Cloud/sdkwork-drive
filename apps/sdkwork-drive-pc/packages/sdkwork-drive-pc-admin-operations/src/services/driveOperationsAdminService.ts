@@ -1,10 +1,10 @@
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
 import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
 import type {
-  AuditEventPageView,
+  AuditEventView,
   CreateLabelInput,
   UpdateLabelInput,
-  DownloadPackagePageView,
+  DownloadPackageView,
   DriveSpaceListView,
   LabelListView,
   ListAuditEventsQuery,
@@ -12,14 +12,18 @@ import type {
   ListLabelsQuery,
   ListMaintenanceJobsQuery,
   ListSpacesAdminQuery,
-  MaintenanceJobPageView,
+  MaintenanceJobView,
   MaintenanceJobType,
   MaintenanceSweepResultView,
   QuotaSummaryView,
   StartMaintenanceSweepInput,
   UpdateQuotaPolicyInput,
 } from '../types/driveOperationsAdminTypes';
-import { normalizeBackendOffsetListPage } from '../utils/normalizeBackendOffsetListPage';
+import {
+  normalizeBackendOffsetListPage,
+  type BackendOffsetListPage,
+  type BackendOffsetListWire,
+} from '../utils/normalizeBackendOffsetListPage';
 
 const MAINTENANCE_SWEEP_OPERATIONS: Record<
   MaintenanceJobType,
@@ -32,8 +36,8 @@ const MAINTENANCE_SWEEP_OPERATIONS: Record<
 };
 
 export interface DriveOperationsAdminService {
-  listAuditEvents(query?: ListAuditEventsQuery): Promise<AuditEventPageView>;
-  listMaintenanceJobs(query?: ListMaintenanceJobsQuery): Promise<MaintenanceJobPageView>;
+  listAuditEvents(query?: ListAuditEventsQuery): Promise<BackendOffsetListPage<AuditEventView>>;
+  listMaintenanceJobs(query?: ListMaintenanceJobsQuery): Promise<BackendOffsetListPage<MaintenanceJobView>>;
   startMaintenanceSweep(input: StartMaintenanceSweepInput): Promise<MaintenanceSweepResultView>;
   getQuotaSummary(signal?: AbortSignal): Promise<QuotaSummaryView>;
   updateQuotaPolicy(input: UpdateQuotaPolicyInput): Promise<QuotaSummaryView>;
@@ -42,7 +46,7 @@ export interface DriveOperationsAdminService {
   updateLabel(labelId: string, input: UpdateLabelInput): Promise<LabelListView['items'][number]>;
   deleteLabel(labelId: string): Promise<void>;
   listSpaces(query?: ListSpacesAdminQuery): Promise<DriveSpaceListView>;
-  listDownloadPackages(query?: ListDownloadPackagesQuery): Promise<DownloadPackagePageView>;
+  listDownloadPackages(query?: ListDownloadPackagesQuery): Promise<BackendOffsetListPage<DownloadPackageView>>;
 }
 
 export interface DriveOperationsAdminServiceOptions {
@@ -64,7 +68,7 @@ export function createDriveOperationsAdminService({
 }: DriveOperationsAdminServiceOptions): DriveOperationsAdminService {
   return {
     async listAuditEvents(query = {}) {
-      const payload = await backendSdkClient.request<AuditEventPageView>({
+      const payload = await backendSdkClient.request<BackendOffsetListWire<AuditEventView>>({
         operationId: 'auditEvents.list',
         query: {
           action: query.action,
@@ -81,7 +85,7 @@ export function createDriveOperationsAdminService({
     },
 
     async listMaintenanceJobs(query = {}) {
-      const payload = await backendSdkClient.request<MaintenanceJobPageView>({
+      const payload = await backendSdkClient.request<BackendOffsetListWire<MaintenanceJobView>>({
         operationId: 'maintenance.jobs.list',
         query: {
           jobType: query.jobType,
@@ -187,7 +191,7 @@ export function createDriveOperationsAdminService({
     },
 
     async listDownloadPackages(query = {}) {
-      const payload = await backendSdkClient.request<DownloadPackagePageView>({
+      const payload = await backendSdkClient.request<BackendOffsetListWire<DownloadPackageView>>({
         operationId: 'downloadPackages.list',
         query: {
           state: query.state,

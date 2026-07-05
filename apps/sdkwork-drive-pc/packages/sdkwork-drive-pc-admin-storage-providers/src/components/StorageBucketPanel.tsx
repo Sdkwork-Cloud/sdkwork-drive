@@ -5,7 +5,7 @@ import { formatMutationError } from '../utils/mutationError';
 import { useTranslation } from '../hooks/useTranslation';
 
 interface BucketInfo {
-  name: string;
+  bucket: string;
   exists: boolean;
   configured: boolean;
   creationDate?: string;
@@ -29,7 +29,7 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
     try {
       const items = await service.listBuckets(provider.id);
       setBuckets(items.map((item) => ({
-        name: item.name,
+        bucket: item.bucket,
         exists: true,
         configured: item.configured,
         creationDate: item.creationDate,

@@ -20,6 +20,7 @@
 | Drive SDK 消费 | ✅ | `check-app-sdk-consumer-imports.mjs` |
 | Native composition | ✅ | `pnpm check:app-composition` |
 | 打包 / 拓扑 / 发布 | ✅ | `topology:validate` + `gateway:assembly:validate` |
+| Backend admin 列表 envelope | ✅ | `success_offset_list_page` + PC `normalizeBackendOffsetListPage` |
 
 ---
 
@@ -31,7 +32,9 @@
 | Outbox claim 在 SQLite 使用 PostgreSQL-only `SKIP LOCKED` | 按引擎分支：PostgreSQL `FOR UPDATE SKIP LOCKED`；SQLite 单写者 claim；新增 `outbox_dispatch` 集成测试 |
 | `database/migrations` 空目录 vs REQ-0001 | 物化 `0002` outbox 索引与 `0003` tenant quota 的 up/down SQL（postgres + sqlite） |
 | `database.manifest.json` 缺 sqlite | 声明 `postgres` + `sqlite`；`contract/schema.yaml` 同步 |
-| SQLite baseline 缺 outbox dispatch 索引 / tenant quota | 对齐 `sqlite_core.sql` 与 baseline DDL |
+| PC 文件浏览器服务端排序 | `starred`/`shared`/`recent`/`trash` 根视图启用 server-side sort；测试与实现对齐 |
+| Backend admin 列表 SdkWorkPageData | audit/maintenance/downloadPackages 使用 `success_offset_list_page`；PC admin 经 `@sdkwork/utils` 归一化分页 |
+| ShareLinkModal / fileBrowser 测试 | ShareLinkModal 改为契约测试；fileBrowser server-side sort 测试与实现对齐 |
 
 ---
 

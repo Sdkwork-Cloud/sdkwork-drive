@@ -52,38 +52,3 @@ pub(crate) fn success_offset_list_page<T: Serialize>(
         current_trace_id(),
     ))
 }
-
-pub(crate) fn success_cursor_list_page<T: Serialize>(
-    items: Vec<T>,
-    page_size: i32,
-    next_cursor: Option<String>,
-) -> DriveListHttpResponse<T> {
-    Json(SdkWorkApiResponse::success(
-        SdkWorkPageData {
-            items,
-            page_info: PageInfo {
-                mode: PageMode::Cursor,
-                page: None,
-                page_size: Some(page_size),
-                total_items: None,
-                total_pages: None,
-                next_cursor: next_cursor.clone(),
-                has_more: Some(next_cursor.is_some()),
-            },
-        },
-        current_trace_id(),
-    ))
-}
-
-pub(crate) fn offset_list_params_from_page(page: OffsetPage) -> OffsetListPageParams {
-    let page_no = if page.limit > 0 {
-        (page.offset / page.limit) + 1
-    } else {
-        1
-    };
-    OffsetListPageParams {
-        page: page_no,
-        page_size: page.limit,
-        offset: page.offset,
-    }
-}

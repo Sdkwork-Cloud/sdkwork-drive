@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
 import type { StorageProviderAdminService } from '../services/storageProviderAdminService';
-import type { StorageProviderBindingView, StorageProviderBucketView, StorageProviderCapabilitiesView, StorageProviderView } from '../types/storageProviderAdminTypes';
+import type { StorageProviderBindingView, StorageProviderBucketListItemView, StorageProviderBucketView, StorageProviderCapabilitiesView, StorageProviderView } from '../types/storageProviderAdminTypes';
 import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
 import { getProviderKindMeta, HEALTH_STATUS_CONFIG } from '../utils/providerKindConfig';
 import { formatMutationError } from '../utils/mutationError';
@@ -30,7 +30,7 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
   const [diagnosticsLoaded, setDiagnosticsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bucketExists, setBucketExists] = useState<boolean | null>(null);
-  const [buckets, setBuckets] = useState<Array<{ name: string; configured: boolean; creationDate?: string }>>([]);
+  const [buckets, setBuckets] = useState<StorageProviderBucketListItemView[]>([]);
   const [objects, setObjects] = useState<Array<{ key: string; sizeBytes: number; lastModified?: string; isFolder: boolean }>>([]);
   const [currentPrefix, setCurrentPrefix] = useState('');
   const [pageToken, setPageToken] = useState<string | null>(null);

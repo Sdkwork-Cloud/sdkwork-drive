@@ -145,7 +145,7 @@ assert.match(spaceHandlers, /ownerSubjectType to group or organization/);
 assert.match(appTestCommon, /auth_token_for_organization/);
 assert.match(spaceHandlers, /SdkWorkResultCode::InvalidParameter/);
 assert.match(shareLinkHandlers, /claim_share_link/);
-assert.match(spaceHandlers, /acl::space_is_accessible_to_subject/);
+assert.match(spaceHandlers, /list_accessible_spaces/);
 assert.match(spaceHandlers, /acl::ensure_space_owner/);
 assert.match(nodeHandlers, /acl::ensure_parent_writer\(&state\.pool, &ctx, &payload\.space_id, None\)/);
 assert.doesNotMatch(appRoutes, /operator-unset/);
@@ -235,6 +235,8 @@ assert.match(securityWebhook, /is_blocked_webhook_ip/);
 assert.match(webhookUrl, /sdkwork_drive_security::validate_webhook_https_url/);
 assert.match(appValidators, /validate_webhook_https_url/);
 assert.match(outboxDispatch, /sdkwork_drive_security::validate_webhook_https_url/);
+assert.match(outboxDispatch, /FOR UPDATE SKIP LOCKED/);
+assert.match(outboxDispatch, /DatabaseEngine::Sqlite/);
 assert.match(jwtModule, /validate_jwt_expiry/);
 assert.match(jwtModule, /JWT exp claim is required/);
 assert.match(appContext, /is_production_runtime_profile/);
@@ -493,12 +495,12 @@ assert.match(playwrightConfig, /specs/);
 assert.match(playwrightSmoke, /DRIVE_E2E_OPEN_API_BASE_URL/);
 assert.match(playwrightSmoke, /x-trace-id/);
 assert.match(playwrightSmoke, /e2e-staging-trace-001/);
-const shareLinkModalUiTest = read(
-  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file/src/components/ShareLinkModal.test.tsx',
+const shareLinkModalContractTest = read(
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file/src/components/ShareLinkModal.contract.test.ts',
 );
-assert.match(shareLinkModalUiTest, /ShareLinkModal/);
-assert.match(shareLinkModalUiTest, /accessCode: 'extract-ui-42'/);
-assert.match(shareLinkModalUiTest, /@vitest-environment jsdom/);
+assert.match(shareLinkModalContractTest, /ShareLinkModal contract/);
+assert.match(shareLinkModalContractTest, /createShareLink\(file\.id/);
+assert.match(shareLinkModalContractTest, /accessCodeRequired/);
 const pcShareLinkUiSpec = read('tests/e2e/specs/drive-pc-share-link.ui.spec.mjs');
 assert.match(pcShareLinkUiSpec, /DRIVE_E2E_PC_BASE_URL/);
 assert.match(pcShareLinkUiSpec, /\/share\/\$\{encodeURIComponent\(shareClaimToken\)\}/);
@@ -516,19 +518,23 @@ assert.match(driveFileServiceTest, /creates share links with extraction codes/);
 assert.match(driveFileServiceTest, /accessCode: 'extract-42'/);
 assert.match(playwrightSmoke, /40301/);
 
-const outboxDispatch = read('crates/sdkwork-drive-workspace-service/src/infrastructure/outbox_dispatch.rs');
-const downloadTransfer = read(
-  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-core/src/transfer/downloadTransfer.ts',
-);
 const databaseManifest = read('database/database.manifest.json');
-assert.match(outboxDispatch, /FOR UPDATE SKIP LOCKED/);
-assert.match(outboxDispatch, /DatabaseEngine::Sqlite/);
 assert.match(downloadTransfer, /assertInMemoryDownloadWithinLimit/);
 assert.match(downloadTransfer, /64 \* 1024 \* 1024/);
 assert.match(databaseManifest, /"sqlite"/);
 assert.match(databaseManifest, /"postgres"/);
-read('database/migrations/postgres/0002_drive_outbox_pending_dispatch_index.up.sql');
-read('database/migrations/sqlite/0002_drive_outbox_pending_dispatch_index.up.sql');
+read('database/migrations/postgres/0003_drive_tenant_quota.up.sql');
+read('database/migrations/sqlite/0003_drive_tenant_quota.up.sql');
+const adminOffsetNormalizer = read(
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-operations/src/utils/normalizeBackendOffsetListPage.ts',
+);
+const uploadContentPolicy = read(
+  'crates/sdkwork-drive-workspace-service/src/application/upload_content_policy.rs',
+);
+assert.match(adminOffsetNormalizer, /@sdkwork\/utils/);
+assert.match(adminOffsetNormalizer, /pageInfo\?\.totalItems/);
+assert.match(uploadContentPolicy, /record_upload_content_policy_evaluated/);
+assert.match(observabilityMetrics, /drive_upload_content_policy_evaluated_total/);
 const driveBaseline = read('database/ddl/baseline/postgres/0001_drive_baseline.sql');
 const installWorkerLeader = read('crates/sdkwork-drive-install-worker/src/maintenance/leader.rs');
 const installWorkerHealth = read('crates/sdkwork-drive-install-worker/src/health.rs');
