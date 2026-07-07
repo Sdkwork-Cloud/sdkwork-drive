@@ -76,7 +76,7 @@ sdks/                          → OpenAPI 权威 → composed SDK facade
 | `pnpm check` | ✅ 本地通过（2026-07-08） |
 | API envelope + schema | ✅ |
 | PostgreSQL/SQLite lifecycle | ✅ baseline + 0002–0006 |
-| 多实例 Redis 限流（可选） | ✅ `redis-rate-limit` + `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis` |
+| 多实例 Redis 限流 | ✅ `redis-rate-limit` feature + K8s `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis` + fail-closed Redis secret 门禁 |
 | Outbox 双引擎 claim + 幂等 fan-out | ✅ |
 | Cloud 分服务 outbox | ✅ K8s `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` |
 | PostgreSQL 集成测试（CI） | ✅ |
@@ -84,7 +84,7 @@ sdks/                          → OpenAPI 权威 → composed SDK facade
 
 ### 部署要点
 
-1. 多实例限流：`SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`；生产建议 `SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED=true`
+1. 多实例限流：云端 API Deployment 必须配置 `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`、`SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED=true`，并从 `sdkwork-drive-rate-limit` secret 注入 `SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL`
 2. 可信代理后：`SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY=true`
 3. 生产下载令牌：`SDKWORK_DRIVE_DOWNLOAD_TOKEN_HMAC_SECRET`
 4. Cloud 分服务：`SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false`
@@ -133,7 +133,7 @@ cargo check -p sdkwork-drive-workspace-service
 | 上传 AV 扫描 | 生产内容安全需求 |
 | 桌面 delta sync | PRD P4 |
 | Azure Blob 适配器 | 具体客户需求 |
-| 内存限流改 sharded / Redis 默认 | 多实例高并发压测证据 |
+| Redis 限流容量模型与压测阈值 | 多实例高并发压测证据 |
 
 ---
 

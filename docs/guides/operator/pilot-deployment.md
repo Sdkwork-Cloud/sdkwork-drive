@@ -9,7 +9,7 @@ Use this guide after `pnpm check` passes on the release commit. Pilot validates 
 | Code gates | `pnpm check` and `pnpm verify` pass on the target commit |
 | Database | PostgreSQL provisioned; `pnpm db:migrate` applied against pilot schema |
 | IAM | Tenant org-scoped admin credentials; IAM DB session resolver reachable |
-| Secrets | `SDKWORK_DRIVE_DATABASE_*`, JWT/HMAC secrets, download token HMAC (production profile) |
+| Secrets | `SDKWORK_DRIVE_DATABASE_*`, JWT/HMAC secrets, download token HMAC, and `sdkwork-drive-rate-limit` Redis URL for cloud production |
 | Topology | Profile selected from `configs/topology/` (pilot: `standalone.unified-process.development` or staging production profile) |
 
 ## Phase 1 — Local / staging smoke
@@ -66,7 +66,7 @@ Production profile hardening:
 - `SDKWORK_DRIVE_RUNTIME_PROFILE=production`
 - `SDKWORK_DRIVE_UPLOAD_CONTENT_POLICY_MODE=enforce`
 - `SDKWORK_DRIVE_DOWNLOAD_TOKEN_HMAC_SECRET` or tenant JSON keys configured
-- Multi-instance: `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis` with Redis URL
+- Multi-instance: `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`, `SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED=true`, and `SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL` from the `sdkwork-drive-rate-limit` secret
 
 ## Phase 3 — Operator acceptance
 

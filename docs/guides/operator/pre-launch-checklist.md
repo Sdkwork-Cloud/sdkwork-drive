@@ -18,7 +18,8 @@ Use this checklist before promoting Drive from controlled pilot to commercial GA
 - [ ] **required** Prometheus scrapes `/metrics`; dashboards alert on error rate, latency (`sdkwork_drive_http_request_duration_seconds`), rate-limit saturation, and route-level counters (`drive_http_requests_by_route_total`).
 - [ ] **required** OTEL exporter endpoint and service names are configured per deployment block in `deployments/kubernetes/drive-services.yaml` or equivalent env files.
 - [ ] **required** Kubernetes image references use immutable `@sha256:<64 hex>` digests; `SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate` passes.
-- [ ] **recommended** Edge rate limiting is active (nginx `limit-rps` or Ingress annotation).
+- [ ] **required** Cloud API Deployments set `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`, source `SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL` from `sdkwork-drive-rate-limit`, and use `SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED=true`.
+- [ ] **recommended** Edge rate limiting is active (nginx `limit-rps` or Ingress annotation) as an additional protection layer.
 
 ## Release and Catalog
 

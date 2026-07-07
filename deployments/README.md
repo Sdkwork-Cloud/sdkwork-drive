@@ -38,5 +38,5 @@ SDKWork Drive. It is the deployment boundary governed by
 - API pods should set `SDKWORK_DRIVE_DEPLOYMENT_PROFILE=cloud` and `SDKWORK_DRIVE_RUNTIME_TARGET=server`.
 - When `sdkwork-drive-install-worker` is deployed, set `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` on API pods so only the worker runs the periodic outbox loop.
 - `install-worker` uses PostgreSQL advisory locks so only one replica runs maintenance tasks at a time; SQLite standalone runs maintenance locally.
-- Distributed rate limiting in cloud is expected from ingress (see Ingress annotations); app-level limiters remain in-process with optional `SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY=true`.
+- Cloud multi-instance rate limiting uses the Redis-backed application limiter (`SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`, `SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED=true`, and `SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL` from the `sdkwork-drive-rate-limit` secret). Ingress `limit-rps` remains the first edge protection layer.
 - Use `/readyz` for readiness probes on HTTP services; `/healthz` remains the liveness probe.

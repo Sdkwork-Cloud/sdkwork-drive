@@ -9,12 +9,12 @@ problem: Drive production routers must validate IAM sessions through the IAM dat
 goals:
   - Protected HTTP routers finalize with IamWebRequestContextResolver in production assembly paths.
   - Webhook outbox dispatch validates DNS-resolved addresses before egress.
-  - Backend and admin-storage APIs expose in-process rate limiting with documented env keys.
+  - Backend, open, app, and admin-storage APIs expose Redis-backed cloud rate limiting with documented env keys.
   - Kubernetes, systemd, container, and runbook docs reflect current production defaults.
   - Release-mode deployment validation rejects placeholder Kubernetes image digests.
 non_goals:
   - Enabling artifact signing or ACTIVE catalog publication in this requirement.
-  - Redis-backed distributed rate limiting.
+  - Managed Redis service provisioning itself.
 users:
   - platform operators
   - security reviewers
@@ -27,10 +27,11 @@ acceptance_criteria:
   - PC bootstrap failure markup escapes user-visible error content.
   - `pnpm check:architecture-alignment` and `pnpm deploy:validate` pass.
   - `node --test tools/check_drive_deployments.test.mjs` passes for strict Kubernetes digest validation behavior.
+  - Kubernetes API Deployment validation fails when Redis rate-limit backend, Redis URL secret, or fail-closed mode is missing.
   - TECH IAM standard and runbooks document IAM DB resolver wiring and DR procedures.
 non_functional_requirements:
   security: IAM DB session validation on protected routers; webhook SSRF DNS checks; install-worker health bind defaults to loopback.
-  reliability: PostgreSQL pool acquire/idle/max lifetime timeouts; cloud outbox single-dispatcher guidance documented.
+  reliability: PostgreSQL pool acquire/idle/max lifetime timeouts; cloud outbox single-dispatcher guidance documented; fail-closed Redis limiter documented for multi-replica production.
 affected_surfaces:
   - backend
   - deployments

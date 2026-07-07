@@ -40,7 +40,7 @@ SDKWork Drive is a contract-first file workspace with metadata/object separation
 Deployment profiles:
 
 - **standalone** — unified gateway embeds split routers plus embedded IAM app-api
-- **cloud** — Kubernetes split services with ingress rate limits and install-worker maintenance
+- **cloud** — Kubernetes split services with Redis-backed application rate limits, ingress edge limits, and install-worker maintenance
 
 ## 2. Technology Choices
 
@@ -75,8 +75,8 @@ See repository `AGENTS.md` dictionary. Generated SDK output lives under `sdks/` 
 ## 5. API, SDK, And Data Ownership
 
 - OpenAPI authorities under `apis/` materialize SDK families under `sdks/`.
-- Drive-owned upload/download flows use uploader APIs; legacy global asset upload routes return `501`.
-- PostgreSQL is the production database; SQLite is development-only.
+- Drive-owned upload/download flows use uploader APIs; legacy global asset upload routes fail closed with explicit retired-route semantics.
+- PostgreSQL is the production database; SQLite is for development, tests, and single-writer standalone use only.
 
 ## 6. Security, Privacy, And Observability
 
@@ -98,6 +98,7 @@ See repository `AGENTS.md` dictionary. Generated SDK output lives under `sdks/` 
 - Topology contract: `specs/topology.spec.json`
 
 Cloud operators must set `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` on API pods when install-worker is deployed.
+Cloud API Deployments must set `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`, source `SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL` from the `sdkwork-drive-rate-limit` secret, and set `SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED=true`; ingress limits remain an edge protection layer.
 
 ## 8. Architecture Decision Index
 

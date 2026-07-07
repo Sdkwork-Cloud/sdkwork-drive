@@ -60,7 +60,7 @@ Legacy `/app/v3/api/assets/upload*` routes remain unavailable; global assets mus
 2. **Share link access**: Anonymous recipient resolves a share link through open-api, optionally enters an access code, and receives a short-lived download grant.
 3. **Admin storage setup**: Tenant admin registers an S3-compatible provider and binds it to a space through admin storage APIs and the PC admin UI.
 4. **Admin operations**: Tenant admin reviews audit logs, runs maintenance sweeps, sets tenant quota caps, and inspects labels, spaces, and download packages through backend APIs and the PC admin UI.
-5. **Cloud operations**: Operator deploys split services with `/readyz` probes, install-worker maintenance, ingress rate limits, and immutable release digests.
+5. **Cloud operations**: Operator deploys split services with `/readyz` probes, install-worker maintenance, Redis-backed global rate limits, ingress edge limits, and immutable release digests.
 6. **Desktop secure session**: Desktop client persists auth/session tokens in OS secure storage via Tauri keychain commands.
 
 ## 6. Success Metrics
@@ -82,7 +82,7 @@ Legacy `/app/v3/api/assets/upload*` routes remain unavailable; global assets mus
 | P1 PC client | AuthGate, SDK-backed file browser, transfer center, desktop host | Done |
 | P2 Production hardening | Outbox singleton, readyz, K8s spec alignment, secure desktop storage, CSP, IAM DB resolver wiring | Done |
 | P3 Release & ops | Signed multi-platform artifacts, catalog media, staging smoke schedule, ACTIVE publish | In progress — **代码对齐已完成**（原子空间删除、版本历史分页、分任务维护 leader、PostgreSQL CI）；阻塞项仅剩制品签名、Catalog CDN 与 staging 运营验证 |
-| P4 Differentiation | Delta/changes API, knowledge/AI space profiles, optional Redis rate limit backend | Planned |
+| P4 Differentiation | Delta/changes API, knowledge/AI space profiles, and storage-provider expansion | Planned |
 
 ## 8. Linked Requirements
 
@@ -93,5 +93,4 @@ Legacy `/app/v3/api/assets/upload*` routes remain unavailable; global assets mus
 ## 9. Open Questions
 
 - Exact timeline for enabling artifact signing in CI (`signatureRequired`).
-- Whether cloud rate limiting remains ingress-only or adds Redis-backed app limiter before GA.
 - Minimum supported desktop platforms for macOS/Linux store publication beyond Windows x64.

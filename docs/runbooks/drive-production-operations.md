@@ -24,9 +24,10 @@ Key metrics:
 ## 2. Rate Limiting
 
 1. **Edge**: Configure `deployments/nginx/drive-edge-rate-limit.conf.example` on the public ingress, or apply the `Ingress` resource in `deployments/kubernetes/drive-services.yaml` (`limit-rps: 120`, burst multiplier `2`).
-2. **In-process**: Tune `SDKWORK_DRIVE_APP_API_RATE_LIMIT_*`, `SDKWORK_DRIVE_BACKEND_API_RATE_LIMIT_*`, `SDKWORK_DRIVE_ADMIN_STORAGE_API_RATE_LIMIT_*`, and `SDKWORK_DRIVE_OPEN_API_RATE_LIMIT_*`.
-3. **Cloud outbox**: Set `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` on API pods; dispatch via install-worker only.
-4. **Alert** when `drive_http_rate_limited_total` spikes alongside 429 responses on share-link paths.
+2. **Cloud application limiter**: Kubernetes API Deployments must set `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`, source `SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL` from the `sdkwork-drive-rate-limit` secret, and set `SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED=true`. This keeps enforcement global across replicas.
+3. **Per-surface budgets**: Tune `SDKWORK_DRIVE_APP_API_RATE_LIMIT_*`, `SDKWORK_DRIVE_BACKEND_API_RATE_LIMIT_*`, `SDKWORK_DRIVE_ADMIN_STORAGE_API_RATE_LIMIT_*`, and `SDKWORK_DRIVE_OPEN_API_RATE_LIMIT_*`.
+4. **Cloud outbox**: Set `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` on API pods; dispatch via install-worker only.
+5. **Alert** when `drive_http_rate_limited_total` spikes alongside 429 responses on share-link paths, or when Redis limiter errors appear with fail-closed denials.
 
 ## 3. Trace Correlation
 
@@ -86,6 +87,7 @@ Kubernetes split-services mounts:
 | --- | --- | --- |
 | `sdkwork-drive-database` | all API/worker Deployments | `SDKWORK_DRIVE_DATABASE_URL` or PostgreSQL field set |
 | `sdkwork-drive-iam` | `app-api`, `backend-api`, `standalone-gateway` | `SDKWORK_DRIVE_JWT_HMAC_SECRET` and/or `SDKWORK_DRIVE_JWT_JWKS_URL` |
+| `sdkwork-drive-rate-limit` | `app-api`, `backend-api`, `open-api`, `admin-storage-api` | `SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL` |
 
 Share links store hashed tokens and optional hashed extraction codes. Never log raw share tokens or extraction codes.
 

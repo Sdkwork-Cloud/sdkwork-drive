@@ -14,7 +14,7 @@ goals:
   - Release and deployment evidence align with RELEASE_SPEC and DEPLOYMENT_SPEC before ACTIVE publication.
 non_goals:
   - Desktop sync client or collaborative editing in this requirement.
-  - Replacing ingress rate limiting with Redis before evidence shows it is required.
+  - Managed Redis service provisioning itself; this requirement consumes a Redis URL from deployment secrets.
 users:
   - platform operators
   - tenant administrators
@@ -23,6 +23,7 @@ acceptance_criteria:
   - `pnpm verify` passes on main.
   - `pnpm deploy:validate` passes.
   - Strict deployment validation rejects placeholder Kubernetes image digests until release evidence replaces them.
+  - Cloud Kubernetes API deployments configure Redis-backed rate limiting with fail-closed behavior.
   - Postgres migration 0002 exists with paired up/down SQL under database/migrations/postgres/.
   - install-worker uses postgres advisory lock for maintenance tasks in cloud replicas.
   - staging-e2e workflow runs on schedule and skips gracefully when secrets are absent.
@@ -30,8 +31,8 @@ acceptance_criteria:
 non_functional_requirements:
   security: production download-token signing required; browser CSP aligned with SECURITY_SPEC; desktop tokens in OS secure storage.
   privacy: none beyond root standards; no secrets in release artifacts.
-  performance: outbox partial index migration; file list content-visibility optimization in PC client.
-  reliability: singleton outbox dispatcher; /readyz database checks; maintenance leader election for install-worker.
+  performance: outbox partial index migration; file list content-visibility optimization in PC client; Redis-backed global rate limiting for cloud replicas.
+  reliability: singleton outbox dispatcher; /readyz database checks; maintenance leader election for install-worker; fail-closed rate limiting when Redis is unavailable in production cloud.
 affected_surfaces:
   - backend
   - pc

@@ -1,8 +1,9 @@
 # SDKWork Drive edge rate limiting (example)
 
-Use this pattern in front of multi-replica Drive HTTP services. In-process
-rate limiters in `sdkwork-routes-drive-*` are a defense-in-depth layer only;
-edge limits must be enforced at the gateway for production HA deployments.
+Use this pattern in front of multi-replica Drive HTTP services. Cloud
+deployments also run the Redis-backed application limiter with fail-closed
+behavior; edge limits are the first protection layer and absorb obvious
+abuse before requests reach Drive pods.
 
 ## Nginx (`limit_req`)
 
