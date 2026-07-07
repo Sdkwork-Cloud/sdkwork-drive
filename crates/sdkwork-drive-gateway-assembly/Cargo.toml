@@ -12,7 +12,7 @@ path = "src/lib.rs"
 axum.workspace = true
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
 sqlx.workspace = true
-sdkwork-drive-http.workspace = true
+sdkwork-drive-http = { workspace = true, features = ["redis-rate-limit"] }
 sdkwork-routes-drive-app-api.workspace = true
 sdkwork-routes-drive-backend-api.workspace = true
 sdkwork-routes-drive-open-api.workspace = true

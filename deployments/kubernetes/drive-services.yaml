@@ -38,6 +38,15 @@ spec:
               value: "false"
             - name: SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY
               value: "true"
+            - name: SDKWORK_DRIVE_RATE_LIMIT_BACKEND
+              value: redis
+            - name: SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-drive-rate-limit
+                  key: SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL
+            - name: SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED
+              value: "true"
             - name: SDKWORK_DRIVE_UPLOAD_CONTENT_POLICY_MODE
               value: enforce
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -125,6 +134,15 @@ spec:
               value: cloud
             - name: SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY
               value: "true"
+            - name: SDKWORK_DRIVE_RATE_LIMIT_BACKEND
+              value: redis
+            - name: SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-drive-rate-limit
+                  key: SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL
+            - name: SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED
+              value: "true"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://otel-collector.observability.svc.cluster.local:4318/v1/traces
             - name: OTEL_SERVICE_NAME
@@ -206,6 +224,15 @@ spec:
               value: "0.0.0.0:18082"
             - name: SDKWORK_DRIVE_RUNTIME_PROFILE
               value: production
+            - name: SDKWORK_DRIVE_RATE_LIMIT_BACKEND
+              value: redis
+            - name: SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-drive-rate-limit
+                  key: SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL
+            - name: SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED
+              value: "true"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://otel-collector.observability.svc.cluster.local:4318/v1/traces
             - name: OTEL_SERVICE_NAME
@@ -290,6 +317,15 @@ spec:
             - name: SDKWORK_DRIVE_DEPLOYMENT_PROFILE
               value: cloud
             - name: SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY
+              value: "true"
+            - name: SDKWORK_DRIVE_RATE_LIMIT_BACKEND
+              value: redis
+            - name: SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-drive-rate-limit
+                  key: SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL
+            - name: SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED
               value: "true"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://otel-collector.observability.svc.cluster.local:4318/v1/traces

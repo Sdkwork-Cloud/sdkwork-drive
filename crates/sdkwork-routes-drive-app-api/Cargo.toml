@@ -9,7 +9,7 @@ axum.workspace = true
 serde.workspace = true
 http.workspace = true
 serde_json.workspace = true
-sdkwork-drive-http.workspace = true
+sdkwork-drive-http = { workspace = true, features = ["redis-rate-limit"] }
 sdkwork-drive-observability = { workspace = true, features = ["otlp"] }
 sdkwork-drive-config.workspace = true
 sdkwork-drive-contract.workspace = true

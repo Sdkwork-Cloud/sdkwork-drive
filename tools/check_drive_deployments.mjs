@@ -87,6 +87,39 @@ function validateKubernetesImageDigests(manifest) {
   }
 }
 
+function envValuePattern(envName, expectedValue) {
+  return new RegExp(
+    `name:\\s*${envName}[\\s\\S]*?value:\\s*["']?${expectedValue}["']?`,
+    'u',
+  );
+}
+
+function validateRedisRateLimit(deploymentName) {
+  const block = deploymentBlock(kubernetesManifest, deploymentName);
+  if (!block) {
+    return;
+  }
+  if (!envValuePattern('SDKWORK_DRIVE_RATE_LIMIT_BACKEND', 'redis').test(block)) {
+    failures.push(
+      `${deploymentName} Deployment must set SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis for production multi-instance rate limiting`,
+    );
+  }
+  if (
+    !/name:\s*SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL[\s\S]*?secretKeyRef:[\s\S]*?name:\s*sdkwork-drive-rate-limit[\s\S]*?key:\s*SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL/u.test(
+      block,
+    )
+  ) {
+    failures.push(
+      `${deploymentName} Deployment must source SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL from sdkwork-drive-rate-limit secret`,
+    );
+  }
+  if (!envValuePattern('SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED', 'true').test(block)) {
+    failures.push(
+      `${deploymentName} Deployment must set SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED=true for production multi-instance rate limiting`,
+    );
+  }
+}
+
 requirePath('deployments/deploy.yaml', 'SDKWORK_DEPLOY_SPEC.md deployctl contract');
 
 const deployResult = validateDeploy(
@@ -167,6 +200,7 @@ for (const [deploymentName, envName] of [
   if (!block.includes(envName)) {
     failures.push(`${deploymentName} Deployment must configure ${envName}`);
   }
+  validateRedisRateLimit(deploymentName);
 }
 const appApiBlock = deploymentBlock(kubernetesManifest, 'sdkwork-drive-app-api');
 if (appApiBlock && !/SDKWORK_DRIVE_UPLOAD_CONTENT_POLICY_MODE/u.test(appApiBlock)) {

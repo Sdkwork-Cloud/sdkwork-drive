@@ -9,7 +9,138 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const toolPath = path.join(repoRoot, 'tools/check_drive_deployments.mjs');
 
-function deploymentManifest(imageRefs) {
+function redisRateLimitEnvBlock() {
+  return `            - name: SDKWORK_DRIVE_RATE_LIMIT_BACKEND
+              value: redis
+            - name: SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-drive-rate-limit
+                  key: SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL
+            - name: SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED
+              value: "true"
+`;
+}
+
+function deploymentManifest(imageRefs, options = {}) {
+  const includeRedisRateLimit = options.includeRedisRateLimit !== false;
+  const redisRateLimit = includeRedisRateLimit ? redisRateLimitEnvBlock() : '';
+  const imageByName = Object.fromEntries(imageRefs.map((imageRef) => [imageRef.name, imageRef.image]));
+  return `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdkwork-drive-app-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: app-api
+          image: ${imageByName['sdkwork-drive-app-api']}
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel:4318/v1/traces
+            - name: OTEL_SERVICE_NAME
+              value: sdkwork-drive-app-api
+            - name: SDKWORK_DRIVE_APP_API_RATE_LIMIT_MAX_REQUESTS
+              value: "600"
+${redisRateLimit}            - name: SDKWORK_DRIVE_UPLOAD_CONTENT_POLICY_MODE
+              value: enforce
+          envFrom:
+            - secretRef:
+                name: sdkwork-drive-iam
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdkwork-drive-backend-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: backend-api
+          image: ${imageByName['sdkwork-drive-backend-api']}
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel:4318/v1/traces
+            - name: OTEL_SERVICE_NAME
+              value: sdkwork-drive-backend-api
+            - name: SDKWORK_DRIVE_BACKEND_API_RATE_LIMIT_MAX_REQUESTS
+              value: "300"
+${redisRateLimit}          envFrom:
+            - secretRef:
+                name: sdkwork-drive-iam
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdkwork-drive-open-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: open-api
+          image: ${imageByName['sdkwork-drive-open-api']}
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel:4318/v1/traces
+            - name: OTEL_SERVICE_NAME
+              value: sdkwork-drive-open-api
+            - name: SDKWORK_DRIVE_OPEN_API_RATE_LIMIT_MAX_REQUESTS
+              value: "120"
+${redisRateLimit}          envFrom:
+            - secretRef:
+                name: sdkwork-drive-iam
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdkwork-drive-admin-storage-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: admin-storage-api
+          image: ${imageByName['sdkwork-drive-admin-storage-api']}
+          env:
+            - name: SDKWORK_DRIVE_ADMIN_STORAGE_API_RATE_LIMIT_MAX_REQUESTS
+              value: "300"
+${redisRateLimit}          envFrom:
+            - secretRef:
+                name: sdkwork-drive-iam
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdkwork-drive-install-worker
+spec:
+  template:
+    spec:
+      containers:
+        - name: install-worker
+          image: ${imageByName['sdkwork-drive-install-worker']}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdkwork-drive-standalone-gateway
+spec:
+  template:
+    spec:
+      containers:
+        - name: standalone-gateway
+          image: ${imageByName['sdkwork-drive-standalone-gateway']}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sdkwork-drive
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "120"
+spec: {}
+`;
+}
+
+function legacyDeploymentManifestWithoutRedis(imageRefs) {
   const imageByName = Object.fromEntries(imageRefs.map((imageRef) => [imageRef.name, imageRef.image]));
   return `apiVersion: apps/v1
 kind: Deployment
@@ -149,7 +280,7 @@ function realDigestImages() {
   }));
 }
 
-async function createTempWorkspace(imageRefs) {
+async function createTempWorkspace(imageRefs, options = {}) {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'sdkwork-drive-deploy-'));
   const appId = path.basename(tempRoot);
   await mkdir(path.join(tempRoot, 'deployments/kubernetes'), { recursive: true });
@@ -229,7 +360,9 @@ async function createTempWorkspace(imageRefs) {
   );
   await writeFile(
     path.join(tempRoot, 'deployments/kubernetes/drive-services.yaml'),
-    deploymentManifest(imageRefs),
+    options.legacyWithoutRedis === true
+      ? legacyDeploymentManifestWithoutRedis(imageRefs)
+      : deploymentManifest(imageRefs, options),
     'utf8',
   );
 
@@ -299,6 +432,15 @@ function runDeployValidate(tempRoot, env = {}) {
   const result = runDeployValidate(tempRoot, { SDKWORK_DEPLOY_VALIDATION: 'strict' });
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stdout, /deployment descriptors ok/);
+}
+
+{
+  const tempRoot = await createTempWorkspace(realDigestImages(), { legacyWithoutRedis: true });
+  const result = runDeployValidate(tempRoot);
+  assert.notEqual(result.status, 0, result.stdout);
+  assert.match(result.stderr, /SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis/);
+  assert.match(result.stderr, /SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED=true/);
+  assert.match(result.stderr, /sdkwork-drive-rate-limit/);
 }
 
 console.log('check_drive_deployments.test.mjs passed');
