@@ -1,25 +1,32 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import en from '../i18n/locales/en';
-import zh from '../i18n/locales/zh';
+import enUS from '../i18n/en-US/drive/commons';
+import zhCN from '../i18n/zh-CN/drive/commons';
 import {
   readPreference,
   writePreference,
   type PreferenceStorage,
 } from './preferenceStorage';
 
-export type Language = 'en' | 'zh';
+export type Language = 'en-US' | 'zh-CN';
 
-const languages = { en, zh };
+const languages = { 'en-US': enUS, 'zh-CN': zhCN };
+
+function normalizeLanguage(value: string | undefined): Language | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const lower = value.toLowerCase();
+  if (lower === 'en' || lower === 'en-us' || lower.startsWith('en-')) {
+    return 'en-US';
+  }
+  if (lower === 'zh' || lower === 'zh-cn' || lower.startsWith('zh-')) {
+    return 'zh-CN';
+  }
+  return undefined;
+}
 
 function mapHostLanguage(value: string): Language {
-  const lower = value.toLowerCase();
-  if (lower === 'en' || lower.startsWith('en-')) {
-    return 'en';
-  }
-  if (lower === 'zh' || lower.startsWith('zh-')) {
-    return 'zh';
-  }
-  return 'zh';
+  return normalizeLanguage(value) ?? 'zh-CN';
 }
 
 function resolveStandaloneLanguage(
@@ -27,14 +34,19 @@ function resolveStandaloneLanguage(
   preferenceStorage?: PreferenceStorage,
   storageKey?: string,
 ): Language {
-  const saved = readPreference(preferenceStorage, storageKey ?? 'sdkwork-ui-language');
-  if (saved === 'en' || saved === 'zh') {
-    return saved;
+  const resolvedStorageKey = storageKey ?? 'sdkwork-ui-language';
+  const saved = readPreference(preferenceStorage, resolvedStorageKey);
+  const normalizedSaved = normalizeLanguage(saved);
+  if (normalizedSaved) {
+    if (saved !== normalizedSaved) {
+      writePreference(preferenceStorage, resolvedStorageKey, normalizedSaved);
+    }
+    return normalizedSaved;
   }
   if (typeof window !== 'undefined' && window.navigator) {
     const browserLang = window.navigator.language.toLowerCase();
     if (browserLang.startsWith('zh')) {
-      return 'zh';
+      return 'zh-CN';
     }
   }
   return defaultLanguage;
@@ -59,7 +71,7 @@ export const LanguageProviderContext = createContext<LanguageProviderState | und
 
 export function LanguageProvider({
   children,
-  defaultLanguage = 'en',
+  defaultLanguage = 'en-US',
   preferenceStorage,
   storageKey = 'sdkwork-ui-language',
   resolveHostLanguage,
@@ -88,7 +100,7 @@ export function LanguageProvider({
   };
 
   const t = (key: string, params?: Record<string, string | number>): string => {
-    const localeDict = languages[language] || languages.en;
+    const localeDict = languages[language] || languages['en-US'];
     const parts = key.split('.');
     let current: any = localeDict;
 
@@ -102,7 +114,7 @@ export function LanguageProvider({
 
     if (typeof current !== 'string') {
       // Fallback to English dictionary if key is not found in selected language
-      let fallbackCurrent: any = languages.en;
+      let fallbackCurrent: any = languages['en-US'];
       for (const part of parts) {
         if (fallbackCurrent == null || typeof fallbackCurrent !== 'object') {
           fallbackCurrent = undefined;

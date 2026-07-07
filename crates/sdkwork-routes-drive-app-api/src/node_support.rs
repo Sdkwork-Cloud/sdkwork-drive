@@ -49,7 +49,7 @@ pub(crate) async fn validate_archive_extraction_plan(
     tenant_id: &str,
     space_id: &str,
     root_parent_node_id: Option<&str>,
-    files: &[ArchiveFileForExtract],
+    files: &[ArchiveFileForExtractPlan],
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let mut planned_folders = BTreeSet::<String>::new();
     let mut planned_files = BTreeSet::<String>::new();

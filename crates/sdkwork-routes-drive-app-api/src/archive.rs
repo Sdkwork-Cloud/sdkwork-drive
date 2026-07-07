@@ -1,4 +1,7 @@
-use crate::constants::{ARCHIVE_MAX_ENTRIES, ARCHIVE_MAX_TOTAL_UNCOMPRESSED_BYTES};
+use crate::constants::{
+    ARCHIVE_EXTRACT_MAX_FILE_BYTES, ARCHIVE_EXTRACT_MAX_TOTAL_UNCOMPRESSED_BYTES,
+    ARCHIVE_MAX_ENTRIES, ARCHIVE_MAX_TOTAL_UNCOMPRESSED_BYTES,
+};
 use crate::dto::{ArchiveEntryResponse, DriveNodeResponse, SafeArchivePath};
 use crate::error::{internal_problem, problem, ProblemDetail, SdkWorkResultCode};
 use crate::hashing::sha256_hex;
@@ -9,7 +12,7 @@ use std::io::{Cursor, Read};
 use std::path::PathBuf;
 use zip::ZipArchive;
 
-type ArchiveZipReader = ZipArchive<Cursor<Vec<u8>>>;
+type ArchiveZipReader<'a> = ZipArchive<Cursor<&'a [u8]>>;
 
 #[derive(Debug, Clone)]
 pub(crate) struct ArchiveFileForExtract {
@@ -17,6 +20,13 @@ pub(crate) struct ArchiveFileForExtract {
     pub(crate) content_type: String,
     pub(crate) content: Vec<u8>,
     pub(crate) checksum_sha256_hex: String,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct ArchiveFileForExtractPlan {
+    pub(crate) archive_index: usize,
+    pub(crate) path: SafeArchivePath,
+    pub(crate) content_type: String,
 }
 
 pub(crate) fn validate_archive_source_node(
@@ -79,50 +89,79 @@ pub(crate) fn read_archive_entry_list(
     Ok(items)
 }
 
-pub(crate) fn read_archive_files_for_extract(
+pub(crate) fn read_archive_file_extract_plan(
     archive_bytes: &[u8],
     requested_paths: Option<&BTreeSet<String>>,
-) -> Result<Vec<ArchiveFileForExtract>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<Vec<ArchiveFileForExtractPlan>, (StatusCode, Json<ProblemDetail>)> {
     let mut archive = open_zip_archive(archive_bytes)?;
     validate_archive_entry_count(archive.len())?;
-    let mut files = Vec::new();
-    let mut total_uncompressed = 0_i64;
+    let mut plans = Vec::new();
+    let mut selected_uncompressed = 0_i64;
     for index in 0..archive.len() {
-        let mut file = archive.by_index(index).map_err(map_zip_archive_error)?;
+        let file = archive.by_index(index).map_err(map_zip_archive_error)?;
         let is_directory = file.is_dir();
         let safe_path = safe_archive_path_from_enclosed(file.enclosed_name(), is_directory)?;
         let uncompressed_size = archive_size_to_i64(file.size())?;
-        total_uncompressed = total_uncompressed
-            .checked_add(uncompressed_size)
-            .ok_or_else(|| archive_limit_problem("archive total uncompressed size overflow"))?;
-        if total_uncompressed > ARCHIVE_MAX_TOTAL_UNCOMPRESSED_BYTES {
-            return Err(archive_limit_problem(&format!(
-                "archive total uncompressed size must be at most {ARCHIVE_MAX_TOTAL_UNCOMPRESSED_BYTES}"
-            )));
-        }
         if is_directory {
             continue;
         }
         if requested_paths.is_some_and(|paths| !paths.contains(&safe_path.path)) {
             continue;
         }
-        let mut content = Vec::with_capacity(uncompressed_size as usize);
-        file.read_to_end(&mut content)
-            .map_err(|error| internal_problem(format!("read zip archive entry failed: {error}")))?;
-        files.push(ArchiveFileForExtract {
+        validate_archive_extract_file_size(uncompressed_size)?;
+        selected_uncompressed =
+            checked_archive_extract_total(selected_uncompressed, uncompressed_size)?;
+        plans.push(ArchiveFileForExtractPlan {
+            archive_index: index,
             content_type: guess_content_type_from_name(&safe_path.path).to_string(),
-            checksum_sha256_hex: sha256_hex(&content),
             path: safe_path,
-            content,
         });
     }
-    Ok(files)
+    Ok(plans)
+}
+
+pub(crate) fn read_archive_file_for_extract_plan(
+    archive_bytes: &[u8],
+    plan: &ArchiveFileForExtractPlan,
+) -> Result<ArchiveFileForExtract, (StatusCode, Json<ProblemDetail>)> {
+    let mut archive = open_zip_archive(archive_bytes)?;
+    let mut file = archive
+        .by_index(plan.archive_index)
+        .map_err(map_zip_archive_error)?;
+    if file.is_dir() {
+        return Err(unsafe_archive_path_problem());
+    }
+    let safe_path = safe_archive_path_from_enclosed(file.enclosed_name(), false)?;
+    if safe_path.path != plan.path.path {
+        return Err(unsafe_archive_path_problem());
+    }
+    let uncompressed_size = archive_size_to_i64(file.size())?;
+    validate_archive_extract_file_size(uncompressed_size)?;
+    let content = read_archive_file_content_bounded(&mut file, uncompressed_size)?;
+    Ok(ArchiveFileForExtract {
+        content_type: plan.content_type.clone(),
+        checksum_sha256_hex: sha256_hex(&content),
+        path: safe_path,
+        content,
+    })
+}
+
+pub(crate) fn validate_archive_file_extract_actual_total(
+    archive_bytes: &[u8],
+    plans: &[ArchiveFileForExtractPlan],
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    let mut actual_uncompressed = 0_i64;
+    for plan in plans {
+        let actual_file_size = read_archive_file_actual_size_for_extract_plan(archive_bytes, plan)?;
+        actual_uncompressed = checked_archive_extract_total(actual_uncompressed, actual_file_size)?;
+    }
+    Ok(())
 }
 
 fn open_zip_archive(
     archive_bytes: &[u8],
-) -> Result<ArchiveZipReader, (StatusCode, Json<ProblemDetail>)> {
-    ZipArchive::new(Cursor::new(archive_bytes.to_vec())).map_err(map_zip_archive_error)
+) -> Result<ArchiveZipReader<'_>, (StatusCode, Json<ProblemDetail>)> {
+    ZipArchive::new(Cursor::new(archive_bytes)).map_err(map_zip_archive_error)
 }
 
 fn map_zip_archive_error(error: zip::result::ZipError) -> (StatusCode, Json<ProblemDetail>) {
@@ -150,6 +189,94 @@ fn archive_limit_problem(detail: &str) -> (StatusCode, Json<ProblemDetail>) {
         detail,
         SdkWorkResultCode::ValidationError,
     )
+}
+
+fn archive_payload_too_large_problem(detail: &str) -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::PAYLOAD_TOO_LARGE,
+        "validation failed",
+        detail,
+        SdkWorkResultCode::ValidationError,
+    )
+}
+
+fn validate_archive_extract_file_size(
+    uncompressed_size: i64,
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    if uncompressed_size > ARCHIVE_EXTRACT_MAX_FILE_BYTES {
+        return Err(archive_payload_too_large_problem(&format!(
+            "archive extraction file size must be at most {ARCHIVE_EXTRACT_MAX_FILE_BYTES} bytes"
+        )));
+    }
+    Ok(())
+}
+
+fn checked_archive_extract_total(
+    current_total: i64,
+    next_size: i64,
+) -> Result<i64, (StatusCode, Json<ProblemDetail>)> {
+    let total = current_total.checked_add(next_size).ok_or_else(|| {
+        archive_payload_too_large_problem("archive extraction total uncompressed size overflow")
+    })?;
+    if total > ARCHIVE_EXTRACT_MAX_TOTAL_UNCOMPRESSED_BYTES {
+        return Err(archive_payload_too_large_problem(&format!(
+            "archive extraction total uncompressed size must be at most {ARCHIVE_EXTRACT_MAX_TOTAL_UNCOMPRESSED_BYTES} bytes"
+        )));
+    }
+    Ok(total)
+}
+
+fn read_archive_file_content_bounded<R: Read>(
+    reader: &mut R,
+    expected_uncompressed_size: i64,
+) -> Result<Vec<u8>, (StatusCode, Json<ProblemDetail>)> {
+    let mut content = Vec::with_capacity(expected_uncompressed_size as usize);
+    let max_read = ARCHIVE_EXTRACT_MAX_FILE_BYTES as u64 + 1;
+    let mut limited_reader = reader.take(max_read);
+    limited_reader
+        .read_to_end(&mut content)
+        .map_err(|error| internal_problem(format!("read zip archive entry failed: {error}")))?;
+    if content.len() as i64 > ARCHIVE_EXTRACT_MAX_FILE_BYTES {
+        return Err(archive_payload_too_large_problem(&format!(
+            "archive extraction file size must be at most {ARCHIVE_EXTRACT_MAX_FILE_BYTES} bytes"
+        )));
+    }
+    Ok(content)
+}
+
+fn read_archive_file_actual_size_for_extract_plan(
+    archive_bytes: &[u8],
+    plan: &ArchiveFileForExtractPlan,
+) -> Result<i64, (StatusCode, Json<ProblemDetail>)> {
+    let mut archive = open_zip_archive(archive_bytes)?;
+    let mut file = archive
+        .by_index(plan.archive_index)
+        .map_err(map_zip_archive_error)?;
+    if file.is_dir() {
+        return Err(unsafe_archive_path_problem());
+    }
+    let safe_path = safe_archive_path_from_enclosed(file.enclosed_name(), false)?;
+    if safe_path.path != plan.path.path {
+        return Err(unsafe_archive_path_problem());
+    }
+    let metadata_uncompressed_size = archive_size_to_i64(file.size())?;
+    validate_archive_extract_file_size(metadata_uncompressed_size)?;
+    read_archive_file_actual_size_bounded(&mut file)
+}
+
+fn read_archive_file_actual_size_bounded<R: Read>(
+    reader: &mut R,
+) -> Result<i64, (StatusCode, Json<ProblemDetail>)> {
+    let max_read = ARCHIVE_EXTRACT_MAX_FILE_BYTES as u64 + 1;
+    let mut limited_reader = reader.take(max_read);
+    let actual_size = std::io::copy(&mut limited_reader, &mut std::io::sink())
+        .map_err(|error| internal_problem(format!("read zip archive entry failed: {error}")))?;
+    if actual_size > ARCHIVE_EXTRACT_MAX_FILE_BYTES as u64 {
+        return Err(archive_payload_too_large_problem(&format!(
+            "archive extraction file size must be at most {ARCHIVE_EXTRACT_MAX_FILE_BYTES} bytes"
+        )));
+    }
+    archive_size_to_i64(actual_size)
 }
 
 fn archive_size_to_i64(value: u64) -> Result<i64, (StatusCode, Json<ProblemDetail>)> {
@@ -311,4 +438,109 @@ pub(crate) fn unique_archive_path(candidate: &str, used_paths: &mut BTreeSet<Str
         }
     }
     normalized
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use zip::write::SimpleFileOptions;
+    use zip::ZipWriter;
+
+    #[test]
+    fn read_archive_file_extract_plan_rejects_entries_above_sync_file_budget() {
+        let archive_bytes = build_zip_with_repeated_file("large.bin", (16 * 1024 * 1024) + 1);
+
+        let result = read_archive_file_extract_plan(&archive_bytes, None);
+        let (status, Json(problem)) = match result {
+            Ok(_) => panic!("oversized synchronous archive entry must be rejected"),
+            Err(error) => error,
+        };
+
+        assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE);
+        let problem_json = serde_json::to_value(problem).expect("problem detail should serialize");
+        let detail = problem_json["detail"]
+            .as_str()
+            .expect("problem detail should be present");
+        assert!(
+            detail.contains("archive extraction file size must be at most 16777216 bytes"),
+            "unexpected problem detail: {detail}"
+        );
+    }
+
+    #[test]
+    fn validate_archive_file_extract_actual_total_rejects_selected_bytes_above_sync_budget() {
+        let archive_bytes = build_zip_with_repeated_files(&[
+            ("part-1.bin", 16 * 1024 * 1024),
+            ("part-2.bin", 16 * 1024 * 1024),
+            ("part-3.bin", 16 * 1024 * 1024),
+            ("part-4.bin", 16 * 1024 * 1024),
+            ("part-5.bin", 1),
+        ]);
+        let plans = [
+            "part-1.bin",
+            "part-2.bin",
+            "part-3.bin",
+            "part-4.bin",
+            "part-5.bin",
+        ]
+        .iter()
+        .enumerate()
+        .map(|(archive_index, path)| ArchiveFileForExtractPlan {
+            archive_index,
+            content_type: "application/octet-stream".to_string(),
+            path: SafeArchivePath {
+                path: (*path).to_string(),
+                segments: vec![(*path).to_string()],
+            },
+        })
+        .collect::<Vec<_>>();
+
+        let result = validate_archive_file_extract_actual_total(&archive_bytes, &plans);
+        let (status, Json(problem)) = match result {
+            Ok(_) => panic!("oversized synchronous archive extraction total must be rejected"),
+            Err(error) => error,
+        };
+
+        assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE);
+        let problem_json = serde_json::to_value(problem).expect("problem detail should serialize");
+        let detail = problem_json["detail"]
+            .as_str()
+            .expect("problem detail should be present");
+        assert!(
+            detail.contains(
+                "archive extraction total uncompressed size must be at most 67108864 bytes"
+            ),
+            "unexpected problem detail: {detail}"
+        );
+    }
+
+    fn build_zip_with_repeated_file(path: &str, size_bytes: usize) -> Vec<u8> {
+        build_zip_with_repeated_files(&[(path, size_bytes)])
+    }
+
+    fn build_zip_with_repeated_files(files: &[(&str, usize)]) -> Vec<u8> {
+        let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+        let options = SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated)
+            .unix_permissions(0o644);
+        let chunk = [b'a'; 8192];
+        for (path, size_bytes) in files {
+            writer
+                .start_file(*path, options)
+                .expect("zip file should start");
+            let mut remaining = *size_bytes;
+            while remaining > 0 {
+                let write_len = remaining.min(chunk.len());
+                writer
+                    .write_all(&chunk[..write_len])
+                    .expect("zip file content should be written");
+                remaining -= write_len;
+            }
+        }
+        writer
+            .finish()
+            .expect("zip file should finish")
+            .into_inner()
+    }
 }

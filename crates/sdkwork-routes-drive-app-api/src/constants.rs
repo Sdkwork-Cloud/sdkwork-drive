@@ -14,9 +14,14 @@ pub(crate) const MAX_LIFECYCLE_SUBTREE_NODES: usize = 10_000;
 pub(crate) const DOWNLOAD_PACKAGE_MAX_FILES: usize = 500;
 pub(crate) const DOWNLOAD_PACKAGE_MAX_TOTAL_BYTES: i64 = 1_073_741_824;
 pub(crate) const ARCHIVE_MAX_ENTRIES: usize = 500;
+/// Maximum total uncompressed bytes reported by archive metadata for listing.
 pub(crate) const ARCHIVE_MAX_TOTAL_UNCOMPRESSED_BYTES: i64 = 1_073_741_824;
+/// Maximum selected uncompressed bytes handled by the synchronous extract API.
+pub(crate) const ARCHIVE_EXTRACT_MAX_TOTAL_UNCOMPRESSED_BYTES: i64 = 64 * 1024 * 1024;
+/// Maximum single archive entry bytes held in memory during synchronous extract.
+pub(crate) const ARCHIVE_EXTRACT_MAX_FILE_BYTES: i64 = 16 * 1024 * 1024;
 /// Maximum compressed archive bytes loaded into memory before ZIP inspection.
-pub(crate) const ARCHIVE_MAX_COMPRESSED_BYTES: i64 = 268_435_456;
+pub(crate) const ARCHIVE_MAX_COMPRESSED_BYTES: i64 = 64 * 1024 * 1024;
 pub(crate) const SDKWORK_SNOWFLAKE_EPOCH_MS: u64 = 1_609_459_200_000;
 pub(crate) const SDKWORK_DRIVE_WORKER_ID: u64 = 17;
 pub(crate) static LAST_APP_SNOWFLAKE_ID: AtomicU64 = AtomicU64::new(0);

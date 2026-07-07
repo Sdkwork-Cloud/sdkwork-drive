@@ -53,6 +53,8 @@ const versionHandlers = read('crates/sdkwork-routes-drive-app-api/src/version_ha
 const metadataHandlers = read('crates/sdkwork-routes-drive-app-api/src/metadata_handlers.rs');
 const spaceHandlers = read('crates/sdkwork-routes-drive-app-api/src/space_handlers.rs');
 const nodeHandlers = read('crates/sdkwork-routes-drive-app-api/src/node_handlers.rs');
+const archiveModule = read('crates/sdkwork-routes-drive-app-api/src/archive.rs');
+const routeConstants = read('crates/sdkwork-routes-drive-app-api/src/constants.rs');
 const uploadHandlers = read('crates/sdkwork-routes-drive-app-api/src/upload_handlers.rs');
 const downloadHandlers = read('crates/sdkwork-routes-drive-app-api/src/download_handlers.rs');
 const watchRepository = read('crates/sdkwork-routes-drive-app-api/src/watch_repository.rs');
@@ -122,6 +124,17 @@ assert.match(assetsModule, /success_created_resource\(item\)/);
 assert.match(nodeHandlers, /present_node_list/);
 assert.match(nodeHandlers, /present_drive_node/);
 assert.match(quotaHandlers, /resolve_effective_max_bytes/);
+assert.match(routeConstants, /ARCHIVE_EXTRACT_MAX_TOTAL_UNCOMPRESSED_BYTES: i64 = 64 \* 1024 \* 1024/);
+assert.match(routeConstants, /ARCHIVE_EXTRACT_MAX_FILE_BYTES: i64 = 16 \* 1024 \* 1024/);
+assert.match(routeConstants, /ARCHIVE_MAX_COMPRESSED_BYTES: i64 = 64 \* 1024 \* 1024/);
+assert.match(archiveModule, /read_archive_file_extract_plan/);
+assert.match(archiveModule, /read_archive_file_for_extract_plan/);
+assert.match(archiveModule, /validate_archive_file_extract_actual_total/);
+assert.match(nodeHandlers, /validate_archive_file_extract_actual_total\(&archive_bytes, &file_plans\)\?/);
+assert.match(archiveModule, /reader\.take\(max_read\)/);
+assert.match(archiveModule, /std::io::sink\(\)/);
+assert.match(archiveModule, /ZipArchive::new\(Cursor::new\(archive_bytes\)\)/);
+assert.doesNotMatch(archiveModule, /archive_bytes\.to_vec\(\)/);
 
 assert.match(aclModule, /subject_has_any_space_permission_grant/);
 assert.match(aclModule, /SdkWorkResultCode::PermissionRequired/);
@@ -573,10 +586,14 @@ assert.match(driveFileServiceTest, /COMMAND_DATA_OPERATION_IDS/);
 assert.match(playwrightSmoke, /40301/);
 
 const databaseManifest = read('database/database.manifest.json');
+const seedManifest = read('database/seeds/seed.manifest.json');
 assert.match(downloadTransfer, /assertInMemoryDownloadWithinLimit/);
 assert.match(downloadTransfer, /64 \* 1024 \* 1024/);
 assert.match(databaseManifest, /"sqlite"/);
 assert.match(databaseManifest, /"postgres"/);
+assert.match(seedManifest, /"i18nVersion"/);
+assert.match(seedManifest, /"fallbackLocale"/);
+assert.match(seedManifest, /"localeSets"/);
 read('database/migrations/postgres/0003_drive_tenant_quota.up.sql');
 read('database/migrations/sqlite/0003_drive_tenant_quota.up.sql');
 const adminOffsetNormalizer = read(

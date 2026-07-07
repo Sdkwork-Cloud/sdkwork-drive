@@ -20,6 +20,7 @@
 | 上传完成 saga | ✅ | DB 失败补偿：session 重置 + 孤儿对象 best-effort 删除 |
 | SQLite 写事务 | ✅ | `begin_transaction_sql()` + `install_any_schema` 注册 engine |
 | 下载包 / 本地存储 OOM | ✅ | 文件夹 BFS 分批 LIMIT；local range seek 读取 |
+| 归档同步解压 OOM | ✅ | ZIP 打开不再复制压缩包字节；同步提取先做条目计划校验，压缩包 64MiB、单条目 16MiB、选中总解压 64MiB 上限；写入前再用流式读取到 `std::io::sink()` 校验实际解压总量，逐文件读取写入 |
 | 移动目标 / Admin 分页 | ✅ | move destinations 使用 `page_size`/`cursor` + 窗口化 BFS；Storage Providers Admin 使用 `data.items` + `pageInfo.nextCursor` 翻页 |
 | 资产 API 退役路由 | ✅ | legacy upload 返回 `410 Gone`；错误方法返回 `405 Method Not Allowed` |
 | 409 冲突检测 | ✅ | 数值 platform code + MoveCopy 全量 sibling 扫描 |
@@ -35,6 +36,7 @@
 | transaction engine 注册 | `register_installed_database_engine` 在 `install_any_schema` 结束时调用 |
 | transaction 单元测试 | 修正为 `begin_transaction_sql_for_engine` 引擎语义测试 |
 | download_packages 宽目录 OOM | 每父目录 LIMIT/OFFSET 分批拉取 |
+| archive_entries 同步提取内存 | ZIP inspection 使用 `Cursor<&[u8]>` 避免压缩包复制；extract 先生成计划，再在任何 DB/对象存储写入前流式预检实际解压总量，拒绝超出同步预算的 ZIP bomb / 大文件条目；正式写入时仍逐个条目读取 |
 | local_store range read | `File::seek` + bounded read，不再 `fs::read` 全文件 |
 | move destination 假分页 / OOM 风险 | 使用 `page_size`/`cursor`，BFS 只保留当前页窗口；每个父目录按 SQL `LIMIT/OFFSET` 小批量读取，并拒绝 legacy query alias |
 | Staging admin smoke 分页参数 | GET list/search smoke 请求统一使用 `page_size=20`，契约测试禁止 `pageSize=` |
@@ -48,6 +50,7 @@
 | 资产 legacy upload / 错误方法 | `/app/v3/api/assets/{upload,presign,upload_sessions}` fail-closed 为 `410 Gone` + `Gone`；资产删除型子资源错误 `POST` 返回 `405 MethodNotAllowed`，不再保留生产 `501/not implemented` |
 | 延期发布包 checksum 证据 | macOS DMG / Linux AppImage 延期包移除占位 checksum；`releaseBuildDeferred=true` 时 materialize / readiness / verify 均禁止保留伪造 checksum 字段，等待目标 runner 物化真实 SHA-256 |
 | K8s digest 严格部署门禁 | `check_drive_deployments.mjs` 支持 `--root` 与 `SDKWORK_DEPLOY_VALIDATION=strict` / `SDKWORK_RELEASE_VALIDATION=strict`；默认模式仅告警占位符，严格模式拒绝 `REPLACE_WITH_RELEASE_DIGEST` 和非 `@sha256:<64 hex>` 镜像引用 |
+| 数据库 seed i18n 契约 | `database/seeds/seed.manifest.json` 补齐 `i18nVersion`、`fallbackLocale`、`localeSets`；当前无必需参考数据，common bootstrap seed 明确为 no-op 生命周期脚本 |
 | 409 冲突 | `isDriveConflictError` 识别 40901；上传队列专用 toast |
 
 ---

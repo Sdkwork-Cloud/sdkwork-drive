@@ -13,7 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
-import { useTranslation } from './LanguageProvider';
+import { useTranslation, type Language } from './LanguageProvider';
 import { useDrivePcPreferences, type DrivePcPreferences } from './drivePcPreferences';
 import type { DriveSidebarAccount } from './UserProfileModal';
 
@@ -212,8 +212,8 @@ function GeneralSettings({
   onCompactModeChange,
   t,
 }: {
-  language: 'en' | 'zh';
-  setLanguage: (language: 'en' | 'zh') => void;
+  language: Language;
+  setLanguage: (language: Language) => void;
   theme: 'dark' | 'light' | 'system';
   setTheme: (theme: 'dark' | 'light' | 'system') => void;
   compactMode: boolean;
@@ -225,14 +225,14 @@ function GeneralSettings({
       <SettingsSection title={t('commons.selectLanguage')} description={t('commons.languageDesc')}>
         <div className="grid grid-cols-2 gap-4">
           <LanguageCard
-            active={language === 'en'}
-            onClick={() => setLanguage('en')}
+            active={language === 'en-US'}
+            onClick={() => setLanguage('en-US')}
             title={t('commons.english')}
             localeCode="EN"
           />
           <LanguageCard
-            active={language === 'zh'}
-            onClick={() => setLanguage('zh')}
+            active={language === 'zh-CN'}
+            onClick={() => setLanguage('zh-CN')}
             title={t('commons.chinese')}
             localeCode="中文"
           />

@@ -15,6 +15,10 @@ This module ships a governed **baseline-plus-migrations** lifecycle:
 3. **Runtime installers** — `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/{postgres,sqlite}_core.sql` remain the authoritative runtime schema for `sqlx::AnyPool` services; SQLite applies incremental column/index upgrades on boot when needed.
 4. **Drift** — run `pnpm db:drift:check` before release.
 
+### Seed lifecycle
+
+`database/seeds/seed.manifest.json` declares `i18nVersion`, fallback/default locales, active locale sets, and the current no-op common bootstrap seed. Drive currently has no required reference data.
+
 ## Commands
 
 ```bash

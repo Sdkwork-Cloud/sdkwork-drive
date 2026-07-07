@@ -935,12 +935,14 @@ describe('desktop architecture contract', () => {
     );
     const drivePage = read('packages/sdkwork-drive-pc-file/src/pages/DrivePage.tsx');
     const sharedSpaceLocaleEn = read(
-      'packages/sdkwork-drive-pc-commons/src/i18n/locales/en/sharedSpace.ts',
+      'packages/sdkwork-drive-pc-commons/src/i18n/en-US/drive/commons/sharedSpace.ts',
     );
     const sharedSpaceLocaleZh = read(
-      'packages/sdkwork-drive-pc-commons/src/i18n/locales/zh/sharedSpace.ts',
+      'packages/sdkwork-drive-pc-commons/src/i18n/zh-CN/drive/commons/sharedSpace.ts',
     );
-    const commonsIndex = read('packages/sdkwork-drive-pc-commons/src/i18n/locales/en/index.ts');
+    const commonsIndex = read(
+      'packages/sdkwork-drive-pc-commons/src/i18n/en-US/drive/commons/index.ts',
+    );
 
     expect(commonsIndex).toContain('sharedSpace');
     expect(sharedSpaceLocaleEn).toContain('createSuccess');
@@ -1104,7 +1106,7 @@ describe('desktop architecture contract', () => {
 
   it('keeps user-facing locale copy free of demo, mock, and simulation wording', () => {
     const localeSource = readAll(
-      path.join(appRoot, 'packages', 'sdkwork-drive-pc-commons', 'src', 'i18n', 'locales'),
+      path.join(appRoot, 'packages', 'sdkwork-drive-pc-commons', 'src', 'i18n'),
     );
 
     for (const forbidden of [

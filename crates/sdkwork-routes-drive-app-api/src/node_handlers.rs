@@ -788,8 +788,8 @@ pub(crate) async fn extract_archive_entries(
     .await?;
     let requested_paths = normalize_archive_entry_selection(payload.entry_paths)?;
     let archive_bytes = read_archive_node_bytes(&state, &tenant_id, &node_id).await?;
-    let files = read_archive_files_for_extract(&archive_bytes, requested_paths.as_ref())?;
-    if files.is_empty() {
+    let file_plans = read_archive_file_extract_plan(&archive_bytes, requested_paths.as_ref())?;
+    if file_plans.is_empty() {
         return Err(problem(
             StatusCode::BAD_REQUEST,
             "validation failed",
@@ -802,12 +802,14 @@ pub(crate) async fn extract_archive_entries(
         &tenant_id,
         &source_node.space_id,
         target_parent_node_id.as_deref(),
-        &files,
+        &file_plans,
     )
     .await?;
+    validate_archive_file_extract_actual_total(&archive_bytes, &file_plans)?;
 
-    let mut created_nodes = Vec::with_capacity(files.len());
-    for file in files {
+    let mut created_nodes = Vec::with_capacity(file_plans.len());
+    for file_plan in file_plans {
+        let file = read_archive_file_for_extract_plan(&archive_bytes, &file_plan)?;
         let parent_id = ensure_archive_parent_folders(
             &state.pool,
             &tenant_id,
