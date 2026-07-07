@@ -90,7 +90,10 @@ const workspaceService = read(
   'crates/sdkwork-drive-workspace-service/src/application/workspace_service.rs',
 );
 const sharedSpaceLocale = read(
-  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons/src/i18n/locales/en/sharedSpace.ts',
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons/src/i18n/en-US/drive/commons/sharedSpace.ts',
+);
+const languageProvider = read(
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons/src/components/LanguageProvider.tsx',
 );
 const createSharedSpaceModal = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file/src/components/CreateSharedSpaceModal.tsx',
@@ -569,6 +572,24 @@ const shareLinkModalContractTest = read(
 assert.match(shareLinkModalContractTest, /ShareLinkModal contract/);
 assert.match(shareLinkModalContractTest, /createShareLink\(file\.id/);
 assert.match(shareLinkModalContractTest, /accessCodeRequired/);
+assert.ok(
+  existsSync(
+    resolve(
+      repoRoot,
+      'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons/src/i18n/zh-CN/drive/commons/sharedSpace.ts',
+    ),
+  ),
+);
+assert.ok(
+  !existsSync(
+    resolve(
+      repoRoot,
+      'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons/src/i18n/locales/zh/sharedSpace.ts',
+    ),
+  ),
+);
+assert.match(languageProvider, /export type Language = 'en-US' \| 'zh-CN'/);
+assert.match(languageProvider, /normalizeLanguage/);
 const pcShareLinkUiSpec = read('tests/e2e/specs/drive-pc-share-link.ui.spec.mjs');
 assert.match(pcShareLinkUiSpec, /DRIVE_E2E_PC_BASE_URL/);
 assert.match(pcShareLinkUiSpec, /\/share\/\$\{encodeURIComponent\(shareClaimToken\)\}/);

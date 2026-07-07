@@ -51,6 +51,7 @@
 | 延期发布包 checksum 证据 | macOS DMG / Linux AppImage 延期包移除占位 checksum；`releaseBuildDeferred=true` 时 materialize / readiness / verify 均禁止保留伪造 checksum 字段，等待目标 runner 物化真实 SHA-256 |
 | K8s digest 严格部署门禁 | `check_drive_deployments.mjs` 支持 `--root` 与 `SDKWORK_DEPLOY_VALIDATION=strict` / `SDKWORK_RELEASE_VALIDATION=strict`；默认模式仅告警占位符，严格模式拒绝 `REPLACE_WITH_RELEASE_DIGEST` 和非 `@sha256:<64 hex>` 镜像引用 |
 | 数据库 seed i18n 契约 | `database/seeds/seed.manifest.json` 补齐 `i18nVersion`、`fallbackLocale`、`localeSets`；当前无必需参考数据，common bootstrap seed 明确为 no-op 生命周期脚本 |
+| PC authored i18n 目录 | `sdkwork-drive-pc-commons/src/i18n/{en-US,zh-CN}/drive/commons/*` 对齐 `I18N_SPEC.md` `<locale>/<domain>/<capability>/<fragment>`；运行时语言状态升级为 `en-US`/`zh-CN`，兼容迁移旧 `en`/`zh` 偏好值 |
 | 409 冲突 | `isDriveConflictError` 识别 40901；上传队列专用 toast |
 
 ---
