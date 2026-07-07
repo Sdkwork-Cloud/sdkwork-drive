@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { CreateShortcutRequest, DriveNode } from '../types';
+import type { CreateShortcutRequest } from '../types';
 
 
 export class NodesShortcutsApi {
@@ -13,8 +13,8 @@ export class NodesShortcutsApi {
 
 
 /** Create a shortcut node */
-  async create(body: CreateShortcutRequest): Promise<DriveNode> {
-    return this.client.post<DriveNode>(appApiPath(`/drive/nodes/shortcuts`), body, undefined, undefined, 'application/json');
+  async create(body: CreateShortcutRequest): Promise<unknown> {
+    return this.client.post<unknown>(appApiPath(`/drive/nodes/shortcuts`), body, undefined, undefined, 'application/json');
   }
 }
 

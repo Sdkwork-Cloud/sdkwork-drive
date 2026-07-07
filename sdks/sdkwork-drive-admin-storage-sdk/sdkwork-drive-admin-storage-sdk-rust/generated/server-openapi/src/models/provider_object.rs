@@ -7,7 +7,11 @@ pub struct ProviderObject {
 
     pub bucket: String,
 
-    /// Drive object key. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments.
+    /// Object list entry kind. `prefix` represents an object-store common prefix returned by delimiter-based browsing.
+    #[serde(rename = "objectKind")]
+    pub object_kind: String,
+
+    /// Drive object key or common prefix. UTF-8 1-1024 bytes, trimmed relative key/prefix; no leading slash, double slash, NUL, or period-only path segments. Common prefixes end with `/`.
     #[serde(rename = "objectKey")]
     pub object_key: String,
 

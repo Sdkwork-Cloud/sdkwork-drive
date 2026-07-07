@@ -11,7 +11,8 @@ use crate::dto::{
 };
 use crate::error::{
     internal_problem, internal_sql_error, map_object_store_route_error, map_service_error,
-    not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
+    not_found_problem, problem, ProblemDetail, SdkWorkResultCode,
+};
 use crate::hashing::{sha256_raw_hex_separated, tenant_shard_prefix};
 use crate::mappers::map_node_row;
 use crate::node_repository::find_node;
@@ -20,6 +21,7 @@ use crate::object_store::{
     missing_signing_provider_error, require_active_storage_provider,
     unsupported_signing_provider_error,
 };
+use crate::response::{success_created_command_data, success_envelope};
 use crate::state::AppState;
 use crate::time::{current_epoch_ms, signing_ttl_seconds};
 use crate::validators::{normalize_optional_text, validate_requested_ttl_seconds};
@@ -34,6 +36,7 @@ use sdkwork_drive_storage_contract::{
 use sdkwork_drive_storage_s3::S3DriveObjectStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
 use sdkwork_drive_workspace_service::ports::storage_object_store::SignedDownloadPayload;
+use sdkwork_utils_rust::SdkWorkApiResponse;
 use sqlx::AnyPool;
 use sqlx::Row;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -67,7 +70,13 @@ pub(crate) async fn create_download_package(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateDownloadPackageRequest>,
-) -> Result<(StatusCode, Json<DownloadPackageResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<DownloadPackageResponse>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id)?;
     let requested_node_ids = normalize_download_package_node_ids(payload.node_ids)?;
@@ -157,9 +166,8 @@ pub(crate) async fn create_download_package(
         expires_at_epoch_ms,
     )
     .await?;
-    Ok((
-        StatusCode::CREATED,
-        Json(build_download_package_response(
+    Ok(success_created_command_data(
+        build_download_package_response(
             &state,
             DownloadPackageRecordView {
                 id: package_id,
@@ -177,7 +185,7 @@ pub(crate) async fn create_download_package(
                 items: package_files,
             },
             signed,
-        )),
+        ),
     ))
 }
 
@@ -185,7 +193,7 @@ pub(crate) async fn resolve_download_package_url(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(package_id): Path<String>,
-) -> Result<Json<DownloadPackageResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<Json<SdkWorkApiResponse<DownloadPackageResponse>>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let package = find_download_package_record(&state.pool, &tenant_id, &package_id).await?;
     let node_ids = package
@@ -222,7 +230,7 @@ pub(crate) async fn resolve_download_package_url(
         package.expires_at_epoch_ms,
     )
     .await?;
-    Ok(Json(build_download_package_response(
+    Ok(success_envelope(build_download_package_response(
         &state, package, signed,
     )))
 }
@@ -289,6 +297,7 @@ async fn collect_download_package_files(
     let mut used_paths = BTreeSet::new();
     let requested_set = requested_node_ids.iter().cloned().collect::<BTreeSet<_>>();
     for node_id in requested_node_ids {
+        ensure_download_package_file_capacity(files.len())?;
         let node = find_node(pool, tenant_id, node_id).await?;
         if node.lifecycle_status != "active" {
             return Err(problem(
@@ -306,12 +315,21 @@ async fn collect_download_package_files(
                 );
                 let file = read_download_package_file(pool, tenant_id, &node, archive_path).await?;
                 files.push(file);
+                ensure_download_package_file_capacity(files.len())?;
             }
             "folder" => {
                 let root_path = sanitize_archive_path_segment(&node.node_name);
-                let descendants =
-                    list_folder_descendant_files(pool, tenant_id, &node.id, &requested_set).await?;
+                let remaining_capacity = DOWNLOAD_PACKAGE_MAX_FILES.saturating_sub(files.len());
+                let descendants = list_folder_descendant_files(
+                    pool,
+                    tenant_id,
+                    &node.id,
+                    &requested_set,
+                    remaining_capacity,
+                )
+                .await?;
                 for descendant in descendants {
+                    ensure_download_package_file_capacity(files.len())?;
                     let archive_path = unique_archive_path(
                         &format!(
                             "{}/{}",
@@ -345,6 +363,20 @@ async fn collect_download_package_files(
         }
     }
     Ok(files)
+}
+
+fn ensure_download_package_file_capacity(
+    current_count: usize,
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    if current_count > DOWNLOAD_PACKAGE_MAX_FILES {
+        return Err(problem(
+            StatusCode::BAD_REQUEST,
+            "validation failed",
+            format!("download package can include at most {DOWNLOAD_PACKAGE_MAX_FILES} files"),
+            SdkWorkResultCode::ValidationError,
+        ));
+    }
+    Ok(())
 }
 
 fn validate_download_package_manifest(
@@ -404,7 +436,16 @@ async fn list_folder_descendant_files(
     tenant_id: &str,
     root_node_id: &str,
     requested_node_ids: &BTreeSet<String>,
+    max_files: usize,
 ) -> Result<Vec<FolderDescendantFile>, (StatusCode, Json<ProblemDetail>)> {
+    if max_files == 0 {
+        return Err(problem(
+            StatusCode::BAD_REQUEST,
+            "validation failed",
+            format!("download package can include at most {DOWNLOAD_PACKAGE_MAX_FILES} files"),
+            SdkWorkResultCode::ValidationError,
+        ));
+    }
     let mut queue = VecDeque::from([(root_node_id.to_string(), String::new(), 0_usize)]);
     let mut files = Vec::new();
     while let Some((parent_id, parent_path, depth)) = queue.pop_front() {
@@ -416,38 +457,74 @@ async fn list_folder_descendant_files(
                 SdkWorkResultCode::Conflict,
             ));
         }
-        let rows = sqlx::query(&format!(
-            "SELECT {NODE_API_SELECT_COLUMNS}
-             FROM dr_drive_node
-             WHERE tenant_id=$1
-               AND parent_node_id=$2
-               AND lifecycle_status='active'
-             ORDER BY node_type DESC, node_name ASC, id ASC",
-        ))
-        .bind(tenant_id)
-        .bind(&parent_id)
-        .fetch_all(pool)
-        .await
-        .map_err(internal_sql_error("list folder descendants failed"))?;
-        for row in rows {
-            let node = map_node_row(&row);
-            if requested_node_ids.contains(&node.id) {
-                continue;
+        let mut child_offset = 0_i64;
+        loop {
+            let remaining = max_files.saturating_sub(files.len());
+            if remaining == 0 {
+                return Err(problem(
+                    StatusCode::BAD_REQUEST,
+                    "validation failed",
+                    format!(
+                        "download package can include at most {DOWNLOAD_PACKAGE_MAX_FILES} files"
+                    ),
+                    SdkWorkResultCode::ValidationError,
+                ));
             }
-            let segment = sanitize_archive_path_segment(&node.node_name);
-            let relative_path = if parent_path.is_empty() {
-                segment
-            } else {
-                format!("{parent_path}/{segment}")
-            };
-            match node.node_type.as_str() {
-                "file" => files.push(FolderDescendantFile {
-                    node,
-                    relative_path,
-                }),
-                "folder" => queue.push_back((node.id.clone(), relative_path, depth + 1)),
-                _ => {}
+            let batch_limit = remaining.min(500) as i64;
+            let rows = sqlx::query(&format!(
+                "SELECT {NODE_API_SELECT_COLUMNS}
+                 FROM dr_drive_node
+                 WHERE tenant_id=$1
+                   AND parent_node_id=$2
+                   AND lifecycle_status='active'
+                 ORDER BY node_type DESC, node_name ASC, id ASC
+                 LIMIT $3 OFFSET $4",
+            ))
+            .bind(tenant_id)
+            .bind(&parent_id)
+            .bind(batch_limit)
+            .bind(child_offset)
+            .fetch_all(pool)
+            .await
+            .map_err(internal_sql_error("list folder descendants failed"))?;
+            if rows.is_empty() {
+                break;
             }
+            let fetched = rows.len();
+            for row in rows {
+                if files.len() >= max_files {
+                    return Err(problem(
+                        StatusCode::BAD_REQUEST,
+                        "validation failed",
+                        format!(
+                            "download package can include at most {DOWNLOAD_PACKAGE_MAX_FILES} files"
+                        ),
+                        SdkWorkResultCode::ValidationError,
+                    ));
+                }
+                let node = map_node_row(&row);
+                if requested_node_ids.contains(&node.id) {
+                    continue;
+                }
+                let segment = sanitize_archive_path_segment(&node.node_name);
+                let relative_path = if parent_path.is_empty() {
+                    segment
+                } else {
+                    format!("{parent_path}/{segment}")
+                };
+                match node.node_type.as_str() {
+                    "file" => files.push(FolderDescendantFile {
+                        node,
+                        relative_path,
+                    }),
+                    "folder" => queue.push_back((node.id.clone(), relative_path, depth + 1)),
+                    _ => {}
+                }
+            }
+            if fetched < batch_limit as usize {
+                break;
+            }
+            child_offset += batch_limit;
         }
     }
     Ok(files)

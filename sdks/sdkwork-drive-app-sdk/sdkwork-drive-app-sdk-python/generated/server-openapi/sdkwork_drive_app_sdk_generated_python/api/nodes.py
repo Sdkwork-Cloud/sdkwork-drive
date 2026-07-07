@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import CreateShortcutRequest, DriveNode
+from ..models import CreateShortcutRequest, NodesShortcutsCreateResponse201
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -28,6 +28,6 @@ class NodesShortcutsApi:
         self._client = client
 
 
-    def create(self, body: CreateShortcutRequest) -> DriveNode:
+    def create(self, body: CreateShortcutRequest) -> NodesShortcutsCreateResponse201:
         """Create a shortcut node"""
         return self._client.post(f"/app/v3/api/drive/nodes/shortcuts", json=body)

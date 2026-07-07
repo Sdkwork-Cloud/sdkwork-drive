@@ -45,7 +45,8 @@ assert.match(workspaceLib, /share_link_access_code_matches/);
 assert.match(metricsMiddleware, /record_http_request_duration/);
 assert.match(rateLimitMiddleware, /record_http_rate_limited/);
 assert.match(runbook, /drive_http_request_duration_seconds/);
-assert.match(runbook, /x-trace-id/);
+assert.match(runbook, /X-SdkWork-Trace-Id/);
+assert.doesNotMatch(runbook, /x-trace-id/);
 assert.match(runbook, /drive-edge-rate-limit/);
 
 assert.match(runbook, /\/share\/\{token\}/);

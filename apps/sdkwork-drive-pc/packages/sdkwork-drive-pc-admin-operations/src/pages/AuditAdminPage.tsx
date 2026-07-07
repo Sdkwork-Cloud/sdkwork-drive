@@ -176,7 +176,7 @@ export function AuditAdminPage({ backendSdkClient, getSession }: AuditAdminPageP
                       <td className="px-3 py-2 text-neutral-600 dark:text-neutral-300">{item.resourceType}</td>
                       <td className="px-3 py-2 font-mono text-xs text-neutral-600 dark:text-neutral-300">{item.resourceId}</td>
                       <td className="px-3 py-2 text-neutral-600 dark:text-neutral-300">{item.operatorId}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-neutral-500">{item.traceId || item.requestId || '--'}</td>
+                      <td className="px-3 py-2 font-mono text-xs text-neutral-500">{item.traceId || item.correlationId || '--'}</td>
                     </tr>
                   ))}
                 </tbody>

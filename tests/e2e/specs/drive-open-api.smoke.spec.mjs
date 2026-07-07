@@ -31,17 +31,14 @@ test.describe('Drive open-api production smoke', () => {
       'Set DRIVE_E2E_OPEN_API_BASE_URL, DRIVE_E2E_SHARE_TOKEN, DRIVE_E2E_SHARE_ACCESS_CODE',
     );
 
-    const denied = await request.get(`${baseUrl}/open/v3/api/drive/share_links/${token}`, {
-      headers: {
-        'x-trace-id': 'e2e-staging-trace-001',
-      },
-    });
+    const denied = await request.get(`${baseUrl}/open/v3/api/drive/share_links/${token}`);
     expect(denied.status()).toBe(403);
-    expect(denied.headers()['x-trace-id']).toBe('e2e-staging-trace-001');
     const deniedBody = await denied.json();
+    const serverTraceId = denied.headers()['x-sdkwork-trace-id'];
     expect(deniedBody.code).toBe(40301);
     expect(typeof deniedBody.traceId).toBe('string');
     expect(deniedBody.traceId.length).toBeGreaterThan(0);
+    expect(serverTraceId).toBe(deniedBody.traceId);
 
     const allowed = await request.get(
       `${baseUrl}/open/v3/api/drive/share_links/${token}?accessCode=${encodeURIComponent(accessCode)}`,

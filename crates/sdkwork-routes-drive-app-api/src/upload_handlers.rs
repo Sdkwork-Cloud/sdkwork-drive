@@ -3,7 +3,8 @@ use crate::app_context::DriveRequestContext;
 use crate::dto::*;
 use crate::error::{
     internal_problem, internal_sql_error, map_service_error, not_found_problem, problem,
-    service_error_kind, ProblemDetail, SdkWorkResultCode};
+    service_error_kind, ProblemDetail, SdkWorkResultCode,
+};
 use crate::node_repository::find_active_node;
 use crate::object_store::{AppDownloadSigner, UploadPartSignCommand};
 use crate::state::AppState;
@@ -33,15 +34,26 @@ use sdkwork_drive_workspace_service::infrastructure::sql::node_head_metadata::{
 use sdkwork_drive_workspace_service::infrastructure::sql::quota_store::SqlQuotaStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::upload_session_store::SqlUploadSessionStore;
 
+use crate::response::{
+    success_created_command_data, success_created_resource, success_envelope, success_resource,
+};
 use crate::route_change::{record_change, record_change_on_connection};
 use crate::upload_support::*;
 use sdkwork_drive_workspace_service::infrastructure::outbox_dispatch::trigger_immediate_outbox_dispatch;
+use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 
 pub(crate) async fn create_upload_session(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateUploadSessionRequest>,
-) -> Result<(StatusCode, Json<CreateUploadSessionResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<CreateUploadSessionResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let started = start_timer();
     let _client_requested_object_key = payload.object_key.as_deref();
     let session_id = payload.session_id.trim();
@@ -81,10 +93,9 @@ pub(crate) async fn create_upload_session(
     )
     .await?
     {
-        return Ok((
-            StatusCode::CREATED,
-            Json(CreateUploadSessionResponse::from(existing)),
-        ));
+        return Ok(success_created_resource(CreateUploadSessionResponse::from(
+            existing,
+        )));
     }
     ensure_upload_session_id_available(&state.pool, session_id).await?;
     let target_version_no =
@@ -149,29 +160,29 @@ pub(crate) async fn create_upload_session(
     )
     .await?;
 
-    Ok((
-        StatusCode::CREATED,
-        Json(CreateUploadSessionResponse {
-            id: created.id,
-            tenant_id: created.tenant_id,
-            space_id: created.space_id,
-            node_id: created.node_id,
-            bucket: created.bucket,
-            object_key: created.object_key,
-            idempotency_key: created.idempotency_key,
-            storage_provider_id: created.storage_provider_id,
-            storage_upload_id: created.storage_upload_id,
-            state: session_state.to_string(),
-            expires_at_epoch_ms: created.expires_at_epoch_ms,
-            version: created.version,
-        }),
-    ))
+    Ok(success_created_resource(CreateUploadSessionResponse {
+        id: created.id,
+        tenant_id: created.tenant_id,
+        space_id: created.space_id,
+        node_id: created.node_id,
+        bucket: created.bucket,
+        object_key: created.object_key,
+        idempotency_key: created.idempotency_key,
+        storage_provider_id: created.storage_provider_id,
+        storage_upload_id: created.storage_upload_id,
+        state: session_state.to_string(),
+        expires_at_epoch_ms: created.expires_at_epoch_ms,
+        version: created.version,
+    }))
 }
 pub(crate) async fn get_upload_session(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(upload_session_id): Path<String>,
-) -> Result<Json<UploadSessionMutationResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<UploadSessionMutationResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let upload_session = find_upload_session(&state.pool, &tenant_id, &upload_session_id).await?;
     let node = find_active_node(&state.pool, &tenant_id, &upload_session.node_id).await?;
@@ -183,14 +194,17 @@ pub(crate) async fn get_upload_session(
         "reader",
     )
     .await?;
-    Ok(Json(UploadSessionMutationResponse::from(upload_session)))
+    Ok(success_resource(UploadSessionMutationResponse::from(
+        upload_session,
+    )))
 }
 pub(crate) async fn presign_upload_part(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((upload_session_id, part_no)): Path<(String, u16)>,
     Json(payload): Json<PresignUploadPartRequest>,
-) -> Result<Json<PresignedUploadPartResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<Json<SdkWorkApiResponse<PresignedUploadPartResponse>>, (StatusCode, Json<ProblemDetail>)>
+{
     let tenant_id = ctx.resolve_tenant_id()?;
     if part_no == 0 || part_no > 10_000 {
         return Err(problem(
@@ -261,7 +275,7 @@ pub(crate) async fn presign_upload_part(
     )
     .await?;
 
-    Ok(Json(PresignedUploadPartResponse {
+    Ok(success_envelope(PresignedUploadPartResponse {
         upload_url: signed.raw_url,
         expires_at_epoch_ms: signed.expires_at_epoch_ms,
         method: signed.method,
@@ -275,7 +289,10 @@ pub(crate) async fn complete_upload_session(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(upload_session_id): Path<String>,
     Json(payload): Json<CompleteUploadSessionRequest>,
-) -> Result<Json<UploadSessionMutationResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<UploadSessionMutationResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     validate_completed_multipart_parts(&payload.parts)?;
     let content_type = validate_content_type(&payload.content_type, "contentType")?;
@@ -368,7 +385,7 @@ pub(crate) async fn complete_upload_session(
             "acquire upload completion transaction connection failed: {error}"
         ))
     })?;
-    sqlx::query("BEGIN")
+    sqlx::query(begin_transaction_sql())
         .execute(&mut *connection)
         .await
         .map_err(internal_sql_error(
@@ -494,20 +511,34 @@ pub(crate) async fn complete_upload_session(
         }
         Err(error) => {
             let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            drop(connection);
+            recover_upload_completion_after_db_failure(
+                &state,
+                &state.pool,
+                &tenant_id,
+                &upload_session,
+                &operator_id,
+            )
+            .await;
             return Err(error);
         }
     }
     drop(connection);
 
     let updated = find_upload_session(&state.pool, &tenant_id, &upload_session_id).await?;
-    Ok(Json(UploadSessionMutationResponse::from(updated)))
+    Ok(success_resource(UploadSessionMutationResponse::from(
+        updated,
+    )))
 }
 pub(crate) async fn abort_upload_session(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(upload_session_id): Path<String>,
     Json(payload): Json<NodeCommandRequest>,
-) -> Result<Json<UploadSessionMutationResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<UploadSessionMutationResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let upload_session = find_upload_session(&state.pool, &tenant_id, &upload_session_id).await?;
@@ -540,13 +571,21 @@ pub(crate) async fn abort_upload_session(
     )
     .await?;
     let updated = find_upload_session(&state.pool, &tenant_id, &upload_session_id).await?;
-    Ok(Json(UploadSessionMutationResponse::from(updated)))
+    Ok(success_resource(UploadSessionMutationResponse::from(
+        updated,
+    )))
 }
 pub(crate) async fn prepare_uploader_upload(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<PrepareUploaderUploadRequest>,
-) -> Result<(StatusCode, Json<PrepareUploaderUploadResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<PrepareUploaderUploadResponse>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let started = start_timer();
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
@@ -643,12 +682,11 @@ pub(crate) async fn prepare_uploader_upload(
         space_id = upload_item.space_id.as_str()
     );
 
-    Ok((
-        StatusCode::CREATED,
-        Json(PrepareUploaderUploadResponse {
+    Ok(success_created_command_data(
+        PrepareUploaderUploadResponse {
             upload_item: UploaderUploadItemResponse::from(upload_item),
             upload_session: UploadSessionMutationResponse::from(upload_session),
-        }),
+        },
     ))
 }
 pub(crate) async fn mark_uploader_part_uploaded(
@@ -656,7 +694,10 @@ pub(crate) async fn mark_uploader_part_uploaded(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((upload_item_id, part_no)): Path<(String, i64)>,
     Json(payload): Json<MarkUploaderPartUploadedRequest>,
-) -> Result<Json<UploaderUploadPartResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<UploaderUploadPartResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let started = start_timer();
     let tenant_id = ctx.resolve_tenant_id()?;
     let upload_item = find_uploader_upload_item(&state.pool, &tenant_id, &upload_item_id)
@@ -698,5 +739,5 @@ pub(crate) async fn mark_uploader_part_uploaded(
         upload_item_id = upload_item.id.as_str(),
         part_no = part_no
     );
-    Ok(Json(UploaderUploadPartResponse::from(part)))
+    Ok(success_resource(UploaderUploadPartResponse::from(part)))
 }

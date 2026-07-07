@@ -139,7 +139,8 @@ where
         .validate_public_path_prefixes(&drive_backend_public_path_prefixes())
         .expect("drive backend-api public prefixes must not cover protected manifest routes");
 
-    let environment = sdkwork_drive_http::web_framework::resolve_drive_web_environment_from_process_env();
+    let environment =
+        sdkwork_drive_http::web_framework::resolve_drive_web_environment_from_process_env();
     let security_policy =
         sdkwork_drive_http::web_framework::drive_service_security_policy(&environment);
 

@@ -38,7 +38,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -46,14 +46,6 @@
               "format": "int64",
               "minimum": 1,
               "maximum": 200
-            }
-          },
-          {
-            "name": "pageToken",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -63,7 +55,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChangeListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ChangeListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -146,7 +145,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "changes.startPageToken.get",
+        "operationId": "changes.startPageToken.retrieve",
         "parameters": [
           {
             "name": "spaceId",
@@ -163,7 +162,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StartPageTokenResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StartPageTokenHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -246,7 +252,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "downloadTokens.resolve",
+        "operationId": "downloadTokens.retrieve",
         "parameters": [
           {
             "name": "token",
@@ -258,8 +264,22 @@
           }
         ],
         "responses": {
-          "307": {
-            "description": "Temporary Redirect"
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
+                    }
+                  ]
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -356,7 +376,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateDownloadUrlResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -435,7 +462,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -446,11 +473,38 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "owner",
+                "lastModified",
+                "contentLength",
+                "type"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
             }
           }
         ],
@@ -460,7 +514,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodeListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -538,12 +599,62 @@
         "x-sdkwork-api-surface": "app-api"
       }
     },
+    "/app/v3/api/drive/favorites/check": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "favorites.check",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckFavoriteNodesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SdkWorkApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
+      }
+    },
     "/app/v3/api/drive/quotas/summary": {
       "get": {
         "tags": [
           "drive"
         ],
-        "operationId": "quotas.summary",
+        "operationId": "quotas.retrieve",
         "parameters": [],
         "responses": {
           "200": {
@@ -551,7 +662,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuotaSummary"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/QuotaSummaryHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -631,7 +749,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveNode"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -712,7 +837,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "nodes.get",
+        "operationId": "nodes.retrieve",
         "parameters": [
           {
             "name": "nodeId",
@@ -729,7 +854,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveNode"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -807,15 +939,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteNodeResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -880,7 +1005,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "nodes.capabilities.get",
+        "operationId": "nodes.capabilities.list",
         "parameters": [
           {
             "name": "nodeId",
@@ -897,7 +1022,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodeCapabilitiesResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NodeCapabilitiesHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -976,7 +1108,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -987,7 +1119,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -1001,7 +1133,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommentListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveCommentListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1109,7 +1248,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveComment"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveCommentHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1192,7 +1338,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "comments.get",
+        "operationId": "comments.retrieve",
         "parameters": [
           {
             "name": "nodeId",
@@ -1217,7 +1363,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveComment"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveCommentHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1333,7 +1486,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveComment"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveCommentHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1434,15 +1594,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -1541,7 +1694,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -1552,7 +1705,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -1566,7 +1719,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommentReplyListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveCommentReplyListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1682,7 +1842,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveCommentReply"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveCommentReplyHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1765,7 +1932,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "commentReplies.get",
+        "operationId": "commentReplies.retrieve",
         "parameters": [
           {
             "name": "nodeId",
@@ -1798,7 +1965,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveCommentReply"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveCommentReplyHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1922,7 +2096,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveCommentReply"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveCommentReplyHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -2031,15 +2212,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -2141,12 +2315,19 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveNode"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -2229,7 +2410,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "nodes.downloadUrls.create",
+        "operationId": "nodes.downloadUrls.retrieve",
         "parameters": [
           {
             "name": "nodeId",
@@ -2256,7 +2437,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateDownloadUrlResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -2351,7 +2539,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateDownloadUrlResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -2419,7 +2614,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "favorites.set",
+        "operationId": "favorites.update",
         "parameters": [
           {
             "name": "nodeId",
@@ -2446,7 +2641,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FavoriteNodeResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FavoriteNodeHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -2539,15 +2741,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FavoriteNodeResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -2653,7 +2848,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -2664,7 +2859,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -2680,7 +2875,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodeLabelListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NodeLabelListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -2763,7 +2965,7 @@
         "tags": [
           "nodeLabels"
         ],
-        "operationId": "nodeLabels.apply",
+        "operationId": "nodeLabels.update",
         "summary": "Apply a label to a node",
         "parameters": [
           {
@@ -2805,7 +3007,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodeLabel"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NodeLabelHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -2886,7 +3095,7 @@
         "tags": [
           "nodeLabels"
         ],
-        "operationId": "nodeLabels.remove",
+        "operationId": "nodeLabels.delete",
         "summary": "Remove a label from a node",
         "parameters": [
           {
@@ -2913,15 +3122,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Node label removed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RemoveNodeLabelResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Validation failed.",
@@ -3028,7 +3230,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveNode"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -3111,7 +3320,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "nodes.path.get",
+        "operationId": "nodes.path.retrieve",
         "parameters": [
           {
             "name": "nodeId",
@@ -3128,7 +3337,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodePathResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NodePathHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -3222,7 +3438,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -3233,7 +3449,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -3247,7 +3463,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PermissionListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DrivePermissionListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -3355,7 +3578,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DrivePermission"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DrivePermissionHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -3458,15 +3688,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -3579,7 +3802,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DrivePermission"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DrivePermissionHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -3660,7 +3890,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "permissions.get",
+        "operationId": "permissions.retrieve",
         "parameters": [
           {
             "name": "nodeId",
@@ -3685,7 +3915,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DrivePermission"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DrivePermissionHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -3779,7 +4016,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -3790,7 +4027,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -3804,7 +4041,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EffectivePermissionListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EffectivePermissionListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -3917,7 +4161,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -3928,7 +4172,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -3944,7 +4188,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodePropertyListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodePropertyListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -4013,7 +4264,7 @@
           "nodeProperties"
         ],
         "summary": "Create or update a node custom property",
-        "operationId": "nodeProperties.set",
+        "operationId": "nodeProperties.update",
         "parameters": [
           {
             "name": "nodeId",
@@ -4056,7 +4307,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveNodeProperty"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodePropertyHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -4165,15 +4423,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Deletion result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteNodePropertyResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Validation failed.",
@@ -4265,7 +4516,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateShareLinkResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CreateShareLinkHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -4357,7 +4615,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -4368,7 +4626,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -4382,7 +4640,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShareLinkListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ShareLinkListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -4465,7 +4730,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "trash.move",
+        "operationId": "trash.create",
         "parameters": [
           {
             "name": "nodeId",
@@ -4487,12 +4752,19 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "OK",
+          "201": {
+            "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveNode"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -4586,7 +4858,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -4597,7 +4869,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -4611,7 +4883,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/VersionListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FileVersionListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -4714,15 +4993,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteVersionResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -4800,7 +5072,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "versions.get",
+        "operationId": "versions.retrieve",
         "parameters": [
           {
             "name": "nodeId",
@@ -4825,7 +5097,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileVersion"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FileVersionHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -4943,7 +5222,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveNode"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -5033,7 +5319,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateFileResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CreateFileHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -5143,7 +5436,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveNode"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -5244,7 +5544,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveNode"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -5338,7 +5645,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -5349,11 +5656,38 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "owner",
+                "lastModified",
+                "contentLength",
+                "type"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
             }
           }
         ],
@@ -5363,7 +5697,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodeListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -5446,7 +5787,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "search.query",
+        "operationId": "search.list",
         "parameters": [
           {
             "name": "q",
@@ -5465,7 +5806,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -5476,7 +5817,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -5490,7 +5831,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodeListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -5590,7 +5938,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClaimShareLinkResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ClaimShareLinkHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -5600,7 +5955,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClaimShareLinkResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ClaimShareLinkHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -5698,7 +6060,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "shareLinks.revoke",
+        "operationId": "shareLinks.delete",
         "parameters": [
           {
             "name": "shareLinkId",
@@ -5710,15 +6072,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -5823,7 +6178,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveShareLink"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ShareLinkHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -5904,7 +6266,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "shareLinks.get",
+        "operationId": "shareLinks.retrieve",
         "parameters": [
           {
             "name": "shareLinkId",
@@ -5921,7 +6283,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveShareLink"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ShareLinkHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -6015,7 +6384,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -6026,11 +6395,38 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "owner",
+                "lastModified",
+                "contentLength",
+                "type"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
             }
           }
         ],
@@ -6040,7 +6436,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodeListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -6140,6 +6543,42 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "spaceType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "personal",
+                "team",
+                "knowledge_base",
+                "git_repository",
+                "app_upload",
+                "rtc"
+              ]
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -6148,7 +6587,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListSpacesResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveSpaceListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -6216,7 +6662,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveSpace"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveSpaceHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -6279,12 +6732,117 @@
         "x-sdkwork-api-surface": "app-api"
       }
     },
+    "/app/v3/api/drive/spaces/{spaceId}/move_destinations": {
+      "get": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "moveDestinations.list",
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "excludeNodeIds",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated node IDs to exclude from results and subtree traversal."
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api"
+      }
+    },
     "/app/v3/api/drive/spaces/{spaceId}": {
       "get": {
         "tags": [
           "drive"
         ],
-        "operationId": "spaces.get",
+        "operationId": "spaces.retrieve",
         "parameters": [
           {
             "name": "spaceId",
@@ -6301,7 +6859,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveSpace"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveSpaceHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -6394,7 +6959,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveSpace"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveSpaceHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -6487,15 +7059,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteSpaceResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -6594,7 +7159,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -6605,7 +7170,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -6622,7 +7187,7 @@
                 "name",
                 "owner",
                 "lastModified",
-                "size",
+                "contentLength",
                 "type"
               ]
             }
@@ -6646,7 +7211,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodeListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -6740,7 +7312,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -6751,7 +7323,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -6765,6 +7337,33 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "owner",
+                "lastModified",
+                "contentLength",
+                "type"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
           }
         ],
         "responses": {
@@ -6773,7 +7372,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodeListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -6883,7 +7489,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveNode"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -6973,7 +7586,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EmptyTrashResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EmptyTrashHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -7083,7 +7703,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveUploadSession"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -7151,7 +7778,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "uploadSessions.get",
+        "operationId": "uploadSessions.retrieve",
         "parameters": [
           {
             "name": "uploadSessionId",
@@ -7168,7 +7795,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UploadSessionMutationResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -7278,7 +7912,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UploadSessionMutationResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -7388,7 +8029,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UploadSessionMutationResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -7471,7 +8119,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "uploadSessions.parts.presign",
+        "operationId": "uploadSessions.parts.update",
         "parameters": [
           {
             "name": "uploadSessionId",
@@ -7508,7 +8156,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PresignedUploadPart"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PresignedUploadPartHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -7604,12 +8259,19 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Watch channel created.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveWatchChannel"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveWatchChannelHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -7718,12 +8380,19 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Watch channel created.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveWatchChannel"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveWatchChannelHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -7836,7 +8505,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -7847,7 +8516,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -7863,7 +8532,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveWatchChannelListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveWatchChannelListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -7946,7 +8622,7 @@
         "tags": [
           "watchChannels"
         ],
-        "operationId": "watchChannels.get",
+        "operationId": "watchChannels.retrieve",
         "summary": "Get a Drive watch channel",
         "parameters": [
           {
@@ -7967,7 +8643,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveWatchChannel"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveWatchChannelHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -8081,7 +8764,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StopWatchChannelResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StopWatchChannelHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -8181,7 +8871,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DownloadPackageResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DownloadPackageHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -8279,7 +8976,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "downloadPackages.downloadUrls.get",
+        "operationId": "downloadPackages.downloadUrls.retrieve",
         "parameters": [
           {
             "name": "packageId",
@@ -8298,7 +8995,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DownloadPackageResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DownloadPackageHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -8413,7 +9117,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ArchiveEntryListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ArchiveEntryListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -8518,12 +9229,19 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtractArchiveEntriesResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ExtractArchiveEntriesHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -8606,7 +9324,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "uploader.uploads.prepare",
+        "operationId": "uploader.uploads.create",
         "requestBody": {
           "required": true,
           "content": {
@@ -8623,7 +9341,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PrepareUploaderUploadResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PrepareUploaderUploadHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -8706,7 +9431,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "uploader.uploads.parts.markUploaded",
+        "operationId": "uploader.uploads.parts.update",
         "parameters": [
           {
             "name": "uploadItemId",
@@ -8744,7 +9469,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UploaderUploadPart"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/UploaderUploadPartHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -8839,7 +9571,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -8881,7 +9613,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AssetPage"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AssetListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -8996,7 +9735,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AssetItem"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AssetItemHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -9094,7 +9840,7 @@
         "tags": [
           "assets"
         ],
-        "operationId": "assets.get",
+        "operationId": "assets.retrieve",
         "summary": "Get a global asset",
         "parameters": [
           {
@@ -9112,7 +9858,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AssetItem"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AssetItemHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -9236,7 +9989,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AssetItem"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AssetItemHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -9362,7 +10122,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AssetItem"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AssetItemHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -9488,7 +10255,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AssetItem"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AssetItemHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -9598,7 +10372,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -9615,7 +10389,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AssetCollectionPage"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AssetCollectionListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -9730,7 +10511,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AssetCollection"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AssetCollectionHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -9856,7 +10644,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AssetCollectionItem"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AssetCollectionItemHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -9975,15 +10770,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteAssetCollectionItemResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Problem detail",
@@ -10106,7 +10894,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AssetRelation"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AssetRelationHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -10225,15 +11020,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteAssetRelationResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Problem detail",
@@ -10370,61 +11158,6 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
-          }
-        }
-      },
-      "ChangeListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Change"
-            }
-          },
-          "nextCursor": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "nextPageToken": {
-            "type": "string"
-          }
-        }
-      },
-      "CommentListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DriveComment"
-            }
-          },
-          "nextPageToken": {
-            "type": "string"
-          }
-        }
-      },
-      "CommentReplyListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DriveCommentReply"
-            }
-          },
-          "nextPageToken": {
-            "type": "string"
           }
         }
       },
@@ -10643,6 +11376,24 @@
           }
         }
       },
+      "CreateFileHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/CreateFileResponse"
+              }
+            }
+          }
+        ]
+      },
       "CreateFolderRequest": {
         "type": "object",
         "required": [
@@ -10851,60 +11602,6 @@
           }
         }
       },
-      "DeleteNodePropertyResponse": {
-        "type": "object",
-        "required": [
-          "deleted"
-        ],
-        "properties": {
-          "deleted": {
-            "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
-      "DeleteNodeResponse": {
-        "type": "object",
-        "required": [
-          "deleted"
-        ],
-        "properties": {
-          "deleted": {
-            "type": "boolean"
-          }
-        }
-      },
-      "DeleteSpaceResponse": {
-        "type": "object",
-        "required": [
-          "deleted",
-          "space",
-          "deletedNodeCount"
-        ],
-        "properties": {
-          "deleted": {
-            "type": "boolean"
-          },
-          "space": {
-            "$ref": "#/components/schemas/DriveSpace"
-          },
-          "deletedNodeCount": {
-            "type": "integer",
-            "format": "int64"
-          }
-        }
-      },
-      "DeleteVersionResponse": {
-        "type": "object",
-        "required": [
-          "deleted"
-        ],
-        "properties": {
-          "deleted": {
-            "type": "boolean"
-          }
-        }
-      },
       "DriveComment": {
         "type": "object",
         "required": [
@@ -11013,6 +11710,242 @@
             "format": "date-time"
           }
         }
+      },
+      "DriveCommentHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/DriveComment"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DriveCommentListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DriveComment"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DriveCommentReplyHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/DriveCommentReply"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DriveCommentReplyListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DriveCommentReply"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DriveNodePropertyHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/DriveNodeProperty"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DriveNodePropertyListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DriveNodeProperty"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "NodeLabelHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/NodeLabel"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "NodeLabelListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/NodeLabel"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
       },
       "DriveLabelSummary": {
         "type": "object",
@@ -11290,6 +12223,98 @@
           }
         }
       },
+      "DrivePermissionHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/DrivePermission"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DrivePermissionListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DrivePermission"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "EffectivePermissionListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/EffectivePermission"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
       "ClaimShareLinkResponse": {
         "type": "object",
         "required": [
@@ -11431,6 +12456,101 @@
             "description": "Extraction code returned only once when configured at create time."
           }
         }
+      },
+      "CreateShareLinkHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/CreateShareLinkResponse"
+              }
+            }
+          }
+        ]
+      },
+      "ShareLinkHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/DriveShareLink"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ShareLinkListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DriveShareLink"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ClaimShareLinkHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/ClaimShareLinkResponse"
+              }
+            }
+          }
+        ]
       },
       "DriveSpace": {
         "type": "object",
@@ -11623,23 +12743,6 @@
           }
         }
       },
-      "EffectivePermissionListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EffectivePermission"
-            }
-          },
-          "nextPageToken": {
-            "type": "string"
-          }
-        }
-      },
       "EmptyTrashRequest": {
         "type": "object",
         "required": [],
@@ -11652,14 +12755,42 @@
       "EmptyTrashResponse": {
         "type": "object",
         "required": [
-          "deletedCount"
+          "deletedCount",
+          "skippedCount",
+          "hasMore"
         ],
         "properties": {
           "deletedCount": {
             "type": "integer",
             "format": "int64"
+          },
+          "skippedCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "True when more trashed items remain after this batch (500-item cap per request)."
           }
         }
+      },
+      "EmptyTrashHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/EmptyTrashResponse"
+              }
+            }
+          }
+        ]
       },
       "FavoriteNodeRequest": {
         "type": "object",
@@ -11688,6 +12819,28 @@
             "type": "boolean"
           }
         }
+      },
+      "CheckFavoriteNodesRequest": {
+        "type": "object",
+        "required": [
+          "nodeIds"
+        ],
+        "properties": {
+          "nodeIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200
+          },
+          "subjectType": {
+            "type": "string"
+          },
+          "subjectId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
       },
       "FileVersion": {
         "type": "object",
@@ -11737,19 +12890,64 @@
           }
         }
       },
-      "ListSpacesResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DriveSpace"
+      "DriveSpaceListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DriveSpace"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
             }
           }
-        }
+        ]
+      },
+      "DriveSpaceHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/DriveSpace"
+                  }
+                }
+              }
+            }
+          }
+        ]
       },
       "MoveNodeRequest": {
         "type": "object",
@@ -11936,46 +13134,6 @@
         },
         "additionalProperties": false
       },
-      "NodeLabelListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/NodeLabel"
-            }
-          },
-          "nextPageToken": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "NodeListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DriveNode"
-            }
-          },
-          "nextPageToken": {
-            "type": "string"
-          },
-          "incompletePage": {
-            "type": "boolean",
-            "description": "True when ACL pagination scan budget was exhausted before the requested page could be filled."
-          }
-        }
-      },
       "NodePathResponse": {
         "type": "object",
         "required": [
@@ -11994,42 +13152,6 @@
             "items": {
               "type": "string"
             }
-          }
-        }
-      },
-      "NodePropertyListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DriveNodeProperty"
-            }
-          },
-          "nextPageToken": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "PermissionListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DrivePermission"
-            }
-          },
-          "nextPageToken": {
-            "type": "string"
           }
         }
       },
@@ -12093,7 +13215,9 @@
         "required": [
           "type",
           "title",
-          "status"
+          "status",
+          "code",
+          "traceId"
         ],
         "properties": {
           "type": {
@@ -12115,12 +13239,9 @@
             "type": "string"
           },
           "code": {
-            "type": "string"
+            "$ref": "#/components/schemas/SdkWorkPlatformErrorCode"
           },
           "traceId": {
-            "type": "string"
-          },
-          "requestId": {
             "type": "string",
             "format": "uuid",
             "description": "Server-owned request correlation id."
@@ -12161,18 +13282,6 @@
           }
         }
       },
-      "RemoveNodeLabelResponse": {
-        "type": "object",
-        "required": [
-          "removed"
-        ],
-        "properties": {
-          "removed": {
-            "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
       "SetNodePropertyRequest": {
         "type": "object",
         "required": [
@@ -12194,23 +13303,6 @@
           }
         },
         "additionalProperties": false
-      },
-      "ShareLinkListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DriveShareLink"
-            }
-          },
-          "nextPageToken": {
-            "type": "string"
-          }
-        }
       },
       "StartPageTokenResponse": {
         "type": "object",
@@ -12383,23 +13475,6 @@
           }
         }
       },
-      "VersionListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FileVersion"
-            }
-          },
-          "nextPageToken": {
-            "type": "string"
-          }
-        }
-      },
       "CreateWatchChannelRequest": {
         "type": "object",
         "required": [
@@ -12537,25 +13612,6 @@
           "version": {
             "type": "integer",
             "minimum": 1
-          }
-        },
-        "additionalProperties": false
-      },
-      "DriveWatchChannelListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DriveWatchChannel"
-            }
-          },
-          "nextPageToken": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12775,19 +13831,38 @@
           }
         }
       },
-      "ArchiveEntryListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ArchiveEntry"
+      "ArchiveEntryListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ArchiveEntry"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
             }
           }
-        }
+        ]
       },
       "ExtractArchiveEntriesRequest": {
         "type": "object",
@@ -12828,6 +13903,24 @@
           }
         }
       },
+      "ExtractArchiveEntriesHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/ExtractArchiveEntriesResponse"
+              }
+            }
+          }
+        ]
+      },
       "FieldError": {
         "type": "object",
         "additionalProperties": false,
@@ -12843,7 +13936,10 @@
             "type": "string"
           },
           "code": {
-            "type": "string"
+            "type": "integer",
+            "format": "int32",
+            "minimum": 40011,
+            "maximum": 40099
           }
         }
       },
@@ -13269,6 +14365,10 @@
       "MediaResource": {
         "type": "object",
         "additionalProperties": false,
+        "required": [
+          "kind",
+          "source"
+        ],
         "properties": {
           "id": {
             "type": "string"
@@ -13279,11 +14379,10 @@
               "image",
               "video",
               "audio",
+              "voice",
               "document",
               "archive",
-              "file",
-              "folder",
-              "generated",
+              "model",
               "other"
             ]
           },
@@ -13297,17 +14396,31 @@
               "generated"
             ]
           },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "publicUrl": {
+            "type": "string",
+            "format": "uri"
+          },
           "uri": {
             "type": "string"
           },
-          "fileName": {
+          "objectBlobId": {
             "type": "string"
+          },
+          "fileName": {
+            "type": "string",
+            "maxLength": 512
           },
           "mimeType": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 256
           },
           "sizeBytes": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^[0-9]+$"
           },
           "checksum": {
             "type": "object",
@@ -13321,40 +14434,147 @@
               }
             }
           },
-          "url": {
-            "type": "string"
-          },
-          "mediaResourceId": {
-            "type": "string",
-            "description": "Legacy alias for id."
-          },
-          "mediaType": {
-            "type": "string",
-            "description": "Legacy alias for kind."
-          },
-          "contentType": {
-            "type": "string",
-            "description": "Legacy alias for mimeType."
-          },
           "width": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "minimum": 0
           },
           "height": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "minimum": 0
           },
-          "durationMs": {
-            "type": "integer",
-            "format": "int64"
+          "durationSeconds": {
+            "type": "number",
+            "minimum": 0
           },
-          "checksumSha256": {
+          "altText": {
             "type": "string",
-            "description": "Legacy checksum field."
+            "maxLength": 512
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "poster": {
+            "$ref": "#/components/schemas/MediaResource"
+          },
+          "thumbnails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaResource"
+            }
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaResource"
+            }
+          },
+          "access": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "private",
+                  "tenant",
+                  "organization",
+                  "public",
+                  "signed"
+                ]
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "visibility"
+            ]
+          },
+          "ai": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "provenance": {
+                "type": "string",
+                "enum": [
+                  "uploaded",
+                  "generated",
+                  "edited",
+                  "imported"
+                ]
+              },
+              "provider": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "promptId": {
+                "type": "string"
+              },
+              "generationTaskId": {
+                "type": "string"
+              },
+              "sourceMediaIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "seed": {
+                "type": "string"
+              },
+              "moderationStatus": {
+                "type": "string",
+                "enum": [
+                  "unknown",
+                  "pending",
+                  "approved",
+                  "rejected",
+                  "blocked"
+                ]
+              },
+              "safetyLabels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "metadata": {
             "type": "object",
             "additionalProperties": true
+          },
+          "mediaResourceId": {
+            "type": "string",
+            "deprecated": true,
+            "description": "Legacy alias for id."
+          },
+          "mediaType": {
+            "type": "string",
+            "deprecated": true,
+            "description": "Legacy alias for kind."
+          },
+          "contentType": {
+            "type": "string",
+            "deprecated": true,
+            "description": "Legacy alias for mimeType."
+          },
+          "durationMs": {
+            "type": "integer",
+            "format": "int64",
+            "deprecated": true,
+            "description": "Legacy duration field. Use durationSeconds."
+          },
+          "checksumSha256": {
+            "type": "string",
+            "deprecated": true,
+            "description": "Legacy checksum field. Use checksum."
           }
         }
       },
@@ -13489,24 +14709,6 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
-          }
-        }
-      },
-      "AssetPage": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AssetItem"
-            }
-          },
-          "nextCursor": {
-            "type": "string"
           }
         }
       },
@@ -13674,24 +14876,6 @@
           }
         }
       },
-      "AssetCollectionPage": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AssetCollection"
-            }
-          },
-          "nextCursor": {
-            "type": "string"
-          }
-        }
-      },
       "CreateAssetCollectionRequest": {
         "type": "object",
         "additionalProperties": false,
@@ -13766,18 +14950,6 @@
           "sortOrder": {
             "type": "integer",
             "format": "int64"
-          }
-        }
-      },
-      "DeleteAssetCollectionItemResponse": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "deleted"
-        ],
-        "properties": {
-          "deleted": {
-            "type": "boolean"
           }
         }
       },
@@ -13872,17 +15044,804 @@
           }
         }
       },
-      "DeleteAssetRelationResponse": {
+      "SdkWorkApiResponse": {
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "deleted"
+          "code",
+          "data",
+          "traceId"
         ],
         "properties": {
-          "deleted": {
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+              0
+            ],
+            "default": 0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "data": {
+            "description": "Operation-specific payload typed per response schema."
+          },
+          "traceId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Server-owned request correlation id."
+          }
+        }
+      },
+      "PageInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "offset",
+              "cursor"
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200
+          },
+          "totalItems": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hasMore": {
             "type": "boolean"
           }
         }
+      },
+      "SdkWorkPlatformErrorCode": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 40001,
+        "maximum": 79999,
+        "description": "Platform or domain error code per API_SPEC.md §15.3."
+      },
+      "DriveNodeHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/DriveNode"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "QuotaSummaryHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/QuotaSummary"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "CreateDownloadUrlHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/CreateDownloadUrlResponse"
+              }
+            }
+          }
+        ]
+      },
+      "DriveUploadSessionHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/DriveUploadSession"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "PresignedUploadPartHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/PresignedUploadPart"
+              }
+            }
+          }
+        ]
+      },
+      "PrepareUploaderUploadHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/PrepareUploaderUploadResponse"
+              }
+            }
+          }
+        ]
+      },
+      "UploaderUploadPartHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/UploaderUploadPart"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "FileVersionHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/FileVersion"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "FavoriteNodeHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/FavoriteNodeResponse"
+              }
+            }
+          }
+        ]
+      },
+      "NodePathHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/NodePathResponse"
+              }
+            }
+          }
+        ]
+      },
+      "NodeCapabilitiesHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/NodeCapabilitiesResponse"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "StartPageTokenHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/StartPageTokenResponse"
+              }
+            }
+          }
+        ]
+      },
+      "DriveWatchChannelHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/DriveWatchChannel"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "StopWatchChannelHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/StopWatchChannelResponse"
+              }
+            }
+          }
+        ]
+      },
+      "DownloadPackageHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/DownloadPackageResponse"
+              }
+            }
+          }
+        ]
+      },
+      "AssetItemHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/AssetItem"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "AssetCollectionHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/AssetCollection"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "AssetCollectionItemHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/AssetCollectionItem"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "AssetRelationHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "$ref": "#/components/schemas/AssetRelation"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DriveNodeListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DriveNode"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  },
+                  "incompletePage": {
+                    "type": "boolean",
+                    "description": "True when ACL pagination scan budget was exhausted before the requested page could be filled."
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ChangeListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Change"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "FileVersionListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FileVersion"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DriveWatchChannelListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DriveWatchChannel"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "AssetListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/AssetItem"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "AssetCollectionListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/AssetCollection"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "SdkWorkResourceData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item"
+        ],
+        "properties": {
+          "item": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Typed domain resource for the operation."
+          }
+        }
+      },
+      "SdkWorkPageData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "SdkWorkCommandData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "accepted"
+        ],
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "const": true
+          },
+          "resourceId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "SdkWorkResourceResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/SdkWorkResourceData"
+              }
+            }
+          }
+        ]
+      },
+      "SdkWorkCommandResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/SdkWorkCommandData"
+              }
+            }
+          }
+        ]
       }
     },
     "securitySchemes": {

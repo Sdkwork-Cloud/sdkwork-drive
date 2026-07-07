@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-sdk-generated-go"
   },
-  "changeFingerprint": "eccd07fa4dd0882556faa290f8c87bd7d6f563993b7334e324c8d8e618808f37",
+  "changeFingerprint": "1ced540c3a7b1d64b0f2a81ae8e33f57ad47996cbcd4e9639d887b2908a0adc0",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [],
@@ -39,6 +39,8 @@
       "types/open_download_url_response.go",
       "types/open_node.go",
       "types/open_share_link_resolve_response.go",
+      "types/open_share_links_download_urls_create_response201.go",
+      "types/open_share_links_retrieve_response.go",
       "types/problem_detail.go",
       "types/sdk_work_api_response.go",
       "types/sdk_work_platform_error_code.go",

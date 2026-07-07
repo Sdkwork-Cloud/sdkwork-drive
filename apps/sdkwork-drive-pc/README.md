@@ -22,7 +22,7 @@ apps/sdkwork-drive-pc/
     sdkwork-drive-pc-file/       file feature UI backed by injected DriveFileService
     sdkwork-drive-pc-commons/    shared UI components and i18n
     sdkwork-drive-pc-transfer/   transfer feature UI
-    sdkwork-drive-pc-types/      shared Drive UI/domain types
+    sdkwork-drive-pc-types/      compatibility re-export for core-owned Drive UI/domain types
     sdkwork-drive-pc-admin-core/ admin SDK wrappers (storage + backend)
     sdkwork-drive-pc-admin-storage-providers/ storage provider admin UI
     sdkwork-drive-pc-admin-operations/ backend operations admin UI

@@ -1,25 +1,36 @@
 package com.sdkwork.drive.app.sdk.generated.java.model;
 
+import java.util.List;
 import java.util.Map;
 
 public class MediaResource {
     private String id;
     private String kind;
     private String source;
+    private String url;
+    private String publicUrl;
     private String uri;
+    private String objectBlobId;
     private String fileName;
     private String mimeType;
     private String sizeBytes;
     private Map<String, Object> checksum;
-    private String url;
+    private Integer width;
+    private Integer height;
+    private Double durationSeconds;
+    private String altText;
+    private String title;
+    private MediaResource poster;
+    private List<MediaResource> thumbnails;
+    private List<MediaResource> variants;
+    private Map<String, Object> access;
+    private Map<String, Object> ai;
+    private Map<String, Object> metadata;
     private String mediaResourceId;
     private String mediaType;
     private String contentType;
-    private Integer width;
-    private Integer height;
     private Integer durationMs;
     private String checksumSha256;
-    private Map<String, Object> metadata;
 
     public String getId() {
         return this.id;
@@ -45,12 +56,36 @@ public class MediaResource {
         this.source = source;
     }
 
+    public String getUrl() {
+        return this.url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getPublicUrl() {
+        return this.publicUrl;
+    }
+
+    public void setPublicUrl(String publicUrl) {
+        this.publicUrl = publicUrl;
+    }
+
     public String getUri() {
         return this.uri;
     }
 
     public void setUri(String uri) {
         this.uri = uri;
+    }
+
+    public String getObjectBlobId() {
+        return this.objectBlobId;
+    }
+
+    public void setObjectBlobId(String objectBlobId) {
+        this.objectBlobId = objectBlobId;
     }
 
     public String getFileName() {
@@ -85,12 +120,92 @@ public class MediaResource {
         this.checksum = checksum;
     }
 
-    public String getUrl() {
-        return this.url;
+    public Integer getWidth() {
+        return this.width;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setWidth(Integer width) {
+        this.width = width;
+    }
+
+    public Integer getHeight() {
+        return this.height;
+    }
+
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public Double getDurationSeconds() {
+        return this.durationSeconds;
+    }
+
+    public void setDurationSeconds(Double durationSeconds) {
+        this.durationSeconds = durationSeconds;
+    }
+
+    public String getAltText() {
+        return this.altText;
+    }
+
+    public void setAltText(String altText) {
+        this.altText = altText;
+    }
+
+    public String getTitle() {
+        return this.title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public MediaResource getPoster() {
+        return this.poster;
+    }
+
+    public void setPoster(MediaResource poster) {
+        this.poster = poster;
+    }
+
+    public List<MediaResource> getThumbnails() {
+        return this.thumbnails;
+    }
+
+    public void setThumbnails(List<MediaResource> thumbnails) {
+        this.thumbnails = thumbnails;
+    }
+
+    public List<MediaResource> getVariants() {
+        return this.variants;
+    }
+
+    public void setVariants(List<MediaResource> variants) {
+        this.variants = variants;
+    }
+
+    public Map<String, Object> getAccess() {
+        return this.access;
+    }
+
+    public void setAccess(Map<String, Object> access) {
+        this.access = access;
+    }
+
+    public Map<String, Object> getAi() {
+        return this.ai;
+    }
+
+    public void setAi(Map<String, Object> ai) {
+        this.ai = ai;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return this.metadata;
+    }
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
     }
 
     public String getMediaResourceId() {
@@ -117,22 +232,6 @@ public class MediaResource {
         this.contentType = contentType;
     }
 
-    public Integer getWidth() {
-        return this.width;
-    }
-
-    public void setWidth(Integer width) {
-        this.width = width;
-    }
-
-    public Integer getHeight() {
-        return this.height;
-    }
-
-    public void setHeight(Integer height) {
-        this.height = height;
-    }
-
     public Integer getDurationMs() {
         return this.durationMs;
     }
@@ -147,13 +246,5 @@ public class MediaResource {
 
     public void setChecksumSha256(String checksumSha256) {
         this.checksumSha256 = checksumSha256;
-    }
-
-    public Map<String, Object> getMetadata() {
-        return this.metadata;
-    }
-
-    public void setMetadata(Map<String, Object> metadata) {
-        this.metadata = metadata;
     }
 }

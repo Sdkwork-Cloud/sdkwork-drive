@@ -2,20 +2,23 @@ use crate::acl;
 use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    AssetActionRequest, AssetCollectionItemResponse, AssetCollectionResponse,
-    AssetItemResponse, AssetRelationResponse, CreateAssetCollectionItemRequest,
-    CreateAssetCollectionRequest, CreateAssetRelationRequest, CreateAssetRequest,
-    DeleteAssetCollectionItemResponse, DeleteAssetRelationResponse, ListAssetCollectionsQuery,
-    ListAssetsQuery, MediaResourceResponse, PageRequest, UpdateAssetRequest,
-    ASSET_NODE_SELECT_COLUMNS,
+    AssetActionRequest, AssetCollectionItemResponse, AssetCollectionResponse, AssetItemResponse,
+    AssetRelationResponse, CreateAssetCollectionItemRequest, CreateAssetCollectionRequest,
+    CreateAssetRelationRequest, CreateAssetRequest, ListAssetCollectionsQuery, ListAssetsQuery,
+    MediaResourceResponse, PageRequest, UpdateAssetRequest, ASSET_NODE_SELECT_COLUMNS,
 };
-use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{
-    internal_sql_error, is_unique_constraint_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
+    internal_sql_error, is_unique_constraint_error, not_found_problem, problem, ProblemDetail,
+    SdkWorkResultCode,
+};
 use crate::hashing::sha256_raw_hex_separated;
 use crate::ids::next_drive_id;
 use crate::mappers::map_node_row;
 use crate::node_repository::{find_active_node, find_node};
+use crate::response::{
+    no_content, success_created_resource, success_list_page_simple, success_resource,
+    DriveListHttpResponse,
+};
 use crate::state::AppState;
 use crate::validators::{normalize_optional_text, require_non_empty_text, validate_page_size_i64};
 use axum::extract::Path;
@@ -24,6 +27,7 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Extension;
 use axum::Json;
+use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_contract::drive::domain_events as drive_events;
 use sdkwork_drive_contract::{
     build_drive_backed_media_resource, BuildDriveBackedMediaResourceInput, DriveNodeId,
@@ -32,6 +36,7 @@ use sdkwork_drive_contract::{
 use sdkwork_drive_workspace_service::infrastructure::change_recorder::{
     self, RecordDriveChangeCommand,
 };
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use serde_json::{json, Value};
 use sqlx::AnyPool;
 use sqlx::Row;
@@ -73,8 +78,7 @@ pub(crate) async fn list_assets(
     let kind_filter_for_fetch = kind_filter.clone();
     let source_type_filter_for_fetch = source_type_filter.clone();
     let needle_for_fetch = needle.clone();
-    let reader_acl_predicate =
-        acl_sql::node_reader_visible_sql("dr_drive_node", "$2", "$3");
+    let reader_acl_predicate = acl_sql::node_reader_visible_sql("dr_drive_node", "$2", "$3");
 
     let (rows, next_page_token) = acl::paginate_offset_limited_items(
         page,
@@ -154,7 +158,13 @@ pub(crate) async fn create_asset(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateAssetRequest>,
-) -> Result<(StatusCode, Json<AssetItemResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<AssetItemResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(None)?;
     let organization_id =
@@ -243,14 +253,17 @@ pub(crate) async fn create_asset(
         organization_id.as_deref(),
     )
     .await?;
-    Ok((StatusCode::CREATED, Json(item)))
+    Ok(success_created_resource(item))
 }
 
 pub(crate) async fn get_asset(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(asset_id): Path<String>,
-) -> Result<Json<AssetItemResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<AssetItemResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &asset_id).await?;
     ensure_asset_eligible_node(&node)?;
@@ -262,7 +275,7 @@ pub(crate) async fn get_asset(
         ctx.organization_id.as_deref(),
     )
     .await?;
-    Ok(Json(item))
+    Ok(success_resource(item))
 }
 
 pub(crate) async fn update_asset(
@@ -270,7 +283,10 @@ pub(crate) async fn update_asset(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(asset_id): Path<String>,
     Json(payload): Json<UpdateAssetRequest>,
-) -> Result<Json<AssetItemResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<AssetItemResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(None)?;
     let node = find_active_node(&state.pool, &tenant_id, &asset_id).await?;
@@ -347,7 +363,7 @@ pub(crate) async fn update_asset(
         ctx.organization_id.as_deref(),
     )
     .await?;
-    Ok(Json(item))
+    Ok(success_resource(item))
 }
 
 pub(crate) async fn archive_asset(
@@ -355,7 +371,10 @@ pub(crate) async fn archive_asset(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(asset_id): Path<String>,
     Json(payload): Json<AssetActionRequest>,
-) -> Result<Json<AssetItemResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<AssetItemResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     set_asset_archived_flag(&state, &ctx, &asset_id, true, payload.reason.as_deref()).await
 }
 
@@ -364,7 +383,10 @@ pub(crate) async fn restore_asset(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(asset_id): Path<String>,
     Json(_payload): Json<AssetActionRequest>,
-) -> Result<Json<AssetItemResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<AssetItemResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     set_asset_archived_flag(&state, &ctx, &asset_id, false, None).await
 }
 
@@ -417,7 +439,13 @@ pub(crate) async fn create_asset_collection(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateAssetCollectionRequest>,
-) -> Result<(StatusCode, Json<AssetCollectionResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<AssetCollectionResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let user_id = ctx.user_id.clone();
     let operator_id = ctx.resolve_operator_id(None)?;
@@ -459,7 +487,7 @@ pub(crate) async fn create_asset_collection(
     let collection =
         parse_collection_from_property(&tenant_id, &user_id, &property_key, &body.to_string())
             .ok_or_else(|| not_found_problem("collection not found"))?;
-    Ok((StatusCode::CREATED, Json(collection)))
+    Ok(success_created_resource(collection))
 }
 
 pub(crate) async fn add_asset_collection_item(
@@ -467,7 +495,13 @@ pub(crate) async fn add_asset_collection_item(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(collection_id): Path<String>,
     Json(payload): Json<CreateAssetCollectionItemRequest>,
-) -> Result<(StatusCode, Json<AssetCollectionItemResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<AssetCollectionItemResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let user_id = ctx.user_id.clone();
     let operator_id = ctx.resolve_operator_id(None)?;
@@ -506,23 +540,20 @@ pub(crate) async fn add_asset_collection_item(
     )
     .await?;
 
-    Ok((
-        StatusCode::CREATED,
-        Json(AssetCollectionItemResponse {
-            id: item_id,
-            tenant_id,
-            collection_id,
-            asset_id,
-            sort_order: payload.sort_order,
-        }),
-    ))
+    Ok(success_created_resource(AssetCollectionItemResponse {
+        id: item_id,
+        tenant_id,
+        collection_id,
+        asset_id,
+        sort_order: payload.sort_order,
+    }))
 }
 
 pub(crate) async fn delete_asset_collection_item(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((collection_id, item_id)): Path<(String, String)>,
-) -> Result<Json<DeleteAssetCollectionItemResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let user_id = ctx.user_id.clone();
     let operator_id = ctx.resolve_operator_id(None)?;
@@ -558,9 +589,8 @@ pub(crate) async fn delete_asset_collection_item(
     .await
     .map_err(internal_sql_error("delete asset collection item failed"))?
     .rows_affected();
-    Ok(Json(DeleteAssetCollectionItemResponse {
-        deleted: affected > 0,
-    }))
+    let _deleted = affected > 0;
+    Ok(no_content())
 }
 
 pub(crate) async fn create_asset_relation(
@@ -568,7 +598,13 @@ pub(crate) async fn create_asset_relation(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(asset_id): Path<String>,
     Json(payload): Json<CreateAssetRelationRequest>,
-) -> Result<(StatusCode, Json<AssetRelationResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<AssetRelationResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(None)?;
     let relation_type = require_non_empty_text(payload.relation_type, "relationType")?;
@@ -616,12 +652,9 @@ pub(crate) async fn create_asset_relation(
     )
     .await?;
 
-    Ok((
-        StatusCode::CREATED,
-        Json(
-            parse_relation_from_property(&property_key, &body.to_string())
-                .ok_or_else(|| not_found_problem("relation not found"))?,
-        ),
+    Ok(success_created_resource(
+        parse_relation_from_property(&property_key, &body.to_string())
+            .ok_or_else(|| not_found_problem("relation not found"))?,
     ))
 }
 
@@ -629,7 +662,7 @@ pub(crate) async fn delete_asset_relation(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((asset_id, relation_id)): Path<(String, String)>,
-) -> Result<Json<DeleteAssetRelationResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(None)?;
     let node = find_active_node(&state.pool, &tenant_id, &asset_id).await?;
@@ -651,26 +684,25 @@ pub(crate) async fn delete_asset_relation(
     .await
     .map_err(internal_sql_error("delete asset relation failed"))?
     .rows_affected();
-    Ok(Json(DeleteAssetRelationResponse {
-        deleted: affected > 0,
-    }))
+    let _deleted = affected > 0;
+    Ok(no_content())
 }
 
-pub(crate) async fn asset_upload_not_implemented() -> (StatusCode, Json<ProblemDetail>) {
+pub(crate) async fn legacy_asset_upload_route_gone() -> (StatusCode, Json<ProblemDetail>) {
     problem(
-        StatusCode::NOT_IMPLEMENTED,
-        "not implemented",
+        StatusCode::GONE,
+        "legacy route retired",
         "legacy asset upload endpoints are not available; use Drive uploader APIs",
-        SdkWorkResultCode::InternalError,
+        SdkWorkResultCode::Gone,
     )
 }
 
 pub(crate) async fn asset_method_not_allowed() -> (StatusCode, Json<ProblemDetail>) {
     problem(
-        StatusCode::NOT_IMPLEMENTED,
-        "not implemented",
+        StatusCode::METHOD_NOT_ALLOWED,
+        "method not allowed",
         "Drive assets API method is not available on this route",
-        SdkWorkResultCode::InternalError,
+        SdkWorkResultCode::MethodNotAllowed,
     )
 }
 
@@ -684,7 +716,13 @@ fn parse_asset_page_request(
     page_size: Option<i64>,
     cursor: Option<String>,
 ) -> Result<PageRequest, (StatusCode, Json<ProblemDetail>)> {
-    let limit = validate_page_size_i64(page_size, 200, 1, 200, "pageSize")?;
+    let limit = validate_page_size_i64(
+        page_size,
+        crate::constants::DEFAULT_LIST_PAGE_SIZE,
+        1,
+        crate::constants::MAX_LIST_PAGE_SIZE,
+        "page_size",
+    )?;
     let offset = match normalize_optional_text(cursor) {
         Some(raw) => raw.parse::<i64>().map_err(|_| {
             problem(
@@ -1075,7 +1113,10 @@ async fn set_asset_archived_flag(
     asset_id: &str,
     archived: bool,
     archive_reason: Option<&str>,
-) -> Result<Json<AssetItemResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<AssetItemResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(None)?;
     let node = find_active_node(&state.pool, &tenant_id, asset_id).await?;
@@ -1152,7 +1193,7 @@ async fn set_asset_archived_flag(
         ctx.organization_id.as_deref(),
     )
     .await?;
-    Ok(Json(item))
+    Ok(success_resource(item))
 }
 
 async fn update_node_name_if_needed(
@@ -1586,32 +1627,69 @@ async fn find_collection_item_property_key(
     collection_id: &str,
     item_id: &str,
 ) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
-    let rows = sqlx::query(
-        "SELECT property_key, property_value
-         FROM dr_drive_node_property
-         WHERE tenant_id=$1
-           AND node_id=$2
-           AND visibility=$3
-           AND lifecycle_status='active'
-           AND property_key LIKE $4",
-    )
-    .bind(tenant_id)
-    .bind(catalog_node_id)
-    .bind(PROPERTY_VISIBILITY)
-    .bind(format!("{COLLECTION_ITEM_KEY_PREFIX}{collection_id}.%"))
-    .fetch_all(pool)
-    .await
-    .map_err(internal_sql_error("find asset collection item failed"))?;
-    for row in rows {
-        let property_key: String = row.get("property_key");
-        let property_value: String = row.get("property_value");
-        if let Ok(payload) = serde_json::from_str::<Value>(&property_value) {
-            if payload.get("id").and_then(Value::as_str) == Some(item_id.as_ref()) {
-                return Ok(property_key);
-            }
+    let engine = resolve_pool_database_engine(pool).await?;
+    let property_key_prefix = format!("{COLLECTION_ITEM_KEY_PREFIX}{collection_id}.%");
+    let row = match engine {
+        DatabaseEngine::Postgresql => {
+            sqlx::query(
+                "SELECT property_key
+                 FROM dr_drive_node_property
+                 WHERE tenant_id=$1
+                   AND node_id=$2
+                   AND visibility=$3
+                   AND lifecycle_status='active'
+                   AND property_key LIKE $4
+                   AND (property_value::jsonb->>'id') = $5
+                 LIMIT 1",
+            )
+            .bind(tenant_id)
+            .bind(catalog_node_id)
+            .bind(PROPERTY_VISIBILITY)
+            .bind(&property_key_prefix)
+            .bind(item_id)
+            .fetch_optional(pool)
+            .await
+        }
+        DatabaseEngine::Sqlite => {
+            sqlx::query(
+                "SELECT property_key
+                 FROM dr_drive_node_property
+                 WHERE tenant_id=$1
+                   AND node_id=$2
+                   AND visibility=$3
+                   AND lifecycle_status='active'
+                   AND property_key LIKE $4
+                   AND json_extract(property_value, '$.id') = $5
+                 LIMIT 1",
+            )
+            .bind(tenant_id)
+            .bind(catalog_node_id)
+            .bind(PROPERTY_VISIBILITY)
+            .bind(&property_key_prefix)
+            .bind(item_id)
+            .fetch_optional(pool)
+            .await
         }
     }
-    Err(not_found_problem("collection item not found"))
+    .map_err(internal_sql_error("find asset collection item failed"))?;
+
+    let Some(row) = row else {
+        return Err(not_found_problem("collection item not found"));
+    };
+    Ok(row.get("property_key"))
+}
+
+async fn resolve_pool_database_engine(
+    pool: &AnyPool,
+) -> Result<DatabaseEngine, (StatusCode, Json<ProblemDetail>)> {
+    let sqlite_version = sqlx::query_scalar::<_, String>("SELECT sqlite_version()")
+        .fetch_optional(pool)
+        .await
+        .map_err(internal_sql_error("probe sqlite_version failed"))?;
+    if sqlite_version.is_some() {
+        return Ok(DatabaseEngine::Sqlite);
+    }
+    Ok(DatabaseEngine::Postgresql)
 }
 
 fn build_collection_item_id(collection_id: &str, asset_id: &str) -> String {

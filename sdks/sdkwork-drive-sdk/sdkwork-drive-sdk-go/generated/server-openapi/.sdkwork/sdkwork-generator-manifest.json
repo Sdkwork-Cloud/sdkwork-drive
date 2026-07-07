@@ -20,7 +20,7 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "373521d54c13e1d7136e1c96f6c449d364ad834a021ebae659ac09b231675cf4"
+      "sha256": "f8b281fc6c652edcb1a4de2d66da6da2ed6284af14077134d2e1d84ca8c0d570"
     },
     {
       "path": "api/paths.go",
@@ -64,7 +64,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "dc3289ee63145e2b49810fb7715a1713cee81de090b2d1d0025f85d769c6aff3"
+      "sha256": "fd59751c82ece00196667c33ad291a7146e91c6079610d697ec2ca076b8ccd11"
     },
     {
       "path": "sdk.go",
@@ -96,7 +96,7 @@
     },
     {
       "path": "types/open_download_url_create_response.go",
-      "sha256": "694b2e217defeb75f2881ccd417c16c35e887f480fb766898c7a2b6ef3fac90b"
+      "sha256": "8dfa77e9886037e6db5c5150bc9668ce87a88e630d0b7f0b3d2db3bf3a581a60"
     },
     {
       "path": "types/open_download_url_response.go",
@@ -108,7 +108,15 @@
     },
     {
       "path": "types/open_share_link_resolve_response.go",
-      "sha256": "829d34e2ab23f067ab6080ba9f9452b518a9d3dbc96e7697f7fcd23a998df45a"
+      "sha256": "1ec75032b649b357d179665b09788810786dd426fcfc7caafdd6a88c3c623537"
+    },
+    {
+      "path": "types/open_share_links_download_urls_create_response201.go",
+      "sha256": "e2894341e01653e05e085bb0c8e1a25eef4c28b82db52b10367a175d8c45c159"
+    },
+    {
+      "path": "types/open_share_links_retrieve_response.go",
+      "sha256": "b187d556d6ad804edbd2eb4662439274b9373efc4d2cff105ac052dc7b5cff66"
     },
     {
       "path": "types/problem_detail.go",

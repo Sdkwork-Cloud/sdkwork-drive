@@ -10,16 +10,28 @@ const sdkName = "sdkwork-drive-admin-storage-sdk";
 const apiPrefix = "/backend/v3/api";
 const languages = ["typescript", "rust", "java", "python", "go"];
 const requiredOperations = [
-  "storageProviders.list",
-  "storageProviders.create",
-  "storageProviders.get",
-  "storageProviders.update",
-  "storageProviders.delete",
-  "storageProviders.buckets.list",
-  "storageProviderBindings.default.get",
-  "storageProviderBindings.default.set",
   "storageProviderBindings.default.delete",
+  "storageProviderBindings.default.retrieve",
+  "storageProviderBindings.default.update",
   "storageProviderBindings.list",
+  "storageProviders.activate",
+  "storageProviders.bucket.delete",
+  "storageProviders.bucket.retrieve",
+  "storageProviders.bucket.update",
+  "storageProviders.buckets.list",
+  "storageProviders.capabilities.list",
+  "storageProviders.create",
+  "storageProviders.credentials.rotate",
+  "storageProviders.deactivate",
+  "storageProviders.delete",
+  "storageProviders.list",
+  "storageProviders.objects.copy",
+  "storageProviders.objects.delete",
+  "storageProviders.objects.list",
+  "storageProviders.objects.retrieve",
+  "storageProviders.retrieve",
+  "storageProviders.test",
+  "storageProviders.update",
 ];
 
 test("sdkwork-drive-admin-storage-sdk uses sdkwork-drive-admin-storage-v3 profile", () => {

@@ -29,10 +29,12 @@ SDKWork Drive. It is the deployment boundary governed by
 ## Verification
 
 - `pnpm deploy:validate` (validates `deployments/deploy.yaml` + Kubernetes/systemd descriptors)
+- `SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate` (release/GA gate; rejects placeholder or non-immutable Kubernetes image digests)
 
 ## Cloud deployment notes
 
 - Replace every `REPLACE_WITH_RELEASE_DIGEST` image reference with the immutable digest from release evidence before applying manifests.
+- Strict deployment validation fails until every Kubernetes `image:` reference uses a real `@sha256:<64 hex>` digest.
 - API pods should set `SDKWORK_DRIVE_DEPLOYMENT_PROFILE=cloud` and `SDKWORK_DRIVE_RUNTIME_TARGET=server`.
 - When `sdkwork-drive-install-worker` is deployed, set `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` on API pods so only the worker runs the periodic outbox loop.
 - `install-worker` uses PostgreSQL advisory locks so only one replica runs maintenance tasks at a time; SQLite standalone runs maintenance locally.

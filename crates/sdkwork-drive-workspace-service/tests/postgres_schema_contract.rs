@@ -1,3 +1,13 @@
+use sdkwork_drive_config::DatabaseEngine;
+use sdkwork_drive_workspace_service::application::space_lifecycle_service::{
+    DeleteSpaceWithContentsCommand, SqlDriveSpaceLifecycleService,
+};
+use sdkwork_drive_workspace_service::application::space_service::{
+    CreateSpaceCommand, DriveSpaceService,
+};
+use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
+use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
+use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
 use sqlx::postgres::PgPoolOptions;
 
 #[tokio::test]
@@ -110,6 +120,8 @@ async fn postgres_installer_creates_special_space_profile_tables() {
         "dr_drive_change_cursor",
         "dr_drive_change_log",
         "dr_drive_domain_outbox",
+        "dr_drive_domain_outbox_channel_delivery",
+        "dr_drive_maintenance_leader",
         "dr_drive_storage_provider",
         "dr_drive_storage_provider_binding",
         "dr_drive_audit_event",
@@ -167,6 +179,7 @@ async fn postgres_installer_creates_special_space_profile_tables() {
         "ix_dr_drive_change_log_tenant_space_created",
         "ix_dr_drive_domain_outbox_pending",
         "ix_dr_drive_domain_outbox_pending_dispatch",
+        "ix_dr_drive_domain_outbox_channel_delivery_channel",
         "ix_dr_drive_audit_event_tenant_created",
         "ix_dr_drive_audit_event_resource",
         "ix_dr_drive_audit_event_action_created",
@@ -289,4 +302,81 @@ async fn postgres_installer_creates_special_space_profile_tables() {
             "dr_drive_node should expose head metadata column: {column_name}"
         );
     }
+}
+
+#[tokio::test]
+async fn postgres_delete_space_with_contents_is_atomic() {
+    let database_url = match std::env::var("SDKWORK_DRIVE_POSTGRES_URL") {
+        Ok(value) if !value.trim().is_empty() => value,
+        _ => {
+            eprintln!(
+                "skip postgres delete space with contents: SDKWORK_DRIVE_POSTGRES_URL is not set"
+            );
+            return;
+        }
+    };
+
+    sqlx::any::install_default_drivers();
+    let pool = sqlx::any::AnyPoolOptions::new()
+        .max_connections(2)
+        .connect(&database_url)
+        .await
+        .expect("postgres any pool should be created");
+
+    install_any_schema(&pool, DatabaseEngine::Postgresql)
+        .await
+        .expect("postgres schema installation should succeed");
+
+    let tenant_id = format!("tenant-pg-delete-{}", uuid::Uuid::new_v4());
+    let space_id = format!("space-pg-delete-{}", uuid::Uuid::new_v4());
+
+    let space_service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
+    space_service
+        .create_space(CreateSpaceCommand {
+            id: space_id.clone(),
+            tenant_id: tenant_id.clone(),
+            owner_subject_type: "user".to_string(),
+            owner_subject_id: "user-pg-delete".to_string(),
+            display_name: "PG Delete".to_string(),
+            space_type: DriveSpaceType::Personal,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
+            operator_id: "user-pg-delete".to_string(),
+        })
+        .await
+        .expect("postgres space should be created");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, node_type, node_name, content_state, lifecycle_status,
+            version, created_by, updated_by
+         ) VALUES ($1, $2, $3, 'folder', 'Docs', 'ready', 'active', 1, 'user-pg-delete', 'user-pg-delete')",
+    )
+    .bind(format!("node-{space_id}"))
+    .bind(&tenant_id)
+    .bind(&space_id)
+    .execute(&pool)
+    .await
+    .expect("postgres node insert should succeed");
+
+    let result = SqlDriveSpaceLifecycleService::new(pool.clone())
+        .delete_space_with_contents(DeleteSpaceWithContentsCommand {
+            tenant_id,
+            space_id: space_id.clone(),
+            operator_id: "user-pg-delete".to_string(),
+        })
+        .await
+        .expect("postgres atomic delete should succeed");
+    assert_eq!(result.deleted_node_count, 1);
+    assert_eq!(result.space.lifecycle_status, "deleted");
+
+    let active_nodes: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1) FROM dr_drive_node WHERE space_id=$1 AND lifecycle_status != 'deleted'",
+    )
+    .bind(&space_id)
+    .fetch_one(&pool)
+    .await
+    .expect("active node count should be readable");
+    assert_eq!(active_nodes, 0);
 }

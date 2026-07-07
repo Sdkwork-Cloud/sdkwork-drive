@@ -2,7 +2,7 @@ import {
   encodeLocalFilesystemId,
   type LocalFilesystemEntry,
   type DriveFile,
-} from 'sdkwork-drive-pc-types';
+} from '../types';
 
 export function mapLocalFilesystemEntryToDriveFile(
   entry: LocalFilesystemEntry,

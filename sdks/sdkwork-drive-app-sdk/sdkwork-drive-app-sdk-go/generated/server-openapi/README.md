@@ -27,7 +27,7 @@ func main() {
 client.SetAccessToken("your-access-token")
     
     // Use the SDK
-    result, err := client.Drive.QuotasSummary()
+    result, err := client.Drive.QuotasRetrieve()
     if err != nil {
         panic(err)
     }
@@ -68,7 +68,7 @@ client.SetHeader("X-Custom-Header", "value")
 
 ```go
 // GET /app/v3/api/drive/quotas/summary
-result, err := client.Drive.QuotasSummary()
+result, err := client.Drive.QuotasRetrieve()
 if err != nil {
     panic(err)
 }
@@ -82,8 +82,8 @@ fmt.Println(result)
 nodeId := "1"
 params := map[string]interface{}{
     "labelKey": "labelKey",
-    "pageSize": 2,
-    "pageToken": "pageToken",
+    "page_size": 2,
+    "cursor": "cursor",
 }
 result, err := client.NodeLabels.List(nodeId, params)
 if err != nil {
@@ -99,8 +99,8 @@ fmt.Println(result)
 nodeId := "1"
 params := map[string]interface{}{
     "visibility": "private",
-    "pageSize": 2,
-    "pageToken": "pageToken",
+    "page_size": 2,
+    "cursor": "cursor",
 }
 result, err := client.NodeProperties.List(nodeId, params)
 if err != nil {
@@ -134,8 +134,8 @@ fmt.Println(result)
 params := map[string]interface{}{
     "resourceType": "changes",
     "lifecycleStatus": "active",
-    "pageSize": 3,
-    "pageToken": "pageToken",
+    "page_size": 3,
+    "cursor": "cursor",
 }
 result, err := client.WatchChannels.List(params)
 if err != nil {
@@ -150,7 +150,7 @@ fmt.Println(result)
 // List asset collections
 params := map[string]interface{}{
     "cursor": "cursor",
-    "pageSize": 2,
+    "page_size": 2,
 }
 result, err := client.Assets.AssetCollectionsList(params)
 if err != nil {
@@ -162,7 +162,7 @@ fmt.Println(result)
 ## Error Handling
 
 ```go
-_, err := client.Drive.QuotasSummary()
+_, err := client.Drive.QuotasRetrieve()
 if err != nil {
     // Handle error
     fmt.Println("Error:", err)

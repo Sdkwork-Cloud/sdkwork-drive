@@ -1,4 +1,4 @@
-import type { LocalFilesystemEntry } from 'sdkwork-drive-pc-types';
+import type { LocalFilesystemEntry } from '../types';
 import type { NativeLocalUploadDescriptor } from './nativeLocalUploadFile';
 
 export type WindowControlAction = 'minimize' | 'maximize' | 'unmaximize' | 'close' | 'show';

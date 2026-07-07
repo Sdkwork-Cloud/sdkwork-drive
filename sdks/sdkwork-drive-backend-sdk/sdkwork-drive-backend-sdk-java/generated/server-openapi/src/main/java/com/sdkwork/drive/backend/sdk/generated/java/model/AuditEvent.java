@@ -8,7 +8,7 @@ public class AuditEvent {
     private String resourceType;
     private String resourceId;
     private String operatorId;
-    private String requestId;
+    private String correlationId;
     private String traceId;
     private String createdAt;
 
@@ -60,12 +60,12 @@ public class AuditEvent {
         this.operatorId = operatorId;
     }
 
-    public String getRequestId() {
-        return this.requestId;
+    public String getCorrelationId() {
+        return this.correlationId;
     }
 
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
+    public void setCorrelationId(String correlationId) {
+        this.correlationId = correlationId;
     }
 
     public String getTraceId() {

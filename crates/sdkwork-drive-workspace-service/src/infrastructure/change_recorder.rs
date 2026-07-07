@@ -1,7 +1,7 @@
 //! Durable Drive change log and domain outbox recording per EVENT_SPEC.
 
 use crate::infrastructure::outbox_dispatch::trigger_immediate_outbox_dispatch;
-use crate::infrastructure::sql::next_drive_runtime_id;
+use crate::infrastructure::sql::{begin_transaction_sql, next_drive_runtime_id};
 use crate::DriveServiceError;
 use serde_json::json;
 use sqlx::{AnyConnection, AnyPool};
@@ -30,10 +30,32 @@ pub async fn record_drive_change(
     command: RecordDriveChangeCommand<'_>,
 ) -> Result<(), DriveServiceError> {
     let mut connection = pool.acquire().await.map_err(sql_internal)?;
-    record_drive_change_on_connection(&mut connection, command).await?;
-    sdkwork_drive_observability::metrics::record_outbox_pending();
-    trigger_immediate_outbox_dispatch(pool.clone());
-    Ok(())
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("begin change record transaction failed: {error}"))
+        })?;
+
+    match record_drive_change_on_connection(&mut connection, command).await {
+        Ok(()) => {
+            sqlx::query("COMMIT")
+                .execute(&mut *connection)
+                .await
+                .map_err(|error| {
+                    DriveServiceError::Internal(format!(
+                        "commit change record transaction failed: {error}"
+                    ))
+                })?;
+            sdkwork_drive_observability::metrics::record_outbox_pending();
+            trigger_immediate_outbox_dispatch(pool.clone());
+            Ok(())
+        }
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            Err(error)
+        }
+    }
 }
 
 async fn allocate_change_sequence(

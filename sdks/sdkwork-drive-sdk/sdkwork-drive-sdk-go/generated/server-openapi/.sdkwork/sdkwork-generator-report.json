@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": false,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "eccd07fa4dd0882556faa290f8c87bd7d6f563993b7334e324c8d8e618808f37",
+  "changeFingerprint": "1ced540c3a7b1d64b0f2a81ae8e33f57ad47996cbcd4e9639d887b2908a0adc0",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [],
@@ -56,8 +56,8 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 31,
-    "models": 12,
+    "totalFiles": 33,
+    "models": 14,
     "apis": 1,
     "types": 0
   },
@@ -67,10 +67,10 @@
     "controlPlaneEnabled": true,
     "writtenFiles": 0,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 30,
+    "skippedUnchangedGeneratedFiles": 32,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "eccd07fa4dd0882556faa290f8c87bd7d6f563993b7334e324c8d8e618808f37",
+    "changeFingerprint": "1ced540c3a7b1d64b0f2a81ae8e33f57ad47996cbcd4e9639d887b2908a0adc0",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [],
@@ -100,6 +100,8 @@
         "types/open_download_url_response.go",
         "types/open_node.go",
         "types/open_share_link_resolve_response.go",
+        "types/open_share_links_download_urls_create_response201.go",
+        "types/open_share_links_retrieve_response.go",
         "types/problem_detail.go",
         "types/sdk_work_api_response.go",
         "types/sdk_work_platform_error_code.go",

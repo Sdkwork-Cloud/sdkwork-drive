@@ -4,6 +4,7 @@ package com.sdkwork.drive.admin.storage.sdk.generated.java.model;
 public class ProviderObject {
     private String providerId;
     private String bucket;
+    private String objectKind;
     private String objectKey;
     private Integer contentLength;
     private String contentType;
@@ -26,6 +27,14 @@ public class ProviderObject {
 
     public void setBucket(String bucket) {
         this.bucket = bucket;
+    }
+
+    public String getObjectKind() {
+        return this.objectKind;
+    }
+
+    public void setObjectKind(String objectKind) {
+        this.objectKind = objectKind;
     }
 
     public String getObjectKey() {

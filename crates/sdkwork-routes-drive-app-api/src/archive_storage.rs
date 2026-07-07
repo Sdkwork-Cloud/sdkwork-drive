@@ -1,8 +1,10 @@
 use crate::archive::{is_supported_archive_content, validate_archive_source_node};
+use crate::constants::ARCHIVE_MAX_COMPRESSED_BYTES;
 use crate::dto::ActiveStorageObjectRef;
 use crate::error::{
     internal_sql_error, map_object_store_route_error, map_service_error, not_found_problem,
-    problem, ProblemDetail, SdkWorkResultCode};
+    problem, ProblemDetail, SdkWorkResultCode,
+};
 use crate::node_repository::find_node;
 use crate::object_store::{
     build_s3_object_store_for_provider, find_storage_provider_by_id,
@@ -98,6 +100,16 @@ async fn read_full_storage_object(
     if object_ref.content_length == 0 {
         return Ok(Vec::new());
     }
+    if object_ref.content_length > ARCHIVE_MAX_COMPRESSED_BYTES {
+        return Err(problem(
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "validation failed",
+            &format!(
+                "archive compressed size must be at most {ARCHIVE_MAX_COMPRESSED_BYTES} bytes"
+            ),
+            SdkWorkResultCode::ValidationError,
+        ));
+    }
     let (_response, mut stream) = object_store
         .read_object_range(ReadObjectRangeRequest {
             locator: DriveObjectLocator {
@@ -117,6 +129,16 @@ async fn read_full_storage_object(
         .await
         .map_err(map_object_store_route_error)?
     {
+        if bytes.len() + chunk.len() > ARCHIVE_MAX_COMPRESSED_BYTES as usize {
+            return Err(problem(
+                StatusCode::PAYLOAD_TOO_LARGE,
+                "validation failed",
+                &format!(
+                    "archive compressed size must be at most {ARCHIVE_MAX_COMPRESSED_BYTES} bytes"
+                ),
+                SdkWorkResultCode::ValidationError,
+            ));
+        }
         bytes.extend_from_slice(&chunk);
     }
     Ok(bytes)

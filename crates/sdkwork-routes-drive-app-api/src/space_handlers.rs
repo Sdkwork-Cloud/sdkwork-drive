@@ -1,13 +1,18 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::*;
-use crate::error::{map_service_error, problem, service_error_kind, ProblemDetail, SdkWorkResultCode};
+use crate::error::{
+    map_service_error, problem, service_error_kind, ProblemDetail, SdkWorkResultCode,
+};
 use crate::ids::next_drive_id;
 use crate::mappers::*;
+use crate::response::{
+    no_content, success_created_resource, success_list_page_simple, success_resource,
+    DriveListHttpResponse,
+};
 use crate::space_repository::validate_space_exists;
 use crate::state::AppState;
 use crate::validators::{next_page_token, normalize_optional_text, parse_page_request};
-use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
@@ -17,15 +22,16 @@ use axum::Json;
 use sdkwork_drive_contract::drive::domain_events as drive_events;
 use sdkwork_drive_observability::{elapsed_ms, error_kinds, events, has_value, start_timer};
 use sdkwork_drive_workspace_service::application::space_lifecycle_service::{
-    BootstrapTeamSpaceCreatorAccessCommand, RetireSpaceContentsCommand,
+    BootstrapTeamSpaceCreatorAccessCommand, DeleteSpaceWithContentsCommand,
     SqlDriveSpaceLifecycleService,
 };
 use sdkwork_drive_workspace_service::application::space_service::{
-    CreateSpaceCommand, DeleteSpaceCommand, DriveSpaceService, GetSpaceCommand,
-    ListAccessibleSpacesCommand, UpdateSpaceCommand,
+    CreateSpaceCommand, DriveSpaceService, GetSpaceCommand, ListAccessibleSpacesCommand,
+    UpdateSpaceCommand,
 };
 use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 
 use crate::route_change::record_change;
 
@@ -56,6 +62,7 @@ pub(crate) async fn list_spaces(
     let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
     let owner_subject_type = normalize_optional_text(query.owner_subject_type);
     let owner_subject_id = normalize_optional_text(query.owner_subject_id);
+    let space_type = normalize_optional_text(query.space_type);
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
     let spaces = service
         .list_accessible_spaces(ListAccessibleSpacesCommand {
@@ -64,6 +71,7 @@ pub(crate) async fn list_spaces(
             viewer_subject_id: subject_id,
             owner_subject_type,
             owner_subject_id,
+            space_type,
             offset: page.offset,
             limit: page.limit + 1,
         })
@@ -80,7 +88,10 @@ pub(crate) async fn list_spaces(
             map_service_error(error)
         })?;
 
-    let mut items = spaces.into_iter().map(map_space_response).collect::<Vec<_>>();
+    let mut items = spaces
+        .into_iter()
+        .map(map_space_response)
+        .collect::<Vec<_>>();
     let next_page_token = next_page_token(&mut items, page);
     let latency_ms = elapsed_ms(started);
     sdkwork_drive_observability::observe_route!(
@@ -98,7 +109,13 @@ pub(crate) async fn create_space(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateSpaceRequest>,
-) -> Result<(StatusCode, Json<CreateSpaceResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<CreateSpaceResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let started = start_timer();
     let space_type = match DriveSpaceType::try_from_str(payload.space_type.trim()) {
         Some(space_type) => space_type,
@@ -193,13 +210,16 @@ pub(crate) async fn create_space(
             .map_err(map_service_error)?;
     }
 
-    Ok((StatusCode::CREATED, Json(map_space_response(created))))
+    Ok(success_created_resource(map_space_response(created)))
 }
 pub(crate) async fn get_space(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(space_id): Path<String>,
-) -> Result<Json<CreateSpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<CreateSpaceResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let started = start_timer();
     let tenant_id = match ctx.resolve_tenant_id() {
         Ok(tenant_id) => tenant_id,
@@ -256,14 +276,17 @@ pub(crate) async fn get_space(
         lifecycle_status = response.lifecycle_status.as_str(),
         version = response.version
     );
-    Ok(Json(response))
+    Ok(success_resource(response))
 }
 pub(crate) async fn update_space(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(space_id): Path<String>,
     Json(payload): Json<UpdateSpaceRequest>,
-) -> Result<Json<CreateSpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<CreateSpaceResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let started = start_timer();
     let tenant_id = match ctx.resolve_tenant_id() {
         Ok(tenant_id) => tenant_id,
@@ -325,14 +348,14 @@ pub(crate) async fn update_space(
         lifecycle_status = response.lifecycle_status.as_str(),
         version = response.version
     );
-    Ok(Json(response))
+    Ok(success_resource(response))
 }
 pub(crate) async fn delete_space(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(space_id): Path<String>,
     Query(query): Query<NodeMutationQuery>,
-) -> Result<Json<DeleteSpaceResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
     let tenant_id = match ctx.resolve_tenant_id() {
         Ok(tenant_id) => tenant_id,
@@ -350,16 +373,16 @@ pub(crate) async fn delete_space(
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
     acl::ensure_space_owner(&state.pool, &ctx, &space_id).await?;
-    let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
-    let deleted = match service
-        .delete_space(DeleteSpaceCommand {
+    let lifecycle_service = SqlDriveSpaceLifecycleService::new(state.pool.clone());
+    let delete_result = match lifecycle_service
+        .delete_space_with_contents(DeleteSpaceWithContentsCommand {
             tenant_id: tenant_id.clone(),
             space_id: space_id.clone(),
             operator_id: operator_id.clone(),
         })
         .await
     {
-        Ok(deleted) => deleted,
+        Ok(result) => result,
         Err(error) => {
             sdkwork_drive_observability::observe_route!(
                 event = events::APP_SPACES_DELETE,
@@ -371,25 +394,8 @@ pub(crate) async fn delete_space(
             return Err(map_service_error(error));
         }
     };
-    let deleted_node_count = SqlDriveSpaceLifecycleService::new(state.pool.clone())
-        .retire_space_contents(RetireSpaceContentsCommand {
-            tenant_id: tenant_id.clone(),
-            space_id: space_id.clone(),
-            operator_id: operator_id.clone(),
-        })
-        .await
-        .map_err(map_service_error)?;
-    record_change(
-        &state.pool,
-        &tenant_id,
-        &space_id,
-        None,
-        drive_events::space::DELETED,
-        &operator_id,
-    )
-    .await?;
 
-    let response_space = map_space_response(deleted);
+    let response_space = map_space_response(delete_result.space);
     sdkwork_drive_observability::observe_route!(
         event = events::APP_SPACES_DELETE,
         result = "ok",
@@ -397,13 +403,9 @@ pub(crate) async fn delete_space(
         space_id = response_space.id.as_str(),
         lifecycle_status = response_space.lifecycle_status.as_str(),
         version = response_space.version,
-        deleted_node_count = deleted_node_count
+        deleted_node_count = delete_result.deleted_node_count
     );
-    Ok(Json(DeleteSpaceResponse {
-        deleted: true,
-        space: response_space,
-        deleted_node_count,
-    }))
+    Ok(no_content())
 }
 fn ensure_create_space_owner_matches_caller(
     space_type: &DriveSpaceType,

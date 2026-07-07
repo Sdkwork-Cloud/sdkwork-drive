@@ -25,7 +25,7 @@ token = 'token'
 params = {
     'accessCode': 'accessCode',
 }
-result = client.drive.open_share_links_resolve(token, params)
+result = client.drive.open_share_links_retrieve(token, params)
 ```
 
 ## Authentication Modes (Mutually Exclusive)
@@ -82,7 +82,7 @@ token = 'token'
 params = {
     'accessCode': 'accessCode',
 }
-result = client.drive.open_share_links_resolve(token, params)
+result = client.drive.open_share_links_retrieve(token, params)
 print(result)
 ```
 
@@ -94,7 +94,7 @@ try:
     params = {
         'accessCode': 'accessCode',
     }
-    client.drive.open_share_links_resolve(token, params)
+    client.drive.open_share_links_retrieve(token, params)
 except Exception as error:
     print(f"Error: {error}")
 ```

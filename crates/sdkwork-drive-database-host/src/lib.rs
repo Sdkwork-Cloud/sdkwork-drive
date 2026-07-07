@@ -37,9 +37,7 @@ pub fn install_drive_database_host(host: DriveDatabaseHost) -> Result<(), String
 }
 
 pub fn ensure_drive_database_host_installed(host: DriveDatabaseHost) -> Arc<DriveDatabaseHost> {
-    DRIVE_DATABASE_HOST
-        .get_or_init(|| Arc::new(host))
-        .clone()
+    DRIVE_DATABASE_HOST.get_or_init(|| Arc::new(host)).clone()
 }
 
 fn resolve_app_root() -> PathBuf {

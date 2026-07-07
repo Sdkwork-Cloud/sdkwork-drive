@@ -4,12 +4,13 @@ title: Pre-launch technical debt cleanup for SDKWork Drive
 owner: SDKWork maintainers
 status: done
 source: platform
-updated: 2026-06-30
+updated: 2026-07-08
 problem: Before commercial GA, Drive must remove dead auth-policy wiring, standardize deployment profile env keys, eliminate stale documentation, align deploy/API/database framework contracts with sdkwork-specs, and prevent legacy HTTP envelope modules from returning.
 goals:
   - Remove unused `auth_policy` state fields and deprecated `build_router_with_pool_and_iam_policy` builders.
   - Standardize `SDKWORK_DRIVE_DEPLOYMENT_PROFILE` across systemd units and deployment validators.
   - Provide `deployments/deploy.yaml` per SDKWORK_DEPLOY_SPEC.md.
+  - Add a strict deployment validator that fails release-mode checks on `REPLACE_WITH_RELEASE_DIGEST` and non-immutable Kubernetes image references.
   - Route JWT/download crypto through `sdkwork-utils-rust` instead of direct `sha2`/`hmac` in workspace route crates.
   - Include `api:envelope:check` and `api:schema:check` in the root `pnpm check` gate.
   - Provide an operator pre-launch checklist linked from deployment validation.
@@ -28,6 +29,7 @@ acceptance_criteria:
   - `deployments/deploy.yaml` exists and passes `check-deploy-standard.mjs`.
   - `pnpm check` includes `api:envelope:check`, `api:schema:check`, and passes.
   - `pnpm deploy:validate` and `pnpm check:architecture-alignment` pass.
+  - `node --test tools/check_drive_deployments.test.mjs` proves default-mode warnings, strict-mode placeholder rejection, and strict-mode real digest acceptance.
   - `docs/guides/operator/pre-launch-checklist.md` exists and is referenced by deployment checks.
   - `crates/sdkwork-drive-http/src/response.rs` and `problem_detail.rs` do not exist; `lib.rs` exposes only `api_problem`.
   - `.env.postgres.example` contains no `SDKWORK_CLAW_DATABASE_*` keys.
@@ -47,6 +49,7 @@ verification:
   - pnpm check
   - pnpm api:envelope:check
   - pnpm api:schema:check
+  - node --test tools/check_drive_deployments.test.mjs
   - pnpm deploy:validate
   - pnpm check:architecture-alignment
 ---

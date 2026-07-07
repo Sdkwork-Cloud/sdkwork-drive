@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 class ProviderObject:
     provider_id: str
     bucket: str
+    object_kind: str
     object_key: str
     content_length: int
     content_type: Optional[str] = None

@@ -15,6 +15,7 @@ pub mod space_store;
 pub mod sql_error;
 pub mod storage_object_store;
 pub mod storage_provider_store;
+pub mod transaction;
 pub mod upload_query_columns;
 pub mod upload_session_store;
 pub mod uploader_store;
@@ -23,6 +24,7 @@ pub mod workspace_store;
 pub use installer::{
     connect_any_database, connect_any_database_and_install_schema, install_any_schema,
     install_postgres_schema, install_sqlite_schema, installed_database_engine,
+    register_installed_database_engine,
 };
 pub use node_head_metadata::{
     apply_file_node_head_snapshot, apply_file_node_head_snapshot_in_transaction,
@@ -30,6 +32,7 @@ pub use node_head_metadata::{
     NODE_API_SELECT_COLUMNS, NODE_API_SELECT_JOIN_COLUMNS,
 };
 pub use runtime_id::next_drive_runtime_id;
+pub use transaction::{begin_transaction_sql, begin_transaction_sql_for_engine};
 pub use upload_query_columns::{
     DRIVE_UPLOAD_ITEM_SELECT_COLUMNS, DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS,
     DRIVE_UPLOAD_PART_SELECT_COLUMNS,

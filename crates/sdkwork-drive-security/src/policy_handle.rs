@@ -82,8 +82,14 @@ pub fn spawn_drive_auth_jwks_refresh(handle: DriveAuthPolicyHandle) {
 
 pub fn ensure_drive_auth_policy_refresh_task() {
     let handle = DriveAuthPolicyHandle::shared_from_env();
-    handle
-        .read(|policy| policy.ensure_production_ready())
-        .unwrap_or_else(|error| panic!("Drive auth policy is not production ready: {error}"));
-    spawn_drive_auth_jwks_refresh(handle);
+    match handle.read(|policy| policy.ensure_production_ready()) {
+        Ok(()) => spawn_drive_auth_jwks_refresh(handle),
+        Err(error) => {
+            tracing::error!(
+                event = "drive.auth.policy_not_production_ready",
+                error = %error,
+                "Drive auth policy is not production ready; JWKS refresh task was not started"
+            );
+        }
+    }
 }

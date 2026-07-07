@@ -24,7 +24,9 @@ pub(crate) struct UpdateLabelRequest {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct LabelListQuery {
     pub(crate) lifecycle_status: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
 }
 
@@ -47,28 +49,17 @@ pub(crate) struct LabelResponse {
     pub(crate) version: i64,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct LabelListResponse {
-    pub(crate) items: Vec<LabelResponse>,
-    pub(crate) next_page_token: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct DeleteLabelResponse {
-    pub(crate) deleted: bool,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListAuditEventsQuery {
     pub(crate) action: Option<String>,
     pub(crate) resource_type: Option<String>,
     pub(crate) resource_id: Option<String>,
+    #[serde(rename = "correlationId")]
     pub(crate) request_id: Option<String>,
     pub(crate) trace_id: Option<String>,
     pub(crate) page: Option<u32>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<u32>,
 }
 
@@ -81,6 +72,7 @@ pub(crate) struct AuditEventItemResponse {
     pub(crate) resource_type: String,
     pub(crate) resource_id: String,
     pub(crate) operator_id: String,
+    #[serde(rename = "correlationId")]
     pub(crate) request_id: Option<String>,
     pub(crate) trace_id: Option<String>,
     pub(crate) created_at: String,
@@ -92,6 +84,7 @@ pub(crate) struct SweepObjectStoreRequest {
     pub(crate) dry_run: bool,
     pub(crate) limit: Option<i64>,
     pub(crate) operator_id: String,
+    #[serde(rename = "correlationId")]
     pub(crate) request_id: Option<String>,
     pub(crate) trace_id: Option<String>,
 }
@@ -103,6 +96,7 @@ pub(crate) struct SweepUploadSessionsRequest {
     pub(crate) dry_run: bool,
     pub(crate) limit: Option<i64>,
     pub(crate) operator_id: String,
+    #[serde(rename = "correlationId")]
     pub(crate) request_id: Option<String>,
     pub(crate) trace_id: Option<String>,
 }
@@ -122,6 +116,7 @@ pub(crate) struct ListMaintenanceJobsQuery {
     pub(crate) status: Option<String>,
     pub(crate) operator_id: Option<String>,
     pub(crate) page: Option<u32>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<u32>,
 }
 
@@ -135,6 +130,7 @@ pub(crate) struct MaintenanceJobItemResponse {
     pub(crate) scanned_count: i64,
     pub(crate) affected_count: i64,
     pub(crate) operator_id: String,
+    #[serde(rename = "correlationId")]
     pub(crate) request_id: Option<String>,
     pub(crate) trace_id: Option<String>,
     pub(crate) error_message: Option<String>,
@@ -148,6 +144,7 @@ pub(crate) struct MaintenanceJobItemResponse {
 pub(crate) struct ListDownloadPackagesQuery {
     pub(crate) state: Option<String>,
     pub(crate) page: Option<u32>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<u32>,
 }
 
@@ -178,7 +175,10 @@ pub(crate) struct DownloadPackageItemResponse {
 pub(crate) struct ListSpacesQuery {
     pub(crate) owner_subject_type: Option<String>,
     pub(crate) owner_subject_id: Option<String>,
+    pub(crate) space_type: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
 }
 
@@ -193,12 +193,6 @@ pub(crate) struct SpaceResponse {
     pub(crate) space_type: String,
     pub(crate) lifecycle_status: String,
     pub(crate) version: i64,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct SpaceListResponse {
-    pub(crate) items: Vec<SpaceResponse>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -78,6 +78,8 @@ const STORAGE_CREDENTIAL_REF_PATTERN = "^(plain|env|secret|kms|vault):.+$";
 const OBJECT_KEY_MAX_LENGTH = 1024;
 const OBJECT_KEY_PATTERN =
   "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\u0000).*(?:[^/])$";
+const OBJECT_LIST_ENTRY_KEY_PATTERN =
+  "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\u0000).+$";
 const S3_BUCKET_NAME_MAX_LENGTH = 63;
 const S3_BUCKET_NAME_PATTERN =
   "^(?!xn--)(?!sthree-)(?!.*\\.\\.)(?!.*\\.-)(?!.*-\\.)(?!\\d+\\.\\d+\\.\\d+\\.\\d+$)(?!.*(-s3alias|--ol-s3|\\.mrap|--x-s3)$)[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$";
@@ -710,6 +712,24 @@ function assertQueryParameterAbsent(document, pathKey, method, parameterName, la
   }
 }
 
+function assertNoContentResponse(document, pathKey, method, label) {
+  const operation = document.paths?.[pathKey]?.[method];
+  if (!operation || typeof operation !== "object") {
+    fail(`${label} missing operation ${method.toUpperCase()} ${pathKey}`);
+  }
+  const responses = operation.responses || {};
+  const noContent = responses["204"];
+  if (!noContent) {
+    fail(`${label} ${method.toUpperCase()} ${pathKey} must declare 204 No Content`);
+  }
+  if (noContent.content) {
+    fail(`${label} ${method.toUpperCase()} ${pathKey} 204 response must not declare content`);
+  }
+  if (responses["200"]?.content?.["application/json"]) {
+    fail(`${label} ${method.toUpperCase()} ${pathKey} must not keep legacy 200 JSON delete content`);
+  }
+}
+
 function assertQueryParameterRequired(document, pathKey, method, parameterName, label) {
   const pathItem = document.paths && document.paths[pathKey];
   if (!pathItem || !pathItem[method]) {
@@ -1229,12 +1249,6 @@ assertSchemaHasProperties(
 );
 assertSchemaHasProperties(
   appOpenapi,
-  "ShareLinkListResponse",
-  ["items"],
-  "app openapi",
-);
-assertSchemaHasProperties(
-  appOpenapi,
   "CreateCommentRequest",
   [
   "id",
@@ -1267,12 +1281,6 @@ assertSchemaHasProperties(
     "createdAt",
     "updatedAt",
   ],
-  "app openapi",
-);
-assertSchemaHasProperties(
-  appOpenapi,
-  "CommentListResponse",
-  ["items", "nextPageToken"],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1312,26 +1320,8 @@ assertSchemaHasProperties(
 );
 assertSchemaHasProperties(
   appOpenapi,
-  "CommentReplyListResponse",
-  ["items", "nextPageToken"],
-  "app openapi",
-);
-assertSchemaHasProperties(
-  appOpenapi,
-  "ChangeListResponse",
-  ["items", "nextPageToken"],
-  "app openapi",
-);
-assertSchemaHasProperties(
-  appOpenapi,
   "StartPageTokenResponse",
   ["startPageToken"],
-  "app openapi",
-);
-assertSchemaHasProperties(
-  appOpenapi,
-  "DeleteVersionResponse",
-  ["deleted"],
   "app openapi",
 );
 if (!isSdkExportGate) {
@@ -1395,19 +1385,6 @@ assertSchemaHasProperties(
   ],
   "app openapi",
 );
-for (const schemaName of [
-  "VersionListResponse",
-  "PermissionListResponse",
-  "ShareLinkListResponse",
-]) {
-  assertSchemaHasProperties(appOpenapi, schemaName, ["items", "nextPageToken"], "app openapi");
-}
-assertSchemaHasProperties(
-  appOpenapi,
-  "NodeListResponse",
-  ["items", "nextPageToken", "incompletePage"],
-  "app openapi",
-);
 assertSchemaHasProperties(
   appOpenapi,
   "CopyNodeRequest",
@@ -1417,12 +1394,6 @@ assertSchemaHasProperties(
   "targetParentNodeId",
   "nodeName"
   ],
-  "app openapi",
-);
-assertSchemaHasProperties(
-  appOpenapi,
-  "DeleteNodeResponse",
-  ["deleted"],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1563,13 +1534,13 @@ assertSchemaPropertyEnum(
 assertSchemaHasProperties(
   backendOpenapi,
   "SweepObjectStoreRequest",
-  ["requestId", "traceId"],
+  ["correlationId", "traceId"],
   "backend openapi",
 );
 assertSchemaHasProperties(
   backendOpenapi,
   "SweepUploadSessionsRequest",
-  ["requestId", "traceId"],
+  ["correlationId", "traceId"],
   "backend openapi",
 );
 for (const fieldName of ["startedAt", "finishedAt", "createdAt"]) {
@@ -1674,24 +1645,25 @@ assertSchemaHasProperties(
   ["bucket", "configured", "creationDateEpochMs"],
   "admin storage openapi",
 );
-assertSchemaHasProperties(
-  adminStorageOpenapi,
-  "ProviderBucketList",
-  ["providerId", "configuredBucket", "items"],
-  "admin storage openapi",
-);
-assertSchemaRequired(
-  adminStorageOpenapi,
-  "ProviderBucketList",
-  "items",
-  "admin storage openapi",
-);
 assertSchemaPropertyStringConstraints(
   adminStorageOpenapi,
   "ProviderObject",
   "objectKey",
   OBJECT_KEY_MAX_LENGTH,
-  OBJECT_KEY_PATTERN,
+  OBJECT_LIST_ENTRY_KEY_PATTERN,
+  "admin storage openapi",
+);
+assertSchemaHasProperties(
+  adminStorageOpenapi,
+  "ProviderObject",
+  ["objectKind"],
+  "admin storage openapi",
+);
+assertSchemaPropertyEnum(
+  adminStorageOpenapi,
+  "ProviderObject",
+  "objectKind",
+  ["object", "prefix"],
   "admin storage openapi",
 );
 for (const propertyName of ["sourceObjectKey", "destinationObjectKey"]) {
@@ -1806,30 +1778,6 @@ assertSchemaHasProperties(
   "admin storage openapi",
 );
 assertSchemaHasProperties(
-  adminStorageOpenapi,
-  "StorageProviderBindingListResponse",
-  ["items"],
-  "admin storage openapi",
-);
-assertSchemaRequired(
-  adminStorageOpenapi,
-  "StorageProviderBindingListResponse",
-  "items",
-  "admin storage openapi",
-);
-assertSchemaHasProperties(
-  adminStorageOpenapi,
-  "DeleteStorageProviderBindingResponse",
-  ["deleted"],
-  "admin storage openapi",
-);
-assertSchemaRequired(
-  adminStorageOpenapi,
-  "DeleteStorageProviderBindingResponse",
-  "deleted",
-  "admin storage openapi",
-);
-assertSchemaHasProperties(
   backendOpenapi,
   "DriveLabel",
   ["id", "tenantId", "labelKey", "displayName", "lifecycleStatus", "version"],
@@ -1854,18 +1802,6 @@ assertSchemaHasProperties(
   "backend openapi",
 );
 assertSchemaHasProperties(
-  backendOpenapi,
-  "LabelListResponse",
-  ["items", "nextPageToken"],
-  "backend openapi",
-);
-assertSchemaHasProperties(
-  backendOpenapi,
-  "DeleteLabelResponse",
-  ["deleted"],
-  "backend openapi",
-);
-assertSchemaHasProperties(
   appOpenapi,
   "DriveLabelSummary",
   ["id", "tenantId", "labelKey", "displayName", "lifecycleStatus", "version"],
@@ -1887,22 +1823,10 @@ assertSchemaHasProperties(
 );
 assertSchemaHasProperties(
   appOpenapi,
-  "NodeLabelListResponse",
-  ["items", "nextPageToken"],
-  "app openapi",
-);
-assertSchemaHasProperties(
-  appOpenapi,
   "ApplyNodeLabelRequest",
   [
 
   ],
-  "app openapi",
-);
-assertSchemaHasProperties(
-  appOpenapi,
-  "RemoveNodeLabelResponse",
-  ["removed"],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1918,12 +1842,6 @@ assertSchemaHasProperties(
     "lifecycleStatus",
     "version",
   ],
-  "app openapi",
-);
-assertSchemaHasProperties(
-  appOpenapi,
-  "DriveWatchChannelListResponse",
-  ["items", "nextPageToken"],
   "app openapi",
 );
 assertSchemaHasProperties(
@@ -1973,12 +1891,6 @@ assertSchemaHasProperties(
   "app openapi",
 );
 assertSchemaMissing(appOpenapi, "AssetResourceRef", "app openapi");
-assertSchemaHasProperties(
-  appOpenapi,
-  "AssetPage",
-  ["items", "nextCursor"],
-  "app openapi",
-);
 assertSchemaHasProperties(
   appOpenapi,
   "CreateAssetRequest",
@@ -2086,7 +1998,7 @@ for (const schemaName of ["SweepObjectStoreRequest", "SweepUploadSessionsRequest
   assertSchemaPropertyStringConstraints(
     backendOpenapi,
     schemaName,
-    "requestId",
+    "correlationId",
     64,
     "^[A-Za-z0-9._:@-]+$",
     "backend openapi",
@@ -2111,7 +2023,7 @@ assertSchemaPropertyStringConstraints(
 assertSchemaPropertyStringConstraints(
   backendOpenapi,
   "MaintenanceJob",
-  "requestId",
+  "correlationId",
   64,
   "^[A-Za-z0-9._:@-]+$",
   "backend openapi",
@@ -2187,7 +2099,7 @@ assertQueryParameterStringConstraints(
   backendOpenapi,
   "/backend/v3/api/drive/audit_events",
   "get",
-  "requestId",
+  "correlationId",
   64,
   "^[A-Za-z0-9._:@-]+$",
   "backend openapi",
@@ -2219,8 +2131,98 @@ for (const pathKey of [
   "/app/v3/api/drive/nodes/{nodeId}/comments",
   "/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}/replies",
 ]) {
-  assertQueryParameterExists(appOpenapi, pathKey, "get", "pageSize", "app openapi");
-  assertQueryParameterExists(appOpenapi, pathKey, "get", "pageToken", "app openapi");
+  assertQueryParameterExists(appOpenapi, pathKey, "get", "page_size", "app openapi");
+  assertQueryParameterExists(appOpenapi, pathKey, "get", "cursor", "app openapi");
+}
+for (const [pathKey, label] of [
+  ["/app/v3/api/drive/nodes/{nodeId}", "app openapi"],
+  ["/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}", "app openapi"],
+  ["/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}/replies/{replyId}", "app openapi"],
+  ["/app/v3/api/drive/nodes/{nodeId}/favorite", "app openapi"],
+  ["/app/v3/api/drive/nodes/{nodeId}/labels/{labelId}", "app openapi"],
+  ["/app/v3/api/drive/nodes/{nodeId}/permissions/{permissionId}", "app openapi"],
+  ["/app/v3/api/drive/nodes/{nodeId}/properties/{propertyKey}", "app openapi"],
+  ["/app/v3/api/drive/nodes/{nodeId}/versions/{versionId}", "app openapi"],
+  ["/app/v3/api/drive/share_links/{shareLinkId}", "app openapi"],
+  ["/app/v3/api/drive/spaces/{spaceId}", "app openapi"],
+  ["/app/v3/api/assets/collections/{collectionId}/items/{itemId}", "app openapi"],
+  ["/app/v3/api/assets/{assetId}/relations/{relationId}", "app openapi"],
+]) {
+  assertNoContentResponse(appOpenapi, pathKey, "delete", label);
+}
+for (const pathKey of [
+  "/backend/v3/api/drive/labels/{labelId}",
+]) {
+  assertNoContentResponse(backendOpenapi, pathKey, "delete", "backend openapi");
+}
+for (const pathKey of [
+  "/backend/v3/api/drive/storage/bindings/default",
+  "/backend/v3/api/drive/storage/providers/{providerId}",
+  "/backend/v3/api/drive/storage/providers/{providerId}/bucket",
+  "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
+]) {
+  assertNoContentResponse(adminStorageOpenapi, pathKey, "delete", "admin storage openapi");
+}
+for (const schemaName of [
+  "ArchiveEntryListResponse",
+  "AssetCollectionPage",
+  "AssetPage",
+  "ChangeListResponse",
+  "CommentListResponse",
+  "CommentReplyListResponse",
+  "DeleteAssetCollectionItemHttpResponse",
+  "DeleteAssetCollectionItemResponse",
+  "DeleteAssetRelationHttpResponse",
+  "DeleteAssetRelationResponse",
+  "DeleteNodePropertyHttpResponse",
+  "DeleteNodePropertyResponse",
+  "DeleteNodeResponse",
+  "DeleteSpaceHttpResponse",
+  "DeleteSpaceResponse",
+  "DeleteVersionHttpResponse",
+  "DeleteVersionResponse",
+  "DeletedCommandHttpResponse",
+  "DriveWatchChannelListResponse",
+  "EffectivePermissionListResponse",
+  "ListSpacesResponse",
+  "NodeLabelListResponse",
+  "NodeListResponse",
+  "NodePropertyListResponse",
+  "PermissionListResponse",
+  "RemoveNodeLabelResponse",
+  "RevokeShareLinkResponse",
+  "SdkWorkListResponse",
+  "ShareLinkListResponse",
+  "VersionListResponse",
+]) {
+  assertSchemaMissing(appOpenapi, schemaName, "app openapi");
+}
+for (const schemaName of [
+  "AuditEventPage",
+  "AuditEventPageSdkWorkEnvelope",
+  "DeleteLabelResponse",
+  "DownloadPackagePage",
+  "DownloadPackagePageSdkWorkEnvelope",
+  "LabelListResponse",
+  "LabelListResponseSdkWorkEnvelope",
+  "ListSpacesResponse",
+  "ListSpacesResponseSdkWorkEnvelope",
+  "MaintenanceJobPage",
+  "MaintenanceJobPageSdkWorkEnvelope",
+  "SdkWorkListResponse",
+]) {
+  assertSchemaMissing(backendOpenapi, schemaName, "backend openapi");
+}
+for (const schemaName of [
+  "DeleteStorageProviderBindingResponse",
+  "DeleteStorageProviderResponse",
+  "ListStorageProvidersResponse",
+  "ProviderBucketList",
+  "ProviderObjectList",
+  "SdkWorkListResponse",
+  "StorageProviderBindingListResponse",
+]) {
+  assertSchemaMissing(adminStorageOpenapi, schemaName, "admin storage openapi");
 }
 const openOperationIds = collectOperationIds(openOpenapi, "open openapi");
 const appOperationIds = collectOperationIds(appOpenapi, "app openapi");
@@ -2238,62 +2240,62 @@ assertOperationIdsInclude(
   [
     "spaces.list",
     "spaces.create",
-    "spaces.get",
+    "spaces.retrieve",
     "spaces.update",
     "spaces.delete",
     "nodes.files.create",
     "nodes.shortcuts.create",
-    "nodes.get",
-    "nodes.path.get",
-    "nodes.capabilities.get",
+    "nodes.retrieve",
+    "nodes.path.retrieve",
+    "nodes.capabilities.list",
     "nodeProperties.list",
-    "nodeProperties.set",
+    "nodeProperties.update",
     "nodeProperties.delete",
     "nodeLabels.list",
-    "nodeLabels.apply",
-    "nodeLabels.remove",
+    "nodeLabels.update",
+    "nodeLabels.delete",
     "changes.watch",
     "nodes.watch",
     "watchChannels.list",
-    "watchChannels.get",
+    "watchChannels.retrieve",
     "watchChannels.stop",
     "nodes.move",
     "nodes.copy",
     "nodes.delete",
-    "nodes.downloadUrls.create",
+    "nodes.downloadUrls.retrieve",
     "trash.empty",
     "trash.list",
     "recent.list",
     "sharedWithMe.list",
     "favorites.list",
-    "favorites.set",
+    "favorites.update",
     "favorites.delete",
-    "uploadSessions.get",
-    "uploadSessions.parts.presign",
+    "uploadSessions.retrieve",
+    "uploadSessions.parts.update",
     "uploadSessions.complete",
     "uploadSessions.abort",
-    "permissions.get",
+    "permissions.retrieve",
     "permissions.update",
     "permissions.effective.list",
-    "shareLinks.get",
+    "shareLinks.retrieve",
     "shareLinks.list",
     "shareLinks.update",
     "comments.list",
     "comments.create",
-    "comments.get",
+    "comments.retrieve",
     "comments.update",
     "comments.delete",
-    "changes.startPageToken.get",
+    "changes.startPageToken.retrieve",
     "commentReplies.list",
     "commentReplies.create",
-    "commentReplies.get",
+    "commentReplies.retrieve",
     "commentReplies.update",
     "commentReplies.delete",
-    "versions.get",
+    "versions.retrieve",
     "versions.delete",
     "assets.list",
     "assets.create",
-    "assets.get",
+    "assets.retrieve",
     "assets.update",
     "assets.archive",
     "assets.restore",
@@ -2311,23 +2313,23 @@ assertOperationIdsExclude(
   [
     "storageProviders.list",
     "storageProviders.create",
-    "storageProviders.get",
+    "storageProviders.retrieve",
     "storageProviders.update",
     "storageProviders.delete",
     "storageProviders.test",
-    "storageProviders.capabilities.get",
+    "storageProviders.capabilities.list",
     "storageProviders.activate",
     "storageProviders.deactivate",
     "storageProviders.credentials.rotate",
-    "storageProviders.bucket.head",
-    "storageProviders.bucket.create",
+    "storageProviders.bucket.retrieve",
+    "storageProviders.bucket.update",
     "storageProviders.bucket.delete",
     "storageProviders.objects.list",
-    "storageProviders.objects.head",
+    "storageProviders.objects.retrieve",
     "storageProviders.objects.delete",
     "storageProviders.objects.copy",
-    "storageProviderBindings.default.get",
-    "storageProviderBindings.default.set",
+    "storageProviderBindings.default.retrieve",
+    "storageProviderBindings.default.update",
   ],
   "app openapi",
 );
@@ -2338,17 +2340,17 @@ assertOperationIdsInclude(
   [
     "labels.list",
     "labels.create",
-    "labels.get",
+    "labels.retrieve",
     "labels.update",
     "labels.delete",
-    "quotas.summary",
+    "quotas.retrieve",
     "quotas.update",
     "auditEvents.list",
     "maintenance.jobs.list",
-    "maintenance.objectSweep.start",
-    "maintenance.uploadSessionSweep.start",
-    "maintenance.expiredUploadContentSweep.start",
-    "maintenance.abandonedUploadTaskSweep.start",
+    "maintenance.objectSweep",
+    "maintenance.uploadSessionSweep",
+    "maintenance.expiredUploadContentSweep",
+    "maintenance.abandonedUploadTaskSweep",
     "spaces.admin.list",
     "downloadPackages.list",
   ],
@@ -2358,8 +2360,8 @@ assertOperationIdsExclude(
   backendOperationIds,
   [
     "storageProviders.list",
-    "storageProviders.get",
-    "storageProviderBindings.default.get",
+    "storageProviders.retrieve",
+    "storageProviderBindings.default.retrieve",
   ],
   "backend openapi",
 );
@@ -2368,24 +2370,24 @@ assertOperationIdsInclude(
   [
     "storageProviders.list",
     "storageProviders.create",
-    "storageProviders.get",
+    "storageProviders.retrieve",
     "storageProviders.update",
     "storageProviders.delete",
     "storageProviders.test",
-    "storageProviders.capabilities.get",
+    "storageProviders.capabilities.list",
     "storageProviders.activate",
     "storageProviders.deactivate",
     "storageProviders.credentials.rotate",
     "storageProviders.buckets.list",
-    "storageProviders.bucket.head",
-    "storageProviders.bucket.create",
+    "storageProviders.bucket.retrieve",
+    "storageProviders.bucket.update",
     "storageProviders.bucket.delete",
     "storageProviders.objects.list",
-    "storageProviders.objects.head",
+    "storageProviders.objects.retrieve",
     "storageProviders.objects.delete",
     "storageProviders.objects.copy",
-    "storageProviderBindings.default.get",
-    "storageProviderBindings.default.set",
+    "storageProviderBindings.default.retrieve",
+    "storageProviderBindings.default.update",
   ],
   "admin storage openapi",
 );

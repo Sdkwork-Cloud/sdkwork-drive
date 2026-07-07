@@ -1,6 +1,7 @@
+use sqlx::AnyConnection;
 use sqlx::AnyPool;
-use sqlx::Row;
 
+use crate::infrastructure::sql::begin_transaction_sql;
 use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
@@ -65,43 +66,75 @@ impl SqlSpaceLifecycleStore {
         space_id: &str,
         operator_id: &str,
     ) -> Result<i64, DriveServiceError> {
-        let node_ids = sqlx::query(
-            "SELECT id
-             FROM dr_drive_node
-             WHERE tenant_id=$1 AND space_id=$2 AND lifecycle_status != 'deleted'",
-        )
-        .bind(tenant_id)
-        .bind(space_id)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|error| {
+        let mut connection = self.pool.acquire().await.map_err(|error| {
             DriveServiceError::Internal(format!(
-                "list dr_drive_node for space retirement failed: {error}"
+                "acquire retire space contents connection failed: {error}"
             ))
-        })?
-        .into_iter()
-        .map(|row| row.get::<String, _>("id"))
-        .collect::<Vec<_>>();
-
-        for node_id in &node_ids {
-            sqlx::query(
-                "UPDATE dr_drive_storage_object
-                 SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP
-                 WHERE tenant_id=$2 AND node_id=$3 AND lifecycle_status != 'deleted'",
-            )
-            .bind(operator_id)
-            .bind(tenant_id)
-            .bind(node_id)
-            .execute(&self.pool)
+        })?;
+        sqlx::query(begin_transaction_sql())
+            .execute(&mut *connection)
             .await
             .map_err(|error| {
                 DriveServiceError::Internal(format!(
-                    "retire dr_drive_storage_object for space failed: {error}"
+                    "begin retire space contents transaction failed: {error}"
                 ))
             })?;
-        }
 
+        match Self::retire_space_contents_on_connection(
+            &mut connection,
+            tenant_id,
+            space_id,
+            operator_id,
+        )
+        .await
+        {
+            Ok(deleted_node_count) => {
+                sqlx::query("COMMIT")
+                    .execute(&mut *connection)
+                    .await
+                    .map_err(|error| {
+                        DriveServiceError::Internal(format!(
+                            "commit retire space contents transaction failed: {error}"
+                        ))
+                    })?;
+                Ok(deleted_node_count)
+            }
+            Err(error) => {
+                let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+                Err(error)
+            }
+        }
+    }
+
+    pub async fn retire_space_contents_on_connection(
+        connection: &mut AnyConnection,
+        tenant_id: &str,
+        space_id: &str,
+        operator_id: &str,
+    ) -> Result<i64, DriveServiceError> {
         sqlx::query(
+            "UPDATE dr_drive_storage_object
+             SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP
+             WHERE tenant_id=$2
+               AND lifecycle_status != 'deleted'
+               AND node_id IN (
+                 SELECT id
+                 FROM dr_drive_node
+                 WHERE tenant_id=$2 AND space_id=$3 AND lifecycle_status != 'deleted'
+               )",
+        )
+        .bind(operator_id)
+        .bind(tenant_id)
+        .bind(space_id)
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!(
+                "retire dr_drive_storage_object for space failed: {error}"
+            ))
+        })?;
+
+        let retired_nodes = sqlx::query(
             "UPDATE dr_drive_node
              SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
              WHERE tenant_id=$2 AND space_id=$3 AND lifecycle_status != 'deleted'",
@@ -109,12 +142,12 @@ impl SqlSpaceLifecycleStore {
         .bind(operator_id)
         .bind(tenant_id)
         .bind(space_id)
-        .execute(&self.pool)
+        .execute(&mut *connection)
         .await
         .map_err(|error| {
             DriveServiceError::Internal(format!("retire dr_drive_node for space failed: {error}"))
         })?;
 
-        Ok(node_ids.len() as i64)
+        Ok(retired_nodes.rows_affected() as i64)
     }
 }

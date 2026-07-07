@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use sqlx::any::AnyRow;
+use sqlx::AnyConnection;
 use sqlx::AnyPool;
 use sqlx::Row;
 
@@ -18,6 +19,45 @@ pub struct SqlSpaceStore {
 impl SqlSpaceStore {
     pub fn new(pool: AnyPool) -> Self {
         Self { pool }
+    }
+
+    pub async fn delete_space_on_connection(
+        connection: &mut AnyConnection,
+        tenant_id: &str,
+        space_id: &str,
+        operator_id: &str,
+    ) -> Result<DriveSpace, DriveServiceError> {
+        let affected = sqlx::query(
+            "UPDATE dr_drive_space
+             SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
+             WHERE tenant_id=$2 AND id=$3 AND lifecycle_status='active'",
+        )
+        .bind(operator_id)
+        .bind(tenant_id)
+        .bind(space_id)
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("delete dr_drive_space failed: {error}"))
+        })?
+        .rows_affected();
+        if affected == 0 {
+            return Err(DriveServiceError::NotFound("space not found".to_string()));
+        }
+
+        let row = sqlx::query(&format!(
+            "SELECT {SPACE_SELECT_COLUMNS}
+             FROM dr_drive_space
+             WHERE tenant_id=$1 AND id=$2",
+        ))
+        .bind(tenant_id)
+        .bind(space_id)
+        .fetch_one(&mut *connection)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("read deleted dr_drive_space failed: {error}"))
+        })?;
+        map_row_to_space(&row)
     }
 }
 
@@ -81,11 +121,34 @@ impl DriveSpaceStore for SqlSpaceStore {
         tenant_id: &str,
         owner_subject_type: Option<&str>,
         owner_subject_id: Option<&str>,
+        space_type: Option<&str>,
         offset: i64,
         limit: i64,
     ) -> Result<Vec<DriveSpace>, DriveServiceError> {
-        let rows = match (owner_subject_type, owner_subject_id) {
-            (Some(owner_type), Some(owner_id)) => sqlx::query(&format!(
+        let rows = match (owner_subject_type, owner_subject_id, space_type) {
+            (Some(owner_type), Some(owner_id), Some(space_type)) => sqlx::query(&format!(
+                "SELECT {SPACE_SELECT_COLUMNS}
+                    FROM dr_drive_space
+                    WHERE tenant_id=$1
+                      AND owner_subject_type=$2
+                      AND owner_subject_id=$3
+                      AND space_type=$4
+                      AND lifecycle_status='active'
+                    ORDER BY id ASC
+                    LIMIT $5 OFFSET $6",
+            ))
+            .bind(tenant_id)
+            .bind(owner_type)
+            .bind(owner_id)
+            .bind(space_type)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!("list dr_drive_space by owner failed: {error}"))
+            })?,
+            (Some(owner_type), Some(owner_id), None) => sqlx::query(&format!(
                 "SELECT {SPACE_SELECT_COLUMNS}
                     FROM dr_drive_space
                     WHERE tenant_id=$1
@@ -104,6 +167,24 @@ impl DriveSpaceStore for SqlSpaceStore {
             .await
             .map_err(|error| {
                 DriveServiceError::Internal(format!("list dr_drive_space by owner failed: {error}"))
+            })?,
+            (None, None, Some(space_type)) => sqlx::query(&format!(
+                "SELECT {SPACE_SELECT_COLUMNS}
+                    FROM dr_drive_space
+                    WHERE tenant_id=$1
+                      AND space_type=$2
+                      AND lifecycle_status='active'
+                    ORDER BY id ASC
+                    LIMIT $3 OFFSET $4",
+            ))
+            .bind(tenant_id)
+            .bind(space_type)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!("list dr_drive_space by type failed: {error}"))
             })?,
             _ => sqlx::query(&format!(
                 "SELECT {SPACE_SELECT_COLUMNS}
@@ -135,6 +216,7 @@ impl DriveSpaceStore for SqlSpaceStore {
         viewer_subject_id: &str,
         owner_subject_type: Option<&str>,
         owner_subject_id: Option<&str>,
+        space_type: Option<&str>,
         offset: i64,
         limit: i64,
     ) -> Result<Vec<DriveSpace>, DriveServiceError> {
@@ -142,8 +224,35 @@ impl DriveSpaceStore for SqlSpaceStore {
 
         let space_accessible_predicate =
             space_accessible_to_subject_sql("dr_drive_space", "$2", "$3");
-        let rows = match (owner_subject_type, owner_subject_id) {
-            (Some(owner_type), Some(owner_id)) => sqlx::query(&format!(
+        let rows = match (owner_subject_type, owner_subject_id, space_type) {
+            (Some(owner_type), Some(owner_id), Some(space_type)) => sqlx::query(&format!(
+                "SELECT {SPACE_SELECT_COLUMNS}
+                 FROM dr_drive_space
+                 WHERE tenant_id=$1
+                   AND owner_subject_type=$4
+                   AND owner_subject_id=$5
+                   AND space_type=$6
+                   AND lifecycle_status='active'
+                   AND ({space_accessible_predicate})
+                 ORDER BY id ASC
+                 LIMIT $7 OFFSET $8",
+            ))
+            .bind(tenant_id)
+            .bind(viewer_subject_type)
+            .bind(viewer_subject_id)
+            .bind(owner_type)
+            .bind(owner_id)
+            .bind(space_type)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "list accessible dr_drive_space by owner failed: {error}"
+                ))
+            })?,
+            (Some(owner_type), Some(owner_id), None) => sqlx::query(&format!(
                 "SELECT {SPACE_SELECT_COLUMNS}
                  FROM dr_drive_space
                  WHERE tenant_id=$1
@@ -166,6 +275,29 @@ impl DriveSpaceStore for SqlSpaceStore {
             .map_err(|error| {
                 DriveServiceError::Internal(format!(
                     "list accessible dr_drive_space by owner failed: {error}"
+                ))
+            })?,
+            (None, None, Some(space_type)) => sqlx::query(&format!(
+                "SELECT {SPACE_SELECT_COLUMNS}
+                 FROM dr_drive_space
+                 WHERE tenant_id=$1
+                   AND space_type=$4
+                   AND lifecycle_status='active'
+                   AND ({space_accessible_predicate})
+                 ORDER BY id ASC
+                 LIMIT $5 OFFSET $6",
+            ))
+            .bind(tenant_id)
+            .bind(viewer_subject_type)
+            .bind(viewer_subject_id)
+            .bind(space_type)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "list accessible dr_drive_space by type failed: {error}"
                 ))
             })?,
             _ => sqlx::query(&format!(
@@ -273,37 +405,12 @@ impl DriveSpaceStore for SqlSpaceStore {
         space_id: &str,
         operator_id: &str,
     ) -> Result<DriveSpace, DriveServiceError> {
-        let affected = sqlx::query(
-            "UPDATE dr_drive_space
-             SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
-             WHERE tenant_id=$2 AND id=$3 AND lifecycle_status='active'",
-        )
-        .bind(operator_id)
-        .bind(tenant_id)
-        .bind(space_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|error| {
-            DriveServiceError::Internal(format!("delete dr_drive_space failed: {error}"))
-        })?
-        .rows_affected();
-        if affected == 0 {
-            return Err(DriveServiceError::NotFound("space not found".to_string()));
-        }
-
-        let row = sqlx::query(&format!(
-            "SELECT {SPACE_SELECT_COLUMNS}
-             FROM dr_drive_space
-             WHERE tenant_id=$1 AND id=$2",
-        ))
-        .bind(tenant_id)
-        .bind(space_id)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|error| {
-            DriveServiceError::Internal(format!("read deleted dr_drive_space failed: {error}"))
+        let mut connection = self.pool.acquire().await.map_err(|error| {
+            DriveServiceError::Internal(format!(
+                "acquire delete dr_drive_space connection failed: {error}"
+            ))
         })?;
-        map_row_to_space(&row)
+        Self::delete_space_on_connection(&mut connection, tenant_id, space_id, operator_id).await
     }
 }
 

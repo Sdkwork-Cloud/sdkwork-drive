@@ -126,10 +126,11 @@ test("drive app asset schemas use Drive nodes as canonical global assets", () =>
 
   for (const schemaName of [
     "AssetItem",
-    "AssetPage",
+    "AssetListHttpResponse",
     "CreateAssetRequest",
     "UpdateAssetRequest",
     "AssetCollection",
+    "AssetCollectionListHttpResponse",
     "CreateAssetCollectionRequest",
     "AssetRelation",
     "CreateAssetRelationRequest",
@@ -138,6 +139,32 @@ test("drive app asset schemas use Drive nodes as canonical global assets", () =>
     assert.ok(schemas[schemaName], `missing schema ${schemaName}`);
   }
 
+  const assetListPayload = schemas.AssetListHttpResponse?.allOf?.[1]?.properties?.data?.properties || {};
+  assert.equal(
+    assetListPayload.items?.items?.$ref,
+    "#/components/schemas/AssetItem",
+    "AssetListHttpResponse.data.items must contain AssetItem",
+  );
+  assert.equal(
+    assetListPayload.pageInfo?.$ref,
+    "#/components/schemas/PageInfo",
+    "AssetListHttpResponse.data.pageInfo must use PageInfo",
+  );
+
+  const assetCollectionListPayload =
+    schemas.AssetCollectionListHttpResponse?.allOf?.[1]?.properties?.data?.properties || {};
+  assert.equal(
+    assetCollectionListPayload.items?.items?.$ref,
+    "#/components/schemas/AssetCollection",
+    "AssetCollectionListHttpResponse.data.items must contain AssetCollection",
+  );
+  assert.equal(
+    assetCollectionListPayload.pageInfo?.$ref,
+    "#/components/schemas/PageInfo",
+    "AssetCollectionListHttpResponse.data.pageInfo must use PageInfo",
+  );
+
+  assert.ok(!schemas.AssetPage, "assets must not keep legacy AssetPage list schema");
   assert.ok(!schemas.AssetResourceRef, "assets must not introduce a second resource-ref entity");
 
   const assetItem = schemas.AssetItem.properties || {};

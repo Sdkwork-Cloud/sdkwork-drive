@@ -142,14 +142,14 @@ export interface DriveUploaderTransport {
   drive: {
     uploader: {
       uploads: {
-        prepare(
+        create(
           body: Omit<PrepareUploaderUploadRequest, "userId"> & {
             userId?: string;
           },
           options?: DriveUploaderTransportOptions,
         ): Promise<PrepareUploaderUploadResponse>;
         parts: {
-          markUploaded(
+          update(
             uploadItemId: string,
             partNo: number,
             body: MarkUploaderPartUploadedRequest,
@@ -164,7 +164,7 @@ export interface DriveUploaderTransport {
         options?: DriveUploaderTransportOptions,
       ): Promise<DriveUploadSession>;
       parts: {
-        presign(
+        update(
           uploadSessionId: string,
           partNo: number,
           body: {

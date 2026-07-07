@@ -12,5 +12,5 @@ class AuditEvent:
     resource_id: str
     operator_id: str
     created_at: str
-    request_id: Optional[str] = None
+    correlation_id: Optional[str] = None
     trace_id: Optional[str] = None

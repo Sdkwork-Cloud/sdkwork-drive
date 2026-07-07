@@ -330,6 +330,12 @@ assert(
 );
 
 const appOpenapi = readText('apis/app-api/drive/drive-app-api.openapi.json');
+const appNodeHandlers = productionRustSource(
+  readText('crates/sdkwork-routes-drive-app-api/src/node_handlers.rs'),
+);
+const appAssetsHandlers = productionRustSource(
+  readText('crates/sdkwork-routes-drive-app-api/src/assets.rs'),
+);
 assert(
   !appOpenapi.includes('"x-sdkwork-request-context": "AppRequestContext"'),
   'app OpenAPI must use WebRequestContext instead of AppRequestContext',
@@ -341,6 +347,36 @@ assert(
 assert(
   !appOpenapi.includes('"x-sdkwork-api-surface": "app"'),
   'app OpenAPI x-sdkwork-api-surface must use canonical app-api label',
+);
+assert(
+  appNodeHandlers.includes('collect_move_destination_folder_window'),
+  'move_destinations.list must use bounded window collection for production pagination',
+);
+assert(
+  !appNodeHandlers.includes('fetch_all_folder_children_at_parent'),
+  'move_destinations.list must not reintroduce full child-folder collection before pagination',
+);
+assert(
+  !appAssetsHandlers.includes('StatusCode::NOT_IMPLEMENTED'),
+  'Drive assets production routes must not return 501 not implemented; retire legacy routes with explicit API semantics',
+);
+assert(
+  !appAssetsHandlers.includes('asset_upload_not_implemented'),
+  'Drive assets production routes must not retain asset_upload_not_implemented stubs',
+);
+assert(
+  appAssetsHandlers.includes('legacy_asset_upload_route_gone'),
+  'legacy Drive asset upload routes must fail closed through legacy_asset_upload_route_gone',
+);
+assert(
+  appAssetsHandlers.includes('StatusCode::GONE')
+    && appAssetsHandlers.includes('SdkWorkResultCode::Gone'),
+  'legacy Drive asset upload routes must return 410 Gone with SdkWorkResultCode::Gone',
+);
+assert(
+  appAssetsHandlers.includes('StatusCode::METHOD_NOT_ALLOWED')
+    && appAssetsHandlers.includes('SdkWorkResultCode::MethodNotAllowed'),
+  'unsupported Drive asset methods must return 405 Method Not Allowed with SdkWorkResultCode::MethodNotAllowed',
 );
 
 const canonicalOpenApiPaths = [
@@ -373,6 +409,35 @@ function walkRustTests(relativeRoot, visitor) {
     }
     visitor(`${relativeRoot}/${entry.name}`.replace(/\\/g, '/'), fs.readFileSync(absolutePath, 'utf8'));
   }
+}
+
+function productionRustSource(source) {
+  const testModuleMatch = /\r?\n#\[cfg\(test\)\]\r?\nmod tests/u.exec(source);
+  const testModuleIndex = testModuleMatch?.index ?? -1;
+  if (testModuleIndex === -1) {
+    return source;
+  }
+  return source.slice(0, testModuleIndex);
+}
+
+function assertNoLegacyCorrelationHeaders(relativePath) {
+  const source = productionRustSource(readText(relativePath));
+  for (const legacyHeader of ['X-Request-Id', 'x-request-id', 'x-trace-id']) {
+    assert(
+      !source.includes(legacyHeader),
+      `${relativePath} must not use legacy ${legacyHeader}; use server-owned request identity and X-SdkWork-Trace-Id`,
+    );
+  }
+}
+
+for (const relativePath of [
+  'crates/sdkwork-drive-http/src/middleware/request_id.rs',
+  'crates/sdkwork-drive-http/src/context.rs',
+  'crates/sdkwork-drive-http/src/trace_ids.rs',
+  'crates/sdkwork-drive-http/src/problem_correlation.rs',
+  'crates/sdkwork-drive-security/src/context.rs',
+]) {
+  assertNoLegacyCorrelationHeaders(relativePath);
 }
 
 for (const relativeRoot of [

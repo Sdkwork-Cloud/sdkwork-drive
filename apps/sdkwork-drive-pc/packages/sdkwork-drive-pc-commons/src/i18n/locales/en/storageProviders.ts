@@ -295,4 +295,9 @@ export default {
   bindingsTenantDefaultClear: 'Clear tenant default',
   bindingsTenantDefaultSaved: 'Tenant default binding updated.',
   bindingsTenantDefaultCleared: 'Tenant default binding cleared.',
+
+  // Pagination
+  pageLabel: 'Page {page}',
+  previousPage: 'Previous',
+  nextPage: 'Next',
 };

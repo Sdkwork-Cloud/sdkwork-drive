@@ -18,7 +18,7 @@ pub async fn backend_api_rate_limit(request: Request<Body>, next: Next) -> Respo
 
 fn backend_api_rate_limit_state(
 ) -> &'static sdkwork_drive_http::middleware::rate_limit::SharedRateLimitState {
-    shared_rate_limit_state(|| {
+    shared_rate_limit_state("drive-backend-api", || {
         rate_limit_config_from_env(
             "SDKWORK_DRIVE_BACKEND_API_RATE_LIMIT_WINDOW_SECONDS",
             "SDKWORK_DRIVE_BACKEND_API_RATE_LIMIT_MAX_REQUESTS",

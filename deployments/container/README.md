@@ -10,7 +10,7 @@ docker build -f deployments/docker/Dockerfile.admin-storage-api -t registry.sdkw
 docker build -f deployments/docker/Dockerfile.install-worker -t registry.sdkwork.com/apps/sdkwork-drive/install-worker:local .
 ```
 
-Release packaging records immutable digests in release evidence. Replace `REPLACE_WITH_RELEASE_DIGEST` placeholders in `deployments/kubernetes/drive-services.yaml` before applying manifests.
+Release packaging records immutable digests in release evidence. Replace `REPLACE_WITH_RELEASE_DIGEST` placeholders in `deployments/kubernetes/drive-services.yaml` before applying manifests, then run `SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate` to reject any remaining placeholder or tag-only image references.
 
 Mount secrets:
 

@@ -1,13 +1,13 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ApplyNodeLabelRequest, NodeLabel, NodeLabelListResponse, RemoveNodeLabelResponse } from '../types';
+import type { ApplyNodeLabelRequest } from '../types';
 
 
 export interface NodeLabelsListParams {
   labelKey?: string;
   pageSize?: number;
-  pageToken?: string;
+  cursor?: string;
 }
 
 export class NodeLabelsApi {
@@ -19,23 +19,23 @@ export class NodeLabelsApi {
 
 
 /** List labels applied to a node */
-  async list(nodeId: string, params?: NodeLabelsListParams): Promise<NodeLabelListResponse> {
+  async list(nodeId: string, params?: NodeLabelsListParams): Promise<unknown> {
     const query = buildQueryString([
       { name: 'labelKey', value: params?.labelKey, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<NodeLabelListResponse>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels`), query));
+    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels`), query));
   }
 
 /** Apply a label to a node */
-  async apply(nodeId: string, labelId: string, body: ApplyNodeLabelRequest): Promise<NodeLabel> {
-    return this.client.put<NodeLabel>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(nodeId: string, labelId: string, body: ApplyNodeLabelRequest): Promise<unknown> {
+    return this.client.put<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
 /** Remove a label from a node */
-  async remove(nodeId: string, labelId: string): Promise<RemoveNodeLabelResponse> {
-    return this.client.delete<RemoveNodeLabelResponse>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`));
+  async delete(nodeId: string, labelId: string): Promise<void> {
+    return this.client.delete<void>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`));
   }
 }
 

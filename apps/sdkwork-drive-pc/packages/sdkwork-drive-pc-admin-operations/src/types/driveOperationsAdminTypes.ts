@@ -5,7 +5,7 @@ export interface AuditEventView {
   resourceType: string;
   resourceId: string;
   operatorId: string;
-  requestId?: string;
+  correlationId?: string;
   traceId?: string;
   createdAt: string;
 }
@@ -150,7 +150,7 @@ export interface ListAuditEventsQuery {
   action?: string;
   resourceType?: string;
   resourceId?: string;
-  requestId?: string;
+  correlationId?: string;
   traceId?: string;
   page?: number;
   pageSize?: number;
@@ -176,6 +176,8 @@ export interface ListLabelsQuery {
 export interface ListSpacesAdminQuery {
   ownerSubjectType?: string;
   ownerSubjectId?: string;
+  pageSize?: number;
+  pageToken?: string;
   signal?: AbortSignal;
 }
 

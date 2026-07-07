@@ -2,7 +2,7 @@
 
 Status: accepted
 Owner: SDKWork maintainers
-Updated: 2026-06-25
+Updated: 2026-07-07
 Specs: SECURITY_SPEC.md §3, API_SPEC.md
 
 ## Context
@@ -17,8 +17,8 @@ Several Drive route handlers returned SQL and infrastructure error strings throu
 
 ## Consequences
 
-- Clients receive RFC 9457 problems with `code = drive.internal_error` and generic detail text.
-- Operators diagnose failures through structured logs and `requestId` / `traceId` correlation instead of response bodies.
+- Clients receive RFC 9457 problems with numeric `code = 50001` and generic detail text.
+- Operators diagnose failures through structured logs, `traceId`, and audit `correlationId` values instead of response bodies.
 - Route handlers may still pass internal detail into `internal_problem`; it is never forwarded to clients.
 
 ## Verification

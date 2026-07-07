@@ -199,11 +199,8 @@ pub(crate) fn watch_channel_reader_visible_sql(
 ) -> String {
     let node_reader =
         node_reader_visible_sql("watch_channel_node", subject_type_bind, subject_id_bind);
-    let space_accessible = space_accessible_to_subject_sql(
-        "watch_channel_space",
-        subject_type_bind,
-        subject_id_bind,
-    );
+    let space_accessible =
+        space_accessible_to_subject_sql("watch_channel_space", subject_type_bind, subject_id_bind);
     format!(
         "(
             ({channel_alias}.node_id IS NOT NULL AND EXISTS (

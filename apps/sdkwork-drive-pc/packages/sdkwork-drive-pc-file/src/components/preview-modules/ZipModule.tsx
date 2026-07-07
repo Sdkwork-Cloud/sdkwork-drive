@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Archive, ExternalLink, Info } from 'lucide-react';
-import { formatDriveBytes, useTranslation } from 'sdkwork-drive-pc-commons';
+import { formatDriveBytes, isDriveConflictError, useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
 import { isDriveAbortError, type DriveArchiveEntry, type DriveFileService } from 'sdkwork-drive-pc-core';
 
@@ -106,7 +106,12 @@ export function ZipModule({
       if (isDriveAbortError(err)) {
         return;
       }
-      triggerFeedback(err?.message || t('previewModules.archiveExtractFailed'), 'error');
+      triggerFeedback(
+        isDriveConflictError(err)
+          ? t('previewModules.archiveNameConflict')
+          : err?.message || t('previewModules.archiveExtractFailed'),
+        'error',
+      );
     } finally {
       if (extractionAbortControllerRef.current === extractionAbortController) {
         extractionAbortControllerRef.current = null;

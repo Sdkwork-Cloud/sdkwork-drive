@@ -17,6 +17,7 @@ Use this checklist before promoting Drive from controlled pilot to commercial GA
 - [ ] **required** All systemd units set `SDKWORK_DRIVE_DEPLOYMENT_PROFILE` (`cloud` or `standalone`) and `SDKWORK_DRIVE_RUNTIME_PROFILE=production`.
 - [ ] **required** Prometheus scrapes `/metrics`; dashboards alert on error rate, latency (`sdkwork_drive_http_request_duration_seconds`), rate-limit saturation, and route-level counters (`drive_http_requests_by_route_total`).
 - [ ] **required** OTEL exporter endpoint and service names are configured per deployment block in `deployments/kubernetes/drive-services.yaml` or equivalent env files.
+- [ ] **required** Kubernetes image references use immutable `@sha256:<64 hex>` digests; `SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate` passes.
 - [ ] **recommended** Edge rate limiting is active (nginx `limit-rps` or Ingress annotation).
 
 ## Release and Catalog
@@ -36,6 +37,7 @@ pnpm verify
 pnpm api:envelope:check
 pnpm api:schema:check
 pnpm deploy:validate
+SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate
 pnpm gateway:assembly:validate
 pnpm check:architecture-alignment
 node ../sdkwork-specs/tools/check-deploy-standard.mjs
@@ -44,6 +46,20 @@ node ../sdkwork-specs/tools/check-deploy-standard.mjs
 ## Admin Operations Smoke (required)
 
 With a tenant admin session (`drive.storage.admin`, `drive.*`, or a granular `drive.<capability>.admin` scope) against a staging or pre-production backend:
+
+Automated helper (skips when staging secrets are unset; contract validated in CI via `pnpm test:staging-admin-smoke-contract`):
+
+```bash
+export SDKWORK_DRIVE_STAGING_BACKEND_BASE_URL="https://<staging-host>/backend/v3/api/drive"
+export SDKWORK_DRIVE_STAGING_AUTH_TOKEN="<org-scoped-auth-jwt>"
+export SDKWORK_DRIVE_STAGING_ACCESS_TOKEN="<org-scoped-access-jwt>"
+# Optional RBAC pairs:
+# SDKWORK_DRIVE_STAGING_AUDIT_AUTH_TOKEN / SDKWORK_DRIVE_STAGING_AUDIT_ACCESS_TOKEN
+# SDKWORK_DRIVE_STAGING_QUOTA_AUTH_TOKEN / SDKWORK_DRIVE_STAGING_QUOTA_ACCESS_TOKEN
+pnpm smoke:staging-admin
+```
+
+Manual / scripted checklist:
 
 - [ ] **required** Audit-only role (`drive.audit.admin`) can list audit events but receives `403` on quota, label mutation, and storage provider routes.
 - [ ] **required** Quota-only role (`drive.quota.admin`) can read/update quotas but receives `403` on audit and storage provider routes.

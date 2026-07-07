@@ -50,7 +50,7 @@
             }
           },
           {
-            "name": "requestId",
+            "name": "correlationId",
             "in": "query",
             "required": false,
             "schema": {
@@ -80,7 +80,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -96,7 +96,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuditEventPage"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AuditEventListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -166,7 +173,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -177,7 +184,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -193,7 +200,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LabelListResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveLabelListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -292,7 +306,30 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveLabel"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "data"
+                      ],
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "required": [
+                            "item"
+                          ],
+                          "properties": {
+                            "item": {
+                              "$ref": "#/components/schemas/DriveLabel"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -375,7 +412,7 @@
         "tags": [
           "labels"
         ],
-        "operationId": "labels.get",
+        "operationId": "labels.retrieve",
         "summary": "Get a Drive label definition",
         "parameters": [
           {
@@ -396,7 +433,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveLabel"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveLabel"
+                    }
+                  ]
                 }
               }
             }
@@ -508,7 +552,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriveLabel"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveLabel"
+                    }
+                  ]
                 }
               }
             }
@@ -616,15 +667,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Drive label deleted.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteLabelResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Validation failed.",
@@ -753,7 +797,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -769,7 +813,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MaintenanceJobPage"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MaintenanceJobListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -822,7 +873,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "maintenance.objectSweep.start",
+        "operationId": "maintenance.objectSweep",
         "requestBody": {
           "required": true,
           "content": {
@@ -839,7 +890,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SweepResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SweepResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -892,7 +950,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "maintenance.uploadSessionSweep.start",
+        "operationId": "maintenance.uploadSessionSweep",
         "requestBody": {
           "required": true,
           "content": {
@@ -909,7 +967,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SweepResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SweepResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -962,7 +1027,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "maintenance.expiredUploadContentSweep.start",
+        "operationId": "maintenance.expiredUploadContentSweep",
         "requestBody": {
           "required": true,
           "content": {
@@ -979,7 +1044,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SweepResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SweepResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1032,7 +1104,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "maintenance.abandonedUploadTaskSweep.start",
+        "operationId": "maintenance.abandonedUploadTaskSweep",
         "requestBody": {
           "required": true,
           "content": {
@@ -1049,7 +1121,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SweepResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SweepResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1102,7 +1181,7 @@
         "tags": [
           "drive"
         ],
-        "operationId": "quotas.summary",
+        "operationId": "quotas.retrieve",
         "parameters": [],
         "responses": {
           "200": {
@@ -1110,7 +1189,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuotaSummary"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/QuotaSummary"
+                    }
+                  ]
                 }
               }
             }
@@ -1179,7 +1265,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuotaSummary"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/QuotaSummary"
+                    }
+                  ]
                 }
               }
             }
@@ -1249,6 +1342,25 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1257,7 +1369,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListSpacesResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DriveSpaceListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1337,7 +1456,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -1353,7 +1472,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DownloadPackagePage"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DownloadPackageListHttpResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1482,7 +1608,7 @@
             "maxLength": 128,
             "pattern": "^[A-Za-z0-9._:@-]+$"
           },
-          "requestId": {
+          "correlationId": {
             "type": "string",
             "maxLength": 64,
             "pattern": "^[A-Za-z0-9._:@-]+$"
@@ -1494,33 +1620,6 @@
           },
           "createdAt": {
             "type": "string"
-          }
-        }
-      },
-      "AuditEventPage": {
-        "type": "object",
-        "required": [
-          "items",
-          "page",
-          "pageSize",
-          "total"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AuditEvent"
-            }
-          },
-          "page": {
-            "type": "integer"
-          },
-          "pageSize": {
-            "type": "integer"
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -1562,18 +1661,6 @@
             "minLength": 1,
             "maxLength": 128,
             "pattern": "^[A-Za-z0-9._:@-]+$"
-          }
-        },
-        "additionalProperties": false
-      },
-      "DeleteLabelResponse": {
-        "type": "object",
-        "required": [
-          "deleted"
-        ],
-        "properties": {
-          "deleted": {
-            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -1685,39 +1772,6 @@
           }
         }
       },
-      "LabelListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DriveLabel"
-            }
-          },
-          "nextPageToken": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "ListSpacesResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DriveSpace"
-            }
-          }
-        }
-      },
       "MaintenanceJob": {
         "type": "object",
         "required": [
@@ -1771,7 +1825,7 @@
             "maxLength": 128,
             "pattern": "^[A-Za-z0-9._:@-]+$"
           },
-          "requestId": {
+          "correlationId": {
             "type": "string",
             "maxLength": 64,
             "pattern": "^[A-Za-z0-9._:@-]+$"
@@ -1795,33 +1849,6 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
-          }
-        }
-      },
-      "MaintenanceJobPage": {
-        "type": "object",
-        "required": [
-          "items",
-          "page",
-          "pageSize",
-          "total"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MaintenanceJob"
-            }
-          },
-          "page": {
-            "type": "integer"
-          },
-          "pageSize": {
-            "type": "integer"
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -1938,7 +1965,7 @@
             "maxLength": 128,
             "pattern": "^[A-Za-z0-9._:@-]+$"
           },
-          "requestId": {
+          "correlationId": {
             "type": "string",
             "maxLength": 64,
             "pattern": "^[A-Za-z0-9._:@-]+$"
@@ -1997,7 +2024,7 @@
             "maxLength": 128,
             "pattern": "^[A-Za-z0-9._:@-]+$"
           },
-          "requestId": {
+          "correlationId": {
             "type": "string",
             "maxLength": 64,
             "pattern": "^[A-Za-z0-9._:@-]+$"
@@ -2128,37 +2155,6 @@
           }
         }
       },
-      "DownloadPackagePage": {
-        "type": "object",
-        "required": [
-          "items",
-          "page",
-          "pageSize",
-          "total"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DownloadPackage"
-            }
-          },
-          "page": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "pageSize": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 100
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64",
-            "minimum": 0
-          }
-        }
-      },
       "FieldError": {
         "type": "object",
         "required": [
@@ -2184,6 +2180,331 @@
         "minimum": 40001,
         "maximum": 79999,
         "description": "Platform or domain error code per API_SPEC.md §15.3."
+      },
+      "SdkWorkApiResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "data",
+          "traceId"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+              0
+            ],
+            "default": 0,
+            "minimum": 0,
+            "maximum": 0
+          },
+          "data": {
+            "description": "Operation-specific payload typed per response schema."
+          },
+          "traceId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Server-owned request correlation id."
+          }
+        }
+      },
+      "SdkWorkResourceData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item"
+        ],
+        "properties": {
+          "item": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Typed domain resource for the operation."
+          }
+        }
+      },
+      "SdkWorkPageData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "SdkWorkCommandData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "accepted"
+        ],
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "const": true
+          },
+          "resourceId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "PageInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "offset",
+              "cursor"
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200
+          },
+          "totalItems": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SdkWorkResourceResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/SdkWorkResourceData"
+              }
+            }
+          }
+        ]
+      },
+      "SdkWorkCommandResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/SdkWorkCommandData"
+              }
+            }
+          }
+        ]
+      },
+      "AuditEventListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/AuditEvent"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DriveLabelListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DriveLabel"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "MaintenanceJobListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/MaintenanceJob"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DriveSpaceListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DriveSpace"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DownloadPackageListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "items",
+                  "pageInfo"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DownloadPackage"
+                    }
+                  },
+                  "pageInfo": {
+                    "$ref": "#/components/schemas/PageInfo"
+                  }
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "securitySchemes": {

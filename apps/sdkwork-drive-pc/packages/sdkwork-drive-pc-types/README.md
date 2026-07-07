@@ -3,13 +3,13 @@
 Domain: drive
 Capability: types
 Package type: node-package
-Status: standard
+Status: compatibility facade
 
-This README is the SDKWork module entrypoint for `sdkwork-drive-pc-types`. The machine-readable component contract is `specs/component.spec.json`; canonical standards are under `../../../../../sdkwork-specs/`.
+This README is the SDKWork module entrypoint for `sdkwork-drive-pc-types`. The package is a compatibility facade that re-exports the authoritative Drive PC UI/domain types from `sdkwork-drive-pc-core/types`, so `sdkwork-drive-pc-core` remains the core composition owner and does not depend on a feature or compatibility package. The machine-readable component contract is `specs/component.spec.json`; canonical standards are under `../../../../../sdkwork-specs/`.
 
 ## Public API
 
-- `.`
+- `.` re-exports `sdkwork-drive-pc-core/types`
 
 ## Required SDK Surface
 

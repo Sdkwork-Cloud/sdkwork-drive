@@ -13,7 +13,7 @@ import type {
   StorageProviderView,
   UpdateStorageProviderInput,
 } from '../types/storageProviderAdminTypes';
-import { PRIMARY_BUTTON_CLASS, BADGE_BASE_CLASS } from '../utils/uiPrimitives';
+import { PRIMARY_BUTTON_CLASS, BADGE_BASE_CLASS, SECONDARY_BUTTON_CLASS } from '../utils/uiPrimitives';
 import { useTranslation } from '../hooks/useTranslation';
 
 interface StorageProvidersAdminPageProps {
@@ -38,6 +38,9 @@ export function StorageProvidersAdminPage({
     [adminStorageSdkClient, getSession],
   );
   const [providers, setProviders] = useState<StorageProviderView[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState<PageNotice>();
@@ -47,9 +50,14 @@ export function StorageProvidersAdminPage({
   const [detailProvider, setDetailProvider] = useState<StorageProviderView | undefined>();
 
   const refreshProviders = async (signal?: AbortSignal) => {
-    const items = await service.listProviders({ signal });
-    setProviders(items);
-    return items;
+    const result = await service.listProvidersPage({
+      signal,
+      pageSize,
+      pageToken: page > 1 ? String((page - 1) * pageSize) : undefined,
+    });
+    setProviders(result.items);
+    setHasMore(result.hasMore);
+    return result.items;
   };
 
   const reload = (signal?: AbortSignal) => {
@@ -65,7 +73,7 @@ export function StorageProvidersAdminPage({
     const c = new AbortController();
     reload(c.signal);
     return () => c.abort();
-  }, [service]);
+  }, [service, page, pageSize]);
 
   const syncProviderViews = (items: StorageProviderView[], saved?: StorageProviderView) => {
     setProviders(items);
@@ -216,18 +224,41 @@ export function StorageProvidersAdminPage({
             </div>
           </div>
         ) : (
-          <StorageProviderTable
-            providers={providers}
-            actionPending={pending}
-            onNewProvider={() => { setEditingProvider(undefined); setEditorOpen(true); }}
-            onEditProvider={(p) => { setEditingProvider(p); setEditorOpen(true); }}
-            onViewDetail={(p) => { setDetailProvider(p); setDetailDrawerOpen(true); }}
-            onActivateProvider={activateProvider}
-            onDeactivateProvider={deactivateProvider}
-            onTestProvider={testProvider}
-            onTestProviders={testProviders}
-            onDeleteProvider={deleteProvider}
-          />
+          <>
+            <StorageProviderTable
+              providers={providers}
+              actionPending={pending}
+              onNewProvider={() => { setEditingProvider(undefined); setEditorOpen(true); }}
+              onEditProvider={(p) => { setEditingProvider(p); setEditorOpen(true); }}
+              onViewDetail={(p) => { setDetailProvider(p); setDetailDrawerOpen(true); }}
+              onActivateProvider={activateProvider}
+              onDeactivateProvider={deactivateProvider}
+              onTestProvider={testProvider}
+              onTestProviders={testProviders}
+              onDeleteProvider={deleteProvider}
+            />
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
+              <span className="text-sm text-neutral-500">{t('pageLabel', { page })}</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className={SECONDARY_BUTTON_CLASS}
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                >
+                  {t('previousPage')}
+                </button>
+                <button
+                  type="button"
+                  className={SECONDARY_BUTTON_CLASS}
+                  disabled={!hasMore || loading}
+                  onClick={() => setPage((current) => current + 1)}
+                >
+                  {t('nextPage')}
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

@@ -300,8 +300,12 @@ pub(crate) fn unique_archive_path(candidate: &str, used_paths: &mut BTreeSet<Str
         Some((stem, extension)) if !stem.is_empty() => (stem.to_string(), format!(".{extension}")),
         _ => (normalized.clone(), String::new()),
     };
-    for index in 2..10_000 {
-        let candidate = format!("{stem} ({index}){extension}");
+    for index in 1..10_000 {
+        let candidate = sdkwork_utils_rust::format_numbered_filename_variant(
+            &stem,
+            index,
+            extension.strip_prefix('.').filter(|ext| !ext.is_empty()),
+        );
         if used_paths.insert(candidate.clone()) {
             return candidate;
         }

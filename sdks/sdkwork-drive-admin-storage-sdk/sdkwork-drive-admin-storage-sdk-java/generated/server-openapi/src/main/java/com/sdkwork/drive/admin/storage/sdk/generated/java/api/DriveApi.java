@@ -13,148 +13,152 @@ public class DriveApi {
         this.client = client;
     }
 
-    public StorageProviderBinding storageProviderBindingsDefaultGet(String spaceId, String spaceType) throws Exception {
+    public StorageProviderBindingsDefaultRetrieveResponse storageProviderBindingsDefaultRetrieve(String spaceId, String spaceType) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("spaceId", spaceId, "form", true, false, null),
             new QueryParameterSpec("spaceType", spaceType, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/bindings/default"), query));
-        return client.convertValue(raw, new TypeReference<StorageProviderBinding>() {});
+        return client.convertValue(raw, new TypeReference<StorageProviderBindingsDefaultRetrieveResponse>() {});
     }
 
-    public StorageProviderBinding storageProviderBindingsDefaultSet(SetDefaultStorageProviderBindingRequest body) throws Exception {
+    public StorageProviderBindingsDefaultUpdateResponse storageProviderBindingsDefaultUpdate(SetDefaultStorageProviderBindingRequest body) throws Exception {
         Object raw = client.put(ApiPaths.customPath("/drive/storage/bindings/default"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<StorageProviderBinding>() {});
+        return client.convertValue(raw, new TypeReference<StorageProviderBindingsDefaultUpdateResponse>() {});
     }
 
     /** Delete a Drive default storage provider binding */
-    public DeleteStorageProviderBindingResponse storageProviderBindingsDefaultDelete(String operatorId, String spaceId) throws Exception {
+    public Void storageProviderBindingsDefaultDelete(String operatorId, String spaceId) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("spaceId", spaceId, "form", true, false, null),
             new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
         ));
-        Object raw = client.delete(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/bindings/default"), query));
-        return client.convertValue(raw, new TypeReference<DeleteStorageProviderBindingResponse>() {});
+        client.delete(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/bindings/default"), query));
+        return null;
     }
 
-    public ListStorageProvidersResponse storageProvidersList(String status) throws Exception {
+    public StorageProvidersListResponse storageProvidersList(String status) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("status", status, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers"), query));
-        return client.convertValue(raw, new TypeReference<ListStorageProvidersResponse>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersListResponse>() {});
     }
 
-    public StorageProvider storageProvidersCreate(CreateStorageProviderRequest body) throws Exception {
+    public StorageProvidersCreateResponse201 storageProvidersCreate(CreateStorageProviderRequest body) throws Exception {
         Object raw = client.post(ApiPaths.customPath("/drive/storage/providers"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<StorageProvider>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersCreateResponse201>() {});
     }
 
-    public StorageProvider storageProvidersUpdate(String providerId, UpdateStorageProviderRequest body) throws Exception {
+    public StorageProvidersUpdateResponse storageProvidersUpdate(String providerId, UpdateStorageProviderRequest body) throws Exception {
         Object raw = client.patch(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + ""), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<StorageProvider>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersUpdateResponse>() {});
     }
 
-    public DeleteStorageProviderResponse storageProvidersDelete(String providerId) throws Exception {
-        Object raw = client.delete(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + ""));
-        return client.convertValue(raw, new TypeReference<DeleteStorageProviderResponse>() {});
+    public Void storageProvidersDelete(String providerId) throws Exception {
+        client.delete(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + ""));
+        return null;
     }
 
-    public StorageProvider storageProvidersGet(String providerId) throws Exception {
+    public StorageProvidersRetrieveResponse storageProvidersRetrieve(String providerId) throws Exception {
         Object raw = client.get(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + ""));
-        return client.convertValue(raw, new TypeReference<StorageProvider>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersRetrieveResponse>() {});
     }
 
-    public StorageProvider storageProvidersActivate(String providerId, OperatorRequest body) throws Exception {
+    public StorageProvidersActivateResponse storageProvidersActivate(String providerId, OperatorRequest body) throws Exception {
         Object raw = client.post(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/activate"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<StorageProvider>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersActivateResponse>() {});
     }
 
-    public StorageProviderCapabilities storageProvidersCapabilitiesGet(String providerId) throws Exception {
+    public StorageProvidersCapabilitiesListResponse storageProvidersCapabilitiesList(String providerId) throws Exception {
         Object raw = client.get(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/capabilities"));
-        return client.convertValue(raw, new TypeReference<StorageProviderCapabilities>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersCapabilitiesListResponse>() {});
     }
 
-    public StorageProvider storageProvidersCredentialsRotate(String providerId, RotateStorageProviderCredentialRequest body) throws Exception {
+    public StorageProvidersCredentialsRotateResponse storageProvidersCredentialsRotate(String providerId, RotateStorageProviderCredentialRequest body) throws Exception {
         Object raw = client.post(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/credentials/rotate"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<StorageProvider>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersCredentialsRotateResponse>() {});
     }
 
-    public StorageProvider storageProvidersDeactivate(String providerId, OperatorRequest body) throws Exception {
+    public StorageProvidersDeactivateResponse storageProvidersDeactivate(String providerId, OperatorRequest body) throws Exception {
         Object raw = client.post(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/deactivate"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<StorageProvider>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersDeactivateResponse>() {});
     }
 
-    public TestStorageProviderResponse storageProvidersTest(String providerId, TestStorageProviderRequest body) throws Exception {
+    public StorageProvidersTestResponse storageProvidersTest(String providerId, TestStorageProviderRequest body) throws Exception {
         Object raw = client.post(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/test"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<TestStorageProviderResponse>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersTestResponse>() {});
     }
 
-    public ProviderBucket storageProvidersBucketHead(String providerId) throws Exception {
+    public StorageProvidersBucketRetrieveResponse storageProvidersBucketRetrieve(String providerId) throws Exception {
         Object raw = client.get(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/bucket"));
-        return client.convertValue(raw, new TypeReference<ProviderBucket>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersBucketRetrieveResponse>() {});
     }
 
-    public ProviderBucketMutation storageProvidersBucketCreate(String providerId, String operatorId) throws Exception {
+    public StorageProvidersBucketUpdateResponse storageProvidersBucketUpdate(String providerId, String operatorId) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
         ));
         Object raw = client.put(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/bucket"), query), null);
-        return client.convertValue(raw, new TypeReference<ProviderBucketMutation>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersBucketUpdateResponse>() {});
     }
 
-    public ProviderBucketMutation storageProvidersBucketDelete(String providerId, String operatorId) throws Exception {
+    public Void storageProvidersBucketDelete(String providerId, String operatorId) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
         ));
-        Object raw = client.delete(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/bucket"), query));
-        return client.convertValue(raw, new TypeReference<ProviderBucketMutation>() {});
+        client.delete(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/bucket"), query));
+        return null;
     }
 
-    public ProviderObjectList storageProvidersObjectsList(String providerId, String prefix, String delimiter, String pageToken, Integer pageSize) throws Exception {
+    public StorageProvidersObjectsListResponse storageProvidersObjectsList(String providerId, String prefix, String delimiter, String cursor, Integer pageSize) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("prefix", prefix, "form", true, false, null),
             new QueryParameterSpec("delimiter", delimiter, "form", true, false, null),
-            new QueryParameterSpec("pageToken", pageToken, "form", true, false, null),
-            new QueryParameterSpec("pageSize", pageSize, "form", true, false, null)
+            new QueryParameterSpec("cursor", cursor, "form", true, false, null),
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/objects"), query));
-        return client.convertValue(raw, new TypeReference<ProviderObjectList>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersObjectsListResponse>() {});
     }
 
-    public ProviderObject storageProvidersObjectsHead(String providerId, String objectKey) throws Exception {
+    public StorageProvidersObjectsRetrieveResponse storageProvidersObjectsRetrieve(String providerId, String objectKey) throws Exception {
         Object raw = client.get(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/objects/" + serializePathParameter(objectKey, new PathParameterSpec("objectKey", "simple", false)) + ""));
-        return client.convertValue(raw, new TypeReference<ProviderObject>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersObjectsRetrieveResponse>() {});
     }
 
-    public ProviderObjectMutation storageProvidersObjectsDelete(String providerId, String objectKey, String operatorId) throws Exception {
+    public Void storageProvidersObjectsDelete(String providerId, String objectKey, String operatorId) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
         ));
-        Object raw = client.delete(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/objects/" + serializePathParameter(objectKey, new PathParameterSpec("objectKey", "simple", false)) + ""), query));
-        return client.convertValue(raw, new TypeReference<ProviderObjectMutation>() {});
+        client.delete(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/objects/" + serializePathParameter(objectKey, new PathParameterSpec("objectKey", "simple", false)) + ""), query));
+        return null;
     }
 
-    public ProviderObjectMutation storageProvidersObjectsCopy(String providerId, CopyProviderObjectRequest body) throws Exception {
+    public StorageProvidersObjectsCopyResponse storageProvidersObjectsCopy(String providerId, CopyProviderObjectRequest body) throws Exception {
         Object raw = client.post(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/objects/copy"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<ProviderObjectMutation>() {});
+        return client.convertValue(raw, new TypeReference<StorageProvidersObjectsCopyResponse>() {});
     }
 
     /** List buckets visible to a Drive storage provider account */
-    public ProviderBucketList storageProvidersBucketsList(String providerId) throws Exception {
-        Object raw = client.get(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/buckets"));
-        return client.convertValue(raw, new TypeReference<ProviderBucketList>() {});
+    public StorageProvidersBucketsListResponse storageProvidersBucketsList(String providerId, String cursor, Integer pageSize) throws Exception {
+        String query = buildQueryString(List.of(
+            new QueryParameterSpec("cursor", cursor, "form", true, false, null),
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null)
+        ));
+        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/buckets"), query));
+        return client.convertValue(raw, new TypeReference<StorageProvidersBucketsListResponse>() {});
     }
 
     /** List Drive storage provider bindings */
-    public StorageProviderBindingListResponse storageProviderBindingsList(String spaceId, String providerId, String lifecycleStatus) throws Exception {
+    public StorageProviderBindingsListResponse storageProviderBindingsList(String spaceId, String providerId, String lifecycleStatus) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("spaceId", spaceId, "form", true, false, null),
             new QueryParameterSpec("providerId", providerId, "form", true, false, null),
             new QueryParameterSpec("lifecycleStatus", lifecycleStatus, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/bindings"), query));
-        return client.convertValue(raw, new TypeReference<StorageProviderBindingListResponse>() {});
+        return client.convertValue(raw, new TypeReference<StorageProviderBindingsListResponse>() {});
     }
 
     private record PathParameterSpec(String name, String style, boolean explode) {}

@@ -248,22 +248,38 @@ impl DriveObjectStore for OpendalS3DriveObjectStore {
         }
         let entries = list.await.map_err(map_opendal_error)?;
         let mut items = Vec::new();
+        let mut prefixes = Vec::new();
+        let delimiter_mode = request.delimiter.as_deref().map(str::trim) == Some("/");
         for entry in entries {
             let metadata = entry.metadata();
-            if !metadata.is_file() {
+            if metadata.is_file() {
+                items.push(ListedObject {
+                    object_key: entry.path().trim_end_matches('/').to_string(),
+                    content_length: metadata.content_length(),
+                    etag: metadata.etag().map(str::to_string),
+                    storage_class: None,
+                    last_modified_epoch_ms: None,
+                });
                 continue;
             }
-            items.push(ListedObject {
-                object_key: entry.path().trim_end_matches('/').to_string(),
-                content_length: metadata.content_length(),
-                etag: metadata.etag().map(str::to_string),
-                storage_class: None,
-                last_modified_epoch_ms: None,
-            });
+            if delimiter_mode {
+                let path = entry.path().trim_end_matches('/');
+                if !path.is_empty() {
+                    prefixes.push(format!("{path}/"));
+                }
+            }
         }
-        let is_truncated = items.len() >= usize::from(request.max_keys);
+        prefixes.sort();
+        prefixes.dedup();
+        let mut continuation_keys = items
+            .iter()
+            .map(|item| item.object_key.as_str())
+            .chain(prefixes.iter().map(String::as_str))
+            .collect::<Vec<_>>();
+        continuation_keys.sort_unstable();
+        let is_truncated = continuation_keys.len() >= usize::from(request.max_keys);
         let next_continuation_token = if is_truncated {
-            items.last().map(|item| item.object_key.clone())
+            continuation_keys.last().map(|key| (*key).to_string())
         } else {
             None
         };
@@ -271,6 +287,7 @@ impl DriveObjectStore for OpendalS3DriveObjectStore {
             bucket: request.bucket,
             prefix,
             items,
+            prefixes,
             next_continuation_token,
             is_truncated,
         })

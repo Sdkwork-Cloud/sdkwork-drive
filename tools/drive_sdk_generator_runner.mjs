@@ -572,13 +572,23 @@ function syncDriveAssemblyMetadata(family, openapiPath) {
     manualTransports: [],
   };
   assembly.languages = syncLanguageAssemblyEntries(family, assembly.languages);
-  if (family.sdkDependencies && family.sdkDependencies.length > 0) {
-    assembly.sdkDependencies = family.sdkDependencies;
-  } else {
-    delete assembly.sdkDependencies;
-  }
+  assembly.sdkDependencies = family.sdkDependencies || [];
 
   writeFileSync(assemblyPath, `${JSON.stringify(assembly, null, 2)}\n`, "utf8");
+}
+
+function normalizeGeneratedSdkMetadata(outputPath, family, language, packageName) {
+  const sdkMetadataPath = path.join(outputPath, "sdkwork-sdk.json");
+  if (!existsSync(sdkMetadataPath)) {
+    return;
+  }
+  const metadata = JSON.parse(readFileSync(sdkMetadataPath, "utf8"));
+  metadata.name = family.sdkName;
+  metadata.language = language;
+  metadata.sdkType = family.sdkType;
+  metadata.packageName = packageName;
+  metadata.transportPackageName = packageName;
+  writeFileSync(sdkMetadataPath, `${JSON.stringify(metadata, null, 2)}\n`, "utf8");
 }
 
 export function runDriveSdkGenerator(family, argv) {
@@ -662,6 +672,7 @@ export function runDriveSdkGenerator(family, argv) {
       fail(sdkName, `generator terminated by signal ${result.signal}`);
     }
 
+    normalizeGeneratedSdkMetadata(outputPath, family, language, packageName);
     removeStaleGeneratedTrackingFiles(outputPath);
     writeGeneratedSourceOpenApi({ openapiPath: ownerOnlyOpenapiPath, outputPath });
   }

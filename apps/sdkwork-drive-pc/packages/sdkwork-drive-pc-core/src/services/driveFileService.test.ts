@@ -10,7 +10,7 @@ import {
 } from '@sdkwork/drive-app-sdk';
 import type { SessionSnapshot } from '../session/sessionStore';
 import type { HostAdapter } from '../host/hostAdapter';
-import { encodeLocalFilesystemId } from 'sdkwork-drive-pc-types';
+import { encodeLocalFilesystemId } from '../types';
 import {
   createDriveFileService,
   type DriveFileService,
@@ -29,6 +29,10 @@ const session: SessionSnapshot = {
     actorKind: 'user',
   },
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
 const folderNode = {
   id: 'folder-001',
@@ -104,6 +108,89 @@ const fileNode = {
   version: 1,
 };
 
+function wrapListEnvelope(payload: unknown): unknown {
+  if (!isRecord(payload)) {
+    return payload;
+  }
+  if (isRecord(payload.data) && Array.isArray(payload.data.items)) {
+    return payload;
+  }
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  const pageInfo = isRecord(payload.pageInfo)
+    ? payload.pageInfo
+    : { mode: 'offset', hasMore: false };
+  return {
+    code: 0,
+    traceId: 'test-trace',
+    data: { items, pageInfo },
+  };
+}
+
+function wrapResourceEnvelope(payload: unknown): unknown {
+  if (!isRecord(payload)) {
+    return payload;
+  }
+  if ('code' in payload && 'data' in payload) {
+    return payload;
+  }
+  if (
+    'deletedCount' in payload
+    || ('deleted' in payload && !('nodeType' in payload))
+    || ('items' in payload && 'extractedCount' in payload)
+    || ('node' in payload && 'uploadSession' in payload)
+  ) {
+    return { code: 0, traceId: 'test-trace', data: payload };
+  }
+  return { code: 0, traceId: 'test-trace', data: { item: payload } };
+}
+
+function wrapCommandEnvelope(payload: unknown): unknown {
+  if (!isRecord(payload)) {
+    return payload;
+  }
+  if ('code' in payload && 'data' in payload) {
+    return payload;
+  }
+  return { code: 0, traceId: 'test-trace', data: payload };
+}
+
+const LIST_OPERATION_IDS = new Set([
+  'spaces.list',
+  'nodes.list',
+  'versions.list',
+  'favorites.check',
+  'shareLinks.list',
+  'archiveEntries.list',
+  'nodeProperties.list',
+  'changes.list',
+]);
+
+const RESOURCE_OPERATION_IDS = new Set([
+  'spaces.create',
+  'spaces.retrieve',
+  'spaces.update',
+  'nodes.retrieve',
+  'nodes.update',
+  'nodes.move',
+  'nodes.copy',
+  'nodes.folders.create',
+  'nodes.shortcuts.create',
+  'trash.create',
+  'trash.restore',
+  'quotas.retrieve',
+]);
+
+const COMMAND_DATA_OPERATION_IDS = new Set([
+  'spaces.delete',
+  'trash.empty',
+  'archiveEntries.extract',
+  'shareLinks.create',
+  'shareLinks.claim',
+  'shareLinks.delete',
+  'nodes.downloadUrls.retrieve',
+  'downloadPackages.create',
+]);
+
 function createFakeClient(
   responses: Record<string, unknown>,
   requests: DriveAppSdkRequest[],
@@ -117,9 +204,58 @@ function createFakeClient(
       const response = responses[request.operationId];
       if (response === undefined) {
         if (request.operationId === 'spaces.list') {
-          return { items: [personalSpaceNode] };
+          return wrapListEnvelope({ items: [personalSpaceNode] });
+        }
+        if (request.operationId === 'favorites.check') {
+          const nodeIds = (request.body as { nodeIds?: string[] } | undefined)?.nodeIds ?? [];
+          return wrapListEnvelope({
+            items: nodeIds.map((nodeId) => ({
+              nodeId,
+              favorited: false,
+            })),
+          });
         }
         return {};
+      }
+      if (request.operationId === 'spaces.list' && isRecord(response) && Array.isArray(response.items)) {
+        const spaceType =
+          typeof request.query?.spaceType === 'string' ? request.query.spaceType : undefined;
+        const ownerSubjectType =
+          typeof request.query?.ownerSubjectType === 'string'
+            ? request.query.ownerSubjectType
+            : undefined;
+        const ownerSubjectId =
+          typeof request.query?.ownerSubjectId === 'string'
+            ? request.query.ownerSubjectId
+            : undefined;
+        const items = response.items.filter((item) => {
+          if (!isRecord(item)) {
+            return false;
+          }
+          if (spaceType && item.spaceType !== spaceType) {
+            return false;
+          }
+          if (ownerSubjectType && item.ownerSubjectType !== ownerSubjectType) {
+            return false;
+          }
+          if (ownerSubjectId && item.ownerSubjectId !== ownerSubjectId) {
+            return false;
+          }
+          return true;
+        });
+        return wrapListEnvelope({
+          ...response,
+          items,
+        });
+      }
+      if (LIST_OPERATION_IDS.has(request.operationId)) {
+        return wrapListEnvelope(response);
+      }
+      if (COMMAND_DATA_OPERATION_IDS.has(request.operationId)) {
+        return wrapCommandEnvelope(response);
+      }
+      if (RESOURCE_OPERATION_IDS.has(request.operationId)) {
+        return wrapResourceEnvelope(response);
       }
       return response;
     }) as DriveAppSdkClient['request']),
@@ -222,7 +358,7 @@ describe('drive file service', () => {
       'nodes.list': {
         items: [folderNode],
       },
-      'favorites.list': {
+      'favorites.check': {
         items: [],
       },
     });
@@ -241,7 +377,7 @@ describe('drive file service', () => {
       pathParams: { spaceId: 'my-storage' },
       query: {
         parentNodeId: 'root-folder',
-        pageSize: 200,
+        page_size: 20,
       },
     });
     expect(files).toEqual([
@@ -263,7 +399,7 @@ describe('drive file service', () => {
       'nodes.list': {
         items: [folderNode],
       },
-      'favorites.list': {
+      'favorites.check': {
         items: [],
       },
     });
@@ -283,8 +419,11 @@ describe('drive file service', () => {
         signal: listAbortController.signal,
       }),
       expect.objectContaining({
-        operationId: 'favorites.list',
+        operationId: 'favorites.check',
         signal: listAbortController.signal,
+        body: {
+          nodeIds: ['folder-001'],
+        },
       }),
       expect.objectContaining({
         operationId: 'nodeProperties.list',
@@ -323,7 +462,7 @@ describe('drive file service', () => {
             ],
           };
         }
-        if (request.operationId === 'favorites.list') {
+        if (request.operationId === 'favorites.check') {
           return { items: [] };
         }
         return {};
@@ -355,10 +494,10 @@ describe('drive file service', () => {
         pathParams: { spaceId: 'space-personal-real' },
       }),
       expect.objectContaining({
-        operationId: 'favorites.list',
-        query: expect.objectContaining({
-          spaceId: 'space-personal-real',
-        }),
+        operationId: 'favorites.check',
+        body: {
+          nodeIds: ['file-personal-real'],
+        },
       }),
     ]);
     expect(
@@ -377,22 +516,22 @@ describe('drive file service', () => {
           return { items: [] };
         }
         if (request.operationId === 'spaces.create') {
-          return {
+          return wrapResourceEnvelope({
             ...personalSpaceNode,
             id: 'space-created-personal',
             displayName: 'My Storage',
-          };
+          });
         }
         if (request.operationId === 'nodes.folders.create') {
-          return {
+          return wrapResourceEnvelope({
             ...folderNode,
             id: 'folder-created-personal',
             spaceId: 'space-created-personal',
             parentNodeId: undefined,
-          };
+          });
         }
         if (request.operationId === 'nodeProperties.list') {
-          return { items: [] };
+          return wrapListEnvelope({ items: [] });
         }
         return {};
       }) as DriveAppSdkClient['request'],
@@ -431,7 +570,7 @@ describe('drive file service', () => {
 
   it('loads remote folder breadcrumb ancestors through the node path SDK surface', async () => {
     const { service, requests } = createRemoteService({
-      'nodes.path.get': {
+      'nodes.path.retrieve': {
         items: [
           {
             id: 'folder-root',
@@ -464,7 +603,7 @@ describe('drive file service', () => {
     });
 
     expect(requests[0]).toMatchObject({
-      operationId: 'nodes.path.get',
+      operationId: 'nodes.path.retrieve',
       signal: pathAbortController.signal,
       pathParams: { nodeId: 'folder-child' },
       query: {
@@ -495,10 +634,10 @@ describe('drive file service', () => {
     const { service, requests } = createRemoteService({
       'nodes.folders.create': folderNode,
       'nodes.update': { ...fileNode, nodeName: 'Renamed.pdf' },
-      'trash.move': { ...fileNode, lifecycleStatus: 'trashed' },
+      'trash.create': { ...fileNode, lifecycleStatus: 'trashed' },
       'trash.restore': fileNode,
       'nodes.delete': { deleted: true },
-      'nodeProperties.set': {
+      'nodeProperties.update': {
         propertyKey: 'ui.folderColor',
         propertyValue: 'emerald',
       },
@@ -534,7 +673,7 @@ describe('drive file service', () => {
         nodeName: 'Renamed.pdf',
       },
     });
-    expect(requests.find((request) => request.operationId === 'trash.move')).toMatchObject({
+    expect(requests.find((request) => request.operationId === 'trash.create')).toMatchObject({
       signal: writeAbortController.signal,
       pathParams: { nodeId: 'file-001' },
       body: {
@@ -552,7 +691,7 @@ describe('drive file service', () => {
       query: {
       },
     });
-    expect(requests.find((request) => request.operationId === 'nodeProperties.set')).toMatchObject({
+    expect(requests.find((request) => request.operationId === 'nodeProperties.update')).toMatchObject({
       signal: writeAbortController.signal,
       pathParams: {
         nodeId: 'folder-001',
@@ -642,15 +781,8 @@ describe('drive file service', () => {
       operations: {} as DriveAppSdkClient['operations'],
       request: vi.fn(async (request: DriveAppSdkRequest) => {
         requests.push(request);
-        if (request.operationId === 'nodes.list') {
-          const parentId = request.query?.parentNodeId;
-          if (!parentId) {
-            return { items: [folderNode, fileNode] };
-          }
-          if (parentId === 'folder-001') {
-            return { items: [nestedFolder] };
-          }
-          return { items: [] };
+        if (request.operationId === 'moveDestinations.list') {
+          return { items: [folderNode, nestedFolder] };
         }
         return {};
       }) as DriveAppSdkClient['request'],
@@ -666,33 +798,17 @@ describe('drive file service', () => {
     );
 
     expect(folders.map((folder) => folder.id)).toEqual(['folder-001', 'folder-nested']);
-    expect(requests.filter((request) => request.operationId === 'nodes.list').length).toBeGreaterThanOrEqual(2);
+    expect(requests.some((request) => request.operationId === 'moveDestinations.list')).toBe(true);
   });
 
   it('does not offer descendant folders as move destinations when moving a folder', async () => {
     const requests: DriveAppSdkRequest[] = [];
-    const nestedFolder = {
-      id: 'folder-nested',
-      spaceId: 'my-storage',
-      parentNodeId: 'folder-001',
-      nodeType: 'folder',
-      nodeName: 'Archive',
-      lifecycleStatus: 'active',
-      version: 1,
-    };
     const appSdkClient = attachUploader({
       metadata: {} as DriveAppSdkClient['metadata'],
       operations: {} as DriveAppSdkClient['operations'],
       request: vi.fn(async (request: DriveAppSdkRequest) => {
         requests.push(request);
-        if (request.operationId === 'nodes.list') {
-          const parentId = request.query?.parentNodeId;
-          if (!parentId) {
-            return { items: [folderNode] };
-          }
-          if (parentId === 'folder-001') {
-            return { items: [nestedFolder] };
-          }
+        if (request.operationId === 'moveDestinations.list') {
           return { items: [] };
         }
         return {};
@@ -708,8 +824,8 @@ describe('drive file service', () => {
       'my-storage',
     );
 
-    expect(folders.map((folder) => folder.id)).not.toContain('folder-nested');
-    expect(folders.map((folder) => folder.id)).not.toContain('folder-001');
+    expect(folders).toEqual([]);
+    expect(requests.some((request) => request.operationId === 'moveDestinations.list')).toBe(true);
   });
 
   it('rejects write operations from aggregate Drive views before calling the App SDK', async () => {
@@ -747,7 +863,7 @@ describe('drive file service', () => {
           },
         ],
       },
-      'favorites.list': {
+      'favorites.check': {
         items: [],
       },
     });
@@ -780,18 +896,18 @@ describe('drive file service', () => {
         }),
       }),
       expect.objectContaining({
-        operationId: 'favorites.list',
-        query: expect.objectContaining({
-          spaceId: 'my-storage',
-        }),
+        operationId: 'favorites.check',
+        body: {
+          nodeIds: ['file-recent-child'],
+        },
       }),
     ]);
     expect(requests.some((request) => request.operationId === 'recent.list')).toBe(false);
   });
 
-  it('resolves folder space through nodes.get when drilling down from an aggregate view', async () => {
+  it('resolves folder space through nodes.retrieve when drilling down from an aggregate view', async () => {
     const { service, requests } = createRemoteService({
-      'nodes.get': {
+      'nodes.retrieve': {
         ...folderNode,
         id: 'folder-remote',
         spaceId: 'space-personal-real',
@@ -806,7 +922,7 @@ describe('drive file service', () => {
           },
         ],
       },
-      'favorites.list': {
+      'favorites.check': {
         items: [],
       },
     });
@@ -821,7 +937,7 @@ describe('drive file service', () => {
       }),
     ]);
     expect(requests[0]).toMatchObject({
-      operationId: 'nodes.get',
+      operationId: 'nodes.retrieve',
       pathParams: { nodeId: 'folder-remote' },
     });
     expect(requests[1]).toMatchObject({
@@ -841,7 +957,7 @@ describe('drive file service', () => {
       'favorites.delete': {
         favorited: false,
       },
-      'favorites.set': {
+      'favorites.update': {
         favorited: true,
       },
     });
@@ -868,7 +984,7 @@ describe('drive file service', () => {
       },
     });
     expect(requests[1]).toMatchObject({
-      operationId: 'favorites.set',
+      operationId: 'favorites.update',
       signal: favoriteAbortController.signal,
       pathParams: { nodeId: 'file-002' },
       body: {
@@ -888,8 +1004,11 @@ describe('drive file service', () => {
           },
         ],
       },
-      'favorites.list': {
-        items: [fileNode],
+      'favorites.check': {
+        items: [
+          { nodeId: 'file-001', favorited: true },
+          { nodeId: 'file-002', favorited: false },
+        ],
       },
     });
 
@@ -905,10 +1024,9 @@ describe('drive file service', () => {
       }),
     ]);
     expect(files[1].isStarred).toBeUndefined();
-    expect(requests.find((request) => request.operationId === 'favorites.list')).toMatchObject({
-      query: {
-        spaceId: 'my-storage',
-        pageSize: 200,
+    expect(requests.find((request) => request.operationId === 'favorites.check')).toMatchObject({
+      body: {
+        nodeIds: ['file-001', 'file-002'],
       },
     });
   });
@@ -923,10 +1041,10 @@ describe('drive file service', () => {
         if (request.operationId === 'spaces.list') {
           return { items: [personalSpaceNode] };
         }
-        if (request.operationId === 'favorites.list') {
+        if (request.operationId === 'favorites.check') {
           return { items: [] };
         }
-        if (request.operationId === 'nodes.list' && request.query?.pageToken === 'node-page-2') {
+        if (request.operationId === 'nodes.list' && request.query?.cursor === 'node-page-2') {
           return {
             data: {
               items: [
@@ -938,7 +1056,7 @@ describe('drive file service', () => {
               ],
               pageInfo: {
                 mode: 'cursor',
-                pageSize: 200,
+                pageSize: 20,
                 hasMore: false,
               },
             },
@@ -958,7 +1076,7 @@ describe('drive file service', () => {
               ],
               pageInfo: {
                 mode: 'cursor',
-                pageSize: 200,
+                pageSize: 20,
                 hasMore: true,
                 nextCursor: 'node-page-2',
               },
@@ -979,7 +1097,7 @@ describe('drive file service', () => {
 
     expect(files.map((file) => file.id)).toEqual(['file-page-1']);
     expect(
-      requests.filter((request) => request.operationId === 'nodes.list').map((request) => request.query?.pageToken),
+      requests.filter((request) => request.operationId === 'nodes.list').map((request) => request.query?.cursor),
     ).toEqual([undefined]);
   });
 
@@ -993,7 +1111,7 @@ describe('drive file service', () => {
         if (request.operationId === 'spaces.list') {
           return { items: [personalSpaceNode] };
         }
-        if (request.operationId === 'favorites.list') {
+        if (request.operationId === 'favorites.check') {
           return { items: [] };
         }
         if (request.operationId === 'nodes.list' && request.pathParams?.spaceId === 'space-marketing') {
@@ -1021,10 +1139,7 @@ describe('drive file service', () => {
     });
 
     const sharedFiles = await service.listFiles('space-marketing', undefined, 'folder-deep');
-    const workspaceAbortController = new AbortController();
-    const allKnownFiles = await service.getAllWorkspaceFiles({
-      signal: workspaceAbortController.signal,
-    });
+    const allKnownFiles = await service.listCachedWorkspaceFiles();
 
     expect(sharedFiles).toEqual([
       expect.objectContaining({
@@ -1040,11 +1155,11 @@ describe('drive file service', () => {
         name: 'Brand Kit.pdf',
       }),
     ]);
-    expect(requests.find((request) => request.operationId === 'nodes.list' && request.pathParams?.spaceId === 'my-storage')).toBeTruthy();
     expect(
-      requests
-        .filter((request) => request.operationId === 'nodes.list' && request.pathParams?.spaceId === 'my-storage')
-        .every((request) => request.signal === workspaceAbortController.signal),
+      requests.some(
+        (request) =>
+          request.operationId === 'nodes.list' && request.pathParams?.spaceId === 'space-marketing',
+      ),
     ).toBe(true);
   });
 
@@ -1168,7 +1283,7 @@ describe('drive file service', () => {
           },
         ],
       },
-      'favorites.list': {
+      'favorites.check': {
         items: [],
       },
     });
@@ -1195,14 +1310,14 @@ describe('drive file service', () => {
         operationId: 'nodes.list',
         pathParams: { spaceId: 'space-git-repository-001' },
         query: expect.objectContaining({
-          pageSize: 200,
+          page_size: 20,
         }),
       }),
       expect.objectContaining({
-        operationId: 'favorites.list',
-        query: expect.objectContaining({
-          spaceId: 'space-git-repository-001',
-        }),
+        operationId: 'favorites.check',
+        body: {
+          nodeIds: ['folder-git-repository-sdkwork-drive'],
+        },
       }),
       expect.objectContaining({
         operationId: 'nodeProperties.list',
@@ -1274,10 +1389,15 @@ describe('drive file service', () => {
         requests.push(request);
         if (request.operationId === 'spaces.list') {
           listCalls += 1;
+          const items = listCalls === 1
+            ? [personalSpaceNode]
+            : [personalSpaceNode, { ...gitRepositorySpaceNode, id: 'space-existing-git-repository' }];
+          const spaceType =
+            typeof request.query?.spaceType === 'string' ? request.query.spaceType : undefined;
           return {
-            items: listCalls === 1
-              ? [personalSpaceNode]
-              : [personalSpaceNode, { ...gitRepositorySpaceNode, id: 'space-existing-git-repository' }],
+            items: spaceType
+              ? items.filter((item) => item.spaceType === spaceType)
+              : items,
           };
         }
         if (request.operationId === 'spaces.create') {
@@ -1343,7 +1463,7 @@ describe('drive file service', () => {
           },
         ],
       },
-      'favorites.list': {
+      'favorites.check': {
         items: [],
       },
     });
@@ -1362,14 +1482,14 @@ describe('drive file service', () => {
         operationId: 'nodes.list',
         pathParams: { spaceId: 'space-kb-engineering' },
         query: expect.objectContaining({
-          pageSize: 200,
+          page_size: 20,
         }),
       }),
       expect.objectContaining({
-        operationId: 'favorites.list',
-        query: expect.objectContaining({
-          spaceId: 'space-kb-engineering',
-        }),
+        operationId: 'favorites.check',
+        body: {
+          nodeIds: ['file-kb-001'],
+        },
       }),
     ]);
     expect(
@@ -1427,7 +1547,7 @@ describe('drive file service', () => {
     );
     const { service, requests } = createRemoteService(
       {
-        'uploader.uploads.prepare': {
+        'uploader.uploads.create': {
           uploadItem: {
             id: 'upload-item-001',
             taskId: 'task-001',
@@ -1471,7 +1591,7 @@ describe('drive file service', () => {
             version: 1,
           },
         },
-        'uploadSessions.parts.presign': {
+        'uploadSessions.parts.update': {
           uploadUrl: 'https://storage.example.test/upload',
           method: 'PUT',
           headers: {
@@ -1485,7 +1605,7 @@ describe('drive file service', () => {
           id: 'upload-001',
           state: 'completed',
         },
-        'uploader.uploads.parts.markUploaded': {
+        'uploader.uploads.parts.update': {
           id: 'part-001',
           status: 'uploaded',
         },
@@ -1509,9 +1629,9 @@ describe('drive file service', () => {
     });
     expect(requests.map((request) => request.operationId)).toEqual([
       'spaces.list',
-      'uploader.uploads.prepare',
-      'uploadSessions.parts.presign',
-      'uploader.uploads.parts.markUploaded',
+      'uploader.uploads.create',
+      'uploadSessions.parts.update',
+      'uploader.uploads.parts.update',
       'uploadSessions.complete',
     ]);
     expect(requests[1].body).toMatchObject({
@@ -1534,7 +1654,7 @@ describe('drive file service', () => {
       },
     });
     expect(requests[3]).toMatchObject({
-      operationId: 'uploader.uploads.parts.markUploaded',
+      operationId: 'uploader.uploads.parts.update',
       pathParams: {
         uploadItemId: 'upload-item-001',
         partNo: 1,
@@ -1586,7 +1706,7 @@ describe('drive file service', () => {
     });
     const { service, requests } = createRemoteService(
       {
-        'uploader.uploads.prepare': {
+        'uploader.uploads.create': {
           uploadItem: {
             id: 'upload-item-cancellable',
             taskId: 'task-cancellable',
@@ -1630,7 +1750,7 @@ describe('drive file service', () => {
             version: 1,
           },
         },
-        'uploadSessions.parts.presign': {
+        'uploadSessions.parts.update': {
           uploadUrl: 'https://storage.example.test/upload-cancellable',
           method: 'PUT',
           partNo: 1,
@@ -1660,8 +1780,8 @@ describe('drive file service', () => {
     await expect(upload).rejects.toThrow(/aborted/i);
     expect(requests.map((request) => request.operationId)).toEqual([
       'spaces.list',
-      'uploader.uploads.prepare',
-      'uploadSessions.parts.presign',
+      'uploader.uploads.create',
+      'uploadSessions.parts.update',
       'uploadSessions.abort',
       'nodes.delete',
     ]);
@@ -1673,7 +1793,7 @@ describe('drive file service', () => {
     const uploadFetch = vi.fn<typeof fetch>(async () => new Response('', { status: 503 }));
     const { service, requests } = createRemoteService(
       {
-        'uploader.uploads.prepare': {
+        'uploader.uploads.create': {
           uploadItem: {
             id: 'upload-item-failed',
             taskId: 'task-failed',
@@ -1717,7 +1837,7 @@ describe('drive file service', () => {
             version: 1,
           },
         },
-        'uploadSessions.parts.presign': {
+        'uploadSessions.parts.update': {
           uploadUrl: 'https://storage.example.test/upload-failed',
           method: 'PUT',
           partNo: 1,
@@ -1745,8 +1865,8 @@ describe('drive file service', () => {
 
     expect(requests.map((request) => request.operationId)).toEqual([
       'spaces.list',
-      'uploader.uploads.prepare',
-      'uploadSessions.parts.presign',
+      'uploader.uploads.create',
+      'uploadSessions.parts.update',
     ]);
     expect(requests.some((request) => request.operationId === 'uploadSessions.abort')).toBe(false);
     expect(requests.some((request) => request.operationId === 'nodes.delete')).toBe(false);
@@ -1763,7 +1883,7 @@ describe('drive file service', () => {
     );
     const { service, requests } = createRemoteService(
       {
-        'uploader.uploads.prepare': {
+        'uploader.uploads.create': {
           uploadItem: {
             id: 'upload-item-generated',
             taskId: 'task-generated',
@@ -1807,7 +1927,7 @@ describe('drive file service', () => {
             version: 1,
           },
         },
-        'uploadSessions.parts.presign': {
+        'uploadSessions.parts.update': {
           uploadUrl: 'https://storage.example.test/generated-upload',
           method: 'PUT',
           headers: {
@@ -1821,7 +1941,7 @@ describe('drive file service', () => {
           id: 'upload-generated',
           state: 'completed',
         },
-        'uploader.uploads.parts.markUploaded': {
+        'uploader.uploads.parts.update': {
           id: 'part-generated',
           status: 'uploaded',
         },
@@ -1845,9 +1965,9 @@ describe('drive file service', () => {
     });
     expect(requests.map((request) => request.operationId)).toEqual([
       'spaces.list',
-      'uploader.uploads.prepare',
-      'uploadSessions.parts.presign',
-      'uploader.uploads.parts.markUploaded',
+      'uploader.uploads.create',
+      'uploadSessions.parts.update',
+      'uploader.uploads.parts.update',
       'uploadSessions.complete',
     ]);
     expect(uploadFetch).toHaveBeenCalledWith(
@@ -1873,7 +1993,7 @@ describe('drive file service', () => {
 
   it('creates single-file download grants and multi-node archive packages through the Drive SDK', async () => {
     const { service, requests } = createRemoteService({
-      'nodes.downloadUrls.create': {
+      'nodes.downloadUrls.retrieve': {
         downloadUrl: 'https://drive.example.test/download/file-001',
         signedSourceUrl: 'https://storage.example.test/file-001',
         expiresAtEpochMs: 1_800_000_000_000,
@@ -1934,7 +2054,7 @@ describe('drive file service', () => {
       totalBytes: 4096,
     });
     expect(requests[0]).toMatchObject({
-      operationId: 'nodes.downloadUrls.create',
+      operationId: 'nodes.downloadUrls.retrieve',
       pathParams: { nodeId: 'file-001' },
       query: {
         requestedTtlSeconds: 300,
@@ -1954,7 +2074,7 @@ describe('drive file service', () => {
 
   it('rejects malformed backend download grants before the UI can mark transfers ready', async () => {
     const { service } = createRemoteService({
-      'nodes.downloadUrls.create': {
+      'nodes.downloadUrls.retrieve': {
         expiresAtEpochMs: 1_800_000_000_000,
         method: 'GET',
       },
@@ -1983,7 +2103,7 @@ describe('drive file service', () => {
 
   it('loads storage usage summary through the Drive quota SDK surface', async () => {
     const { service, requests } = createRemoteService({
-      'quotas.summary': {
+      'quotas.retrieve': {
         usedBytes: 4_294_967_296,
         objectCount: 42,
       },
@@ -2001,7 +2121,7 @@ describe('drive file service', () => {
     });
     expect(requests).toEqual([
       {
-        operationId: 'quotas.summary',
+        operationId: 'quotas.retrieve',
         signal: summaryAbortController.signal,
       },
     ]);
@@ -2018,7 +2138,7 @@ describe('drive file service', () => {
     ) as unknown as typeof fetch;
     const { service, requests } = createRemoteService(
       {
-        'nodes.downloadUrls.create': {
+        'nodes.downloadUrls.retrieve': {
           downloadUrl: 'https://drive.example.test/download/file-001',
           signedSourceUrl: 'https://storage.example.test/file-001',
           expiresAtEpochMs: 1_800_000_000_000,
@@ -2046,7 +2166,7 @@ describe('drive file service', () => {
       expiresAtEpochMs: 1_800_000_000_000,
     });
     expect(requests[0]).toMatchObject({
-      operationId: 'nodes.downloadUrls.create',
+      operationId: 'nodes.downloadUrls.retrieve',
       pathParams: { nodeId: 'file-001' },
     });
     expect(downloadFetch).toHaveBeenCalledWith(
@@ -2055,6 +2175,86 @@ describe('drive file service', () => {
         method: 'GET',
       }),
     );
+  });
+
+  it('rejects text preview when Content-Length exceeds the in-memory limit', async () => {
+    const downloadFetch = vi.fn(async () =>
+      new Response('x', {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain',
+          'Content-Length': String(11 * 1024 * 1024),
+        },
+      }),
+    ) as unknown as typeof fetch;
+    const { service } = createRemoteService(
+      {
+        'nodes.downloadUrls.retrieve': {
+          downloadUrl: 'https://drive.example.test/download/file-001',
+          signedSourceUrl: 'https://storage.example.test/file-001',
+          expiresAtEpochMs: 1_800_000_000_000,
+          method: 'GET',
+        },
+      },
+      undefined,
+      downloadFetch,
+    );
+
+    await expect(
+      service.readFileText({
+        id: 'file-001',
+        name: 'huge.txt',
+        type: 'file',
+        mimeType: 'text/plain',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        ownerId: 'Ada',
+      }),
+    ).rejects.toThrow(/in-memory limit/);
+  });
+
+  it('checks favorite status for the current page via favorites.check', async () => {
+    const favoritesRequest = vi.fn(async (request: DriveAppSdkRequest) => {
+      if (request.operationId === 'favorites.check') {
+        const nodeIds = Array.isArray((request.body as { nodeIds?: string[] } | undefined)?.nodeIds)
+          ? (request.body as { nodeIds: string[] }).nodeIds
+          : [];
+        return {
+          items: nodeIds.map((nodeId, index) => ({
+            nodeId,
+            favorited: index % 2 === 0,
+          })),
+        };
+      }
+      if (request.operationId === 'nodes.list') {
+        return {
+          items: [
+            { id: 'node-1', nodeType: 'file', nodeName: 'a.txt', lifecycleStatus: 'active', version: 1 },
+            { id: 'node-2', nodeType: 'file', nodeName: 'b.txt', lifecycleStatus: 'active', version: 1 },
+          ],
+        };
+      }
+      if (request.operationId === 'spaces.list') {
+        return { items: [personalSpaceNode] };
+      }
+      return { items: [] };
+    });
+    const client = attachUploader({
+      metadata: {} as DriveAppSdkClient['metadata'],
+      operations: {} as DriveAppSdkClient['operations'],
+      request: favoritesRequest as DriveAppSdkClient['request'],
+    });
+    const service = createDriveFileService({
+      appSdkClient: client,
+      getSession: () => session,
+    });
+
+    const page = await service.listFilesPage('my-storage', undefined, undefined, {});
+
+    expect(page.files.find((file) => file.id === 'node-1')?.isStarred).toBe(true);
+    expect(page.files.find((file) => file.id === 'node-2')?.isStarred).toBeUndefined();
+    expect(
+      favoritesRequest.mock.calls.some(([request]) => request.operationId === 'favorites.check'),
+    ).toBe(true);
   });
 
   it('saves edited text content through the composed Drive uploader boundary', async () => {
@@ -2126,7 +2326,7 @@ describe('drive file service', () => {
   it('resolves missing file space ids before passing edited text content to the composed uploader', async () => {
     const { service, appSdkClient, requests } = createRemoteService(
       {
-        'nodes.get': {
+        'nodes.retrieve': {
           ...fileNode,
           id: 'file-001',
           spaceId: 'space-resolved-from-node',
@@ -2160,10 +2360,10 @@ describe('drive file service', () => {
     );
 
     expect(requests.map((request) => request.operationId)).toEqual([
-      'nodes.get',
+      'nodes.retrieve',
     ]);
     expect(requests[0]).toMatchObject({
-      operationId: 'nodes.get',
+      operationId: 'nodes.retrieve',
       signal: saveAbortController.signal,
     });
     expect(replaceNodeContent).toHaveBeenCalledWith(expect.objectContaining({
@@ -2301,7 +2501,7 @@ describe('drive file service', () => {
 
   it('records PDF signatures through the generated Drive App SDK node property surface', async () => {
     const { service, requests } = createRemoteService({
-      'nodeProperties.set': {
+      'nodeProperties.update': {
         propertyKey: 'workflow.pdfSignature',
         propertyValue: '{"signatureType":"metadata_acknowledgement"}',
         visibility: 'private',
@@ -2323,7 +2523,7 @@ describe('drive file service', () => {
 
     expect(requests).toEqual([
       expect.objectContaining({
-        operationId: 'nodeProperties.set',
+        operationId: 'nodeProperties.update',
         signal: signAbortController.signal,
         pathParams: {
           nodeId: 'file-pdf',
@@ -2344,7 +2544,7 @@ describe('drive file service', () => {
     });
   });
 
-  it('lists knowledge base spaces from tenant-wide spaces.list results', async () => {
+  it('lists knowledge base spaces from typed spaces.list results', async () => {
     const productKnowledgeSpaceNode = {
       ...knowledgeSpaceNode,
       id: 'space-kb-product',
@@ -2376,12 +2576,17 @@ describe('drive file service', () => {
       },
     ]);
     expect(service.getKnowledgeBaseSpaces()).toEqual(spaces);
-    expect(requests).toEqual([
+    const spaceListRequests = requests.filter((request) => request.operationId === 'spaces.list');
+    expect(spaceListRequests).toHaveLength(2);
+    expect(spaceListRequests).toContainEqual(
       expect.objectContaining({
         operationId: 'spaces.list',
+        query: expect.objectContaining({
+          spaceType: 'knowledge_base',
+        }),
         signal: listAbortController.signal,
       }),
-    ]);
+    );
   });
 
   it('lists, creates, and deletes shared spaces through the Drive spaces SDK surface', async () => {
@@ -2522,7 +2727,7 @@ describe('drive file service', () => {
     ).rejects.toThrow('Drive organization context is required to create a shared space.');
   });
 
-  it('loads shared and knowledge base spaces from one spaces.list request', async () => {
+  it('loads shared and knowledge base spaces from typed spaces.list requests', async () => {
     const requests: DriveAppSdkRequest[] = [];
     const appSdkClient = createFakeClient(
       {
@@ -2569,7 +2774,61 @@ describe('drive file service', () => {
         color: 'green',
       },
     ]);
-    expect(requests.filter((request) => request.operationId === 'spaces.list')).toHaveLength(1);
+    expect(requests.filter((request) => request.operationId === 'spaces.list')).toHaveLength(2);
+    expect(requests.filter((request) => request.operationId === 'spaces.list' && request.query?.spaceType === 'team')).toHaveLength(1);
+    expect(requests.filter((request) => request.operationId === 'spaces.list' && request.query?.spaceType === 'knowledge_base')).toHaveLength(1);
+  });
+
+  it('does not implicitly drain every spaces page while loading the shared spaces catalog', async () => {
+    const requests: DriveAppSdkRequest[] = [];
+    const request: DriveAppSdkClient['request'] = async <T>(
+      request: DriveAppSdkRequest,
+    ): Promise<T> => {
+      requests.push(request);
+      if (request.operationId !== 'spaces.list') {
+        return {} as T;
+      }
+      if (request.query?.spaceType === 'knowledge_base') {
+        return wrapListEnvelope({ items: [] }) as T;
+      }
+      if (request.query?.cursor) {
+        return wrapListEnvelope({
+          items: [
+            {
+              ...sharedSpaceNode,
+              id: 'space-second-page',
+              displayName: 'Second Page Team',
+            },
+          ],
+          pageInfo: { mode: 'offset', hasMore: false },
+        }) as T;
+      }
+      return wrapListEnvelope({
+        items: [sharedSpaceNode],
+        pageInfo: { mode: 'offset', hasMore: true, nextPageToken: 'space-page-2' },
+      }) as T;
+    };
+    const appSdkClient = {
+      metadata: {} as DriveAppSdkClient['metadata'],
+      operations: {} as DriveAppSdkClient['operations'],
+      uploader: undefined as unknown as DriveAppSdkClient['uploader'],
+      request,
+      setTokenManager: () => undefined,
+    } satisfies DriveAppSdkClient;
+    const service = createDriveFileService({
+      appSdkClient,
+      getSession: () => session,
+    });
+
+    const spaces = await service.listSharedSpaces();
+
+    expect(spaces.map((space) => space.id)).toEqual(['space-marketing']);
+    expect(
+      requests.filter(
+        (request) => request.operationId === 'spaces.list' && request.query?.spaceType === 'team',
+      ),
+    ).toHaveLength(1);
+    expect(requests.some((request) => request.query?.cursor === 'space-page-2')).toBe(false);
   });
 
   it('paginates apps section files through listFilesPage', async () => {
@@ -2599,7 +2858,7 @@ describe('drive file service', () => {
           code: 0,
           traceId: 'trace-apps-page',
         },
-        'favorites.list': { items: [] },
+        'favorites.check': { items: [] },
       },
       requests,
     );
@@ -2643,7 +2902,7 @@ describe('drive file service', () => {
             },
           ],
         },
-        'favorites.list': { items: [] },
+        'favorites.check': { items: [] },
       },
       requests,
     );
@@ -2678,7 +2937,7 @@ describe('drive file service', () => {
             },
           ],
         },
-        'shareLinks.revoke': {
+        'shareLinks.delete': {
           revoked: true,
         },
       },
@@ -2702,7 +2961,7 @@ describe('drive file service', () => {
     expect(revoked).toBe(true);
     expect(requests.map((request) => request.operationId)).toEqual([
       'shareLinks.list',
-      'shareLinks.revoke',
+      'shareLinks.delete',
     ]);
   });
 
@@ -2781,5 +3040,49 @@ describe('drive file service', () => {
         }),
       }),
     ]);
+  });
+
+  it('paginates file version history through versions.list', async () => {
+    const requests: DriveAppSdkRequest[] = [];
+    let versionPage = 0;
+    const appSdkClient = createFakeClient({}, requests);
+    appSdkClient.request = vi.fn(async (request: DriveAppSdkRequest): Promise<unknown> => {
+      requests.push(request);
+      if (request.operationId === 'versions.list') {
+        versionPage += 1;
+        if (versionPage === 1) {
+          return {
+            code: 0,
+            traceId: 'trace-versions-1',
+            data: {
+              items: [{ versionNo: 2, createdAt: '2026-07-06T10:00:00Z', contentLength: 120 }],
+              pageInfo: { mode: 'offset', hasMore: true, nextPageToken: '20' },
+            },
+          };
+        }
+        return {
+          code: 0,
+          traceId: 'trace-versions-2',
+          data: {
+            items: [{ versionNo: 1, createdAt: '2026-07-05T10:00:00Z', contentLength: 80 }],
+            pageInfo: { mode: 'offset', hasMore: false },
+          },
+        };
+      }
+      return {};
+    }) as DriveAppSdkClient['request'];
+
+    const service = createDriveFileService({
+      appSdkClient,
+      getSession: () => session,
+    });
+
+    const versions = await service.listFileVersions('file-001');
+    expect(versions).toEqual([
+      { versionNo: 2, createdAt: '2026-07-06T10:00:00Z', contentLength: 120 },
+      { versionNo: 1, createdAt: '2026-07-05T10:00:00Z', contentLength: 80 },
+    ]);
+    expect(requests.filter((request) => request.operationId === 'versions.list')).toHaveLength(2);
+    expect(requests[1]?.query?.cursor).toBe('20');
   });
 });

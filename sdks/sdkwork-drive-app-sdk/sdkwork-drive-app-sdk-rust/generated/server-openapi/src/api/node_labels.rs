@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::app_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{ApplyNodeLabelRequest, NodeLabel, NodeLabelListResponse, RemoveNodeLabelResponse};
+use crate::models::{ApplyNodeLabelRequest, NodeLabelsListResponse, NodeLabelsUpdateResponse};
 
 #[derive(Clone)]
 pub struct NodeLabelsApi {
@@ -16,24 +16,24 @@ impl NodeLabelsApi {
     }
 
     /// List labels applied to a node
-    pub async fn list(&self, node_id: &str, label_key: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<NodeLabelListResponse, SdkworkError> {
+    pub async fn list(&self, node_id: &str, label_key: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<NodeLabelsListResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("labelKey", label_key, "form", true, false, None),
-            QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
-            QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
+            QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
         ]);
         let path = append_query_string(app_path(&format!("/drive/nodes/{}/labels", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)))), &query);
         self.client.get(&path, None, None).await
     }
 
     /// Apply a label to a node
-    pub async fn apply(&self, node_id: &str, label_id: &str, body: &ApplyNodeLabelRequest) -> Result<NodeLabel, SdkworkError> {
+    pub async fn update(&self, node_id: &str, label_id: &str, body: &ApplyNodeLabelRequest) -> Result<NodeLabelsUpdateResponse, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/labels/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(label_id, PathParameterSpec::new("labelId", "simple", false))));
         self.client.put(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Remove a label from a node
-    pub async fn remove(&self, node_id: &str, label_id: &str) -> Result<RemoveNodeLabelResponse, SdkworkError> {
+    pub async fn delete(&self, node_id: &str, label_id: &str) -> Result<(), SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/labels/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(label_id, PathParameterSpec::new("labelId", "simple", false))));
         self.client.delete(&path, None, None).await
     }

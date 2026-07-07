@@ -2,6 +2,7 @@ use crate::dto::OffsetPage;
 use crate::error::{problem, ProblemDetail, SdkWorkResultCode};
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_utils_rust::{DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE};
 
 pub(crate) fn normalize_optional_text(value: Option<String>) -> Option<String> {
     value
@@ -29,13 +30,19 @@ pub(crate) fn parse_offset_page(
     page_size: Option<i64>,
     page_token: Option<String>,
 ) -> Result<OffsetPage, (StatusCode, Json<ProblemDetail>)> {
-    let limit = validate_page_size_i64(page_size, 200, 1, 200, "pageSize")?;
+    let limit = validate_page_size_i64(
+        page_size,
+        i64::from(DEFAULT_LIST_PAGE_SIZE),
+        1,
+        i64::from(MAX_LIST_PAGE_SIZE),
+        "page_size",
+    )?;
     let offset = match normalize_optional_text(page_token) {
         Some(raw) => raw.parse::<i64>().map_err(|_| {
             problem(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
-                "pageToken is invalid",
+                "cursor is invalid",
                 SdkWorkResultCode::ValidationError,
             )
         })?,
@@ -45,7 +52,7 @@ pub(crate) fn parse_offset_page(
         return Err(problem(
             StatusCode::BAD_REQUEST,
             "validation failed",
-            "pageToken is invalid",
+            "cursor is invalid",
             SdkWorkResultCode::ValidationError,
         ));
     }

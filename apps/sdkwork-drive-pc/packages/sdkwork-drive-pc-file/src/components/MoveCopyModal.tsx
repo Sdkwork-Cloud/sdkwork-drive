@@ -1,8 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FolderInput, X } from 'lucide-react';
-import { useTranslation } from 'sdkwork-drive-pc-commons';
+import {
+  hasSiblingNameConflict,
+  isDriveConflictError,
+  resolveCopyTargetName,
+  useTranslation,
+} from 'sdkwork-drive-pc-commons';
 import { isDriveAbortError, type DriveFileService } from 'sdkwork-drive-pc-core';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
+import {
+  getSettledBatchMessage,
+  runBatchSettledOperations,
+} from './fileBrowserBatchUtils';
 
 export type MoveCopyMode = 'move' | 'copy';
 
@@ -15,6 +24,18 @@ interface MoveCopyModalProps {
   onClose: () => void;
   onCompleted: () => void;
   onToast: (message: string, type?: 'success' | 'err' | 'info') => void;
+}
+
+function normalizeParentId(parentId: string | null | undefined): string | null {
+  const trimmed = parentId?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function isSameParent(
+  sourceParentId: string | null | undefined,
+  targetParentId: string | null,
+): boolean {
+  return normalizeParentId(sourceParentId) === targetParentId;
 }
 
 export function MoveCopyModal({
@@ -89,26 +110,81 @@ export function MoveCopyModal({
     const controller = new AbortController();
     submitAbortRef.current = controller;
     setSubmitting(true);
-    const parentId = targetParentId.trim() || null;
+    const parentId = normalizeParentId(targetParentId);
 
     try {
+      const destinationFiles = await fileService.listSiblingFileNames(
+        activeSection,
+        parentId,
+        { signal: controller.signal },
+      );
+      const reservedSiblingNames = destinationFiles;
+      const renamedCopies: string[] = [];
+
       if (mode === 'move') {
-        await Promise.all(
-          files.map((file) =>
-            fileService.moveFile(file.id, parentId, { signal: controller.signal }),
-          ),
+        const moveConflicts = files.filter((file) =>
+          hasSiblingNameConflict(file.name, reservedSiblingNames),
         );
+        if (moveConflicts.length > 0) {
+          onToast(t('fileBrowser.moveNameConflict'), 'err');
+          return;
+        }
+      }
+
+      const operations = files.map((file) => async () => {
+        if (mode === 'move') {
+          return fileService.moveFile(file.id, parentId, { signal: controller.signal });
+        }
+
+        const sameParent = isSameParent(file.parentId, parentId);
+        const nodeName = resolveCopyTargetName(file.name, reservedSiblingNames, sameParent);
+        reservedSiblingNames.push(nodeName);
+        if (nodeName !== file.name) {
+          renamedCopies.push(nodeName);
+        }
+        return fileService.copyFile(file.id, {
+          targetParentNodeId: parentId,
+          nodeName,
+          signal: controller.signal,
+        });
+      });
+
+      const outcome = await runBatchSettledOperations(operations);
+      if (outcome.failedCount > 0) {
+        const failureMessage = getSettledBatchMessage(
+          outcome.firstFailure ?? { status: 'rejected', reason: null },
+          t('fileBrowser.moveCopyFailed'),
+        );
+        onToast(
+          isDriveConflictError(
+            outcome.firstFailure?.status === 'rejected'
+              ? outcome.firstFailure.reason
+              : undefined,
+          )
+            ? t('fileBrowser.nameConflict')
+            : failureMessage,
+          'err',
+        );
+        if (outcome.succeededCount > 0) {
+          onToast(
+            t('fileBrowser.batchPartialResult', {
+              succeeded: outcome.succeededCount,
+              failed: outcome.failedCount,
+            }),
+            'info',
+          );
+          onCompleted();
+        }
+        return;
+      }
+
+      if (mode === 'move') {
         onToast(t('fileBrowser.moveCompleted', { count: files.length }), 'success');
       } else {
-        await Promise.all(
-          files.map((file) =>
-            fileService.copyFile(file.id, {
-              targetParentNodeId: parentId,
-              signal: controller.signal,
-            }),
-          ),
-        );
         onToast(t('fileBrowser.copyCompleted', { count: files.length }), 'success');
+        if (renamedCopies.length === 1) {
+          onToast(t('fileBrowser.toastCopyRenamed', { name: renamedCopies[0]! }), 'info');
+        }
       }
       onCompleted();
       onClose();
@@ -117,7 +193,11 @@ export function MoveCopyModal({
         return;
       }
       onToast(
-        error instanceof Error ? error.message : t('fileBrowser.moveCopyFailed'),
+        isDriveConflictError(error)
+          ? t('fileBrowser.nameConflict')
+          : error instanceof Error
+            ? error.message
+            : t('fileBrowser.moveCopyFailed'),
         'err',
       );
     } finally {

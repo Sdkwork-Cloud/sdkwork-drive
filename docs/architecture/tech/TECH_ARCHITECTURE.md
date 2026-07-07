@@ -12,6 +12,7 @@ Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md
 - [TECH-drive-observability-event-dictionary.md](TECH-drive-observability-event-dictionary.md)
 - [TECH-drive-iam-integration-standard.md](TECH-drive-iam-integration-standard.md)
 - [TECH-drive-sdk-integration-standard.md](TECH-drive-sdk-integration-standard.md)
+- [TECH-drive-sibling-naming-standard.md](TECH-drive-sibling-naming-standard.md)
 - [TECH-drive-topology-standard.md](TECH-drive-topology-standard.md)
 - [TECH-drive-uploader-standard.md](TECH-drive-uploader-standard.md)
 - [TECH-database-architecture.md](TECH-database-architecture.md)
@@ -107,6 +108,7 @@ Cloud operators must set `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` o
 | HTTP error sanitization | [ADR-20260625-http-error-sanitization.md](../../architecture/decisions/ADR-20260625-http-error-sanitization.md) |
 | App-api route modularization | [ADR-20260625-app-api-route-modularization.md](../../architecture/decisions/ADR-20260625-app-api-route-modularization.md) |
 | SDK consumption | [TECH-drive-sdk-integration-standard.md](TECH-drive-sdk-integration-standard.md) |
+| Sibling naming and conflict handling | [TECH-drive-sibling-naming-standard.md](TECH-drive-sibling-naming-standard.md) |
 | Runtime topology | [TECH-drive-topology-standard.md](TECH-drive-topology-standard.md) |
 | Database policy | [TECH-database-architecture.md](TECH-database-architecture.md) |
 | Object storage | [TECH-storage-s3-architecture.md](TECH-storage-s3-architecture.md) |

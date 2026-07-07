@@ -1,4 +1,5 @@
 use axum::body::{to_bytes, Body};
+use axum::response::Response;
 use http::{Method, Request, StatusCode};
 use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
@@ -26,7 +27,11 @@ fn envelope_items(payload: &serde_json::Value) -> &serde_json::Value {
 fn envelope_next_page_token(payload: &serde_json::Value) -> Option<String> {
     payload
         .pointer("/data/pageInfo/nextCursor")
-        .or_else(|| payload.get("pageInfo").and_then(|info| info.get("nextCursor")))
+        .or_else(|| {
+            payload
+                .get("pageInfo")
+                .and_then(|info| info.get("nextCursor"))
+        })
         .and_then(|value| value.as_str())
         .map(str::to_string)
         .or_else(|| {
@@ -35,6 +40,17 @@ fn envelope_next_page_token(payload: &serde_json::Value) -> Option<String> {
                 .and_then(|value| value.as_str())
                 .map(str::to_string)
         })
+}
+
+async fn assert_no_content_response(response: Response) {
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    let body = to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("204 response body should be readable");
+    assert!(
+        body.is_empty(),
+        "204 delete response must not include a JSON body"
+    );
 }
 
 async fn fetch_backend_paged_items(
@@ -170,7 +186,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
     assert_eq!(create_second.status(), StatusCode::CREATED);
 
     let (first_items, next_token) =
-        fetch_backend_paged_items(app.clone(), "/backend/v3/api/drive/labels?pageSize=1").await;
+        fetch_backend_paged_items(app.clone(), "/backend/v3/api/drive/labels?page_size=1").await;
     assert_eq!(first_items.len(), 1);
     assert_eq!(
         first_items[0]["labelKey"].as_str(),
@@ -179,7 +195,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
     let next_token = next_token.expect("label list should expose next page token");
     let (second_items, final_token) = fetch_backend_paged_items(
         app.clone(),
-        &format!("/backend/v3/api/drive/labels?pageSize=1&pageToken={next_token}"),
+        &format!("/backend/v3/api/drive/labels?page_size=1&cursor={next_token}"),
     )
     .await;
     assert_eq!(second_items.len(), 1);
@@ -200,14 +216,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
         )
         .await
         .expect("delete label request should be handled");
-    assert_eq!(delete_response.status(), StatusCode::OK);
-    let delete_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(delete_response.into_body(), usize::MAX)
-            .await
-            .expect("delete label response should be read"),
-    )
-    .expect("delete label response should be valid json");
-    assert_eq!(delete_payload["deleted"].as_bool(), Some(true));
+    assert_no_content_response(delete_response).await;
 
     let remaining = fetch_backend_paged_items(app, "/backend/v3/api/drive/labels")
         .await
@@ -244,7 +253,7 @@ async fn backend_label_list_rejects_page_size_outside_contract() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/labels?pageSize=0")
+                .uri("/backend/v3/api/drive/labels?page_size=0")
                 .body(Body::empty())
                 .expect("label list request should be built"),
         )
@@ -262,7 +271,7 @@ async fn backend_label_list_rejects_page_size_outside_contract() {
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
-        .contains("pageSize"));
+        .contains("page_size"));
 }
 
 #[tokio::test]
@@ -612,7 +621,7 @@ async fn list_audit_events_route_supports_filters_and_pagination() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/audit_events?resourceType=storage_provider&page=1&pageSize=1")
+                .uri("/backend/v3/api/drive/audit_events?resourceType=storage_provider&page=1&page_size=1")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -627,7 +636,10 @@ async fn list_audit_events_route_supports_filters_and_pagination() {
     .expect("response body should be valid json");
     assert_eq!(envelope_page_info(&payload)["page"].as_i64(), Some(1));
     assert_eq!(envelope_page_info(&payload)["pageSize"].as_i64(), Some(1));
-    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("2"));
+    assert_eq!(
+        envelope_page_info(&payload)["totalItems"].as_str(),
+        Some("2")
+    );
     assert_eq!(
         envelope_items(&payload)
             .as_array()
@@ -701,7 +713,7 @@ async fn list_audit_events_route_supports_request_and_trace_filters() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/audit_events?resourceType=storage_provider&requestId=request-002&traceId=trace-002&page=1&pageSize=10")
+                .uri("/backend/v3/api/drive/audit_events?resourceType=storage_provider&correlationId=request-002&traceId=trace-002&page=1&page_size=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -714,7 +726,10 @@ async fn list_audit_events_route_supports_request_and_trace_filters() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("1"));
+    assert_eq!(
+        envelope_page_info(&payload)["totalItems"].as_str(),
+        Some("1")
+    );
     let items = envelope_items(&payload)
         .as_array()
         .expect("items should be an array");
@@ -723,7 +738,7 @@ async fn list_audit_events_route_supports_request_and_trace_filters() {
         items[0]["action"].as_str(),
         Some("drive.storage_provider.tested")
     );
-    assert_eq!(items[0]["requestId"].as_str(), Some("request-002"));
+    assert_eq!(items[0]["correlationId"].as_str(), Some("request-002"));
     assert_eq!(items[0]["traceId"].as_str(), Some("trace-002"));
 }
 
@@ -742,19 +757,19 @@ async fn list_audit_events_route_rejects_invalid_identifier_filters() {
     let app = build_router_with_pool(pool);
     for (query, expected_detail) in [
         (
-            "/backend/v3/api/drive/audit_events?action=storage%20provider.created&page=1&pageSize=10",
+            "/backend/v3/api/drive/audit_events?action=storage%20provider.created&page=1&page_size=10",
             "action contains invalid characters",
         ),
         (
-            "/backend/v3/api/drive/audit_events?resourceId=provider%2F001&page=1&pageSize=10",
+            "/backend/v3/api/drive/audit_events?resourceId=provider%2F001&page=1&page_size=10",
             "resource_id contains invalid characters",
         ),
         (
-            "/backend/v3/api/drive/audit_events?requestId=request%20id&page=1&pageSize=10",
+            "/backend/v3/api/drive/audit_events?correlationId=request%20id&page=1&page_size=10",
             "request_id contains invalid characters",
         ),
         (
-            "/backend/v3/api/drive/audit_events?traceId=trace%20id&page=1&pageSize=10",
+            "/backend/v3/api/drive/audit_events?traceId=trace%20id&page=1&page_size=10",
             "trace_id contains invalid characters",
         ),
     ] {
@@ -906,7 +921,7 @@ async fn maintenance_routes_sweep_objects_and_upload_sessions_and_emit_audit_eve
                         "dryRun": false,
                         "limit": 100,
                         "operatorId": "admin-ops",
-                        "requestId": "request-001",
+                        "correlationId": "request-001",
                         "traceId": "trace-001"
                     }"#,
                 ))
@@ -936,7 +951,7 @@ async fn maintenance_routes_sweep_objects_and_upload_sessions_and_emit_audit_eve
                         "dryRun": false,
                         "limit": 100,
                         "operatorId": "admin-ops",
-                        "requestId": "request-001",
+                        "correlationId": "request-001",
                         "traceId": "trace-001"
                     }"#,
                 ))
@@ -966,7 +981,7 @@ async fn maintenance_routes_sweep_objects_and_upload_sessions_and_emit_audit_eve
                         "dryRun": true,
                         "limit": 100,
                         "operatorId": "admin-ops",
-                        "requestId": "request-002",
+                        "correlationId": "request-002",
                         "traceId": "trace-002"
                     }"#,
                 ))
@@ -989,7 +1004,7 @@ async fn maintenance_routes_sweep_objects_and_upload_sessions_and_emit_audit_eve
                         "dryRun": true,
                         "limit": 100,
                         "operatorId": "admin-ops",
-                        "requestId": "request-003",
+                        "correlationId": "request-003",
                         "traceId": "trace-003"
                     }"#,
                 ))
@@ -1081,7 +1096,7 @@ async fn list_maintenance_jobs_route_supports_filters_and_pagination() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/maintenance/jobs?jobType=object_sweep&status=completed&operatorId=admin-001&page=1&pageSize=1")
+                .uri("/backend/v3/api/drive/maintenance/jobs?jobType=object_sweep&status=completed&operatorId=admin-001&page=1&page_size=1")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -1097,7 +1112,10 @@ async fn list_maintenance_jobs_route_supports_filters_and_pagination() {
     .expect("response body should be valid json");
     assert_eq!(envelope_page_info(&payload)["page"].as_i64(), Some(1));
     assert_eq!(envelope_page_info(&payload)["pageSize"].as_i64(), Some(1));
-    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("1"));
+    assert_eq!(
+        envelope_page_info(&payload)["totalItems"].as_str(),
+        Some("1")
+    );
     let items = envelope_items(&payload)
         .as_array()
         .expect("items should be an array");
@@ -1210,7 +1228,7 @@ async fn list_download_packages_route_supports_filters_and_pagination() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/download_packages?state=ready&page=1&pageSize=1")
+                .uri("/backend/v3/api/drive/download_packages?state=ready&page=1&page_size=1")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -1226,7 +1244,10 @@ async fn list_download_packages_route_supports_filters_and_pagination() {
     .expect("response body should be valid json");
     assert_eq!(envelope_page_info(&payload)["page"].as_i64(), Some(1));
     assert_eq!(envelope_page_info(&payload)["pageSize"].as_i64(), Some(1));
-    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("1"));
+    assert_eq!(
+        envelope_page_info(&payload)["totalItems"].as_str(),
+        Some("1")
+    );
     let items = envelope_items(&payload)
         .as_array()
         .expect("items should be an array");
@@ -1256,9 +1277,9 @@ async fn list_download_packages_rejects_page_and_page_size_outside_contract() {
     let app = build_router_with_pool(pool);
     for uri in [
         "/backend/v3/api/drive/download_packages?page=0",
-        "/backend/v3/api/drive/download_packages?pageSize=0",
+        "/backend/v3/api/drive/download_packages?page_size=0",
         "/backend/v3/api/drive/download_packages?page=10001",
-        "/backend/v3/api/drive/download_packages?pageSize=101",
+        "/backend/v3/api/drive/download_packages?page_size=101",
     ] {
         let response = app
             .clone()
@@ -1313,7 +1334,7 @@ async fn maintenance_routes_record_failed_jobs_with_request_and_trace() {
                         "dryRun": false,
                         "limit": 100,
                         "operatorId": "admin-failed",
-                        "requestId": "request-failed-001",
+                        "correlationId": "request-failed-001",
                         "traceId": "trace-failed-001"
                     }"#,
                 ))
@@ -1327,7 +1348,7 @@ async fn maintenance_routes_record_failed_jobs_with_request_and_trace() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/maintenance/jobs?status=failed&operatorId=admin-failed&page=1&pageSize=10")
+                .uri("/backend/v3/api/drive/maintenance/jobs?status=failed&operatorId=admin-failed&page=1&page_size=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -1340,14 +1361,20 @@ async fn maintenance_routes_record_failed_jobs_with_request_and_trace() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("1"));
+    assert_eq!(
+        envelope_page_info(&payload)["totalItems"].as_str(),
+        Some("1")
+    );
     let items = envelope_items(&payload)
         .as_array()
         .expect("items should be an array");
     assert_eq!(items.len(), 1);
     assert_eq!(items[0]["jobType"].as_str(), Some("object_sweep"));
     assert_eq!(items[0]["status"].as_str(), Some("failed"));
-    assert_eq!(items[0]["requestId"].as_str(), Some("request-failed-001"));
+    assert_eq!(
+        items[0]["correlationId"].as_str(),
+        Some("request-failed-001")
+    );
     assert_eq!(items[0]["traceId"].as_str(), Some("trace-failed-001"));
     assert!(
         items[0]["errorMessage"]
@@ -1403,7 +1430,7 @@ async fn maintenance_upload_sweep_failure_records_failed_job_and_audit() {
                         "dryRun": false,
                         "limit": 100,
                         "operatorId": "admin-upload-failed",
-                        "requestId": "request-upload-failed-001",
+                        "correlationId": "request-upload-failed-001",
                         "traceId": "trace-upload-failed-001"
                     }"#,
                 ))
@@ -1417,7 +1444,7 @@ async fn maintenance_upload_sweep_failure_records_failed_job_and_audit() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/maintenance/jobs?jobType=upload_session_sweep&status=failed&operatorId=admin-upload-failed&page=1&pageSize=10")
+                .uri("/backend/v3/api/drive/maintenance/jobs?jobType=upload_session_sweep&status=failed&operatorId=admin-upload-failed&page=1&page_size=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -1430,7 +1457,10 @@ async fn maintenance_upload_sweep_failure_records_failed_job_and_audit() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(envelope_page_info(&payload)["totalItems"].as_str(), Some("1"));
+    assert_eq!(
+        envelope_page_info(&payload)["totalItems"].as_str(),
+        Some("1")
+    );
     let items = envelope_items(&payload)
         .as_array()
         .expect("items should be an array");
@@ -1438,7 +1468,7 @@ async fn maintenance_upload_sweep_failure_records_failed_job_and_audit() {
     assert_eq!(items[0]["jobType"].as_str(), Some("upload_session_sweep"));
     assert_eq!(items[0]["status"].as_str(), Some("failed"));
     assert_eq!(
-        items[0]["requestId"].as_str(),
+        items[0]["correlationId"].as_str(),
         Some("request-upload-failed-001")
     );
     assert_eq!(
@@ -1492,13 +1522,13 @@ async fn maintenance_routes_reject_invalid_request_id_with_bad_request() {
                         "dryRun": true,
                         "limit": 1,
                         "operatorId": "admin-ops",
-                        "requestId": "request id with spaces"
+                        "correlationId": "request id with spaces"
                     }"#,
                 ))
                 .expect("request should be built"),
         )
         .await
-        .expect("invalid requestId sweep request should be handled");
+        .expect("invalid correlationId sweep request should be handled");
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     let payload: serde_json::Value = serde_json::from_slice(
         &to_bytes(response.into_body(), usize::MAX)
@@ -1533,7 +1563,7 @@ async fn maintenance_jobs_route_rejects_invalid_operator_id_filter() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/maintenance/jobs?operatorId=admin%20ops&page=1&pageSize=10")
+                .uri("/backend/v3/api/drive/maintenance/jobs?operatorId=admin%20ops&page=1&page_size=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )

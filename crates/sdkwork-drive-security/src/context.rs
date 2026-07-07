@@ -1,5 +1,5 @@
 use http::{HeaderMap, Uri};
-use sdkwork_utils_rust::SdkWorkResultCode;
+use sdkwork_utils_rust::{uuid, SdkWorkResultCode};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -8,8 +8,7 @@ use crate::token_claims::{resolve_dual_token_context, TokenClaimsError};
 
 pub const AUTHORIZATION_HEADER: &str = "authorization";
 pub const ACCESS_TOKEN_HEADER: &str = "access-token";
-pub const REQUEST_ID_HEADER: &str = "x-request-id";
-pub const TRACE_ID_HEADER: &str = "x-trace-id";
+pub const TRACE_ID_HEADER: &str = sdkwork_utils_rust::SDKWORK_TRACE_ID_HEADER;
 
 pub fn crate_id() -> &'static str {
     "sdkwork-drive-security"
@@ -50,10 +49,8 @@ pub fn validate_drive_app_context(
     uri: &Uri,
     policy: &DriveAuthValidationPolicy,
 ) -> Result<DriveAppContext, DriveAuthError> {
-    let request_id =
-        optional_header(headers, REQUEST_ID_HEADER).unwrap_or_else(|| "request-unset".to_string());
-    let trace_id =
-        optional_header(headers, TRACE_ID_HEADER).unwrap_or_else(|| "trace-unset".to_string());
+    let request_id = uuid();
+    let trace_id = optional_header(headers, TRACE_ID_HEADER).unwrap_or_else(uuid);
 
     let auth_token = bearer_token(headers, &request_id, &trace_id)?;
     if auth_token.is_empty() {
@@ -585,5 +582,65 @@ mod tests {
 
         assert_eq!(context.tenant_id, "tenant-001");
         assert_eq!(context.user_id, "user-001");
+    }
+
+    #[test]
+    fn ignores_legacy_request_id_header_and_prefers_canonical_trace_header() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            AUTHORIZATION_HEADER,
+            HeaderValue::from_str(&format!("Bearer {}", auth_token("tenant-001", "user-001")))
+                .expect("auth header"),
+        );
+        headers.insert(
+            ACCESS_TOKEN_HEADER,
+            HeaderValue::from_str(&access_token("tenant-001", "user-001")).expect("access header"),
+        );
+        headers.insert(
+            "x-request-id",
+            HeaderValue::from_static("client-forged-request"),
+        );
+        headers.insert("x-trace-id", HeaderValue::from_static("legacy-trace"));
+        headers.insert(
+            sdkwork_utils_rust::SDKWORK_TRACE_ID_HEADER,
+            HeaderValue::from_static("canonical-trace"),
+        );
+
+        let context = validate_drive_app_context(
+            &headers,
+            &"/app/v3/api/drive/spaces".parse().expect("uri"),
+            &dev_policy(),
+        )
+        .expect("context should validate");
+
+        assert_ne!(context.request_id, "client-forged-request");
+        assert_ne!(context.request_id, "request-unset");
+        assert_eq!(context.trace_id, "canonical-trace");
+    }
+
+    #[test]
+    fn generates_server_correlation_when_trace_header_is_absent() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            AUTHORIZATION_HEADER,
+            HeaderValue::from_str(&format!("Bearer {}", auth_token("tenant-001", "user-001")))
+                .expect("auth header"),
+        );
+        headers.insert(
+            ACCESS_TOKEN_HEADER,
+            HeaderValue::from_str(&access_token("tenant-001", "user-001")).expect("access header"),
+        );
+
+        let context = validate_drive_app_context(
+            &headers,
+            &"/app/v3/api/drive/spaces".parse().expect("uri"),
+            &dev_policy(),
+        )
+        .expect("context should validate");
+
+        assert_ne!(context.request_id, "request-unset");
+        assert_ne!(context.trace_id, "trace-unset");
+        assert_eq!(context.request_id.len(), 36);
+        assert_eq!(context.trace_id.len(), 36);
     }
 }

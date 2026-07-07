@@ -2,13 +2,13 @@ use crate::app_context::DriveRequestContext;
 use crate::audit::record_audit_event;
 use crate::dto::{
     DefaultStorageProviderBindingQuery, DeleteDefaultStorageProviderBindingQuery,
-    DeleteStorageProviderBindingResponse, ListStorageProviderBindingsQuery,
-    SetDefaultStorageProviderBindingRequest, StorageProviderBindingResponse,
+    ListStorageProviderBindingsQuery, SetDefaultStorageProviderBindingRequest,
+    StorageProviderBindingResponse,
 };
 use crate::error::{map_service_error, not_found_binding_problem, ProblemDetail};
 use crate::provider_lookup::get_provider;
 use crate::provider_mappers::map_storage_provider;
-use crate::response::{success_list_page_simple, StorageListHttpResponse};
+use crate::response::{no_content, success_list_page_simple, StorageListHttpResponse};
 use crate::state::AdminStorageState;
 use crate::validators::{
     default_storage_provider_binding_id, next_page_token, normalize_optional_text,
@@ -43,7 +43,10 @@ pub(crate) async fn list_storage_provider_bindings(
     State(state): State<AdminStorageState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<ListStorageProviderBindingsQuery>,
-) -> Result<StorageListHttpResponse<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    StorageListHttpResponse<StorageProviderBindingResponse>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_offset_page(query.page_size, query.page_token)?;
     let space_id = normalize_optional_text(query.space_id);
@@ -168,7 +171,7 @@ pub(crate) async fn delete_default_storage_provider_binding(
     State(state): State<AdminStorageState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<DeleteDefaultStorageProviderBindingQuery>,
-) -> Result<Json<DeleteStorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let target = resolve_storage_provider_binding_target(query.space_id, query.space_type)?;
@@ -208,7 +211,8 @@ pub(crate) async fn delete_default_storage_provider_binding(
         )
         .await?;
     }
-    Ok(Json(DeleteStorageProviderBindingResponse { deleted }))
+    let _deleted = deleted;
+    Ok(no_content())
 }
 
 fn binding_audit_resource_id(tenant_id: &str, target: &StorageProviderBindingTarget) -> String {

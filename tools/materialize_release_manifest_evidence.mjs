@@ -149,6 +149,12 @@ async function main() {
       : [];
     const artifactPath = await resolvePackageArtifact(workspaceRoot, pkg.id, metadataGlobs);
     if (!artifactPath) {
+      if (pkg.metadata?.releaseBuildDeferred === true && pkg.checksum && isPlaceholderChecksum(pkg.checksum)) {
+        console.error(
+          `[release-evidence] error: package ${pkg.id} must not keep placeholder checksum fields while releaseBuildDeferred is true`,
+        );
+        process.exit(1);
+      }
       const message = pkg.metadata?.releaseBuildDeferred === true
         ? `package ${pkg.id} is deferred to cross-platform CI release builds`
         : `package ${pkg.id} has no local build artifact; run release packaging before materializing checksum evidence`;

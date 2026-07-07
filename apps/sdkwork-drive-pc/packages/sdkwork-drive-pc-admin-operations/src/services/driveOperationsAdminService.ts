@@ -5,7 +5,7 @@ import type {
   CreateLabelInput,
   UpdateLabelInput,
   DownloadPackageView,
-  DriveSpaceListView,
+  DriveSpaceAdminView,
   LabelListView,
   ListAuditEventsQuery,
   ListDownloadPackagesQuery,
@@ -29,10 +29,10 @@ const MAINTENANCE_SWEEP_OPERATIONS: Record<
   MaintenanceJobType,
   keyof DriveBackendSdkClient['operations']
 > = {
-  object_sweep: 'maintenance.objectSweep.start',
-  upload_session_sweep: 'maintenance.uploadSessionSweep.start',
-  expired_upload_content_sweep: 'maintenance.expiredUploadContentSweep.start',
-  abandoned_upload_task_sweep: 'maintenance.abandonedUploadTaskSweep.start',
+  object_sweep: 'maintenance.objectSweep',
+  upload_session_sweep: 'maintenance.uploadSessionSweep',
+  expired_upload_content_sweep: 'maintenance.expiredUploadContentSweep',
+  abandoned_upload_task_sweep: 'maintenance.abandonedUploadTaskSweep',
 };
 
 export interface DriveOperationsAdminService {
@@ -45,7 +45,7 @@ export interface DriveOperationsAdminService {
   createLabel(input: CreateLabelInput): Promise<LabelListView['items'][number]>;
   updateLabel(labelId: string, input: UpdateLabelInput): Promise<LabelListView['items'][number]>;
   deleteLabel(labelId: string): Promise<void>;
-  listSpaces(query?: ListSpacesAdminQuery): Promise<DriveSpaceListView>;
+  listSpaces(query?: ListSpacesAdminQuery): Promise<BackendOffsetListPage<DriveSpaceAdminView>>;
   listDownloadPackages(query?: ListDownloadPackagesQuery): Promise<BackendOffsetListPage<DownloadPackageView>>;
 }
 
@@ -74,10 +74,10 @@ export function createDriveOperationsAdminService({
           action: query.action,
           resourceType: query.resourceType,
           resourceId: query.resourceId,
-          requestId: query.requestId,
+          correlationId: query.correlationId,
           traceId: query.traceId,
           page: query.page,
-          pageSize: query.pageSize,
+          page_size: query.pageSize,
         },
         signal: query.signal,
       });
@@ -92,7 +92,7 @@ export function createDriveOperationsAdminService({
           status: query.status,
           operatorId: query.operatorId,
           page: query.page,
-          pageSize: query.pageSize,
+          page_size: query.pageSize,
         },
         signal: query.signal,
       });
@@ -120,7 +120,7 @@ export function createDriveOperationsAdminService({
 
     async getQuotaSummary(signal) {
       return backendSdkClient.request<QuotaSummaryView>({
-        operationId: 'quotas.summary',
+        operationId: 'quotas.retrieve',
         signal,
       });
     },
@@ -141,8 +141,8 @@ export function createDriveOperationsAdminService({
         operationId: 'labels.list',
         query: {
           lifecycleStatus: query.lifecycleStatus,
-          pageSize: query.pageSize,
-          pageToken: query.pageToken,
+          page_size: query.pageSize,
+          cursor: query.pageToken,
         },
         signal: query.signal,
       });
@@ -180,14 +180,17 @@ export function createDriveOperationsAdminService({
     },
 
     async listSpaces(query = {}) {
-      return backendSdkClient.request<DriveSpaceListView>({
+      const payload = await backendSdkClient.request<BackendOffsetListWire<DriveSpaceAdminView>>({
         operationId: 'spaces.admin.list',
         query: {
           ownerSubjectType: query.ownerSubjectType,
           ownerSubjectId: query.ownerSubjectId,
+          page_size: query.pageSize,
+          cursor: query.pageToken,
         },
         signal: query.signal,
       });
+      return normalizeBackendOffsetListPage(payload);
     },
 
     async listDownloadPackages(query = {}) {
@@ -196,7 +199,7 @@ export function createDriveOperationsAdminService({
         query: {
           state: query.state,
           page: query.page,
-          pageSize: query.pageSize,
+          page_size: query.pageSize,
         },
         signal: query.signal,
       });

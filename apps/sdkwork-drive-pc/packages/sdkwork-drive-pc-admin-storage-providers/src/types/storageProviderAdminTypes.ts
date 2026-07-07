@@ -94,7 +94,15 @@ export interface UpdateStorageProviderInput {
 
 export interface ListStorageProvidersInput {
   status?: string;
+  pageSize?: number;
+  pageToken?: string;
   signal?: AbortSignal;
+}
+
+export interface ListStorageProvidersPageResult {
+  items: StorageProviderView[];
+  nextPageToken?: string;
+  hasMore: boolean;
 }
 
 export interface SetDefaultStorageProviderBindingInput {

@@ -9,5 +9,5 @@ class SweepUploadSessionsRequest:
     dry_run: bool
     operator_id: str
     limit: Optional[int] = None
-    request_id: Optional[str] = None
+    correlation_id: Optional[str] = None
     trace_id: Optional[str] = None

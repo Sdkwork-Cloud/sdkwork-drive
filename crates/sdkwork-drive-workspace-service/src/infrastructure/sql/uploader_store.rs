@@ -3,6 +3,7 @@ use sqlx::any::AnyRow;
 use sqlx::{AnyConnection, AnyPool, Row};
 
 use crate::domain::uploader::{DriveUploadItem, DriveUploadPart};
+use crate::infrastructure::sql::begin_transaction_sql;
 use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::infrastructure::sql::upload_query_columns::{
     DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS, DRIVE_UPLOAD_PART_SELECT_COLUMNS,
@@ -220,28 +221,33 @@ impl DriveUploaderStore for SqlUploaderStore {
         })
     }
 
-    async fn list_live_node_names_in_parent(
+    async fn live_node_name_exists_in_parent(
         &self,
         tenant_id: &str,
         space_id: &str,
         parent_node_id: Option<&str>,
-    ) -> Result<Vec<String>, DriveServiceError> {
-        sqlx::query_scalar(
-            "SELECT node_name
+        node_name: &str,
+    ) -> Result<bool, DriveServiceError> {
+        let exists = sqlx::query_scalar::<_, i32>(
+            "SELECT 1
              FROM dr_drive_node
              WHERE tenant_id=$1
                AND space_id=$2
-               AND lifecycle_status != 'deleted'
-               AND ((parent_node_id IS NULL AND $3 IS NULL) OR parent_node_id = $3)",
+               AND lifecycle_status = 'active'
+               AND node_name = $4
+               AND ((parent_node_id IS NULL AND $3 IS NULL) OR parent_node_id = $3)
+             LIMIT 1",
         )
         .bind(tenant_id)
         .bind(space_id)
         .bind(parent_node_id)
-        .fetch_all(&self.pool)
+        .bind(node_name)
+        .fetch_optional(&self.pool)
         .await
         .map_err(|error| {
-            DriveServiceError::Internal(format!("list live uploader node names failed: {error}"))
-        })
+            DriveServiceError::Internal(format!("check live uploader node name failed: {error}"))
+        })?;
+        Ok(exists.is_some())
     }
 
     async fn insert_upload_node(
@@ -524,7 +530,7 @@ impl DriveUploaderStore for SqlUploaderStore {
                 "acquire uploader completion transaction connection failed: {error}"
             ))
         })?;
-        sqlx::query("BEGIN")
+        sqlx::query(begin_transaction_sql())
             .execute(&mut *connection)
             .await
             .map_err(|error| {
@@ -597,7 +603,7 @@ impl DriveUploaderStore for SqlUploaderStore {
                 "acquire quarantine transaction connection failed: {error}"
             ))
         })?;
-        sqlx::query("BEGIN")
+        sqlx::query(begin_transaction_sql())
             .execute(&mut *connection)
             .await
             .map_err(|error| {

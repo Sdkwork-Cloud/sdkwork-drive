@@ -1,5 +1,8 @@
+use crate::constants::MAX_LIFECYCLE_SUBTREE_NODES;
 use crate::dto::DriveNodeResponse;
-use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
+use crate::error::{
+    internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode,
+};
 use crate::mappers::map_node_row;
 use crate::space_repository::validate_space_exists;
 use axum::http::StatusCode;
@@ -87,6 +90,16 @@ pub(crate) async fn collect_node_subtree(
             }
             queue.push_back((child.id.clone(), depth + 1));
             nodes.push(child);
+            if nodes.len() > MAX_LIFECYCLE_SUBTREE_NODES {
+                return Err(problem(
+                    StatusCode::PAYLOAD_TOO_LARGE,
+                    "subtree too large",
+                    format!(
+                        "node subtree exceeds the maximum of {MAX_LIFECYCLE_SUBTREE_NODES} nodes"
+                    ),
+                    SdkWorkResultCode::ValidationError,
+                ));
+            }
         }
     }
 

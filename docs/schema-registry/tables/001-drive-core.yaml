@@ -139,7 +139,7 @@ tables:
           - tenant_id
           - space_id
           - node_name
-        predicate: "parent_node_id IS NULL AND lifecycle_status != 'deleted'"
+        predicate: "parent_node_id IS NULL AND lifecycle_status = 'active'"
       - name: ux_dr_drive_node_child_name_live
         unique: true
         columns:
@@ -147,7 +147,7 @@ tables:
           - space_id
           - parent_node_id
           - node_name
-        predicate: "parent_node_id IS NOT NULL AND lifecycle_status != 'deleted'"
+        predicate: "parent_node_id IS NOT NULL AND lifecycle_status = 'active'"
       - name: ix_dr_drive_node_space_parent
         columns:
           - tenant_id

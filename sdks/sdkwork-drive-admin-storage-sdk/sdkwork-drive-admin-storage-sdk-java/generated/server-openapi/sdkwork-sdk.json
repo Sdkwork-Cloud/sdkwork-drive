@@ -5,6 +5,8 @@
   "language": "java",
   "sdkType": "custom",
   "packageName": "sdkwork-drive-admin-storage-sdk-generated-java",
+  "transportPackageName": "sdkwork-drive-admin-storage-sdk-generated-java",
+  "consumerPackageName": "@sdkwork/drive-admin-storage-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

@@ -5,6 +5,8 @@
   "language": "java",
   "sdkType": "app",
   "packageName": "sdkwork-drive-app-sdk-generated-java",
+  "transportPackageName": "sdkwork-drive-app-sdk-generated-java",
+  "consumerPackageName": "@sdkwork/drive-app-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

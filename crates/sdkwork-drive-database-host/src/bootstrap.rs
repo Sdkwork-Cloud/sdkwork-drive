@@ -5,8 +5,8 @@ use sdkwork_database_spi::{DatabaseAssetProvider, DatabaseManifest, DefaultDatab
 use sdkwork_database_sqlx::{create_pool_from_config, DatabasePool};
 
 use crate::{
-    ensure_drive_database_host_installed, installed_drive_database_host, resolve_app_root_for_bootstrap,
-    DriveDatabaseHost,
+    ensure_drive_database_host_installed, installed_drive_database_host,
+    resolve_app_root_for_bootstrap, DriveDatabaseHost,
 };
 
 pub async fn bootstrap_drive_database(pool: DatabasePool) -> Result<DriveDatabaseHost, String> {
@@ -33,7 +33,11 @@ pub async fn bootstrap_drive_database(pool: DatabasePool) -> Result<DriveDatabas
             .map_err(|error| format!("drive database migrate failed: {error}"))?;
     }
 
-    Ok(ensure_drive_database_host_installed(DriveDatabaseHost { pool, module }).as_ref().clone())
+    Ok(
+        ensure_drive_database_host_installed(DriveDatabaseHost { pool, module })
+            .as_ref()
+            .clone(),
+    )
 }
 
 pub async fn bootstrap_drive_database_from_env() -> Result<DriveDatabaseHost, String> {

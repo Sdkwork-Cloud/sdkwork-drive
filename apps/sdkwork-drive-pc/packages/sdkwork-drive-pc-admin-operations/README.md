@@ -17,7 +17,7 @@ Backend admin UI for audit logs, maintenance sweeps, quota policy, labels, space
 
 - `auditEvents.list`
 - `maintenance.jobs.list`, `maintenance.*.start`
-- `quotas.summary`, `quotas.update`
+- `quotas.retrieve`, `quotas.update`
 - `labels.list`, `labels.create`, `labels.delete`
 - `spaces.admin.list`
 - `downloadPackages.list`

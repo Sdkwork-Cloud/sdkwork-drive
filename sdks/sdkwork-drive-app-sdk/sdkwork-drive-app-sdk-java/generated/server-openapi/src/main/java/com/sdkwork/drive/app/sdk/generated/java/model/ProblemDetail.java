@@ -8,9 +8,8 @@ public class ProblemDetail {
     private Integer status;
     private String detail;
     private String instance;
-    private String code;
+    private Integer code;
     private String traceId;
-    private String requestId;
     private List<FieldError> errors;
 
     public String getType() {
@@ -53,11 +52,11 @@ public class ProblemDetail {
         this.instance = instance;
     }
 
-    public String getCode() {
+    public Integer getCode() {
         return this.code;
     }
 
-    public void setCode(String code) {
+    public void setCode(Integer code) {
         this.code = code;
     }
 
@@ -67,14 +66,6 @@ public class ProblemDetail {
 
     public void setTraceId(String traceId) {
         this.traceId = traceId;
-    }
-
-    public String getRequestId() {
-        return this.requestId;
-    }
-
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
     }
 
     public List<FieldError> getErrors() {

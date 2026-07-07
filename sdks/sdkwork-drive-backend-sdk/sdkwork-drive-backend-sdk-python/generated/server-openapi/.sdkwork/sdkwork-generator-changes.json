@@ -9,13 +9,10 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-backend-sdk-generated-python"
   },
-  "changeFingerprint": "c25c6200a5bcd309a6a11f000296ae9a16923f42494c3eacda825ed69ed5032b",
+  "changeFingerprint": "99a119d7569f366261f3eab2399e0996be8a15962662a1d618d0cf6d56884bb8",
   "changes": {
     "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [
-      "sdkwork_drive_backend_sdk_generated_python/api/drive.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/__init__.py"
-    ],
+    "updatedGeneratedFiles": [],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
@@ -28,23 +25,46 @@
       "requirements.txt",
       "sdkwork_drive_backend_sdk_generated_python/__init__.py",
       "sdkwork_drive_backend_sdk_generated_python/api/__init__.py",
+      "sdkwork_drive_backend_sdk_generated_python/api/drive.py",
       "sdkwork_drive_backend_sdk_generated_python/api/labels.py",
       "sdkwork_drive_backend_sdk_generated_python/client.py",
       "sdkwork_drive_backend_sdk_generated_python/http_client.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/audit_event_page.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/__init__.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/audit_event_list_http_response.py",
       "sdkwork_drive_backend_sdk_generated_python/models/audit_event.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/audit_events_list_response.py",
       "sdkwork_drive_backend_sdk_generated_python/models/create_label_request.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/delete_label_response.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/download_package_page.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/download_package_list_http_response.py",
       "sdkwork_drive_backend_sdk_generated_python/models/download_package.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/download_packages_list_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/drive_label_list_http_response.py",
       "sdkwork_drive_backend_sdk_generated_python/models/drive_label.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/drive_space_list_http_response.py",
       "sdkwork_drive_backend_sdk_generated_python/models/drive_space.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/label_list_response.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/list_spaces_response.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/maintenance_job_page.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/field_error.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/labels_create_response201.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/labels_list_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/labels_retrieve_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/labels_update_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/maintenance_abandoned_upload_task_sweep_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/maintenance_expired_upload_content_sweep_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/maintenance_job_list_http_response.py",
       "sdkwork_drive_backend_sdk_generated_python/models/maintenance_job.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/maintenance_jobs_list_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/maintenance_object_sweep_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/maintenance_upload_session_sweep_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/page_info.py",
       "sdkwork_drive_backend_sdk_generated_python/models/problem_detail.py",
       "sdkwork_drive_backend_sdk_generated_python/models/quota_summary.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/quotas_retrieve_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/quotas_update_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/sdk_work_api_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/sdk_work_command_data.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/sdk_work_command_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/sdk_work_page_data.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/sdk_work_resource_data.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/sdk_work_resource_response.py",
+      "sdkwork_drive_backend_sdk_generated_python/models/spaces_admin_list_response.py",
       "sdkwork_drive_backend_sdk_generated_python/models/sweep_object_store_request.py",
       "sdkwork_drive_backend_sdk_generated_python/models/sweep_response.py",
       "sdkwork_drive_backend_sdk_generated_python/models/sweep_upload_sessions_request.py",
@@ -53,26 +73,7 @@
       "sdkwork-sdk.json",
       "setup.py"
     ],
-    "deletedGeneratedFiles": [
-      "sdkwork_drive_backend_sdk_generated_python/models/copy_provider_object_request.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/create_storage_provider_request.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/delete_storage_provider_response.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/list_storage_providers_response.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/operator_request.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/provider_bucket_mutation.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/provider_bucket.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/provider_object_list.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/provider_object_mutation.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/provider_object.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/rotate_storage_provider_credential_request.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/set_default_storage_provider_binding_request.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/storage_provider_binding.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/storage_provider_capabilities.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/storage_provider.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/test_storage_provider_request.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/test_storage_provider_response.py",
-      "sdkwork_drive_backend_sdk_generated_python/models/update_storage_provider_request.py"
-    ],
+    "deletedGeneratedFiles": [],
     "scaffoldedFiles": [],
     "preservedScaffoldFiles": [
       "custom/README.md"
@@ -81,82 +82,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface",
-      "models"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "sdkwork_drive_backend_sdk_generated_python/api/drive.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/__init__.py"
-        ]
-      },
-      {
-        "area": "models",
-        "paths": [
-          "sdkwork_drive_backend_sdk_generated_python/models/__init__.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/copy_provider_object_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/create_storage_provider_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/delete_storage_provider_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/list_storage_providers_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/operator_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/provider_bucket_mutation.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/provider_bucket.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/provider_object_list.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/provider_object_mutation.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/provider_object.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/rotate_storage_provider_credential_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/set_default_storage_provider_binding_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/storage_provider_binding.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/storage_provider_capabilities.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/storage_provider.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/test_storage_provider_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/test_storage_provider_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/update_storage_provider_request.py"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-python\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "python",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language python --project-dir . --action check"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "high",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "deleted-generated-files",
-      "manual-review-required",
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

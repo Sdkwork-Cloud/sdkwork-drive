@@ -27,7 +27,7 @@ func main() {
 client.SetAccessToken("your-access-token")
     
     // Use the SDK
-    result, err := client.Drive.QuotasSummary()
+    result, err := client.Drive.QuotasRetrieve()
     if err != nil {
         panic(err)
     }
@@ -64,7 +64,7 @@ client.SetHeader("X-Custom-Header", "value")
 
 ```go
 // GET /backend/v3/api/drive/quotas
-result, err := client.Drive.QuotasSummary()
+result, err := client.Drive.QuotasRetrieve()
 if err != nil {
     panic(err)
 }
@@ -77,8 +77,8 @@ fmt.Println(result)
 // List Drive label definitions
 params := map[string]interface{}{
     "lifecycleStatus": "active",
-    "pageSize": 2,
-    "pageToken": "pageToken",
+    "page_size": 2,
+    "cursor": "cursor",
 }
 result, err := client.Labels.List(params)
 if err != nil {
@@ -90,7 +90,7 @@ fmt.Println(result)
 ## Error Handling
 
 ```go
-_, err := client.Drive.QuotasSummary()
+_, err := client.Drive.QuotasRetrieve()
 if err != nil {
     // Handle error
     fmt.Println("Error:", err)

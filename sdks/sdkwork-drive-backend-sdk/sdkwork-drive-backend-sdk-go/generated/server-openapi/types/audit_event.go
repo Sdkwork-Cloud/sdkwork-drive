@@ -8,7 +8,7 @@ type AuditEvent struct {
 	ResourceType string `json:"resourceType"`
 	ResourceId string `json:"resourceId"`
 	OperatorId string `json:"operatorId"`
-	RequestId string `json:"requestId"`
+	CorrelationId string `json:"correlationId"`
 	TraceId string `json:"traceId"`
 	CreatedAt string `json:"createdAt"`
 }

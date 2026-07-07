@@ -4,8 +4,8 @@ use sdkwork_drive_workspace_service::application::change_feed_service::{
     ListChangesCommand, QueryStartPageTokenCommand, SqlDriveChangeFeedService,
 };
 use sdkwork_drive_workspace_service::application::space_lifecycle_service::{
-    BootstrapTeamSpaceCreatorAccessCommand, RetireSpaceContentsCommand,
-    SqlDriveSpaceLifecycleService,
+    BootstrapTeamSpaceCreatorAccessCommand, DeleteSpaceWithContentsCommand,
+    RetireSpaceContentsCommand, SqlDriveSpaceLifecycleService,
 };
 use sdkwork_drive_workspace_service::application::space_service::{
     CreateSpaceCommand, DriveSpaceService,
@@ -129,6 +129,74 @@ async fn space_lifecycle_service_retires_space_contents_before_space_delete_side
     .await
     .expect("active node count should be readable");
     assert_eq!(active_nodes, 0);
+}
+
+#[tokio::test]
+async fn delete_space_with_contents_is_atomic_and_records_change_feed() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    let space_service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
+    let space = space_service
+        .create_space(CreateSpaceCommand {
+            id: "space-delete-atomic".to_string(),
+            tenant_id: "tenant-001".to_string(),
+            owner_subject_type: "user".to_string(),
+            owner_subject_id: "user-001".to_string(),
+            display_name: "Delete Me".to_string(),
+            space_type: DriveSpaceType::Personal,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
+            operator_id: "user-001".to_string(),
+        })
+        .await
+        .expect("space should be created");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, node_type, node_name, content_state, lifecycle_status,
+            version, created_by, updated_by
+         ) VALUES ('node-delete-1', 'tenant-001', 'space-delete-atomic', 'folder', 'Docs', 'ready', 'active', 1, 'user-001', 'user-001')",
+    )
+    .execute(&pool)
+    .await
+    .expect("node insert should succeed");
+
+    let result = SqlDriveSpaceLifecycleService::new(pool.clone())
+        .delete_space_with_contents(DeleteSpaceWithContentsCommand {
+            tenant_id: space.tenant_id,
+            space_id: space.id,
+            operator_id: "user-001".to_string(),
+        })
+        .await
+        .expect("atomic delete should succeed");
+    assert_eq!(result.deleted_node_count, 1);
+    assert_eq!(result.space.lifecycle_status, "deleted");
+
+    let active_nodes: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1) FROM dr_drive_node WHERE space_id='space-delete-atomic' AND lifecycle_status != 'deleted'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("active node count should be readable");
+    assert_eq!(active_nodes, 0);
+
+    let change_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1) FROM dr_drive_change_log WHERE space_id='space-delete-atomic' AND event_type=$1",
+    )
+    .bind(drive_events::space::DELETED)
+    .fetch_one(&pool)
+    .await
+    .expect("change log count should be readable");
+    assert_eq!(change_count, 1);
 }
 
 #[tokio::test]

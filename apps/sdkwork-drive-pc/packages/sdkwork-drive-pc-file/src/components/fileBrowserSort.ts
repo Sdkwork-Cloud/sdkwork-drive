@@ -5,7 +5,7 @@ export type FileBrowserSortField =
   | "name"
   | "owner"
   | "lastModified"
-  | "size"
+  | "contentLength"
   | "type";
 
 export type FileBrowserSortOrder = "asc" | "desc";
@@ -39,7 +39,7 @@ export function sortDriveFiles(
         valueLeft = new Date(left.updatedAt || 0).getTime();
         valueRight = new Date(right.updatedAt || 0).getTime();
         break;
-      case "size":
+      case "contentLength":
         valueLeft = left.size || 0;
         valueRight = right.size || 0;
         break;

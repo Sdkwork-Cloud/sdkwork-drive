@@ -1,13 +1,13 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { DeleteNodePropertyResponse, DriveNodeProperty, NodePropertyListResponse, SetNodePropertyRequest } from '../types';
+import type { SetNodePropertyRequest } from '../types';
 
 
 export interface NodePropertiesListParams {
   visibility?: 'private' | 'app_public';
   pageSize?: number;
-  pageToken?: string;
+  cursor?: string;
 }
 
 export interface NodePropertiesDeleteParams {
@@ -23,26 +23,26 @@ export class NodePropertiesApi {
 
 
 /** List node custom properties */
-  async list(nodeId: string, params?: NodePropertiesListParams): Promise<NodePropertyListResponse> {
+  async list(nodeId: string, params?: NodePropertiesListParams): Promise<unknown> {
     const query = buildQueryString([
       { name: 'visibility', value: params?.visibility, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<NodePropertyListResponse>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties`), query));
+    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties`), query));
   }
 
 /** Create or update a node custom property */
-  async set(nodeId: string, propertyKey: string, body: SetNodePropertyRequest): Promise<DriveNodeProperty> {
-    return this.client.put<DriveNodeProperty>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties/${serializePathParameter(propertyKey, { name: 'propertyKey', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(nodeId: string, propertyKey: string, body: SetNodePropertyRequest): Promise<unknown> {
+    return this.client.put<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties/${serializePathParameter(propertyKey, { name: 'propertyKey', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
 /** Delete a node custom property */
-  async delete(nodeId: string, propertyKey: string, params?: NodePropertiesDeleteParams): Promise<DeleteNodePropertyResponse> {
+  async delete(nodeId: string, propertyKey: string, params?: NodePropertiesDeleteParams): Promise<void> {
     const query = buildQueryString([
       { name: 'visibility', value: params?.visibility, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.delete<DeleteNodePropertyResponse>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties/${serializePathParameter(propertyKey, { name: 'propertyKey', style: 'simple', explode: false })}`), query));
+    return this.client.delete<void>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties/${serializePathParameter(propertyKey, { name: 'propertyKey', style: 'simple', explode: false })}`), query));
   }
 }
 

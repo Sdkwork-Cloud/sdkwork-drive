@@ -1,36 +1,17 @@
 use axum::{extract::Request, middleware::Next, response::Response};
-use uuid::Uuid;
-
-/// Header name for request ID.
-pub const REQUEST_ID_HEADER: &str = "X-Request-Id";
+use sdkwork_utils_rust::uuid;
 
 /// Middleware that ensures every request has a request ID.
 ///
-/// If the request already has an `X-Request-Id` header, it is preserved.
-/// Otherwise, a new UUID is generated and added to the request and response.
+/// The ID is always server-owned and is stored only in request extensions.
 pub async fn request_id_middleware(mut request: Request, next: Next) -> Response {
-    let request_id = request
-        .headers()
-        .get(REQUEST_ID_HEADER)
-        .and_then(|v| v.to_str().ok())
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| Uuid::new_v4().to_string());
+    let request_id = uuid();
 
-    // Insert request ID into request extensions for downstream handlers
     request
         .extensions_mut()
         .insert(RequestId(request_id.clone()));
 
-    let mut response = next.run(request).await;
-
-    // Add request ID to response headers
-    if let Ok(header_value) = request_id.parse() {
-        response
-            .headers_mut()
-            .insert(REQUEST_ID_HEADER, header_value);
-    }
-
-    response
+    next.run(request).await
 }
 
 /// Request ID extracted from request extensions.
@@ -40,5 +21,52 @@ pub struct RequestId(pub String);
 impl RequestId {
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::{to_bytes, Body};
+    use axum::extract::Extension;
+    use axum::middleware;
+    use axum::routing::get;
+    use axum::Router;
+    use http::{Request, StatusCode};
+    use tower::ServiceExt;
+
+    async fn echo_request_id(Extension(request_id): Extension<RequestId>) -> String {
+        request_id.0
+    }
+
+    #[tokio::test]
+    async fn middleware_ignores_client_request_id_and_does_not_expose_legacy_header() {
+        let app = Router::new()
+            .route("/probe", get(echo_request_id))
+            .layer(middleware::from_fn(request_id_middleware));
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/probe")
+                    .header("X-Request-Id", "client-forged-request-id")
+                    .body(Body::empty())
+                    .expect("request should be built"),
+            )
+            .await
+            .expect("request should be handled");
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(
+            response.headers().get("X-Request-Id").is_none(),
+            "Drive-owned middleware must not expose legacy X-Request-Id"
+        );
+
+        let body = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("body should be readable");
+        let request_id = String::from_utf8(body.to_vec()).expect("request id should be utf8");
+        assert_ne!(request_id, "client-forged-request-id");
+        assert_eq!(request_id.len(), 36);
     }
 }

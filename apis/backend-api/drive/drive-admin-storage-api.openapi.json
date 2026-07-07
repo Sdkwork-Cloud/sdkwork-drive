@@ -24,7 +24,7 @@
         "tags": [
           "storageAdmin"
         ],
-        "operationId": "storageProviderBindings.default.get",
+        "operationId": "storageProviderBindings.default.retrieve",
         "parameters": [
           {
             "name": "spaceId",
@@ -165,7 +165,7 @@
         "tags": [
           "storageAdmin"
         ],
-        "operationId": "storageProviderBindings.default.set",
+        "operationId": "storageProviderBindings.default.update",
         "responses": {
           "200": {
             "description": "OK",
@@ -312,15 +312,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Drive storage provider binding deletion result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkCommandResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -680,15 +673,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkCommandResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -751,7 +737,7 @@
         "tags": [
           "storageAdmin"
         ],
-        "operationId": "storageProviders.get",
+        "operationId": "storageProviders.retrieve",
         "parameters": [
           {
             "name": "providerId",
@@ -1007,7 +993,7 @@
         "tags": [
           "storageAdmin"
         ],
-        "operationId": "storageProviders.capabilities.get",
+        "operationId": "storageProviders.capabilities.list",
         "parameters": [
           {
             "name": "providerId",
@@ -1514,7 +1500,7 @@
         "tags": [
           "storageAdmin"
         ],
-        "operationId": "storageProviders.bucket.head",
+        "operationId": "storageProviders.bucket.retrieve",
         "parameters": [
           {
             "name": "providerId",
@@ -1635,7 +1621,7 @@
         "tags": [
           "storageAdmin"
         ],
-        "operationId": "storageProviders.bucket.create",
+        "operationId": "storageProviders.bucket.update",
         "parameters": [
           {
             "name": "providerId",
@@ -1790,15 +1776,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkCommandResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Problem detail",
@@ -1905,7 +1884,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -1913,13 +1892,13 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 1000
+              "maximum": 200
             }
           }
         ],
@@ -2043,7 +2022,7 @@
         "tags": [
           "storageAdmin"
         ],
-        "operationId": "storageProviders.objects.head",
+        "operationId": "storageProviders.objects.retrieve",
         "parameters": [
           {
             "name": "providerId",
@@ -2213,15 +2192,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkCommandResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Problem detail",
@@ -2448,7 +2420,7 @@
             }
           },
           {
-            "name": "pageToken",
+            "name": "cursor",
             "in": "query",
             "required": false,
             "schema": {
@@ -2456,7 +2428,7 @@
             }
           },
           {
-            "name": "pageSize",
+            "name": "page_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -2831,20 +2803,6 @@
           }
         }
       },
-      "ListStorageProvidersResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StorageProvider"
-            }
-          }
-        }
-      },
       "CreateStorageProviderRequest": {
         "type": "object",
         "required": [
@@ -3024,17 +2982,6 @@
           }
         }
       },
-      "DeleteStorageProviderResponse": {
-        "type": "object",
-        "required": [
-          "deleted"
-        ],
-        "properties": {
-          "deleted": {
-            "type": "boolean"
-          }
-        }
-      },
       "OperatorRequest": {
         "type": "object",
         "required": [],
@@ -3168,42 +3115,12 @@
         },
         "additionalProperties": false
       },
-      "ProviderObjectList": {
-        "type": "object",
-        "required": [
-          "providerId",
-          "bucket",
-          "items"
-        ],
-        "properties": {
-          "providerId": {
-            "type": "string"
-          },
-          "bucket": {
-            "type": "string"
-          },
-          "prefix": {
-            "type": "string",
-            "nullable": true
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProviderObject"
-            }
-          },
-          "nextPageToken": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "ProviderObject": {
         "type": "object",
         "required": [
           "providerId",
           "bucket",
+          "objectKind",
           "objectKey",
           "contentLength"
         ],
@@ -3214,12 +3131,20 @@
           "bucket": {
             "type": "string"
           },
+          "objectKind": {
+            "type": "string",
+            "enum": [
+              "object",
+              "prefix"
+            ],
+            "description": "Object list entry kind. `prefix` represents an object-store common prefix returned by delimiter-based browsing."
+          },
           "objectKey": {
             "type": "string",
             "minLength": 1,
             "maxLength": 1024,
-            "description": "Drive object key. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments.",
-            "pattern": "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\u0000).*(?:[^/])$"
+            "description": "Drive object key or common prefix. UTF-8 1-1024 bytes, trimmed relative key/prefix; no leading slash, double slash, NUL, or period-only path segments. Common prefixes end with `/`.",
+            "pattern": "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\u0000).+$"
           },
           "contentLength": {
             "type": "integer",
@@ -3341,57 +3266,6 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
-          }
-        }
-      },
-      "ProviderBucketList": {
-        "type": "object",
-        "required": [
-          "providerId",
-          "configuredBucket",
-          "items"
-        ],
-        "properties": {
-          "providerId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64
-          },
-          "configuredBucket": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProviderBucketListItem"
-            }
-          }
-        }
-      },
-      "StorageProviderBindingListResponse": {
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StorageProviderBinding"
-            }
-          }
-        }
-      },
-      "DeleteStorageProviderBindingResponse": {
-        "type": "object",
-        "required": [
-          "deleted"
-        ],
-        "properties": {
-          "deleted": {
-            "type": "boolean"
           }
         }
       },
@@ -3561,24 +3435,6 @@
             "properties": {
               "data": {
                 "$ref": "#/components/schemas/SdkWorkResourceData"
-              }
-            }
-          }
-        ]
-      },
-      "SdkWorkListResponse": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "type": "object",
-            "required": [
-              "data"
-            ],
-            "properties": {
-              "data": {
-                "$ref": "#/components/schemas/SdkWorkPageData"
               }
             }
           }

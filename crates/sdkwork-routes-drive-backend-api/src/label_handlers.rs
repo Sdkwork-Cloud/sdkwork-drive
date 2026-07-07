@@ -1,11 +1,10 @@
 use crate::audit::record_label_audit;
 use crate::dto::{
-    CreateLabelRequest, DeleteLabelResponse, LabelListQuery, LabelMutationQuery, LabelResponse,
-    UpdateLabelRequest,
+    CreateLabelRequest, LabelListQuery, LabelMutationQuery, LabelResponse, UpdateLabelRequest,
 };
 use crate::error::{internal_sql_error, not_found_problem, ProblemDetail};
 use crate::mappers::map_label_row;
-use crate::response::{success_list_page_simple, DriveListHttpResponse};
+use crate::response::{no_content, success_list_page_simple, DriveListHttpResponse};
 use crate::state::BackendState;
 use crate::tenant_context::authenticated_tenant_id;
 use crate::validators::{
@@ -160,7 +159,7 @@ pub(crate) async fn delete_label(
     Extension(app_context): Extension<DriveAppContext>,
     Path(label_id): Path<String>,
     Query(query): Query<LabelMutationQuery>,
-) -> Result<Json<DeleteLabelResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = authenticated_tenant_id(&app_context);
     let operator_id = require_non_empty_text(
         query
@@ -186,7 +185,7 @@ pub(crate) async fn delete_label(
     .map_err(internal_sql_error("delete dr_drive_label failed"))?;
 
     record_label_audit(&state, admin_audit::label::DELETED, &label_id, &operator_id).await?;
-    Ok(Json(DeleteLabelResponse { deleted: true }))
+    Ok(no_content())
 }
 
 async fn find_label(

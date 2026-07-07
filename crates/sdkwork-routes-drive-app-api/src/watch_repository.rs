@@ -1,7 +1,8 @@
 use crate::dto::{DriveWatchChannelResponse, InsertWatchChannel};
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, not_found_problem, problem,
-    ProblemDetail, SdkWorkResultCode};
+    ProblemDetail, SdkWorkResultCode,
+};
 use crate::mappers::map_watch_channel_row;
 use axum::http::StatusCode;
 use axum::Json;

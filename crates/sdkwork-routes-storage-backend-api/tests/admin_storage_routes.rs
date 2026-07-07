@@ -25,6 +25,17 @@ struct CapturedS3Request {
 
 type CapturedS3Requests = Arc<Mutex<Vec<CapturedS3Request>>>;
 
+async fn assert_no_content_response(response: Response) {
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    let body = to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("204 response body should be readable");
+    assert!(
+        body.is_empty(),
+        "204 delete response must not include a JSON body"
+    );
+}
+
 async fn start_s3_mock_server() -> (String, CapturedS3Requests) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let router = Router::new()
@@ -548,7 +559,7 @@ async fn admin_storage_activate_rejects_deleted_provider() {
     )
     .await
     .expect("delete provider request should be handled");
-    assert_eq!(delete_response.status(), StatusCode::OK);
+    assert_no_content_response(delete_response).await;
 
     let rotate_response = app
         .clone()
@@ -776,7 +787,10 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         "aliyun_oss"
     );
     assert_eq!(list_payload["data"]["items"][1]["bindingScope"], "tenant");
-    assert_eq!(list_payload["data"]["items"][1]["spaceId"], serde_json::Value::Null);
+    assert_eq!(
+        list_payload["data"]["items"][1]["spaceId"],
+        serde_json::Value::Null
+    );
 
     let filtered_response = app
         .clone()
@@ -797,7 +811,10 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
     )
     .expect("filtered bindings response should be json");
     assert_eq!(filtered_payload["code"], 0);
-    assert_eq!(filtered_payload["data"]["items"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        filtered_payload["data"]["items"].as_array().unwrap().len(),
+        1
+    );
     assert_eq!(
         filtered_payload["data"]["items"][0]["providerId"],
         "provider-space-default"
@@ -814,14 +831,7 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
         )
         .await
         .expect("delete binding request should be handled");
-    assert_eq!(delete_response.status(), StatusCode::OK);
-    let delete_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(delete_response.into_body(), usize::MAX)
-            .await
-            .expect("delete binding response body should be read"),
-    )
-    .expect("delete binding response should be json");
-    assert_eq!(delete_payload["deleted"], true);
+    assert_no_content_response(delete_response).await;
 
     let get_deleted_binding = app
         .oneshot(
@@ -903,14 +913,13 @@ async fn admin_storage_provider_bucket_routes_list_account_buckets() {
     let payload: serde_json::Value =
         serde_json::from_slice(&body).expect("bucket list response should be json");
     assert_eq!(payload["code"], 0);
-    let items = payload["data"]["items"].as_array().expect("bucket list items");
+    let items = payload["data"]["items"]
+        .as_array()
+        .expect("bucket list items");
     assert_eq!(items.len(), 2);
     assert_eq!(items[0]["bucket"], "bucket-admin");
     assert_eq!(items[0]["configured"], true);
-    assert_eq!(
-        items[0]["creationDateEpochMs"],
-        1780531200000_i64
-    );
+    assert_eq!(items[0]["creationDateEpochMs"], 1780531200000_i64);
     assert_eq!(items[1]["bucket"], "bucket-archive");
     assert_eq!(items[1]["configured"], false);
 
@@ -974,7 +983,7 @@ async fn admin_storage_bucket_and_object_routes_use_configured_s3_store() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/storage/providers/provider-admin-s3/objects?prefix=objects/&pageSize=100")
+                .uri("/backend/v3/api/drive/storage/providers/provider-admin-s3/objects?prefix=objects/&page_size=100")
                 .body(Body::empty())
                 .expect("object list request should be built"),
         )
@@ -988,7 +997,11 @@ async fn admin_storage_bucket_and_object_routes_use_configured_s3_store() {
     )
     .expect("object list response should be json");
     assert_eq!(list_payload["code"], 0);
-    assert_eq!(list_payload["data"]["items"][0]["objectKey"], "objects/file-a.bin");
+    assert_eq!(
+        list_payload["data"]["items"][0]["objectKey"],
+        "objects/file-a.bin"
+    );
+    assert_eq!(list_payload["data"]["items"][0]["objectKind"], "object");
     assert_eq!(list_payload["data"]["items"][0]["contentLength"], 128);
 
     let head_response = app
@@ -1014,7 +1027,7 @@ async fn admin_storage_bucket_and_object_routes_use_configured_s3_store() {
         )
         .await
         .expect("object delete request should be handled");
-    assert_eq!(delete_response.status(), StatusCode::OK);
+    assert_no_content_response(delete_response).await;
 
     let requests = captured_requests
         .lock()
@@ -1204,7 +1217,7 @@ async fn admin_storage_opendal_plugin_adapter_is_default_disabled_without_featur
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/storage/providers/provider-admin-opendal-disabled/objects?prefix=objects/&pageSize=10")
+                .uri("/backend/v3/api/drive/storage/providers/provider-admin-opendal-disabled/objects?prefix=objects/&page_size=10")
                 .body(Body::empty())
                 .expect("object list request should be built"),
         )
@@ -1637,7 +1650,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         )
         .await
         .expect("delete default binding request should be handled");
-    assert_eq!(delete_binding_response.status(), StatusCode::OK);
+    assert_no_content_response(delete_binding_response).await;
 
     let delete_response = app
         .oneshot(
@@ -1649,7 +1662,7 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
         )
         .await
         .expect("delete provider request should be handled");
-    assert_eq!(delete_response.status(), StatusCode::OK);
+    assert_no_content_response(delete_response).await;
 
     let provider_actions: Vec<String> = sqlx::query_scalar(
         "SELECT action
@@ -1774,7 +1787,7 @@ async fn admin_storage_bucket_and_object_mutations_require_operator_id_and_audit
         )
         .await
         .expect("object delete request should be handled");
-    assert_eq!(delete_object.status(), StatusCode::OK);
+    assert_no_content_response(delete_object).await;
 
     let copy_without_operator = app
         .clone()
@@ -1825,7 +1838,7 @@ async fn admin_storage_bucket_and_object_mutations_require_operator_id_and_audit
         )
         .await
         .expect("bucket delete request should be handled");
-    assert_eq!(delete_bucket.status(), StatusCode::OK);
+    assert_no_content_response(delete_bucket).await;
 
     let audit_rows: Vec<(String, String)> = sqlx::query_as(
         "SELECT action, operator_id

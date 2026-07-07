@@ -101,7 +101,7 @@ async fn list_audit_events_emits_structured_observability_log() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/audit_events?action=drive.storage_provider.created&resourceType=storage_provider&resourceId=provider-001&requestId=request-001&traceId=trace-001&page=1&pageSize=10")
+                .uri("/backend/v3/api/drive/audit_events?action=drive.storage_provider.created&resourceType=storage_provider&resourceId=provider-001&correlationId=request-001&traceId=trace-001&page=1&page_size=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -258,7 +258,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
                         "dryRun": false,
                         "limit": 100,
                         "operatorId": "admin-ops",
-                        "requestId": "request-001",
+                        "correlationId": "request-001",
                         "traceId": "trace-001"
                     }"#,
                 ))
@@ -284,7 +284,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
                         "dryRun": false,
                         "limit": 100,
                         "operatorId": "admin-ops",
-                        "requestId": "request-001",
+                        "correlationId": "request-001",
                         "traceId": "trace-001"
                     }"#,
                 ))
@@ -314,7 +314,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
                             "dryRun": true,
                             "limit": 100,
                             "operatorId": "admin-ops",
-                            "requestId": "request-001",
+                            "correlationId": "request-001",
                             "traceId": "trace-001"
                         }"#,
                     ))
@@ -332,7 +332,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/maintenance/jobs?jobType=object_sweep&status=completed&operatorId=admin-ops&page=1&pageSize=10")
+                .uri("/backend/v3/api/drive/maintenance/jobs?jobType=object_sweep&status=completed&operatorId=admin-ops&page=1&page_size=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -434,7 +434,7 @@ async fn backend_route_errors_emit_structured_observability_logs() {
             Request::builder()
                 .method(Method::GET)
                 .uri(
-                    "/backend/v3/api/drive/audit_events?action=invalid%20action&page=1&pageSize=10",
+                    "/backend/v3/api/drive/audit_events?action=invalid%20action&page=1&page_size=10",
                 )
                 .body(Body::empty())
                 .expect("request should be built"),
@@ -450,7 +450,7 @@ async fn backend_route_errors_emit_structured_observability_logs() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/maintenance/jobs?operatorId=invalid%20operator&page=1&pageSize=10")
+                .uri("/backend/v3/api/drive/maintenance/jobs?operatorId=invalid%20operator&page=1&page_size=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )

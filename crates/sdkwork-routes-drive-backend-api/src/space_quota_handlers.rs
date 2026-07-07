@@ -35,6 +35,7 @@ pub(crate) async fn list_spaces(
             tenant_id,
             owner_subject_type: query.owner_subject_type,
             owner_subject_id: query.owner_subject_id,
+            space_type: query.space_type,
             offset: page.offset,
             limit: page.limit + 1,
         })

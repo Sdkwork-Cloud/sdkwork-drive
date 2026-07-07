@@ -9,7 +9,7 @@ public class MaintenanceJob {
     private Integer scannedCount;
     private Integer affectedCount;
     private String operatorId;
-    private String requestId;
+    private String correlationId;
     private String traceId;
     private String errorMessage;
     private String startedAt;
@@ -72,12 +72,12 @@ public class MaintenanceJob {
         this.operatorId = operatorId;
     }
 
-    public String getRequestId() {
-        return this.requestId;
+    public String getCorrelationId() {
+        return this.correlationId;
     }
 
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
+    public void setCorrelationId(String correlationId) {
+        this.correlationId = correlationId;
     }
 
     public String getTraceId() {

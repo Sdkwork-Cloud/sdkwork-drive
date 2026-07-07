@@ -26,7 +26,7 @@ import { DownloadManager, type DownloadJob } from "./DownloadManager";
 import { FileBrowserHeader } from "./FileBrowserHeader";
 import { FileDetailModal } from "./FileDetailModal";
 import { Info, Star, Download, Trash2, CheckSquare, Copy, FolderInput } from "lucide-react";
-import { formatDriveBytes, useTranslation, useDrivePcPreferences } from "sdkwork-drive-pc-commons";
+import { formatDriveBytes, useTranslation, useDrivePcPreferences, hasSiblingNameConflict, isDriveConflictError, resolveUniqueSiblingName } from "sdkwork-drive-pc-commons";
 import { createLatestRequestGuard } from "./fileBrowserLoadGuard";
 import {
   getSettledBatchMessage,
@@ -75,6 +75,10 @@ interface FileBrowserProps {
   createDownloadAbortController: (jobId: string) => AbortController;
   releaseDownloadAbortController: (jobId: string) => void;
   onCancelJob: (id: string) => void;
+}
+
+function collectSiblingNames(files: DriveFile[]): string[] {
+  return files.map((file) => file.name);
 }
 
 export function FileBrowser({
@@ -271,17 +275,24 @@ export function FileBrowser({
   // Inline Folder Creation state
   const [isCreatingFolderInline, setIsCreatingFolderInline] = useState(false);
   const [inlineFolderName, setInlineFolderName] = useState("");
+  const [inlineFolderSuggestedName, setInlineFolderSuggestedName] = useState("");
   const inlineFolderNameRef = React.useRef("");
+  const inlineFolderSuggestedNameRef = React.useRef("");
 
   useEffect(() => {
     inlineFolderNameRef.current = inlineFolderName;
   }, [inlineFolderName]);
+
+  useEffect(() => {
+    inlineFolderSuggestedNameRef.current = inlineFolderSuggestedName;
+  }, [inlineFolderSuggestedName]);
 
   // Automatically reset selection and inline inputs on section or folder navigation
   useEffect(() => {
     setSelectedFileIds([]);
     setIsCreatingFolderInline(false);
     setInlineFolderName("");
+    setInlineFolderSuggestedName("");
   }, [activeSection, currentFolderId]);
 
   useEffect(() => {
@@ -698,7 +709,7 @@ export function FileBrowser({
     loadAbortControllerRef.current?.abort();
     const loadAbortController = new AbortController();
     loadAbortControllerRef.current = loadAbortController;
-    const requestId = latestLoadGuardRef.current.begin(currentLoadScope);
+    const loadSequence = latestLoadGuardRef.current.begin(currentLoadScope);
     setLoading(true);
     setErrorState(null);
     setNextPageToken(undefined);
@@ -709,7 +720,7 @@ export function FileBrowser({
       sortOrder,
     })
       .then((page) => {
-        if (!latestLoadGuardRef.current.isCurrent(requestId)) {
+        if (!latestLoadGuardRef.current.isCurrent(loadSequence)) {
           return;
         }
         setFiles(page.files);
@@ -720,7 +731,7 @@ export function FileBrowser({
         if (isDriveAbortError(err)) {
           return;
         }
-        if (!latestLoadGuardRef.current.isCurrent(requestId)) {
+        if (!latestLoadGuardRef.current.isCurrent(loadSequence)) {
           return;
         }
         setErrorState(
@@ -738,7 +749,7 @@ export function FileBrowser({
       signal: loadAbortController.signal,
     })
       .then((path) => {
-        if (!latestLoadGuardRef.current.isCurrent(requestId)) {
+        if (!latestLoadGuardRef.current.isCurrent(loadSequence)) {
           return;
         }
         setBreadcrumbFiles(path);
@@ -747,7 +758,7 @@ export function FileBrowser({
         if (isDriveAbortError(err)) {
           return;
         }
-        if (!latestLoadGuardRef.current.isCurrent(requestId)) {
+        if (!latestLoadGuardRef.current.isCurrent(loadSequence)) {
           return;
         }
         setBreadcrumbFiles([]);
@@ -1030,7 +1041,11 @@ export function FileBrowser({
       });
   };
 
-  const runCreateFolder = (folderName: string, onSuccess?: () => void) => {
+  const runCreateFolder = (
+    folderName: string,
+    onSuccess?: () => void,
+    options?: { allowAutoRename?: boolean; restoreInlineOnError?: boolean },
+  ) => {
     if (createFolderInFlightRef.current) {
       return;
     }
@@ -1039,11 +1054,37 @@ export function FileBrowser({
       return;
     }
 
+    const trimmed = folderName.trim();
+    if (trimmed === "") {
+      return;
+    }
+
+    const siblingNames = collectSiblingNames(files);
+    const userEditedName = trimmed !== inlineFolderSuggestedNameRef.current;
+    if (
+      userEditedName &&
+      hasSiblingNameConflict(trimmed, siblingNames)
+    ) {
+      triggerToast(t("fileBrowser.nameConflict"), "err");
+      if (options?.restoreInlineOnError) {
+        setIsCreatingFolderInline(true);
+        setInlineFolderName(trimmed);
+      }
+      return;
+    }
+
+    const resolvedName = options?.allowAutoRename
+      ? resolveUniqueSiblingName(trimmed, siblingNames)
+      : trimmed;
+
     createFolderInFlightRef.current = true;
     const createFolderController = createFileWriteAbortController("create-folder");
-    fileService.createFolder(folderName, activeSection, currentFolderId, {
+    const submitCreateFolder = (name: string) =>
+      fileService.createFolder(name, activeSection, currentFolderId, {
         signal: createFolderController.signal,
-      })
+      });
+
+    submitCreateFolder(resolvedName)
       .then((folder) => {
         triggerToast(
           t("fileBrowser.toastCreatedFolder", { name: folder.name }),
@@ -1055,7 +1096,42 @@ export function FileBrowser({
         if (isDriveAbortError(err)) {
           return;
         }
-        triggerToast(err.message, "err");
+        if (isDriveConflictError(err) && options?.allowAutoRename) {
+          const retriedName = resolveUniqueSiblingName(resolvedName, siblingNames);
+          if (retriedName !== resolvedName) {
+            return submitCreateFolder(retriedName)
+              .then((folder) => {
+                triggerToast(
+                  t("fileBrowser.toastCreatedFolder", { name: folder.name }),
+                );
+                onSuccess?.();
+                loadFiles();
+              })
+              .catch((retryErr) => {
+                if (isDriveAbortError(retryErr)) {
+                  return;
+                }
+                triggerToast(
+                  isDriveConflictError(retryErr)
+                    ? t("fileBrowser.nameConflict")
+                    : retryErr.message,
+                  "err",
+                );
+                if (options?.restoreInlineOnError) {
+                  setIsCreatingFolderInline(true);
+                  setInlineFolderName(trimmed);
+                }
+              });
+          }
+        }
+        triggerToast(
+          isDriveConflictError(err) ? t("fileBrowser.nameConflict") : err.message,
+          "err",
+        );
+        if (options?.restoreInlineOnError) {
+          setIsCreatingFolderInline(true);
+          setInlineFolderName(trimmed);
+        }
       })
       .finally(() => {
         createFolderInFlightRef.current = false;
@@ -1067,7 +1143,32 @@ export function FileBrowser({
   const handleCreateFolderSubmit = (folderName: string) => {
     runCreateFolder(folderName, () => {
       setIsNewFolderOpen(false);
-    });
+    }, { allowAutoRename: false });
+  };
+
+  const beginInlineFolderCreation = () => {
+    const suggestedName = resolveUniqueSiblingName(
+      t("fileBrowser.newFolder"),
+      collectSiblingNames(files),
+    );
+    setInlineFolderSuggestedName(suggestedName);
+    setInlineFolderName(suggestedName);
+    setIsCreatingFolderInline(true);
+  };
+
+  const confirmInlineFolderCreation = (folderName: string) => {
+    const trimmed = folderName.trim();
+    if (trimmed === "") {
+      handleInlineFolderCancel();
+      return;
+    }
+
+    const allowAutoRename = trimmed === inlineFolderSuggestedNameRef.current;
+    setIsCreatingFolderInline(false);
+    runCreateFolder(trimmed, () => {
+      setInlineFolderName("");
+      setInlineFolderSuggestedName("");
+    }, { allowAutoRename, restoreInlineOnError: true });
   };
 
   const handleInlineFolderConfirm = () => {
@@ -1077,21 +1178,13 @@ export function FileBrowser({
       return;
     }
 
-    const trimmed = inlineFolderName.trim();
-    if (trimmed === "") {
-      handleInlineFolderCancel();
-      return;
-    }
-
-    setIsCreatingFolderInline(false);
-    runCreateFolder(trimmed, () => {
-      setInlineFolderName("");
-    });
+    confirmInlineFolderCreation(inlineFolderName);
   };
 
   const handleInlineFolderCancel = () => {
     setIsCreatingFolderInline(false);
     setInlineFolderName("");
+    setInlineFolderSuggestedName("");
   };
 
   const handleInlineFolderBlur = () => {
@@ -1100,6 +1193,7 @@ export function FileBrowser({
         if (currentActive) {
           if (!canCreateDriveFolderInSection(activeSection)) {
             setInlineFolderName("");
+            setInlineFolderSuggestedName("");
             triggerToast(t("fileBrowser.sectionFolderUnsupported"), "err");
             return false;
           }
@@ -1107,13 +1201,12 @@ export function FileBrowser({
           const trimmed = inlineFolderNameRef.current.trim();
           if (trimmed === "") {
             setInlineFolderName("");
-            return false;
-          } else {
-            runCreateFolder(trimmed, () => {
-              setInlineFolderName("");
-            });
+            setInlineFolderSuggestedName("");
             return false;
           }
+
+          confirmInlineFolderCreation(trimmed);
+          return false;
         }
         return currentActive;
       });
@@ -1139,18 +1232,24 @@ export function FileBrowser({
       return;
     }
 
+    const trimmedName = newFileName.trim();
+    if (hasSiblingNameConflict(trimmedName, collectSiblingNames(files), targetOldName)) {
+      triggerToast(t("fileBrowser.nameConflict"), "err");
+      return;
+    }
+
     const renameController = createFileWriteAbortController(`rename-${targetId}`);
-    fileService.renameFile(targetId, newFileName.trim(), {
+    fileService.renameFile(targetId, trimmedName, {
         signal: renameController.signal,
       })
       .then(() => {
         triggerToast(
-          t("fileBrowser.toastRenamedTo", { name: newFileName.trim() }),
+          t("fileBrowser.toastRenamedTo", { name: trimmedName }),
         );
         // Keep active detail card synchronized
         if (selectedPreviewFile && selectedPreviewFile.id === targetId) {
           setSelectedPreviewFile((prev) =>
-            prev ? { ...prev, name: newFileName.trim() } : null,
+            prev ? { ...prev, name: trimmedName } : null,
           );
         }
         setInlineRenameFileId(null);
@@ -1160,8 +1259,10 @@ export function FileBrowser({
         if (isDriveAbortError(err)) {
           return;
         }
-        triggerToast(err?.message || t("fileBrowser.toastRenameFailed"), "err");
-        setInlineRenameFileId(null);
+        triggerToast(
+          isDriveConflictError(err) ? t("fileBrowser.nameConflict") : (err?.message || t("fileBrowser.toastRenameFailed")),
+          "err",
+        );
       })
       .finally(() => {
         releaseFileWriteAbortController(`rename-${targetId}`, renameController);
@@ -1301,10 +1402,7 @@ export function FileBrowser({
         canUpload={canUploadToActiveSection}
         canEmptyTrash={activeSection === "trash" && files.length > 0}
         onEmptyTrash={handleEmptyTrash}
-        onCreateFolder={() => {
-          setIsCreatingFolderInline(true);
-          setInlineFolderName("");
-        }}
+        onCreateFolder={beginInlineFolderCreation}
         onUpload={handleUploadClick}
         currentFolderId={currentFolderId}
         breadcrumbFiles={breadcrumbFiles}
@@ -1407,10 +1505,10 @@ export function FileBrowser({
                   </div>
                   <div
                     className="group flex cursor-pointer items-center justify-end gap-1 text-right hover:text-gray-700 dark:hover:text-neutral-300"
-                    onClick={() => handleSort("size")}
+                    onClick={() => handleSort("contentLength")}
                   >
                     <span>{t("fileBrowser.fileSize")}</span>
-                    {renderSortIndicator("size")}
+                    {renderSortIndicator("contentLength")}
                   </div>
                   <div
                     className="group flex min-w-0 cursor-pointer items-center gap-1 hover:text-gray-700 dark:hover:text-neutral-300"
@@ -1801,6 +1899,7 @@ export function FileBrowser({
         isOpen={isNewFolderOpen}
         onClose={() => setIsNewFolderOpen(false)}
         onSubmit={handleCreateFolderSubmit}
+        existingNames={collectSiblingNames(files)}
       />
 
       <ShareLinkModal

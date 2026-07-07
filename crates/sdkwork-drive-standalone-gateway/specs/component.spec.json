@@ -87,10 +87,20 @@
   ],
   "contracts": {
     "publicExports": [
-      "."
+      ".",
+      "sdkwork_routes_drive_app_api::build_router_with_pool_and_iam",
+      "sdkwork_routes_drive_backend_api::build_router_with_pool_and_iam",
+      "sdkwork_routes_drive_open_api::build_router_with_pool",
+      "sdkwork_routes_storage_backend_api::build_router_with_pool",
+      "sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router"
     ],
     "runtimeEntrypoints": [
-      "src/main.rs"
+      "src/main.rs",
+      "sdkwork_routes_drive_app_api::build_router_with_pool_and_iam",
+      "sdkwork_routes_drive_backend_api::build_router_with_pool_and_iam",
+      "sdkwork_routes_drive_open_api::build_router_with_pool",
+      "sdkwork_routes_storage_backend_api::build_router_with_pool",
+      "sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router"
     ],
     "routeManifest": null,
     "sdkClients": [],
@@ -110,7 +120,7 @@
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "embedded",
-        "executableExport": "sdkwork_routes_drive_app_api::build_router_with_pool_and_iam",
+        "embeddedExecutableExport": "sdkwork_routes_drive_app_api::build_router_with_pool_and_iam",
         "cargoDependency": "sdkwork-routes-drive-app-api",
         "coverageEvidence": "crates/sdkwork-routes-drive-app-api/src/routes.rs"
       },
@@ -121,7 +131,7 @@
         "surface": "backend-api",
         "apiPrefix": "/backend/v3/api",
         "runtimeMode": "embedded",
-        "executableExport": "sdkwork_routes_drive_backend_api::build_router_with_pool_and_iam",
+        "embeddedExecutableExport": "sdkwork_routes_drive_backend_api::build_router_with_pool_and_iam",
         "cargoDependency": "sdkwork-routes-drive-backend-api",
         "coverageEvidence": "crates/sdkwork-routes-drive-backend-api/src/routes.rs"
       },
@@ -132,7 +142,7 @@
         "surface": "open-api",
         "apiPrefix": "/open/v3/api",
         "runtimeMode": "embedded",
-        "executableExport": "sdkwork_routes_drive_open_api::build_router_with_pool",
+        "embeddedExecutableExport": "sdkwork_routes_drive_open_api::build_router_with_pool",
         "cargoDependency": "sdkwork-routes-drive-open-api",
         "coverageEvidence": "crates/sdkwork-routes-drive-open-api/src/routes.rs"
       },
@@ -143,7 +153,7 @@
         "surface": "backend-api",
         "apiPrefix": "/backend/v3/api",
         "runtimeMode": "embedded",
-        "executableExport": "sdkwork_routes_storage_backend_api::build_router_with_pool",
+        "embeddedExecutableExport": "sdkwork_routes_storage_backend_api::build_router_with_pool",
         "cargoDependency": "sdkwork-routes-storage-backend-api",
         "coverageEvidence": "crates/sdkwork-routes-storage-backend-api/src/routes.rs"
       },
@@ -154,7 +164,7 @@
         "surface": "app-api",
         "apiPrefix": "/auth",
         "runtimeMode": "embedded",
-        "executableExport": "sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router",
+        "embeddedExecutableExport": "sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router",
         "cargoDependency": "sdkwork-routes-iam-app-api",
         "coverageEvidence": "../sdkwork-iam/crates/sdkwork-routes-iam-app-api/src/routes.rs"
       }

@@ -11,7 +11,7 @@ Canonical lifecycle assets for `sdkwork-drive` per `DATABASE_FRAMEWORK_SPEC.md`.
 This module ships a governed **baseline-plus-migrations** lifecycle:
 
 1. **Baseline** — `database/ddl/baseline/{engine}/0001_drive_baseline.sql` contains the greenfield DDL snapshot.
-2. **Migrations** — `database/migrations/{engine}/0002_*` and `0003_*` materialize folded baseline deltas for upgrade paths and CI validation. Post-GA schema changes append new versioned files here.
+2. **Migrations** — `database/migrations/{engine}/0002` through `0006` materialize folded baseline deltas for upgrade paths and CI validation. Post-GA schema changes append new versioned files here.
 3. **Runtime installers** — `crates/sdkwork-drive-workspace-service/src/infrastructure/sql/{postgres,sqlite}_core.sql` remain the authoritative runtime schema for `sqlx::AnyPool` services; SQLite applies incremental column/index upgrades on boot when needed.
 4. **Drift** — run `pnpm db:drift:check` before release.
 

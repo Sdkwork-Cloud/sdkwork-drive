@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::custom_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{CopyProviderObjectRequest, CreateStorageProviderRequest, DeleteStorageProviderBindingResponse, DeleteStorageProviderResponse, ListStorageProvidersResponse, OperatorRequest, ProviderBucket, ProviderBucketList, ProviderBucketMutation, ProviderObject, ProviderObjectList, ProviderObjectMutation, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, StorageProvider, StorageProviderBinding, StorageProviderBindingListResponse, StorageProviderCapabilities, TestStorageProviderRequest, TestStorageProviderResponse, UpdateStorageProviderRequest};
+use crate::models::{CopyProviderObjectRequest, CreateStorageProviderRequest, OperatorRequest, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, StorageProviderBindingsDefaultRetrieveResponse, StorageProviderBindingsDefaultUpdateResponse, StorageProviderBindingsListResponse, StorageProvidersActivateResponse, StorageProvidersBucketRetrieveResponse, StorageProvidersBucketUpdateResponse, StorageProvidersBucketsListResponse, StorageProvidersCapabilitiesListResponse, StorageProvidersCreateResponse201, StorageProvidersCredentialsRotateResponse, StorageProvidersDeactivateResponse, StorageProvidersListResponse, StorageProvidersObjectsCopyResponse, StorageProvidersObjectsListResponse, StorageProvidersObjectsRetrieveResponse, StorageProvidersRetrieveResponse, StorageProvidersTestResponse, StorageProvidersUpdateResponse, TestStorageProviderRequest, UpdateStorageProviderRequest};
 
 #[derive(Clone)]
 pub struct DriveApi {
@@ -15,7 +15,7 @@ impl DriveApi {
         Self { client }
     }
 
-    pub async fn storage_provider_bindings_default_get(&self, space_id: Option<&str>, space_type: Option<&str>) -> Result<StorageProviderBinding, SdkworkError> {
+    pub async fn storage_provider_bindings_default_retrieve(&self, space_id: Option<&str>, space_type: Option<&str>) -> Result<StorageProviderBindingsDefaultRetrieveResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
             QueryParameterSpec::new("spaceType", space_type, "form", true, false, None),
@@ -24,13 +24,13 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn storage_provider_bindings_default_set(&self, body: &SetDefaultStorageProviderBindingRequest) -> Result<StorageProviderBinding, SdkworkError> {
+    pub async fn storage_provider_bindings_default_update(&self, body: &SetDefaultStorageProviderBindingRequest) -> Result<StorageProviderBindingsDefaultUpdateResponse, SdkworkError> {
         let path = custom_path(&"/drive/storage/bindings/default".to_string());
         self.client.put(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Delete a Drive default storage provider binding
-    pub async fn storage_provider_bindings_default_delete(&self, operator_id: &str, space_id: Option<&str>) -> Result<DeleteStorageProviderBindingResponse, SdkworkError> {
+    pub async fn storage_provider_bindings_default_delete(&self, operator_id: &str, space_id: Option<&str>) -> Result<(), SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
             QueryParameterSpec::new("operatorId", operator_id, "form", true, false, None),
@@ -39,7 +39,7 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn storage_providers_list(&self, status: Option<&str>) -> Result<ListStorageProvidersResponse, SdkworkError> {
+    pub async fn storage_providers_list(&self, status: Option<&str>) -> Result<StorageProvidersListResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("status", status, "form", true, false, None),
         ]);
@@ -47,57 +47,57 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn storage_providers_create(&self, body: &CreateStorageProviderRequest) -> Result<StorageProvider, SdkworkError> {
+    pub async fn storage_providers_create(&self, body: &CreateStorageProviderRequest) -> Result<StorageProvidersCreateResponse201, SdkworkError> {
         let path = custom_path(&"/drive/storage/providers".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn storage_providers_update(&self, provider_id: &str, body: &UpdateStorageProviderRequest) -> Result<StorageProvider, SdkworkError> {
+    pub async fn storage_providers_update(&self, provider_id: &str, body: &UpdateStorageProviderRequest) -> Result<StorageProvidersUpdateResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/storage/providers/{}", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
         self.client.patch(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn storage_providers_delete(&self, provider_id: &str) -> Result<DeleteStorageProviderResponse, SdkworkError> {
+    pub async fn storage_providers_delete(&self, provider_id: &str) -> Result<(), SdkworkError> {
         let path = custom_path(&format!("/drive/storage/providers/{}", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn storage_providers_get(&self, provider_id: &str) -> Result<StorageProvider, SdkworkError> {
+    pub async fn storage_providers_retrieve(&self, provider_id: &str) -> Result<StorageProvidersRetrieveResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/storage/providers/{}", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn storage_providers_activate(&self, provider_id: &str, body: &OperatorRequest) -> Result<StorageProvider, SdkworkError> {
+    pub async fn storage_providers_activate(&self, provider_id: &str, body: &OperatorRequest) -> Result<StorageProvidersActivateResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/storage/providers/{}/activate", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn storage_providers_capabilities_get(&self, provider_id: &str) -> Result<StorageProviderCapabilities, SdkworkError> {
+    pub async fn storage_providers_capabilities_list(&self, provider_id: &str) -> Result<StorageProvidersCapabilitiesListResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/storage/providers/{}/capabilities", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn storage_providers_credentials_rotate(&self, provider_id: &str, body: &RotateStorageProviderCredentialRequest) -> Result<StorageProvider, SdkworkError> {
+    pub async fn storage_providers_credentials_rotate(&self, provider_id: &str, body: &RotateStorageProviderCredentialRequest) -> Result<StorageProvidersCredentialsRotateResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/storage/providers/{}/credentials/rotate", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn storage_providers_deactivate(&self, provider_id: &str, body: &OperatorRequest) -> Result<StorageProvider, SdkworkError> {
+    pub async fn storage_providers_deactivate(&self, provider_id: &str, body: &OperatorRequest) -> Result<StorageProvidersDeactivateResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/storage/providers/{}/deactivate", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn storage_providers_test(&self, provider_id: &str, body: &TestStorageProviderRequest) -> Result<TestStorageProviderResponse, SdkworkError> {
+    pub async fn storage_providers_test(&self, provider_id: &str, body: &TestStorageProviderRequest) -> Result<StorageProvidersTestResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/storage/providers/{}/test", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn storage_providers_bucket_head(&self, provider_id: &str) -> Result<ProviderBucket, SdkworkError> {
+    pub async fn storage_providers_bucket_retrieve(&self, provider_id: &str) -> Result<StorageProvidersBucketRetrieveResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/storage/providers/{}/bucket", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn storage_providers_bucket_create(&self, provider_id: &str, operator_id: &str) -> Result<ProviderBucketMutation, SdkworkError> {
+    pub async fn storage_providers_bucket_update(&self, provider_id: &str, operator_id: &str) -> Result<StorageProvidersBucketUpdateResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("operatorId", operator_id, "form", true, false, None),
         ]);
@@ -105,7 +105,7 @@ impl DriveApi {
         self.client.put(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
-    pub async fn storage_providers_bucket_delete(&self, provider_id: &str, operator_id: &str) -> Result<ProviderBucketMutation, SdkworkError> {
+    pub async fn storage_providers_bucket_delete(&self, provider_id: &str, operator_id: &str) -> Result<(), SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("operatorId", operator_id, "form", true, false, None),
         ]);
@@ -113,23 +113,23 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn storage_providers_objects_list(&self, provider_id: &str, prefix: Option<&str>, delimiter: Option<&str>, page_token: Option<&str>, page_size: Option<i64>) -> Result<ProviderObjectList, SdkworkError> {
+    pub async fn storage_providers_objects_list(&self, provider_id: &str, prefix: Option<&str>, delimiter: Option<&str>, cursor: Option<&str>, page_size: Option<i64>) -> Result<StorageProvidersObjectsListResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("prefix", prefix, "form", true, false, None),
             QueryParameterSpec::new("delimiter", delimiter, "form", true, false, None),
-            QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
-            QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
+            QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
         ]);
         let path = append_query_string(custom_path(&format!("/drive/storage/providers/{}/objects", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false)))), &query);
         self.client.get(&path, None, None).await
     }
 
-    pub async fn storage_providers_objects_head(&self, provider_id: &str, object_key: &str) -> Result<ProviderObject, SdkworkError> {
+    pub async fn storage_providers_objects_retrieve(&self, provider_id: &str, object_key: &str) -> Result<StorageProvidersObjectsRetrieveResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/storage/providers/{}/objects/{}", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false)), serialize_path_parameter(object_key, PathParameterSpec::new("objectKey", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn storage_providers_objects_delete(&self, provider_id: &str, object_key: &str, operator_id: &str) -> Result<ProviderObjectMutation, SdkworkError> {
+    pub async fn storage_providers_objects_delete(&self, provider_id: &str, object_key: &str, operator_id: &str) -> Result<(), SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("operatorId", operator_id, "form", true, false, None),
         ]);
@@ -137,19 +137,23 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn storage_providers_objects_copy(&self, provider_id: &str, body: &CopyProviderObjectRequest) -> Result<ProviderObjectMutation, SdkworkError> {
+    pub async fn storage_providers_objects_copy(&self, provider_id: &str, body: &CopyProviderObjectRequest) -> Result<StorageProvidersObjectsCopyResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/storage/providers/{}/objects/copy", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// List buckets visible to a Drive storage provider account
-    pub async fn storage_providers_buckets_list(&self, provider_id: &str) -> Result<ProviderBucketList, SdkworkError> {
-        let path = custom_path(&format!("/drive/storage/providers/{}/buckets", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false))));
+    pub async fn storage_providers_buckets_list(&self, provider_id: &str, cursor: Option<&str>, page_size: Option<i64>) -> Result<StorageProvidersBucketsListResponse, SdkworkError> {
+        let query = build_query_string(&[
+            QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
+        ]);
+        let path = append_query_string(custom_path(&format!("/drive/storage/providers/{}/buckets", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false)))), &query);
         self.client.get(&path, None, None).await
     }
 
     /// List Drive storage provider bindings
-    pub async fn storage_provider_bindings_list(&self, space_id: Option<&str>, provider_id: Option<&str>, lifecycle_status: Option<&str>) -> Result<StorageProviderBindingListResponse, SdkworkError> {
+    pub async fn storage_provider_bindings_list(&self, space_id: Option<&str>, provider_id: Option<&str>, lifecycle_status: Option<&str>) -> Result<StorageProviderBindingsListResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
             QueryParameterSpec::new("providerId", provider_id, "form", true, false, None),

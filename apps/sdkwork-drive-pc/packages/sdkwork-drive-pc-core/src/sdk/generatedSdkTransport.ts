@@ -29,9 +29,8 @@ export interface GeneratedSdkErrorDetails {
   status: number;
   title?: string;
   detail?: string;
-  code?: string;
+  code?: number;
   traceId?: string;
-  requestId?: string;
 }
 
 export function normalizeGeneratedSdkBaseUrl(
@@ -68,6 +67,34 @@ export function compactQuery(
   return Object.keys(compact).length > 0 ? compact : undefined;
 }
 
+const LEGACY_SDKWORK_PAGINATION_QUERY_KEYS = [
+  'pageSize',
+  'pageToken',
+  'page_token',
+  'limit',
+  'page_no',
+  'pageNo',
+  'per_page',
+  'size',
+];
+
+export function assertStandardSdkWorkPaginationQuery(
+  query?: GeneratedSdkRequestOptions['params'],
+): GeneratedSdkRequestOptions['params'] | undefined {
+  if (!query) {
+    return undefined;
+  }
+  const legacyKey = LEGACY_SDKWORK_PAGINATION_QUERY_KEYS.find(
+    (key) => Object.prototype.hasOwnProperty.call(query, key) && query[key] !== undefined,
+  );
+  if (legacyKey) {
+    throw new Error(
+      `Legacy SDKWork pagination query parameter "${legacyKey}" is not allowed. Use "page_size" and "cursor".`,
+    );
+  }
+  return query;
+}
+
 export function normalizeGeneratedSdkError(error: unknown): GeneratedSdkErrorDetails {
   if (!error || typeof error !== 'object') {
     return {
@@ -84,9 +111,8 @@ export function normalizeGeneratedSdkError(error: unknown): GeneratedSdkErrorDet
     status: numberValue(record.httpStatus) ?? numberValue(record.status) ?? 0,
     title: stringValue(record.title) ?? name,
     detail: stringValue(record.detail) ?? message,
-    code: stringValue(record.businessCode) ?? stringValue(record.code),
+    code: numberValue(record.businessCode) ?? numberValue(record.code),
     traceId: stringValue(record.traceId) ?? stringValue(record.trace_id),
-    requestId: stringValue(record.requestId) ?? stringValue(record.request_id),
   };
 }
 

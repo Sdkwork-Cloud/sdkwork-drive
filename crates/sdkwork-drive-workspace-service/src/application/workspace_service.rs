@@ -1,6 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use sdkwork_utils_rust::MAX_LIST_PAGE_SIZE;
 use sqlx::AnyPool;
 
 use crate::infrastructure::sql::workspace_store::SqlDriveWorkspaceStore;
@@ -313,10 +314,10 @@ where
                 "offset must be greater than or equal to 0".to_string(),
             ));
         }
-        if command.page_size <= 0 || command.page_size > 500 {
-            return Err(DriveServiceError::Validation(
-                "page_size must be between 1 and 500".to_string(),
-            ));
+        if command.page_size <= 0 || command.page_size > i64::from(MAX_LIST_PAGE_SIZE) {
+            return Err(DriveServiceError::Validation(format!(
+                "page_size must be between 1 and {MAX_LIST_PAGE_SIZE}"
+            )));
         }
 
         let parent_path = match command.parent_node_id.as_deref() {

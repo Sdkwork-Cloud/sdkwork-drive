@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::app_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{DeleteNodePropertyResponse, DriveNodeProperty, NodePropertyListResponse, SetNodePropertyRequest};
+use crate::models::{NodePropertiesListResponse, NodePropertiesUpdateResponse, SetNodePropertyRequest};
 
 #[derive(Clone)]
 pub struct NodePropertiesApi {
@@ -16,24 +16,24 @@ impl NodePropertiesApi {
     }
 
     /// List node custom properties
-    pub async fn list(&self, node_id: &str, visibility: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<NodePropertyListResponse, SdkworkError> {
+    pub async fn list(&self, node_id: &str, visibility: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<NodePropertiesListResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("visibility", visibility, "form", true, false, None),
-            QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
-            QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
+            QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
         ]);
         let path = append_query_string(app_path(&format!("/drive/nodes/{}/properties", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)))), &query);
         self.client.get(&path, None, None).await
     }
 
     /// Create or update a node custom property
-    pub async fn set(&self, node_id: &str, property_key: &str, body: &SetNodePropertyRequest) -> Result<DriveNodeProperty, SdkworkError> {
+    pub async fn update(&self, node_id: &str, property_key: &str, body: &SetNodePropertyRequest) -> Result<NodePropertiesUpdateResponse, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/properties/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(property_key, PathParameterSpec::new("propertyKey", "simple", false))));
         self.client.put(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Delete a node custom property
-    pub async fn delete(&self, node_id: &str, property_key: &str, visibility: Option<&str>) -> Result<DeleteNodePropertyResponse, SdkworkError> {
+    pub async fn delete(&self, node_id: &str, property_key: &str, visibility: Option<&str>) -> Result<(), SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("visibility", visibility, "form", true, false, None),
         ]);

@@ -1,4 +1,12 @@
-import type { PrepareUploaderUploadRequest } from "../generated/server-openapi/src/types";
+import type {
+  DriveUploadSession,
+  PrepareUploaderUploadRequest,
+  PrepareUploaderUploadResponse,
+  PresignedUploadPart,
+  PresignUploadPartRequest,
+  UploadSessionMutationResponse,
+  UploaderUploadPart,
+} from "../generated/server-openapi/src/types";
 import {
   createClient as createGeneratedDriveAppClient,
   SdkworkAppClient,
@@ -54,6 +62,10 @@ export interface DriveAppClientOptions {
   uploader?: Omit<DriveUploaderClientOptions, "transport">;
 }
 
+function typedSdkResponse<T>(response: Promise<unknown>): Promise<T> {
+  return response as Promise<T>;
+}
+
 export function createDriveUploaderTransport(
   client: Pick<SdkworkAppClient, "drive">,
 ): DriveUploaderTransport {
@@ -61,25 +73,39 @@ export function createDriveUploaderTransport(
     drive: {
       uploader: {
         uploads: {
-          prepare: (body) =>
-            client.drive.uploader.uploads.prepare(body as PrepareUploaderUploadRequest),
+          create: (body) =>
+            typedSdkResponse<PrepareUploaderUploadResponse>(
+              client.drive.uploader.uploads.create(body as PrepareUploaderUploadRequest),
+            ),
           parts: {
-            markUploaded: (uploadItemId, partNo, body) =>
-              client.drive.uploader.uploads.parts.markUploaded(uploadItemId, partNo, body),
+            update: (uploadItemId, partNo, body) =>
+              typedSdkResponse<UploaderUploadPart>(
+                client.drive.uploader.uploads.parts.update(uploadItemId, partNo, body),
+              ),
           },
         },
       },
       uploadSessions: {
         create: (body) =>
-          client.drive.uploadSessions.create(body),
+          typedSdkResponse<DriveUploadSession>(client.drive.uploadSessions.create(body)),
         parts: {
-          presign: (uploadSessionId, partNo, body) =>
-            client.drive.uploadSessions.parts.presign(uploadSessionId, partNo, body),
+          update: (uploadSessionId, partNo, body) =>
+            typedSdkResponse<PresignedUploadPart>(
+              client.drive.uploadSessions.parts.update(
+                uploadSessionId,
+                partNo,
+                body as PresignUploadPartRequest,
+              ),
+            ),
         },
         complete: (uploadSessionId, body) =>
-          client.drive.uploadSessions.complete(uploadSessionId, body),
+          typedSdkResponse<UploadSessionMutationResponse>(
+            client.drive.uploadSessions.complete(uploadSessionId, body),
+          ),
         abort: (uploadSessionId, body) =>
-          client.drive.uploadSessions.abort(uploadSessionId, body),
+          typedSdkResponse<UploadSessionMutationResponse>(
+            client.drive.uploadSessions.abort(uploadSessionId, body),
+          ),
       },
     },
   };
@@ -110,5 +136,3 @@ export function createClient(
 ): SdkworkDriveAppClient {
   return createDriveAppClient(config, options);
 }
-
-

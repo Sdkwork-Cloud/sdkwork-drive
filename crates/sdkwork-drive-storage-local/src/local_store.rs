@@ -14,7 +14,10 @@ use sdkwork_drive_storage_contract::{
 };
 use sdkwork_utils_rust::sha256_hash;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
 use std::fs;
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -28,6 +31,38 @@ struct LocalObjectMetadata {
     content_type: Option<String>,
     metadata: std::collections::BTreeMap<String, String>,
     checksum_sha256_hex: Option<String>,
+}
+
+#[derive(Debug)]
+struct ListedObjectPageCandidate {
+    sort_key: String,
+    entry: ListedObjectPageEntry,
+}
+
+#[derive(Debug)]
+enum ListedObjectPageEntry {
+    Object(ListedObject),
+    Prefix(String),
+}
+
+impl Eq for ListedObjectPageCandidate {}
+
+impl PartialEq for ListedObjectPageCandidate {
+    fn eq(&self, other: &Self) -> bool {
+        self.sort_key == other.sort_key
+    }
+}
+
+impl Ord for ListedObjectPageCandidate {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.sort_key.cmp(&other.sort_key)
+    }
+}
+
+impl PartialOrd for ListedObjectPageCandidate {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 #[derive(Debug)]
@@ -206,63 +241,190 @@ impl LocalDriveObjectStore {
         Ok(Some(delimiter))
     }
 
-    fn collect_objects(
-        bucket_root: &Path,
-        current: &Path,
+    fn normalize_continuation_token(
+        token: Option<String>,
+    ) -> Result<Option<String>, DriveObjectStoreError> {
+        let Some(token) = token else {
+            return Ok(None);
+        };
+        if token.trim().is_empty() {
+            return Ok(None);
+        }
+        if token != token.trim() {
+            return Err(DriveObjectStoreError::new(
+                DriveObjectStoreErrorKind::InvalidRequest,
+                "continuation_token must be trimmed",
+            ));
+        }
+        Self::validate_relative_segment(&token, "continuation_token")?;
+        Ok(Some(token))
+    }
+
+    fn push_page_candidate(
+        candidates: &mut BinaryHeap<ListedObjectPageCandidate>,
+        candidate_limit: usize,
+        sort_key: String,
+        entry: ListedObjectPageEntry,
+    ) {
+        candidates.push(ListedObjectPageCandidate { sort_key, entry });
+        if candidates.len() > candidate_limit {
+            candidates.pop();
+        }
+    }
+
+    fn push_prefix_page_candidate(
+        candidates: &mut BinaryHeap<ListedObjectPageCandidate>,
+        candidate_limit: usize,
+        prefix: String,
+    ) {
+        if candidates
+            .iter()
+            .any(|candidate| matches!(&candidate.entry, ListedObjectPageEntry::Prefix(value) if value == &prefix))
+        {
+            return;
+        }
+        Self::push_page_candidate(
+            candidates,
+            candidate_limit,
+            prefix.clone(),
+            ListedObjectPageEntry::Prefix(prefix),
+        );
+    }
+
+    fn common_prefix_for_object_key(
+        object_key: &str,
         prefix: Option<&str>,
-        items: &mut Vec<ListedObject>,
-    ) -> Result<(), DriveObjectStoreError> {
-        for entry in fs::read_dir(current).map_err(|error| {
-            DriveObjectStoreError::new(
-                DriveObjectStoreErrorKind::Internal,
-                format!("read bucket dir failed: {error}"),
-            )
-        })? {
-            let entry = entry.map_err(|error| {
+        delimiter: Option<&str>,
+    ) -> Option<String> {
+        let delimiter = delimiter?;
+        let remainder = match prefix {
+            Some(prefix) => object_key.strip_prefix(prefix).unwrap_or(object_key),
+            None => object_key,
+        };
+        let delimiter_index = remainder.find(delimiter)?;
+        let prefix_root = prefix.unwrap_or("");
+        Some(format!(
+            "{}{}{}",
+            prefix_root,
+            &remainder[..delimiter_index],
+            delimiter,
+        ))
+    }
+
+    fn collect_object_page(
+        bucket_root: &Path,
+        prefix: Option<&str>,
+        delimiter: Option<&str>,
+        continuation_token: Option<&str>,
+        max_keys: usize,
+    ) -> Result<(Vec<ListedObject>, Vec<String>, Option<String>), DriveObjectStoreError> {
+        let candidate_limit = max_keys.saturating_add(1);
+        let mut candidates = BinaryHeap::<ListedObjectPageCandidate>::new();
+        let mut pending_dirs = vec![bucket_root.to_path_buf()];
+
+        while let Some(current) = pending_dirs.pop() {
+            for entry in fs::read_dir(&current).map_err(|error| {
                 DriveObjectStoreError::new(
                     DriveObjectStoreErrorKind::Internal,
-                    format!("read bucket entry failed: {error}"),
+                    format!("read bucket dir failed: {error}"),
                 )
-            })?;
-            let path = entry.path();
-            if path.is_dir() {
-                Self::collect_objects(bucket_root, &path, prefix, items)?;
-                continue;
-            }
-            let Some(file_name) = path.file_name().and_then(|value| value.to_str()) else {
-                continue;
-            };
-            if file_name.ends_with(".meta.json") {
-                continue;
-            }
-            let object_key = path
-                .strip_prefix(bucket_root)
-                .map_err(|error| {
+            })? {
+                let entry = entry.map_err(|error| {
                     DriveObjectStoreError::new(
                         DriveObjectStoreErrorKind::Internal,
-                        format!("strip bucket prefix failed: {error}"),
+                        format!("read bucket entry failed: {error}"),
                     )
-                })?
-                .to_string_lossy()
-                .replace('\\', "/");
-            if prefix.is_some_and(|value| !object_key.starts_with(value)) {
-                continue;
+                })?;
+                let file_type = entry.file_type().map_err(|error| {
+                    DriveObjectStoreError::new(
+                        DriveObjectStoreErrorKind::Internal,
+                        format!("read bucket entry type failed: {error}"),
+                    )
+                })?;
+                let path = entry.path();
+                if file_type.is_dir() {
+                    pending_dirs.push(path);
+                    continue;
+                }
+                if !file_type.is_file() {
+                    continue;
+                }
+                let Some(file_name) = path.file_name().and_then(|value| value.to_str()) else {
+                    continue;
+                };
+                if file_name.ends_with(".meta.json") {
+                    continue;
+                }
+                let object_key = path
+                    .strip_prefix(bucket_root)
+                    .map_err(|error| {
+                        DriveObjectStoreError::new(
+                            DriveObjectStoreErrorKind::Internal,
+                            format!("strip bucket prefix failed: {error}"),
+                        )
+                    })?
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                if prefix.is_some_and(|value| !object_key.starts_with(value)) {
+                    continue;
+                }
+                if continuation_token.is_some_and(|value| object_key.as_str() <= value) {
+                    continue;
+                }
+                if let Some(common_prefix) =
+                    Self::common_prefix_for_object_key(&object_key, prefix, delimiter)
+                {
+                    if continuation_token.is_some_and(|value| common_prefix.as_str() <= value) {
+                        continue;
+                    }
+                    Self::push_prefix_page_candidate(
+                        &mut candidates,
+                        candidate_limit,
+                        common_prefix,
+                    );
+                    continue;
+                }
+                let stat = fs::metadata(&path).map_err(|error| {
+                    DriveObjectStoreError::new(
+                        DriveObjectStoreErrorKind::Internal,
+                        format!("stat object failed: {error}"),
+                    )
+                })?;
+                let object = ListedObject {
+                    object_key,
+                    content_length: stat.len(),
+                    etag: None,
+                    storage_class: None,
+                    last_modified_epoch_ms: None,
+                };
+                Self::push_page_candidate(
+                    &mut candidates,
+                    candidate_limit,
+                    object.object_key.clone(),
+                    ListedObjectPageEntry::Object(object),
+                );
             }
-            let stat = fs::metadata(&path).map_err(|error| {
-                DriveObjectStoreError::new(
-                    DriveObjectStoreErrorKind::Internal,
-                    format!("stat object failed: {error}"),
-                )
-            })?;
-            items.push(ListedObject {
-                object_key,
-                content_length: stat.len(),
-                etag: None,
-                storage_class: None,
-                last_modified_epoch_ms: None,
-            });
         }
-        Ok(())
+
+        let mut candidates = candidates.into_vec().into_iter().collect::<Vec<_>>();
+        candidates.sort_by(|left, right| left.sort_key.cmp(&right.sort_key));
+        let next_continuation_token = if candidates.len() > max_keys {
+            candidates.truncate(max_keys);
+            candidates
+                .last()
+                .map(|candidate| candidate.sort_key.clone())
+        } else {
+            None
+        };
+        let mut items = Vec::new();
+        let mut prefixes = Vec::new();
+        for candidate in candidates {
+            match candidate.entry {
+                ListedObjectPageEntry::Object(object) => items.push(object),
+                ListedObjectPageEntry::Prefix(prefix) => prefixes.push(prefix),
+            }
+        }
+        Ok((items, prefixes, next_continuation_token))
     }
 }
 
@@ -496,7 +658,6 @@ impl DriveObjectStore for LocalDriveObjectStore {
     ) -> Result<ListObjectsResponse, DriveObjectStoreError> {
         let bucket_path = self.bucket_path(&request.bucket)?;
         let prefix = Self::normalize_list_prefix(request.prefix)?;
-        let _delimiter = Self::normalize_list_delimiter(request.delimiter)?;
         if !bucket_path.exists() {
             return Err(DriveObjectStoreError::new(
                 DriveObjectStoreErrorKind::NotFound,
@@ -509,17 +670,23 @@ impl DriveObjectStore for LocalDriveObjectStore {
                 "max_keys must be greater than zero",
             ));
         }
-        let mut items = Vec::new();
-        Self::collect_objects(&bucket_path, &bucket_path, prefix.as_deref(), &mut items)?;
-        items.sort_by(|left, right| left.object_key.cmp(&right.object_key));
         let max_keys = usize::from(request.max_keys);
-        let is_truncated = items.len() > max_keys;
-        items.truncate(max_keys);
+        let continuation_token = Self::normalize_continuation_token(request.continuation_token)?;
+        let delimiter = Self::normalize_list_delimiter(request.delimiter)?;
+        let (items, prefixes, next_continuation_token) = Self::collect_object_page(
+            &bucket_path,
+            prefix.as_deref(),
+            delimiter.as_deref(),
+            continuation_token.as_deref(),
+            max_keys,
+        )?;
+        let is_truncated = next_continuation_token.is_some();
         Ok(ListObjectsResponse {
             bucket: request.bucket,
             prefix,
             items,
-            next_continuation_token: None,
+            prefixes,
+            next_continuation_token,
             is_truncated,
         })
     }
@@ -634,7 +801,7 @@ impl DriveObjectStore for LocalDriveObjectStore {
     ) -> Result<(ReadObjectRangeResponse, Box<dyn DriveObjectChunkStream>), DriveObjectStoreError>
     {
         let object_path = self.object_path(&request.locator)?;
-        let bytes = fs::read(&object_path).map_err(|error| {
+        let mut file = std::fs::File::open(&object_path).map_err(|error| {
             if error.kind() == std::io::ErrorKind::NotFound {
                 return DriveObjectStoreError::new(
                     DriveObjectStoreErrorKind::NotFound,
@@ -643,11 +810,20 @@ impl DriveObjectStore for LocalDriveObjectStore {
             }
             DriveObjectStoreError::new(
                 DriveObjectStoreErrorKind::Internal,
-                format!("read object failed: {error}"),
+                format!("open object failed: {error}"),
             )
         })?;
 
-        let total_len = bytes.len() as u64;
+        let total_len = file
+            .metadata()
+            .map_err(|error| {
+                DriveObjectStoreError::new(
+                    DriveObjectStoreErrorKind::Internal,
+                    format!("read object metadata failed: {error}"),
+                )
+            })?
+            .len();
+
         if request.range.start_inclusive >= total_len
             || request.range.end_inclusive >= total_len
             || request.range.start_inclusive > request.range.end_inclusive
@@ -658,9 +834,32 @@ impl DriveObjectStore for LocalDriveObjectStore {
             ));
         }
 
-        let start = request.range.start_inclusive as usize;
-        let end = request.range.end_inclusive as usize;
-        let slice = bytes[start..=end].to_vec();
+        let start = request.range.start_inclusive;
+        let end = request.range.end_inclusive;
+        let byte_len = end
+            .checked_sub(start)
+            .and_then(|delta| delta.checked_add(1))
+            .ok_or_else(|| {
+                DriveObjectStoreError::new(
+                    DriveObjectStoreErrorKind::InvalidRequest,
+                    "byte range is out of bounds",
+                )
+            })? as usize;
+
+        file.seek(SeekFrom::Start(start)).map_err(|error| {
+            DriveObjectStoreError::new(
+                DriveObjectStoreErrorKind::Internal,
+                format!("seek object failed: {error}"),
+            )
+        })?;
+
+        let mut slice = vec![0_u8; byte_len];
+        file.read_exact(&mut slice).map_err(|error| {
+            DriveObjectStoreError::new(
+                DriveObjectStoreErrorKind::Internal,
+                format!("read object range failed: {error}"),
+            )
+        })?;
 
         let response = ReadObjectRangeResponse {
             locator: request.locator,

@@ -4,7 +4,7 @@ package com.sdkwork.drive.app.sdk.generated.java.model;
 public class FieldError {
     private String field;
     private String message;
-    private String code;
+    private Integer code;
 
     public String getField() {
         return this.field;
@@ -22,11 +22,11 @@ public class FieldError {
         this.message = message;
     }
 
-    public String getCode() {
+    public Integer getCode() {
         return this.code;
     }
 
-    public void setCode(String code) {
+    public void setCode(Integer code) {
         this.code = code;
     }
 }

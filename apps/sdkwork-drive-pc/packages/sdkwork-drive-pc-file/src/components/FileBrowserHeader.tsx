@@ -14,7 +14,7 @@ import { useTranslation } from "sdkwork-drive-pc-commons";
 import type { DriveFile } from "sdkwork-drive-pc-types";
 import { Breadcrumbs } from "./Breadcrumbs";
 
-type SortField = "name" | "owner" | "lastModified" | "size" | "type";
+type SortField = "name" | "owner" | "lastModified" | "contentLength" | "type";
 type SortOrder = "asc" | "desc";
 type ViewMode = "list" | "grid";
 
@@ -185,10 +185,10 @@ export function FileBrowserHeader({
                 <option value="lastModified-asc">
                   {t("fileBrowser.sortByModified")} (Oldest)
                 </option>
-                <option value="size-desc">
+                <option value="contentLength-desc">
                   {t("fileBrowser.sortBySize")} (Largest)
                 </option>
-                <option value="size-asc">
+                <option value="contentLength-asc">
                   {t("fileBrowser.sortBySize")} (Smallest)
                 </option>
                 <option value="type-asc">

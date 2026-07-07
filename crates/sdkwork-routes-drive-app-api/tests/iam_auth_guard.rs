@@ -45,12 +45,7 @@ async fn app_production_routes_require_valid_dual_tokens() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        missing_credentials,
-        StatusCode::UNAUTHORIZED,
-        40101,
-    )
-    .await;
+    assert_problem(missing_credentials, StatusCode::UNAUTHORIZED, 40101).await;
 
     let missing_access = app
         .clone()
@@ -67,12 +62,7 @@ async fn app_production_routes_require_valid_dual_tokens() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        missing_access,
-        StatusCode::UNAUTHORIZED,
-        40101,
-    )
-    .await;
+    assert_problem(missing_access, StatusCode::UNAUTHORIZED, 40101).await;
 
     let invalid_credentials = app
         .oneshot(
@@ -86,12 +76,7 @@ async fn app_production_routes_require_valid_dual_tokens() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        invalid_credentials,
-        StatusCode::UNAUTHORIZED,
-        40103,
-    )
-    .await;
+    assert_problem(invalid_credentials, StatusCode::UNAUTHORIZED, 40103).await;
 }
 
 #[tokio::test]
@@ -114,12 +99,7 @@ async fn app_routes_validate_token_derived_app_context() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        tenant_conflict,
-        StatusCode::FORBIDDEN,
-        40301,
-    )
-    .await;
+    assert_problem(tenant_conflict, StatusCode::FORBIDDEN, 40301).await;
 
     let operator_conflict = app
         .clone()
@@ -138,12 +118,7 @@ async fn app_routes_validate_token_derived_app_context() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        operator_conflict,
-        StatusCode::FORBIDDEN,
-        40303,
-    )
-    .await;
+    assert_problem(operator_conflict, StatusCode::FORBIDDEN, 40303).await;
 
     let subject_conflict = app
         .clone()
@@ -161,12 +136,7 @@ async fn app_routes_validate_token_derived_app_context() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        subject_conflict,
-        StatusCode::FORBIDDEN,
-        40303,
-    )
-    .await;
+    assert_problem(subject_conflict, StatusCode::FORBIDDEN, 40303).await;
 
     let prepare_without_app_id = app
         .clone()
@@ -233,12 +203,7 @@ async fn app_routes_validate_token_derived_app_context() {
         )
         .await
         .expect("uploader prepare request should be handled");
-    assert_problem(
-        app_id_conflict,
-        StatusCode::FORBIDDEN,
-        40303,
-    )
-    .await;
+    assert_problem(app_id_conflict, StatusCode::FORBIDDEN, 40303).await;
 
     let allowed = app
         .clone()

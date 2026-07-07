@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use sqlx::{AnyConnection, AnyPool, Row};
 
+use crate::infrastructure::sql::begin_transaction_sql;
 use crate::ports::workspace_store::{
     DriveWorkspaceNodeRecord, DriveWorkspaceStore, NewDriveWorkspaceNodeRecord,
     NewDriveWorkspaceObjectRecord,
@@ -362,7 +363,7 @@ impl SqlDriveWorkspaceStore {
                 "acquire workspace storage transaction connection failed: {error}"
             ))
         })?;
-        sqlx::query("BEGIN")
+        sqlx::query(begin_transaction_sql())
             .execute(&mut *connection)
             .await
             .map_err(|error| {

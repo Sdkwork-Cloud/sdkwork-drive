@@ -1,6 +1,8 @@
 use crate::app_context::DriveRequestContext;
 use crate::dto::{ChangeResponse, DriveWatchChannelResponse, PageRequest};
-use crate::error::{internal_sql_error, map_service_error, problem, ProblemDetail, SdkWorkResultCode};
+use crate::error::{
+    internal_sql_error, map_service_error, problem, ProblemDetail, SdkWorkResultCode,
+};
 use crate::node_repository::find_node;
 use axum::http::StatusCode;
 use axum::Json;
@@ -286,33 +288,6 @@ pub(crate) async fn ensure_space_owner(
     )
     .await?;
     Ok(())
-}
-
-pub(crate) async fn space_is_accessible_to_subject(
-    pool: &AnyPool,
-    tenant_id: &str,
-    space_id: &str,
-    subject_type: &str,
-    subject_id: &str,
-) -> Result<bool, (StatusCode, Json<ProblemDetail>)> {
-    let service = SqlDrivePermissionService::new(pool.clone());
-    if service
-        .is_space_owner(tenant_id, space_id, subject_type, subject_id)
-        .await
-        .map_err(map_service_error)?
-    {
-        return Ok(true);
-    }
-    Ok(ensure_subject_space_scoped_reader(
-        pool,
-        tenant_id,
-        space_id,
-        None,
-        subject_type,
-        subject_id,
-    )
-    .await
-    .is_ok())
 }
 
 pub(crate) async fn ensure_parent_writer(

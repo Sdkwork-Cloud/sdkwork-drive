@@ -20,6 +20,7 @@ Package and multi-platform artifacts via GitHub Actions:
 ```bash
 pnpm release:evidence
 pnpm release:validate
+SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate
 SDKWORK_RELEASE_VALIDATION=strict pnpm check:release-readiness
 ```
 
@@ -33,7 +34,7 @@ Before setting `publish.status` to `ACTIVE` in `sdkwork.app.config.json`:
 2. Materialize signed release artifacts for every enabled install package.
 3. Upload catalog media to CDN and clear `generatedPlaceholder` metadata.
 4. Replace Kubernetes `REPLACE_WITH_RELEASE_DIGEST` placeholders with immutable digests.
-5. Run `SDKWORK_RELEASE_VALIDATION=strict node tools/check_sdkwork_drive_release_readiness.mjs` with zero blocking failures.
+5. Run `SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate` and `SDKWORK_RELEASE_VALIDATION=strict node tools/check_sdkwork_drive_release_readiness.mjs` with zero blocking failures.
 6. Record staging smoke evidence from `.github/workflows/staging-e2e.yml`.
 
 See [pre-launch-checklist.md](../guides/operator/pre-launch-checklist.md) for the operator-facing checklist.

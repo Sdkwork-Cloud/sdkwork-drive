@@ -1,13 +1,13 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { CreateLabelRequest, DeleteLabelResponse, DriveLabel, LabelListResponse, UpdateLabelRequest } from '../types';
+import type { CreateLabelRequest, DriveLabel, UpdateLabelRequest } from '../types';
 
 
 export interface LabelsListParams {
   lifecycleStatus?: 'active' | 'deleted';
   pageSize?: number;
-  pageToken?: string;
+  cursor?: string;
 }
 
 export interface LabelsDeleteParams {
@@ -23,13 +23,13 @@ export class LabelsApi {
 
 
 /** List Drive label definitions */
-  async list(params?: LabelsListParams): Promise<LabelListResponse> {
+  async list(params?: LabelsListParams): Promise<unknown> {
     const query = buildQueryString([
       { name: 'lifecycleStatus', value: params?.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<LabelListResponse>(appendQueryString(backendApiPath(`/drive/labels`), query));
+    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/labels`), query));
   }
 
 /** Create a Drive label definition */
@@ -38,21 +38,21 @@ export class LabelsApi {
   }
 
 /** Get a Drive label definition */
-  async get(labelId: string): Promise<DriveLabel> {
-    return this.client.get<DriveLabel>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`));
+  async retrieve(labelId: string): Promise<unknown> {
+    return this.client.get<unknown>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`));
   }
 
 /** Update a Drive label definition */
-  async update(labelId: string, body: UpdateLabelRequest): Promise<DriveLabel> {
-    return this.client.patch<DriveLabel>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(labelId: string, body: UpdateLabelRequest): Promise<unknown> {
+    return this.client.patch<unknown>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
 /** Delete a Drive label definition */
-  async delete(labelId: string, params: LabelsDeleteParams): Promise<DeleteLabelResponse> {
+  async delete(labelId: string, params: LabelsDeleteParams): Promise<void> {
     const query = buildQueryString([
       { name: 'operatorId', value: params.operatorId, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.delete<DeleteLabelResponse>(appendQueryString(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), query));
+    return this.client.delete<void>(appendQueryString(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), query));
   }
 }
 

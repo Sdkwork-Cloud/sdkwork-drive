@@ -1,10 +1,8 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
-use crate::dto::{
-    ChangeResponse, ChangesQuery, StartPageTokenQuery, StartPageTokenResponse,
-};
-use crate::response::{success_cursor_list_page, DriveListHttpResponse};
+use crate::dto::{ChangeResponse, ChangesQuery, StartPageTokenQuery, StartPageTokenResponse};
 use crate::error::{map_service_error, ProblemDetail};
+use crate::response::{success_cursor_list_page, success_envelope, DriveListHttpResponse};
 use crate::space_repository::{validate_space_exists, validate_space_exists_for_change_history};
 use crate::state::AppState;
 use crate::validators::{parse_change_page_request, require_query_value};
@@ -15,6 +13,7 @@ use sdkwork_drive_workspace_service::application::change_feed_service::{
     ListChangesCommand, QueryStartPageTokenCommand, SqlDriveChangeFeedService,
 };
 use sdkwork_drive_workspace_service::domain::change::DriveChangeRecord;
+use sdkwork_utils_rust::SdkWorkApiResponse;
 
 pub(crate) async fn list_changes(
     State(state): State<AppState>,
@@ -22,7 +21,7 @@ pub(crate) async fn list_changes(
     Query(query): Query<ChangesQuery>,
 ) -> Result<DriveListHttpResponse<ChangeResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let page = parse_change_page_request(query.page_size, query.page_token, query.cursor)?;
+    let page = parse_change_page_request(query.page_size, query.cursor)?;
     let space_id = require_query_value(query.space_id, "spaceId")?;
     validate_space_exists_for_change_history(&state.pool, &tenant_id, &space_id).await?;
     acl::ensure_space_change_feed_reader(&state.pool, &ctx, &space_id).await?;
@@ -72,21 +71,25 @@ pub(crate) async fn list_changes(
             }
         })
         .await?;
-    Ok(success_cursor_list_page(items, page.limit as i32, next_page_token))
+    Ok(success_cursor_list_page(
+        items,
+        page.limit as i32,
+        next_page_token,
+    ))
 }
 
 pub(crate) async fn get_changes_start_page_token(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Query(query): Query<StartPageTokenQuery>,
-) -> Result<Json<StartPageTokenResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<Json<SdkWorkApiResponse<StartPageTokenResponse>>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let space_id = require_query_value(query.space_id, "spaceId")?;
     validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
     acl::ensure_space_change_feed_reader(&state.pool, &ctx, &space_id).await?;
     let start_page_token =
         query_start_page_token(&state.pool, &tenant_id, Some(space_id.as_str())).await?;
-    Ok(Json(StartPageTokenResponse {
+    Ok(success_envelope(StartPageTokenResponse {
         start_page_token: start_page_token.to_string(),
     }))
 }

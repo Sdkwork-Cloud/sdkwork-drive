@@ -155,7 +155,7 @@ fn sdk_generate_check_supports_explicit_openapi_and_language_flags() {
 }
 
 #[test]
-fn local_sdk_generator_stub_can_generate_typescript_output() {
+fn local_sdk_generator_stub_is_fail_closed_tombstone() {
     let root = workspace_root();
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -163,46 +163,65 @@ fn local_sdk_generator_stub_can_generate_typescript_output() {
         .as_millis();
     let output_dir = std::env::temp_dir().join(format!("sdkwork-drive-apigen-{nonce}"));
 
-    assert_node_script_succeeds(&[
-        root.join("tools/sdkwork_sdk_generator_stub.mjs"),
-        PathBuf::from("generate"),
-        PathBuf::from("--input"),
-        root.join("apis/app-api/drive/drive-app-api.openapi.json"),
-        PathBuf::from("--output"),
-        output_dir.clone(),
-        PathBuf::from("--name"),
-        PathBuf::from("sdkwork-drive-app-sdk"),
-        PathBuf::from("--type"),
-        PathBuf::from("app"),
-        PathBuf::from("--language"),
-        PathBuf::from("typescript"),
-        PathBuf::from("--base-url"),
-        PathBuf::from("http://127.0.0.1:18080"),
-        PathBuf::from("--api-prefix"),
-        PathBuf::from("/app/v3/api"),
-        PathBuf::from("--fixed-sdk-version"),
-        PathBuf::from("0.1.0"),
-        PathBuf::from("--sdk-root"),
-        root.join("sdks/sdkwork-drive-app-sdk"),
-        PathBuf::from("--sdk-name"),
-        PathBuf::from("sdkwork-drive-app-sdk"),
-        PathBuf::from("--package-name"),
-        PathBuf::from("sdkwork-drive-app-sdk-generated-typescript"),
-        PathBuf::from("--standard-profile"),
-        PathBuf::from("sdkwork-v3"),
-    ]);
+    let output = run_node_command_in(
+        &root,
+        [
+            root.join("tools/sdkwork_sdk_generator_stub.mjs"),
+            PathBuf::from("generate"),
+            PathBuf::from("--input"),
+            root.join("apis/app-api/drive/drive-app-api.openapi.json"),
+            PathBuf::from("--output"),
+            output_dir.clone(),
+            PathBuf::from("--name"),
+            PathBuf::from("sdkwork-drive-app-sdk"),
+            PathBuf::from("--type"),
+            PathBuf::from("app"),
+            PathBuf::from("--language"),
+            PathBuf::from("typescript"),
+            PathBuf::from("--base-url"),
+            PathBuf::from("http://127.0.0.1:18080"),
+            PathBuf::from("--api-prefix"),
+            PathBuf::from("/app/v3/api"),
+            PathBuf::from("--fixed-sdk-version"),
+            PathBuf::from("0.1.0"),
+            PathBuf::from("--sdk-root"),
+            root.join("sdks/sdkwork-drive-app-sdk"),
+            PathBuf::from("--sdk-name"),
+            PathBuf::from("sdkwork-drive-app-sdk"),
+            PathBuf::from("--package-name"),
+            PathBuf::from("sdkwork-drive-app-sdk-generated-typescript"),
+            PathBuf::from("--standard-profile"),
+            PathBuf::from("sdkwork-v3"),
+        ],
+    )
+    .expect("node command should start");
 
     assert!(
-        output_dir.join("sdk-manifest.json").exists(),
-        "manifest should be generated",
+        !output.status.success(),
+        "local SDK generator tombstone must fail closed, stdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let output_text = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
     );
     assert!(
-        output_dir.join("source-openapi.json").exists(),
-        "openapi snapshot should be generated",
+        output_text.contains("canonical sdkgen"),
+        "local SDK generator tombstone should direct callers to canonical sdkgen, stdout/stderr:\n{output_text}"
     );
     assert!(
-        output_dir.join("src/index.ts").exists(),
-        "typescript entry should be generated",
+        !output_dir.join("sdk-manifest.json").exists(),
+        "tombstone must not generate an SDK manifest",
+    );
+    assert!(
+        !output_dir.join("source-openapi.json").exists(),
+        "tombstone must not generate an OpenAPI snapshot",
+    );
+    assert!(
+        !output_dir.join("src/index.ts").exists(),
+        "tombstone must not generate a TypeScript entrypoint",
     );
 }
 
@@ -673,7 +692,7 @@ fn schema_quality_gate_fails_when_maintenance_jobs_operator_id_pattern_is_missin
 }
 
 #[test]
-fn schema_quality_gate_fails_when_audit_events_request_id_pattern_is_missing() {
+fn schema_quality_gate_fails_when_audit_events_correlation_id_pattern_is_missing() {
     let root = workspace_root();
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -700,11 +719,11 @@ fn schema_quality_gate_fails_when_audit_events_request_id_pattern_is_missing() {
         .and_then(|value| value.get_mut("parameters"))
         .and_then(serde_json::Value::as_array_mut)
         .expect("audit events get parameters should exist");
-    let request_id_param = parameters
+    let correlation_id_param = parameters
         .iter_mut()
-        .find(|item| item.get("name").and_then(serde_json::Value::as_str) == Some("requestId"))
-        .expect("audit events requestId query parameter should exist");
-    if let Some(schema) = request_id_param
+        .find(|item| item.get("name").and_then(serde_json::Value::as_str) == Some("correlationId"))
+        .expect("audit events correlationId query parameter should exist");
+    if let Some(schema) = correlation_id_param
         .get_mut("schema")
         .and_then(serde_json::Value::as_object_mut)
     {
@@ -734,7 +753,7 @@ fn schema_quality_gate_fails_when_audit_events_request_id_pattern_is_missing() {
     .expect("schema quality gate command should start");
     assert!(
         !output.status.success(),
-        "schema quality gate should fail when audit_events requestId pattern is missing, stdout:\n{}\nstderr:\n{}",
+        "schema quality gate should fail when audit_events correlationId pattern is missing, stdout:\n{}\nstderr:\n{}",
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );

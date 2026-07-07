@@ -2,7 +2,7 @@
 
 Status: active
 Owner: SDKWork maintainers
-Updated: 2026-06-23
+Updated: 2026-07-07
 Specs: OBSERVABILITY_SPEC.md, DEPLOYMENT_SPEC.md, RELEASE_SPEC.md
 
 ## 1. Service Health
@@ -30,9 +30,9 @@ Key metrics:
 
 ## 3. Trace Correlation
 
-- Responses include `x-trace-id` and echo inbound W3C `traceparent` when provided.
-- Problem JSON bodies include `traceId` and `requestId` for support correlation.
-- Propagate `traceparent` on downstream calls from gateways and BFF layers.
+- Responses include server-owned `X-SdkWork-Trace-Id`; problem JSON bodies include numeric `code` and the same server `traceId`.
+- Audit/event flows use `correlationId` when a business operation id is needed.
+- Propagate W3C `traceparent` on downstream calls from gateways and BFF layers.
 - HTTP spans use OpenTelemetry-compatible fields: `otel.name`, `http.request.method`, `http.route` (template), `deployment.profile`, `runtime.profile`.
 
 ### OTLP export

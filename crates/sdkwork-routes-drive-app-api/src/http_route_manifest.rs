@@ -43,7 +43,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/assets/{assetId}",
         "drive-app-api",
-        "assets.get",
+        "assets.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Patch,
@@ -139,7 +139,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/changes/start_page_token",
         "drive-app-api",
-        "changes.startPageToken.get",
+        "changes.startPageToken.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
@@ -157,13 +157,13 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/download_packages/{packageId}/download_url",
         "drive-app-api",
-        "downloadPackages.downloadUrls.get",
+        "downloadPackages.downloadUrls.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/drive/download_tokens/{token}",
         "drive-app-api",
-        "downloadTokens.resolve",
+        "downloadTokens.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
@@ -176,6 +176,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/drive/favorites",
         "drive-app-api",
         "favorites.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/drive/favorites/check",
+        "drive-app-api",
+        "favorites.check",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
@@ -205,7 +211,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/nodes/{nodeId}",
         "drive-app-api",
-        "nodes.get",
+        "nodes.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Patch,
@@ -229,7 +235,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/nodes/{nodeId}/capabilities",
         "drive-app-api",
-        "nodes.capabilities.get",
+        "nodes.capabilities.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -253,7 +259,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}",
         "drive-app-api",
-        "comments.get",
+        "comments.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Patch,
@@ -283,7 +289,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}/replies/{replyId}",
         "drive-app-api",
-        "commentReplies.get",
+        "commentReplies.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Patch,
@@ -307,7 +313,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/nodes/{nodeId}/download_url",
         "drive-app-api",
-        "nodes.downloadUrls.create",
+        "nodes.downloadUrls.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Delete,
@@ -319,7 +325,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Put,
         "/app/v3/api/drive/nodes/{nodeId}/favorite",
         "drive-app-api",
-        "favorites.set",
+        "favorites.update",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -331,13 +337,13 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Delete,
         "/app/v3/api/drive/nodes/{nodeId}/labels/{labelId}",
         "drive-app-api",
-        "nodeLabels.remove",
+        "nodeLabels.delete",
     ),
     HttpRoute::dual_token(
         HttpMethod::Put,
         "/app/v3/api/drive/nodes/{nodeId}/labels/{labelId}",
         "drive-app-api",
-        "nodeLabels.apply",
+        "nodeLabels.update",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
@@ -349,7 +355,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/nodes/{nodeId}/path",
         "drive-app-api",
-        "nodes.path.get",
+        "nodes.path.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -379,7 +385,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/nodes/{nodeId}/permissions/{permissionId}",
         "drive-app-api",
-        "permissions.get",
+        "permissions.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Patch,
@@ -403,7 +409,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Put,
         "/app/v3/api/drive/nodes/{nodeId}/properties/{propertyKey}",
         "drive-app-api",
-        "nodeProperties.set",
+        "nodeProperties.update",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -421,7 +427,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Post,
         "/app/v3/api/drive/nodes/{nodeId}/trash",
         "drive-app-api",
-        "trash.move",
+        "trash.create",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -439,7 +445,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/nodes/{nodeId}/versions/{versionId}",
         "drive-app-api",
-        "versions.get",
+        "versions.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
@@ -457,7 +463,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/quotas/summary",
         "drive-app-api",
-        "quotas.summary",
+        "quotas.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -469,19 +475,19 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/search",
         "drive-app-api",
-        "search.query",
+        "search.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Delete,
         "/app/v3/api/drive/share_links/{shareLinkId}",
         "drive-app-api",
-        "shareLinks.revoke",
+        "shareLinks.delete",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/drive/share_links/{shareLinkId}",
         "drive-app-api",
-        "shareLinks.get",
+        "shareLinks.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Patch,
@@ -523,13 +529,19 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/spaces/{spaceId}",
         "drive-app-api",
-        "spaces.get",
+        "spaces.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Patch,
         "/app/v3/api/drive/spaces/{spaceId}",
         "drive-app-api",
         "spaces.update",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/drive/spaces/{spaceId}/move_destinations",
+        "drive-app-api",
+        "moveDestinations.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -565,7 +577,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/upload_sessions/{uploadSessionId}",
         "drive-app-api",
-        "uploadSessions.get",
+        "uploadSessions.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
@@ -583,19 +595,19 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Put,
         "/app/v3/api/drive/upload_sessions/{uploadSessionId}/parts/{partNo}",
         "drive-app-api",
-        "uploadSessions.parts.presign",
+        "uploadSessions.parts.update",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/drive/uploader/uploads",
         "drive-app-api",
-        "uploader.uploads.prepare",
+        "uploader.uploads.create",
     ),
     HttpRoute::dual_token(
         HttpMethod::Put,
         "/app/v3/api/drive/uploader/uploads/{uploadItemId}/parts/{partNo}",
         "drive-app-api",
-        "uploader.uploads.parts.markUploaded",
+        "uploader.uploads.parts.update",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -607,7 +619,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/drive/watch_channels/{channelId}",
         "drive-app-api",
-        "watchChannels.get",
+        "watchChannels.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,

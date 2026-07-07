@@ -37,7 +37,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/backend/v3/api/drive/labels/{labelId}",
         "drive",
-        "labels.get",
+        "labels.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Patch,
@@ -49,13 +49,13 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Post,
         "/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep",
         "drive",
-        "maintenance.abandonedUploadTaskSweep.start",
+        "maintenance.abandonedUploadTaskSweep",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
         "/backend/v3/api/drive/maintenance/expired_upload_content_sweep",
         "drive",
-        "maintenance.expiredUploadContentSweep.start",
+        "maintenance.expiredUploadContentSweep",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -67,19 +67,19 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Post,
         "/backend/v3/api/drive/maintenance/object_sweep",
         "drive",
-        "maintenance.objectSweep.start",
+        "maintenance.objectSweep",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
         "/backend/v3/api/drive/maintenance/upload_session_sweep",
         "drive",
-        "maintenance.uploadSessionSweep.start",
+        "maintenance.uploadSessionSweep",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
         "/backend/v3/api/drive/quotas",
         "drive",
-        "quotas.summary",
+        "quotas.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Put,

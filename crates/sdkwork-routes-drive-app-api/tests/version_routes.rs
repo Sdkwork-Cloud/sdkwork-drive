@@ -85,9 +85,10 @@ async fn version_routes_prefer_logical_node_version_ids() {
             .expect("version detail response should be read"),
     )
     .expect("version detail response should be valid json");
-    assert_eq!(detail_payload["id"].as_str(), Some("version-node-001-v1"));
+    let detail_item = common::envelope_item(&detail_payload);
+    assert_eq!(detail_item["id"].as_str(), Some("version-node-001-v1"));
     assert_eq!(
-        detail_payload["storageObjectId"].as_str(),
+        detail_item["storageObjectId"].as_str(),
         Some("object-node-001-v1")
     );
 
@@ -109,7 +110,7 @@ async fn version_routes_prefer_logical_node_version_ids() {
         )
         .await
         .expect("version delete request should be handled");
-    assert_eq!(delete_response.status(), StatusCode::OK);
+    common::assert_no_content_response(delete_response).await;
     let deleted_statuses: (String, String) = sqlx::query_as(
         "SELECT v.lifecycle_status, o.lifecycle_status
          FROM dr_drive_node_version v

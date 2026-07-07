@@ -14,26 +14,26 @@ public class NodeLabelsApi {
     }
 
     /** List labels applied to a node */
-    public NodeLabelListResponse list(String nodeId, String labelKey, Integer pageSize, String pageToken) throws Exception {
+    public NodeLabelsListResponse list(String nodeId, String labelKey, Integer pageSize, String cursor) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("labelKey", labelKey, "form", true, false, null),
-            new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
-            new QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("cursor", cursor, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/labels"), query));
-        return client.convertValue(raw, new TypeReference<NodeLabelListResponse>() {});
+        return client.convertValue(raw, new TypeReference<NodeLabelsListResponse>() {});
     }
 
     /** Apply a label to a node */
-    public NodeLabel apply(String nodeId, String labelId, ApplyNodeLabelRequest body) throws Exception {
+    public NodeLabelsUpdateResponse update(String nodeId, String labelId, ApplyNodeLabelRequest body) throws Exception {
         Object raw = client.put(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<NodeLabel>() {});
+        return client.convertValue(raw, new TypeReference<NodeLabelsUpdateResponse>() {});
     }
 
     /** Remove a label from a node */
-    public RemoveNodeLabelResponse remove(String nodeId, String labelId) throws Exception {
-        Object raw = client.delete(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""));
-        return client.convertValue(raw, new TypeReference<RemoveNodeLabelResponse>() {});
+    public Void delete(String nodeId, String labelId) throws Exception {
+        client.delete(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""));
+        return null;
     }
 
     private record PathParameterSpec(String name, String style, boolean explode) {}

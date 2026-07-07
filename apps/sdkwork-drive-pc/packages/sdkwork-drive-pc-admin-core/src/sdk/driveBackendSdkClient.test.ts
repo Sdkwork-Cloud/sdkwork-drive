@@ -49,7 +49,7 @@ describe('drive backend sdk client', () => {
 
     await client.request({
       operationId: 'auditEvents.list',
-      query: { page: 1 },
+      query: { page: 1, page_size: 50, cursor: '100' },
     });
 
     expect(sdkClient.setTokenManager).toHaveBeenCalledWith(tokenManager);
@@ -59,7 +59,7 @@ describe('drive backend sdk client', () => {
       '/backend/v3/api/drive/audit_events',
       {
         method: 'GET',
-        params: { page: 1 },
+        params: { page: 1, page_size: 50, cursor: '100' },
         body: undefined,
         contentType: undefined,
         signal: undefined,
@@ -72,9 +72,8 @@ describe('drive backend sdk client', () => {
     const tokenManager = createDriveSessionTokenManager(createSessionStore());
     const request = vi.fn(async <T>(): Promise<T> => {
       throw Object.assign(new Error('backend permission is required'), {
-        code: 'drive.backend.forbidden',
+        code: 40301,
         httpStatus: 403,
-        requestId: 'request-001',
         traceId: 'trace-001',
       });
     });
@@ -99,9 +98,8 @@ describe('drive backend sdk client', () => {
       operationId: 'maintenance.jobs.list',
       status: 403,
       detail: 'backend permission is required',
-      code: 'drive.backend.forbidden',
+      code: 40301,
       traceId: 'trace-001',
-      requestId: 'request-001',
     });
   });
 });

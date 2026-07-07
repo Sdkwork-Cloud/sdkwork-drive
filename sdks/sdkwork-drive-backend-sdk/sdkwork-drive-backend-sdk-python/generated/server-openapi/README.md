@@ -22,7 +22,7 @@ client.set_auth_token("your-auth-token")
 client.set_access_token("your-access-token")
 
 # Use the SDK
-result = client.drive.quotas.summary()
+result = client.drive.quotas.retrieve()
 ```
 
 ## Authentication
@@ -57,7 +57,7 @@ client.set_header('X-Custom-Header', 'value')
 
 ```python
 # GET /backend/v3/api/drive/quotas
-result = client.drive.quotas.summary()
+result = client.drive.quotas.retrieve()
 print(result)
 ```
 
@@ -67,8 +67,8 @@ print(result)
 # List Drive label definitions
 params = {
     'lifecycleStatus': 'active',
-    'pageSize': 2,
-    'pageToken': 'pageToken',
+    'page_size': 2,
+    'cursor': 'cursor',
 }
 result = client.labels.list(params)
 print(result)
@@ -78,7 +78,7 @@ print(result)
 
 ```python
 try:
-    client.drive.quotas.summary()
+    client.drive.quotas.retrieve()
 except Exception as error:
     print(f"Error: {error}")
 ```

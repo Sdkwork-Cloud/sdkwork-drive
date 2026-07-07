@@ -1,12 +1,11 @@
 use crate::audit::record_maintenance_audit;
 use crate::dto::{
-    ListMaintenanceJobsQuery, MaintenanceJobItemResponse,
-    SweepObjectStoreRequest, SweepResponse, SweepUploadSessionsRequest,
+    ListMaintenanceJobsQuery, MaintenanceJobItemResponse, SweepObjectStoreRequest, SweepResponse,
+    SweepUploadSessionsRequest,
 };
 use crate::error::{map_service_error, service_error_kind, ProblemDetail};
 use crate::response::{success_offset_list_page, DriveListHttpResponse};
 use crate::state::BackendState;
-use sdkwork_utils_rust::OffsetListPageParams;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Json;
@@ -17,6 +16,8 @@ use sdkwork_drive_workspace_service::application::maintenance_service::{
     SweepExpiredUploadContentCommand, SweepObjectStoreCommand, SweepUploadSessionsCommand,
 };
 use sdkwork_drive_workspace_service::infrastructure::sql::maintenance_store::SqlMaintenanceStore;
+use sdkwork_utils_rust::OffsetListPageParams;
+use sdkwork_utils_rust::MAX_LIST_PAGE_SIZE;
 
 pub(crate) async fn sweep_object_store(
     State(state): State<BackendState>,
@@ -50,7 +51,7 @@ pub(crate) async fn sweep_object_store(
                 result = "ok",
                 latency_ms = latency_ms,
                 dry_run = result.dry_run,
-                limit = payload.limit.unwrap_or(200),
+                limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
                 operator_id = payload.operator_id.as_str(),
                 has_request_id = payload.request_id.is_some(),
                 has_trace_id = payload.trace_id.is_some(),
@@ -81,7 +82,7 @@ pub(crate) async fn sweep_object_store(
                 latency_ms = latency_ms,
                 error_kind = error_kind,
                 dry_run = payload.dry_run,
-                limit = payload.limit.unwrap_or(200),
+                limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
                 operator_id = payload.operator_id.as_str(),
                 has_request_id = payload.request_id.is_some(),
                 has_trace_id = payload.trace_id.is_some()
@@ -125,7 +126,7 @@ pub(crate) async fn sweep_upload_sessions(
                 latency_ms = latency_ms,
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = result.dry_run,
-                limit = payload.limit.unwrap_or(200),
+                limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
                 operator_id = payload.operator_id.as_str(),
                 has_request_id = payload.request_id.is_some(),
                 has_trace_id = payload.trace_id.is_some(),
@@ -157,7 +158,7 @@ pub(crate) async fn sweep_upload_sessions(
                 error_kind = error_kind,
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = payload.dry_run,
-                limit = payload.limit.unwrap_or(200),
+                limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
                 operator_id = payload.operator_id.as_str(),
                 has_request_id = payload.request_id.is_some(),
                 has_trace_id = payload.trace_id.is_some()
@@ -201,7 +202,7 @@ pub(crate) async fn sweep_expired_upload_content(
                 latency_ms = latency_ms,
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = result.dry_run,
-                limit = payload.limit.unwrap_or(200),
+                limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
                 operator_id = payload.operator_id.as_str(),
                 has_request_id = payload.request_id.is_some(),
                 has_trace_id = payload.trace_id.is_some(),
@@ -233,7 +234,7 @@ pub(crate) async fn sweep_expired_upload_content(
                 error_kind = error_kind,
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = payload.dry_run,
-                limit = payload.limit.unwrap_or(200),
+                limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
                 operator_id = payload.operator_id.as_str(),
                 has_request_id = payload.request_id.is_some(),
                 has_trace_id = payload.trace_id.is_some()
@@ -277,7 +278,7 @@ pub(crate) async fn sweep_abandoned_upload_tasks(
                 latency_ms = latency_ms,
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = result.dry_run,
-                limit = payload.limit.unwrap_or(200),
+                limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
                 operator_id = payload.operator_id.as_str(),
                 has_request_id = payload.request_id.is_some(),
                 has_trace_id = payload.trace_id.is_some(),
@@ -309,7 +310,7 @@ pub(crate) async fn sweep_abandoned_upload_tasks(
                 error_kind = error_kind,
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = payload.dry_run,
-                limit = payload.limit.unwrap_or(200),
+                limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
                 operator_id = payload.operator_id.as_str(),
                 has_request_id = payload.request_id.is_some(),
                 has_trace_id = payload.trace_id.is_some()
@@ -368,8 +369,7 @@ pub(crate) async fn list_maintenance_jobs(
     );
 
     Ok(success_offset_list_page(
-        page
-            .items
+        page.items
             .into_iter()
             .map(|item| MaintenanceJobItemResponse {
                 id: item.id,

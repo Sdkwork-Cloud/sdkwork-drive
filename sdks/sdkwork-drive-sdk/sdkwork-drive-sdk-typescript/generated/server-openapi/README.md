@@ -30,7 +30,7 @@ const token = 'token';
 const params = {
   accessCode: 'accessCode',
 };
-const result = await client.drive.openShareLinksResolve(token, params);
+const result = await client.drive.openShareLinksRetrieve(token, params);
 ```
 
 ## Authentication Modes (Mutually Exclusive)
@@ -86,7 +86,7 @@ const token = 'token';
 const params = {
   accessCode: 'accessCode',
 };
-const result = await client.drive.openShareLinksResolve(token, params);
+const result = await client.drive.openShareLinksRetrieve(token, params);
 ```
 
 ## Error Handling
@@ -99,7 +99,7 @@ try {
   const params = {
     accessCode: 'accessCode',
   };
-  const result = await client.drive.openShareLinksResolve(token, params);
+  const result = await client.drive.openShareLinksRetrieve(token, params);
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

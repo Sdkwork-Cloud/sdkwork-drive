@@ -144,6 +144,7 @@ function dispatch(args) {
       runShell("pnpm test:drive-integration", repoRoot);
       runShell("pnpm test:global-assets-contract", repoRoot);
       runShell("pnpm test:drive-share-link-integration", repoRoot);
+      runShell("node --test tests/contract/sdk-generator-stub.contract.test.mjs", repoRoot);
       runShell("pnpm test:drive-e2e", repoRoot);
       runShell("pnpm test:e2e", repoRoot);
       break;

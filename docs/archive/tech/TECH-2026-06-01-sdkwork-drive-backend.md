@@ -1,6 +1,8 @@
-> Owner: SDKWork maintainers
-
 # SDKWork Drive Backend Implementation Plan
+
+> **Historical document.** Implementation completed. Active references: [TECH_ARCHITECTURE.md](../../architecture/tech/TECH_ARCHITECTURE.md), [FULL_CODE_REVIEW_REPORT.md](../../reviews/FULL_CODE_REVIEW_REPORT.md), and shipped crates under `crates/sdkwork-routes-*`.
+
+> Owner: SDKWork maintainers
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

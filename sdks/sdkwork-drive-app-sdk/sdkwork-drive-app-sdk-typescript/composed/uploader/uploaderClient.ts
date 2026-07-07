@@ -226,7 +226,7 @@ export class DriveUploaderClient {
   ): Promise<DriveUploaderUploadResult> {
     const normalized = await this.normalizeRequest(profile, request);
     const parts = planUploaderParts(normalized.file, normalized.chunkSizeBytes);
-    const prepared = await this.transport.drive.uploader.uploads.prepare({
+    const prepared = await this.transport.drive.uploader.uploads.create({
       id: normalized.id,
       taskId: normalized.taskId,
       organizationId: normalized.organizationId,
@@ -293,7 +293,7 @@ export class DriveUploaderClient {
           status: "uploading",
         });
 
-        const presigned = await this.transport.drive.uploadSessions.parts.presign(uploadSessionId, part.partNo, {
+        const presigned = await this.transport.drive.uploadSessions.parts.update(uploadSessionId, part.partNo, {
           uploadId: storageUploadId,
           requestedTtlSeconds: normalized.requestedPartTtlSeconds,
         }, { signal: normalized.signal });
@@ -318,7 +318,7 @@ export class DriveUploaderClient {
           sizeBytes: part.sizeBytes,
         };
 
-        await this.transport.drive.uploader.uploads.parts.markUploaded(uploadItem.id, part.partNo, {
+        await this.transport.drive.uploader.uploads.parts.update(uploadItem.id, part.partNo, {
           uploadSessionId,
           offsetBytes: String(part.offsetBytes),
           sizeBytes: String(part.sizeBytes),
@@ -409,7 +409,7 @@ export class DriveUploaderClient {
     try {
       const completedParts: DriveUploaderCompletedPart[] = [];
       for (const part of parts) {
-        const presigned = await this.transport.drive.uploadSessions.parts.presign(
+        const presigned = await this.transport.drive.uploadSessions.parts.update(
           uploadSessionId,
           part.partNo,
           {

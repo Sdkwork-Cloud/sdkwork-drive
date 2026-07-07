@@ -149,6 +149,168 @@ async fn local_store_rejects_invalid_list_prefix_and_delimiter() {
 }
 
 #[tokio::test]
+async fn local_store_lists_objects_with_continuation_tokens() {
+    let temp_dir = tempfile::tempdir().expect("temp dir must be created");
+    let store = LocalDriveObjectStore::new(temp_dir.path());
+    store
+        .create_bucket(sdkwork_drive_storage_contract::CreateBucketRequest {
+            bucket: "tenant-001".to_string(),
+        })
+        .await
+        .expect("bucket should be created");
+
+    for object_key in [
+        "spaces/a/003.txt",
+        "spaces/a/001.txt",
+        "spaces/b/001.txt",
+        "spaces/a/deep/002.txt",
+    ] {
+        store
+            .put_object(PutObjectRequest {
+                locator: DriveObjectLocator {
+                    bucket: "tenant-001".to_string(),
+                    object_key: object_key.to_string(),
+                },
+                content_type: Some("text/plain".to_string()),
+                metadata: BTreeMap::new(),
+                body: object_key.as_bytes().to_vec(),
+                checksum_sha256_hex: None,
+            })
+            .await
+            .expect("object should be written");
+    }
+
+    let first_page = store
+        .list_objects(ListObjectsRequest {
+            bucket: "tenant-001".to_string(),
+            prefix: Some("spaces/a/".to_string()),
+            delimiter: None,
+            continuation_token: None,
+            max_keys: 2,
+        })
+        .await
+        .expect("first object page should be listed");
+
+    assert_eq!(
+        first_page
+            .items
+            .iter()
+            .map(|item| item.object_key.as_str())
+            .collect::<Vec<_>>(),
+        vec!["spaces/a/001.txt", "spaces/a/003.txt"]
+    );
+    assert!(first_page.is_truncated);
+    assert_eq!(
+        first_page.next_continuation_token.as_deref(),
+        Some("spaces/a/003.txt")
+    );
+
+    let second_page = store
+        .list_objects(ListObjectsRequest {
+            bucket: "tenant-001".to_string(),
+            prefix: Some("spaces/a/".to_string()),
+            delimiter: None,
+            continuation_token: first_page.next_continuation_token,
+            max_keys: 2,
+        })
+        .await
+        .expect("second object page should be listed");
+
+    assert_eq!(
+        second_page
+            .items
+            .iter()
+            .map(|item| item.object_key.as_str())
+            .collect::<Vec<_>>(),
+        vec!["spaces/a/deep/002.txt"]
+    );
+    assert!(!second_page.is_truncated);
+    assert_eq!(second_page.next_continuation_token, None);
+}
+
+#[tokio::test]
+async fn local_store_lists_common_prefixes_with_continuation_tokens() {
+    let temp_dir = tempfile::tempdir().expect("temp dir must be created");
+    let store = LocalDriveObjectStore::new(temp_dir.path());
+    store
+        .create_bucket(sdkwork_drive_storage_contract::CreateBucketRequest {
+            bucket: "tenant-001".to_string(),
+        })
+        .await
+        .expect("bucket should be created");
+
+    for object_key in [
+        "spaces/a/z.txt",
+        "spaces/a/deep/002.txt",
+        "spaces/a/001.txt",
+        "spaces/a/deep/nested/003.txt",
+    ] {
+        store
+            .put_object(PutObjectRequest {
+                locator: DriveObjectLocator {
+                    bucket: "tenant-001".to_string(),
+                    object_key: object_key.to_string(),
+                },
+                content_type: Some("text/plain".to_string()),
+                metadata: BTreeMap::new(),
+                body: object_key.as_bytes().to_vec(),
+                checksum_sha256_hex: None,
+            })
+            .await
+            .expect("object should be written");
+    }
+
+    let first_page = store
+        .list_objects(ListObjectsRequest {
+            bucket: "tenant-001".to_string(),
+            prefix: Some("spaces/a/".to_string()),
+            delimiter: Some("/".to_string()),
+            continuation_token: None,
+            max_keys: 2,
+        })
+        .await
+        .expect("first object and prefix page should be listed");
+
+    assert_eq!(
+        first_page
+            .items
+            .iter()
+            .map(|item| item.object_key.as_str())
+            .collect::<Vec<_>>(),
+        vec!["spaces/a/001.txt"]
+    );
+    assert_eq!(first_page.prefixes, vec!["spaces/a/deep/"]);
+    assert!(first_page.is_truncated);
+    assert_eq!(
+        first_page.next_continuation_token.as_deref(),
+        Some("spaces/a/deep/")
+    );
+
+    let second_page = store
+        .list_objects(ListObjectsRequest {
+            bucket: "tenant-001".to_string(),
+            prefix: Some("spaces/a/".to_string()),
+            delimiter: Some("/".to_string()),
+            continuation_token: first_page.next_continuation_token,
+            max_keys: 2,
+        })
+        .await
+        .expect("second object and prefix page should be listed");
+
+    assert_eq!(
+        second_page
+            .items
+            .iter()
+            .map(|item| item.object_key.as_str())
+            .collect::<Vec<_>>(),
+        vec!["spaces/a/z.txt"]
+    );
+    assert!(second_page.prefixes.is_empty());
+    assert!(!second_page.is_truncated);
+    assert_eq!(second_page.next_continuation_token, None);
+}
+
+#[tokio::test]
 async fn local_store_rejects_zero_presign_download_expiry() {
     let temp_dir = tempfile::tempdir().expect("temp dir must be created");
     let store = LocalDriveObjectStore::new(temp_dir.path());

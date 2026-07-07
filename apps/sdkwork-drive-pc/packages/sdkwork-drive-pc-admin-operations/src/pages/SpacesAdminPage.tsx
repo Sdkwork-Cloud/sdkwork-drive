@@ -9,6 +9,7 @@ import {
   CARD_HEADER_CLASS,
   INPUT_CLASS,
   PRIMARY_BUTTON_CLASS,
+  SECONDARY_BUTTON_CLASS,
   TABLE_CLASS,
   TABLE_HEAD_CLASS,
   TABLE_ROW_CLASS,
@@ -32,6 +33,9 @@ export function SpacesAdminPage({ backendSdkClient, getSession }: SpacesAdminPag
     [backendSdkClient, getSession],
   );
   const [spaces, setSpaces] = useState<DriveSpaceAdminView[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
   const [ownerSubjectType, setOwnerSubjectType] = useState('');
@@ -43,9 +47,14 @@ export function SpacesAdminPage({ backendSdkClient, getSession }: SpacesAdminPag
     service.listSpaces({
       ownerSubjectType: ownerSubjectType.trim() || undefined,
       ownerSubjectId: ownerSubjectId.trim() || undefined,
+      pageSize,
+      pageToken: page > 1 ? String((page - 1) * pageSize) : undefined,
       signal,
     })
-      .then((result) => setSpaces(result.items))
+      .then((result) => {
+        setSpaces(result.items);
+        setTotal(result.total);
+      })
       .catch((err) => {
         if (!isAbortError(err)) setError(t('noticeLoadFailed'));
       })
@@ -56,7 +65,9 @@ export function SpacesAdminPage({ backendSdkClient, getSession }: SpacesAdminPag
     const controller = new AbortController();
     load(controller.signal);
     return () => controller.abort();
-  }, [service]);
+  }, [service, page, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#fafafa] dark:bg-[#111]">
@@ -75,33 +86,71 @@ export function SpacesAdminPage({ backendSdkClient, getSession }: SpacesAdminPag
             {t('filterOwnerId')}
             <input className={INPUT_CLASS} value={ownerSubjectId} onChange={(e) => setOwnerSubjectId(e.target.value)} />
           </label>
-          <button type="button" className={PRIMARY_BUTTON_CLASS} onClick={() => load()}>{t('applyFilters')}</button>
+          <button
+            type="button"
+            className={PRIMARY_BUTTON_CLASS}
+            onClick={() => {
+              setPage(1);
+              load();
+            }}
+          >
+            {t('applyFilters')}
+          </button>
         </div>
         <div className={CARD_CLASS}>
           <div className={CARD_HEADER_CLASS}>{t('spacesListTitle')}</div>
-          <div className={`${CARD_BODY_CLASS} overflow-x-auto`}>
-            {loading ? <div className="py-8 text-center text-sm text-neutral-500">{t('loading')}</div> : spaces.length === 0 ? (
-              <div className="py-8 text-center text-sm text-neutral-500">{t('spacesEmpty')}</div>
-            ) : (
-              <table className={TABLE_CLASS}>
-                <thead><tr className={TABLE_HEAD_CLASS}>
-                  <th className="px-3 py-2">{t('colSpaceName')}</th>
-                  <th className="px-3 py-2">{t('colSpaceType')}</th>
-                  <th className="px-3 py-2">{t('colOwner')}</th>
-                  <th className="px-3 py-2">{t('colStatus')}</th>
-                </tr></thead>
-                <tbody>
-                  {spaces.map((space) => (
+          <div className="overflow-x-auto">
+            <table className={TABLE_CLASS}>
+              <thead className={TABLE_HEAD_CLASS}>
+                <tr>
+                  <th>{t('colSpaceName')}</th>
+                  <th>{t('colSpaceType')}</th>
+                  <th>{t('colOwner')}</th>
+                  <th>{t('colStatus')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr className={TABLE_ROW_CLASS}>
+                    <td colSpan={4} className="px-4 py-6 text-sm text-neutral-500">{t('loading')}</td>
+                  </tr>
+                ) : spaces.length === 0 ? (
+                  <tr className={TABLE_ROW_CLASS}>
+                    <td colSpan={4} className="px-4 py-6 text-sm text-neutral-500">{t('spacesEmpty')}</td>
+                  </tr>
+                ) : (
+                  spaces.map((space) => (
                     <tr key={space.id} className={TABLE_ROW_CLASS}>
-                      <td className="px-3 py-2">{space.displayName}</td>
-                      <td className="px-3 py-2">{space.spaceType}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{space.ownerSubjectType}:{space.ownerSubjectId}</td>
-                      <td className="px-3 py-2">{space.lifecycleStatus}</td>
+                      <td>{space.displayName}</td>
+                      <td>{space.spaceType}</td>
+                      <td>{space.ownerSubjectType}:{space.ownerSubjectId}</td>
+                      <td>{space.lifecycleStatus}</td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className={`${CARD_BODY_CLASS} flex items-center justify-between gap-3 border-t border-neutral-200 dark:border-neutral-800`}>
+            <span className="text-sm text-neutral-500">{t('pageOf', { page, totalPages })}</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className={SECONDARY_BUTTON_CLASS}
+                disabled={page <= 1 || loading}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+              >
+                {t('previousPage')}
+              </button>
+              <button
+                type="button"
+                className={SECONDARY_BUTTON_CLASS}
+                disabled={page >= totalPages || loading}
+                onClick={() => setPage((current) => current + 1)}
+              >
+                {t('nextPage')}
+              </button>
+            </div>
           </div>
         </div>
       </div>

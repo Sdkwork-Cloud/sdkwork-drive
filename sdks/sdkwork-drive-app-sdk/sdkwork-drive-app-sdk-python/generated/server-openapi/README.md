@@ -22,7 +22,7 @@ client.set_auth_token("your-auth-token")
 client.set_access_token("your-access-token")
 
 # Use the SDK
-result = client.drive.quotas.summary()
+result = client.drive.quotas.retrieve()
 ```
 
 ## Authentication
@@ -61,7 +61,7 @@ client.set_header('X-Custom-Header', 'value')
 
 ```python
 # GET /app/v3/api/drive/quotas/summary
-result = client.drive.quotas.summary()
+result = client.drive.quotas.retrieve()
 print(result)
 ```
 
@@ -72,8 +72,8 @@ print(result)
 node_id = '1'
 params = {
     'labelKey': 'labelKey',
-    'pageSize': 2,
-    'pageToken': 'pageToken',
+    'page_size': 2,
+    'cursor': 'cursor',
 }
 result = client.node_labels.list(node_id, params)
 print(result)
@@ -86,8 +86,8 @@ print(result)
 node_id = '1'
 params = {
     'visibility': 'private',
-    'pageSize': 2,
-    'pageToken': 'pageToken',
+    'page_size': 2,
+    'cursor': 'cursor',
 }
 result = client.node_properties.list(node_id, params)
 print(result)
@@ -115,8 +115,8 @@ print(result)
 params = {
     'resourceType': 'changes',
     'lifecycleStatus': 'active',
-    'pageSize': 3,
-    'pageToken': 'pageToken',
+    'page_size': 3,
+    'cursor': 'cursor',
 }
 result = client.watch_channels.list(params)
 print(result)
@@ -128,7 +128,7 @@ print(result)
 # List asset collections
 params = {
     'cursor': 'cursor',
-    'pageSize': 2,
+    'page_size': 2,
 }
 result = client.assets.asset_collections.list(params)
 print(result)
@@ -138,7 +138,7 @@ print(result)
 
 ```python
 try:
-    client.drive.quotas.summary()
+    client.drive.quotas.retrieve()
 except Exception as error:
     print(f"Error: {error}")
 ```

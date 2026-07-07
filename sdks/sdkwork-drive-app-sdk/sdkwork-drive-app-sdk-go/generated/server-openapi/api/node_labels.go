@@ -18,38 +18,38 @@ func NewNodeLabelsApi(client *sdkhttp.Client) *NodeLabelsApi {
 }
 
 // List labels applied to a node
-func (a *NodeLabelsApi) List(nodeId string, labelKey *string, pageSize *int, pageToken *string) (sdktypes.NodeLabelListResponse, error) {
+func (a *NodeLabelsApi) List(nodeId string, labelKey *string, pageSize *int, cursor *string) (sdktypes.NodeLabelsListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "labelKey", Value: func() interface{} { if labelKey == nil { return nil }; return *labelKey }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "pageToken", Value: func() interface{} { if pageToken == nil { return nil }; return *pageToken }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath(fmt.Sprintf("/drive/nodes/%s/labels", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {
-        var zero sdktypes.NodeLabelListResponse
+        var zero sdktypes.NodeLabelsListResponse
         return zero, err
     }
-    return decodeResult[sdktypes.NodeLabelListResponse](raw)
+    return decodeResult[sdktypes.NodeLabelsListResponse](raw)
 }
 
 // Apply a label to a node
-func (a *NodeLabelsApi) Apply(nodeId string, labelId string, body sdktypes.ApplyNodeLabelRequest) (sdktypes.NodeLabel, error) {
+func (a *NodeLabelsApi) Update(nodeId string, labelId string, body sdktypes.ApplyNodeLabelRequest) (sdktypes.NodeLabelsUpdateResponse, error) {
     raw, err := a.client.Put(AppApiPath(fmt.Sprintf("/drive/nodes/%s/labels/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}), SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.NodeLabel
+        var zero sdktypes.NodeLabelsUpdateResponse
         return zero, err
     }
-    return decodeResult[sdktypes.NodeLabel](raw)
+    return decodeResult[sdktypes.NodeLabelsUpdateResponse](raw)
 }
 
 // Remove a label from a node
-func (a *NodeLabelsApi) Remove(nodeId string, labelId string) (sdktypes.RemoveNodeLabelResponse, error) {
+func (a *NodeLabelsApi) Delete(nodeId string, labelId string) (struct{}, error) {
     raw, err := a.client.Delete(AppApiPath(fmt.Sprintf("/drive/nodes/%s/labels/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}), SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.RemoveNodeLabelResponse
+        var zero struct{}
         return zero, err
     }
-    return decodeResult[sdktypes.RemoveNodeLabelResponse](raw)
+    return decodeResult[struct{}](raw)
 }
 
 type PathParameterSpec struct {

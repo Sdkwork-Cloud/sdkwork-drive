@@ -7,4 +7,6 @@ export * from './components/preferenceStorage';
 export * from './components/drivePcPreferences';
 export * from './utils/formatDriveBytes';
 export * from './utils/transferJobDisplay';
+export * from './utils/driveConflictError';
 export * from './utils/driveSensitiveConfirm';
+export * from './utils/resolveUniqueSiblingName';

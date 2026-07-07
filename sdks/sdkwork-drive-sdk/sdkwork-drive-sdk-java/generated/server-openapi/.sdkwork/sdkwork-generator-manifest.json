@@ -36,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "6d206f6e9816705b2f7db7d4f1d0053ad79c04f95e9f4a708e41215beeb95bd9"
+      "sha256": "046f7301b7e35ae70a640a5ab46e87174162918bdbb0e9a98ca57c6ae79892b1"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -48,7 +48,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/api/DriveApi.java",
-      "sha256": "98ca59e94e4210e10c297da0e4f484e42153ece4ca8325eb02cdcf88e8d36d86"
+      "sha256": "ad07542c68cf13a8146ae4861d126a790bab60bd680326c13975016beaa62c46"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/api/package-info.java",
@@ -72,7 +72,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenDownloadUrlCreateResponse.java",
-      "sha256": "2284667153a5446d95e6147a46415af567045f732840678f5a8ad2cd92e53429"
+      "sha256": "b27b51aa3ddbbcdbdd9e2994c91e2e18655f16280bec11251b3a0f2ad9ee913c"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenDownloadUrlResponse.java",
@@ -84,7 +84,15 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenShareLinkResolveResponse.java",
-      "sha256": "68cc6da236d3ada75c1f9e2e3a0318b7d660e5233a60a6ab1b43d14b4844d85b"
+      "sha256": "a50a0a7f52715bb2624bb761057cd2bb8ad1e5db0e8794394ec0eca82069bf3f"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenShareLinksDownloadUrlsCreateResponse201.java",
+      "sha256": "183b55e1857064de1b6b830edea64b37ea6d415a1331bc3c0010025b55021b20"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenShareLinksRetrieveResponse.java",
+      "sha256": "152d15c2613b8de9d21128a03122ef69f2353126f998782d20610ff2667bb83b"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/ProblemDetail.java",

@@ -3,7 +3,7 @@
 Status: active
 Owner: SDKWork maintainers
 Application: sdkwork-drive
-Updated: 2026-06-25
+Updated: 2026-07-07
 Specs: REQUIREMENTS_SPEC.md, DOCUMENTATION_SPEC.md, DRIVE_SPEC.md, DEPLOYMENT_SPEC.md, SECURITY_SPEC.md
 
 ## Document Map
@@ -81,7 +81,7 @@ Legacy `/app/v3/api/assets/upload*` routes remain unavailable; global assets mus
 | P0 Core backend | Spaces, nodes, upload/download, permissions, storage abstraction | Done |
 | P1 PC client | AuthGate, SDK-backed file browser, transfer center, desktop host | Done |
 | P2 Production hardening | Outbox singleton, readyz, K8s spec alignment, secure desktop storage, CSP, IAM DB resolver wiring | Done |
-| P3 Release & ops | Signed multi-platform artifacts, catalog media, staging smoke schedule, ACTIVE publish | In progress (security/error sanitization, backend session policy, download pause/resume, labeled HTTP metrics, audit runbook, tenant quota policy + PC admin operations UI; signing and catalog CDN still blocked) |
+| P3 Release & ops | Signed multi-platform artifacts, catalog media, staging smoke schedule, ACTIVE publish | In progress — **代码对齐已完成**（原子空间删除、版本历史分页、分任务维护 leader、PostgreSQL CI）；阻塞项仅剩制品签名、Catalog CDN 与 staging 运营验证 |
 | P4 Differentiation | Delta/changes API, knowledge/AI space profiles, optional Redis rate limit backend | Planned |
 
 ## 8. Linked Requirements

@@ -5,6 +5,8 @@
   "language": "java",
   "sdkType": "backend",
   "packageName": "sdkwork-drive-backend-sdk-generated-java",
+  "transportPackageName": "sdkwork-drive-backend-sdk-generated-java",
+  "consumerPackageName": "@sdkwork/drive-backend-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

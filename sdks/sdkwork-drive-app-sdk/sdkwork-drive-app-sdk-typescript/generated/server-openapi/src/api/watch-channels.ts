@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { CreateWatchChannelRequest, DriveWatchChannel, DriveWatchChannelListResponse, StopWatchChannelRequest, StopWatchChannelResponse } from '../types';
+import type { CreateWatchChannelRequest, StopWatchChannelRequest } from '../types';
 
 
 export class WatchChannelsNodesApi {
@@ -13,8 +13,8 @@ export class WatchChannelsNodesApi {
 
 
 /** Create a push notification channel for a Drive node */
-  async watch(nodeId: string, body: CreateWatchChannelRequest): Promise<DriveWatchChannel> {
-    return this.client.post<DriveWatchChannel>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/watch`), body, undefined, undefined, 'application/json');
+  async watch(nodeId: string, body: CreateWatchChannelRequest): Promise<unknown> {
+    return this.client.post<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/watch`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -27,8 +27,8 @@ export class WatchChannelsChangesApi {
 
 
 /** Create a push notification channel for Drive changes */
-  async watch(body: CreateWatchChannelRequest): Promise<DriveWatchChannel> {
-    return this.client.post<DriveWatchChannel>(appApiPath(`/drive/changes/watch`), body, undefined, undefined, 'application/json');
+  async watch(body: CreateWatchChannelRequest): Promise<unknown> {
+    return this.client.post<unknown>(appApiPath(`/drive/changes/watch`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -36,7 +36,7 @@ export interface WatchChannelsListParams {
   resourceType?: 'changes' | 'node';
   lifecycleStatus?: 'active' | 'stopped' | 'expired';
   pageSize?: number;
-  pageToken?: string;
+  cursor?: string;
 }
 
 export class WatchChannelsApi {
@@ -52,24 +52,24 @@ export class WatchChannelsApi {
 
 
 /** List Drive watch channels */
-  async list(params?: WatchChannelsListParams): Promise<DriveWatchChannelListResponse> {
+  async list(params?: WatchChannelsListParams): Promise<unknown> {
     const query = buildQueryString([
       { name: 'resourceType', value: params?.resourceType, style: 'form', explode: true, allowReserved: false },
       { name: 'lifecycleStatus', value: params?.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<DriveWatchChannelListResponse>(appendQueryString(appApiPath(`/drive/watch_channels`), query));
+    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/watch_channels`), query));
   }
 
 /** Get a Drive watch channel */
-  async get(channelId: string): Promise<DriveWatchChannel> {
-    return this.client.get<DriveWatchChannel>(appApiPath(`/drive/watch_channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
+  async retrieve(channelId: string): Promise<unknown> {
+    return this.client.get<unknown>(appApiPath(`/drive/watch_channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
   }
 
 /** Stop a Drive watch channel */
-  async stop(channelId: string, body: StopWatchChannelRequest): Promise<StopWatchChannelResponse> {
-    return this.client.post<StopWatchChannelResponse>(appApiPath(`/drive/watch_channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}/stop`), body, undefined, undefined, 'application/json');
+  async stop(channelId: string, body: StopWatchChannelRequest): Promise<unknown> {
+    return this.client.post<unknown>(appApiPath(`/drive/watch_channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}/stop`), body, undefined, undefined, 'application/json');
   }
 }
 

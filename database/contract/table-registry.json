@@ -187,6 +187,24 @@
       "owner": "drive-platform",
       "compliance_level": "L2",
       "lifecycle_status": "active"
+    },
+    {
+      "table_name": "dr_drive_domain_outbox_channel_delivery",
+      "owner": "drive-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "dr_drive_tenant_quota",
+      "owner": "drive-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "dr_drive_maintenance_leader",
+      "owner": "drive-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
     }
   ]
 }

@@ -4,12 +4,12 @@ use crate::app_context::DriveRequestContext;
 use crate::dto::{
     DriveNodeResponse, EmptyTrashRequest, EmptyTrashResponse, NodeCommandRequest, NodeViewQuery,
 };
-use crate::response::DriveNodeListHttpResponse;
-use crate::error::{internal_sql_error, ProblemDetail};
+use crate::error::{internal_sql_error, problem, ProblemDetail, SdkWorkResultCode};
 use crate::mappers::map_node_row;
 use crate::metadata_repository::present_node_list;
 use crate::node_lifecycle::set_node_lifecycle;
 use crate::node_repository::find_node;
+use crate::response::{success_envelope, DriveNodeListHttpResponse};
 use crate::route_change::record_change;
 use crate::space_repository::validate_space_exists;
 use crate::state::AppState;
@@ -19,6 +19,7 @@ use axum::http::StatusCode;
 use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
 use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use sqlx::Row;
 
 pub(crate) async fn trash_node(
@@ -26,8 +27,14 @@ pub(crate) async fn trash_node(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<NodeCommandRequest>,
-) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    set_node_lifecycle(
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<DriveNodeResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
+    let response = set_node_lifecycle(
         state,
         &ctx,
         node_id,
@@ -35,14 +42,18 @@ pub(crate) async fn trash_node(
         "trashed",
         drive_events::node::TRASHED,
     )
-    .await
+    .await?;
+    Ok((StatusCode::CREATED, response))
 }
 pub(crate) async fn restore_trashed_node(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<NodeCommandRequest>,
-) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<DriveNodeResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     set_node_lifecycle(
         state,
         &ctx,
@@ -232,8 +243,7 @@ pub(crate) async fn list_trashed_nodes(
         };
         (items, next_page_token, false)
     } else {
-        let reader_acl_predicate =
-            acl_sql::node_reader_visible_sql("dr_drive_node", "$2", "$3");
+        let reader_acl_predicate = acl_sql::node_reader_visible_sql("dr_drive_node", "$2", "$3");
         let (items, next_page_token) = acl::paginate_offset_limited_items(
             page,
             move |scan_offset, batch_limit| {
@@ -346,7 +356,7 @@ pub(crate) async fn empty_trash(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<EmptyTrashRequest>,
-) -> Result<Json<EmptyTrashResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<Json<SdkWorkApiResponse<EmptyTrashResponse>>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let space_id = normalize_optional_text(payload.space_id);
@@ -378,6 +388,7 @@ pub(crate) async fn empty_trash(
     .map_err(internal_sql_error("list trashed dr_drive_node failed"))?;
 
     let mut deleted_count = 0_i64;
+    let mut skipped_count = 0_i64;
     let mut changed_spaces = Vec::<String>::new();
     for row in &trashed_rows {
         let node_id: String = row.get("id");
@@ -386,6 +397,7 @@ pub(crate) async fn empty_trash(
             .await
             .is_err()
         {
+            skipped_count += 1;
             continue;
         }
         sqlx::query(
@@ -430,5 +442,20 @@ pub(crate) async fn empty_trash(
         .await?;
     }
 
-    Ok(Json(EmptyTrashResponse { deleted_count }))
+    if skipped_count > 0 && deleted_count == 0 {
+        return Err(problem(
+            StatusCode::FORBIDDEN,
+            "forbidden",
+            format!(
+                "insufficient permission to permanently delete {skipped_count} trashed item(s)"
+            ),
+            SdkWorkResultCode::PermissionRequired,
+        ));
+    }
+
+    Ok(success_envelope(EmptyTrashResponse {
+        deleted_count,
+        skipped_count,
+        has_more: trashed_rows.len() == 500,
+    }))
 }

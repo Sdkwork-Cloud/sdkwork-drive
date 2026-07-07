@@ -53,7 +53,7 @@ export function PdfModule({
       if (signAbortControllerRef.current !== signAbortController) {
         return;
       }
-      triggerFeedback(t('previewModules.pdfSigned'), 'success');
+      triggerFeedback(t('previewModules.pdfAcknowledged'), 'success');
     } catch (err: any) {
       if (isDriveAbortError(err)) {
         return;
@@ -61,7 +61,7 @@ export function PdfModule({
       if (signAbortControllerRef.current !== signAbortController) {
         return;
       }
-      triggerFeedback(err?.message || t('previewModules.pdfSigningFailed'), 'error');
+      triggerFeedback(err?.message || t('previewModules.pdfAcknowledgementFailed'), 'error');
     } finally {
       if (signAbortControllerRef.current === signAbortController) {
         signAbortControllerRef.current = null;

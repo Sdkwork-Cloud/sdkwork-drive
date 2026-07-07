@@ -1,7 +1,8 @@
 use crate::dto::*;
 use crate::error::{
     internal_sql_error, map_object_store_route_error, map_service_error, not_found_problem,
-    problem, ProblemDetail, SdkWorkResultCode};
+    problem, ProblemDetail, SdkWorkResultCode,
+};
 use crate::hashing::sha256_hex;
 use crate::ids::next_drive_id;
 use crate::object_store::{
@@ -16,7 +17,7 @@ use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_storage_contract::{
     AbortMultipartUploadRequest, CompleteMultipartUploadRequest, CompletedMultipartPart,
-    CreateMultipartUploadRequest, DriveObjectLocator, DriveObjectStore,
+    CreateMultipartUploadRequest, DeleteObjectRequest, DriveObjectLocator, DriveObjectStore,
 };
 use sdkwork_drive_workspace_service::application::storage_key_service::{
     BuildStorageObjectKeyCommand, DriveStorageKeyService,
@@ -757,6 +758,95 @@ pub(crate) async fn claim_upload_session_completion(
     }
     Ok(())
 }
+
+/// Compensates when storage finalize succeeded but the DB completion transaction failed.
+///
+/// Resets the session to `uploading` so the client can retry completion, and best-effort
+/// deletes the orphaned storage object.
+pub(crate) async fn recover_upload_completion_after_db_failure(
+    state: &AppState,
+    pool: &AnyPool,
+    tenant_id: &str,
+    upload_session: &UploadSessionRecord,
+    operator_id: &str,
+) {
+    if let Err(error) = update_upload_session_state(
+        pool,
+        tenant_id,
+        &upload_session.id,
+        "uploading",
+        operator_id,
+    )
+    .await
+    {
+        tracing::error!(
+            event = "drive.upload.completion_db_failure_session_reset_failed",
+            tenant_id = %tenant_id,
+            upload_session_id = %upload_session.id,
+            error = ?error,
+            "failed to reset upload session after DB completion failure"
+        );
+    }
+
+    if let Ok(Some(provider)) =
+        find_storage_provider_by_id(pool, &upload_session.storage_provider_id).await
+    {
+        match require_active_storage_provider(provider, &upload_session.bucket) {
+            Ok(provider) => match build_s3_object_store_for_provider(&provider).await {
+                Ok(Some(object_store)) => {
+                    if let Err(error) = object_store
+                        .delete_object(DeleteObjectRequest {
+                            locator: DriveObjectLocator {
+                                bucket: upload_session.bucket.clone(),
+                                object_key: upload_session.object_key.clone(),
+                            },
+                        })
+                        .await
+                    {
+                        tracing::warn!(
+                            event = "drive.upload.completion_db_failure_orphan_delete_failed",
+                            tenant_id = %tenant_id,
+                            upload_session_id = %upload_session.id,
+                            object_key = %upload_session.object_key,
+                            error = ?error,
+                            "failed to delete orphaned storage object after DB completion failure"
+                        );
+                    }
+                }
+                Ok(None) => tracing::warn!(
+                    event = "drive.upload.completion_db_failure_orphan_delete_skipped",
+                    tenant_id = %tenant_id,
+                    upload_session_id = %upload_session.id,
+                    "storage provider does not support object delete"
+                ),
+                Err(error) => tracing::warn!(
+                    event = "drive.upload.completion_db_failure_orphan_delete_skipped",
+                    tenant_id = %tenant_id,
+                    upload_session_id = %upload_session.id,
+                    error = ?error,
+                    "object store unavailable; orphan object delete skipped"
+                ),
+            },
+            Err(error) => tracing::warn!(
+                event = "drive.upload.completion_db_failure_orphan_delete_skipped",
+                tenant_id = %tenant_id,
+                upload_session_id = %upload_session.id,
+                error = ?error,
+                "storage provider inactive; orphan object delete skipped"
+            ),
+        }
+    }
+
+    tracing::warn!(
+        event = "drive.upload.completion_db_failure_recovered",
+        tenant_id = %tenant_id,
+        upload_session_id = %upload_session.id,
+        object_key = %upload_session.object_key,
+        "upload DB commit failed after storage finalize; session reset and orphan cleanup attempted"
+    );
+    let _ = state;
+}
+
 pub(crate) fn upload_session_state_as_str(state: &DriveUploadSessionState) -> &'static str {
     match state {
         DriveUploadSessionState::Created => "created",

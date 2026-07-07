@@ -2,7 +2,8 @@ use crate::archive::*;
 use crate::dto::*;
 use crate::error::{
     internal_sql_error, map_object_store_route_error, map_service_error, not_found_problem,
-    problem, ProblemDetail, SdkWorkResultCode};
+    problem, ProblemDetail, SdkWorkResultCode,
+};
 use crate::ids::next_drive_id;
 use crate::mappers::*;
 use crate::node_repository::find_node;
@@ -59,11 +60,6 @@ pub(crate) async fn validate_archive_extraction_plan(
         }
 
         let folder_segments = &file.path.segments[..file.path.segments.len().saturating_sub(1)];
-        let file_name = file
-            .path
-            .segments
-            .last()
-            .ok_or_else(unsafe_archive_path_problem)?;
         let mut current_parent_id = root_parent_node_id.map(ToString::to_string);
         let mut parent_is_existing = true;
         let mut current_path = String::new();
@@ -110,20 +106,6 @@ pub(crate) async fn validate_archive_extraction_plan(
 
         let file_path = file.path.segments.join("/");
         if planned_folders.contains(&file_path) || !planned_files.insert(file_path) {
-            return Err(archive_extraction_target_conflict_problem());
-        }
-
-        if parent_is_existing
-            && find_live_child_by_name(
-                pool,
-                tenant_id,
-                space_id,
-                current_parent_id.as_deref(),
-                file_name,
-            )
-            .await?
-            .is_some()
-        {
             return Err(archive_extraction_target_conflict_problem());
         }
 
@@ -227,7 +209,7 @@ pub(crate) async fn find_live_child_by_name(
          WHERE tenant_id=$1
            AND space_id=$2
            AND node_name=$3
-           AND lifecycle_status != 'deleted'
+           AND lifecycle_status = 'active'
            AND ((parent_node_id IS NULL AND $4 IS NULL) OR parent_node_id=$4)
          ORDER BY id ASC
          LIMIT 1",
@@ -249,7 +231,7 @@ pub(crate) async fn create_extracted_archive_file(
     file: &ArchiveFileForExtract,
     operator_id: &str,
 ) -> Result<DriveNodeResponse, (StatusCode, Json<ProblemDetail>)> {
-    let node_name = file
+    let base_node_name = file
         .path
         .segments
         .last()
@@ -263,12 +245,12 @@ pub(crate) async fn create_extracted_archive_file(
         "file",
     )
     .await?;
-    ensure_no_live_name_conflict(
+    let node_name = resolve_live_unique_node_name_in_parent(
         &state.pool,
         tenant_id,
         space_id,
         parent_node_id,
-        &node_name,
+        &base_node_name,
         None,
     )
     .await?;
@@ -539,7 +521,7 @@ pub(crate) async fn ensure_no_live_name_conflict(
          WHERE tenant_id=$1
            AND space_id=$2
            AND node_name=$3
-           AND lifecycle_status != 'deleted'
+           AND lifecycle_status = 'active'
            AND ((parent_node_id IS NULL AND $4 IS NULL) OR parent_node_id = $4)
            AND ($5 IS NULL OR id != $5)",
     )
@@ -666,4 +648,98 @@ pub(crate) async fn copy_active_storage_object_metadata(
         .await?;
     }
     Ok(())
+}
+
+pub(crate) fn build_copy_of_node_name(source_name: &str) -> String {
+    format!("Copy of {source_name}")
+}
+
+pub(crate) fn parents_equivalent(left: Option<&str>, right: Option<&str>) -> bool {
+    let normalize = |value: Option<&str>| -> Option<String> {
+        value
+            .map(str::trim)
+            .filter(|candidate| !candidate.is_empty())
+            .map(str::to_string)
+    };
+    normalize(left) == normalize(right)
+}
+
+pub(crate) async fn live_node_name_exists_in_parent(
+    pool: &AnyPool,
+    tenant_id: &str,
+    space_id: &str,
+    parent_node_id: Option<&str>,
+    node_name: &str,
+    excluded_node_id: Option<&str>,
+) -> Result<bool, (StatusCode, Json<ProblemDetail>)> {
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1)
+         FROM dr_drive_node
+         WHERE tenant_id=$1
+           AND space_id=$2
+           AND node_name=$3
+           AND lifecycle_status = 'active'
+           AND ((parent_node_id IS NULL AND $4 IS NULL) OR parent_node_id = $4)
+           AND ($5 IS NULL OR id != $5)",
+    )
+    .bind(tenant_id)
+    .bind(space_id)
+    .bind(node_name)
+    .bind(parent_node_id)
+    .bind(excluded_node_id)
+    .fetch_one(pool)
+    .await
+    .map_err(internal_sql_error(
+        "check dr_drive_node live name existence failed",
+    ))?;
+    Ok(count > 0)
+}
+
+pub(crate) async fn resolve_live_unique_node_name_in_parent(
+    pool: &AnyPool,
+    tenant_id: &str,
+    space_id: &str,
+    parent_node_id: Option<&str>,
+    base_name: &str,
+    excluded_node_id: Option<&str>,
+) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
+    if !live_node_name_exists_in_parent(
+        pool,
+        tenant_id,
+        space_id,
+        parent_node_id,
+        base_name,
+        excluded_node_id,
+    )
+    .await?
+    {
+        return Ok(base_name.to_string());
+    }
+
+    let (stem, extension) = sdkwork_utils_rust::split_filename_stem_extension(base_name);
+    for index in 1..=9_999 {
+        let candidate = sdkwork_utils_rust::format_numbered_filename_variant(
+            &stem,
+            index,
+            extension.as_deref(),
+        );
+        if !live_node_name_exists_in_parent(
+            pool,
+            tenant_id,
+            space_id,
+            parent_node_id,
+            &candidate,
+            excluded_node_id,
+        )
+        .await?
+        {
+            return Ok(candidate);
+        }
+    }
+
+    Ok(sdkwork_utils_rust::format_numbered_filename_variant(
+        &stem,
+        9_999,
+        extension.as_deref(),
+    ))
 }

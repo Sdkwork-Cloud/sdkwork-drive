@@ -8,7 +8,7 @@ use crate::provider_lookup::get_provider;
 use crate::provider_mappers::{
     map_storage_provider, map_storage_provider_capabilities, parse_storage_provider_kind,
 };
-use crate::response::{success_list_page_simple, StorageListHttpResponse};
+use crate::response::{no_content, success_list_page_simple, StorageListHttpResponse};
 use crate::state::AdminStorageState;
 use crate::validators::{next_page_token, parse_offset_page};
 use axum::extract::{Path, Query, State};
@@ -24,7 +24,6 @@ use sdkwork_drive_workspace_service::application::storage_provider_service::{
 };
 use sdkwork_drive_workspace_service::infrastructure::sql::storage_provider_store::SqlStorageProviderStore;
 use sdkwork_drive_workspace_service::DriveServiceError;
-use serde_json::json;
 
 pub(crate) async fn list_storage_providers(
     State(state): State<AdminStorageState>,
@@ -132,7 +131,7 @@ pub(crate) async fn delete_storage_provider(
     State(state): State<AdminStorageState>,
     Path(provider_id): Path<String>,
     Query(query): Query<DeleteStorageProviderQuery>,
-) -> Result<Json<serde_json::Value>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let operator_id = query
         .operator_id
         .ok_or_else(|| DriveServiceError::Validation("operator_id is required".to_string()))
@@ -153,7 +152,8 @@ pub(crate) async fn delete_storage_provider(
         &operator_id,
     )
     .await?;
-    Ok(Json(json!({ "deleted": deleted.deleted })))
+    let _deleted = deleted.deleted;
+    Ok(no_content())
 }
 
 pub(crate) async fn get_storage_provider_capabilities(

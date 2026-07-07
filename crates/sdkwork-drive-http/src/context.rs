@@ -48,5 +48,4 @@ pub mod headers {
     pub const TENANT_ID: &str = "X-Tenant-Id";
     pub const OPERATOR_ID: &str = "X-Operator-Id";
     pub const ORGANIZATION_ID: &str = "X-Organization-Id";
-    pub const REQUEST_ID: &str = "X-Request-Id";
 }

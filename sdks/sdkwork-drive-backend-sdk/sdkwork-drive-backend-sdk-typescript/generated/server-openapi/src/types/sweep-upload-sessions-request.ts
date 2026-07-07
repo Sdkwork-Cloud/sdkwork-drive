@@ -3,6 +3,6 @@ export interface SweepUploadSessionsRequest {
   dryRun: boolean;
   limit?: string;
   operatorId: string;
-  requestId?: string;
+  correlationId?: string;
   traceId?: string;
 }

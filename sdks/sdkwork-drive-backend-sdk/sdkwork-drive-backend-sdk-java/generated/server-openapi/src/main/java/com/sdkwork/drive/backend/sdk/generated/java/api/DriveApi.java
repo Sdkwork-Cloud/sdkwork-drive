@@ -13,80 +13,82 @@ public class DriveApi {
         this.client = client;
     }
 
-    public AuditEventPage auditEventsList(String action, String resourceType, String resourceId, String requestId, String traceId, Integer page, Integer pageSize) throws Exception {
+    public AuditEventsListResponse auditEventsList(String action, String resourceType, String resourceId, String correlationId, String traceId, Integer page, Integer pageSize) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("action", action, "form", true, false, null),
             new QueryParameterSpec("resourceType", resourceType, "form", true, false, null),
             new QueryParameterSpec("resourceId", resourceId, "form", true, false, null),
-            new QueryParameterSpec("requestId", requestId, "form", true, false, null),
+            new QueryParameterSpec("correlationId", correlationId, "form", true, false, null),
             new QueryParameterSpec("traceId", traceId, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null),
-            new QueryParameterSpec("pageSize", pageSize, "form", true, false, null)
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/audit_events"), query));
-        return client.convertValue(raw, new TypeReference<AuditEventPage>() {});
+        return client.convertValue(raw, new TypeReference<AuditEventsListResponse>() {});
     }
 
-    public MaintenanceJobPage maintenanceJobsList(String jobType, String status, String operatorId, Integer page, Integer pageSize) throws Exception {
+    public MaintenanceJobsListResponse maintenanceJobsList(String jobType, String status, String operatorId, Integer page, Integer pageSize) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("jobType", jobType, "form", true, false, null),
             new QueryParameterSpec("status", status, "form", true, false, null),
             new QueryParameterSpec("operatorId", operatorId, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null),
-            new QueryParameterSpec("pageSize", pageSize, "form", true, false, null)
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/maintenance/jobs"), query));
-        return client.convertValue(raw, new TypeReference<MaintenanceJobPage>() {});
+        return client.convertValue(raw, new TypeReference<MaintenanceJobsListResponse>() {});
     }
 
-    public SweepResponse maintenanceObjectSweepStart(SweepObjectStoreRequest body) throws Exception {
+    public MaintenanceObjectSweepResponse maintenanceObjectSweep(SweepObjectStoreRequest body) throws Exception {
         Object raw = client.post(ApiPaths.backendPath("/drive/maintenance/object_sweep"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<SweepResponse>() {});
+        return client.convertValue(raw, new TypeReference<MaintenanceObjectSweepResponse>() {});
     }
 
-    public SweepResponse maintenanceUploadSessionSweepStart(SweepUploadSessionsRequest body) throws Exception {
+    public MaintenanceUploadSessionSweepResponse maintenanceUploadSessionSweep(SweepUploadSessionsRequest body) throws Exception {
         Object raw = client.post(ApiPaths.backendPath("/drive/maintenance/upload_session_sweep"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<SweepResponse>() {});
+        return client.convertValue(raw, new TypeReference<MaintenanceUploadSessionSweepResponse>() {});
     }
 
-    public SweepResponse maintenanceExpiredUploadContentSweepStart(SweepUploadSessionsRequest body) throws Exception {
+    public MaintenanceExpiredUploadContentSweepResponse maintenanceExpiredUploadContentSweep(SweepUploadSessionsRequest body) throws Exception {
         Object raw = client.post(ApiPaths.backendPath("/drive/maintenance/expired_upload_content_sweep"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<SweepResponse>() {});
+        return client.convertValue(raw, new TypeReference<MaintenanceExpiredUploadContentSweepResponse>() {});
     }
 
-    public SweepResponse maintenanceAbandonedUploadTaskSweepStart(SweepUploadSessionsRequest body) throws Exception {
+    public MaintenanceAbandonedUploadTaskSweepResponse maintenanceAbandonedUploadTaskSweep(SweepUploadSessionsRequest body) throws Exception {
         Object raw = client.post(ApiPaths.backendPath("/drive/maintenance/abandoned_upload_task_sweep"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<SweepResponse>() {});
+        return client.convertValue(raw, new TypeReference<MaintenanceAbandonedUploadTaskSweepResponse>() {});
     }
 
-    public QuotaSummary quotasSummary() throws Exception {
+    public QuotasRetrieveResponse quotasRetrieve() throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/drive/quotas"));
-        return client.convertValue(raw, new TypeReference<QuotaSummary>() {});
+        return client.convertValue(raw, new TypeReference<QuotasRetrieveResponse>() {});
     }
 
     /** Update tenant quota policy */
-    public QuotaSummary quotasUpdate(UpdateQuotaPolicyRequest body) throws Exception {
+    public QuotasUpdateResponse quotasUpdate(UpdateQuotaPolicyRequest body) throws Exception {
         Object raw = client.put(ApiPaths.backendPath("/drive/quotas"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<QuotaSummary>() {});
+        return client.convertValue(raw, new TypeReference<QuotasUpdateResponse>() {});
     }
 
-    public ListSpacesResponse spacesAdminList(String ownerSubjectType, String ownerSubjectId) throws Exception {
+    public SpacesAdminListResponse spacesAdminList(String ownerSubjectType, String ownerSubjectId, Integer pageSize, String cursor) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("ownerSubjectType", ownerSubjectType, "form", true, false, null),
-            new QueryParameterSpec("ownerSubjectId", ownerSubjectId, "form", true, false, null)
+            new QueryParameterSpec("ownerSubjectId", ownerSubjectId, "form", true, false, null),
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("cursor", cursor, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/spaces"), query));
-        return client.convertValue(raw, new TypeReference<ListSpacesResponse>() {});
+        return client.convertValue(raw, new TypeReference<SpacesAdminListResponse>() {});
     }
 
-    public DownloadPackagePage downloadPackagesList(String state, Integer page, Integer pageSize) throws Exception {
+    public DownloadPackagesListResponse downloadPackagesList(String state, Integer page, Integer pageSize) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("state", state, "form", true, false, null),
             new QueryParameterSpec("page", page, "form", true, false, null),
-            new QueryParameterSpec("pageSize", pageSize, "form", true, false, null)
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/download_packages"), query));
-        return client.convertValue(raw, new TypeReference<DownloadPackagePage>() {});
+        return client.convertValue(raw, new TypeReference<DownloadPackagesListResponse>() {});
     }
 
 

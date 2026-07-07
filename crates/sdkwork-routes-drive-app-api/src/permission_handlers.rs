@@ -4,12 +4,16 @@ use crate::dto::{
     CreatePermissionRequest, EffectivePermissionResponse, NodeMutationQuery, PageQuery,
     PermissionResponse, UpdatePermissionRequest,
 };
-use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, not_found_problem, problem,
-    ProblemDetail, SdkWorkResultCode};
+    ProblemDetail, SdkWorkResultCode,
+};
 use crate::mappers::map_permission_row;
 use crate::node_repository::{find_active_node, find_node};
+use crate::response::{
+    no_content, success_created_resource, success_list_page_simple, success_resource,
+    DriveListHttpResponse,
+};
 use crate::route_change::record_change;
 use crate::state::AppState;
 use crate::validators::{
@@ -19,7 +23,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
-use serde_json::json;
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 
 pub(crate) async fn list_permissions(
     State(state): State<AppState>,
@@ -55,7 +59,10 @@ pub(crate) async fn get_permission(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, permission_id)): Path<(String, String)>,
-) -> Result<Json<PermissionResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<PermissionResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
@@ -73,7 +80,7 @@ pub(crate) async fn get_permission(
     let Some(row) = row else {
         return Err(not_found_problem("permission not found"));
     };
-    Ok(Json(map_permission_row(&row)))
+    Ok(success_resource(map_permission_row(&row)))
 }
 
 pub(crate) async fn list_effective_permissions(
@@ -156,7 +163,13 @@ pub(crate) async fn create_permission(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CreatePermissionRequest>,
-) -> Result<(StatusCode, Json<PermissionResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<PermissionResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
 
@@ -168,7 +181,7 @@ pub(crate) async fn create_permission(
         "INSERT INTO dr_drive_node_permission (
             id, tenant_id, node_id, subject_type, subject_id, role,
             inherited, lifecycle_status, version, created_by, updated_by
-         ) VALUES ($1, $2, $3, $4, $5, $6, 0, 'active', 1, $7, $7)",
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', 1, $8, $8)",
     )
     .bind(&payload.id)
     .bind(&tenant_id)
@@ -176,6 +189,7 @@ pub(crate) async fn create_permission(
     .bind(&payload.subject_type)
     .bind(&payload.subject_id)
     .bind(&payload.role)
+    .bind(false)
     .bind(&operator_id)
     .execute(&state.pool)
     .await
@@ -212,7 +226,7 @@ pub(crate) async fn create_permission(
     .await
     .map_err(internal_sql_error("read dr_drive_node_permission failed"))?;
 
-    Ok((StatusCode::CREATED, Json(map_permission_row(&row))))
+    Ok(success_created_resource(map_permission_row(&row)))
 }
 
 pub(crate) async fn update_permission(
@@ -220,7 +234,10 @@ pub(crate) async fn update_permission(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, permission_id)): Path<(String, String)>,
     Json(payload): Json<UpdatePermissionRequest>,
-) -> Result<Json<PermissionResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<PermissionResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -286,7 +303,7 @@ pub(crate) async fn update_permission(
     .await
     .map_err(internal_sql_error("read dr_drive_node_permission failed"))?;
 
-    Ok(Json(map_permission_row(&row)))
+    Ok(success_resource(map_permission_row(&row)))
 }
 
 pub(crate) async fn delete_permission(
@@ -294,7 +311,7 @@ pub(crate) async fn delete_permission(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, permission_id)): Path<(String, String)>,
     Query(query): Query<NodeMutationQuery>,
-) -> Result<Json<serde_json::Value>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -323,5 +340,6 @@ pub(crate) async fn delete_permission(
         )
         .await?;
     }
-    Ok(Json(json!({ "deleted": affected > 0 })))
+    let _deleted = affected > 0;
+    Ok(no_content())
 }

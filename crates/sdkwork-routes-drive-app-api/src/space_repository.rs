@@ -1,4 +1,6 @@
-use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
+use crate::error::{
+    internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode,
+};
 use axum::http::StatusCode;
 use axum::Json;
 use sqlx::AnyPool;

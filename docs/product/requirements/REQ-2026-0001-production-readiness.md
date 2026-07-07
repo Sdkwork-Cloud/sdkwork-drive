@@ -4,7 +4,7 @@ title: Production and commercial readiness for SDKWork Drive
 owner: SDKWork maintainers
 status: done
 source: platform
-updated: 2026-06-24
+updated: 2026-07-08
 problem: SDKWork Drive must reach production-operable and commercially publishable quality before public GA, without leaving backend, client, release, or deployment technical debt.
 goals:
   - All HTTP services expose health/readiness/metrics appropriate to their role.
@@ -22,6 +22,7 @@ users:
 acceptance_criteria:
   - `pnpm verify` passes on main.
   - `pnpm deploy:validate` passes.
+  - Strict deployment validation rejects placeholder Kubernetes image digests until release evidence replaces them.
   - Postgres migration 0002 exists with paired up/down SQL under database/migrations/postgres/.
   - install-worker uses postgres advisory lock for maintenance tasks in cloud replicas.
   - staging-e2e workflow runs on schedule and skips gracefully when secrets are absent.
@@ -50,5 +51,6 @@ trace:
 verification:
   - pnpm verify
   - pnpm deploy:validate
+  - node --test tools/check_drive_deployments.test.mjs
   - pnpm db:validate
   - SDKWORK_RELEASE_VALIDATION=strict node tools/check_sdkwork_drive_release_readiness.mjs

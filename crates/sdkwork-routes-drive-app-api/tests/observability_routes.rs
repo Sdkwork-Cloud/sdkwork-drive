@@ -308,7 +308,7 @@ async fn app_routes_emit_standardized_observability_events() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    let token = payload["downloadUrl"]
+    let token = common::envelope_data(&payload)["downloadUrl"]
         .as_str()
         .expect("download url should exist")
         .rsplit('/')
@@ -425,10 +425,17 @@ async fn app_routes_emit_standardized_observability_events() {
         )
         .await
         .expect("resolve token request should be handled");
-    assert_eq!(resolve_response.status(), StatusCode::TEMPORARY_REDIRECT);
-    let _ = to_bytes(resolve_response.into_body(), usize::MAX)
-        .await
-        .expect("response body should be readable");
+    assert_eq!(resolve_response.status(), StatusCode::OK);
+    let resolve_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(resolve_response.into_body(), usize::MAX)
+            .await
+            .expect("response body should be readable"),
+    )
+    .expect("resolve download token response should be valid json");
+    assert!(
+        common::envelope_data(&resolve_payload)["signedSourceUrl"].is_string(),
+        "resolve download token should return an SDKWork envelope with signedSourceUrl"
+    );
 
     let delete_space_response = app
         .oneshot(
@@ -451,10 +458,7 @@ async fn app_routes_emit_standardized_observability_events() {
         )
         .await
         .expect("delete space request should be handled");
-    assert_eq!(delete_space_response.status(), StatusCode::OK);
-    let _ = to_bytes(delete_space_response.into_body(), usize::MAX)
-        .await
-        .expect("response body should be readable");
+    common::assert_no_content_response(delete_space_response).await;
 
     drop(guard);
     let logs = buffer_to_string(&log_buffer);

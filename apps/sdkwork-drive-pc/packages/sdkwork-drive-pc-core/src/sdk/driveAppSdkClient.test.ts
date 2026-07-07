@@ -53,7 +53,7 @@ describe('drive app sdk client', () => {
     await client.request({
       operationId: 'nodes.list',
       pathParams: { spaceId: 'space-001' },
-      query: { tenantId: 'tenant-001', pageSize: 50 },
+      query: { tenantId: 'tenant-001', page_size: 50, cursor: '100' },
     });
 
     expect(sdkClient.setTokenManager).toHaveBeenCalledWith(tokenManager);
@@ -63,7 +63,7 @@ describe('drive app sdk client', () => {
       '/app/v3/api/drive/spaces/space-001/nodes',
       {
         method: 'GET',
-        params: { pageSize: 50 },
+        params: { page_size: 50, cursor: '100' },
         body: undefined,
         contentType: undefined,
         signal: undefined,
@@ -76,9 +76,8 @@ describe('drive app sdk client', () => {
     const tokenManager = createDriveSessionTokenManager(createSessionStore());
     const request = vi.fn(async <T>(): Promise<T> => {
       throw Object.assign(new Error('tenantId is required'), {
-        code: 'drive.validation.tenant_id_required',
+        code: 40001,
         httpStatus: 400,
-        requestId: 'request-001',
         traceId: 'trace-001',
       });
     });
@@ -104,9 +103,32 @@ describe('drive app sdk client', () => {
       operationId: 'nodes.list',
       status: 400,
       detail: 'tenantId is required',
-      code: 'drive.validation.tenant_id_required',
+      code: 40001,
       traceId: 'trace-001',
-      requestId: 'request-001',
     });
+  });
+
+  it('rejects legacy pagination query aliases at the SDK facade boundary', async () => {
+    const tokenManager = createDriveSessionTokenManager(createSessionStore());
+    const request = vi.fn(async <T>(): Promise<T> => ({ items: [] }) as T);
+    const sdkClient = {
+      http: {
+        request,
+      },
+      setTokenManager: vi.fn(),
+    };
+
+    const client = createDriveAppSdkClient({
+      config,
+      sdkClient: sdkClient as never,
+      tokenManager,
+    });
+
+    await expect(client.request({
+      operationId: 'nodes.list',
+      pathParams: { spaceId: 'space-001' },
+      query: { pageSize: 50 },
+    })).rejects.toThrow(/Legacy SDKWork pagination query parameter "pageSize"/);
+    expect(request).not.toHaveBeenCalled();
   });
 });

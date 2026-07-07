@@ -35,11 +35,7 @@ pub async fn build_protected_router_with_pool_and_config(
     pool: AnyPool,
     config: AdminStorageConfig,
 ) -> Router {
-    let router = build_router_inner_with_infra(
-        AdminStorageState::new(pool, config),
-        true,
-        None,
-    );
+    let router = build_router_inner_with_infra(AdminStorageState::new(pool, config), true, None);
     crate::web_bootstrap::wrap_router_with_web_framework_from_env(router).await
 }
 

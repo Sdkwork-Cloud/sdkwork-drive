@@ -8,8 +8,10 @@ use crate::ports::uploader_store::{
 };
 use crate::{drive_share_token_hash, DriveServiceError};
 use sdkwork_drive_storage_contract::{DriveObjectLocator, DriveObjectStore, PutObjectRequest};
-use sdkwork_utils_rust::sha256_hash;
-use std::collections::{BTreeMap, HashSet};
+use sdkwork_utils_rust::{
+    format_numbered_filename_variant, sha256_hash, split_filename_stem_extension,
+};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
 pub enum UploaderActor {
@@ -237,23 +239,35 @@ where
             }
         };
         let node_id = format!("node-{id}");
-        let taken_node_names = self
-            .store
-            .list_live_node_names_in_parent(&tenant_id, &space_id, parent_node_id.as_deref())
+        let mut node_name = String::new();
+        for attempt in 0..5 {
+            node_name = resolve_unique_upload_node_name(
+                &self.store,
+                &tenant_id,
+                &space_id,
+                parent_node_id.as_deref(),
+                &original_file_name,
+            )
             .await?;
-        let node_name = allocate_unique_upload_node_name(&original_file_name, &taken_node_names);
-        self.store
-            .insert_upload_node(&NewDriveUploaderNode {
-                id: node_id.clone(),
-                tenant_id: tenant_id.clone(),
-                space_id: space_id.clone(),
-                parent_node_id,
-                node_name: node_name.clone(),
-                scene: scene.clone(),
-                source: source.clone(),
-                operator_id: operator_id.clone(),
-            })
-            .await?;
+            match self
+                .store
+                .insert_upload_node(&NewDriveUploaderNode {
+                    id: node_id.clone(),
+                    tenant_id: tenant_id.clone(),
+                    space_id: space_id.clone(),
+                    parent_node_id: parent_node_id.clone(),
+                    node_name: node_name.clone(),
+                    scene: scene.clone(),
+                    source: source.clone(),
+                    operator_id: operator_id.clone(),
+                })
+                .await
+            {
+                Ok(_) => break,
+                Err(DriveServiceError::Conflict(_)) if attempt < 4 => continue,
+                Err(error) => return Err(error),
+            }
+        }
         let (storage_provider_id, bucket) = self
             .store
             .find_default_storage_provider(&tenant_id)
@@ -926,34 +940,48 @@ fn file_extension(file_name: &str) -> Option<String> {
 }
 
 fn split_upload_file_name(file_name: &str) -> (String, Option<String>) {
-    match file_name.rsplit_once('.') {
-        Some((stem, extension))
-            if !stem.is_empty() && !extension.is_empty() && extension.len() <= 64 =>
-        {
-            (stem.to_string(), Some(extension.to_string()))
-        }
-        _ => (file_name.to_string(), None),
-    }
+    split_filename_stem_extension(file_name)
 }
 
-fn allocate_unique_upload_node_name(base_name: &str, taken_names: &[String]) -> String {
-    let taken: HashSet<&str> = taken_names.iter().map(String::as_str).collect();
-    if !taken.contains(base_name) {
-        return base_name.to_string();
+async fn resolve_unique_upload_node_name<S: DriveUploaderStore>(
+    store: &S,
+    tenant_id: &str,
+    space_id: &str,
+    parent_node_id: Option<&str>,
+    base_name: &str,
+) -> Result<String, DriveServiceError> {
+    if !store
+        .live_node_name_exists_in_parent(tenant_id, space_id, parent_node_id, base_name)
+        .await?
+    {
+        return Ok(base_name.to_string());
     }
 
     let (stem, extension) = split_upload_file_name(base_name);
     for index in 1..=9999 {
-        let candidate = match &extension {
-            Some(ext) => format!("{stem} ({index}).{ext}"),
-            None => format!("{stem} ({index})"),
-        };
-        if !taken.contains(candidate.as_str()) {
-            return candidate;
+        let candidate = format_numbered_filename_variant(&stem, index, extension.as_deref());
+        if !store
+            .live_node_name_exists_in_parent(tenant_id, space_id, parent_node_id, &candidate)
+            .await?
+        {
+            return Ok(candidate);
         }
     }
 
-    format!("{stem} ({})", stable_identifier_suffix(base_name))
+    Ok(format_numbered_filename_variant(
+        &stem,
+        9_999,
+        extension.as_deref(),
+    ))
+}
+
+#[cfg(test)]
+fn allocate_unique_upload_node_name(base_name: &str, taken_names: &[String]) -> String {
+    use std::collections::HashSet;
+    let taken: HashSet<&str> = taken_names.iter().map(String::as_str).collect();
+    sdkwork_utils_rust::allocate_unique_display_name(base_name, |candidate| {
+        taken.contains(candidate)
+    })
 }
 
 fn stable_identifier_suffix(value: &str) -> String {

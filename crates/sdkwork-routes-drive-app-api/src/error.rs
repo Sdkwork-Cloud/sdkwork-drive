@@ -1,8 +1,8 @@
 use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_http::api_problem::{
-    problem as shared_problem,
-    problem_with_trace_id as shared_problem_with_trace_id, SdkWorkProblemDetail,
+    problem as shared_problem, problem_with_trace_id as shared_problem_with_trace_id,
+    SdkWorkProblemDetail,
 };
 use sdkwork_drive_observability::error_kinds;
 use sdkwork_drive_storage_contract::{DriveObjectStoreError, DriveObjectStoreErrorKind};
@@ -22,9 +22,12 @@ pub(crate) fn map_service_error(error: DriveServiceError) -> (StatusCode, Json<P
             };
             problem(StatusCode::BAD_REQUEST, "validation failed", detail, code)
         }
-        DriveServiceError::Conflict(detail) => {
-            problem(StatusCode::CONFLICT, "conflict", detail, SdkWorkResultCode::Conflict)
-        }
+        DriveServiceError::Conflict(detail) => problem(
+            StatusCode::CONFLICT,
+            "conflict",
+            detail,
+            SdkWorkResultCode::Conflict,
+        ),
         DriveServiceError::NotFound(detail) => problem(
             StatusCode::NOT_FOUND,
             "not found",

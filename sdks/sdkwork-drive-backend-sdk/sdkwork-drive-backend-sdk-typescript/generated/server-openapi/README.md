@@ -27,7 +27,7 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-const result = await client.drive.quotas.summary();
+const result = await client.drive.quotas.retrieve();
 ```
 
 ## Authentication
@@ -63,7 +63,7 @@ const client = new SdkworkBackendClient({
 
 ```typescript
 // GET /backend/v3/api/drive/quotas
-const result = await client.drive.quotas.summary();
+const result = await client.drive.quotas.retrieve();
 ```
 
 ### labels
@@ -72,8 +72,8 @@ const result = await client.drive.quotas.summary();
 // List Drive label definitions
 const params = {
   lifecycleStatus: 'active',
-  pageSize: 2,
-  pageToken: 'pageToken',
+  page_size: 2,
+  cursor: 'cursor',
 };
 const result = await client.labels.list(params);
 ```
@@ -84,7 +84,7 @@ const result = await client.labels.list(params);
 import { SdkworkBackendClient, NetworkError, TimeoutError, AuthenticationError } from 'sdkwork-drive-backend-sdk-generated-typescript';
 
 try {
-  const result = await client.drive.quotas.summary();
+  const result = await client.drive.quotas.retrieve();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

@@ -50,6 +50,7 @@ impl Scheduler {
             loop {
                 tokio::time::sleep(interval).await;
                 let pool_for_task = pool_clone.clone();
+                let engine_for_task = engine;
                 crate::maintenance::leader::run_if_maintenance_leader(
                     &pool_clone,
                     engine,
@@ -57,14 +58,19 @@ impl Scheduler {
                     || async move {
                         match crate::maintenance::upload_session_cleanup::cleanup_expired_sessions(
                             &pool_for_task,
+                            engine_for_task,
                         )
                         .await
                         {
                             Ok(result) => {
                                 tracing::info!(
-                                    "Upload session cleanup: expired={}, parts={}",
-                                    result.expired_sessions,
-                                    result.cleaned_parts
+                                    target: "sdkwork.drive",
+                                    event = "drive.install_worker.upload_session_cleanup",
+                                    expired_sessions = result.expired_sessions,
+                                    cleaned_parts = result.cleaned_parts,
+                                    retired_uploading_nodes = result.retired_uploading_nodes,
+                                    retired_storage_objects = result.retired_storage_objects,
+                                    "upload session cleanup completed"
                                 );
                             }
                             Err(error) => {
@@ -83,6 +89,7 @@ impl Scheduler {
             loop {
                 tokio::time::sleep(interval).await;
                 let pool_for_task = pool_clone.clone();
+                let engine_for_task = engine;
                 crate::maintenance::leader::run_if_maintenance_leader(
                     &pool_clone,
                     engine,
@@ -90,11 +97,18 @@ impl Scheduler {
                     || async move {
                         match crate::maintenance::orphan_object_cleanup::cleanup_orphan_objects(
                             &pool_for_task,
+                            engine_for_task,
                         )
                         .await
                         {
                             Ok(result) => {
-                                tracing::info!("Orphan cleanup: nodes={}", result.orphaned_nodes);
+                                tracing::info!(
+                                    target: "sdkwork.drive",
+                                    event = "drive.install_worker.orphan_object_cleanup",
+                                    orphaned_nodes = result.orphaned_nodes,
+                                    cleaned_objects = result.cleaned_objects,
+                                    "orphan object cleanup completed"
+                                );
                             }
                             Err(error) => {
                                 tracing::error!("Orphan cleanup failed: {}", error);
@@ -124,10 +138,21 @@ impl Scheduler {
                         {
                             Ok(result) => {
                                 tracing::info!(
-                                    "Quota recalculation: tenants={}, spaces={}",
-                                    result.tenants_processed,
-                                    result.spaces_processed
+                                    target: "sdkwork.drive",
+                                    event = "drive.install_worker.quota_recalculation",
+                                    tenants_scanned = result.tenants_scanned,
+                                    storage_objects_retired = result.storage_objects_retired,
+                                    tenants_over_quota = result.tenants_over_quota,
+                                    "quota reconciliation completed"
                                 );
+                                if result.tenants_over_quota > 0 {
+                                    tracing::warn!(
+                                        target: "sdkwork.drive",
+                                        event = "drive.install_worker.quota_over_limit",
+                                        tenants_over_quota = result.tenants_over_quota,
+                                        "tenants exceed configured storage quota caps"
+                                    );
+                                }
                             }
                             Err(error) => {
                                 tracing::error!("Quota recalculation failed: {}", error);

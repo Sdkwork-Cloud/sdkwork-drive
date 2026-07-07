@@ -306,7 +306,7 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
 }
 
 #[tokio::test]
-async fn app_forbidden_asset_upload_routes_return_not_implemented_problem_detail() {
+async fn app_forbidden_asset_upload_routes_return_gone_problem_detail() {
     let app = build_router();
 
     for (method, uri) in [
@@ -339,8 +339,8 @@ async fn app_forbidden_asset_upload_routes_return_not_implemented_problem_detail
             .unwrap_or_else(|error| panic!("{uri} should be handled: {error}"));
         assert_eq!(
             response.status(),
-            StatusCode::NOT_IMPLEMENTED,
-            "{uri} must remain forbidden until legacy upload routes are removed"
+            StatusCode::GONE,
+            "{uri} must remain fail-closed and direct clients to Drive uploader APIs"
         );
         let payload: serde_json::Value = serde_json::from_slice(
             &to_bytes(response.into_body(), usize::MAX)
@@ -348,8 +348,59 @@ async fn app_forbidden_asset_upload_routes_return_not_implemented_problem_detail
                 .expect("assets response should be read"),
         )
         .expect("assets response should be valid json");
-        assert_eq!(payload["code"].as_i64(), Some(50001));
-        assert_eq!(payload["status"].as_i64(), Some(501));
+        assert_eq!(payload["code"].as_i64(), Some(41001));
+        assert_eq!(payload["status"].as_i64(), Some(410));
+        assert_ne!(payload["title"].as_str(), Some("not implemented"));
+        assert_ne!(payload["detail"].as_str(), Some("not implemented"));
+        assert!(payload["traceId"].as_str().is_some());
+    }
+}
+
+#[tokio::test]
+async fn app_asset_delete_resource_post_routes_return_method_not_allowed_problem_detail() {
+    let app = build_router();
+
+    for uri in [
+        "/app/v3/api/assets/collections/collection-001/items/item-001",
+        "/app/v3/api/assets/asset-001/relations/relation-001",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .header(
+                        "authorization",
+                        format!(
+                            "Bearer {}",
+                            common::auth_token("tenant-001", "user-001", "appbase")
+                        ),
+                    )
+                    .header(
+                        "access-token",
+                        common::access_token("tenant-001", "user-001", "appbase"),
+                    )
+                    .method(Method::POST)
+                    .uri(uri)
+                    .header("content-type", "application/json")
+                    .body(Body::from("{}"))
+                    .expect("request should be built"),
+            )
+            .await
+            .unwrap_or_else(|error| panic!("{uri} should be handled: {error}"));
+        assert_eq!(
+            response.status(),
+            StatusCode::METHOD_NOT_ALLOWED,
+            "{uri} must reject POST with a standard method-not-allowed problem"
+        );
+        let payload: serde_json::Value = serde_json::from_slice(
+            &to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("assets response should be read"),
+        )
+        .expect("assets response should be valid json");
+        assert_eq!(payload["code"].as_i64(), Some(40501));
+        assert_eq!(payload["status"].as_i64(), Some(405));
+        assert_eq!(payload["title"].as_str(), Some("method not allowed"));
         assert!(payload["traceId"].as_str().is_some());
     }
 }

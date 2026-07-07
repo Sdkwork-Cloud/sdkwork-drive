@@ -17,7 +17,7 @@
         "tags": [
           "driveOpen"
         ],
-        "operationId": "openShareLinks.resolve",
+        "operationId": "openShareLinks.retrieve",
         "parameters": [
           {
             "name": "token",
@@ -44,7 +44,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpenShareLinkResolveResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenShareLinkResolveResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -135,7 +142,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpenDownloadUrlCreateResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenDownloadUrlCreateResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -377,7 +391,7 @@
       "OpenShareLinkResolveResponse": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/SdkWorkResourceResponse"
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "type": "object",
@@ -400,7 +414,7 @@
       "OpenDownloadUrlCreateResponse": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/SdkWorkResourceResponse"
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "type": "object",

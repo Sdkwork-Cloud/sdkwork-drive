@@ -4,6 +4,8 @@ use crate::ports::maintenance_store::{
     SweepAbandonedUploadTasksQuery, SweepDeletedObjectsQuery, SweepExpiredUploadContentQuery,
     SweepExpiredUploadSessionsQuery,
 };
+use sdkwork_utils_rust::MAX_LIST_PAGE_SIZE;
+
 use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
@@ -425,11 +427,12 @@ fn is_allowed_identifier_char(ch: char) -> bool {
 }
 
 fn normalize_limit(limit: Option<i64>) -> Result<i64, DriveServiceError> {
-    let limit = limit.unwrap_or(200);
-    if !(1..=1000).contains(&limit) {
-        return Err(DriveServiceError::Validation(
-            "limit must be in range [1, 1000]".to_string(),
-        ));
+    // Maintenance sweep batch size (PAGINATION_SPEC §2.5); not interactive list page_size.
+    let limit = limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE));
+    if !(1..=i64::from(MAX_LIST_PAGE_SIZE)).contains(&limit) {
+        return Err(DriveServiceError::Validation(format!(
+            "limit must be in range [1, {MAX_LIST_PAGE_SIZE}]"
+        )));
     }
     Ok(limit)
 }

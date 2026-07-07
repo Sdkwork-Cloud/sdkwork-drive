@@ -34,6 +34,9 @@
       "sdkwork-drive-pc-core": [
         "./packages/sdkwork-drive-pc-core/src"
       ],
+      "sdkwork-drive-pc-core/types": [
+        "./packages/sdkwork-drive-pc-core/src/types/index.ts"
+      ],
       "sdkwork-drive-pc-drive": [
         "./packages/sdkwork-drive-pc-drive/src"
       ],

@@ -171,7 +171,17 @@
     "config": {
       "workspaceRoot": ".",
       "framework": "tauri",
-      "managedBy": "apps/scripts/initialize-sdkwork-app-standard-v3.mjs"
+      "managedBy": "apps/scripts/initialize-sdkwork-app-standard-v3.mjs",
+      "pilotReadiness": {
+        "codeAlignmentCompletedAt": "2026-07-07",
+        "blockingGaGates": [
+          "artifactSigning",
+          "crossPlatformChecksums",
+          "catalogCdnUpload",
+          "kubernetesImageDigests",
+          "stagingAdminSmoke"
+        ]
+      }
     }
   },
   "environments": {
@@ -253,8 +263,6 @@
             "releaseBuildDeferred": true
           },
           "architecture": "universal",
-          "checksumAlgorithm": "SHA-256",
-          "checksum": "5ceffa105ceffa105ceffa105ceffa105ceffa105ceffa105ceffa105ceffa10",
           "deploymentProfile": "standalone",
           "runtimeTarget": "desktop"
         },
@@ -273,8 +281,6 @@
             "releaseBuildDeferred": true
           },
           "architecture": "x64",
-          "checksumAlgorithm": "SHA-256",
-          "checksum": "5ce5af915ce5af915ce5af915ce5af915ce5af915ce5af915ce5af915ce5af91",
           "deploymentProfile": "standalone",
           "runtimeTarget": "desktop"
         }

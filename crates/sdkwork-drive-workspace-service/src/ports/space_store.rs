@@ -31,6 +31,7 @@ pub trait DriveSpaceStore: Send + Sync {
         tenant_id: &str,
         owner_subject_type: Option<&str>,
         owner_subject_id: Option<&str>,
+        space_type: Option<&str>,
         offset: i64,
         limit: i64,
     ) -> Result<Vec<DriveSpace>, DriveServiceError>;
@@ -42,6 +43,7 @@ pub trait DriveSpaceStore: Send + Sync {
         viewer_subject_id: &str,
         owner_subject_type: Option<&str>,
         owner_subject_id: Option<&str>,
+        space_type: Option<&str>,
         offset: i64,
         limit: i64,
     ) -> Result<Vec<DriveSpace>, DriveServiceError>;

@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let token = "token";
     let mut query = HashMap::new();
     query.insert("accessCode".to_string(), serde_json::json!("ok"));
-    let result = client.drive().open_share_links_resolve(token, Some(&query)).await?;
+    let result = client.drive().open_share_links_retrieve(token, Some(&query)).await?;
     println!("{result:?}");
     Ok(())
 }
@@ -75,7 +75,7 @@ use std::collections::HashMap;
 let token = "token";
 let mut query = HashMap::new();
 query.insert("accessCode".to_string(), serde_json::json!("ok"));
-let result = client.drive().open_share_links_resolve(token, Some(&query)).await?;
+let result = client.drive().open_share_links_retrieve(token, Some(&query)).await?;
 println!("{result:?}");
 ```
 
@@ -92,7 +92,7 @@ let outcome: Result<(), _> = async {
     let token = "token";
     let mut query = HashMap::new();
     query.insert("accessCode".to_string(), serde_json::json!("ok"));
-    client.drive().open_share_links_resolve(token, Some(&query)).await?;
+    client.drive().open_share_links_retrieve(token, Some(&query)).await?;
     Ok(())
 }.await;
 

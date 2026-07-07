@@ -1,5 +1,7 @@
 use crate::dto::{OpenNodeResponse, OpenShareLinkResponse};
-use crate::error::{internal_sql_error, problem, share_link_access_code_problem, ProblemDetail, SdkWorkResultCode};
+use crate::error::{
+    internal_sql_error, problem, share_link_access_code_problem, ProblemDetail, SdkWorkResultCode,
+};
 use crate::time::now_epoch_ms;
 use axum::http::StatusCode;
 use axum::Json;

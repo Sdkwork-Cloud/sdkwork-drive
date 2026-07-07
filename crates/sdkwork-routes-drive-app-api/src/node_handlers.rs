@@ -3,6 +3,7 @@ use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
 use crate::archive::*;
 use crate::archive_storage::read_archive_node_bytes;
+use crate::constants::{DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE, MAX_MOVE_DESTINATION_FOLDERS};
 use crate::dto::*;
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, map_service_error,
@@ -13,6 +14,10 @@ use crate::ids::next_drive_id;
 use crate::mappers::*;
 use crate::metadata_repository::{present_drive_node, present_node_list};
 use crate::node_repository::{collect_node_subtree, find_active_node, find_node};
+use crate::response::{
+    no_content, success_created_command_data, success_created_envelope, success_created_resource,
+    success_envelope, success_full_list, success_resource,
+};
 use crate::space_repository::validate_space_exists;
 use crate::state::AppState;
 use crate::validators::*;
@@ -28,7 +33,10 @@ use sdkwork_drive_workspace_service::application::upload_service::{
 };
 use sdkwork_drive_workspace_service::infrastructure::sql::upload_session_store::SqlUploadSessionStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use sqlx::Row;
+
+use std::collections::{BTreeSet, VecDeque};
 
 use crate::node_repository::resolve_node_path;
 use crate::node_support::*;
@@ -171,7 +179,13 @@ pub(crate) async fn create_folder(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateFolderRequest>,
-) -> Result<(StatusCode, Json<DriveNodeResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<DriveNodeResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node_name = payload.node_name.trim();
@@ -220,9 +234,8 @@ pub(crate) async fn create_folder(
         Some(client_id) => {
             if let Ok(existing) = find_node(&state.pool, &tenant_id, client_id).await {
                 if folder_create_request_matches(&existing, &payload, node_name) {
-                    return Ok((
-                        StatusCode::CREATED,
-                        Json(present_drive_node(&state.pool, &tenant_id, existing).await?),
+                    return Ok(success_created_resource(
+                        present_drive_node(&state.pool, &tenant_id, existing).await?,
                     ));
                 }
                 return Err(problem(
@@ -269,7 +282,12 @@ pub(crate) async fn create_folder(
             } else {
                 "node name already exists in parent"
             };
-            return problem(StatusCode::CONFLICT, "conflict", detail, SdkWorkResultCode::Conflict);
+            return problem(
+                StatusCode::CONFLICT,
+                "conflict",
+                detail,
+                SdkWorkResultCode::Conflict,
+            );
         }
         internal_problem(format!("insert dr_drive_node failed: {error}"))
     })?;
@@ -290,13 +308,16 @@ pub(crate) async fn create_folder(
         find_node(&state.pool, &tenant_id, &node_id).await?,
     )
     .await?;
-    Ok((StatusCode::CREATED, Json(node)))
+    Ok(success_created_resource(node))
 }
 pub(crate) async fn create_file(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateFileRequest>,
-) -> Result<(StatusCode, Json<CreateFileResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (StatusCode, Json<SdkWorkApiResponse<CreateFileResponse>>),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
 
@@ -323,20 +344,22 @@ pub(crate) async fn create_file(
     )
     .await?
     {
-        let node = find_active_node(&state.pool, &tenant_id, payload.id.trim()).await?;
+        let node = present_drive_node(
+            &state.pool,
+            &tenant_id,
+            find_node(&state.pool, &tenant_id, payload.id.trim()).await?,
+        )
+        .await?;
         validate_create_file_idempotent_replay(
             &payload,
             &tenant_id,
             &node,
             &existing_upload_session,
         )?;
-        return Ok((
-            StatusCode::CREATED,
-            Json(CreateFileResponse {
-                node,
-                upload_session: CreateUploadSessionResponse::from(existing_upload_session),
-            }),
-        ));
+        return Ok(success_created_envelope(CreateFileResponse {
+            node,
+            upload_session: CreateUploadSessionResponse::from(existing_upload_session),
+        }));
     }
     validate_space_exists(&state.pool, &tenant_id, &payload.space_id).await?;
     validate_target_parent(
@@ -449,32 +472,35 @@ pub(crate) async fn create_file(
         find_node(&state.pool, &tenant_id, payload.id.trim()).await?,
     )
     .await?;
-    Ok((
-        StatusCode::CREATED,
-        Json(CreateFileResponse {
-            node,
-            upload_session: CreateUploadSessionResponse {
-                id: created.id,
-                tenant_id: created.tenant_id,
-                space_id: created.space_id,
-                node_id: created.node_id,
-                bucket: created.bucket,
-                object_key: created.object_key,
-                idempotency_key: created.idempotency_key,
-                storage_provider_id: created.storage_provider_id,
-                storage_upload_id: created.storage_upload_id,
-                state: upload_session_state,
-                expires_at_epoch_ms: created.expires_at_epoch_ms,
-                version: created.version,
-            },
-        }),
-    ))
+    Ok(success_created_envelope(CreateFileResponse {
+        node,
+        upload_session: CreateUploadSessionResponse {
+            id: created.id,
+            tenant_id: created.tenant_id,
+            space_id: created.space_id,
+            node_id: created.node_id,
+            bucket: created.bucket,
+            object_key: created.object_key,
+            idempotency_key: created.idempotency_key,
+            storage_provider_id: created.storage_provider_id,
+            storage_upload_id: created.storage_upload_id,
+            state: upload_session_state,
+            expires_at_epoch_ms: created.expires_at_epoch_ms,
+            version: created.version,
+        },
+    }))
 }
 pub(crate) async fn create_shortcut(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateShortcutRequest>,
-) -> Result<(StatusCode, Json<DriveNodeResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<DriveNodeResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
 
@@ -578,27 +604,27 @@ pub(crate) async fn create_shortcut(
     )
     .await?;
 
-    Ok((
-        StatusCode::CREATED,
-        Json(
-            present_drive_node(
-                &state.pool,
-                &tenant_id,
-                find_node(&state.pool, &tenant_id, payload.id.trim()).await?,
-            )
-            .await?,
-        ),
+    Ok(success_created_resource(
+        present_drive_node(
+            &state.pool,
+            &tenant_id,
+            find_node(&state.pool, &tenant_id, payload.id.trim()).await?,
+        )
+        .await?,
     ))
 }
 pub(crate) async fn get_node(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<DriveNodeResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
-    Ok(Json(
+    Ok(success_resource(
         present_drive_node(&state.pool, &tenant_id, node).await?,
     ))
 }
@@ -606,7 +632,7 @@ pub(crate) async fn get_node_path(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-) -> Result<Json<NodePathResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<Json<SdkWorkApiResponse<NodePathResponse>>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
@@ -615,7 +641,7 @@ pub(crate) async fn get_node_path(
         .iter()
         .map(|item| item.node_name.clone())
         .collect::<Vec<_>>();
-    Ok(Json(NodePathResponse {
+    Ok(success_envelope(NodePathResponse {
         items,
         path_segments,
     }))
@@ -625,7 +651,10 @@ pub(crate) async fn get_node_capabilities(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<NodeCapabilitiesQuery>,
-) -> Result<Json<NodeCapabilitiesResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<NodeCapabilitiesResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
     validate_subject_type(&subject_type)?;
@@ -649,7 +678,7 @@ pub(crate) async fn get_node_capabilities(
     let owner_subject_type: String = owner_row.get("owner_subject_type");
     let owner_subject_id: String = owner_row.get("owner_subject_id");
     if owner_subject_type == subject_type && owner_subject_id == subject_id {
-        return Ok(Json(build_node_capabilities_response(
+        return Ok(success_resource(build_node_capabilities_response(
             NodeCapabilitiesInput {
                 tenant_id,
                 node_id,
@@ -690,7 +719,7 @@ pub(crate) async fn get_node_capabilities(
         if let Some(row) = row {
             let permission = map_permission_row(&row);
             let inherited = permission.node_id != node_id;
-            return Ok(Json(build_node_capabilities_response(
+            return Ok(success_resource(build_node_capabilities_response(
                 NodeCapabilitiesInput {
                     tenant_id,
                     node_id,
@@ -713,20 +742,29 @@ pub(crate) async fn list_archive_entries(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-) -> Result<Json<ArchiveEntryListResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<sdkwork_utils_rust::SdkWorkPageData<ArchiveEntryResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let archive_bytes = read_archive_node_bytes(&state, &tenant_id, &node_id).await?;
     let items = read_archive_entry_list(&archive_bytes)?;
-    Ok(Json(ArchiveEntryListResponse { items }))
+    Ok(success_full_list(items))
 }
 pub(crate) async fn extract_archive_entries(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<ExtractArchiveEntriesRequest>,
-) -> Result<(StatusCode, Json<ExtractArchiveEntriesResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<ExtractArchiveEntriesResponse>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let source_node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -791,12 +829,11 @@ pub(crate) async fn extract_archive_entries(
         created_nodes.push(created);
     }
 
-    Ok((
-        StatusCode::CREATED,
-        Json(ExtractArchiveEntriesResponse {
+    Ok(success_created_command_data(
+        ExtractArchiveEntriesResponse {
             extracted_count: created_nodes.len() as i64,
             items: created_nodes,
-        }),
+        },
     ))
 }
 pub(crate) async fn update_node(
@@ -804,7 +841,10 @@ pub(crate) async fn update_node(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<UpdateNodeRequest>,
-) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<DriveNodeResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let current = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -872,7 +912,17 @@ pub(crate) async fn update_node(
     .bind(&node_id)
     .execute(&state.pool)
     .await
-    .map_err(internal_sql_error("update dr_drive_node failed"))?
+    .map_err(|error| {
+        if is_unique_constraint_error(&error) {
+            return problem(
+                StatusCode::CONFLICT,
+                "conflict",
+                "node name already exists in parent",
+                SdkWorkResultCode::Conflict,
+            );
+        }
+        internal_sql_error("update dr_drive_node failed")(error)
+    })?
     .rows_affected();
     if affected == 0 {
         return Err(not_found_problem("node not found"));
@@ -888,7 +938,7 @@ pub(crate) async fn update_node(
     )
     .await?;
 
-    Ok(Json(
+    Ok(success_resource(
         present_drive_node(
             &state.pool,
             &tenant_id,
@@ -902,7 +952,10 @@ pub(crate) async fn move_node(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<MoveNodeRequest>,
-) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<DriveNodeResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let current = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -968,7 +1021,17 @@ pub(crate) async fn move_node(
     .bind(&node_id)
     .execute(&state.pool)
     .await
-    .map_err(internal_sql_error("move dr_drive_node failed"))?
+    .map_err(|error| {
+        if is_unique_constraint_error(&error) {
+            return problem(
+                StatusCode::CONFLICT,
+                "conflict",
+                "node name already exists in parent",
+                SdkWorkResultCode::Conflict,
+            );
+        }
+        internal_sql_error("move dr_drive_node failed")(error)
+    })?
     .rows_affected();
     if affected == 0 {
         return Err(not_found_problem("node not found"));
@@ -983,7 +1046,7 @@ pub(crate) async fn move_node(
         &operator_id,
     )
     .await?;
-    Ok(Json(
+    Ok(success_resource(
         present_drive_node(
             &state.pool,
             &tenant_id,
@@ -997,7 +1060,13 @@ pub(crate) async fn copy_node(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CopyNodeRequest>,
-) -> Result<(StatusCode, Json<DriveNodeResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<DriveNodeResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     if payload.id.trim().is_empty() {
         return Err(problem(
             StatusCode::BAD_REQUEST,
@@ -1018,11 +1087,37 @@ pub(crate) async fn copy_node(
         .unwrap_or_else(|| source.space_id.clone());
     let target_parent = normalize_optional_text(payload.target_parent_node_id)
         .or_else(|| source.parent_node_id.clone());
-    let target_name = payload
+    let name_explicit = payload
         .node_name
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| source.node_name.clone());
+        .as_ref()
+        .map(|value| !value.trim().is_empty())
+        .unwrap_or(false);
+    let same_parent =
+        parents_equivalent(source.parent_node_id.as_deref(), target_parent.as_deref());
+    let target_name = if name_explicit {
+        payload
+            .node_name
+            .as_ref()
+            .map(|value| value.trim().to_string())
+            .expect("explicit node name")
+    } else if same_parent {
+        build_copy_of_node_name(&source.node_name)
+    } else {
+        source.node_name.clone()
+    };
+    let target_name = if name_explicit {
+        target_name
+    } else {
+        resolve_live_unique_node_name_in_parent(
+            &state.pool,
+            &tenant_id,
+            &target_space_id,
+            target_parent.as_deref(),
+            &target_name,
+            None,
+        )
+        .await?
+    };
     let content_state = read_node_content_state(&state.pool, &tenant_id, &node_id).await?;
 
     validate_space_exists(&state.pool, &tenant_id, &target_space_id).await?;
@@ -1048,15 +1143,17 @@ pub(crate) async fn copy_node(
         &source.node_type,
     )
     .await?;
-    ensure_no_live_name_conflict(
-        &state.pool,
-        &tenant_id,
-        &target_space_id,
-        target_parent.as_deref(),
-        &target_name,
-        None,
-    )
-    .await?;
+    if name_explicit {
+        ensure_no_live_name_conflict(
+            &state.pool,
+            &tenant_id,
+            &target_space_id,
+            target_parent.as_deref(),
+            &target_name,
+            None,
+        )
+        .await?;
+    }
 
     sqlx::query(
         "INSERT INTO dr_drive_node (
@@ -1107,16 +1204,13 @@ pub(crate) async fn copy_node(
     )
     .await?;
 
-    Ok((
-        StatusCode::CREATED,
-        Json(
-            present_drive_node(
-                &state.pool,
-                &tenant_id,
-                find_node(&state.pool, &tenant_id, payload.id.trim()).await?,
-            )
-            .await?,
-        ),
+    Ok(success_created_resource(
+        present_drive_node(
+            &state.pool,
+            &tenant_id,
+            find_node(&state.pool, &tenant_id, payload.id.trim()).await?,
+        )
+        .await?,
     ))
 }
 pub(crate) async fn delete_node(
@@ -1124,7 +1218,7 @@ pub(crate) async fn delete_node(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<NodeMutationQuery>,
-) -> Result<Json<DeleteNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -1173,7 +1267,215 @@ pub(crate) async fn delete_node(
             .await?;
         }
     }
-    Ok(Json(DeleteNodeResponse {
-        deleted: deleted_count > 0,
-    }))
+    let _deleted = deleted_count > 0;
+    Ok(no_content())
+}
+
+async fn fetch_folder_children_page(
+    pool: &sqlx::AnyPool,
+    tenant_id: &str,
+    space_id: &str,
+    parent_node_id: Option<&str>,
+    is_space_owner: bool,
+    subject_type: &str,
+    subject_id: &str,
+    offset: i64,
+    limit: i64,
+) -> Result<Vec<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let rows = if is_space_owner {
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_COLUMNS}
+             FROM dr_drive_node
+             WHERE tenant_id=$1
+               AND space_id=$2
+               AND lifecycle_status='active'
+               AND content_state='ready'
+               AND node_type='folder'
+               AND ((parent_node_id IS NULL AND $3 IS NULL) OR parent_node_id = $3)
+             ORDER BY node_name ASC, id ASC
+             LIMIT $4 OFFSET $5",
+        ))
+        .bind(tenant_id)
+        .bind(space_id)
+        .bind(parent_node_id)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(pool)
+        .await
+        .map_err(internal_sql_error(
+            "list move destination folder page failed",
+        ))?
+    } else {
+        let reader_acl_predicate =
+            acl_sql::reader_inherited_permission_exists_sql("dr_drive_node", "$4", "$5");
+        sqlx::query(&format!(
+            "SELECT {NODE_API_SELECT_COLUMNS}
+             FROM dr_drive_node
+             WHERE tenant_id=$1
+               AND space_id=$2
+               AND lifecycle_status='active'
+               AND content_state='ready'
+               AND node_type='folder'
+               AND ((parent_node_id IS NULL AND $3 IS NULL) OR parent_node_id = $3)
+               AND ({reader_acl_predicate})
+             ORDER BY node_name ASC, id ASC
+             LIMIT $6 OFFSET $7",
+        ))
+        .bind(tenant_id)
+        .bind(space_id)
+        .bind(parent_node_id)
+        .bind(subject_type)
+        .bind(subject_id)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(pool)
+        .await
+        .map_err(internal_sql_error(
+            "list move destination folder page failed",
+        ))?
+    };
+    Ok(rows.iter().map(map_node_row).collect())
+}
+
+fn move_destination_inventory_too_large_problem() -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::PAYLOAD_TOO_LARGE,
+        "move destination inventory too large",
+        format!(
+            "space exposes more than {MAX_MOVE_DESTINATION_FOLDERS} eligible destination folders"
+        ),
+        SdkWorkResultCode::ValidationError,
+    )
+}
+
+async fn collect_move_destination_folder_window(
+    pool: &sqlx::AnyPool,
+    tenant_id: &str,
+    space_id: &str,
+    is_space_owner: bool,
+    subject_type: &str,
+    subject_id: &str,
+    exclude_node_ids: &BTreeSet<String>,
+    page: crate::dto::PageRequest,
+) -> Result<Vec<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+    if page.offset >= MAX_MOVE_DESTINATION_FOLDERS as i64 {
+        return Err(move_destination_inventory_too_large_problem());
+    }
+
+    let target_seen = page
+        .offset
+        .saturating_add(page.limit)
+        .saturating_add(1)
+        .min(MAX_MOVE_DESTINATION_FOLDERS as i64);
+    let child_batch_limit = page
+        .limit
+        .saturating_add(1)
+        .max(DEFAULT_LIST_PAGE_SIZE.saturating_add(1))
+        .min(MAX_LIST_PAGE_SIZE.saturating_add(1));
+    let child_batch_limit_usize = child_batch_limit as usize;
+
+    let mut items = Vec::with_capacity(page.limit.saturating_add(1) as usize);
+    let mut eligible_seen = 0_i64;
+    let mut queue = VecDeque::from([None::<String>]);
+    while let Some(parent_node_id) = queue.pop_front() {
+        let mut child_offset = 0_i64;
+        loop {
+            let children = fetch_folder_children_page(
+                pool,
+                tenant_id,
+                space_id,
+                parent_node_id.as_deref(),
+                is_space_owner,
+                subject_type,
+                subject_id,
+                child_offset,
+                child_batch_limit,
+            )
+            .await?;
+            if children.is_empty() {
+                break;
+            }
+            let has_more_at_parent = children.len() == child_batch_limit_usize;
+            for child in children {
+                if exclude_node_ids.contains(&child.id) {
+                    continue;
+                }
+                if eligible_seen >= MAX_MOVE_DESTINATION_FOLDERS as i64 {
+                    return Err(move_destination_inventory_too_large_problem());
+                }
+
+                queue.push_back(Some(child.id.clone()));
+                if eligible_seen >= page.offset {
+                    items.push(child);
+                    if items.len() > page.limit as usize {
+                        return Ok(items);
+                    }
+                }
+                eligible_seen += 1;
+                if eligible_seen >= target_seen {
+                    return Ok(items);
+                }
+            }
+            if !has_more_at_parent {
+                break;
+            }
+            child_offset += child_batch_limit as i64;
+        }
+    }
+    Ok(items)
+}
+
+pub(crate) async fn list_move_destination_folders(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Path(space_id): Path<String>,
+    Query(query): Query<ListMoveDestinationsQuery>,
+) -> Result<crate::response::DriveNodeListHttpResponse, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
+    acl::ensure_list_parent_reader(&state.pool, &ctx, &space_id, None).await?;
+    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let is_space_owner = acl::is_subject_space_owner(
+        &state.pool,
+        &tenant_id,
+        &space_id,
+        &subject_type,
+        &subject_id,
+    )
+    .await?;
+
+    let exclude_node_ids = query
+        .exclude_node_ids
+        .as_deref()
+        .map(|raw| {
+            raw.split(',')
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_string)
+                .collect::<BTreeSet<_>>()
+        })
+        .unwrap_or_default();
+    let page = crate::validators::parse_page_request(query.page_size, query.page_token)?;
+    let mut folders = collect_move_destination_folder_window(
+        &state.pool,
+        &tenant_id,
+        &space_id,
+        is_space_owner,
+        &subject_type,
+        &subject_id,
+        &exclude_node_ids,
+        page,
+    )
+    .await?;
+
+    let next_page_token = crate::validators::next_page_token(&mut folders, page);
+    present_node_list(
+        &state.pool,
+        &tenant_id,
+        folders,
+        page,
+        next_page_token,
+        false,
+    )
+    .await
 }

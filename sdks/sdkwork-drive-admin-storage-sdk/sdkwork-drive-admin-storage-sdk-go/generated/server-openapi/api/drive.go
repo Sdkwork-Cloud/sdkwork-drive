@@ -17,225 +17,229 @@ func NewDriveApi(client *sdkhttp.Client) *DriveApi {
     return &DriveApi{client: client}
 }
 
-func (a *DriveApi) StorageProviderBindingsDefaultGet(spaceId *string, spaceType *string) (sdktypes.StorageProviderBinding, error) {
+func (a *DriveApi) StorageProviderBindingsDefaultRetrieve(spaceId *string, spaceType *string) (sdktypes.StorageProviderBindingsDefaultRetrieveResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "spaceId", Value: func() interface{} { if spaceId == nil { return nil }; return *spaceId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "spaceType", Value: func() interface{} { if spaceType == nil { return nil }; return *spaceType }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(CustomApiPath("/drive/storage/bindings/default"), query), nil, nil)
     if err != nil {
-        var zero sdktypes.StorageProviderBinding
+        var zero sdktypes.StorageProviderBindingsDefaultRetrieveResponse
         return zero, err
     }
-    return decodeResult[sdktypes.StorageProviderBinding](raw)
+    return decodeResult[sdktypes.StorageProviderBindingsDefaultRetrieveResponse](raw)
 }
 
-func (a *DriveApi) StorageProviderBindingsDefaultSet(body sdktypes.SetDefaultStorageProviderBindingRequest) (sdktypes.StorageProviderBinding, error) {
+func (a *DriveApi) StorageProviderBindingsDefaultUpdate(body sdktypes.SetDefaultStorageProviderBindingRequest) (sdktypes.StorageProviderBindingsDefaultUpdateResponse, error) {
     raw, err := a.client.Put(CustomApiPath("/drive/storage/bindings/default"), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.StorageProviderBinding
+        var zero sdktypes.StorageProviderBindingsDefaultUpdateResponse
         return zero, err
     }
-    return decodeResult[sdktypes.StorageProviderBinding](raw)
+    return decodeResult[sdktypes.StorageProviderBindingsDefaultUpdateResponse](raw)
 }
 
 // Delete a Drive default storage provider binding
-func (a *DriveApi) StorageProviderBindingsDefaultDelete(operatorId string, spaceId *string) (sdktypes.DeleteStorageProviderBindingResponse, error) {
+func (a *DriveApi) StorageProviderBindingsDefaultDelete(operatorId string, spaceId *string) (struct{}, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "spaceId", Value: func() interface{} { if spaceId == nil { return nil }; return *spaceId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "operatorId", Value: operatorId, Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Delete(AppendQueryString(CustomApiPath("/drive/storage/bindings/default"), query), nil, nil)
     if err != nil {
-        var zero sdktypes.DeleteStorageProviderBindingResponse
+        var zero struct{}
         return zero, err
     }
-    return decodeResult[sdktypes.DeleteStorageProviderBindingResponse](raw)
+    return decodeResult[struct{}](raw)
 }
 
-func (a *DriveApi) StorageProvidersList(status *string) (sdktypes.ListStorageProvidersResponse, error) {
+func (a *DriveApi) StorageProvidersList(status *string) (sdktypes.StorageProvidersListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "status", Value: func() interface{} { if status == nil { return nil }; return *status }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(CustomApiPath("/drive/storage/providers"), query), nil, nil)
     if err != nil {
-        var zero sdktypes.ListStorageProvidersResponse
+        var zero sdktypes.StorageProvidersListResponse
         return zero, err
     }
-    return decodeResult[sdktypes.ListStorageProvidersResponse](raw)
+    return decodeResult[sdktypes.StorageProvidersListResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersCreate(body sdktypes.CreateStorageProviderRequest) (sdktypes.StorageProvider, error) {
+func (a *DriveApi) StorageProvidersCreate(body sdktypes.CreateStorageProviderRequest) (sdktypes.StorageProvidersCreateResponse201, error) {
     raw, err := a.client.Post(CustomApiPath("/drive/storage/providers"), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.StorageProvider
+        var zero sdktypes.StorageProvidersCreateResponse201
         return zero, err
     }
-    return decodeResult[sdktypes.StorageProvider](raw)
+    return decodeResult[sdktypes.StorageProvidersCreateResponse201](raw)
 }
 
-func (a *DriveApi) StorageProvidersUpdate(providerId string, body sdktypes.UpdateStorageProviderRequest) (sdktypes.StorageProvider, error) {
+func (a *DriveApi) StorageProvidersUpdate(providerId string, body sdktypes.UpdateStorageProviderRequest) (sdktypes.StorageProvidersUpdateResponse, error) {
     raw, err := a.client.Patch(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.StorageProvider
+        var zero sdktypes.StorageProvidersUpdateResponse
         return zero, err
     }
-    return decodeResult[sdktypes.StorageProvider](raw)
+    return decodeResult[sdktypes.StorageProvidersUpdateResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersDelete(providerId string) (sdktypes.DeleteStorageProviderResponse, error) {
+func (a *DriveApi) StorageProvidersDelete(providerId string) (struct{}, error) {
     raw, err := a.client.Delete(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.DeleteStorageProviderResponse
+        var zero struct{}
         return zero, err
     }
-    return decodeResult[sdktypes.DeleteStorageProviderResponse](raw)
+    return decodeResult[struct{}](raw)
 }
 
-func (a *DriveApi) StorageProvidersGet(providerId string) (sdktypes.StorageProvider, error) {
+func (a *DriveApi) StorageProvidersRetrieve(providerId string) (sdktypes.StorageProvidersRetrieveResponse, error) {
     raw, err := a.client.Get(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.StorageProvider
+        var zero sdktypes.StorageProvidersRetrieveResponse
         return zero, err
     }
-    return decodeResult[sdktypes.StorageProvider](raw)
+    return decodeResult[sdktypes.StorageProvidersRetrieveResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersActivate(providerId string, body sdktypes.OperatorRequest) (sdktypes.StorageProvider, error) {
+func (a *DriveApi) StorageProvidersActivate(providerId string, body sdktypes.OperatorRequest) (sdktypes.StorageProvidersActivateResponse, error) {
     raw, err := a.client.Post(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/activate", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.StorageProvider
+        var zero sdktypes.StorageProvidersActivateResponse
         return zero, err
     }
-    return decodeResult[sdktypes.StorageProvider](raw)
+    return decodeResult[sdktypes.StorageProvidersActivateResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersCapabilitiesGet(providerId string) (sdktypes.StorageProviderCapabilities, error) {
+func (a *DriveApi) StorageProvidersCapabilitiesList(providerId string) (sdktypes.StorageProvidersCapabilitiesListResponse, error) {
     raw, err := a.client.Get(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/capabilities", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.StorageProviderCapabilities
+        var zero sdktypes.StorageProvidersCapabilitiesListResponse
         return zero, err
     }
-    return decodeResult[sdktypes.StorageProviderCapabilities](raw)
+    return decodeResult[sdktypes.StorageProvidersCapabilitiesListResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersCredentialsRotate(providerId string, body sdktypes.RotateStorageProviderCredentialRequest) (sdktypes.StorageProvider, error) {
+func (a *DriveApi) StorageProvidersCredentialsRotate(providerId string, body sdktypes.RotateStorageProviderCredentialRequest) (sdktypes.StorageProvidersCredentialsRotateResponse, error) {
     raw, err := a.client.Post(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/credentials/rotate", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.StorageProvider
+        var zero sdktypes.StorageProvidersCredentialsRotateResponse
         return zero, err
     }
-    return decodeResult[sdktypes.StorageProvider](raw)
+    return decodeResult[sdktypes.StorageProvidersCredentialsRotateResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersDeactivate(providerId string, body sdktypes.OperatorRequest) (sdktypes.StorageProvider, error) {
+func (a *DriveApi) StorageProvidersDeactivate(providerId string, body sdktypes.OperatorRequest) (sdktypes.StorageProvidersDeactivateResponse, error) {
     raw, err := a.client.Post(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/deactivate", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.StorageProvider
+        var zero sdktypes.StorageProvidersDeactivateResponse
         return zero, err
     }
-    return decodeResult[sdktypes.StorageProvider](raw)
+    return decodeResult[sdktypes.StorageProvidersDeactivateResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersTest(providerId string, body sdktypes.TestStorageProviderRequest) (sdktypes.TestStorageProviderResponse, error) {
+func (a *DriveApi) StorageProvidersTest(providerId string, body sdktypes.TestStorageProviderRequest) (sdktypes.StorageProvidersTestResponse, error) {
     raw, err := a.client.Post(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/test", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.TestStorageProviderResponse
+        var zero sdktypes.StorageProvidersTestResponse
         return zero, err
     }
-    return decodeResult[sdktypes.TestStorageProviderResponse](raw)
+    return decodeResult[sdktypes.StorageProvidersTestResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersBucketHead(providerId string) (sdktypes.ProviderBucket, error) {
+func (a *DriveApi) StorageProvidersBucketRetrieve(providerId string) (sdktypes.StorageProvidersBucketRetrieveResponse, error) {
     raw, err := a.client.Get(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/bucket", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.ProviderBucket
+        var zero sdktypes.StorageProvidersBucketRetrieveResponse
         return zero, err
     }
-    return decodeResult[sdktypes.ProviderBucket](raw)
+    return decodeResult[sdktypes.StorageProvidersBucketRetrieveResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersBucketCreate(providerId string, operatorId string) (sdktypes.ProviderBucketMutation, error) {
+func (a *DriveApi) StorageProvidersBucketUpdate(providerId string, operatorId string) (sdktypes.StorageProvidersBucketUpdateResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "operatorId", Value: operatorId, Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Put(AppendQueryString(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/bucket", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), query), nil, nil, nil, "")
     if err != nil {
-        var zero sdktypes.ProviderBucketMutation
+        var zero sdktypes.StorageProvidersBucketUpdateResponse
         return zero, err
     }
-    return decodeResult[sdktypes.ProviderBucketMutation](raw)
+    return decodeResult[sdktypes.StorageProvidersBucketUpdateResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersBucketDelete(providerId string, operatorId string) (sdktypes.ProviderBucketMutation, error) {
+func (a *DriveApi) StorageProvidersBucketDelete(providerId string, operatorId string) (struct{}, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "operatorId", Value: operatorId, Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Delete(AppendQueryString(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/bucket", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {
-        var zero sdktypes.ProviderBucketMutation
+        var zero struct{}
         return zero, err
     }
-    return decodeResult[sdktypes.ProviderBucketMutation](raw)
+    return decodeResult[struct{}](raw)
 }
 
-func (a *DriveApi) StorageProvidersObjectsList(providerId string, prefix *string, delimiter *string, pageToken *string, pageSize *int) (sdktypes.ProviderObjectList, error) {
+func (a *DriveApi) StorageProvidersObjectsList(providerId string, prefix *string, delimiter *string, cursor *string, pageSize *int) (sdktypes.StorageProvidersObjectsListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "prefix", Value: func() interface{} { if prefix == nil { return nil }; return *prefix }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "delimiter", Value: func() interface{} { if delimiter == nil { return nil }; return *delimiter }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "pageToken", Value: func() interface{} { if pageToken == nil { return nil }; return *pageToken }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/objects", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {
-        var zero sdktypes.ProviderObjectList
+        var zero sdktypes.StorageProvidersObjectsListResponse
         return zero, err
     }
-    return decodeResult[sdktypes.ProviderObjectList](raw)
+    return decodeResult[sdktypes.StorageProvidersObjectsListResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersObjectsHead(providerId string, objectKey string) (sdktypes.ProviderObject, error) {
+func (a *DriveApi) StorageProvidersObjectsRetrieve(providerId string, objectKey string) (sdktypes.StorageProvidersObjectsRetrieveResponse, error) {
     raw, err := a.client.Get(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/objects/%s", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}), SerializePathParameter(objectKey, PathParameterSpec{Name: "objectKey", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.ProviderObject
+        var zero sdktypes.StorageProvidersObjectsRetrieveResponse
         return zero, err
     }
-    return decodeResult[sdktypes.ProviderObject](raw)
+    return decodeResult[sdktypes.StorageProvidersObjectsRetrieveResponse](raw)
 }
 
-func (a *DriveApi) StorageProvidersObjectsDelete(providerId string, objectKey string, operatorId string) (sdktypes.ProviderObjectMutation, error) {
+func (a *DriveApi) StorageProvidersObjectsDelete(providerId string, objectKey string, operatorId string) (struct{}, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "operatorId", Value: operatorId, Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Delete(AppendQueryString(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/objects/%s", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}), SerializePathParameter(objectKey, PathParameterSpec{Name: "objectKey", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {
-        var zero sdktypes.ProviderObjectMutation
+        var zero struct{}
         return zero, err
     }
-    return decodeResult[sdktypes.ProviderObjectMutation](raw)
+    return decodeResult[struct{}](raw)
 }
 
-func (a *DriveApi) StorageProvidersObjectsCopy(providerId string, body sdktypes.CopyProviderObjectRequest) (sdktypes.ProviderObjectMutation, error) {
+func (a *DriveApi) StorageProvidersObjectsCopy(providerId string, body sdktypes.CopyProviderObjectRequest) (sdktypes.StorageProvidersObjectsCopyResponse, error) {
     raw, err := a.client.Post(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/objects/copy", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.ProviderObjectMutation
+        var zero sdktypes.StorageProvidersObjectsCopyResponse
         return zero, err
     }
-    return decodeResult[sdktypes.ProviderObjectMutation](raw)
+    return decodeResult[sdktypes.StorageProvidersObjectsCopyResponse](raw)
 }
 
 // List buckets visible to a Drive storage provider account
-func (a *DriveApi) StorageProvidersBucketsList(providerId string) (sdktypes.ProviderBucketList, error) {
-    raw, err := a.client.Get(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/buckets", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), nil, nil)
+func (a *DriveApi) StorageProvidersBucketsList(providerId string, cursor *string, pageSize *int) (sdktypes.StorageProvidersBucketsListResponse, error) {
+    query := BuildQueryString([]QueryParameterSpec{
+        {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+    })
+    raw, err := a.client.Get(AppendQueryString(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/buckets", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {
-        var zero sdktypes.ProviderBucketList
+        var zero sdktypes.StorageProvidersBucketsListResponse
         return zero, err
     }
-    return decodeResult[sdktypes.ProviderBucketList](raw)
+    return decodeResult[sdktypes.StorageProvidersBucketsListResponse](raw)
 }
 
 // List Drive storage provider bindings
-func (a *DriveApi) StorageProviderBindingsList(spaceId *string, providerId *string, lifecycleStatus *string) (sdktypes.StorageProviderBindingListResponse, error) {
+func (a *DriveApi) StorageProviderBindingsList(spaceId *string, providerId *string, lifecycleStatus *string) (sdktypes.StorageProviderBindingsListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "spaceId", Value: func() interface{} { if spaceId == nil { return nil }; return *spaceId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "providerId", Value: func() interface{} { if providerId == nil { return nil }; return *providerId }(), Style: "form", Explode: true, AllowReserved: false},
@@ -243,10 +247,10 @@ func (a *DriveApi) StorageProviderBindingsList(spaceId *string, providerId *stri
     })
     raw, err := a.client.Get(AppendQueryString(CustomApiPath("/drive/storage/bindings"), query), nil, nil)
     if err != nil {
-        var zero sdktypes.StorageProviderBindingListResponse
+        var zero sdktypes.StorageProviderBindingsListResponse
         return zero, err
     }
-    return decodeResult[sdktypes.StorageProviderBindingListResponse](raw)
+    return decodeResult[sdktypes.StorageProviderBindingsListResponse](raw)
 }
 
 type PathParameterSpec struct {

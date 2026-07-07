@@ -18,134 +18,134 @@ func NewAssetsApi(client *sdkhttp.Client) *AssetsApi {
 }
 
 // List global assets
-func (a *AssetsApi) List(cursor *string, pageSize *int, kind *string, sourceType *string, q *string) (sdktypes.AssetPage, error) {
+func (a *AssetsApi) List(cursor *string, pageSize *int, kind *string, sourceType *string, q *string) (sdktypes.AssetsListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "kind", Value: func() interface{} { if kind == nil { return nil }; return *kind }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "sourceType", Value: func() interface{} { if sourceType == nil { return nil }; return *sourceType }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "q", Value: func() interface{} { if q == nil { return nil }; return *q }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath("/assets"), query), nil, nil)
     if err != nil {
-        var zero sdktypes.AssetPage
+        var zero sdktypes.AssetsListResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetPage](raw)
+    return decodeResult[sdktypes.AssetsListResponse](raw)
 }
 
 // Create a global asset metadata record
-func (a *AssetsApi) Create(body sdktypes.CreateAssetRequest) (sdktypes.AssetItem, error) {
+func (a *AssetsApi) Create(body sdktypes.CreateAssetRequest) (sdktypes.AssetsCreateResponse201, error) {
     raw, err := a.client.Post(AppApiPath("/assets"), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetItem
+        var zero sdktypes.AssetsCreateResponse201
         return zero, err
     }
-    return decodeResult[sdktypes.AssetItem](raw)
+    return decodeResult[sdktypes.AssetsCreateResponse201](raw)
 }
 
 // Get a global asset
-func (a *AssetsApi) Get(assetId string) (sdktypes.AssetItem, error) {
+func (a *AssetsApi) Retrieve(assetId string) (sdktypes.AssetsRetrieveResponse, error) {
     raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/assets/%s", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.AssetItem
+        var zero sdktypes.AssetsRetrieveResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetItem](raw)
+    return decodeResult[sdktypes.AssetsRetrieveResponse](raw)
 }
 
 // Update a global asset
-func (a *AssetsApi) Update(assetId string, body sdktypes.UpdateAssetRequest) (sdktypes.AssetItem, error) {
+func (a *AssetsApi) Update(assetId string, body sdktypes.UpdateAssetRequest) (sdktypes.AssetsUpdateResponse, error) {
     raw, err := a.client.Patch(AppApiPath(fmt.Sprintf("/assets/%s", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetItem
+        var zero sdktypes.AssetsUpdateResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetItem](raw)
+    return decodeResult[sdktypes.AssetsUpdateResponse](raw)
 }
 
 // Archive a global asset
-func (a *AssetsApi) Archive(assetId string, body sdktypes.AssetActionRequest) (sdktypes.AssetItem, error) {
+func (a *AssetsApi) Archive(assetId string, body sdktypes.AssetActionRequest) (sdktypes.AssetsArchiveResponse, error) {
     raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/%s/archive", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetItem
+        var zero sdktypes.AssetsArchiveResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetItem](raw)
+    return decodeResult[sdktypes.AssetsArchiveResponse](raw)
 }
 
 // Restore an archived global asset
-func (a *AssetsApi) Restore(assetId string, body sdktypes.AssetActionRequest) (sdktypes.AssetItem, error) {
+func (a *AssetsApi) Restore(assetId string, body sdktypes.AssetActionRequest) (sdktypes.AssetsRestoreResponse, error) {
     raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/%s/restore", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetItem
+        var zero sdktypes.AssetsRestoreResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetItem](raw)
+    return decodeResult[sdktypes.AssetsRestoreResponse](raw)
 }
 
 // List asset collections
-func (a *AssetsApi) AssetCollectionsList(cursor *string, pageSize *int) (sdktypes.AssetCollectionPage, error) {
+func (a *AssetsApi) AssetCollectionsList(cursor *string, pageSize *int) (sdktypes.AssetCollectionsListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath("/assets/collections"), query), nil, nil)
     if err != nil {
-        var zero sdktypes.AssetCollectionPage
+        var zero sdktypes.AssetCollectionsListResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetCollectionPage](raw)
+    return decodeResult[sdktypes.AssetCollectionsListResponse](raw)
 }
 
 // Create an asset collection
-func (a *AssetsApi) AssetCollectionsCreate(body sdktypes.CreateAssetCollectionRequest) (sdktypes.AssetCollection, error) {
+func (a *AssetsApi) AssetCollectionsCreate(body sdktypes.CreateAssetCollectionRequest) (sdktypes.AssetCollectionsCreateResponse201, error) {
     raw, err := a.client.Post(AppApiPath("/assets/collections"), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetCollection
+        var zero sdktypes.AssetCollectionsCreateResponse201
         return zero, err
     }
-    return decodeResult[sdktypes.AssetCollection](raw)
+    return decodeResult[sdktypes.AssetCollectionsCreateResponse201](raw)
 }
 
 // Add an asset to a collection
-func (a *AssetsApi) AssetCollectionItemsCreate(collectionId string, body sdktypes.CreateAssetCollectionItemRequest) (sdktypes.AssetCollectionItem, error) {
+func (a *AssetsApi) AssetCollectionItemsCreate(collectionId string, body sdktypes.CreateAssetCollectionItemRequest) (sdktypes.AssetCollectionItemsCreateResponse201, error) {
     raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/collections/%s/items", SerializePathParameter(collectionId, PathParameterSpec{Name: "collectionId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetCollectionItem
+        var zero sdktypes.AssetCollectionItemsCreateResponse201
         return zero, err
     }
-    return decodeResult[sdktypes.AssetCollectionItem](raw)
+    return decodeResult[sdktypes.AssetCollectionItemsCreateResponse201](raw)
 }
 
 // Remove an asset from a collection
-func (a *AssetsApi) AssetCollectionItemsDelete(collectionId string, itemId string) (sdktypes.DeleteAssetCollectionItemResponse, error) {
+func (a *AssetsApi) AssetCollectionItemsDelete(collectionId string, itemId string) (struct{}, error) {
     raw, err := a.client.Delete(AppApiPath(fmt.Sprintf("/assets/collections/%s/items/%s", SerializePathParameter(collectionId, PathParameterSpec{Name: "collectionId", Style: "simple", Explode: false}), SerializePathParameter(itemId, PathParameterSpec{Name: "itemId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.DeleteAssetCollectionItemResponse
+        var zero struct{}
         return zero, err
     }
-    return decodeResult[sdktypes.DeleteAssetCollectionItemResponse](raw)
+    return decodeResult[struct{}](raw)
 }
 
 // Create an asset relation
-func (a *AssetsApi) AssetRelationsCreate(assetId string, body sdktypes.CreateAssetRelationRequest) (sdktypes.AssetRelation, error) {
+func (a *AssetsApi) AssetRelationsCreate(assetId string, body sdktypes.CreateAssetRelationRequest) (sdktypes.AssetRelationsCreateResponse201, error) {
     raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/%s/relations", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetRelation
+        var zero sdktypes.AssetRelationsCreateResponse201
         return zero, err
     }
-    return decodeResult[sdktypes.AssetRelation](raw)
+    return decodeResult[sdktypes.AssetRelationsCreateResponse201](raw)
 }
 
 // Delete an asset relation
-func (a *AssetsApi) AssetRelationsDelete(assetId string, relationId string) (sdktypes.DeleteAssetRelationResponse, error) {
+func (a *AssetsApi) AssetRelationsDelete(assetId string, relationId string) (struct{}, error) {
     raw, err := a.client.Delete(AppApiPath(fmt.Sprintf("/assets/%s/relations/%s", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}), SerializePathParameter(relationId, PathParameterSpec{Name: "relationId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.DeleteAssetRelationResponse
+        var zero struct{}
         return zero, err
     }
-    return decodeResult[sdktypes.DeleteAssetRelationResponse](raw)
+    return decodeResult[struct{}](raw)
 }
 
 type PathParameterSpec struct {

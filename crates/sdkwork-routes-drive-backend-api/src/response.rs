@@ -13,6 +13,10 @@ pub(crate) fn current_trace_id() -> String {
     sdkwork_drive_http::problem_correlation::current_problem_correlation().trace_id
 }
 
+pub(crate) fn no_content() -> axum::http::StatusCode {
+    axum::http::StatusCode::NO_CONTENT
+}
+
 pub(crate) fn page_info_from_offset_token(
     page: OffsetPage,
     next_page_token: Option<String>,

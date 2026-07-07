@@ -2,7 +2,7 @@
 
 Status: active
 Owner: SDKWork maintainers
-Updated: 2026-06-25
+Updated: 2026-07-06
 
 ## Objective
 
@@ -16,6 +16,7 @@ Promote SDKWork Drive from controlled Beta to commercial GA with signed artifact
 - PC download pause/resume and bootstrap XSS hardening
 - `pnpm verify` and strict release-readiness checks passing locally
 - App-api route modularization Phases 1–7 complete; Phase 8 batch 8a delegates space lifecycle and change-feed SQL to workspace-service (`space_lifecycle_service`, `change_feed_service`)
+- **2026-07-06 alignment:** PAGINATION_SPEC default `page_size=20`; unified table-based maintenance leader (PG/SQLite); Redis rate-limit feature compile + Lua atomic window; outbox per-channel delivery ledger (migration 0005); upload session metadata reclaim; transactional orphan cleanup; SQLite baseline regenerated from `sqlite_core.sql`; PostgreSQL CI integration job
 
 ## Release gates (ops — required before ACTIVE)
 

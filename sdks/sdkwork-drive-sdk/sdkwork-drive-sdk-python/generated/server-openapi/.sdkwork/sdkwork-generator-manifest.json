@@ -40,7 +40,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "5d74fa75c2776e66848153860d59987d2f79c66b75e4efaee10c47f3b91f4500"
+      "sha256": "095628eea79bf6a9acaa25ebb6b82c8502826ddf2509e9e029951d115c75e416"
     },
     {
       "path": "requirements.txt",
@@ -56,7 +56,7 @@
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/api/drive.py",
-      "sha256": "2b9e8b89bad730970a97e03a0cabb33c6ac15059ce4f3fb41bfda9de2d6ec2cd"
+      "sha256": "41924f575b09078f067ae94fca4b8d3a3cb4625c9207f1bf956c20763264d590"
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/client.py",
@@ -68,7 +68,7 @@
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/models/__init__.py",
-      "sha256": "4e16fcc42a55bd4fb00da1d33801e7a5e1fa3af0fe06ff6242154d58b53c3253"
+      "sha256": "68fedbc85b5c6d6cfab3214efeb76c48ac848ee549bf61592874f71e4dd556c4"
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/models/create_open_download_url_request.py",
@@ -84,7 +84,7 @@
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/models/open_download_url_create_response.py",
-      "sha256": "9b4656f6a6fa2c03aea82ff620512d7e6f7c57385fb61a860ab590ae40c93a81"
+      "sha256": "c9a90c543b5bb3c539c2bc1e578b693bc3fb4e391731e1292cfa3c63f5513b02"
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/models/open_download_url_response.py",
@@ -96,7 +96,15 @@
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/models/open_share_link_resolve_response.py",
-      "sha256": "a94661f17f5455485c64564cad276613d7d5c2575d5d9f78b476c2ca339d5884"
+      "sha256": "9ea9987841536c9d92d7312c7ecb47f793ff872aa35cf79eac988665819100e0"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/models/open_share_links_download_urls_create_response201.py",
+      "sha256": "0b0b6ac6ab1cb546e45ee451977cbcc42eaacb859f8e3b24ed1832147184f09f"
+    },
+    {
+      "path": "sdkwork_drive_sdk_generated_python/models/open_share_links_retrieve_response.py",
+      "sha256": "af49f2d1821fb828ee41a685b357b268671d5ad701bada5af75968c81ae91295"
     },
     {
       "path": "sdkwork_drive_sdk_generated_python/models/problem_detail.py",

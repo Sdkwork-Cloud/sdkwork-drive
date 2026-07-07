@@ -9,12 +9,10 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-backend-sdk-generated-java"
   },
-  "changeFingerprint": "a6770dddfa404ba777a7589ecf2c888f10f09bac6893b43dfe78f3e506ef0515",
+  "changeFingerprint": "5c0175a437877754eb027350feff19535731e340be37467c769453c90b0f5941",
   "changes": {
     "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/DriveApi.java"
-    ],
+    "updatedGeneratedFiles": [],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
@@ -25,23 +23,45 @@
       "README.md",
       "sdkwork-sdk.json",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/ApiPaths.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/DriveApi.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/LabelsApi.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/package-info.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/http/HttpClient.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/AuditEvent.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/AuditEventPage.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/AuditEventListHttpResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/AuditEventsListResponse.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateLabelRequest.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DeleteLabelResponse.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DownloadPackage.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DownloadPackagePage.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DownloadPackageListHttpResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DownloadPackagesListResponse.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DriveLabel.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DriveLabelListHttpResponse.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DriveSpace.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/LabelListResponse.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ListSpacesResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DriveSpaceListHttpResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/FieldError.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/LabelsCreateResponse201.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/LabelsListResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/LabelsRetrieveResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/LabelsUpdateResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/MaintenanceAbandonedUploadTaskSweepResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/MaintenanceExpiredUploadContentSweepResponse.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/MaintenanceJob.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/MaintenanceJobPage.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/MaintenanceJobListHttpResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/MaintenanceJobsListResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/MaintenanceObjectSweepResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/MaintenanceUploadSessionSweepResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/PageInfo.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProblemDetail.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/QuotasRetrieveResponse.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/QuotaSummary.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/QuotasUpdateResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SdkWorkApiResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SdkWorkCommandData.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SdkWorkCommandResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SdkWorkPageData.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SdkWorkResourceData.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SdkWorkResourceResponse.java",
+      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SpacesAdminListResponse.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepObjectStoreRequest.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepResponse.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepUploadSessionsRequest.java",
@@ -49,26 +69,7 @@
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateQuotaPolicyRequest.java",
       "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/SdkworkBackendClient.java"
     ],
-    "deletedGeneratedFiles": [
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CopyProviderObjectRequest.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateStorageProviderRequest.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DeleteStorageProviderResponse.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ListStorageProvidersResponse.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/OperatorRequest.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderBucket.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderBucketMutation.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObject.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObjectList.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObjectMutation.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/RotateStorageProviderCredentialRequest.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SetDefaultStorageProviderBindingRequest.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProvider.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProviderBinding.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProviderCapabilities.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/TestStorageProviderRequest.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/TestStorageProviderResponse.java",
-      "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateStorageProviderRequest.java"
-    ],
+    "deletedGeneratedFiles": [],
     "scaffoldedFiles": [],
     "preservedScaffoldFiles": [
       "custom/README.md"
@@ -77,80 +78,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface",
-      "models"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/DriveApi.java"
-        ]
-      },
-      {
-        "area": "models",
-        "paths": [
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CopyProviderObjectRequest.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateStorageProviderRequest.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DeleteStorageProviderResponse.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ListStorageProvidersResponse.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/OperatorRequest.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderBucket.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderBucketMutation.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObject.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObjectList.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/ProviderObjectMutation.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/RotateStorageProviderCredentialRequest.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SetDefaultStorageProviderBindingRequest.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProvider.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProviderBinding.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/StorageProviderCapabilities.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/TestStorageProviderRequest.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/TestStorageProviderResponse.java",
-          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateStorageProviderRequest.java"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-java\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "java",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language java --project-dir . --action check"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "high",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "deleted-generated-files",
-      "manual-review-required",
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

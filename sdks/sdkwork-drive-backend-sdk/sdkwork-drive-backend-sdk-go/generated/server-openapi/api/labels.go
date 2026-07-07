@@ -18,61 +18,61 @@ func NewLabelsApi(client *sdkhttp.Client) *LabelsApi {
 }
 
 // List Drive label definitions
-func (a *LabelsApi) List(lifecycleStatus *string, pageSize *int, pageToken *string) (sdktypes.LabelListResponse, error) {
+func (a *LabelsApi) List(lifecycleStatus *string, pageSize *int, cursor *string) (sdktypes.LabelsListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "lifecycleStatus", Value: func() interface{} { if lifecycleStatus == nil { return nil }; return *lifecycleStatus }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "pageToken", Value: func() interface{} { if pageToken == nil { return nil }; return *pageToken }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(BackendApiPath("/drive/labels"), query), nil, nil)
     if err != nil {
-        var zero sdktypes.LabelListResponse
+        var zero sdktypes.LabelsListResponse
         return zero, err
     }
-    return decodeResult[sdktypes.LabelListResponse](raw)
+    return decodeResult[sdktypes.LabelsListResponse](raw)
 }
 
 // Create a Drive label definition
-func (a *LabelsApi) Create(body sdktypes.CreateLabelRequest) (sdktypes.DriveLabel, error) {
+func (a *LabelsApi) Create(body sdktypes.CreateLabelRequest) (sdktypes.LabelsCreateResponse201, error) {
     raw, err := a.client.Post(BackendApiPath("/drive/labels"), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.DriveLabel
+        var zero sdktypes.LabelsCreateResponse201
         return zero, err
     }
-    return decodeResult[sdktypes.DriveLabel](raw)
+    return decodeResult[sdktypes.LabelsCreateResponse201](raw)
 }
 
 // Get a Drive label definition
-func (a *LabelsApi) Get(labelId string) (sdktypes.DriveLabel, error) {
+func (a *LabelsApi) Retrieve(labelId string) (sdktypes.LabelsRetrieveResponse, error) {
     raw, err := a.client.Get(BackendApiPath(fmt.Sprintf("/drive/labels/%s", SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.DriveLabel
+        var zero sdktypes.LabelsRetrieveResponse
         return zero, err
     }
-    return decodeResult[sdktypes.DriveLabel](raw)
+    return decodeResult[sdktypes.LabelsRetrieveResponse](raw)
 }
 
 // Update a Drive label definition
-func (a *LabelsApi) Update(labelId string, body sdktypes.UpdateLabelRequest) (sdktypes.DriveLabel, error) {
+func (a *LabelsApi) Update(labelId string, body sdktypes.UpdateLabelRequest) (sdktypes.LabelsUpdateResponse, error) {
     raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/drive/labels/%s", SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.DriveLabel
+        var zero sdktypes.LabelsUpdateResponse
         return zero, err
     }
-    return decodeResult[sdktypes.DriveLabel](raw)
+    return decodeResult[sdktypes.LabelsUpdateResponse](raw)
 }
 
 // Delete a Drive label definition
-func (a *LabelsApi) Delete(labelId string, operatorId string) (sdktypes.DeleteLabelResponse, error) {
+func (a *LabelsApi) Delete(labelId string, operatorId string) (struct{}, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "operatorId", Value: operatorId, Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Delete(AppendQueryString(BackendApiPath(fmt.Sprintf("/drive/labels/%s", SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {
-        var zero sdktypes.DeleteLabelResponse
+        var zero struct{}
         return zero, err
     }
-    return decodeResult[sdktypes.DeleteLabelResponse](raw)
+    return decodeResult[struct{}](raw)
 }
 
 type PathParameterSpec struct {

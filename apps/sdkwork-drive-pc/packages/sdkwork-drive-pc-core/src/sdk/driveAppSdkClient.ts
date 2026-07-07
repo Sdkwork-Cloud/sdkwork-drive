@@ -14,6 +14,7 @@ import type { SessionStorageLike } from '../session/sessionStore';
 import type { DriveSessionTokenManager } from '../session/sessionTokenManager';
 import { omitAuthProjectionBody, omitAuthProjectionQuery } from './authProjection';
 import {
+  assertStandardSdkWorkPaginationQuery,
   buildGeneratedSdkPath,
   compactQuery,
   normalizeGeneratedSdkBaseUrl,
@@ -123,9 +124,8 @@ export class DriveAppSdkError extends Error {
   readonly status: number;
   readonly title?: string;
   readonly detail?: string;
-  readonly code?: string;
+  readonly code?: number;
   readonly traceId?: string;
-  readonly requestId?: string;
 
   constructor({
     operationId,
@@ -134,15 +134,13 @@ export class DriveAppSdkError extends Error {
     detail,
     code,
     traceId,
-    requestId,
   }: {
     operationId: DriveAppOperationId;
     status: number;
     title?: string;
     detail?: string;
-    code?: string;
+    code?: number;
     traceId?: string;
-    requestId?: string;
   }) {
     super(detail || title || `Drive App API ${operationId} failed with HTTP ${status}`);
     this.name = 'DriveAppSdkError';
@@ -152,7 +150,6 @@ export class DriveAppSdkError extends Error {
     this.detail = detail;
     this.code = code;
     this.traceId = traceId;
-    this.requestId = requestId;
   }
 }
 
@@ -168,7 +165,6 @@ function buildSdkError(
     detail: details.detail,
     code: details.code,
     traceId: details.traceId,
-    requestId: details.requestId,
   });
 }
 
@@ -205,7 +201,7 @@ export function createDriveAppSdkClient({
           buildGeneratedSdkPath(operation.path, pathParams),
           {
             method: operation.method,
-            params: compactQuery(omitAuthProjectionQuery(query)),
+            params: compactQuery(assertStandardSdkWorkPaginationQuery(omitAuthProjectionQuery(query))),
             body: omitAuthProjectionBody(body),
             contentType: body === undefined ? undefined : 'application/json',
             signal,
@@ -235,16 +231,16 @@ export function createDriveUploaderTransport(
     drive: {
       uploader: {
         uploads: {
-          prepare: (body, options) =>
+          create: (body, options) =>
             client.request({
-              operationId: 'uploader.uploads.prepare',
+              operationId: 'uploader.uploads.create',
               body,
               signal: options?.signal,
             }),
           parts: {
-            markUploaded: (uploadItemId, partNo, body, options) =>
+            update: (uploadItemId, partNo, body, options) =>
               client.request({
-                operationId: 'uploader.uploads.parts.markUploaded',
+                operationId: 'uploader.uploads.parts.update',
                 pathParams: {
                   uploadItemId,
                   partNo,
@@ -263,9 +259,9 @@ export function createDriveUploaderTransport(
             signal: options?.signal,
           }),
         parts: {
-          presign: (uploadSessionId, partNo, body, options) =>
+          update: (uploadSessionId, partNo, body, options) =>
             client.request({
-              operationId: 'uploadSessions.parts.presign',
+              operationId: 'uploadSessions.parts.update',
               pathParams: {
                 uploadSessionId,
                 partNo,

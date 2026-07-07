@@ -9,9 +9,14 @@ import {
 } from "sdkwork-drive-pc-types";
 import type { DriveFileService } from "sdkwork-drive-pc-core";
 import { isDriveAbortError, NativeLocalUploadFile } from "sdkwork-drive-pc-core";
+import { isDriveConflictError } from "sdkwork-drive-pc-commons";
 import type { DriveSection } from "../pages/DrivePage";
 import type { DownloadJob } from "./DownloadManager";
 import { MAX_PARALLEL_UPLOADS, runWithConcurrency } from "./fileBrowserBatchUtils";
+
+function resolveUploadSourceName(source: File | NativeLocalUploadFile): string {
+  return source.name?.trim() || "upload.bin";
+}
 
 export type FileBrowserUploadToast = (
   message: string,
@@ -83,6 +88,12 @@ export function queueFileBrowserUploads({
           item.id === job.id ? applyUploadCompletionToJob(item, uploadedFile) : item,
         ),
       );
+      const localName = resolveUploadSourceName(source);
+      if (uploadedFile.name !== localName) {
+        triggerToast(t("fileBrowser.toastUploadRenamed", { name: uploadedFile.name }), "info");
+      } else {
+        triggerToast(t("fileBrowser.toastUploadSuccess", { name: uploadedFile.name }), "success");
+      }
       loadFiles();
     } catch (err) {
       if (isDriveAbortError(err)) {
@@ -101,7 +112,11 @@ export function queueFileBrowserUploads({
         ),
       );
       triggerToast(
-        err instanceof Error ? err.message : t("fileBrowser.toastUploadFailed"),
+        isDriveConflictError(err)
+          ? t("fileBrowser.nameConflict")
+          : err instanceof Error
+            ? err.message
+            : t("fileBrowser.toastUploadFailed"),
         "err",
       );
       loadFiles();

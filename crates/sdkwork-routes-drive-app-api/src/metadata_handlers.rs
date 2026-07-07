@@ -1,16 +1,17 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    ApplyNodeLabelRequest, DeleteNodePropertyQuery, DeleteNodePropertyResponse, NodeLabelListQuery,
-    NodeLabelResponse, NodePropertyListQuery, NodePropertyResponse, RemoveNodeLabelQuery,
-    RemoveNodeLabelResponse, SetNodePropertyRequest,
+    ApplyNodeLabelRequest, DeleteNodePropertyQuery, NodeLabelListQuery, NodeLabelResponse,
+    NodePropertyListQuery, NodePropertyResponse, RemoveNodeLabelQuery, SetNodePropertyRequest,
 };
-use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::hashing::sha256_raw_hex_separated;
 use crate::mappers::{map_node_label_row, map_node_property_row};
 use crate::metadata_repository::{find_label, find_node_label, find_node_property};
 use crate::node_repository::{find_active_node, find_node};
+use crate::response::{
+    no_content, success_list_page_simple, success_resource, DriveListHttpResponse,
+};
 use crate::route_change::record_change;
 use crate::state::AppState;
 use crate::validators::{
@@ -21,6 +22,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 
 pub(crate) async fn list_node_properties(
     State(state): State<AppState>,
@@ -85,7 +87,10 @@ pub(crate) async fn set_node_property(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, property_key)): Path<(String, String)>,
     Json(payload): Json<SetNodePropertyRequest>,
-) -> Result<Json<NodePropertyResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<NodePropertyResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let property_key = validate_node_property_key(&property_key)?.to_string();
     let visibility = validate_node_property_visibility(
@@ -133,7 +138,7 @@ pub(crate) async fn set_node_property(
     )
     .await?;
 
-    Ok(Json(
+    Ok(success_resource(
         find_node_property(
             &state.pool,
             &tenant_id,
@@ -149,7 +154,7 @@ pub(crate) async fn delete_node_property(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, property_key)): Path<(String, String)>,
     Query(query): Query<DeleteNodePropertyQuery>,
-) -> Result<Json<DeleteNodePropertyResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let property_key = validate_node_property_key(&property_key)?.to_string();
     let visibility = validate_node_property_visibility(
@@ -195,9 +200,8 @@ pub(crate) async fn delete_node_property(
         .await?;
     }
 
-    Ok(Json(DeleteNodePropertyResponse {
-        deleted: affected > 0,
-    }))
+    let _deleted = affected > 0;
+    Ok(no_content())
 }
 pub(crate) async fn list_node_labels(
     State(state): State<AppState>,
@@ -275,7 +279,10 @@ pub(crate) async fn apply_node_label(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, label_id)): Path<(String, String)>,
     Json(payload): Json<ApplyNodeLabelRequest>,
-) -> Result<Json<NodeLabelResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<NodeLabelResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -311,7 +318,7 @@ pub(crate) async fn apply_node_label(
         &operator_id,
     )
     .await?;
-    Ok(Json(
+    Ok(success_resource(
         find_node_label(&state.pool, &tenant_id, &node_id, &label_id).await?,
     ))
 }
@@ -320,7 +327,7 @@ pub(crate) async fn remove_node_label(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, label_id)): Path<(String, String)>,
     Query(query): Query<RemoveNodeLabelQuery>,
-) -> Result<Json<RemoveNodeLabelResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -355,9 +362,8 @@ pub(crate) async fn remove_node_label(
         )
         .await?;
     }
-    Ok(Json(RemoveNodeLabelResponse {
-        removed: affected > 0,
-    }))
+    let _removed = affected > 0;
+    Ok(no_content())
 }
 fn build_node_property_id(
     tenant_id: &str,

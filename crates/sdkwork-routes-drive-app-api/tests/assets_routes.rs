@@ -103,8 +103,9 @@ async fn assets_list_and_get_expose_drive_nodes_as_global_assets() {
             .expect("assets get body should be read"),
     )
     .expect("assets get should be json");
-    assert_eq!(get_payload["assetId"].as_str(), Some("file-asset-001"));
-    assert_eq!(get_payload["title"].as_str(), Some("photo.png"));
+    let get_item = common::envelope_item(&get_payload);
+    assert_eq!(get_item["assetId"].as_str(), Some("file-asset-001"));
+    assert_eq!(get_item["title"].as_str(), Some("photo.png"));
 }
 
 #[tokio::test]
@@ -144,7 +145,8 @@ async fn assets_create_bind_existing_node_and_support_collections_and_relations(
             .expect("collection body should be read"),
     )
     .expect("collection response should be json");
-    let collection_id = collection_payload["id"]
+    let collection_item = common::envelope_item(&collection_payload);
+    let collection_id = collection_item["id"]
         .as_str()
         .expect("collection id should be present")
         .to_string();
@@ -194,7 +196,7 @@ async fn assets_create_bind_existing_node_and_support_collections_and_relations(
     )
     .expect("archive response should be json");
     assert_eq!(
-        archive_payload["lifecycleStatus"].as_str(),
+        common::envelope_item(&archive_payload)["lifecycleStatus"].as_str(),
         Some("archived")
     );
 

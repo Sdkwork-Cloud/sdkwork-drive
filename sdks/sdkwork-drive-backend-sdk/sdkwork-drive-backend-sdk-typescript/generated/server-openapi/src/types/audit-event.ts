@@ -5,7 +5,7 @@ export interface AuditEvent {
   resourceType: string;
   resourceId: string;
   operatorId: string;
-  requestId?: string;
+  correlationId?: string;
   traceId?: string;
   createdAt: string;
 }

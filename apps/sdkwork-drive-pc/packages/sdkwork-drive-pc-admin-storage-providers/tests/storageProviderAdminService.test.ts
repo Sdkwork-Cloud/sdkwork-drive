@@ -70,7 +70,7 @@ function responseFor(request: DriveAdminStorageSdkRequest): unknown {
     };
   }
 
-  if (request.operationId === 'storageProviderBindings.default.set') {
+  if (request.operationId === 'storageProviderBindings.default.update') {
     return {
       id: 'binding-default',
       providerId: 'provider-s3',
@@ -104,14 +104,21 @@ function responseFor(request: DriveAdminStorageSdkRequest): unknown {
         {
           providerId: request.pathParams?.providerId ?? 'provider-s3',
           bucket: 'drive-prod',
+          objectKind: 'prefix',
+          objectKey: 'docs/',
+          contentLength: 0,
+        },
+        {
+          providerId: request.pathParams?.providerId ?? 'provider-s3',
+          bucket: 'drive-prod',
+          objectKind: 'object',
           objectKey: 'docs/readme.txt',
           contentLength: 2048,
           contentType: 'text/plain',
           lastModifiedEpochMs: 1700000000000,
         },
       ],
-      prefixes: ['docs/'],
-      nextPageToken: undefined,
+      pageInfo: { mode: 'cursor', hasMore: false },
     };
   }
 
@@ -199,7 +206,7 @@ describe('storage provider admin service', () => {
     await service.deleteSpaceTypeBinding('personal');
 
     expect(calls.map((call) => call.operationId)).toEqual([
-      'storageProviderBindings.default.set',
+      'storageProviderBindings.default.update',
       'storageProviderBindings.default.delete',
     ]);
     expect(calls[0]).toMatchObject({
@@ -234,7 +241,7 @@ describe('storage provider admin service', () => {
       'storageProviders.deactivate',
       'storageProviders.test',
       'storageProviders.credentials.rotate',
-      'storageProviderBindings.default.set',
+      'storageProviderBindings.default.update',
       'storageProviders.delete',
     ]);
     expect(calls[0]).toMatchObject({

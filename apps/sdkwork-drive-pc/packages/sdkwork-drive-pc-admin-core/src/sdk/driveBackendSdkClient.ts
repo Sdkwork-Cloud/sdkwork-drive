@@ -5,6 +5,7 @@ import {
 } from '@sdkwork/drive-backend-sdk';
 import type { DriveRuntimeConfig, DriveSessionTokenManager } from 'sdkwork-drive-pc-core';
 import {
+  assertStandardSdkWorkPaginationQuery,
   buildGeneratedSdkPath,
   compactQuery,
   normalizeGeneratedSdkBaseUrl,
@@ -42,9 +43,8 @@ export class DriveBackendSdkError extends Error {
   readonly status: number;
   readonly title?: string;
   readonly detail?: string;
-  readonly code?: string;
+  readonly code?: number;
   readonly traceId?: string;
-  readonly requestId?: string;
 
   constructor({
     operationId,
@@ -53,15 +53,13 @@ export class DriveBackendSdkError extends Error {
     detail,
     code,
     traceId,
-    requestId,
   }: {
     operationId: DriveBackendOperationId;
     status: number;
     title?: string;
     detail?: string;
-    code?: string;
+    code?: number;
     traceId?: string;
-    requestId?: string;
   }) {
     super(detail || title || `Drive Backend API ${operationId} failed with HTTP ${status}`);
     this.name = 'DriveBackendSdkError';
@@ -71,7 +69,6 @@ export class DriveBackendSdkError extends Error {
     this.detail = detail;
     this.code = code;
     this.traceId = traceId;
-    this.requestId = requestId;
   }
 }
 
@@ -87,7 +84,6 @@ function buildSdkError(
     detail: details.detail,
     code: details.code,
     traceId: details.traceId,
-    requestId: details.requestId,
   });
 }
 
@@ -125,7 +121,7 @@ export function createDriveBackendSdkClient({
           buildGeneratedSdkPath(operation.path, pathParams),
           {
             method: operation.method,
-            params: compactQuery(omitAuthProjectionQuery(query)),
+            params: compactQuery(assertStandardSdkWorkPaginationQuery(omitAuthProjectionQuery(query))),
             body: omitAuthProjectionBody(body),
             contentType: body === undefined ? undefined : 'application/json',
             signal,

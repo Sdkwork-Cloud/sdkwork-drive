@@ -1,12 +1,12 @@
 use crate::audit::record_storage_provider_audit;
 use crate::dto::{
-    CopyProviderObjectRequest, ListProviderObjectsQuery, OperatorQuery, ProviderObjectMutationResponse,
-    ProviderObjectResponse,
+    CopyProviderObjectRequest, ListProviderObjectsQuery, OperatorQuery,
+    ProviderObjectMutationResponse, ProviderObjectResponse,
 };
 use crate::error::{map_object_store_route_error, ProblemDetail};
 use crate::object_store::build_object_store_for_provider;
 use crate::provider_lookup::get_active_provider;
-use crate::response::{success_cursor_list_page, StorageListHttpResponse};
+use crate::response::{no_content, success_cursor_list_page, StorageListHttpResponse};
 use crate::state::AdminStorageState;
 use crate::validators::{
     decode_object_key, require_query_operator_id, validate_object_delimiter, validate_object_key,
@@ -20,13 +20,20 @@ use sdkwork_drive_storage_contract::{
     validate_s3_bucket_name, CopyObjectRequest, DeleteObjectRequest, DriveObjectLocator,
     HeadObjectRequest, ListObjectsRequest,
 };
+use sdkwork_utils_rust::{DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE};
 
 pub(crate) async fn list_storage_provider_objects(
     State(state): State<AdminStorageState>,
     Path(provider_id): Path<String>,
     Query(query): Query<ListProviderObjectsQuery>,
 ) -> Result<StorageListHttpResponse<ProviderObjectResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let max_keys = validate_page_size_u16(query.page_size, 100, 1, 1000, "pageSize")?;
+    let max_keys = validate_page_size_u16(
+        query.page_size,
+        DEFAULT_LIST_PAGE_SIZE as u16,
+        1,
+        MAX_LIST_PAGE_SIZE as u16,
+        "page_size",
+    )?;
     let prefix = validate_object_prefix(query.prefix, "prefix")?;
     let delimiter = validate_object_delimiter(query.delimiter, "delimiter")?;
     let provider = get_active_provider(&state, &provider_id).await?;
@@ -41,12 +48,25 @@ pub(crate) async fn list_storage_provider_objects(
         })
         .await
         .map_err(map_object_store_route_error)?;
-    let items = result
-        .items
+    let mut items: Vec<ProviderObjectResponse> = result
+        .prefixes
         .into_iter()
-        .map(|item| ProviderObjectResponse {
+        .map(|prefix| ProviderObjectResponse {
             provider_id: provider_id.clone(),
             bucket: result.bucket.clone(),
+            object_kind: "prefix".to_string(),
+            object_key: prefix,
+            content_length: 0,
+            content_type: None,
+            etag: None,
+            version_id: None,
+            storage_class: None,
+            last_modified_epoch_ms: None,
+        })
+        .chain(result.items.into_iter().map(|item| ProviderObjectResponse {
+            provider_id: provider_id.clone(),
+            bucket: result.bucket.clone(),
+            object_kind: "object".to_string(),
             object_key: item.object_key,
             content_length: item.content_length,
             content_type: None,
@@ -54,8 +74,9 @@ pub(crate) async fn list_storage_provider_objects(
             version_id: None,
             storage_class: item.storage_class,
             last_modified_epoch_ms: item.last_modified_epoch_ms,
-        })
+        }))
         .collect();
+    items.sort_by(|left, right| left.object_key.cmp(&right.object_key));
     Ok(success_cursor_list_page(
         items,
         i32::from(max_keys),
@@ -82,6 +103,7 @@ pub(crate) async fn head_storage_provider_object(
     Ok(Json(ProviderObjectResponse {
         provider_id,
         bucket: result.locator.bucket,
+        object_kind: "object".to_string(),
         object_key: result.locator.object_key,
         content_length: result.content_length,
         content_type: result.content_type,
@@ -96,7 +118,7 @@ pub(crate) async fn delete_storage_provider_object(
     State(state): State<AdminStorageState>,
     Path((provider_id, object_key)): Path<(String, String)>,
     Query(query): Query<OperatorQuery>,
-) -> Result<Json<ProviderObjectMutationResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let operator_id = require_query_operator_id(query.operator_id)?;
     let provider = get_active_provider(&state, &provider_id).await?;
     let object_store = build_object_store_for_provider(&state.config, &provider).await?;
@@ -117,12 +139,8 @@ pub(crate) async fn delete_storage_provider_object(
         &operator_id,
     )
     .await?;
-    Ok(Json(ProviderObjectMutationResponse {
-        provider_id,
-        bucket: result.locator.bucket,
-        object_key: result.locator.object_key,
-        changed: result.deleted,
-    }))
+    let _deleted = result.deleted;
+    Ok(no_content())
 }
 
 pub(crate) async fn copy_storage_provider_object(

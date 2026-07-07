@@ -13,7 +13,7 @@ import {
   Star,
   X,
 } from 'lucide-react';
-import { formatDriveBytes, useTranslation } from 'sdkwork-drive-pc-commons';
+import { formatDriveBytes, hasSiblingNameConflict, isDriveConflictError, useTranslation } from 'sdkwork-drive-pc-commons';
 import type { DriveFile } from 'sdkwork-drive-pc-types';
 import { isDriveAbortError, type DriveFileService } from 'sdkwork-drive-pc-core';
 
@@ -76,6 +76,9 @@ export function FileDetailModal({
   const [activeTab, setActiveTab] = useState<'preview' | 'info'>('preview');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [modalFeedback, setModalFeedback] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
+  const [versionHistory, setVersionHistory] = useState<Array<{ versionNo: number; createdAt?: string; contentLength?: number }>>([]);
+  const [versionHistoryLoading, setVersionHistoryLoading] = useState(false);
+  const [versionHistoryError, setVersionHistoryError] = useState<string | null>(null);
   const [previewSourceUrl, setPreviewSourceUrl] = useState<string | null>(null);
   const [previewGrantError, setPreviewGrantError] = useState<string | null>(null);
   const [previewGrantLoading, setPreviewGrantLoading] = useState(false);
@@ -92,6 +95,44 @@ export function FileDetailModal({
       headerRenameAbortControllerRef.current = null;
     };
   }, [file.id, file.name]);
+
+  useEffect(() => {
+    if (file.type === 'folder') {
+      setVersionHistory([]);
+      setVersionHistoryError(null);
+      setVersionHistoryLoading(false);
+      return;
+    }
+
+    let active = true;
+    const controller = new AbortController();
+    setVersionHistory([]);
+    setVersionHistoryError(null);
+    setVersionHistoryLoading(true);
+
+    fileService
+      .listFileVersions(file.id, { signal: controller.signal })
+      .then((versions) => {
+        if (!active) return;
+        setVersionHistory(versions);
+      })
+      .catch((error: unknown) => {
+        if (!active || isDriveAbortError(error)) return;
+        setVersionHistoryError(
+          error instanceof Error ? error.message : t('fileDetail.versionHistoryLoadFailed'),
+        );
+      })
+      .finally(() => {
+        if (active) {
+          setVersionHistoryLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [file.id, file.type, fileService, t]);
 
   useEffect(() => {
     if (file.type === 'folder') {
@@ -163,6 +204,11 @@ export function FileDetailModal({
       setIsHeaderRenameEditing(false);
       return;
     }
+    const siblingNames = (files ?? []).map((item) => item.name);
+    if (hasSiblingNameConflict(trimmed, siblingNames, file.name)) {
+      triggerFeedback(t('fileBrowser.nameConflict'), 'error');
+      return;
+    }
     headerRenameAbortControllerRef.current?.abort();
     const headerRenameAbortController = new AbortController();
     headerRenameAbortControllerRef.current = headerRenameAbortController;
@@ -177,7 +223,12 @@ export function FileDetailModal({
       if (isDriveAbortError(err)) {
         return;
       }
-      triggerFeedback(err?.message || t('fileDetail.renameFailed'), 'error');
+      triggerFeedback(
+        isDriveConflictError(err)
+          ? t('fileBrowser.nameConflict')
+          : err?.message || t('fileDetail.renameFailed'),
+        'error',
+      );
     } finally {
       if (headerRenameAbortControllerRef.current === headerRenameAbortController) {
         headerRenameAbortControllerRef.current = null;
@@ -578,9 +629,14 @@ export function FileDetailModal({
                 )}
 
                 <div>
-                  <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-1">{t('previewModules.systemPhysicalPath')}</label>
+                  <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-1">{t('previewModules.workspaceLocation')}</label>
                   <span className="text-neutral-400 break-all select-text font-mono text-[11px] block leading-normal">
-                    /Cloud/Drive/Catalog/{file.parentId || t('fileDetail.catalogHomeNode')}
+                    {file.spaceId
+                      ? t('fileDetail.workspaceLocationValue', {
+                          spaceId: file.spaceId,
+                          parentId: file.parentId || t('fileDetail.rootDirectory'),
+                        })
+                      : t('fileDetail.workspaceLocationUnknown')}
                   </span>
                 </div>
 
@@ -608,27 +664,34 @@ export function FileDetailModal({
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-3">{t('previewModules.liveSessionLogs')}</label>
-                  <div className="space-y-4 font-mono text-[11px] text-neutral-500">
-                    <div className="flex items-start gap-2 border-l border-blue-500 pl-3">
-                      <div>
-                        <span className="text-gray-200 font-bold block leading-normal">{t('previewModules.metaModified')}</span>
-                        <span className="text-[10px] text-neutral-500 block mt-1">Updated by {file.ownerId}</span>
-                      </div>
+                  <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-3">{t('previewModules.versionHistory')}</label>
+                  {versionHistoryLoading ? (
+                    <p className="text-[11px] text-neutral-500">{t('fileDetail.versionHistoryLoading')}</p>
+                  ) : versionHistoryError ? (
+                    <p className="text-[11px] text-rose-400">{versionHistoryError}</p>
+                  ) : versionHistory.length === 0 ? (
+                    <p className="text-[11px] text-neutral-500">{t('fileDetail.versionHistoryEmpty')}</p>
+                  ) : (
+                    <div className="space-y-3 font-mono text-[11px] text-neutral-500">
+                      {versionHistory.map((version) => (
+                        <div key={version.versionNo} className="flex items-start gap-2 border-l border-neutral-800 pl-3">
+                          <div>
+                            <span className="text-gray-200 font-bold block leading-normal">
+                              {t('fileDetail.versionEntryLabel', { versionNo: version.versionNo })}
+                            </span>
+                            {version.createdAt ? (
+                              <span className="text-[10px] text-neutral-500 block mt-1">{formatDate(version.createdAt)}</span>
+                            ) : null}
+                            {typeof version.contentLength === 'number' ? (
+                              <span className="text-[10px] text-neutral-500 block mt-1">
+                                {formatDriveBytes(version.contentLength)}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex items-start gap-2 border-l border-neutral-800 pl-3">
-                      <div>
-                        <span className="block leading-normal">{t('previewModules.dbValidated')}</span>
-                        <span className="text-[10px] text-neutral-500 block mt-1">Drive App SDK</span>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2 border-l border-neutral-800 pl-3">
-                      <div>
-                        <span className="block leading-normal">{t('previewModules.catalogRegistered')}</span>
-                        <span className="text-[10px] text-neutral-500 block mt-1">Remote Drive catalog</span>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
@@ -636,9 +699,9 @@ export function FileDetailModal({
             <div className="bg-sky-500/5 border border-sky-500/10 p-4.5 rounded-2xl flex gap-2.5 mt-auto text-sky-400">
               <Sparkles className="text-sky-400 shrink-0 mt-0.5" size={14} />
               <div>
-                <span className="text-[11px] font-bold block uppercase tracking-wider">Drive SDK Preview</span>
+                <span className="text-[11px] font-bold block uppercase tracking-wider">{t('previewModules.sdkPreviewTitle')}</span>
                 <p className="text-[11.5px] text-sky-400/70 mt-0.5 leading-relaxed font-normal">
-                  Preview resources are resolved through the Drive App SDK and backend download grants.
+                  {t('previewModules.sdkPreviewDesc')}
                 </p>
               </div>
             </div>

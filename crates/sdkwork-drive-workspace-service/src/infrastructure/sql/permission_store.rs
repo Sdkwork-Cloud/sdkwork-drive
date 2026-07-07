@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use sdkwork_utils_rust::{DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE};
 use sqlx::{AnyPool, Row};
 use uuid::Uuid;
 
@@ -206,7 +207,7 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
         sqlx::query(
             "INSERT INTO dr_drive_node_permission \
              (id, tenant_id, node_id, subject_type, subject_id, role, inherited, lifecycle_status, version, created_by, updated_by) \
-             VALUES ($1, $2, $3, $4, $5, $6, 0, 'active', 1, $7, $7)",
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', 1, $8, $8)",
         )
         .bind(&id)
         .bind(&command.tenant_id)
@@ -214,6 +215,7 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
         .bind(&command.subject_type)
         .bind(&command.subject_id)
         .bind(&command.role)
+        .bind(false)
         .bind(&command.operator_id)
         .execute(&self.pool)
         .await
@@ -271,11 +273,15 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
         &self,
         command: ListDriveNodePermissionsCommand,
     ) -> Result<DriveNodePermissionList, DriveServiceError> {
-        let page_size = command.page_size.unwrap_or(50).min(200) as i64;
+        let page_size = command
+            .page_size
+            .map(|value| i64::from(value.min(MAX_LIST_PAGE_SIZE as u32)))
+            .unwrap_or(i64::from(DEFAULT_LIST_PAGE_SIZE));
         let offset = match command.page_token.as_deref() {
-            Some(raw) if !raw.trim().is_empty() => raw.trim().parse::<i64>().map_err(|_| {
-                DriveServiceError::Validation("page_token is invalid".to_string())
-            })?,
+            Some(raw) if !raw.trim().is_empty() => raw
+                .trim()
+                .parse::<i64>()
+                .map_err(|_| DriveServiceError::Validation("page_token is invalid".to_string()))?,
             _ => 0,
         };
         if offset < 0 {

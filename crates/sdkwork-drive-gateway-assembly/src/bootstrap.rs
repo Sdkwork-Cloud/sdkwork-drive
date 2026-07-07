@@ -13,15 +13,11 @@ pub struct ApplicationAssembly {
 
 pub async fn assemble_application_business_router(pool: sqlx::AnyPool) -> ApplicationAssembly {
     let mut router = Router::new();
-    router = router.merge(
-        sdkwork_routes_drive_app_api::gateway_mount_business(pool.clone()).await,
-    );
-    router = router.merge(
-        sdkwork_routes_drive_backend_api::gateway_mount_business(pool.clone()).await,
-    );
-    router = router.merge(
-        sdkwork_routes_drive_open_api::gateway_mount_business(pool.clone()).await,
-    );
+    router = router.merge(sdkwork_routes_drive_app_api::gateway_mount_business(pool.clone()).await);
+    router =
+        router.merge(sdkwork_routes_drive_backend_api::gateway_mount_business(pool.clone()).await);
+    router =
+        router.merge(sdkwork_routes_drive_open_api::gateway_mount_business(pool.clone()).await);
     ApplicationAssembly { router }
 }
 

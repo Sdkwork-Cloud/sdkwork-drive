@@ -17,6 +17,7 @@ Documentation for SDKWork Drive follows `../sdkwork-specs/DOCUMENTATION_SPEC.md`
 - [TECH-drive-sdk-integration-standard.md](architecture/tech/TECH-drive-sdk-integration-standard.md)
 - [TECH-drive-topology-standard.md](architecture/tech/TECH-drive-topology-standard.md)
 - [TECH-drive-uploader-standard.md](architecture/tech/TECH-drive-uploader-standard.md)
+- [TECH-drive-sibling-naming-standard.md](architecture/tech/TECH-drive-sibling-naming-standard.md)
 - [TECH-drive-observability-event-dictionary.md](architecture/tech/TECH-drive-observability-event-dictionary.md)
 - [TECH-database-architecture.md](architecture/tech/TECH-database-architecture.md)
 - [TECH-storage-s3-architecture.md](architecture/tech/TECH-storage-s3-architecture.md)
@@ -40,12 +41,13 @@ Documentation for SDKWork Drive follows `../sdkwork-specs/DOCUMENTATION_SPEC.md`
 
 ## Release maturity
 
-Drive is **Beta / DRAFT** for catalog publication. Code and verification gates pass for controlled pilot deployment. Commercial GA requires signed multi-platform artifacts, CDN catalog media, immutable K8s digests, and staging smoke evidence — see [releases/README.md](releases/README.md).
+Drive is **Beta / DRAFT** for catalog publication. Code alignment is complete for controlled pilot (atomic space lifecycle, pagination, dual-engine parity, PostgreSQL CI). Commercial GA requires signed artifacts, CDN catalog media, immutable K8s digests, and staging smoke evidence — see [releases/README.md](releases/README.md) and [reviews/FULL_CODE_REVIEW_REPORT.md](reviews/FULL_CODE_REVIEW_REPORT.md).
 
 ## Verification
 
 - `pnpm verify` (includes `check:app-composition`)
-- `pnpm check` — full merge gate: app composition, Rust workspace, architecture/dependency/SDK/PC/docs/pnpm/agent standards, release readiness, IAM bootstrap audit, deploy/topology/gateway assembly, database framework, API envelope and schema
+- `pnpm check` — full merge gate (includes `test:staging-admin-smoke-contract`)
+- `pnpm smoke:staging-admin` — staging admin API smoke (requires `SDKWORK_DRIVE_STAGING_*` secrets)
 - `pnpm api:envelope:check`
 - `pnpm api:schema:check`
 - `pnpm deploy:validate`

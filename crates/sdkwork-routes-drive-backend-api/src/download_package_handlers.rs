@@ -8,12 +8,13 @@ use crate::validators::{
     normalize_optional_text, validate_download_package_state, validate_page_size_u32,
     validate_page_u32,
 };
-use sdkwork_utils_rust::OffsetListPageParams;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Extension;
 use axum::Json;
 use sdkwork_drive_security::DriveAppContext;
+use sdkwork_utils_rust::OffsetListPageParams;
+use sdkwork_utils_rust::DEFAULT_LIST_PAGE_SIZE;
 
 pub(crate) async fn list_download_packages(
     State(state): State<BackendState>,
@@ -21,7 +22,13 @@ pub(crate) async fn list_download_packages(
     Query(query): Query<ListDownloadPackagesQuery>,
 ) -> Result<DriveListHttpResponse<DownloadPackageItemResponse>, (StatusCode, Json<ProblemDetail>)> {
     let page = validate_page_u32(query.page, 1, 1, 10_000, "page")?;
-    let page_size = validate_page_size_u32(query.page_size, 50, 1, 100, "pageSize")?;
+    let page_size = validate_page_size_u32(
+        query.page_size,
+        DEFAULT_LIST_PAGE_SIZE as u32,
+        1,
+        100,
+        "page_size",
+    )?;
     let offset = i64::from(page - 1) * i64::from(page_size);
     let tenant_id = authenticated_tenant_id(&app_context);
     let state_filter = match normalize_optional_text(query.state) {

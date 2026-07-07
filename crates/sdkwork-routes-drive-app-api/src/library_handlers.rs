@@ -1,15 +1,19 @@
 use crate::acl;
 use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
+use crate::constants::MAX_FAVORITE_CHECK_NODE_IDS;
 use crate::dto::{
-    FavoriteNodeQuery, FavoriteNodeRequest, FavoriteNodeResponse, NodeViewQuery,
-    SubjectNodeViewQuery,
+    CheckFavoriteNodesRequest, FavoriteNodeCheckItem, FavoriteNodeQuery, FavoriteNodeRequest,
+    FavoriteNodeResponse, NodeViewQuery, SubjectNodeViewQuery,
 };
-use crate::response::DriveNodeListHttpResponse;
-use crate::error::{internal_sql_error, ProblemDetail};
+use crate::error::{internal_sql_error, problem, ProblemDetail, SdkWorkResultCode};
 use crate::mappers::map_node_row;
 use crate::metadata_repository::present_node_list;
 use crate::node_repository::find_active_node;
+use crate::response::{
+    current_trace_id, no_content, success_envelope, DriveListHttpResponse,
+    DriveNodeListHttpResponse,
+};
 use crate::route_change::record_change;
 use crate::space_repository::validate_space_exists;
 use crate::state::AppState;
@@ -25,6 +29,8 @@ use sdkwork_drive_contract::drive::domain_events as drive_events;
 use sdkwork_drive_workspace_service::infrastructure::sql::{
     NODE_API_SELECT_COLUMNS, NODE_API_SELECT_JOIN_COLUMNS,
 };
+use sdkwork_utils_rust::{PageInfo, PageMode, SdkWorkApiResponse, SdkWorkPageData};
+use sqlx::Row;
 
 pub(crate) async fn list_recent_nodes(
     State(state): State<AppState>,
@@ -134,8 +140,7 @@ pub(crate) async fn list_recent_nodes(
         };
         (items, next_page_token, false)
     } else {
-        let reader_acl_predicate =
-            acl_sql::node_reader_visible_sql("dr_drive_node", "$2", "$3");
+        let reader_acl_predicate = acl_sql::node_reader_visible_sql("dr_drive_node", "$2", "$3");
         let (items, next_page_token) = acl::paginate_offset_limited_items(
             page,
             move |scan_offset, batch_limit| {
@@ -505,7 +510,7 @@ pub(crate) async fn set_favorite(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<FavoriteNodeRequest>,
-) -> Result<Json<FavoriteNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<Json<SdkWorkApiResponse<FavoriteNodeResponse>>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let (subject_type, subject_id) =
         ctx.resolve_subject(payload.subject_type, payload.subject_id)?;
@@ -543,14 +548,14 @@ pub(crate) async fn set_favorite(
         &operator_id,
     )
     .await?;
-    Ok(Json(FavoriteNodeResponse { favorited: true }))
+    Ok(success_envelope(FavoriteNodeResponse { favorited: true }))
 }
 pub(crate) async fn unset_favorite(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<FavoriteNodeQuery>,
-) -> Result<Json<FavoriteNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
@@ -586,8 +591,94 @@ pub(crate) async fn unset_favorite(
         )
         .await?;
     }
-    Ok(Json(FavoriteNodeResponse { favorited: false }))
+    Ok(no_content())
 }
+
+pub(crate) async fn check_favorite_nodes(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Json(payload): Json<CheckFavoriteNodesRequest>,
+) -> Result<DriveListHttpResponse<FavoriteNodeCheckItem>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let (subject_type, subject_id) =
+        ctx.resolve_subject(payload.subject_type, payload.subject_id)?;
+    validate_subject_type(&subject_type)?;
+
+    let mut node_ids = Vec::new();
+    let mut seen = std::collections::BTreeSet::new();
+    for raw in &payload.node_ids {
+        let trimmed = raw.trim();
+        if trimmed.is_empty() || !seen.insert(trimmed.to_string()) {
+            continue;
+        }
+        node_ids.push(trimmed.to_string());
+    }
+    if node_ids.len() > MAX_FAVORITE_CHECK_NODE_IDS {
+        return Err(problem(
+            StatusCode::BAD_REQUEST,
+            "validation failed",
+            format!("nodeIds must contain at most {MAX_FAVORITE_CHECK_NODE_IDS} unique entries"),
+            SdkWorkResultCode::ValidationError,
+        ));
+    }
+
+    let favorited_ids = if node_ids.is_empty() {
+        std::collections::BTreeSet::new()
+    } else {
+        let placeholders = (0..node_ids.len())
+            .map(|index| format!("${}", index + 4))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql = format!(
+            "SELECT node_id
+             FROM dr_drive_node_favorite
+             WHERE tenant_id=$1
+               AND subject_type=$2
+               AND subject_id=$3
+               AND lifecycle_status='active'
+               AND node_id IN ({placeholders})"
+        );
+        let mut query = sqlx::query(&sql)
+            .bind(&tenant_id)
+            .bind(&subject_type)
+            .bind(&subject_id);
+        for node_id in &node_ids {
+            query = query.bind(node_id);
+        }
+        let rows = query
+            .fetch_all(&state.pool)
+            .await
+            .map_err(internal_sql_error("check dr_drive_node_favorite failed"))?;
+        rows.iter()
+            .map(|row| row.get::<String, _>("node_id"))
+            .collect::<std::collections::BTreeSet<_>>()
+    };
+
+    let items = node_ids
+        .into_iter()
+        .map(|node_id| FavoriteNodeCheckItem {
+            favorited: favorited_ids.contains(&node_id),
+            node_id,
+        })
+        .collect::<Vec<_>>();
+    let item_count = items.len() as i32;
+    Ok(Json(SdkWorkApiResponse::success(
+        SdkWorkPageData {
+            items,
+            page_info: PageInfo {
+                mode: PageMode::Offset,
+                page: Some(1),
+                page_size: Some(item_count),
+                total_items: Some(item_count.to_string()),
+                total_pages: Some(1),
+                next_cursor: None,
+                has_more: Some(false),
+            },
+        },
+        current_trace_id(),
+    )))
+}
+
 fn build_favorite_id(
     tenant_id: &str,
     subject_type: &str,

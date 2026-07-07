@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client.set_auth_token("your-auth-token");
 client.set_access_token("your-access-token");
 
-    let result = client.drive().quotas_summary().await?;
+    let result = client.drive().quotas_retrieve().await?;
     println!("{result:?}");
     Ok(())
 }
@@ -56,7 +56,7 @@ client.set_header("X-Custom-Header", "value");
 
 ```rust
 // GET /app/v3/api/drive/quotas/summary
-let result = client.drive().quotas_summary().await?;
+let result = client.drive().quotas_retrieve().await?;
 println!("{result:?}");
 ```
 
@@ -68,8 +68,8 @@ use std::collections::HashMap;
 let node_id = "1";
 let mut query = HashMap::new();
 query.insert("labelKey".to_string(), serde_json::json!("labelkey"));
-query.insert("pageSize".to_string(), serde_json::json!(2));
-query.insert("pageToken".to_string(), serde_json::json!("token"));
+query.insert("page_size".to_string(), serde_json::json!(2));
+query.insert("cursor".to_string(), serde_json::json!("cursor"));
 let result = client.node_labels().list(node_id, Some(&query)).await?;
 println!("{result:?}");
 ```
@@ -82,8 +82,8 @@ use std::collections::HashMap;
 let node_id = "1";
 let mut query = HashMap::new();
 query.insert("visibility".to_string(), serde_json::json!("private"));
-query.insert("pageSize".to_string(), serde_json::json!(2));
-query.insert("pageToken".to_string(), serde_json::json!("token"));
+query.insert("page_size".to_string(), serde_json::json!(2));
+query.insert("cursor".to_string(), serde_json::json!("cursor"));
 let result = client.node_properties().list(node_id, Some(&query)).await?;
 println!("{result:?}");
 ```
@@ -113,8 +113,8 @@ use std::collections::HashMap;
 let mut query = HashMap::new();
 query.insert("resourceType".to_string(), serde_json::json!("changes"));
 query.insert("lifecycleStatus".to_string(), serde_json::json!("active"));
-query.insert("pageSize".to_string(), serde_json::json!(3));
-query.insert("pageToken".to_string(), serde_json::json!("token"));
+query.insert("page_size".to_string(), serde_json::json!(3));
+query.insert("cursor".to_string(), serde_json::json!("cursor"));
 let result = client.watch_channels().list(Some(&query)).await?;
 println!("{result:?}");
 ```
@@ -126,7 +126,7 @@ use std::collections::HashMap;
 // List asset collections
 let mut query = HashMap::new();
 query.insert("cursor".to_string(), serde_json::json!("cursor"));
-query.insert("pageSize".to_string(), serde_json::json!(2));
+query.insert("page_size".to_string(), serde_json::json!(2));
 let result = client.assets().asset_collections_list(Some(&query)).await?;
 println!("{result:?}");
 ```
@@ -140,7 +140,7 @@ use sdkwork_drive_app_sdk_generated_rust::{SdkworkAppClient, SdkworkConfig};
 let client = SdkworkAppClient::new(SdkworkConfig::new("http://127.0.0.1:18080"))?;
 
 let outcome: Result<(), _> = async {
-    client.drive().quotas_summary().await?;
+    client.drive().quotas_retrieve().await?;
     Ok(())
 }.await;
 

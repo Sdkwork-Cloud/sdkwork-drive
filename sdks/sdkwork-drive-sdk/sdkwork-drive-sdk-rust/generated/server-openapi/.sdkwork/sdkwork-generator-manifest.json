@@ -36,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "2aaf5080cd6ddda75a4542f569b50d2a8b2206d08aefbc5a65c10a2aaf0114da"
+      "sha256": "0d41191b7bf966bb27d1b585ef83c5de584b0d512d569b37ad992cda2e9524b5"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -48,7 +48,7 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "8f01ff0dbf7e15743c4defdbc16417d2ba176c6a13a4c2e61dec94bcbab6feba"
+      "sha256": "a56eed4f7e379b2d4bf6ddc00f612bf98515346e0b632df0eaea7429fe315351"
     },
     {
       "path": "src/api/mod.rs",
@@ -92,7 +92,7 @@
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "6700e5565f5511362efcb410a1ba1008aa30846d3b46af17c777dd8f67b66ec8"
+      "sha256": "597c113d2c5a94ec3327bbacae2d07176ecf5c7d6166ffa82245420caabff019"
     },
     {
       "path": "src/models/open_download_url_create_response.rs",
@@ -109,6 +109,14 @@
     {
       "path": "src/models/open_share_link_resolve_response.rs",
       "sha256": "dae85da23579d45fd107e782f08f0856f225a91df3121009bbc2bbe3b2202aef"
+    },
+    {
+      "path": "src/models/open_share_links_download_urls_create_response201.rs",
+      "sha256": "1398597277d9ab82ca76ed4304d2679476b7c1f39518aa2e604b53d28e17bb1c"
+    },
+    {
+      "path": "src/models/open_share_links_retrieve_response.rs",
+      "sha256": "354cad4c0a02c076a055e37314e19f21187325e416a003413e302af8a1ee6ae3"
     },
     {
       "path": "src/models/problem_detail.rs",

@@ -35,7 +35,7 @@ public class Main {
 client.setAccessToken("your-access-token");
 
         // Use the SDK
-        QuotaSummary result = client.getDrive().quotasSummary();
+        QuotasRetrieveResponse result = client.getDrive().quotasRetrieve();
         System.out.println(result);
     }
 }
@@ -70,7 +70,7 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 
 ```java
 // GET /backend/v3/api/drive/quotas
-QuotaSummary result = client.getDrive().quotasSummary();
+QuotasRetrieveResponse result = client.getDrive().quotasRetrieve();
 System.out.println(result);
 ```
 
@@ -80,9 +80,9 @@ System.out.println(result);
 // List Drive label definitions
 Map<String, Object> params = new LinkedHashMap<>();
 params.put("lifecycleStatus", "active");
-params.put("pageSize", 2);
-params.put("pageToken", "token");
-LabelListResponse result = client.getLabels().list(params);
+params.put("page_size", 2);
+params.put("cursor", "cursor");
+LabelsListResponse result = client.getLabels().list(params);
 System.out.println(result);
 ```
 
@@ -90,7 +90,7 @@ System.out.println(result);
 
 ```java
 try {
-    QuotaSummary result = client.getDrive().quotasSummary();
+    QuotasRetrieveResponse result = client.getDrive().quotasRetrieve();
     System.out.println(result);
 } catch (Exception e) {
     System.err.println("Error: " + e.getMessage());

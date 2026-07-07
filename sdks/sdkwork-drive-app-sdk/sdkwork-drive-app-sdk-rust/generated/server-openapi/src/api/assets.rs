@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::app_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{AssetActionRequest, AssetCollection, AssetCollectionItem, AssetCollectionPage, AssetItem, AssetPage, AssetRelation, CreateAssetCollectionItemRequest, CreateAssetCollectionRequest, CreateAssetRelationRequest, CreateAssetRequest, DeleteAssetCollectionItemResponse, DeleteAssetRelationResponse, UpdateAssetRequest};
+use crate::models::{AssetActionRequest, AssetCollectionItemsCreateResponse201, AssetCollectionsCreateResponse201, AssetCollectionsListResponse, AssetRelationsCreateResponse201, AssetsArchiveResponse, AssetsCreateResponse201, AssetsListResponse, AssetsRestoreResponse, AssetsRetrieveResponse, AssetsUpdateResponse, CreateAssetCollectionItemRequest, CreateAssetCollectionRequest, CreateAssetRelationRequest, CreateAssetRequest, UpdateAssetRequest};
 
 #[derive(Clone)]
 pub struct AssetsApi {
@@ -16,10 +16,10 @@ impl AssetsApi {
     }
 
     /// List global assets
-    pub async fn list(&self, cursor: Option<&str>, page_size: Option<i64>, kind: Option<&str>, source_type: Option<&str>, q: Option<&str>) -> Result<AssetPage, SdkworkError> {
+    pub async fn list(&self, cursor: Option<&str>, page_size: Option<i64>, kind: Option<&str>, source_type: Option<&str>, q: Option<&str>) -> Result<AssetsListResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
-            QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
             QueryParameterSpec::new("kind", kind, "form", true, false, None),
             QueryParameterSpec::new("sourceType", source_type, "form", true, false, None),
             QueryParameterSpec::new("q", q, "form", true, false, None),
@@ -29,71 +29,71 @@ impl AssetsApi {
     }
 
     /// Create a global asset metadata record
-    pub async fn create(&self, body: &CreateAssetRequest) -> Result<AssetItem, SdkworkError> {
+    pub async fn create(&self, body: &CreateAssetRequest) -> Result<AssetsCreateResponse201, SdkworkError> {
         let path = app_path(&"/assets".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Get a global asset
-    pub async fn get(&self, asset_id: &str) -> Result<AssetItem, SdkworkError> {
+    pub async fn retrieve(&self, asset_id: &str) -> Result<AssetsRetrieveResponse, SdkworkError> {
         let path = app_path(&format!("/assets/{}", serialize_path_parameter(asset_id, PathParameterSpec::new("assetId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
     /// Update a global asset
-    pub async fn update(&self, asset_id: &str, body: &UpdateAssetRequest) -> Result<AssetItem, SdkworkError> {
+    pub async fn update(&self, asset_id: &str, body: &UpdateAssetRequest) -> Result<AssetsUpdateResponse, SdkworkError> {
         let path = app_path(&format!("/assets/{}", serialize_path_parameter(asset_id, PathParameterSpec::new("assetId", "simple", false))));
         self.client.patch(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Archive a global asset
-    pub async fn archive(&self, asset_id: &str, body: &AssetActionRequest) -> Result<AssetItem, SdkworkError> {
+    pub async fn archive(&self, asset_id: &str, body: &AssetActionRequest) -> Result<AssetsArchiveResponse, SdkworkError> {
         let path = app_path(&format!("/assets/{}/archive", serialize_path_parameter(asset_id, PathParameterSpec::new("assetId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Restore an archived global asset
-    pub async fn restore(&self, asset_id: &str, body: &AssetActionRequest) -> Result<AssetItem, SdkworkError> {
+    pub async fn restore(&self, asset_id: &str, body: &AssetActionRequest) -> Result<AssetsRestoreResponse, SdkworkError> {
         let path = app_path(&format!("/assets/{}/restore", serialize_path_parameter(asset_id, PathParameterSpec::new("assetId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// List asset collections
-    pub async fn asset_collections_list(&self, cursor: Option<&str>, page_size: Option<i64>) -> Result<AssetCollectionPage, SdkworkError> {
+    pub async fn asset_collections_list(&self, cursor: Option<&str>, page_size: Option<i64>) -> Result<AssetCollectionsListResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
-            QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
         ]);
         let path = append_query_string(app_path(&"/assets/collections".to_string()), &query);
         self.client.get(&path, None, None).await
     }
 
     /// Create an asset collection
-    pub async fn asset_collections_create(&self, body: &CreateAssetCollectionRequest) -> Result<AssetCollection, SdkworkError> {
+    pub async fn asset_collections_create(&self, body: &CreateAssetCollectionRequest) -> Result<AssetCollectionsCreateResponse201, SdkworkError> {
         let path = app_path(&"/assets/collections".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Add an asset to a collection
-    pub async fn asset_collection_items_create(&self, collection_id: &str, body: &CreateAssetCollectionItemRequest) -> Result<AssetCollectionItem, SdkworkError> {
+    pub async fn asset_collection_items_create(&self, collection_id: &str, body: &CreateAssetCollectionItemRequest) -> Result<AssetCollectionItemsCreateResponse201, SdkworkError> {
         let path = app_path(&format!("/assets/collections/{}/items", serialize_path_parameter(collection_id, PathParameterSpec::new("collectionId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Remove an asset from a collection
-    pub async fn asset_collection_items_delete(&self, collection_id: &str, item_id: &str) -> Result<DeleteAssetCollectionItemResponse, SdkworkError> {
+    pub async fn asset_collection_items_delete(&self, collection_id: &str, item_id: &str) -> Result<(), SdkworkError> {
         let path = app_path(&format!("/assets/collections/{}/items/{}", serialize_path_parameter(collection_id, PathParameterSpec::new("collectionId", "simple", false)), serialize_path_parameter(item_id, PathParameterSpec::new("itemId", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
     /// Create an asset relation
-    pub async fn asset_relations_create(&self, asset_id: &str, body: &CreateAssetRelationRequest) -> Result<AssetRelation, SdkworkError> {
+    pub async fn asset_relations_create(&self, asset_id: &str, body: &CreateAssetRelationRequest) -> Result<AssetRelationsCreateResponse201, SdkworkError> {
         let path = app_path(&format!("/assets/{}/relations", serialize_path_parameter(asset_id, PathParameterSpec::new("assetId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Delete an asset relation
-    pub async fn asset_relations_delete(&self, asset_id: &str, relation_id: &str) -> Result<DeleteAssetRelationResponse, SdkworkError> {
+    pub async fn asset_relations_delete(&self, asset_id: &str, relation_id: &str) -> Result<(), SdkworkError> {
         let path = app_path(&format!("/assets/{}/relations/{}", serialize_path_parameter(asset_id, PathParameterSpec::new("assetId", "simple", false)), serialize_path_parameter(relation_id, PathParameterSpec::new("relationId", "simple", false))));
         self.client.delete(&path, None, None).await
     }

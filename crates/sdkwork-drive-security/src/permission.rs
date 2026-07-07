@@ -148,7 +148,7 @@ mod tests {
         ));
         assert!(!can_invoke_drive_backend_operation(
             &context,
-            "quotas.summary"
+            "quotas.retrieve"
         ));
         assert!(!can_invoke_drive_storage_operation(
             &context,

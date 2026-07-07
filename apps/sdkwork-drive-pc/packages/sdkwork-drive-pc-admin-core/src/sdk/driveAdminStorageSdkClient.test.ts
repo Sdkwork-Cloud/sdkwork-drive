@@ -50,7 +50,7 @@ describe('drive admin storage sdk client', () => {
 
     await client.request({
       operationId: 'storageProviders.list',
-      query: { status: 'active' },
+      query: { status: 'active', page_size: 50, cursor: '100' },
     });
 
     expect(sdkClient.setTokenManager).toHaveBeenCalledWith(tokenManager);
@@ -60,7 +60,7 @@ describe('drive admin storage sdk client', () => {
       '/backend/v3/api/drive/storage/providers',
       {
         method: 'GET',
-        params: { status: 'active' },
+        params: { status: 'active', page_size: 50, cursor: '100' },
         body: undefined,
         contentType: undefined,
         signal: undefined,
@@ -73,9 +73,8 @@ describe('drive admin storage sdk client', () => {
     const tokenManager = createDriveSessionTokenManager(createSessionStore());
     const request = vi.fn(async <T>(): Promise<T> => {
       throw Object.assign(new Error('admin storage permission is required'), {
-        code: 'drive.storage.forbidden',
+        code: 40301,
         httpStatus: 403,
-        requestId: 'request-001',
         traceId: 'trace-001',
       });
     });
@@ -93,17 +92,16 @@ describe('drive admin storage sdk client', () => {
     });
 
     await expect(client.request({
-      operationId: 'storageProviders.get',
+      operationId: 'storageProviders.retrieve',
       pathParams: { providerId: 'provider-s3-primary' },
     })).rejects.toMatchObject({
       name: 'DriveAdminStorageSdkError',
       message: 'admin storage permission is required',
-      operationId: 'storageProviders.get',
+      operationId: 'storageProviders.retrieve',
       status: 403,
       detail: 'admin storage permission is required',
-      code: 'drive.storage.forbidden',
+      code: 40301,
       traceId: 'trace-001',
-      requestId: 'request-001',
     });
   });
 });

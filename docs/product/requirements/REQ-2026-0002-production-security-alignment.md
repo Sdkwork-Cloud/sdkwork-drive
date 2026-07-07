@@ -4,13 +4,14 @@ title: Production security and IAM alignment for SDKWork Drive
 owner: SDKWork maintainers
 status: done
 source: platform
-updated: 2026-06-25
+updated: 2026-07-08
 problem: Drive production routers must validate IAM sessions through the IAM database resolver, harden webhook dispatch, and align deployment descriptors with SECURITY_SPEC and IAM_LOGIN_INTEGRATION_SPEC without leaving stale documentation.
 goals:
   - Protected HTTP routers finalize with IamWebRequestContextResolver in production assembly paths.
   - Webhook outbox dispatch validates DNS-resolved addresses before egress.
   - Backend and admin-storage APIs expose in-process rate limiting with documented env keys.
   - Kubernetes, systemd, container, and runbook docs reflect current production defaults.
+  - Release-mode deployment validation rejects placeholder Kubernetes image digests.
 non_goals:
   - Enabling artifact signing or ACTIVE catalog publication in this requirement.
   - Redis-backed distributed rate limiting.
@@ -25,6 +26,7 @@ acceptance_criteria:
   - HTTP 500 responses return generic client-safe problem details; internal errors are logged server-side only.
   - PC bootstrap failure markup escapes user-visible error content.
   - `pnpm check:architecture-alignment` and `pnpm deploy:validate` pass.
+  - `node --test tools/check_drive_deployments.test.mjs` passes for strict Kubernetes digest validation behavior.
   - TECH IAM standard and runbooks document IAM DB resolver wiring and DR procedures.
 non_functional_requirements:
   security: IAM DB session validation on protected routers; webhook SSRF DNS checks; install-worker health bind defaults to loopback.
@@ -48,5 +50,6 @@ trace:
     - deployments/kubernetes/drive-services.yaml
 verification:
   - pnpm verify
+  - node --test tools/check_drive_deployments.test.mjs
   - pnpm deploy:validate
   - pnpm check:architecture-alignment

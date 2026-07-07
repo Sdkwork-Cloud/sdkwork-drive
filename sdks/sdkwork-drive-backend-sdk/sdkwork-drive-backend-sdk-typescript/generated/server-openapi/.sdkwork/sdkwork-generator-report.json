@@ -10,147 +10,37 @@
   },
   "status": "ok",
   "mode": "apply",
-  "hasChanges": true,
-  "hasDestructiveChanges": true,
-  "changeFingerprint": "db7e7767ffa1c8e0a34ae28c878d70e9c344e229d0a732037e268a399001dbf8",
+  "hasChanges": false,
+  "hasDestructiveChanges": false,
+  "changeFingerprint": "fd59995e5ab9eadc08776e0cde99fa272de2c29732e8aef501df499b60355a68",
   "changeImpact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface",
-      "models"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "src/api/drive.ts"
-        ]
-      },
-      {
-        "area": "models",
-        "paths": [
-          "src/types/copy-provider-object-request.ts",
-          "src/types/create-storage-provider-request.ts",
-          "src/types/delete-storage-provider-response.ts",
-          "src/types/index.ts",
-          "src/types/list-storage-providers-response.ts",
-          "src/types/operator-request.ts",
-          "src/types/provider-bucket-mutation.ts",
-          "src/types/provider-bucket.ts",
-          "src/types/provider-object-list.ts",
-          "src/types/provider-object-mutation.ts",
-          "src/types/provider-object.ts",
-          "src/types/rotate-storage-provider-credential-request.ts",
-          "src/types/set-default-storage-provider-binding-request.ts",
-          "src/types/storage-provider-binding.ts",
-          "src/types/storage-provider-capabilities.ts",
-          "src/types/storage-provider.ts",
-          "src/types/test-storage-provider-request.ts",
-          "src/types/test-storage-provider-response.ts",
-          "src/types/update-storage-provider-request.ts"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "high",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "deleted-generated-files",
-      "manual-review-required",
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "executionHandoff": {
     "schemaVersion": 1,
-    "summary": "Run the required verification commands now.",
-    "steps": [
-      {
-        "id": "verify-check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-typescript\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "typescript",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action check"
-      },
-      {
-        "id": "verify-build",
-        "title": "Unified package build",
-        "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-typescript\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "typescript",
-          "--project-dir",
-          ".",
-          "--action",
-          "build"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action build"
-      }
-    ]
+    "summary": "No further commands are required.",
+    "steps": []
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-typescript\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "typescript",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action check"
-      },
-      {
-        "id": "build",
-        "title": "Unified package build",
-        "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-typescript\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "typescript",
-          "--project-dir",
-          ".",
-          "--action",
-          "build"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action build"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "sdk": {
     "name": "sdkwork-drive-backend-sdk",
@@ -166,27 +56,24 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 44,
-    "models": 19,
+    "totalFiles": 66,
+    "models": 41,
     "apis": 2,
-    "types": 21
+    "types": 43
   },
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 2,
+    "writtenFiles": 0,
     "skippedScaffoldFiles": 2,
-    "skippedUnchangedGeneratedFiles": 40,
-    "deletedGeneratedFiles": 18,
+    "skippedUnchangedGeneratedFiles": 64,
+    "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "db7e7767ffa1c8e0a34ae28c878d70e9c344e229d0a732037e268a399001dbf8",
+    "changeFingerprint": "fd59995e5ab9eadc08776e0cde99fa272de2c29732e8aef501df499b60355a68",
     "changes": {
       "createdGeneratedFiles": [],
-      "updatedGeneratedFiles": [
-        "src/api/drive.ts",
-        "src/types/index.ts"
-      ],
+      "updatedGeneratedFiles": [],
       "unchangedGeneratedFiles": [
         "bin/publish-core.mjs",
         "bin/publish.ps1",
@@ -199,6 +86,7 @@
         "README.md",
         "sdkwork-sdk.json",
         "src/api/base.ts",
+        "src/api/drive.ts",
         "src/api/index.ts",
         "src/api/labels.ts",
         "src/api/paths.ts",
@@ -207,21 +95,44 @@
         "src/http/index.ts",
         "src/index.ts",
         "src/sdk.ts",
-        "src/types/audit-event-page.ts",
+        "src/types/audit-event-list-http-response.ts",
         "src/types/audit-event.ts",
+        "src/types/audit-events-list-response.ts",
         "src/types/common.ts",
         "src/types/create-label-request.ts",
-        "src/types/delete-label-response.ts",
-        "src/types/download-package-page.ts",
+        "src/types/download-package-list-http-response.ts",
         "src/types/download-package.ts",
+        "src/types/download-packages-list-response.ts",
+        "src/types/drive-label-list-http-response.ts",
         "src/types/drive-label.ts",
+        "src/types/drive-space-list-http-response.ts",
         "src/types/drive-space.ts",
-        "src/types/label-list-response.ts",
-        "src/types/list-spaces-response.ts",
-        "src/types/maintenance-job-page.ts",
+        "src/types/field-error.ts",
+        "src/types/index.ts",
+        "src/types/labels-create-response201.ts",
+        "src/types/labels-list-response.ts",
+        "src/types/labels-retrieve-response.ts",
+        "src/types/labels-update-response.ts",
+        "src/types/maintenance-abandoned-upload-task-sweep-response.ts",
+        "src/types/maintenance-expired-upload-content-sweep-response.ts",
+        "src/types/maintenance-job-list-http-response.ts",
         "src/types/maintenance-job.ts",
+        "src/types/maintenance-jobs-list-response.ts",
+        "src/types/maintenance-object-sweep-response.ts",
+        "src/types/maintenance-upload-session-sweep-response.ts",
+        "src/types/page-info.ts",
         "src/types/problem-detail.ts",
         "src/types/quota-summary.ts",
+        "src/types/quotas-retrieve-response.ts",
+        "src/types/quotas-update-response.ts",
+        "src/types/sdk-work-api-response.ts",
+        "src/types/sdk-work-command-data.ts",
+        "src/types/sdk-work-command-response.ts",
+        "src/types/sdk-work-page-data.ts",
+        "src/types/sdk-work-platform-error-code.ts",
+        "src/types/sdk-work-resource-data.ts",
+        "src/types/sdk-work-resource-response.ts",
+        "src/types/spaces-admin-list-response.ts",
         "src/types/sweep-object-store-request.ts",
         "src/types/sweep-response.ts",
         "src/types/sweep-upload-sessions-request.ts",
@@ -229,26 +140,7 @@
         "src/types/update-quota-policy-request.ts",
         "tsconfig.json"
       ],
-      "deletedGeneratedFiles": [
-        "src/types/copy-provider-object-request.ts",
-        "src/types/create-storage-provider-request.ts",
-        "src/types/delete-storage-provider-response.ts",
-        "src/types/list-storage-providers-response.ts",
-        "src/types/operator-request.ts",
-        "src/types/provider-bucket-mutation.ts",
-        "src/types/provider-bucket.ts",
-        "src/types/provider-object-list.ts",
-        "src/types/provider-object-mutation.ts",
-        "src/types/provider-object.ts",
-        "src/types/rotate-storage-provider-credential-request.ts",
-        "src/types/set-default-storage-provider-binding-request.ts",
-        "src/types/storage-provider-binding.ts",
-        "src/types/storage-provider-capabilities.ts",
-        "src/types/storage-provider.ts",
-        "src/types/test-storage-provider-request.ts",
-        "src/types/test-storage-provider-response.ts",
-        "src/types/update-storage-provider-request.ts"
-      ],
+      "deletedGeneratedFiles": [],
       "scaffoldedFiles": [],
       "preservedScaffoldFiles": [
         "custom/build-runtime.mjs",
@@ -258,99 +150,26 @@
     },
     "impact": {
       "schemaVersion": 1,
-      "areas": [
-        "api-surface",
-        "models"
-      ],
-      "details": [
-        {
-          "area": "api-surface",
-          "paths": [
-            "src/api/drive.ts"
-          ]
-        },
-        {
-          "area": "models",
-          "paths": [
-            "src/types/copy-provider-object-request.ts",
-            "src/types/create-storage-provider-request.ts",
-            "src/types/delete-storage-provider-response.ts",
-            "src/types/index.ts",
-            "src/types/list-storage-providers-response.ts",
-            "src/types/operator-request.ts",
-            "src/types/provider-bucket-mutation.ts",
-            "src/types/provider-bucket.ts",
-            "src/types/provider-object-list.ts",
-            "src/types/provider-object-mutation.ts",
-            "src/types/provider-object.ts",
-            "src/types/rotate-storage-provider-credential-request.ts",
-            "src/types/set-default-storage-provider-binding-request.ts",
-            "src/types/storage-provider-binding.ts",
-            "src/types/storage-provider-capabilities.ts",
-            "src/types/storage-provider.ts",
-            "src/types/test-storage-provider-request.ts",
-            "src/types/test-storage-provider-response.ts",
-            "src/types/update-storage-provider-request.ts"
-          ]
-        }
-      ],
-      "requiresVerification": true,
-      "summary": "Detected impact areas: api-surface, models. Verification is required."
+      "areas": [],
+      "details": [],
+      "requiresVerification": false,
+      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
     },
     "verificationPlan": {
-      "shouldRun": true,
-      "runPhase": "now",
-      "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
-      "steps": [
-        {
-          "id": "check",
-          "title": "Unified package check",
-          "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
-          "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-typescript\\generated\\server-openapi",
-          "command": "node",
-          "args": [
-            "./bin/publish-core.mjs",
-            "--language",
-            "typescript",
-            "--project-dir",
-            ".",
-            "--action",
-            "check"
-          ],
-          "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action check"
-        },
-        {
-          "id": "build",
-          "title": "Unified package build",
-          "required": true,
-          "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models.",
-          "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-typescript\\generated\\server-openapi",
-          "command": "node",
-          "args": [
-            "./bin/publish-core.mjs",
-            "--language",
-            "typescript",
-            "--project-dir",
-            ".",
-            "--action",
-            "build"
-          ],
-          "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action build"
-        }
-      ]
+      "shouldRun": false,
+      "runPhase": "skip",
+      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+      "steps": []
     },
     "executionDecision": {
       "schemaVersion": 1,
-      "riskLevel": "high",
-      "nextAction": "verify",
+      "riskLevel": "low",
+      "nextAction": "skip",
       "requiresManualReview": false,
       "applyRequiresExpectedFingerprint": false,
-      "summary": "Changes have been applied. Run the required verification plan now.",
+      "summary": "No actionable changes were detected. No apply or verification step is required.",
       "reasons": [
-        "deleted-generated-files",
-        "manual-review-required",
-        "verification-required"
+        "no-actionable-changes"
       ]
     },
     "backedUpFiles": [],

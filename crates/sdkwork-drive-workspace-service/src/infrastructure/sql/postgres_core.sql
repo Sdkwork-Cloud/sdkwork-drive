@@ -246,10 +246,10 @@ END $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_node_root_name_live
     ON dr_drive_node (tenant_id, space_id, node_name)
-    WHERE parent_node_id IS NULL AND lifecycle_status != 'deleted';
+    WHERE parent_node_id IS NULL AND lifecycle_status = 'active';
 CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_node_child_name_live
     ON dr_drive_node (tenant_id, space_id, parent_node_id, node_name)
-    WHERE parent_node_id IS NOT NULL AND lifecycle_status != 'deleted';
+    WHERE parent_node_id IS NOT NULL AND lifecycle_status = 'active';
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_space_parent
     ON dr_drive_node (tenant_id, space_id, parent_node_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_space_type_parent
@@ -1404,3 +1404,21 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending
 CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending_dispatch
     ON dr_drive_domain_outbox (attempt_count, created_at)
     WHERE delivery_status = 'pending';
+
+CREATE TABLE IF NOT EXISTS dr_drive_domain_outbox_channel_delivery (
+    outbox_id VARCHAR(64) NOT NULL,
+    channel_id VARCHAR(64) NOT NULL,
+    delivered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (outbox_id, channel_id),
+    CONSTRAINT fk_dr_drive_domain_outbox_channel_delivery_outbox_id
+        FOREIGN KEY (outbox_id) REFERENCES dr_drive_domain_outbox(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_channel_delivery_channel
+    ON dr_drive_domain_outbox_channel_delivery (channel_id, delivered_at DESC);
+
+CREATE TABLE IF NOT EXISTS dr_drive_maintenance_leader (
+    lock_key VARCHAR(64) PRIMARY KEY,
+    holder_id VARCHAR(128) NOT NULL,
+    acquired_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

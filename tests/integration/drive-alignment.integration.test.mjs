@@ -29,9 +29,12 @@ const fileBrowser = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file/src/components/FileBrowser.tsx',
 );
 const drivePage = read('apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file/src/pages/DrivePage.tsx');
-const transferJobs = read('apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-types/src/transferJobs.ts');
+const transferJobs = read('apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-core/src/types/transferJobs.ts');
 const driveFileService = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-core/src/services/driveFileService.ts',
+);
+const driveFileServiceTest = read(
+  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-core/src/services/driveFileService.test.ts',
 );
 const appApiError = read('crates/sdkwork-routes-drive-app-api/src/error.rs');
 const backendWebBootstrap = read('crates/sdkwork-routes-drive-backend-api/src/web_bootstrap.rs');
@@ -81,6 +84,9 @@ const permissionRole = read('crates/sdkwork-drive-workspace-service/src/domain/p
 const permissionStore = read(
   'crates/sdkwork-drive-workspace-service/src/infrastructure/sql/permission_store.rs',
 );
+const workspaceService = read(
+  'crates/sdkwork-drive-workspace-service/src/application/workspace_service.rs',
+);
 const sharedSpaceLocale = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons/src/i18n/locales/en/sharedSpace.ts',
 );
@@ -103,12 +109,16 @@ const officeModule = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file/src/components/preview-modules/OfficeModule.tsx',
 );
 
-assert.match(assetsModule, /SdkWorkResultCode::InternalError/);
-assert.match(assetsModule, /StatusCode::NOT_IMPLEMENTED/);
+assert.doesNotMatch(assetsModule, /StatusCode::NOT_IMPLEMENTED/);
+assert.doesNotMatch(assetsModule, /asset_upload_not_implemented/);
+assert.match(assetsModule, /SdkWorkResultCode::Gone/);
+assert.match(assetsModule, /SdkWorkResultCode::MethodNotAllowed/);
 assert.match(assetsModule, /use Drive uploader APIs/);
 assert.match(assetsModule, /global\.asset\.archived/);
 assert.match(assetsModule, /global\.asset\.archive\.reason/);
 assert.match(assetsModule, /pub\(crate\) async fn list_assets/);
+assert.match(assetsModule, /success_resource\(item\)/);
+assert.match(assetsModule, /success_created_resource\(item\)/);
 assert.match(nodeHandlers, /present_node_list/);
 assert.match(nodeHandlers, /present_drive_node/);
 assert.match(quotaHandlers, /resolve_effective_max_bytes/);
@@ -130,7 +140,7 @@ assert.match(nodeHandlers, /acl::ensure_ctx_node_role\(&state\.pool, &ctx, &node
 assert.match(permissionHandlers, /ensure_ctx_node_role\(&state\.pool, &ctx, &node\.space_id, &node_id, "owner"\)/);
 assert.match(commentHandlers, /ensure_ctx_node_role\(&state\.pool, &ctx, &node\.space_id, &node_id, "commenter"\)/);
 assert.match(aclModule, /ensure_subject_space_scoped_reader/);
-assert.match(aclModule, /space_is_accessible_to_subject/);
+assert.match(aclSqlModule, /space_accessible_to_subject_sql/);
 assert.match(aclModule, /ensure_space_owner/);
 assert.match(aclModule, /resolve_space_permission_anchor_node/);
 assert.match(appRoutes, /build_protected_router_with_pool/);
@@ -162,11 +172,13 @@ assert.match(drivePage, /runManagedDownloadTransfer/);
 assert.match(transferJobs, /progress: 0/);
 assert.doesNotMatch(transferJobs, /tickTransferJobs/);
 
-assert.match(driveFileService, /listShareLinks/);
+assert.match(driveFileService, /extractSdkWorkResourceItem/);
+assert.match(appTestCommon, /pub fn envelope_item/);
 assert.match(driveFileService, /createShareLink/);
 assert.match(driveFileService, /claimShareLink/);
 assert.match(driveFileService, /shareLinks\.claim/);
 assert.match(driveFileService, /revokeShareLink/);
+assert.match(driveFileService, /responseListPayload\(response\)/);
 assert.match(drivePage, /claimShareLink/);
 assert.match(drivePage, /pendingShareClaimToken/);
 assert.match(drivePage, /handleAcceptShareClaim/);
@@ -191,7 +203,7 @@ assert.match(driveSectionRoutes, /export function isShareLinkClaimPath/);
 assert.match(driveSectionRoutes, /return 'shared'/);
 assert.match(driveFileService, /listMoveCopyDestinationFolders/);
 assert.match(moveCopyModal, /listMoveCopyDestinationFolders/);
-assert.doesNotMatch(moveCopyModal, /getAllWorkspaceFiles/);
+assert.doesNotMatch(moveCopyModal, /listCachedWorkspaceFiles/);
 assert.match(hostAdapter, /local_download_save/);
 assert.match(hostAdapter, /local_download_begin/);
 assert.match(hostAdapter, /local_download_write_chunk/);
@@ -204,10 +216,20 @@ assert.match(fileBrowser, /fileBrowser\.batchSelectedCount/);
 assert.match(fileBrowser, /fileBrowser\.batchOperationFailed/);
 assert.match(fileDetailModal, /fileDetail\.previewUrlFailed/);
 assert.match(fileDetailModal, /fileDetail\.renameSuccess/);
+assert.match(fileDetailModal, /listFileVersions/);
+assert.match(fileDetailModal, /previewModules\.versionHistory/);
+assert.match(fileDetailModal, /previewModules\.sdkPreviewTitle/);
+assert.doesNotMatch(fileDetailModal, /dbValidated|catalogRegistered|liveSessionLogs/);
+assert.match(driveFileService, /favorites\.check/);
+assert.match(driveFileService, /moveDestinations\.list/);
+assert.match(driveFileService, /DEFAULT_PAGE_SIZE = 20/);
+assert.doesNotMatch(driveFileService, /requestAllPageItemsWithCap/);
 assert.match(desktopMain, /local_download_begin/);
 assert.match(desktopMain, /local_download_write_chunk/);
 assert.match(permissionRole, /pub fn drive_role_satisfies/);
-assert.match(permissionStore, /permission_role::drive_role_satisfies/);
+assert.match(permissionStore, /DEFAULT_LIST_PAGE_SIZE/);
+assert.match(workspaceService, /MAX_LIST_PAGE_SIZE/);
+assert.doesNotMatch(workspaceService, /between 1 and 500/);
 assert.match(sharedSpaceLocale, /createTitle:/);
 assert.match(sharedSpaceLocale, /createSuccess:/);
 assert.match(createSharedSpaceModal, /sharedSpace\.createTitle/);
@@ -223,6 +245,7 @@ assert.match(downloadService, /SDKWORK_DRIVE_DOWNLOAD_TOKEN_HMAC_SECRET is requi
 assert.doesNotMatch(downloadService, /dlv1_/);
 const webhookUrl = read('crates/sdkwork-routes-drive-app-api/src/webhook_url.rs');
 const appValidators = read('crates/sdkwork-routes-drive-app-api/src/validators.rs');
+const backendValidators = read('crates/sdkwork-routes-drive-backend-api/src/validators.rs');
 const jwtModule = read('crates/sdkwork-drive-security/src/jwt.rs');
 const securityWebhook = read('crates/sdkwork-drive-security/src/webhook_url.rs');
 const outboxDispatch = read(
@@ -237,6 +260,7 @@ assert.match(appValidators, /validate_webhook_https_url/);
 assert.match(outboxDispatch, /sdkwork_drive_security::validate_webhook_https_url/);
 assert.match(outboxDispatch, /FOR UPDATE SKIP LOCKED/);
 assert.match(outboxDispatch, /DatabaseEngine::Sqlite/);
+assert.match(outboxDispatch, /MAX_WATCH_CHANNELS_PER_OUTBOX_EVENT/);
 assert.match(jwtModule, /validate_jwt_expiry/);
 assert.match(jwtModule, /JWT exp claim is required/);
 assert.match(appContext, /is_production_runtime_profile/);
@@ -313,11 +337,22 @@ assert.match(driveAppOpenApi, /"quotaBytes"/);
 assert.match(driveAppOpenApi, /"folderColor"/);
 assert.match(driveAppOpenApi, /CreateShareLinkResponse/);
 assert.match(driveAppOpenApi, /"operationId": "shareLinks.create"[\s\S]*CreateShareLinkResponse/);
+assert.match(driveAppOpenApi, /"operationId": "favorites.check"/);
+assert.match(driveAppOpenApi, /"operationId": "moveDestinations.list"/);
+assert.match(driveAppOpenApi, /DriveNodeListHttpResponse/);
+assert.match(driveAppOpenApi, /"operationId": "nodes.list"[\s\S]*DriveNodeListHttpResponse/);
+assert.match(driveAppOpenApi, /AssetListHttpResponse/);
+assert.match(driveFileService, /responseListPayload\(response\)/);
+assert.match(driveFileService, /extractSdkWorkResourceItem<JsonRecord>\(response\)/);
+assert.match(driveAppOpenApi, /"name": "spaceType"/);
 assert.doesNotMatch(drivePage, /speed: t\('transfer\.uploading'\)/);
 
 const domainEvents = read('crates/sdkwork-drive-contract/src/drive/domain_events.rs');
 const changeRecorder = read(
   'crates/sdkwork-drive-workspace-service/src/infrastructure/change_recorder.rs',
+);
+const installerModule = read(
+  'crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs',
 );
 const uploaderStore = read(
   'crates/sdkwork-drive-workspace-service/src/infrastructure/sql/uploader_store.rs',
@@ -331,6 +366,10 @@ assert.match(domainEvents, /drive\.download_grant\.created/);
 assert.match(domainEvents, /all_domain_event_names_use_drive_prefix/);
 assert.match(changeRecorder, /record_drive_change_on_connection/);
 assert.match(changeRecorder, /dr_drive_domain_outbox/);
+assert.match(changeRecorder, /begin_transaction_sql\(\)/);
+assert.match(backendValidators, /sdkwork_utils_rust::\{DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE\}/);
+assert.match(installerModule, /sqlite_table_exists/);
+assert.match(installerModule, /upgrade_sqlite_dr_drive_node_head_columns\(pool\)\.await\?/);
 assert.match(nodeHandlers, /sdkwork_drive_contract::drive::domain_events as drive_events/);
 assert.match(uploadHandlers, /drive_events::upload_session::COMPLETED/);
 assert.match(downloadHandlers, /drive_events::download_grant::CREATED/);
@@ -351,9 +390,12 @@ const releaseReadiness = read('tools/check_sdkwork_drive_release_readiness.mjs')
 assert.match(releaseReadiness, /SUPPLY_CHAIN_SECURITY_SPEC/);
 assert.match(releaseReadiness, /SDKWORK_RELEASE_VALIDATION=strict/);
 assert.match(releaseReadiness, /generatedPlaceholder/);
+assert.match(releaseReadiness, /--root/);
+assert.match(releaseReadiness, /must not keep placeholder checksum fields while releaseBuildDeferred is true/);
 const releaseEvidence = read('tools/materialize_release_manifest_evidence.mjs');
 assert.match(releaseEvidence, /release-evidence\.json/);
 assert.match(releaseEvidence, /checksumRequired/);
+assert.match(releaseEvidence, /must not keep placeholder checksum fields while releaseBuildDeferred is true/);
 const releaseWebBundle = read('scripts/release-web-bundle.mjs');
 assert.match(releaseWebBundle, /web\.zip/);
 assert.match(releaseWebBundle, /web-universal-cloud-browser-zip/);
@@ -364,6 +406,8 @@ assert.match(releaseDesktopBundle, /linux-x64-standalone-desktop-appimage/);
 const releaseEvidenceVerify = read('tools/verify_release_evidence.mjs');
 assert.match(releaseEvidenceVerify, /QUALITY_GATE_SPEC/);
 assert.match(releaseEvidenceVerify, /release-evidence\.json/);
+assert.match(releaseEvidenceVerify, /--root/);
+assert.match(releaseEvidenceVerify, /must not keep placeholder checksum fields while releaseBuildDeferred is true/);
 const releaseCatalogMedia = read('scripts/release-catalog-media.mjs');
 assert.match(releaseCatalogMedia, /catalog-media-evidence\.json/);
 assert.match(releaseCatalogMedia, /sdkwork-drive-catalog-preview/);
@@ -412,8 +456,8 @@ assert.match(domainEvents, /EXPIRED_UPLOAD_CONTENT_SWEEP_EXECUTED/);
 assert.match(domainEvents, /ABANDONED_UPLOAD_TASK_SWEEP_EXECUTED/);
 assert.match(backendRoutes, /sweep_expired_upload_content/);
 assert.match(backendRoutes, /sweep_abandoned_upload_tasks/);
-assert.match(backendOpenApi, /"operationId": "maintenance\.expiredUploadContentSweep\.start"/);
-assert.match(backendOpenApi, /"operationId": "maintenance\.abandonedUploadTaskSweep\.start"/);
+assert.match(backendOpenApi, /"operationId": "maintenance\.expiredUploadContentSweep"/);
+assert.match(backendOpenApi, /"operationId": "maintenance\.abandonedUploadTaskSweep"/);
 assert.match(backendOpenApi, /expired_upload_content_sweep/);
 assert.match(backendOpenApi, /abandoned_upload_task_sweep/);
 const storageProviderHandlersStorage = read(
@@ -438,12 +482,18 @@ assert.match(driveAppOpenApi, /"accessCode"/);
 assert.match(driveFileService, /accessCodeRequired/);
 assert.match(driveHttpMetrics, /record_http_request_duration/);
 assert.match(driveHttpRateLimit, /record_http_rate_limited/);
-assert.match(productionRunbook, /x-trace-id/);
+assert.match(productionRunbook, /X-SdkWork-Trace-Id/);
+assert.doesNotMatch(productionRunbook, /x-trace-id/);
 assert.ok(deployValidate.includes('must declare an Ingress resource'));
 assert.ok(deployValidate.includes('nginx limit-rps edge rate limiting'));
 assert.ok(deployValidate.includes('OTEL_EXPORTER_OTLP_ENDPOINT'));
 assert.ok(deployValidate.includes('sdkwork-drive-iam secrets for production JWT validation'));
 assert.ok(deployValidate.includes('SDKWORK_DRIVE_OPEN_API_RATE_LIMIT_MAX_REQUESTS'));
+assert.match(deployValidate, /SDKWORK_DEPLOY_VALIDATION/);
+assert.match(deployValidate, /SDKWORK_RELEASE_VALIDATION/);
+assert.match(deployValidate, /REPLACE_WITH_RELEASE_DIGEST/);
+assert.match(deployValidate, /strict deployment validation/);
+assert.match(deployValidate, /@sha256:<64 hex>/);
 const k8sManifest = read('deployments/kubernetes/drive-services.yaml');
 assert.match(k8sManifest, /kind: Ingress/);
 assert.match(k8sManifest, /nginx\.ingress\.kubernetes\.io\/limit-rps/);
@@ -472,6 +522,7 @@ assert.ok(!existsSync(join(repoRoot, 'apps/sdkwork-drive-pc/pnpm-lock.yaml')), '
 const verifyWorkflow = read('.github/workflows/verify.yml');
 const prepareCiDeps = read('scripts/prepare-ci-dependencies.mjs');
 const packageJson = read('package.json');
+const appConfigManifest = read('sdkwork.app.config.json');
 assert.match(verifyWorkflow, /Drive Commercial Gates/);
 assert.match(verifyWorkflow, /pnpm verify/);
 assert.match(verifyWorkflow, /prepare-ci-dependencies/);
@@ -481,10 +532,14 @@ assert.match(stagingE2eWorkflow, /Require staging secrets/);
 assert.match(stagingE2eWorkflow, /DRIVE_E2E_OPEN_API_BASE_URL/);
 assert.match(stagingE2eWorkflow, /DRIVE_E2E_PC_BASE_URL/);
 assert.match(prepareCiDeps, /sdkwork-specs/);
+assert.match(appConfigManifest, /kubernetesImageDigests/);
 assert.ok(packageJson.includes('"build:standalone"'));
 assert.ok(packageJson.includes('"build:debug"'));
 assert.ok(packageJson.includes('"test:drive-e2e"'));
 assert.ok(packageJson.includes('"test:e2e"'));
+assert.ok(packageJson.includes('tools/check_drive_deployments.test.mjs'));
+assert.ok(packageJson.includes('tools/check_sdkwork_drive_release_readiness.test.mjs'));
+assert.ok(packageJson.includes('tools/verify_release_evidence.test.mjs'));
 const tracingSetup = read('crates/sdkwork-drive-observability/src/tracing_setup.rs');
 assert.match(tracingSetup, /init_tracing/);
 assert.match(tracingSetup, /OTEL_EXPORTER_OTLP_ENDPOINT/);
@@ -493,8 +548,8 @@ const playwrightConfig = read('tests/e2e/playwright.config.mjs');
 const playwrightSmoke = read('tests/e2e/specs/drive-open-api.smoke.spec.mjs');
 assert.match(playwrightConfig, /specs/);
 assert.match(playwrightSmoke, /DRIVE_E2E_OPEN_API_BASE_URL/);
-assert.match(playwrightSmoke, /x-trace-id/);
-assert.match(playwrightSmoke, /e2e-staging-trace-001/);
+assert.match(playwrightSmoke, /x-sdkwork-trace-id/);
+assert.doesNotMatch(playwrightSmoke, /e2e-staging-trace-001/);
 const shareLinkModalContractTest = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-file/src/components/ShareLinkModal.contract.test.ts',
 );
@@ -510,12 +565,11 @@ const crossApiE2e = read(
 );
 assert.match(crossApiE2e, /share_link_create_via_app_api_and_resolve_via_open_api_with_access_code/);
 assert.match(crossApiE2e, /40301/);
-assert.match(crossApiE2e, /x-trace-id/);
-const driveFileServiceTest = read(
-  'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-core/src/services/driveFileService.test.ts',
-);
+assert.match(crossApiE2e, /SDKWORK_TRACE_ID_HEADER/);
+assert.doesNotMatch(crossApiE2e, /x-trace-id/);
 assert.match(driveFileServiceTest, /creates share links with extraction codes/);
 assert.match(driveFileServiceTest, /accessCode: 'extract-42'/);
+assert.match(driveFileServiceTest, /COMMAND_DATA_OPERATION_IDS/);
 assert.match(playwrightSmoke, /40301/);
 
 const databaseManifest = read('database/database.manifest.json');
@@ -556,8 +610,9 @@ const productionReadinessReq = read('docs/product/requirements/REQ-2026-0001-pro
 const prdDoc = read('docs/product/prd/PRD.md');
 assert.match(driveBaseline, /ix_dr_drive_domain_outbox_pending_dispatch/);
 assert.match(driveBaseline, /WHERE delivery_status = 'pending'/);
-assert.match(installWorkerLeader, /pg_try_advisory_lock/);
-assert.match(installWorkerLeader, /pg_advisory_unlock/);
+assert.match(installWorkerLeader, /dr_drive_maintenance_leader/);
+assert.match(installWorkerLeader, /acquire_table_maintenance_leader/);
+assert.match(installWorkerLeader, /release_table_maintenance_leader/);
 assert.match(installWorkerHealth, /mount_drive_infra_routes/);
 assert.match(installWorkerHealth, /drive_service_router_config/);
 assert.match(driveHttpInfra, /SELECT 1/);
@@ -624,9 +679,12 @@ assert.match(searchHandlers, /pub\(crate\) async fn search_nodes/);
 assert.match(versionHandlers, /pub\(crate\) async fn restore_version/);
 assert.match(versionHandlers, /drive_events::file_version::DELETED/);
 assert.match(metadataHandlers, /pub\(crate\) async fn set_node_property/);
+assert.match(metadataHandlers, /success_resource\(/);
+assert.match(metadataHandlers, /Ok\(no_content\(\)\)/);
 assert.match(metadataHandlers, /drive_events::node_label::APPLIED/);
 assert.match(trashHandlers, /pub\(crate\) async fn empty_trash/);
 assert.match(trashHandlers, /drive_events::trash::EMPTIED/);
+assert.match(trashHandlers, /success_envelope\(EmptyTrashResponse/);
 assert.match(libraryHandlers, /pub\(crate\) async fn list_favorite_nodes/);
 assert.match(libraryHandlers, /drive_events::favorite::CREATED/);
 assert.match(nodeLifecycle, /pub\(crate\) async fn set_node_lifecycle/);
@@ -635,11 +693,24 @@ assert.match(watchHandlers, /pub\(crate\) async fn stop_watch_channel/);
 assert.match(watchHandlers, /drive_events::watch_channel::STOPPED/);
 assert.match(watchRepository, /pub\(crate\) async fn insert_watch_channel/);
 assert.match(permissionHandlers, /pub\(crate\) async fn list_effective_permissions/);
+assert.match(permissionHandlers, /success_resource\(map_permission_row/);
+assert.match(permissionHandlers, /Ok\(no_content\(\)\)/);
+assert.match(shareLinkHandlers, /success_created_command_data\(CreateShareLinkResponse/);
+assert.match(shareLinkHandlers, /Ok\(no_content\(\)\)/);
+assert.match(quotaHandlers, /success_resource\(QuotaSummaryResponse/);
+assert.match(uploadHandlers, /success_created_resource\(CreateUploadSessionResponse/);
+assert.match(downloadHandlers, /success_created_command_data\(CreateDownloadUrlResponse/);
+assert.match(versionHandlers, /success_resource\(map_file_version_row/);
+assert.match(watchHandlers, /success_created_resource\(/);
 const nodeRepository = read('crates/sdkwork-routes-drive-app-api/src/node_repository.rs');
 assert.match(nodeRepository, /pub\(crate\) async fn resolve_node_path/);
 assert.match(commentHandlers, /pub\(crate\) async fn create_comment_reply/);
+assert.match(commentHandlers, /success_resource\(CommentResponse::from/);
+assert.match(commentHandlers, /Ok\(no_content\(\)\)/);
 assert.match(commentHandlers, /drive_events::comment_reply::DELETED/);
 assert.match(spaceHandlers, /pub\(crate\) async fn list_spaces/);
+assert.match(spaceHandlers, /success_resource\(response\)/);
+assert.match(spaceHandlers, /Ok\(no_content\(\)\)/);
 assert.match(nodeHandlers, /pub\(crate\) async fn create_folder/);
 assert.match(uploadHandlers, /pub\(crate\) async fn complete_upload_session/);
 assert.match(downloadHandlers, /pub\(crate\) async fn resolve_download_token/);

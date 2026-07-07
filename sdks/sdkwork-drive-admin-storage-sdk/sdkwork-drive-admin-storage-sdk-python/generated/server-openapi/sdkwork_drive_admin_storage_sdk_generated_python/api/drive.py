@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import CopyProviderObjectRequest, CreateStorageProviderRequest, DeleteStorageProviderBindingResponse, DeleteStorageProviderResponse, ListStorageProvidersResponse, OperatorRequest, ProviderBucket, ProviderBucketList, ProviderBucketMutation, ProviderObject, ProviderObjectList, ProviderObjectMutation, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, StorageProvider, StorageProviderBinding, StorageProviderBindingListResponse, StorageProviderCapabilities, TestStorageProviderRequest, TestStorageProviderResponse, UpdateStorageProviderRequest
+from ..models import CopyProviderObjectRequest, CreateStorageProviderRequest, OperatorRequest, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, StorageProviderBindingsDefaultRetrieveResponse, StorageProviderBindingsDefaultUpdateResponse, StorageProviderBindingsListResponse, StorageProvidersActivateResponse, StorageProvidersBucketRetrieveResponse, StorageProvidersBucketsListResponse, StorageProvidersBucketUpdateResponse, StorageProvidersCapabilitiesListResponse, StorageProvidersCreateResponse201, StorageProvidersCredentialsRotateResponse, StorageProvidersDeactivateResponse, StorageProvidersListResponse, StorageProvidersObjectsCopyResponse, StorageProvidersObjectsListResponse, StorageProvidersObjectsRetrieveResponse, StorageProvidersRetrieveResponse, StorageProvidersTestResponse, StorageProvidersUpdateResponse, TestStorageProviderRequest, UpdateStorageProviderRequest
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -201,7 +201,7 @@ class DriveStorageProviderBindingsApi:
         self.default = DriveStorageProviderBindingsDefaultApi(client)
 
 
-    def list(self, space_id: Optional[str] = None, provider_id: Optional[str] = None, lifecycle_status: Optional[str] = None) -> StorageProviderBindingListResponse:
+    def list(self, space_id: Optional[str] = None, provider_id: Optional[str] = None, lifecycle_status: Optional[str] = None) -> StorageProviderBindingsListResponse:
         """List Drive storage provider bindings"""
         query = build_query_string([
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -217,17 +217,17 @@ class DriveStorageProviderBindingsDefaultApi:
         self._client = client
 
 
-    def get(self, space_id: Optional[str] = None, space_type: Optional[str] = None) -> StorageProviderBinding:
+    def retrieve(self, space_id: Optional[str] = None, space_type: Optional[str] = None) -> StorageProviderBindingsDefaultRetrieveResponse:
         query = build_query_string([
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'spaceType', 'value': space_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/backend/v3/api/drive/storage/bindings/default", query))
 
-    def set(self, body: SetDefaultStorageProviderBindingRequest) -> StorageProviderBinding:
+    def update(self, body: SetDefaultStorageProviderBindingRequest) -> StorageProviderBindingsDefaultUpdateResponse:
         return self._client.put(f"/backend/v3/api/drive/storage/bindings/default", json=body)
 
-    def delete(self, operator_id: str, space_id: Optional[str] = None) -> DeleteStorageProviderBindingResponse:
+    def delete(self, operator_id: str, space_id: Optional[str] = None) -> None:
         """Delete a Drive default storage provider binding"""
         query = build_query_string([
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -246,31 +246,31 @@ class DriveStorageProvidersApi:
         self.objects = DriveStorageProvidersObjectsApi(client)
 
 
-    def list(self, status: Optional[str] = None) -> ListStorageProvidersResponse:
+    def list(self, status: Optional[str] = None) -> StorageProvidersListResponse:
         query = build_query_string([
             {'name': 'status', 'value': status, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/backend/v3/api/drive/storage/providers", query))
 
-    def create(self, body: CreateStorageProviderRequest) -> StorageProvider:
+    def create(self, body: CreateStorageProviderRequest) -> StorageProvidersCreateResponse201:
         return self._client.post(f"/backend/v3/api/drive/storage/providers", json=body)
 
-    def update(self, provider_id: str, body: UpdateStorageProviderRequest) -> StorageProvider:
+    def update(self, provider_id: str, body: UpdateStorageProviderRequest) -> StorageProvidersUpdateResponse:
         return self._client.patch(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def delete(self, provider_id: str) -> DeleteStorageProviderResponse:
+    def delete(self, provider_id: str) -> None:
         return self._client.delete(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}")
 
-    def get(self, provider_id: str) -> StorageProvider:
+    def retrieve(self, provider_id: str) -> StorageProvidersRetrieveResponse:
         return self._client.get(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}")
 
-    def activate(self, provider_id: str, body: OperatorRequest) -> StorageProvider:
+    def activate(self, provider_id: str, body: OperatorRequest) -> StorageProvidersActivateResponse:
         return self._client.post(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/activate", json=body)
 
-    def deactivate(self, provider_id: str, body: OperatorRequest) -> StorageProvider:
+    def deactivate(self, provider_id: str, body: OperatorRequest) -> StorageProvidersDeactivateResponse:
         return self._client.post(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/deactivate", json=body)
 
-    def test(self, provider_id: str, body: TestStorageProviderRequest) -> TestStorageProviderResponse:
+    def test(self, provider_id: str, body: TestStorageProviderRequest) -> StorageProvidersTestResponse:
         return self._client.post(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/test", json=body)
 
 class DriveStorageProvidersCapabilitiesApi:
@@ -280,7 +280,7 @@ class DriveStorageProvidersCapabilitiesApi:
         self._client = client
 
 
-    def get(self, provider_id: str) -> StorageProviderCapabilities:
+    def list(self, provider_id: str) -> StorageProvidersCapabilitiesListResponse:
         return self._client.get(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/capabilities")
 
 class DriveStorageProvidersCredentialsApi:
@@ -290,7 +290,7 @@ class DriveStorageProvidersCredentialsApi:
         self._client = client
 
 
-    def rotate(self, provider_id: str, body: RotateStorageProviderCredentialRequest) -> StorageProvider:
+    def rotate(self, provider_id: str, body: RotateStorageProviderCredentialRequest) -> StorageProvidersCredentialsRotateResponse:
         return self._client.post(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/credentials/rotate", json=body)
 
 class DriveStorageProvidersBucketApi:
@@ -300,24 +300,28 @@ class DriveStorageProvidersBucketApi:
         self._client = client
 
 
-    def head(self, provider_id: str) -> ProviderBucket:
+    def retrieve(self, provider_id: str) -> StorageProvidersBucketRetrieveResponse:
         return self._client.get(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/bucket")
 
-    def create(self, provider_id: str, operator_id: str) -> ProviderBucketMutation:
+    def update(self, provider_id: str, operator_id: str) -> StorageProvidersBucketUpdateResponse:
         query = build_query_string([
             {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.put(_append_query_string(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/bucket", query))
 
-    def delete(self, provider_id: str, operator_id: str) -> ProviderBucketMutation:
+    def delete(self, provider_id: str, operator_id: str) -> None:
         query = build_query_string([
             {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.delete(_append_query_string(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/bucket", query))
 
-    def list(self, provider_id: str) -> ProviderBucketList:
+    def list(self, provider_id: str, cursor: Optional[str] = None, page_size: Optional[int] = None) -> StorageProvidersBucketsListResponse:
         """List buckets visible to a Drive storage provider account"""
-        return self._client.get(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/buckets")
+        query = build_query_string([
+            {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+        ])
+        return self._client.get(_append_query_string(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/buckets", query))
 
 class DriveStorageProvidersObjectsApi:
     """drive drive.storage_providers.objects API client."""
@@ -326,23 +330,23 @@ class DriveStorageProvidersObjectsApi:
         self._client = client
 
 
-    def list(self, provider_id: str, prefix: Optional[str] = None, delimiter: Optional[str] = None, page_token: Optional[str] = None, page_size: Optional[int] = None) -> ProviderObjectList:
+    def list(self, provider_id: str, prefix: Optional[str] = None, delimiter: Optional[str] = None, cursor: Optional[str] = None, page_size: Optional[int] = None) -> StorageProvidersObjectsListResponse:
         query = build_query_string([
             {'name': 'prefix', 'value': prefix, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'delimiter', 'value': delimiter, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/objects", query))
 
-    def head(self, provider_id: str, object_key: str) -> ProviderObject:
+    def retrieve(self, provider_id: str, object_key: str) -> StorageProvidersObjectsRetrieveResponse:
         return self._client.get(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/objects/{serialize_path_parameter(object_key, {'name': 'objectKey', 'style': 'simple', 'explode': False})}")
 
-    def delete(self, provider_id: str, object_key: str, operator_id: str) -> ProviderObjectMutation:
+    def delete(self, provider_id: str, object_key: str, operator_id: str) -> None:
         query = build_query_string([
             {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.delete(_append_query_string(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/objects/{serialize_path_parameter(object_key, {'name': 'objectKey', 'style': 'simple', 'explode': False})}", query))
 
-    def copy(self, provider_id: str, body: CopyProviderObjectRequest) -> ProviderObjectMutation:
+    def copy(self, provider_id: str, body: CopyProviderObjectRequest) -> StorageProvidersObjectsCopyResponse:
         return self._client.post(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/objects/copy", json=body)

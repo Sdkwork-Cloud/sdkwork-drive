@@ -27,6 +27,7 @@ mod node_lifecycle;
 mod node_repository;
 mod node_support;
 mod object_store;
+mod pagination_guard;
 mod permission_handlers;
 mod quota_handlers;
 mod rate_limit;

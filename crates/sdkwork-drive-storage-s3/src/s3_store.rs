@@ -567,10 +567,16 @@ impl DriveObjectStore for S3DriveObjectStore {
                 })
             })
             .collect();
+        let prefixes = output
+            .common_prefixes()
+            .iter()
+            .filter_map(|prefix| prefix.prefix().map(str::to_string))
+            .collect();
         Ok(ListObjectsResponse {
             bucket: request.bucket,
             prefix,
             items,
+            prefixes,
             next_continuation_token: output.next_continuation_token().map(str::to_string),
             is_truncated: output.is_truncated().unwrap_or(false),
         })

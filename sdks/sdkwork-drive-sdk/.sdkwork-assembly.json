@@ -17,7 +17,6 @@
     ],
     "manualTransports": []
   },
-  "sdkDependencies": [],
   "languages": [
     {
       "language": "typescript",
@@ -82,5 +81,6 @@
     }
   ],
   "sdkOwner": "sdkwork-drive",
-  "apiAuthority": "sdkwork-drive.open"
+  "apiAuthority": "sdkwork-drive.open",
+  "sdkDependencies": []
 }

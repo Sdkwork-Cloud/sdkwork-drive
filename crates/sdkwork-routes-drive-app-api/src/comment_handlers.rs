@@ -5,10 +5,13 @@ use crate::dto::{
     CommentReplyResponse, CommentResponse, CreateCommentReplyRequest, CreateCommentRequest,
     NodeMutationQuery, PageQuery, UpdateCommentReplyRequest, UpdateCommentRequest,
 };
-use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{internal_sql_error, not_found_problem, ProblemDetail};
 use crate::mappers::{map_comment_reply_row, map_comment_row};
 use crate::node_repository::{find_active_node, find_node};
+use crate::response::{
+    no_content, success_created_resource, success_list_page_simple, success_resource,
+    DriveListHttpResponse,
+};
 use crate::route_change::record_change;
 use crate::state::AppState;
 use crate::validators::{
@@ -18,7 +21,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
-use serde_json::json;
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 
 pub(crate) async fn list_comments(
     State(state): State<AppState>,
@@ -58,12 +61,15 @@ pub(crate) async fn get_comment(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
-) -> Result<Json<CommentResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<CommentResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let comment = find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
-    Ok(Json(CommentResponse::from(comment)))
+    Ok(success_resource(CommentResponse::from(comment)))
 }
 
 pub(crate) async fn create_comment(
@@ -71,7 +77,13 @@ pub(crate) async fn create_comment(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CreateCommentRequest>,
-) -> Result<(StatusCode, Json<CommentResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<CommentResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
 
@@ -85,13 +97,14 @@ pub(crate) async fn create_comment(
         "INSERT INTO dr_drive_node_comment (
             id, tenant_id, node_id, content, anchor, resolved, lifecycle_status,
             version, created_by, updated_by
-         ) VALUES ($1, $2, $3, $4, $5, 0, 'active', 1, $6, $6)",
+         ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $7)",
     )
     .bind(&comment_id)
     .bind(&tenant_id)
     .bind(&node_id)
     .bind(&content)
     .bind(anchor.as_deref())
+    .bind(false)
     .bind(&operator_id)
     .execute(&state.pool)
     .await
@@ -108,7 +121,7 @@ pub(crate) async fn create_comment(
     .await?;
 
     let comment = find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
-    Ok((StatusCode::CREATED, Json(CommentResponse::from(comment))))
+    Ok(success_created_resource(CommentResponse::from(comment)))
 }
 
 pub(crate) async fn update_comment(
@@ -116,7 +129,10 @@ pub(crate) async fn update_comment(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
     Json(payload): Json<UpdateCommentRequest>,
-) -> Result<Json<CommentResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<CommentResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -164,7 +180,7 @@ pub(crate) async fn update_comment(
     .await?;
 
     let comment = find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
-    Ok(Json(CommentResponse::from(comment)))
+    Ok(success_resource(CommentResponse::from(comment)))
 }
 
 pub(crate) async fn delete_comment(
@@ -172,7 +188,7 @@ pub(crate) async fn delete_comment(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
     Query(query): Query<NodeMutationQuery>,
-) -> Result<Json<serde_json::Value>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -217,7 +233,8 @@ pub(crate) async fn delete_comment(
         )
         .await?;
     }
-    Ok(Json(json!({ "deleted": affected > 0 })))
+    let _deleted = affected > 0;
+    Ok(no_content())
 }
 
 pub(crate) async fn list_comment_replies(
@@ -262,14 +279,17 @@ pub(crate) async fn get_comment_reply(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id, reply_id)): Path<(String, String, String)>,
-) -> Result<Json<CommentReplyResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<CommentReplyResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
     let reply =
         find_comment_reply(&state.pool, &tenant_id, &node_id, &comment_id, &reply_id).await?;
-    Ok(Json(CommentReplyResponse::from(reply)))
+    Ok(success_resource(CommentReplyResponse::from(reply)))
 }
 
 pub(crate) async fn create_comment_reply(
@@ -277,7 +297,13 @@ pub(crate) async fn create_comment_reply(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
     Json(payload): Json<CreateCommentReplyRequest>,
-) -> Result<(StatusCode, Json<CommentReplyResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<CommentReplyResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
 
@@ -315,7 +341,7 @@ pub(crate) async fn create_comment_reply(
     .await?;
     let reply =
         find_comment_reply(&state.pool, &tenant_id, &node_id, &comment_id, &reply_id).await?;
-    Ok((StatusCode::CREATED, Json(CommentReplyResponse::from(reply))))
+    Ok(success_created_resource(CommentReplyResponse::from(reply)))
 }
 
 pub(crate) async fn update_comment_reply(
@@ -323,7 +349,10 @@ pub(crate) async fn update_comment_reply(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id, reply_id)): Path<(String, String, String)>,
     Json(payload): Json<UpdateCommentReplyRequest>,
-) -> Result<Json<CommentReplyResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<CommentReplyResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -365,7 +394,7 @@ pub(crate) async fn update_comment_reply(
     .await?;
     let reply =
         find_comment_reply(&state.pool, &tenant_id, &node_id, &comment_id, &reply_id).await?;
-    Ok(Json(CommentReplyResponse::from(reply)))
+    Ok(success_resource(CommentReplyResponse::from(reply)))
 }
 
 pub(crate) async fn delete_comment_reply(
@@ -373,7 +402,7 @@ pub(crate) async fn delete_comment_reply(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id, reply_id)): Path<(String, String, String)>,
     Query(query): Query<NodeMutationQuery>,
-) -> Result<Json<serde_json::Value>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -405,5 +434,6 @@ pub(crate) async fn delete_comment_reply(
         )
         .await?;
     }
-    Ok(Json(json!({ "deleted": affected > 0 })))
+    let _deleted = affected > 0;
+    Ok(no_content())
 }

@@ -1,9 +1,9 @@
 use crate::policy::DriveAuthValidationPolicy;
 use crate::token_claims::{decode_base64url, parse_json_claims, TokenClaimsError};
 use jsonwebtoken::{decode, Algorithm, Validation};
-use sdkwork_utils_rust::verify_hmac_sha256_base64url;
 #[cfg(test)]
 use sdkwork_utils_rust::hmac_sha256_base64url;
+use sdkwork_utils_rust::verify_hmac_sha256_base64url;
 use serde_json::Value;
 use std::collections::BTreeMap;
 
@@ -44,9 +44,7 @@ pub fn verify_jwt_hmac_claims(
     let secret = policy
         .resolve_jwt_hmac_secret(kid.as_deref())
         .ok_or_else(|| {
-            TokenClaimsError::InvalidCredentials(
-                "JWT signature verification failed".to_string(),
-            )
+            TokenClaimsError::InvalidCredentials("JWT signature verification failed".to_string())
         })?;
 
     let signing_input = format!("{header_b64}.{payload_b64}");
@@ -101,9 +99,7 @@ pub fn verify_jwt_jwks_claims(
     let kid = jwt_header_kid(header_b64);
     // Use a generic error message that does not reveal whether the kid is configured.
     let decoding_key = policy.resolve_jwt_jwks_key(kid.as_deref()).ok_or_else(|| {
-        TokenClaimsError::InvalidCredentials(
-            "JWT signature verification failed".to_string(),
-        )
+        TokenClaimsError::InvalidCredentials("JWT signature verification failed".to_string())
     })?;
 
     let mut validation = Validation::new(Algorithm::RS256);

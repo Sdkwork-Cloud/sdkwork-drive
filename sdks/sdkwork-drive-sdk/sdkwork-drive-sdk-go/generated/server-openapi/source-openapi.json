@@ -17,7 +17,7 @@
         "tags": [
           "driveOpen"
         ],
-        "operationId": "openShareLinks.resolve",
+        "operationId": "openShareLinks.retrieve",
         "parameters": [
           {
             "name": "token",
@@ -44,7 +44,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpenShareLinkResolveResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenShareLinkResolveResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -135,7 +142,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpenDownloadUrlCreateResponse"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SdkWorkApiResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenDownloadUrlCreateResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -342,42 +356,10 @@
           }
         }
       },
-      "SdkWorkResourceData": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "item"
-        ],
-        "properties": {
-          "item": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Typed domain resource for the operation."
-          }
-        }
-      },
-      "SdkWorkResourceResponse": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "type": "object",
-            "required": [
-              "data"
-            ],
-            "properties": {
-              "data": {
-                "$ref": "#/components/schemas/SdkWorkResourceData"
-              }
-            }
-          }
-        ]
-      },
       "OpenShareLinkResolveResponse": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/SdkWorkResourceResponse"
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "type": "object",
@@ -400,7 +382,7 @@
       "OpenDownloadUrlCreateResponse": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/SdkWorkResourceResponse"
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "type": "object",
@@ -529,6 +511,38 @@
             "type": "string"
           }
         }
+      },
+      "SdkWorkResourceData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item"
+        ],
+        "properties": {
+          "item": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Typed domain resource for the operation."
+          }
+        }
+      },
+      "SdkWorkResourceResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/SdkWorkResourceData"
+              }
+            }
+          }
+        ]
       }
     },
     "securitySchemes": {

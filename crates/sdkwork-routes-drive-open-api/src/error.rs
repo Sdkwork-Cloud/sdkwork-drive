@@ -52,9 +52,12 @@ pub(crate) fn map_service_error(error: DriveServiceError) -> (StatusCode, Json<P
             detail,
             SdkWorkResultCode::ValidationError,
         ),
-        DriveServiceError::Conflict(detail) => {
-            problem(StatusCode::CONFLICT, "conflict", detail, SdkWorkResultCode::Conflict)
-        }
+        DriveServiceError::Conflict(detail) => problem(
+            StatusCode::CONFLICT,
+            "conflict",
+            detail,
+            SdkWorkResultCode::Conflict,
+        ),
         DriveServiceError::NotFound(detail) => problem(
             StatusCode::NOT_FOUND,
             "not found",

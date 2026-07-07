@@ -48,10 +48,10 @@ describe('driveOperationsAdminService', () => {
         action: 'drive.maintenance.object_sweep',
         resourceType: undefined,
         resourceId: undefined,
-        requestId: undefined,
+        correlationId: undefined,
         traceId: undefined,
         page: undefined,
-        pageSize: undefined,
+        page_size: undefined,
       },
       signal: undefined,
     });
@@ -87,7 +87,7 @@ describe('driveOperationsAdminService', () => {
     });
 
     expect(request).toHaveBeenCalledWith({
-      operationId: 'maintenance.uploadSessionSweep.start',
+      operationId: 'maintenance.uploadSessionSweep',
       body: expect.objectContaining({
         dryRun: true,
         operatorId: 'operator-001',
@@ -97,7 +97,7 @@ describe('driveOperationsAdminService', () => {
     });
   });
 
-  it('loads quota summary through quotas.summary', async () => {
+  it('loads quota summary through quotas.retrieve', async () => {
     const request = vi.fn(async () => ({
       tenantId: 'tenant-001',
       totalBytes: 4096,
@@ -117,7 +117,7 @@ describe('driveOperationsAdminService', () => {
     expect(summary.totalBytes).toBe(4096);
     expect(summary.quotaBytes).toBe(8192);
     expect(request).toHaveBeenCalledWith({
-      operationId: 'quotas.summary',
+      operationId: 'quotas.retrieve',
       signal: undefined,
     });
   });
@@ -176,8 +176,8 @@ describe('driveOperationsAdminService', () => {
       operationId: 'labels.list',
       query: {
         lifecycleStatus: 'active',
-        pageSize: undefined,
-        pageToken: undefined,
+        page_size: undefined,
+        cursor: undefined,
       },
       signal: undefined,
     });

@@ -1,3 +1,4 @@
+use crate::constants::{DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE};
 use crate::dto::PageRequest;
 use crate::error::{problem, ProblemDetail, SdkWorkResultCode};
 use crate::time::current_epoch_ms;
@@ -59,15 +60,21 @@ pub(crate) fn normalize_optional_text(value: Option<String>) -> Option<String> {
 
 pub(crate) fn parse_page_request(
     page_size: Option<i64>,
-    page_token: Option<String>,
+    cursor: Option<String>,
 ) -> Result<PageRequest, (StatusCode, Json<ProblemDetail>)> {
-    let limit = validate_page_size_i64(page_size, 200, 1, 200, "pageSize")?;
-    let offset = match normalize_optional_text(page_token) {
+    let limit = validate_page_size_i64(
+        page_size,
+        DEFAULT_LIST_PAGE_SIZE,
+        1,
+        MAX_LIST_PAGE_SIZE,
+        "page_size",
+    )?;
+    let offset = match normalize_optional_text(cursor) {
         Some(raw) => raw.parse::<i64>().map_err(|_| {
             problem(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
-                "pageToken is invalid",
+                "cursor is invalid",
                 SdkWorkResultCode::ValidationError,
             )
         })?,
@@ -77,7 +84,7 @@ pub(crate) fn parse_page_request(
         return Err(problem(
             StatusCode::BAD_REQUEST,
             "validation failed",
-            "pageToken is invalid",
+            "cursor is invalid",
             SdkWorkResultCode::ValidationError,
         ));
     }
@@ -98,8 +105,12 @@ pub(crate) fn parse_nodes_list_order_clause(
         ("owner", true) => Ok("node_type ASC, created_by DESC, node_name ASC"),
         ("lastModified", false) => Ok("node_type ASC, updated_at ASC, node_name ASC"),
         ("lastModified", true) => Ok("node_type ASC, updated_at DESC, node_name ASC"),
-        ("size", false) => Ok("node_type ASC, COALESCE(head_content_length, 0) ASC, node_name ASC"),
-        ("size", true) => Ok("node_type ASC, COALESCE(head_content_length, 0) DESC, node_name ASC"),
+        ("contentLength", false) => {
+            Ok("node_type ASC, COALESCE(head_content_length, 0) ASC, node_name ASC")
+        }
+        ("contentLength", true) => {
+            Ok("node_type ASC, COALESCE(head_content_length, 0) DESC, node_name ASC")
+        }
         ("type", false) => {
             Ok("node_type ASC, COALESCE(head_content_type_group, '') ASC, node_name ASC")
         }
@@ -166,26 +177,31 @@ pub(crate) fn next_page_token<T>(items: &mut Vec<T>, page: PageRequest) -> Optio
 
 pub(crate) fn parse_change_page_request(
     page_size: Option<i64>,
-    page_token: Option<String>,
-    cursor: Option<i64>,
+    cursor: Option<String>,
 ) -> Result<PageRequest, (StatusCode, Json<ProblemDetail>)> {
-    let limit = validate_page_size_i64(page_size, 200, 1, 200, "pageSize")?;
-    let offset = match normalize_optional_text(page_token) {
+    let limit = validate_page_size_i64(
+        page_size,
+        DEFAULT_LIST_PAGE_SIZE,
+        1,
+        MAX_LIST_PAGE_SIZE,
+        "page_size",
+    )?;
+    let offset = match normalize_optional_text(cursor) {
         Some(raw) => raw.parse::<i64>().map_err(|_| {
             problem(
                 StatusCode::BAD_REQUEST,
                 "validation failed",
-                "pageToken is invalid",
+                "cursor is invalid",
                 SdkWorkResultCode::ValidationError,
             )
         })?,
-        None => cursor.unwrap_or(0),
+        None => 0,
     };
     if offset < 0 {
         return Err(problem(
             StatusCode::BAD_REQUEST,
             "validation failed",
-            "pageToken is invalid",
+            "cursor is invalid",
             SdkWorkResultCode::ValidationError,
         ));
     }
@@ -605,10 +621,12 @@ mod nodes_list_order_tests {
     }
 
     #[test]
-    fn maps_size_descending() {
-        let clause =
-            parse_nodes_list_order_clause(Some("size".to_string()), Some("desc".to_string()))
-                .expect("size desc");
+    fn maps_content_length_descending() {
+        let clause = parse_nodes_list_order_clause(
+            Some("contentLength".to_string()),
+            Some("desc".to_string()),
+        )
+        .expect("contentLength desc");
         assert!(clause.contains("head_content_length"));
         assert!(clause.contains("DESC"));
     }
@@ -617,6 +635,13 @@ mod nodes_list_order_tests {
     fn rejects_unknown_sort_field() {
         let err = parse_nodes_list_order_clause(Some("invalid".to_string()), None)
             .expect_err("invalid sort");
+        assert_eq!(err.0, axum::http::StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn rejects_legacy_size_sort_field() {
+        let err = parse_nodes_list_order_clause(Some("size".to_string()), Some("desc".to_string()))
+            .expect_err("legacy size sort");
         assert_eq!(err.0, axum::http::StatusCode::BAD_REQUEST);
     }
 }

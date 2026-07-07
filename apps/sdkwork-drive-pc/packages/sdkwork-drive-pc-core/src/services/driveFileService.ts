@@ -1,11 +1,11 @@
 import type { DriveUploaderBlobLike } from '@sdkwork/drive-app-sdk';
-import { hexEncode, uuid as createUuid } from '@sdkwork/utils';
+import { extractSdkWorkResourceItem, hexEncode, uuid as createUuid } from '@sdkwork/utils';
 import {
   canCreateDriveFolderInSection,
   canUploadDriveFileToSection,
   decodeLocalFilesystemId,
   type DriveFile,
-} from 'sdkwork-drive-pc-types';
+} from '../types';
 import type { HostAdapter } from '../host/hostAdapter';
 import { createHostAdapter } from '../host/hostAdapter';
 import { isNativeLocalUploadFile } from '../host/nativeLocalUploadFile';
@@ -95,7 +95,7 @@ export interface DriveFileReadOptions {
   signal?: AbortSignal;
   pageToken?: string;
   pageSize?: number;
-  sortBy?: 'name' | 'owner' | 'lastModified' | 'size' | 'type';
+  sortBy?: 'name' | 'owner' | 'lastModified' | 'contentLength' | 'type';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -155,7 +155,13 @@ export interface DriveClaimShareLinkResult {
 }
 
 export interface DriveFileService {
-  getAllWorkspaceFiles(options?: DriveFileReadOptions): Promise<DriveFile[]>;
+  listFileVersions(
+    nodeId: string,
+    options?: DriveFileReadOptions,
+  ): Promise<Array<{ versionNo: number; createdAt?: string; contentLength?: number }>>;
+  /** Returns files cached from the latest workspace page request (not a full workspace export). */
+  /** Returns in-memory node metadata accumulated from prior list/detail SDK calls (no network). */
+  listCachedWorkspaceFiles(options?: DriveFileReadOptions): Promise<DriveFile[]>;
   listMoveCopyDestinationFolders(
     sourceFiles: Array<Pick<DriveFile, 'id' | 'spaceId'>>,
     section: string,
@@ -168,6 +174,11 @@ export interface DriveFileService {
     parentId?: string | null,
     options?: DriveFileReadOptions,
   ): Promise<DriveFile[]>;
+  listSiblingFileNames(
+    section: string,
+    parentId?: string | null,
+    options?: DriveFileReadOptions,
+  ): Promise<string[]>;
   listFilesPage(
     section: string,
     searchQuery?: string,
@@ -255,8 +266,10 @@ export interface CreateDriveFileServiceOptions {
 
 type JsonRecord = Record<string, unknown>;
 
-const DEFAULT_PAGE_SIZE = 200;
-const MAX_SPACES_LIST_PAGES = 20;
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_VERSION_LIST_PAGES = 10;
+/** Text preview/editor in-memory limit (aligned with downloadTransfer guard order of magnitude). */
+const MAX_TEXT_PREVIEW_BYTES = 10 * 1024 * 1024;
 const DEFAULT_DOWNLOAD_TTL_SECONDS = 300;
 const FOLDER_COLOR_PROPERTY_KEY = 'ui.folderColor';
 const PDF_SIGNATURE_PROPERTY_KEY = 'workflow.pdfSignature';
@@ -294,8 +307,15 @@ function isConflictError(value: unknown): boolean {
   if (status === 409) {
     return true;
   }
+  const numericCode = numberField(value, 'code');
+  if (
+    numericCode === 40901
+    || (numericCode !== undefined && numericCode >= 40900 && numericCode < 41000)
+  ) {
+    return true;
+  }
   const code = stringField(value, 'code');
-  return Boolean(code && /(?:conflict|already_exists|duplicate)/i.test(code));
+  return Boolean(code && /(?:conflict|already_exists|duplicate|40901)/i.test(code));
 }
 
 function stringField(source: JsonRecord, ...keys: string[]): string | undefined {
@@ -394,9 +414,51 @@ function nextPageTokenFrom(response: unknown): string | undefined {
     if (nextCursor) {
       return nextCursor;
     }
+    const nextPageToken = stringField(pageInfo, 'nextPageToken', 'next_page_token');
+    if (nextPageToken) {
+      return nextPageToken;
+    }
   }
   return stringField(payload, 'nextPageToken', 'next_page_token')
     || stringField(isRecord(response) ? response : {}, 'nextPageToken', 'next_page_token');
+}
+
+async function readResponseTextWithLimit(response: Response, maxBytes: number): Promise<string> {
+  if (!response.body) {
+    const fallback = await response.text();
+    if (fallback.length > maxBytes) {
+      throw new Error(
+        `Drive text preview exceeds the in-memory limit (${fallback.length} bytes; limit ${maxBytes}).`,
+      );
+    }
+    return fallback;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let receivedBytes = 0;
+  let text = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    if (!value) {
+      continue;
+    }
+    receivedBytes += value.byteLength;
+    if (receivedBytes > maxBytes) {
+      await reader.cancel();
+      throw new Error(
+        `Drive text preview exceeds the in-memory limit (${receivedBytes} bytes; limit ${maxBytes}).`,
+      );
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+
+  text += decoder.decode();
+  return text;
 }
 
 function fileTypeFromNode(node: JsonRecord): DriveFile['type'] {
@@ -594,7 +656,7 @@ function mapNodeToDriveFile(
 }
 
 function responseToDownloadUrl(response: unknown): DriveDownloadUrl {
-  const record = isRecord(response) ? response : {};
+  const record = responseListPayload(response);
   const downloadUrl = stringField(record, 'downloadUrl', 'download_url');
   if (!downloadUrl) {
     throw new Error('Drive App SDK download grant did not return a download URL.');
@@ -609,7 +671,7 @@ function responseToDownloadUrl(response: unknown): DriveDownloadUrl {
 }
 
 function responseToDownloadPackage(response: unknown): DriveDownloadPackage {
-  const record = isRecord(response) ? response : {};
+  const record = responseListPayload(response);
   return {
     ...responseToDownloadUrl(response),
     id: stringField(record, 'id', 'packageId', 'package_id') || '',
@@ -640,7 +702,7 @@ function responseToArchiveEntry(response: unknown): DriveArchiveEntry {
 }
 
 function responseToStorageSummary(response: unknown, identity: RemoteIdentity): DriveStorageSummary {
-  const record = isRecord(response) ? response : {};
+  const record = extractSdkWorkResourceItem<JsonRecord>(response) ?? responseListPayload(response);
   const usedBytes =
     numberField(record, 'usedBytes', 'used_bytes', 'totalBytes', 'total_bytes') ?? 0;
   const totalBytes = numberField(record, 'quotaBytes', 'quota_bytes', 'totalQuotaBytes', 'totalBytesLimit');
@@ -711,12 +773,18 @@ function isKnowledgeBaseSpace(response: unknown): boolean {
 }
 
 function spaceIdFromSpace(response: unknown): string | undefined {
-  const record = isRecord(response) ? response : {};
+  if (response === undefined || response === null) {
+    return undefined;
+  }
+  const record = extractSdkWorkResourceItem<JsonRecord>(response);
+  if (!isRecord(record)) {
+    return undefined;
+  }
   return stringField(record, 'id', 'spaceId', 'space_id');
 }
 
 function spaceIdFromNode(response: unknown): string | undefined {
-  const record = isRecord(response) ? response : {};
+  const record = extractSdkWorkResourceItem<JsonRecord>(response);
   const node = isRecord(record.node) ? record.node : record;
   return stringField(node, 'spaceId', 'space_id');
 }
@@ -732,10 +800,11 @@ function uploadSessionFromCreateFile(response: unknown): JsonRecord {
 }
 
 function nodeFromCreateFile(response: unknown): unknown {
-  if (isRecord(response) && response.node !== undefined) {
-    return response.node;
+  const payload = responseListPayload(response);
+  if (payload.node !== undefined) {
+    return payload.node;
   }
-  return response;
+  return extractSdkWorkResourceItem(response);
 }
 
 function createSdkBackedDriveFileService(
@@ -746,8 +815,6 @@ function createSdkBackedDriveFileService(
   downloadFetch: typeof fetch = fetch,
 ): DriveFileService {
   const favoriteNodeIds = new Set<string>();
-  const favoriteIdsApiCache = new Map<string, Set<string>>();
-  const MAX_FAVORITE_CACHE_ENTRIES = 50;
   const folderColorCache = new Map<string, string | null>();
   const MAX_FOLDER_COLOR_CACHE = 500;
   const knownFiles = new Map<string, DriveFile>();
@@ -757,13 +824,6 @@ function createSdkBackedDriveFileService(
   let sharedSpacesCache: SharedSpace[] = [];
   let knowledgeBaseSpacesCache: KnowledgeBaseSpace[] = [];
   let spacesCatalogFetch: Promise<void> | null = null;
-
-  const favoriteCacheScopeKey = (identity: RemoteIdentity, spaceId?: string): string =>
-    `${identity.tenantId}:${spaceId ?? '__all__'}`;
-
-  const invalidateFavoriteIdsCache = (): void => {
-    favoriteIdsApiCache.clear();
-  };
 
   const rememberFolderColor = (folderId: string, color: string | null | undefined): void => {
     // Evict oldest entry when at capacity.
@@ -876,8 +936,8 @@ function createSdkBackedDriveFileService(
       ...request,
       query: {
         ...request.query,
-        pageSize,
-        pageToken: options.pageToken,
+        page_size: pageSize,
+        cursor: options.pageToken,
         ...sortQuery,
       },
     });
@@ -887,39 +947,58 @@ function createSdkBackedDriveFileService(
     };
   };
 
-  const requestAllPageItemsWithCap = async (
-    request: DriveAppSdkRequest,
-    options: { maxPages?: number; pageSize?: number } = {},
-  ): Promise<unknown[]> => {
-    const maxPages = options.maxPages ?? MAX_SPACES_LIST_PAGES;
-    const items: unknown[] = [];
-    const seenPageTokens = new Set<string>();
-    let pageToken =
-      typeof request.query?.pageToken === 'string' ? request.query.pageToken : undefined;
-    if (pageToken) {
-      seenPageTokens.add(pageToken);
-    }
-
-    for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
-      const page = await requestPageItems(request, {
-        pageToken,
+  const listSpacesByType = async (
+    spaceType: string,
+    options: DriveFileReadOptions & {
+      ownerSubjectType?: string;
+      ownerSubjectId?: string;
+      pageSize?: number;
+      pageToken?: string;
+    } = {},
+  ): Promise<{ items: unknown[]; nextPageToken?: string }> => {
+    const page = await requestPageItems(
+      {
+        operationId: 'spaces.list',
+        signal: options.signal,
+        query: {
+          spaceType,
+          ...(options.ownerSubjectType && options.ownerSubjectId
+            ? {
+                ownerSubjectType: options.ownerSubjectType,
+                ownerSubjectId: options.ownerSubjectId,
+              }
+            : {}),
+        },
+      },
+      {
+        pageToken: options.pageToken,
         pageSize: options.pageSize ?? DEFAULT_PAGE_SIZE,
-      });
-      items.push(...page.items);
-
-      const nextPageToken = page.nextPageToken;
-      if (!nextPageToken) {
-        return items;
-      }
-      if (seenPageTokens.has(nextPageToken)) {
-        throw new Error(`Drive App SDK ${request.operationId} returned a repeated page token.`);
-      }
-      seenPageTokens.add(nextPageToken);
-      pageToken = nextPageToken;
-    }
-
-    return items;
+      },
+    );
+    return page;
   };
+
+  const findOwnedSpaceIdByType = async (
+    identity: RemoteIdentity,
+    spaceType: string,
+    options: DriveFileReadOptions = {},
+  ): Promise<string | undefined> =>
+    spaceIdFromSpace(
+      (
+        await requestPageItems(
+          {
+            operationId: 'spaces.list',
+            signal: options.signal,
+            query: {
+              spaceType,
+              ownerSubjectType: identity.subjectType,
+              ownerSubjectId: identity.userId,
+            },
+          },
+          { pageSize: 1 },
+        )
+      ).items[0],
+    );
 
   const mapDecoratedNode = async (
     node: unknown,
@@ -980,48 +1059,56 @@ function createSdkBackedDriveFileService(
     });
   };
 
-  const listFavoriteNodeIds = async (
-    identity: RemoteIdentity,
-    spaceId?: string,
+  const extractNodeIdFromItem = (item: unknown): string | undefined => {
+    const record = isRecord(item) ? item : {};
+    return stringField(record, 'id', 'nodeId', 'node_id');
+  };
+
+  const checkFavoriteIdsForNodeIds = async (
+    nodeIds: string[],
     options: DriveFileReadOptions = {},
   ): Promise<Set<string>> => {
-    const cacheKey = favoriteCacheScopeKey(identity, spaceId);
-    const cachedFavoriteIds = favoriteIdsApiCache.get(cacheKey);
-    if (cachedFavoriteIds) {
-      for (const id of cachedFavoriteIds) {
-        favoriteNodeIds.add(id);
-      }
-      return new Set(cachedFavoriteIds);
+    const uniqueNodeIds = Array.from(new Set(nodeIds.filter((id) => id.trim() !== '')));
+    if (uniqueNodeIds.length === 0) {
+      return new Set();
     }
-
-    // Evict oldest entry when at capacity.
-    if (favoriteIdsApiCache.size >= MAX_FAVORITE_CACHE_ENTRIES) {
-      const oldestKey = favoriteIdsApiCache.keys().next().value;
-      if (oldestKey !== undefined) {
-        favoriteIdsApiCache.delete(oldestKey);
-      }
-    }
-
-    const favoriteIds = new Set<string>();
-    const { items } = await requestPageItems({
-      operationId: 'favorites.list',
+    const response = await sdkRequest<unknown>({
+      operationId: 'favorites.check',
       signal: options.signal,
-      query: {
-        spaceId,
+      body: {
+        nodeIds: uniqueNodeIds,
       },
-    }, {
-      pageSize: DEFAULT_PAGE_SIZE,
     });
-    for (const item of items) {
+    const favorited = new Set<string>();
+    for (const item of extractItems(response)) {
       const record = isRecord(item) ? item : {};
-      const id = stringField(record, 'id', 'nodeId', 'node_id');
-      if (id) {
-        favoriteIds.add(id);
-        favoriteNodeIds.add(id);
+      if (!booleanField(record, 'favorited')) {
+        continue;
+      }
+      const nodeId = stringField(record, 'nodeId', 'node_id', 'id');
+      if (nodeId) {
+        favorited.add(nodeId);
       }
     }
-    favoriteIdsApiCache.set(cacheKey, favoriteIds);
-    return favoriteIds;
+    return favorited;
+  };
+
+  const resolveFavoriteIdsForItems = async (
+    items: unknown[],
+    options: DriveFileReadOptions = {},
+  ): Promise<Set<string>> => {
+    const nodeIds = items
+      .map(extractNodeIdFromItem)
+      .filter((nodeId): nodeId is string => Boolean(nodeId));
+    return checkFavoriteIdsForNodeIds(nodeIds, options);
+  };
+
+  const listSpacesCatalogPageByType = async (
+    spaceType: string,
+    options: DriveFileReadOptions = {},
+  ): Promise<unknown[]> => {
+    const page = await listSpacesByType(spaceType, options);
+    return page.items;
   };
 
   const loadSpacesCatalog = async (options: DriveFileReadOptions = {}): Promise<void> => {
@@ -1031,17 +1118,14 @@ function createSdkBackedDriveFileService(
     }
 
     spacesCatalogFetch = (async () => {
-      const items = await requestAllPageItemsWithCap({
-        operationId: 'spaces.list',
-        signal: options.signal,
-        query: {},
-      });
-      sharedSpacesCache = items
-        .filter(isTeamSpace)
-        .map((item) => responseToSharedSpace(item));
-      knowledgeBaseSpacesCache = items
-        .filter(isKnowledgeBaseSpace)
-        .map((item) => responseToKnowledgeBaseSpace(item));
+      const [teamItems, knowledgeItems] = await Promise.all([
+        listSpacesCatalogPageByType('team', options),
+        listSpacesCatalogPageByType('knowledge_base', options),
+      ]);
+      sharedSpacesCache = teamItems.map((item) => responseToSharedSpace(item));
+      knowledgeBaseSpacesCache = knowledgeItems.map((item) =>
+        responseToKnowledgeBaseSpace(item),
+      );
     })().finally(() => {
       spacesCatalogFetch = null;
     });
@@ -1128,7 +1212,7 @@ function createSdkBackedDriveFileService(
     }
 
     const response = await sdkRequest<unknown>({
-      operationId: 'nodes.get',
+      operationId: 'nodes.retrieve',
       signal: options?.signal,
       pathParams: { nodeId },
       query: {},
@@ -1140,31 +1224,14 @@ function createSdkBackedDriveFileService(
     return spaceId;
   };
 
-  const listOwnedSpaces = async (
+  const findOwnedSpaceId = async (
     identity: RemoteIdentity,
+    spaceType: string,
     options: DriveFileReadOptions = {},
-  ): Promise<unknown[]> =>
-    requestAllPageItemsWithCap({
-      operationId: 'spaces.list',
-      signal: options.signal,
-      query: {
-        ownerSubjectType: identity.subjectType,
-        ownerSubjectId: identity.userId,
-      },
-    });
+  ): Promise<string | undefined> => findOwnedSpaceIdByType(identity, spaceType, options);
 
   const ownerSpaceCacheKey = (identity: RemoteIdentity): string =>
     `${identity.tenantId}:${identity.subjectType}:${identity.userId}`;
-
-  const findOwnedSpaceId = async (
-    identity: RemoteIdentity,
-    predicate: (space: unknown) => boolean,
-    options: DriveFileReadOptions = {},
-  ): Promise<string | undefined> =>
-    (await listOwnedSpaces(identity, options))
-      .filter(predicate)
-      .map(spaceIdFromSpace)
-      .find((spaceId): spaceId is string => Boolean(spaceId));
 
   const resolvePersonalSpaceId = async (
     identity: RemoteIdentity,
@@ -1176,7 +1243,7 @@ function createSdkBackedDriveFileService(
       return cachedSpaceId;
     }
 
-    const existingPersonalSpaceId = await findOwnedSpaceId(identity, isPersonalSpace, options);
+    const existingPersonalSpaceId = await findOwnedSpaceId(identity, 'personal', options);
     if (existingPersonalSpaceId) {
       personalSpaceIds.set(cacheKey, existingPersonalSpaceId);
       return existingPersonalSpaceId;
@@ -1197,7 +1264,7 @@ function createSdkBackedDriveFileService(
       });
     } catch (error) {
       if (isConflictError(error)) {
-        const resolvedSpaceId = await findOwnedSpaceId(identity, isPersonalSpace, options);
+        const resolvedSpaceId = await findOwnedSpaceId(identity, 'personal', options);
         if (resolvedSpaceId) {
           personalSpaceIds.set(cacheKey, resolvedSpaceId);
           return resolvedSpaceId;
@@ -1223,11 +1290,7 @@ function createSdkBackedDriveFileService(
       return cachedSpaceId;
     }
 
-    const existingGitRepositorySpaceId = await findOwnedSpaceId(
-      identity,
-      isGitRepositorySpace,
-      options,
-    );
+    const existingGitRepositorySpaceId = await findOwnedSpaceId(identity, 'git_repository', options);
     if (existingGitRepositorySpaceId) {
       gitRepositorySpaceIds.set(cacheKey, existingGitRepositorySpaceId);
       return existingGitRepositorySpaceId;
@@ -1248,7 +1311,7 @@ function createSdkBackedDriveFileService(
       });
     } catch (error) {
       if (isConflictError(error)) {
-        const resolvedSpaceId = await findOwnedSpaceId(identity, isGitRepositorySpace, options);
+        const resolvedSpaceId = await findOwnedSpaceId(identity, 'git_repository', options);
         if (resolvedSpaceId) {
           gitRepositorySpaceIds.set(cacheKey, resolvedSpaceId);
           return resolvedSpaceId;
@@ -1356,7 +1419,7 @@ function createSdkBackedDriveFileService(
     options: DriveFileWriteOptions = {},
   ): Promise<void> => {
     const spaceId = node.spaceId || spaceIdFromNode(await sdkRequest<unknown>({
-      operationId: 'nodes.get',
+      operationId: 'nodes.retrieve',
       signal: options.signal,
       pathParams: { nodeId: node.id },
       query: {
@@ -1485,8 +1548,7 @@ function createSdkBackedDriveFileService(
   };
 
   const service: DriveFileService = {
-    async getAllWorkspaceFiles(options) {
-      await service.listFilesPage('my-storage', undefined, undefined, options);
+    async listCachedWorkspaceFiles() {
       return Array.from(knownFiles.values());
     },
     async listMoveCopyDestinationFolders(sourceFiles, section, options) {
@@ -1495,7 +1557,6 @@ function createSdkBackedDriveFileService(
       }
 
       const identity = resolveIdentity(getSession);
-      const excludeNodeIds = new Set(sourceFiles.map((file) => file.id));
       const firstFile = sourceFiles[0];
       let spaceId = firstFile.spaceId;
       if (!spaceId && section && !VIEW_SECTIONS.has(section) && section !== 'computers') {
@@ -1504,38 +1565,17 @@ function createSdkBackedDriveFileService(
       if (!spaceId) {
         spaceId = await resolveNodeSpaceId(firstFile.id, identity, options);
       }
-      const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
-      const folders: DriveFile[] = [];
-      const queue: Array<string | null> = [null];
-
-      while (queue.length > 0) {
-        const parentId = queue.shift();
-        const { items } = await requestPageItems({
-          operationId: 'nodes.list',
-          signal: options?.signal,
-          pathParams: { spaceId },
-          query: {
-            parentNodeId: parentId || undefined,
-          },
-        }, {
-          pageSize: DEFAULT_PAGE_SIZE,
-        });
-        const mapped = await mapNodeList(items, identity, {
-          parentId,
-          favoriteIds,
-          signal: options?.signal,
-        });
-        for (const entry of mapped) {
-          if (entry.type !== 'folder' || excludeNodeIds.has(entry.id)) {
-            continue;
-          }
-          folders.push(entry);
-          queue.push(entry.id);
-        }
-      }
-
-      rememberFiles(folders);
-      return folders;
+      const response = await sdkRequest<unknown>({
+        operationId: 'moveDestinations.list',
+        signal: options?.signal,
+        pathParams: { spaceId },
+        query: {
+          excludeNodeIds: sourceFiles.map((file) => file.id).join(','),
+        },
+      });
+      const files = await mapNodeList(response, identity, { signal: options?.signal });
+      rememberFiles(files);
+      return files;
     },
     async getFolderPath(folderId, options) {
       const localPath = decodeLocalFilesystemId(folderId);
@@ -1548,7 +1588,7 @@ function createSdkBackedDriveFileService(
 
       const identity = resolveIdentity(getSession);
       const response = await sdkRequest<unknown>({
-        operationId: 'nodes.path.get',
+        operationId: 'nodes.path.retrieve',
         signal: options?.signal,
         pathParams: { nodeId: folderId },
         query: {
@@ -1561,6 +1601,22 @@ function createSdkBackedDriveFileService(
     async listFiles(section, searchQuery, parentId, options) {
       const page = await service.listFilesPage(section, searchQuery, parentId, options);
       return page.files;
+    },
+    async listSiblingFileNames(section, parentId, options) {
+      const siblingNames: string[] = [];
+      let pageToken = options?.pageToken;
+      do {
+        const page = await service.listFilesPage(section, '', parentId, {
+          ...options,
+          pageToken,
+          pageSize: options?.pageSize ?? DEFAULT_PAGE_SIZE,
+        });
+        for (const file of page.files) {
+          siblingNames.push(file.name);
+        }
+        pageToken = page.nextPageToken;
+      } while (pageToken);
+      return siblingNames;
     },
     async listFilesPage(section, searchQuery, parentId, options) {
       const identity = resolveIdentity(getSession);
@@ -1586,16 +1642,14 @@ function createSdkBackedDriveFileService(
         }
 
         const { items, nextPageToken } = await requestPageItems({
-          operationId: 'search.query',
+          operationId: 'search.list',
           signal: options?.signal,
           query: {
             q: searchQuery,
             ...(spaceId ? { spaceId } : {}),
           },
         }, pageOptions);
-        const favoriteIds = spaceId
-          ? await listFavoriteNodeIds(identity, spaceId, options)
-          : await listFavoriteNodeIds(identity, undefined, options);
+        const favoriteIds = await resolveFavoriteIdsForItems(items, options);
         const files = await mapNodeList(items, identity, { parentId, favoriteIds, signal: options?.signal });
         return { files, nextPageToken };
       }
@@ -1608,7 +1662,7 @@ function createSdkBackedDriveFileService(
           pathParams: { spaceId },
           query: { parentNodeId: parentId },
         }, pageOptions);
-        const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
+        const favoriteIds = await resolveFavoriteIdsForItems(items, options);
         const files = await mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
         return { files, nextPageToken };
       }
@@ -1620,8 +1674,7 @@ function createSdkBackedDriveFileService(
           pathParams: { spaceId },
           query: { parentNodeId: parentId },
         }, pageOptions);
-        const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
-        const files = await mapNodeList(items, identity, { starred: true, favoriteIds, signal: options?.signal });
+        const files = await mapNodeList(items, identity, { starred: true, signal: options?.signal });
         return { files, nextPageToken };
       }
       if (section === 'shared' && parentId) {
@@ -1632,7 +1685,7 @@ function createSdkBackedDriveFileService(
           pathParams: { spaceId },
           query: { parentNodeId: parentId },
         }, pageOptions);
-        const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
+        const favoriteIds = await resolveFavoriteIdsForItems(items, options);
         const files = await mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
         return { files, nextPageToken };
       }
@@ -1653,24 +1706,21 @@ function createSdkBackedDriveFileService(
           pathParams: { spaceId },
           query: { parentNodeId: parentId || undefined },
         }, pageOptions);
-        const favoriteIds = await listFavoriteNodeIds(identity, spaceId, options);
+        const favoriteIds = await resolveFavoriteIdsForItems(items, options);
         const files = await mapNodeList(items, identity, { favoriteIds, signal: options?.signal });
         return { files, nextPageToken };
       }
 
       let request: DriveAppSdkRequest;
       let mapOptions: Parameters<typeof mapNodeList>[2] = { signal: options?.signal };
-      let favoriteSpaceId: string | undefined;
 
       if (section === 'recent') {
         request = { operationId: 'recent.list', signal: options?.signal, query: {} };
-        favoriteSpaceId = undefined;
       } else if (section === 'starred') {
         request = { operationId: 'favorites.list', signal: options?.signal, query: {} };
         mapOptions = { ...mapOptions, starred: true };
       } else if (section === 'shared') {
         request = { operationId: 'sharedWithMe.list', signal: options?.signal, query: {} };
-        favoriteSpaceId = undefined;
       } else if (section === 'trash') {
         request = {
           operationId: 'trash.list',
@@ -1679,7 +1729,6 @@ function createSdkBackedDriveFileService(
         };
       } else {
         const spaceId = await resolvePrimarySpaceId(section, identity, options);
-        favoriteSpaceId = spaceId;
         request = {
           operationId: 'nodes.list',
           signal: options?.signal,
@@ -1689,34 +1738,100 @@ function createSdkBackedDriveFileService(
       }
 
       const { items, nextPageToken } = await requestPageItems(request, pageOptions);
-      if (favoriteSpaceId !== undefined || section === 'recent' || section === 'shared') {
-        const favoriteIds = await listFavoriteNodeIds(
-          identity,
-          favoriteSpaceId,
-          options,
-        );
+      if (section !== 'starred' && section !== 'trash') {
+        const favoriteIds = await resolveFavoriteIdsForItems(items, options);
         mapOptions = { ...mapOptions, favoriteIds };
       }
       const files = await mapNodeList(items, identity, mapOptions);
       return { files, nextPageToken };
     },
+    async listFileVersions(nodeId, options) {
+      const versions: Array<{
+        versionNo: number;
+        createdAt?: string;
+        contentLength?: number;
+      }> = [];
+      const seenPageTokens = new Set<string>();
+      let pageToken: string | undefined;
+
+      for (let pageIndex = 0; pageIndex < MAX_VERSION_LIST_PAGES; pageIndex += 1) {
+        const response = await sdkRequest<unknown>({
+          operationId: 'versions.list',
+          signal: options?.signal,
+          pathParams: { nodeId },
+          query: {
+            page_size: options?.pageSize ?? DEFAULT_PAGE_SIZE,
+            ...(pageToken ? { cursor: pageToken } : {}),
+          },
+        });
+        versions.push(
+          ...extractItems(response)
+            .map((item) => {
+              const record = isRecord(item) ? item : {};
+              const versionNo = numberField(record, 'versionNo', 'version_no');
+              if (versionNo === undefined) {
+                return null;
+              }
+              const entry: {
+                versionNo: number;
+                createdAt?: string;
+                contentLength?: number;
+              } = {
+                versionNo,
+              };
+              const createdAt = stringField(record, 'createdAt', 'created_at');
+              if (createdAt !== undefined) {
+                entry.createdAt = createdAt;
+              }
+              const contentLength = numberField(record, 'contentLength', 'content_length');
+              if (contentLength !== undefined) {
+                entry.contentLength = contentLength;
+              }
+              return entry;
+            })
+            .filter(
+              (
+                entry,
+              ): entry is {
+                versionNo: number;
+                createdAt?: string;
+                contentLength?: number;
+              } => entry !== null,
+            ),
+        );
+
+        const nextToken = nextPageTokenFrom(response);
+        if (!nextToken) {
+          return versions;
+        }
+        if (seenPageTokens.has(nextToken)) {
+          throw new Error('Drive App SDK versions.list returned a repeated page token.');
+        }
+        seenPageTokens.add(nextToken);
+        pageToken = nextToken;
+      }
+
+      throw new Error(
+        `Drive App SDK versions.list exceeded the configured page limit (${MAX_VERSION_LIST_PAGES} pages).`,
+      );
+    },
     async getFolderDetails(folderId, options) {
       const identity = resolveIdentity(getSession);
       const response = await sdkRequest<unknown>({
-        operationId: 'nodes.get',
+        operationId: 'nodes.retrieve',
         signal: options?.signal,
         pathParams: { nodeId: folderId },
         query: {
         },
       });
-      const file = await mapDecoratedNode(response, identity, {}, options);
+      const file = await mapDecoratedNode(extractSdkWorkResourceItem(response), identity, {}, options);
       rememberFiles([file]);
       return file;
     },
     async setFolderColor(folderId, color, options) {
       if (color) {
         await sdkRequest<unknown>({
-          operationId: 'nodeProperties.set',
+          operationId: 'nodeProperties.update',
           signal: options?.signal,
           pathParams: {
             nodeId: folderId,
@@ -1766,7 +1881,7 @@ function createSdkBackedDriveFileService(
           nodeName: name,
         },
       });
-      const folder = await mapDecoratedNode(response, identity, {}, options);
+      const folder = await mapDecoratedNode(extractSdkWorkResourceItem(response), identity, {}, options);
       rememberFiles([folder]);
       return folder;
     },
@@ -1799,7 +1914,7 @@ function createSdkBackedDriveFileService(
           targetParentNodeId: targetParentNodeId || undefined,
         },
       });
-      const moved = await mapDecoratedNode(response, identity, {}, options);
+      const moved = await mapDecoratedNode(extractSdkWorkResourceItem(response), identity, {}, options);
       rememberFiles([moved]);
       return moved;
     },
@@ -1816,14 +1931,14 @@ function createSdkBackedDriveFileService(
           nodeName: options.nodeName,
         },
       });
-      const copied = await mapDecoratedNode(response, identity, {}, options);
+      const copied = await mapDecoratedNode(extractSdkWorkResourceItem(response), identity, {}, options);
       rememberFiles([copied]);
       return copied;
     },
     async deleteFile(id, options) {
       const identity = resolveIdentity(getSession);
       await sdkRequest<unknown>({
-        operationId: 'trash.move',
+        operationId: 'trash.create',
         signal: options?.signal,
         pathParams: { nodeId: id },
         body: {
@@ -1856,21 +1971,28 @@ function createSdkBackedDriveFileService(
       forgetFile(id);
     },
     async emptyTrash(options) {
-      const identity = resolveIdentity(getSession);
-      const body: JsonRecord = {
-      };
+      resolveIdentity(getSession);
+      const body: JsonRecord = {};
       assignDefined(body, 'spaceId', options?.spaceId);
-      const response = await sdkRequest<unknown>({
-        operationId: 'trash.empty',
-        signal: options?.signal,
-        body,
-      });
-      return requiredNumberField(
-        isRecord(response) ? response : {},
-        'trash empty deletedCount',
-        'deletedCount',
-        'deleted_count',
-      );
+
+      let totalDeleted = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const response = await sdkRequest<unknown>({
+          operationId: 'trash.empty',
+          signal: options?.signal,
+          body,
+        });
+        const payload = responseListPayload(response);
+        totalDeleted += requiredNumberField(
+          payload,
+          'trash empty deletedCount',
+          'deletedCount',
+          'deleted_count',
+        );
+        hasMore = booleanField(payload, 'hasMore', 'has_more') ?? false;
+      }
+      return totalDeleted;
     },
     async listShareLinks(nodeId, options) {
       const response = await sdkRequest<unknown>({
@@ -1895,25 +2017,25 @@ function createSdkBackedDriveFileService(
         pathParams: { nodeId },
         body,
       });
-      const source = isRecord(response) ? response : {};
+      const source = responseListPayload(response);
       const responseToken = stringField(source, 'token');
       if (!responseToken) {
         throw new Error('Share link token was not returned by the server.');
       }
       return {
-        ...mapShareLink(response),
+        ...mapShareLink(source),
         token: responseToken,
         accessCode: stringField(source, 'accessCode', 'access_code') || undefined,
       };
     },
     async revokeShareLink(shareLinkId, options) {
       const response = await sdkRequest<unknown>({
-        operationId: 'shareLinks.revoke',
+        operationId: 'shareLinks.delete',
         signal: options?.signal,
         pathParams: { shareLinkId },
         query: {},
       });
-      return booleanField(isRecord(response) ? response : {}, 'revoked') ?? false;
+      return booleanField(responseListPayload(response), 'revoked') ?? false;
     },
     async claimShareLink(token, options) {
       const trimmed = token.trim();
@@ -1925,7 +2047,7 @@ function createSdkBackedDriveFileService(
         signal: options?.signal,
         pathParams: { token: trimmed },
       });
-      const source = isRecord(response) ? response : {};
+      const source = responseListPayload(response);
       const role = stringField(source, 'role');
       const normalizedRole: DriveShareLinkRole =
         role === 'writer' || role === 'commenter' ? role : 'reader';
@@ -1955,7 +2077,6 @@ function createSdkBackedDriveFileService(
         });
         const favorited = booleanField(isRecord(response) ? response : {}, 'favorited') ?? false;
         favoriteNodeIds.delete(id);
-        invalidateFavoriteIdsCache();
         const existing = knownFiles.get(id);
         if (existing) {
           knownFiles.set(id, { ...existing, isStarred: false });
@@ -1964,7 +2085,7 @@ function createSdkBackedDriveFileService(
       }
 
       const response = await sdkRequest<unknown>({
-        operationId: 'favorites.set',
+        operationId: 'favorites.update',
         signal: options?.signal,
         pathParams: { nodeId: id },
         body: {
@@ -1974,7 +2095,6 @@ function createSdkBackedDriveFileService(
       if (favorited) {
         favoriteNodeIds.add(id);
       }
-      invalidateFavoriteIdsCache();
       const existing = knownFiles.get(id);
       if (existing) {
         knownFiles.set(id, { ...existing, isStarred: favorited });
@@ -1988,7 +2108,7 @@ function createSdkBackedDriveFileService(
       const identity = resolveIdentity(getSession);
       const requestedTtlSeconds = options?.requestedTtlSeconds ?? DEFAULT_DOWNLOAD_TTL_SECONDS;
       const response = await sdkRequest<unknown>({
-        operationId: 'nodes.downloadUrls.create',
+        operationId: 'nodes.downloadUrls.retrieve',
         signal: options?.signal,
         pathParams: { nodeId: file.id },
         query: {
@@ -2011,8 +2131,20 @@ function createSdkBackedDriveFileService(
         throw new Error(`Drive preview content fetch failed with HTTP ${response.status}`);
       }
 
+      const contentLengthHeader = response.headers.get('Content-Length');
+      if (contentLengthHeader) {
+        const contentLength = Number.parseInt(contentLengthHeader, 10);
+        if (Number.isFinite(contentLength) && contentLength > MAX_TEXT_PREVIEW_BYTES) {
+          throw new Error(
+            `Drive text preview exceeds the in-memory limit (${contentLength} bytes; limit ${MAX_TEXT_PREVIEW_BYTES}).`,
+          );
+        }
+      }
+
+      const content = await readResponseTextWithLimit(response, MAX_TEXT_PREVIEW_BYTES);
+
       return {
-        content: await response.text(),
+        content,
         contentType: response.headers.get('Content-Type') || file.mimeType,
         downloadUrl: grant.downloadUrl,
         signedSourceUrl: grant.signedSourceUrl,
@@ -2057,7 +2189,7 @@ function createSdkBackedDriveFileService(
     async signPdfFile(file, options) {
       const identity = resolveIdentity(getSession);
       await sdkRequest<unknown>({
-        operationId: 'nodeProperties.set',
+        operationId: 'nodeProperties.update',
         signal: options?.signal,
         pathParams: {
           nodeId: file.id,
@@ -2092,7 +2224,7 @@ function createSdkBackedDriveFileService(
     async getStorageSummary(options) {
       const identity = resolveIdentity(getSession);
       const response = await sdkRequest<unknown>({
-        operationId: 'quotas.summary',
+        operationId: 'quotas.retrieve',
         signal: options?.signal,
         query: {
         },
@@ -2126,7 +2258,7 @@ function createSdkBackedDriveFileService(
           description,
         },
       });
-      const created = responseToSharedSpace(response, {
+      const created = responseToSharedSpace(extractSdkWorkResourceItem(response) ?? response, {
         name,
         icon,
         color,

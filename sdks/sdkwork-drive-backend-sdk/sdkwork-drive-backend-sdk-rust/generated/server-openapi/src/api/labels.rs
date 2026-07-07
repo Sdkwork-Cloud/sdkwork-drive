@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::backend_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{CreateLabelRequest, DeleteLabelResponse, DriveLabel, LabelListResponse, UpdateLabelRequest};
+use crate::models::{CreateLabelRequest, LabelsCreateResponse201, LabelsListResponse, LabelsRetrieveResponse, LabelsUpdateResponse, UpdateLabelRequest};
 
 #[derive(Clone)]
 pub struct LabelsApi {
@@ -16,36 +16,36 @@ impl LabelsApi {
     }
 
     /// List Drive label definitions
-    pub async fn list(&self, lifecycle_status: Option<&str>, page_size: Option<i64>, page_token: Option<&str>) -> Result<LabelListResponse, SdkworkError> {
+    pub async fn list(&self, lifecycle_status: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<LabelsListResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("lifecycleStatus", lifecycle_status, "form", true, false, None),
-            QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
-            QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
+            QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
         ]);
         let path = append_query_string(backend_path(&"/drive/labels".to_string()), &query);
         self.client.get(&path, None, None).await
     }
 
     /// Create a Drive label definition
-    pub async fn create(&self, body: &CreateLabelRequest) -> Result<DriveLabel, SdkworkError> {
+    pub async fn create(&self, body: &CreateLabelRequest) -> Result<LabelsCreateResponse201, SdkworkError> {
         let path = backend_path(&"/drive/labels".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Get a Drive label definition
-    pub async fn get(&self, label_id: &str) -> Result<DriveLabel, SdkworkError> {
+    pub async fn retrieve(&self, label_id: &str) -> Result<LabelsRetrieveResponse, SdkworkError> {
         let path = backend_path(&format!("/drive/labels/{}", serialize_path_parameter(label_id, PathParameterSpec::new("labelId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
     /// Update a Drive label definition
-    pub async fn update(&self, label_id: &str, body: &UpdateLabelRequest) -> Result<DriveLabel, SdkworkError> {
+    pub async fn update(&self, label_id: &str, body: &UpdateLabelRequest) -> Result<LabelsUpdateResponse, SdkworkError> {
         let path = backend_path(&format!("/drive/labels/{}", serialize_path_parameter(label_id, PathParameterSpec::new("labelId", "simple", false))));
         self.client.patch(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Delete a Drive label definition
-    pub async fn delete(&self, label_id: &str, operator_id: &str) -> Result<DeleteLabelResponse, SdkworkError> {
+    pub async fn delete(&self, label_id: &str, operator_id: &str) -> Result<(), SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("operatorId", operator_id, "form", true, false, None),
         ]);

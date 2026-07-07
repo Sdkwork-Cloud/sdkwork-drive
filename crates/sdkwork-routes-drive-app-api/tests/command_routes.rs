@@ -943,7 +943,10 @@ async fn list_nodes_includes_ui_folder_color_from_node_properties() {
             .expect("list nodes response body should be read"),
     )
     .expect("list nodes response json should be valid");
-    assert_eq!(common::envelope_items(&payload)[0]["folderColor"].as_str(), Some("emerald"));
+    assert_eq!(
+        common::envelope_items(&payload)[0]["folderColor"].as_str(),
+        Some("emerald")
+    );
 }
 
 #[tokio::test]
@@ -1166,10 +1169,11 @@ async fn quota_summary_route_counts_active_storage_objects() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["tenantId"], "tenant-quota");
-    assert_eq!(payload["usedBytes"], 4096);
-    assert_eq!(payload["objectCount"], 1);
-    assert_eq!(payload["quotaBytes"], 10_485_760);
+    let quota_item = common::envelope_item(&payload);
+    assert_eq!(quota_item["tenantId"], "tenant-quota");
+    assert_eq!(quota_item["usedBytes"], 4096);
+    assert_eq!(quota_item["objectCount"], 1);
+    assert_eq!(quota_item["quotaBytes"], 10_485_760);
 }
 
 struct RestoreEnvVar {
@@ -1332,7 +1336,10 @@ async fn create_upload_session_route_is_idempotent() {
     )
     .expect("second response json should be valid");
 
-    assert_eq!(first_payload["id"], second_payload["id"]);
+    assert_eq!(
+        common::envelope_body(&first_payload)["id"],
+        common::envelope_body(&second_payload)["id"]
+    );
     let change_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1) FROM dr_drive_change_log WHERE event_type='drive.upload_session.created'",
     )
@@ -1671,8 +1678,11 @@ async fn create_upload_session_resolves_default_bucket_and_generates_standard_ke
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["bucket"].as_str(), Some("bucket-keygen"));
-    let object_key = payload["objectKey"]
+    assert_eq!(
+        common::envelope_body(&payload)["bucket"].as_str(),
+        Some("bucket-keygen")
+    );
+    let object_key = common::envelope_body(&payload)["objectKey"]
         .as_str()
         .expect("response objectKey should be present");
     assert!(object_key.starts_with("drive-custom-root/tenant-keygen/space-keygen/"));
@@ -2163,9 +2173,12 @@ async fn create_upload_session_normalizes_identifiers_before_idempotency_and_sto
             .expect("first response body should be read"),
     )
     .expect("first response json should be valid");
-    assert_eq!(first_payload["id"].as_str(), Some("upload-normalized"));
     assert_eq!(
-        first_payload["idempotencyKey"].as_str(),
+        common::envelope_body(&first_payload)["id"].as_str(),
+        Some("upload-normalized")
+    );
+    assert_eq!(
+        common::envelope_body(&first_payload)["idempotencyKey"].as_str(),
         Some("idem-upload-normalized")
     );
 
@@ -2212,10 +2225,13 @@ async fn create_upload_session_normalizes_identifiers_before_idempotency_and_sto
     )
     .expect("second response json should be valid");
 
-    assert_eq!(first_payload["id"], second_payload["id"]);
     assert_eq!(
-        first_payload["storageUploadId"],
-        second_payload["storageUploadId"]
+        common::envelope_body(&first_payload)["id"],
+        common::envelope_body(&second_payload)["id"]
+    );
+    assert_eq!(
+        common::envelope_body(&first_payload)["storageUploadId"],
+        common::envelope_body(&second_payload)["storageUploadId"]
     );
 
     let stored: (String, String, String) = sqlx::query_as(
@@ -2435,8 +2451,11 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
             .expect("create response body should be read"),
     )
     .expect("create response json should be valid");
-    assert_eq!(create_payload["storageUploadId"], "mock-s3-upload-id");
-    let created_object_key = create_payload["objectKey"]
+    assert_eq!(
+        common::envelope_body(&create_payload)["storageUploadId"],
+        "mock-s3-upload-id"
+    );
+    let created_object_key = common::envelope_body(&create_payload)["objectKey"]
         .as_str()
         .expect("create upload response should include objectKey");
     assert_rooted_standard_storage_object_key(
@@ -2493,8 +2512,9 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
             .expect("part response body should be read"),
     )
     .expect("part response json should be valid");
-    assert_eq!(part_payload["uploadId"], "mock-s3-upload-id");
-    assert!(part_payload["uploadUrl"]
+    let part_data = common::envelope_data(&part_payload);
+    assert_eq!(part_data["uploadId"], "mock-s3-upload-id");
+    assert!(part_data["uploadUrl"]
         .as_str()
         .expect("upload url should be present")
         .contains("uploadId=mock-s3-upload-id"));
@@ -2640,16 +2660,17 @@ async fn uploader_prepare_creates_upload_space_item_and_real_multipart_upload() 
             .expect("uploader prepare response should be read"),
     )
     .expect("uploader prepare response should be valid json");
-    assert_eq!(payload["uploadItem"]["id"], "upload-item-app-001");
-    assert_eq!(payload["uploadItem"]["uploadProfileCode"], "video");
-    assert_eq!(payload["uploadItem"]["contentTypeGroup"], "video");
-    assert_eq!(payload["uploadItem"]["scene"], "user_document_upload");
-    assert_eq!(payload["uploadItem"]["source"], "pc_local_file");
+    let prepare_data = common::envelope_data(&payload);
+    assert_eq!(prepare_data["uploadItem"]["id"], "upload-item-app-001");
+    assert_eq!(prepare_data["uploadItem"]["uploadProfileCode"], "video");
+    assert_eq!(prepare_data["uploadItem"]["contentTypeGroup"], "video");
+    assert_eq!(prepare_data["uploadItem"]["scene"], "user_document_upload");
+    assert_eq!(prepare_data["uploadItem"]["source"], "pc_local_file");
     assert_eq!(
-        payload["uploadSession"]["storageUploadId"],
+        prepare_data["uploadSession"]["storageUploadId"],
         "mock-s3-upload-id"
     );
-    assert_eq!(payload["uploadSession"]["bucket"], "bucket-s3");
+    assert_eq!(prepare_data["uploadSession"]["bucket"], "bucket-s3");
 
     let space_row: (String, String, String) = sqlx::query_as(
         "SELECT space_type, owner_subject_type, owner_subject_id
@@ -2881,7 +2902,7 @@ async fn uploader_prepare_to_target_space_enforces_writer_permission_and_preserv
             .expect("allowed target upload response should be read"),
     )
     .expect("allowed target upload response should be valid json");
-    let object_key = allowed_payload["uploadSession"]["objectKey"]
+    let object_key = common::envelope_data(&allowed_payload)["uploadSession"]["objectKey"]
         .as_str()
         .expect("allowed response should include final object key");
     assert!(
@@ -3106,12 +3127,13 @@ async fn uploader_prepare_anonymous_target_space_requires_public_writer_share_to
             .expect("allowed anonymous target upload response should be read"),
     )
     .expect("allowed anonymous target upload response should be valid json");
+    let allowed_data = common::envelope_data(&allowed_payload);
     assert_eq!(
-        allowed_payload["uploadItem"]["spaceId"],
+        allowed_data["uploadItem"]["spaceId"],
         "space-uploader-anon-share"
     );
-    assert_eq!(allowed_payload["uploadItem"]["actorType"], "anonymous");
-    let object_key = allowed_payload["uploadSession"]["objectKey"]
+    assert_eq!(allowed_data["uploadItem"]["actorType"], "anonymous");
+    let object_key = allowed_data["uploadSession"]["objectKey"]
         .as_str()
         .expect("allowed anonymous response should include final object key");
     assert!(
@@ -3353,7 +3375,7 @@ async fn uploader_upload_session_complete_updates_upload_item_and_sensitive_oper
             .expect("uploader prepare response should be read"),
     )
     .expect("uploader prepare response should be valid json");
-    let upload_session_id = prepare_payload["uploadSession"]["id"]
+    let upload_session_id = common::envelope_data(&prepare_payload)["uploadSession"]["id"]
         .as_str()
         .expect("prepare response should contain upload session id")
         .to_string();
@@ -3765,7 +3787,7 @@ async fn create_upload_session_for_existing_file_uses_next_storage_version_in_ob
             .expect("create v2 response should be read"),
     )
     .expect("create v2 response should be valid json");
-    let created_object_key = create_payload["objectKey"]
+    let created_object_key = common::envelope_body(&create_payload)["objectKey"]
         .as_str()
         .expect("create v2 response should include objectKey");
     assert_rooted_standard_storage_object_key(
@@ -4785,7 +4807,7 @@ async fn s3_upload_session_abort_calls_object_store_abort() {
             .expect("abort response body should be read"),
     )
     .expect("abort response json should be valid");
-    assert_eq!(abort_payload["state"], "aborted");
+    assert_eq!(common::envelope_body(&abort_payload)["state"], "aborted");
 
     let requests = captured_requests
         .lock()
@@ -4946,9 +4968,9 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             .expect("upload part response body should be read"),
     )
     .expect("upload part response json should be valid");
-    assert_eq!(upload_part_payload["method"], "PUT");
-    assert_eq!(upload_part_payload["partNo"], 1);
-    assert!(upload_part_payload["uploadUrl"]
+    assert_eq!(common::envelope_data(&upload_part_payload)["method"], "PUT");
+    assert_eq!(common::envelope_data(&upload_part_payload)["partNo"], 1);
+    assert!(common::envelope_data(&upload_part_payload)["uploadUrl"]
         .as_str()
         .expect("uploadUrl should be present")
         .contains("sdkwork-drive/v1/t/"));
@@ -4984,7 +5006,10 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             .expect("complete response body should be read"),
     )
     .expect("complete response json should be valid");
-    assert_eq!(complete_payload["state"], "completed");
+    assert_eq!(
+        common::envelope_body(&complete_payload)["state"],
+        "completed"
+    );
 
     let stored_object_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -5032,8 +5057,8 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             .expect("detail response body should be read"),
     )
     .expect("detail response json should be valid");
-    assert_eq!(detail_payload["id"], "node-file");
-    assert_eq!(detail_payload["nodeType"], "file");
+    assert_eq!(common::envelope_item(&detail_payload)["id"], "node-file");
+    assert_eq!(common::envelope_item(&detail_payload)["nodeType"], "file");
 
     let node_download_response = app
         .clone()
@@ -5064,7 +5089,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             .expect("node download response body should be read"),
     )
     .expect("node download response json should be valid");
-    assert!(node_download_payload["downloadUrl"]
+    assert!(common::envelope_data(&node_download_payload)["downloadUrl"]
         .as_str()
         .expect("downloadUrl should be present")
         .contains("/download_tokens/"));
@@ -5104,7 +5129,10 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             .expect("move response body should be read"),
     )
     .expect("move response json should be valid");
-    assert_eq!(move_payload["parentNodeId"], "folder-destination");
+    assert_eq!(
+        common::envelope_item(&move_payload)["parentNodeId"],
+        "folder-destination"
+    );
 
     let copy_response = app
         .clone()
@@ -5142,8 +5170,8 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             .expect("copy response body should be read"),
     )
     .expect("copy response json should be valid");
-    assert_eq!(copy_payload["id"], "node-file-copy");
-    assert_eq!(copy_payload["nodeType"], "file");
+    assert_eq!(common::envelope_item(&copy_payload)["id"], "node-file-copy");
+    assert_eq!(common::envelope_item(&copy_payload)["nodeType"], "file");
 
     let copied_object_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -5197,14 +5225,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         )
         .await
         .expect("delete node request should be handled");
-    assert_eq!(delete_response.status(), StatusCode::OK);
-    let delete_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(delete_response.into_body(), usize::MAX)
-            .await
-            .expect("delete response body should be read"),
-    )
-    .expect("delete response json should be valid");
-    assert_eq!(delete_payload["deleted"], true);
+    common::assert_no_content_response(delete_response).await;
 
     let deleted_detail_response = app
         .clone()
@@ -5407,14 +5428,7 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
         )
         .await
         .expect("delete folder request should be handled");
-    assert_eq!(delete_response.status(), StatusCode::OK);
-    let delete_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(delete_response.into_body(), usize::MAX)
-            .await
-            .expect("delete folder response should be read"),
-    )
-    .expect("delete folder response should be valid json");
-    assert_eq!(delete_payload["deleted"].as_bool(), Some(true));
+    common::assert_no_content_response(delete_response).await;
 
     let deleted_node_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -5497,7 +5511,13 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
             .expect("search deleted child response should be read"),
     )
     .expect("search deleted child response should be valid json");
-    assert_eq!(common::envelope_items(&search_payload).as_array().unwrap().len(), 0);
+    assert_eq!(
+        common::envelope_items(&search_payload)
+            .as_array()
+            .unwrap()
+            .len(),
+        0
+    );
 }
 
 #[tokio::test]
@@ -5595,14 +5615,17 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
         )
         .await
         .expect("trash folder request should be handled");
-    assert_eq!(trash_response.status(), StatusCode::OK);
+    assert_eq!(trash_response.status(), StatusCode::CREATED);
     let trash_payload: serde_json::Value = serde_json::from_slice(
         &to_bytes(trash_response.into_body(), usize::MAX)
             .await
             .expect("trash folder response should be read"),
     )
     .expect("trash folder response should be valid json");
-    assert_eq!(trash_payload["lifecycleStatus"].as_str(), Some("trashed"));
+    assert_eq!(
+        common::envelope_item(&trash_payload)["lifecycleStatus"].as_str(),
+        Some("trashed")
+    );
 
     let trashed_node_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -5651,7 +5674,7 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
     )
     .expect("get trashed child response should be valid json");
     assert_eq!(
-        child_detail_payload["lifecycleStatus"].as_str(),
+        common::envelope_item(&child_detail_payload)["lifecycleStatus"].as_str(),
         Some("trashed")
     );
 
@@ -5683,7 +5706,13 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
             .expect("search trashed child response should be read"),
     )
     .expect("search trashed child response should be valid json");
-    assert_eq!(common::envelope_items(&search_payload).as_array().unwrap().len(), 0);
+    assert_eq!(
+        common::envelope_items(&search_payload)
+            .as_array()
+            .unwrap()
+            .len(),
+        0
+    );
 }
 
 #[tokio::test]
@@ -5834,7 +5863,10 @@ async fn app_drive_restore_folder_recursively_restores_descendants_and_requires_
             .expect("restore folder response should be read"),
     )
     .expect("restore folder response should be valid json");
-    assert_eq!(restore_payload["lifecycleStatus"].as_str(), Some("active"));
+    assert_eq!(
+        common::envelope_item(&restore_payload)["lifecycleStatus"].as_str(),
+        Some("active")
+    );
 
     let active_node_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -5957,7 +5989,7 @@ async fn app_dr_drive_upload_session_abort_marks_session_aborted() {
             .expect("abort response body should be read"),
     )
     .expect("abort response json should be valid");
-    assert_eq!(payload["state"], "aborted");
+    assert_eq!(common::envelope_body(&payload)["state"], "aborted");
 }
 
 #[tokio::test]
@@ -6714,7 +6746,10 @@ async fn list_spaces_route_returns_tenant_scoped_items() {
             .len(),
         1
     );
-    assert_eq!(payload["data"]["items"][0]["id"].as_str(), Some("space-001"));
+    assert_eq!(
+        payload["data"]["items"][0]["id"].as_str(),
+        Some("space-001")
+    );
 }
 
 #[tokio::test]
@@ -6833,14 +6868,15 @@ async fn create_download_url_and_resolve_token_redirects_to_signed_source() {
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["method"], "GET");
-    let signed_source_url = payload["signedSourceUrl"]
+    let download_data = common::envelope_data(&payload);
+    assert_eq!(download_data["method"], "GET");
+    let signed_source_url = download_data["signedSourceUrl"]
         .as_str()
         .expect("signedSourceUrl should be present");
     assert!(signed_source_url.contains("http://127.0.0.1:9000/bucket-001/objects/node-001/v1.bin"));
     assert!(signed_source_url.contains("X-Amz-Signature="));
 
-    let url = payload["downloadUrl"]
+    let url = common::envelope_data(&payload)["downloadUrl"]
         .as_str()
         .expect("downloadUrl should be present");
     let token = url
@@ -6868,14 +6904,19 @@ async fn create_download_url_and_resolve_token_redirects_to_signed_source() {
         )
         .await
         .expect("resolve token request should be handled");
-    assert_eq!(resolve_response.status(), StatusCode::TEMPORARY_REDIRECT);
-    let location = resolve_response
-        .headers()
-        .get("location")
-        .and_then(|value| value.to_str().ok())
-        .expect("location header should be present");
-    assert!(location.contains("http://127.0.0.1:9000/bucket-001/objects/node-001/v1.bin"));
-    assert!(location.contains("X-Amz-Signature="));
+    assert_eq!(resolve_response.status(), StatusCode::OK);
+    let resolve_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(resolve_response.into_body(), usize::MAX)
+            .await
+            .expect("resolve token response should be read"),
+    )
+    .expect("resolve token response should be valid json");
+    let resolve_data = common::envelope_data(&resolve_payload);
+    let signed_source_url = resolve_data["signedSourceUrl"]
+        .as_str()
+        .expect("resolved download response should include signedSourceUrl");
+    assert!(signed_source_url.contains("http://127.0.0.1:9000/bucket-001/objects/node-001/v1.bin"));
+    assert!(signed_source_url.contains("X-Amz-Signature="));
 }
 
 #[tokio::test]
@@ -6993,12 +7034,13 @@ async fn create_download_grant_via_canonical_route_returns_created() {
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["method"], "GET");
-    assert!(payload["downloadUrl"]
+    let download_data = common::envelope_data(&payload);
+    assert_eq!(download_data["method"], "GET");
+    assert!(download_data["downloadUrl"]
         .as_str()
         .expect("downloadUrl should be present")
         .contains("/download_tokens/"));
-    assert!(payload["signedSourceUrl"]
+    assert!(download_data["signedSourceUrl"]
         .as_str()
         .expect("signedSourceUrl should be present")
         .contains("http://127.0.0.1:9000/bucket-001/objects/node-001/v1.bin"));
@@ -7356,7 +7398,7 @@ async fn resolve_download_token_uses_active_s3_provider_configuration_when_prese
     )
     .expect("response json should be valid");
 
-    let url = payload["downloadUrl"]
+    let url = common::envelope_data(&payload)["downloadUrl"]
         .as_str()
         .expect("downloadUrl should be present");
     let token = url
@@ -7384,15 +7426,19 @@ async fn resolve_download_token_uses_active_s3_provider_configuration_when_prese
         )
         .await
         .expect("resolve token request should be handled");
-    assert_eq!(resolve_response.status(), StatusCode::TEMPORARY_REDIRECT);
-    let location = resolve_response
-        .headers()
-        .get("location")
-        .and_then(|value| value.to_str().ok())
-        .expect("location header should be present");
-    assert!(location.starts_with("https://s3.custom.local/"));
-    assert!(location.contains("/bucket-001/objects/node-001/v1.bin"));
-    assert!(location.contains("X-Amz-Signature"));
+    assert_eq!(resolve_response.status(), StatusCode::OK);
+    let resolve_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(resolve_response.into_body(), usize::MAX)
+            .await
+            .expect("resolve token response should be read"),
+    )
+    .expect("resolve token response should be valid json");
+    let signed_source_url = common::envelope_data(&resolve_payload)["signedSourceUrl"]
+        .as_str()
+        .expect("resolved download response should include signedSourceUrl");
+    assert!(signed_source_url.starts_with("https://s3.custom.local/"));
+    assert!(signed_source_url.contains("/bucket-001/objects/node-001/v1.bin"));
+    assert!(signed_source_url.contains("X-Amz-Signature"));
 }
 
 #[tokio::test]
@@ -7520,7 +7566,7 @@ async fn resolve_download_token_uses_aliyun_oss_provider_kind_with_s3_signer() {
     )
     .expect("response json should be valid");
 
-    let url = payload["downloadUrl"]
+    let url = common::envelope_data(&payload)["downloadUrl"]
         .as_str()
         .expect("downloadUrl should be present");
     let token = url
@@ -7548,14 +7594,18 @@ async fn resolve_download_token_uses_aliyun_oss_provider_kind_with_s3_signer() {
         )
         .await
         .expect("resolve token request should be handled");
-    assert_eq!(resolve_response.status(), StatusCode::TEMPORARY_REDIRECT);
-    let location = resolve_response
-        .headers()
-        .get("location")
-        .and_then(|value| value.to_str().ok())
-        .expect("location header should be present");
-    assert!(location.contains("X-Amz-Signature"));
-    assert!(location.contains("objects/node-oss-001/v1.bin"));
+    assert_eq!(resolve_response.status(), StatusCode::OK);
+    let resolve_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(resolve_response.into_body(), usize::MAX)
+            .await
+            .expect("resolve token response should be read"),
+    )
+    .expect("resolve token response should be valid json");
+    let signed_source_url = common::envelope_data(&resolve_payload)["signedSourceUrl"]
+        .as_str()
+        .expect("resolved download response should include signedSourceUrl");
+    assert!(signed_source_url.contains("X-Amz-Signature"));
+    assert!(signed_source_url.contains("objects/node-oss-001/v1.bin"));
 }
 
 #[tokio::test]
@@ -7705,7 +7755,7 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
                 .expect("response body should be read"),
         )
         .expect("response json should be valid");
-        let token = payload["downloadUrl"]
+        let token = common::envelope_data(&payload)["downloadUrl"]
             .as_str()
             .expect("downloadUrl should be present")
             .rsplit('/')
@@ -7736,21 +7786,25 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
             .expect("resolve token request should be handled");
         assert_eq!(
             resolve_response.status(),
-            StatusCode::TEMPORARY_REDIRECT,
+            StatusCode::OK,
             "{provider_kind} should be signed through the S3 adapter"
         );
-        let location = resolve_response
-            .headers()
-            .get("location")
-            .and_then(|value| value.to_str().ok())
-            .expect("location header should be present");
+        let resolve_payload: serde_json::Value = serde_json::from_slice(
+            &to_bytes(resolve_response.into_body(), usize::MAX)
+                .await
+                .expect("resolve token response should be read"),
+        )
+        .expect("resolve token response should be valid json");
+        let signed_source_url = common::envelope_data(&resolve_payload)["signedSourceUrl"]
+            .as_str()
+            .expect("resolved download response should include signedSourceUrl");
         assert!(
-            location.contains("X-Amz-Signature"),
-            "{provider_kind} redirect should be an S3 presigned URL: {location}"
+            signed_source_url.contains("X-Amz-Signature"),
+            "{provider_kind} response should expose an S3 presigned URL: {signed_source_url}"
         );
         assert!(
-            location.contains(&object_key),
-            "{provider_kind} redirect should target the stored object key: {location}"
+            signed_source_url.contains(&object_key),
+            "{provider_kind} response should target the stored object key: {signed_source_url}"
         );
     }
 }
@@ -7809,21 +7863,25 @@ async fn create_download_package_for_multiple_files_writes_zip_archive_and_retur
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["state"].as_str(), Some("ready"));
-    assert_eq!(payload["contentType"].as_str(), Some("application/zip"));
-    assert_eq!(payload["fileCount"].as_i64(), Some(2));
-    assert_eq!(payload["totalBytes"].as_i64(), Some(19));
-    assert_eq!(payload["method"].as_str(), Some("GET"));
-    assert!(payload["downloadUrl"]
+    let package_data = common::envelope_data(&payload);
+    assert_eq!(package_data["state"].as_str(), Some("ready"));
+    assert_eq!(
+        package_data["contentType"].as_str(),
+        Some("application/zip")
+    );
+    assert_eq!(package_data["fileCount"].as_i64(), Some(2));
+    assert_eq!(package_data["totalBytes"].as_i64(), Some(19));
+    assert_eq!(package_data["method"].as_str(), Some("GET"));
+    assert!(package_data["downloadUrl"]
         .as_str()
         .is_some_and(|value| value.contains("download_packages/")));
-    assert!(payload["signedSourceUrl"]
+    assert!(package_data["signedSourceUrl"]
         .as_str()
         .is_some_and(|value| value.contains("X-Amz-Signature=")));
-    assert!(payload["archiveObjectKey"]
+    assert!(package_data["archiveObjectKey"]
         .as_str()
         .is_some_and(|value| value.contains("/download-packages/")));
-    let items = common::envelope_items(&payload)
+    let items = package_data["items"]
         .as_array()
         .expect("items should be present");
     assert_eq!(items.len(), 2);
@@ -8002,8 +8060,9 @@ async fn create_download_package_reads_objects_from_their_bound_provider_when_bu
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
+    let package_data = common::envelope_data(&payload);
     assert_eq!(
-        payload["storageProviderId"].as_str(),
+        package_data["storageProviderId"].as_str(),
         Some("provider-shared-bound")
     );
 
@@ -8074,6 +8133,8 @@ async fn list_archive_entries_reads_zip_contents_from_drive_storage() {
             .expect("archive entries response should be read"),
     )
     .expect("archive entries response should be valid json");
+    assert_eq!(payload["code"].as_i64(), Some(0));
+    assert!(payload["traceId"].as_str().is_some());
     let items = common::envelope_items(&payload)
         .as_array()
         .expect("archive entries should include items");
@@ -8149,7 +8210,12 @@ async fn extract_archive_entries_creates_drive_nodes_and_writes_objects_to_defau
             .expect("archive extract response should be read"),
     )
     .expect("archive extract response should be valid json");
-    assert_eq!(payload["extractedCount"].as_i64(), Some(1));
+    assert_eq!(payload["code"].as_i64(), Some(0));
+    assert!(payload["traceId"].as_str().is_some());
+    assert_eq!(
+        common::envelope_field(&payload, "extractedCount").as_i64(),
+        Some(1)
+    );
     let items = common::envelope_items(&payload)
         .as_array()
         .expect("archive extract response should include items");
@@ -8352,7 +8418,7 @@ async fn extract_archive_entries_rejects_trashed_source_before_storage_side_effe
 }
 
 #[tokio::test]
-async fn extract_archive_entries_rejects_any_target_conflict_before_partial_side_effects() {
+async fn extract_archive_entries_auto_renames_file_conflicts_and_completes_atomically() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
     sqlx::any::install_default_drivers();
     let pool = AnyPoolOptions::new()
@@ -8421,16 +8487,20 @@ async fn extract_archive_entries_rejects_any_target_conflict_before_partial_side
                 .expect("archive extract conflict request should be built"),
         )
         .await
-        .expect("archive extract conflict request should be handled");
+        .expect("archive extract request should be handled");
 
-    assert_eq!(response.status(), StatusCode::CONFLICT);
+    assert_eq!(response.status(), StatusCode::CREATED);
     let payload: serde_json::Value = serde_json::from_slice(
         &to_bytes(response.into_body(), usize::MAX)
             .await
-            .expect("archive extract conflict response should be read"),
+            .expect("archive extract response should be read"),
     )
-    .expect("archive extract conflict response should be valid json");
-    assert_eq!(payload["code"].as_i64(), Some(40901));
+    .expect("archive extract response should be valid json");
+    assert_eq!(payload["code"].as_i64(), Some(0));
+    assert_eq!(
+        common::envelope_field(&payload, "extractedCount").as_i64(),
+        Some(2)
+    );
 
     let readme_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -8442,40 +8512,19 @@ async fn extract_archive_entries_rejects_any_target_conflict_before_partial_side
     .fetch_one(&pool)
     .await
     .expect("readme count should be readable");
-    assert_eq!(readme_count, 0);
+    assert_eq!(readme_count, 1);
 
-    let docs_count: i64 = sqlx::query_scalar(
+    let renamed_logo_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
          FROM dr_drive_node
          WHERE tenant_id='tenant-archive'
-           AND node_name='docs'
+           AND node_name='logo (1).png'
            AND lifecycle_status='active'",
     )
     .fetch_one(&pool)
     .await
-    .expect("docs count should be readable");
-    assert_eq!(docs_count, 0);
-
-    let extracted_storage_count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(1)
-         FROM dr_drive_storage_object
-         WHERE tenant_id='tenant-archive'
-           AND node_id NOT IN ('node-archive', 'file-logo-existing')",
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("extracted storage count should be readable");
-    assert_eq!(extracted_storage_count, 0);
-
-    let change_count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(1)
-         FROM dr_drive_change_log
-         WHERE tenant_id='tenant-archive'",
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("change count should be readable");
-    assert_eq!(change_count, 0);
+    .expect("renamed logo count should be readable");
+    assert_eq!(renamed_logo_count, 1);
 
     let requests = captured_requests
         .lock()
@@ -8488,7 +8537,7 @@ async fn extract_archive_entries_rejects_any_target_conflict_before_partial_side
         })
         .count();
     assert_eq!(archive_reads, 1);
-    assert!(!requests.iter().any(|request| {
+    assert!(requests.iter().any(|request| {
         request.method == "PUT"
             && request.path.starts_with("/bucket-archive/")
             && request.path.ends_with("/content")
@@ -8646,11 +8695,15 @@ async fn create_download_package_reads_files_from_multiple_storage_buckets() {
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["state"].as_str(), Some("ready"));
-    assert_eq!(payload["fileCount"].as_i64(), Some(2));
-    assert_eq!(common::envelope_items(&payload)[0]["bucket"].as_str(), Some("bucket-s3"));
+    let package_data = common::envelope_data(&payload);
+    assert_eq!(package_data["state"].as_str(), Some("ready"));
+    assert_eq!(package_data["fileCount"].as_i64(), Some(2));
     assert_eq!(
-        common::envelope_items(&payload)[1]["bucket"].as_str(),
+        package_data["items"][0]["bucket"].as_str(),
+        Some("bucket-s3")
+    );
+    assert_eq!(
+        package_data["items"][1]["bucket"].as_str(),
         Some("bucket-s3-alt")
     );
 
@@ -8989,10 +9042,11 @@ async fn create_download_package_expands_selected_folder_descendants() {
             .expect("response body should be read"),
     )
     .expect("response json should be valid");
-    assert_eq!(payload["fileCount"].as_i64(), Some(1));
-    assert_eq!(payload["totalBytes"].as_i64(), Some(12));
+    let package_data = common::envelope_data(&payload);
+    assert_eq!(package_data["fileCount"].as_i64(), Some(1));
+    assert_eq!(package_data["totalBytes"].as_i64(), Some(12));
     assert_eq!(
-        common::envelope_items(&payload)[0]["archivePath"].as_str(),
+        package_data["items"][0]["archivePath"].as_str(),
         Some("Project/folder-child.txt")
     );
 
@@ -9249,7 +9303,7 @@ async fn resolve_download_token_rejects_node_after_it_is_moved_to_trash() {
             .expect("create response body should be read"),
     )
     .expect("create response should be valid json");
-    let token = create_payload["downloadUrl"]
+    let token = common::envelope_data(&create_payload)["downloadUrl"]
         .as_str()
         .expect("downloadUrl should be present")
         .rsplit('/')
@@ -9792,6 +9846,11 @@ async fn fetch_json(app: axum::Router, uri: &str, tenant: &str) -> serde_json::V
     fetch_json_as(app, uri, tenant, &user).await
 }
 
+async fn fetch_resource_json(app: axum::Router, uri: &str, tenant: &str) -> serde_json::Value {
+    let payload = fetch_json(app, uri, tenant).await;
+    common::envelope_body(&payload).clone()
+}
+
 async fn assert_git_repository_root_directory_error(response: Response) {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     let payload: serde_json::Value = serde_json::from_slice(
@@ -10215,12 +10274,12 @@ async fn create_file_route_is_idempotent_without_repeating_storage_or_changes() 
 
     assert_eq!(first_payload["node"]["id"], second_payload["node"]["id"]);
     assert_eq!(
-        first_payload["uploadSession"]["id"],
-        second_payload["uploadSession"]["id"]
+        common::envelope_data(&first_payload)["uploadSession"]["id"],
+        common::envelope_data(&second_payload)["uploadSession"]["id"]
     );
     assert_eq!(
-        first_payload["uploadSession"]["storageUploadId"],
-        second_payload["uploadSession"]["storageUploadId"]
+        common::envelope_data(&first_payload)["uploadSession"]["storageUploadId"],
+        common::envelope_data(&second_payload)["uploadSession"]["storageUploadId"]
     );
 
     let node_count: i64 = sqlx::query_scalar(
@@ -10349,17 +10408,15 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
             .expect("create file response body should be readable"),
     )
     .expect("create file response body should be valid json");
-    assert_eq!(create_file_payload["node"]["id"].as_str(), Some("file-pro"));
+    let create_file_data = common::envelope_data(&create_file_payload);
+    assert_eq!(create_file_data["node"]["id"].as_str(), Some("file-pro"));
+    assert_eq!(create_file_data["node"]["nodeType"].as_str(), Some("file"));
     assert_eq!(
-        create_file_payload["node"]["nodeType"].as_str(),
-        Some("file")
-    );
-    assert_eq!(
-        create_file_payload["uploadSession"]["bucket"].as_str(),
+        create_file_data["uploadSession"]["bucket"].as_str(),
         Some("bucket-pro")
     );
     assert_eq!(
-        create_file_payload["uploadSession"]["state"].as_str(),
+        create_file_data["uploadSession"]["state"].as_str(),
         Some("created")
     );
 
@@ -10392,9 +10449,10 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
             .expect("get upload response body should be readable"),
     )
     .expect("get upload response body should be valid json");
-    assert_eq!(upload_payload["id"].as_str(), Some("upload-pro"));
+    let upload_item = common::envelope_body(&upload_payload);
+    assert_eq!(upload_item["id"].as_str(), Some("upload-pro"));
     assert_rooted_standard_storage_object_key(
-        upload_payload["objectKey"]
+        upload_item["objectKey"]
             .as_str()
             .expect("upload objectKey should be present"),
         "sdkwork-drive/v1/tenants/tenant-pro/spaces/space-pro",
@@ -10430,7 +10488,7 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
         )
         .await
         .expect("trash file request should be handled");
-    assert_eq!(trash_response.status(), StatusCode::OK);
+    assert_eq!(trash_response.status(), StatusCode::CREATED);
 
     let empty_trash_response = app
         .clone()
@@ -10467,7 +10525,10 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
             .expect("empty trash response body should be readable"),
     )
     .expect("empty trash response body should be valid json");
-    assert_eq!(empty_trash_payload["deletedCount"].as_i64(), Some(1));
+    assert_eq!(
+        common::envelope_field(&empty_trash_payload, "deletedCount").as_i64(),
+        Some(1)
+    );
 
     let deleted_node_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -10669,14 +10730,17 @@ async fn create_folder_assigns_server_id_when_client_id_is_omitted() {
             .expect("create folder response body should be read"),
     )
     .expect("create folder response json should be valid");
-    let assigned_id = folder_payload["id"]
+    let assigned_id = common::envelope_item(&folder_payload)["id"]
         .as_str()
         .expect("created folder id should be returned");
     assert!(
         assigned_id.starts_with("folder_"),
         "expected server-generated folder id, got {assigned_id}"
     );
-    assert_eq!(folder_payload["nodeName"], "Server Assigned");
+    assert_eq!(
+        common::envelope_item(&folder_payload)["nodeName"],
+        "Server Assigned"
+    );
 }
 
 #[tokio::test]
@@ -10739,8 +10803,11 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
             .expect("create folder response body should be read"),
     )
     .expect("create folder response json should be valid");
-    assert_eq!(folder_payload["id"], "node-core-folder");
-    assert_eq!(folder_payload["nodeType"], "folder");
+    assert_eq!(
+        common::envelope_item(&folder_payload)["id"],
+        "node-core-folder"
+    );
+    assert_eq!(common::envelope_item(&folder_payload)["nodeType"], "folder");
 
     let list_response = app
         .clone()
@@ -10771,7 +10838,10 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
             .expect("list nodes response body should be read"),
     )
     .expect("list nodes response json should be valid");
-    assert_eq!(common::envelope_items(&list_payload)[0]["id"], "node-core-folder");
+    assert_eq!(
+        common::envelope_items(&list_payload)[0]["id"],
+        "node-core-folder"
+    );
 
     let permission_response = app
         .clone()
@@ -10876,7 +10946,7 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
             .expect("share response should be read"),
     )
     .expect("share response should be json");
-    let created_token = share_payload["token"]
+    let created_token = common::envelope_data(&share_payload)["token"]
         .as_str()
         .expect("server-generated share token should be returned");
     assert!(created_token.len() >= 32);
@@ -10919,7 +10989,10 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
             .expect("search response body should be read"),
     )
     .expect("search response json should be valid");
-    assert_eq!(common::envelope_items(&search_payload)[0]["id"], "node-core-folder");
+    assert_eq!(
+        common::envelope_items(&search_payload)[0]["id"],
+        "node-core-folder"
+    );
 
     let changes_response = app
         .oneshot(
@@ -11110,7 +11183,7 @@ async fn app_dr_drive_node_share_link_create_stores_access_code_hash_and_reports
             .expect("share link response should be read"),
     )
     .expect("share link response should be valid json");
-    assert_eq!(payload["accessCodeRequired"], true);
+    assert_eq!(common::envelope_data(&payload)["accessCodeRequired"], true);
 
     let stored_hash: Option<String> = sqlx::query_scalar(
         "SELECT access_code_hash FROM dr_drive_node_share_link WHERE id='share-access-code'",
@@ -11366,10 +11439,7 @@ async fn app_dr_drive_node_permission_create_rejects_invalid_dictionaries_before
             .expect("invalid subject response should be read"),
     )
     .expect("invalid subject response should be valid json");
-    assert_eq!(
-        invalid_subject_payload["code"].as_i64(),
-        Some(40001)
-    );
+    assert_eq!(invalid_subject_payload["code"].as_i64(), Some(40001));
 
     let invalid_role_response = app
         .oneshot(
@@ -11408,10 +11478,7 @@ async fn app_dr_drive_node_permission_create_rejects_invalid_dictionaries_before
             .expect("invalid role response should be read"),
     )
     .expect("invalid role response should be valid json");
-    assert_eq!(
-        invalid_role_payload["code"].as_i64(),
-        Some(40001)
-    );
+    assert_eq!(invalid_role_payload["code"].as_i64(), Some(40001));
 
     let permission_count: i64 = sqlx::query_scalar("SELECT COUNT(1) FROM dr_drive_node_permission")
         .fetch_one(&pool)
@@ -11498,9 +11565,10 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
             .expect("get space response should be read"),
     )
     .expect("get space response should be valid json");
-    assert_eq!(get_payload["id"].as_str(), Some("space-resource"));
-    assert_eq!(get_payload["displayName"].as_str(), Some("Resource Space"));
-    assert_eq!(get_payload["version"].as_i64(), Some(1));
+    let get_item = common::envelope_item(&get_payload);
+    assert_eq!(get_item["id"].as_str(), Some("space-resource"));
+    assert_eq!(get_item["displayName"].as_str(), Some("Resource Space"));
+    assert_eq!(get_item["version"].as_i64(), Some(1));
 
     let update_response = app
         .clone()
@@ -11537,11 +11605,12 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
             .expect("update space response should be read"),
     )
     .expect("update space response should be valid json");
+    let update_item = common::envelope_item(&update_payload);
     assert_eq!(
-        update_payload["displayName"].as_str(),
+        update_item["displayName"].as_str(),
         Some("Resource Space Updated")
     );
-    assert_eq!(update_payload["version"].as_i64(), Some(2));
+    assert_eq!(update_item["version"].as_i64(), Some(2));
 
     let delete_response = app
         .clone()
@@ -11565,20 +11634,7 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
         )
         .await
         .expect("delete space request should be handled");
-    assert_eq!(delete_response.status(), StatusCode::OK);
-    let delete_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(delete_response.into_body(), usize::MAX)
-            .await
-            .expect("delete space response should be read"),
-    )
-    .expect("delete space response should be valid json");
-    assert_eq!(delete_payload["deleted"].as_bool(), Some(true));
-    assert_eq!(
-        delete_payload["space"]["lifecycleStatus"].as_str(),
-        Some("deleted")
-    );
-    assert_eq!(delete_payload["space"]["version"].as_i64(), Some(3));
-    assert_eq!(delete_payload["deletedNodeCount"].as_i64(), Some(1));
+    common::assert_no_content_response(delete_response).await;
 
     let list_response = app
         .clone()
@@ -11609,7 +11665,13 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
             .expect("list spaces response should be read"),
     )
     .expect("list spaces response should be valid json");
-    assert_eq!(common::envelope_items(&list_payload).as_array().unwrap().len(), 0);
+    assert_eq!(
+        common::envelope_items(&list_payload)
+            .as_array()
+            .unwrap()
+            .len(),
+        0
+    );
 
     let get_deleted_response = app
         .clone()
@@ -11808,8 +11870,14 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
             .expect("permission update response should be read"),
     )
     .expect("permission update response should be valid json");
-    assert_eq!(permission_payload["role"].as_str(), Some("writer"));
-    assert_eq!(permission_payload["version"].as_i64(), Some(2));
+    assert_eq!(
+        common::envelope_item(&permission_payload)["role"].as_str(),
+        Some("writer")
+    );
+    assert_eq!(
+        common::envelope_item(&permission_payload)["version"].as_i64(),
+        Some(2)
+    );
 
     let permission_detail_response = app
         .clone()
@@ -11841,10 +11909,13 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
     )
     .expect("permission detail response should be valid json");
     assert_eq!(
-        permission_detail_payload["subjectId"].as_str(),
+        common::envelope_item(&permission_detail_payload)["subjectId"].as_str(),
         Some("user-reviewer")
     );
-    assert_eq!(permission_detail_payload["role"].as_str(), Some("writer"));
+    assert_eq!(
+        common::envelope_item(&permission_detail_payload)["role"].as_str(),
+        Some("writer")
+    );
 
     let share_list_response = app
         .clone()
@@ -11884,11 +11955,15 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         Some("reader")
     );
     assert!(
-        common::envelope_items(&share_list_payload)[0].get("token").is_none(),
+        common::envelope_items(&share_list_payload)[0]
+            .get("token")
+            .is_none(),
         "share link list response must not expose raw token"
     );
     assert!(
-        common::envelope_items(&share_list_payload)[0].get("tokenHash").is_none(),
+        common::envelope_items(&share_list_payload)[0]
+            .get("tokenHash")
+            .is_none(),
         "share link list response must not expose token hash"
     );
 
@@ -11929,16 +12004,17 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
             .expect("share link update response should be read"),
     )
     .expect("share link update response should be valid json");
-    assert_eq!(share_update_payload["role"].as_str(), Some("commenter"));
-    assert!(share_update_payload["expiresAtEpochMs"].is_null());
-    assert_eq!(share_update_payload["downloadLimit"].as_i64(), Some(9));
-    assert_eq!(share_update_payload["version"].as_i64(), Some(2));
+    let share_update_item = common::envelope_item(&share_update_payload);
+    assert_eq!(share_update_item["role"].as_str(), Some("commenter"));
+    assert!(share_update_item["expiresAtEpochMs"].is_null());
+    assert_eq!(share_update_item["downloadLimit"].as_i64(), Some(9));
+    assert_eq!(share_update_item["version"].as_i64(), Some(2));
     assert!(
-        share_update_payload.get("token").is_none(),
+        share_update_item.get("token").is_none(),
         "share link update response must not expose raw token"
     );
     assert!(
-        share_update_payload.get("tokenHash").is_none(),
+        share_update_item.get("tokenHash").is_none(),
         "share link update response must not expose token hash"
     );
 
@@ -11971,14 +12047,15 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
             .expect("share link detail response should be read"),
     )
     .expect("share link detail response should be valid json");
-    assert_eq!(share_detail_payload["id"].as_str(), Some("share-gov"));
-    assert_eq!(share_detail_payload["role"].as_str(), Some("commenter"));
+    let share_detail_item = common::envelope_item(&share_detail_payload);
+    assert_eq!(share_detail_item["id"].as_str(), Some("share-gov"));
+    assert_eq!(share_detail_item["role"].as_str(), Some("commenter"));
     assert!(
-        share_detail_payload.get("token").is_none(),
+        share_detail_item.get("token").is_none(),
         "share link detail response must not expose raw token"
     );
     assert!(
-        share_detail_payload.get("tokenHash").is_none(),
+        share_detail_item.get("tokenHash").is_none(),
         "share link detail response must not expose token hash"
     );
 
@@ -12004,14 +12081,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         )
         .await
         .expect("share link revoke request should be handled");
-    assert_eq!(share_revoke_response.status(), StatusCode::OK);
-    let share_revoke_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(share_revoke_response.into_body(), usize::MAX)
-            .await
-            .expect("share link revoke response should be read"),
-    )
-    .expect("share link revoke response should be valid json");
-    assert_eq!(share_revoke_payload["revoked"].as_bool(), Some(true));
+    common::assert_no_content_response(share_revoke_response).await;
     let revoked_share_status: String = sqlx::query_scalar(
         "SELECT lifecycle_status FROM dr_drive_node_share_link WHERE tenant_id='tenant-gov' AND id='share-gov'",
     )
@@ -12086,8 +12156,14 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
             .expect("version detail response should be read"),
     )
     .expect("version detail response should be valid json");
-    assert_eq!(version_detail_payload["id"].as_str(), Some("version-gov-1"));
-    assert_eq!(version_detail_payload["versionNo"].as_i64(), Some(1));
+    assert_eq!(
+        common::envelope_item(&version_detail_payload)["id"].as_str(),
+        Some("version-gov-1")
+    );
+    assert_eq!(
+        common::envelope_item(&version_detail_payload)["versionNo"].as_i64(),
+        Some(1)
+    );
 
     let version_delete_response = app
         .clone()
@@ -12113,14 +12189,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
         )
         .await
         .expect("version delete request should be handled");
-    assert_eq!(version_delete_response.status(), StatusCode::OK);
-    let version_delete_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(version_delete_response.into_body(), usize::MAX)
-            .await
-            .expect("version delete response should be read"),
-    )
-    .expect("version delete response should be valid json");
-    assert_eq!(version_delete_payload["deleted"].as_bool(), Some(true));
+    common::assert_no_content_response(version_delete_response).await;
 
     let deleted_version_status: String = sqlx::query_scalar(
         "SELECT lifecycle_status
@@ -12315,7 +12384,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
                     common::access_token("tenant-comments", "user-owner", "appbase"),
                 )
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/nodes/node-comments/comments?pageSize=1")
+                .uri("/app/v3/api/drive/nodes/node-comments/comments?page_size=1")
                 .body(Body::empty())
                 .expect("comment list request should be built"),
         )
@@ -12328,12 +12397,19 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             .expect("comment list response should be read"),
     )
     .expect("comment list response should be valid json");
-    assert_eq!(common::envelope_items(&first_page_payload).as_array().unwrap().len(), 1);
+    assert_eq!(
+        common::envelope_items(&first_page_payload)
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
     assert_eq!(
         common::envelope_items(&first_page_payload)[0]["id"].as_str(),
         Some("comment-two")
     );
-    let next_page_token = common::envelope_next_page_token(&first_page_payload).expect("comment list should expose nextPageToken");
+    let next_page_token = common::envelope_next_page_token(&first_page_payload)
+        .expect("comment list should expose nextPageToken");
 
     let second_page = app
         .clone()
@@ -12352,7 +12428,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
                 )
                 .method(Method::GET)
                 .uri(format!(
-            "/app/v3/api/drive/nodes/node-comments/comments?pageSize=1&pageToken={next_page_token}"
+            "/app/v3/api/drive/nodes/node-comments/comments?page_size=1&cursor={next_page_token}"
         ))
                 .body(Body::empty())
                 .expect("comment second page request should be built"),
@@ -12401,11 +12477,12 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             .expect("comment detail response should be read"),
     )
     .expect("comment detail response should be valid json");
+    let comment_detail_item = common::envelope_item(&comment_detail_payload);
     assert_eq!(
-        comment_detail_payload["content"].as_str(),
+        comment_detail_item["content"].as_str(),
         Some("Please review the first section.")
     );
-    assert_eq!(comment_detail_payload["resolved"].as_bool(), Some(false));
+    assert_eq!(comment_detail_item["resolved"].as_bool(), Some(false));
 
     let update_comment_response = app
         .clone()
@@ -12443,12 +12520,13 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             .expect("comment update response should be read"),
     )
     .expect("comment update response should be valid json");
+    let update_comment_item = common::envelope_item(&update_comment_payload);
     assert_eq!(
-        update_comment_payload["content"].as_str(),
+        update_comment_item["content"].as_str(),
         Some("Reviewed and resolved.")
     );
-    assert_eq!(update_comment_payload["resolved"].as_bool(), Some(true));
-    assert_eq!(update_comment_payload["version"].as_i64(), Some(2));
+    assert_eq!(update_comment_item["resolved"].as_bool(), Some(true));
+    assert_eq!(update_comment_item["version"].as_i64(), Some(2));
 
     for (id, content) in [
         ("reply-one", "I can take this."),
@@ -12503,7 +12581,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
                 )
                 .method(Method::GET)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies?pageSize=1",
+                    "/app/v3/api/drive/nodes/node-comments/comments/comment-one/replies?page_size=1",
                 )
                 .body(Body::empty())
                 .expect("reply list request should be built"),
@@ -12517,7 +12595,13 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             .expect("reply list response should be read"),
     )
     .expect("reply list response should be valid json");
-    assert_eq!(common::envelope_items(&replies_payload).as_array().unwrap().len(), 1);
+    assert_eq!(
+        common::envelope_items(&replies_payload)
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
     assert_eq!(
         common::envelope_items(&replies_payload)[0]["id"].as_str(),
         Some("reply-one")
@@ -12556,8 +12640,9 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             .expect("reply detail response should be read"),
     )
     .expect("reply detail response should be valid json");
+    let reply_detail_item = common::envelope_item(&reply_detail_payload);
     assert_eq!(
-        reply_detail_payload["content"].as_str(),
+        reply_detail_item["content"].as_str(),
         Some("I can take this.")
     );
 
@@ -12596,11 +12681,12 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
             .expect("reply update response should be read"),
     )
     .expect("reply update response should be valid json");
+    let reply_update_item = common::envelope_item(&reply_update_payload);
     assert_eq!(
-        reply_update_payload["content"].as_str(),
+        reply_update_item["content"].as_str(),
         Some("I handled this.")
     );
-    assert_eq!(reply_update_payload["version"].as_i64(), Some(2));
+    assert_eq!(reply_update_item["version"].as_i64(), Some(2));
 
     let delete_reply_response = app
         .clone()
@@ -12620,14 +12706,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         )
         .await
         .expect("delete reply request should be handled");
-    assert_eq!(delete_reply_response.status(), StatusCode::OK);
-    let delete_reply_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(delete_reply_response.into_body(), usize::MAX)
-            .await
-            .expect("delete reply response should be read"),
-    )
-    .expect("delete reply response should be valid json");
-    assert_eq!(delete_reply_payload["deleted"].as_bool(), Some(true));
+    common::assert_no_content_response(delete_reply_response).await;
 
     let deleted_reply_detail = app
         .clone()
@@ -12671,14 +12750,7 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
         )
         .await
         .expect("delete comment request should be handled");
-    assert_eq!(delete_comment_response.status(), StatusCode::OK);
-    let delete_comment_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(delete_comment_response.into_body(), usize::MAX)
-            .await
-            .expect("delete comment response should be read"),
-    )
-    .expect("delete comment response should be valid json");
-    assert_eq!(delete_comment_payload["deleted"].as_bool(), Some(true));
+    common::assert_no_content_response(delete_comment_response).await;
 
     let deleted_comment_detail = app
         .clone()
@@ -12819,7 +12891,10 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
             .expect("start page token response should be read"),
     )
     .expect("start page token response should be valid json");
-    assert_eq!(start_token_payload["startPageToken"].as_str(), Some("3"));
+    assert_eq!(
+        common::envelope_data(&start_token_payload)["startPageToken"].as_str(),
+        Some("3")
+    );
 
     let first_page = app
         .clone()
@@ -12837,7 +12912,7 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
                     common::access_token("tenant-changes", "user-owner", "appbase"),
                 )
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?spaceId=space-changes&pageSize=1")
+                .uri("/app/v3/api/drive/changes?spaceId=space-changes&page_size=1")
                 .body(Body::empty())
                 .expect("changes first page request should be built"),
         )
@@ -12850,13 +12925,25 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
             .expect("changes first page response should be read"),
     )
     .expect("changes first page response should be valid json");
-    assert_eq!(common::envelope_items(&first_page_payload).as_array().unwrap().len(), 1);
+    assert_eq!(
+        common::envelope_items(&first_page_payload)
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
     assert_eq!(
         common::envelope_items(&first_page_payload)[0]["sequenceNo"].as_i64(),
         Some(1)
     );
-    assert_eq!(common::envelope_next_page_token(&first_page_payload).as_deref(), Some("1"));
-    assert_eq!(common::envelope_next_page_token(&first_page_payload).as_deref(), Some("1"));
+    assert_eq!(
+        common::envelope_next_page_token(&first_page_payload).as_deref(),
+        Some("1")
+    );
+    assert_eq!(
+        common::envelope_next_page_token(&first_page_payload).as_deref(),
+        Some("1")
+    );
 
     let second_page = app
         .clone()
@@ -12874,7 +12961,7 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
                     common::access_token("tenant-changes", "user-owner", "appbase"),
                 )
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?spaceId=space-changes&pageSize=2&pageToken=1")
+                .uri("/app/v3/api/drive/changes?spaceId=space-changes&page_size=2&cursor=1")
                 .body(Body::empty())
                 .expect("changes second page request should be built"),
         )
@@ -13066,7 +13153,7 @@ async fn app_drive_changes_rejects_page_size_outside_contract() {
                     ),
                 )
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?spaceId=space-change-page-size&pageSize=0")
+                .uri("/app/v3/api/drive/changes?spaceId=space-change-page-size&page_size=0")
                 .body(Body::empty())
                 .expect("changes request should be built"),
         )
@@ -13084,7 +13171,7 @@ async fn app_drive_changes_rejects_page_size_outside_contract() {
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
-        .contains("pageSize"));
+        .contains("page_size"));
 }
 
 #[tokio::test]
@@ -13274,7 +13361,7 @@ async fn app_dr_drive_node_path_route_returns_ordered_breadcrumbs() {
             "node-leaf-file".to_string()
         ]
     );
-    let path_segments = path_payload["pathSegments"]
+    let path_segments = common::envelope_data(&path_payload)["pathSegments"]
         .as_array()
         .expect("pathSegments should be an array")
         .iter()
@@ -13472,7 +13559,13 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             .expect("trash response should be read"),
     )
     .expect("trash response should be valid json");
-    assert_eq!(common::envelope_items(&trash_payload).as_array().unwrap().len(), 1);
+    assert_eq!(
+        common::envelope_items(&trash_payload)
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
     assert_eq!(
         common::envelope_items(&trash_payload)[0]["id"].as_str(),
         Some("node-trashed")
@@ -13551,7 +13644,13 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             .expect("shared response should be read"),
     )
     .expect("shared response should be valid json");
-    assert_eq!(common::envelope_items(&shared_payload).as_array().unwrap().len(), 3);
+    assert_eq!(
+        common::envelope_items(&shared_payload)
+            .as_array()
+            .unwrap()
+            .len(),
+        3
+    );
     let shared_ids = common::envelope_items(&shared_payload)
         .as_array()
         .expect("shared items should be an array")
@@ -13596,7 +13695,13 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             .expect("favorites response should be read"),
     )
     .expect("favorites response should be valid json");
-    assert_eq!(common::envelope_items(&favorites_payload).as_array().unwrap().len(), 1);
+    assert_eq!(
+        common::envelope_items(&favorites_payload)
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
     assert_eq!(
         common::envelope_items(&favorites_payload)[0]["id"].as_str(),
         Some("node-favorite")
@@ -13638,7 +13743,10 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             .expect("set favorite response should be read"),
     )
     .expect("set favorite response should be valid json");
-    assert_eq!(set_favorite_payload["favorited"].as_bool(), Some(true));
+    assert_eq!(
+        common::envelope_data(&set_favorite_payload)["favorited"].as_bool(),
+        Some(true)
+    );
 
     let unset_favorite_response = app
         .clone()
@@ -13656,14 +13764,7 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
         )
         .await
         .expect("unset favorite request should be handled");
-    assert_eq!(unset_favorite_response.status(), StatusCode::OK);
-    let unset_favorite_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(unset_favorite_response.into_body(), usize::MAX)
-            .await
-            .expect("unset favorite response should be read"),
-    )
-    .expect("unset favorite response should be valid json");
-    assert_eq!(unset_favorite_payload["favorited"].as_bool(), Some(false));
+    common::assert_no_content_response(unset_favorite_response).await;
 
     let active_favorite_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -13873,7 +13974,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let app = common::test_router_with_pool(pool);
     let (first_nodes, next_nodes_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/spaces/space-page/nodes?pageSize=1",
+        "/app/v3/api/drive/spaces/space-page/nodes?page_size=1",
         "tenant-page",
     )
     .await;
@@ -13881,9 +13982,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let next_nodes_token = next_nodes_token.expect("nodes first page should have nextPageToken");
     let (second_nodes, _) = fetch_paged_items(
         app.clone(),
-        &format!(
-            "/app/v3/api/drive/spaces/space-page/nodes?pageSize=1&pageToken={next_nodes_token}"
-        ),
+        &format!("/app/v3/api/drive/spaces/space-page/nodes?page_size=1&cursor={next_nodes_token}"),
         "tenant-page",
     )
     .await;
@@ -13891,7 +13990,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
 
     let (first_recent, next_recent_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/recent?pageSize=1",
+        "/app/v3/api/drive/recent?page_size=1",
         "tenant-page",
     )
     .await;
@@ -13899,7 +13998,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let next_recent_token = next_recent_token.expect("recent first page should have nextPageToken");
     let (second_recent, _) = fetch_paged_items(
         app.clone(),
-        &format!("/app/v3/api/drive/recent?pageSize=1&pageToken={next_recent_token}"),
+        &format!("/app/v3/api/drive/recent?page_size=1&cursor={next_recent_token}"),
         "tenant-page",
     )
     .await;
@@ -13907,7 +14006,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
 
     let (first_permissions, next_permissions_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-page-a/permissions?pageSize=1",
+        "/app/v3/api/drive/nodes/node-page-a/permissions?page_size=1",
         "tenant-page",
     )
     .await;
@@ -13920,7 +14019,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let (second_permissions, _) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/nodes/node-page-a/permissions?pageSize=1&pageToken={next_permissions_token}"
+            "/app/v3/api/drive/nodes/node-page-a/permissions?page_size=1&cursor={next_permissions_token}"
         ),
     "tenant-page",
     )
@@ -13932,7 +14031,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
 
     let (first_share_links, next_share_links_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-page-a/share_links?pageSize=1",
+        "/app/v3/api/drive/nodes/node-page-a/share_links?page_size=1",
         "tenant-page",
     )
     .await;
@@ -13942,7 +14041,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let (second_share_links, _) = fetch_paged_items(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/nodes/node-page-a/share_links?pageSize=1&pageToken={next_share_links_token}"
+            "/app/v3/api/drive/nodes/node-page-a/share_links?page_size=1&cursor={next_share_links_token}"
         ),
     "tenant-page",
     )
@@ -13951,7 +14050,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
 
     let (first_versions, next_versions_token) = fetch_paged_items(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-page-a/versions?pageSize=1",
+        "/app/v3/api/drive/nodes/node-page-a/versions?page_size=1",
         "tenant-page",
     )
     .await;
@@ -13961,12 +14060,109 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
     let (second_versions, _) = fetch_paged_items(
         app,
         &format!(
-            "/app/v3/api/drive/nodes/node-page-a/versions?pageSize=1&pageToken={next_versions_token}"
+            "/app/v3/api/drive/nodes/node-page-a/versions?page_size=1&cursor={next_versions_token}"
         ),
-    "tenant-page",
+        "tenant-page",
     )
     .await;
     assert_eq!(second_versions[0]["id"].as_str(), Some("version-page-1"));
+}
+
+#[tokio::test]
+async fn app_drive_move_destinations_pages_without_replaying_prior_folders() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'space-move-destination-page', 'tenant-move-destination-page',
+            'user', 'user-move-destination-page', 'personal',
+            'Move Destination Paging', 'active', 1,
+            'user-move-destination-page', 'user-move-destination-page'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("space should be seeded");
+
+    for (id, node_name) in [
+        ("folder-move-page-alpha", "Alpha"),
+        ("folder-move-page-beta", "Beta"),
+        ("folder-move-page-gamma", "Gamma"),
+    ] {
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
+                id, tenant_id, space_id, parent_node_id, node_type, node_name,
+                content_state, lifecycle_status, version, created_by, updated_by
+            ) VALUES (
+                ?1, 'tenant-move-destination-page', 'space-move-destination-page',
+                NULL, 'folder', ?2, 'ready', 'active', 1,
+                'user-move-destination-page', 'user-move-destination-page'
+            )",
+        )
+        .bind(id)
+        .bind(node_name)
+        .execute(&pool)
+        .await
+        .expect("destination folder should be seeded");
+    }
+
+    let app = common::test_router_with_pool(pool);
+    let (first_items, first_next) = fetch_paged_items_as(
+        app.clone(),
+        "/app/v3/api/drive/spaces/space-move-destination-page/move_destinations?page_size=1",
+        "tenant-move-destination-page",
+        "user-move-destination-page",
+    )
+    .await;
+    assert_eq!(first_items.len(), 1);
+    assert_eq!(
+        first_items[0]["id"].as_str(),
+        Some("folder-move-page-alpha")
+    );
+    let first_next = first_next.expect("first page should expose next cursor");
+
+    let (second_items, second_next) = fetch_paged_items_as(
+        app.clone(),
+        &format!(
+            "/app/v3/api/drive/spaces/space-move-destination-page/move_destinations?page_size=1&cursor={first_next}"
+        ),
+        "tenant-move-destination-page",
+        "user-move-destination-page",
+    )
+    .await;
+    assert_eq!(second_items.len(), 1);
+    assert_eq!(
+        second_items[0]["id"].as_str(),
+        Some("folder-move-page-beta")
+    );
+    let second_next = second_next.expect("second page should expose next cursor");
+
+    let (third_items, third_next) = fetch_paged_items_as(
+        app,
+        &format!(
+            "/app/v3/api/drive/spaces/space-move-destination-page/move_destinations?page_size=1&cursor={second_next}"
+        ),
+        "tenant-move-destination-page",
+        "user-move-destination-page",
+    )
+    .await;
+    assert_eq!(third_items.len(), 1);
+    assert_eq!(
+        third_items[0]["id"].as_str(),
+        Some("folder-move-page-gamma")
+    );
+    assert!(third_next.is_none());
 }
 
 #[tokio::test]
@@ -14011,7 +14207,7 @@ async fn app_drive_list_routes_reject_page_size_outside_contract() {
                     common::access_token("tenant-list-page-size", "user-list-page-size", "appbase"),
                 )
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces/space-list-page-size/nodes?pageSize=0")
+                .uri("/app/v3/api/drive/spaces/space-list-page-size/nodes?page_size=0")
                 .body(Body::empty())
                 .expect("nodes list request should be built"),
         )
@@ -14029,7 +14225,7 @@ async fn app_drive_list_routes_reject_page_size_outside_contract() {
     assert!(payload["detail"]
         .as_str()
         .expect("detail should be present")
-        .contains("pageSize"));
+        .contains("page_size"));
 }
 
 #[tokio::test]
@@ -14127,7 +14323,7 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
     let app = common::test_router_with_pool(pool);
     let (first_items, next_token) = fetch_paged_items_as(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?pageSize=2",
+        "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?page_size=2",
         "tenant-effective-perm",
         "user-owner",
     )
@@ -14168,7 +14364,7 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
     let (second_items, final_token) = fetch_paged_items_as(
         app,
         &format!(
-            "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?pageSize=2&pageToken={next_token}"
+            "/app/v3/api/drive/nodes/node-effective-file/permissions/effective?page_size=2&cursor={next_token}"
         ),
         "tenant-effective-perm",
         "user-owner",
@@ -14359,7 +14555,7 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
     }
 
     let app = common::test_router_with_pool(pool);
-    let direct = fetch_json(
+    let direct = fetch_resource_json(
         app.clone(),
         "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-direct-commenter",
         "tenant-capability",
@@ -14375,7 +14571,7 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
     assert_eq!(direct["canDownload"].as_bool(), Some(true));
     assert_eq!(direct["canManagePermissions"].as_bool(), Some(false));
 
-    let inherited = fetch_json(
+    let inherited = fetch_resource_json(
         app.clone(),
         "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-inherited-writer",
         "tenant-capability",
@@ -14393,7 +14589,7 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
     assert_eq!(inherited["canManageVersions"].as_bool(), Some(true));
     assert_eq!(inherited["canDelete"].as_bool(), Some(false));
 
-    let owner = fetch_json(
+    let owner = fetch_resource_json(
         app.clone(),
         "/app/v3/api/drive/nodes/node-cap-file/capabilities?subjectType=user&subjectId=user-owner",
         "tenant-capability",
@@ -14469,7 +14665,7 @@ async fn app_dr_drive_node_capabilities_support_trashed_nodes_with_restore_only_
     .expect("writer permission should be seeded");
 
     let app = common::test_router_with_pool(pool);
-    let writer = fetch_json(
+    let writer = fetch_resource_json(
         app.clone(),
         "/app/v3/api/drive/nodes/node-cap-trash/capabilities?subjectType=user&subjectId=user-writer",
         "tenant-cap-trash",
@@ -14494,7 +14690,7 @@ async fn app_dr_drive_node_capabilities_support_trashed_nodes_with_restore_only_
         assert_eq!(writer[key].as_bool(), Some(false), "{key} should be false");
     }
 
-    let owner = fetch_json(
+    let owner = fetch_resource_json(
         app.clone(),
         "/app/v3/api/drive/nodes/node-cap-trash/capabilities?subjectType=user&subjectId=user-owner",
         "tenant-cap-trash",
@@ -14579,10 +14775,11 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
             .expect("set property response should be read"),
     )
     .expect("set property response should be valid json");
-    assert_eq!(first_payload["propertyKey"].as_str(), Some("customerId"));
-    assert_eq!(first_payload["propertyValue"].as_str(), Some("cust-001"));
-    assert_eq!(first_payload["visibility"].as_str(), Some("private"));
-    assert_eq!(first_payload["version"].as_i64(), Some(1));
+    let first_item = common::envelope_item(&first_payload);
+    assert_eq!(first_item["propertyKey"].as_str(), Some("customerId"));
+    assert_eq!(first_item["propertyValue"].as_str(), Some("cust-001"));
+    assert_eq!(first_item["visibility"].as_str(), Some("private"));
+    assert_eq!(first_item["version"].as_i64(), Some(1));
 
     let second_set = app
         .clone()
@@ -14651,12 +14848,13 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
             .expect("update property response should be read"),
     )
     .expect("update property response should be valid json");
-    assert_eq!(update_payload["propertyValue"].as_str(), Some("cust-002"));
-    assert_eq!(update_payload["version"].as_i64(), Some(2));
+    let update_item = common::envelope_item(&update_payload);
+    assert_eq!(update_item["propertyValue"].as_str(), Some("cust-002"));
+    assert_eq!(update_item["version"].as_i64(), Some(2));
 
     let (first_items, next_token) = fetch_paged_items_as(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-property/properties?pageSize=1",
+        "/app/v3/api/drive/nodes/node-property/properties?page_size=1",
         "tenant-property",
         "user-owner",
     )
@@ -14667,7 +14865,7 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
     let (second_items, final_token) = fetch_paged_items_as(
         app.clone(),
         &format!(
-            "/app/v3/api/drive/nodes/node-property/properties?pageSize=1&pageToken={next_token}"
+            "/app/v3/api/drive/nodes/node-property/properties?page_size=1&cursor={next_token}"
         ),
         "tenant-property",
         "user-owner",
@@ -14704,14 +14902,7 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
         )
         .await
         .expect("delete property request should be handled");
-    assert_eq!(delete_response.status(), StatusCode::OK);
-    let delete_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(delete_response.into_body(), usize::MAX)
-            .await
-            .expect("delete property response should be read"),
-    )
-    .expect("delete property response should be valid json");
-    assert_eq!(delete_payload["deleted"].as_bool(), Some(true));
+    common::assert_no_content_response(delete_response).await;
 
     let remaining = fetch_paged_items_as(
         app.clone(),
@@ -15767,10 +15958,11 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
             .expect("create shortcut response should be read"),
     )
     .expect("create shortcut response should be valid json");
-    assert_eq!(create_payload["id"].as_str(), Some("shortcut-001"));
-    assert_eq!(create_payload["nodeType"].as_str(), Some("shortcut"));
+    let create_item = common::envelope_item(&create_payload);
+    assert_eq!(create_item["id"].as_str(), Some("shortcut-001"));
+    assert_eq!(create_item["nodeType"].as_str(), Some("shortcut"));
     assert_eq!(
-        create_payload["shortcutTargetNodeId"].as_str(),
+        create_item["shortcutTargetNodeId"].as_str(),
         Some("node-target")
     );
 
@@ -15781,7 +15973,10 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
         "user-owner",
     )
     .await;
-    assert_eq!(detail["shortcutTargetNodeId"].as_str(), Some("node-target"));
+    assert_eq!(
+        common::envelope_item(&detail)["shortcutTargetNodeId"].as_str(),
+        Some("node-target")
+    );
 
     let (listed, _) = fetch_paged_items_as(
         app.clone(),
@@ -16570,9 +16765,10 @@ async fn app_drive_copy_shortcut_preserves_target_node_reference() {
             .expect("copy shortcut response should be read"),
     )
     .expect("copy shortcut response should be valid json");
-    assert_eq!(copy_payload["nodeType"].as_str(), Some("shortcut"));
+    let copy_item = common::envelope_item(&copy_payload);
+    assert_eq!(copy_item["nodeType"].as_str(), Some("shortcut"));
     assert_eq!(
-        copy_payload["shortcutTargetNodeId"].as_str(),
+        copy_item["shortcutTargetNodeId"].as_str(),
         Some("node-target-copy")
     );
 }
@@ -16763,12 +16959,13 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
             .expect("apply label response should be read"),
     )
     .expect("apply label response should be valid json");
-    assert_eq!(apply_payload["nodeId"].as_str(), Some("node-label"));
+    let apply_item = common::envelope_item(&apply_payload);
+    assert_eq!(apply_item["nodeId"].as_str(), Some("node-label"));
     assert_eq!(
-        apply_payload["label"]["labelKey"].as_str(),
+        apply_item["label"]["labelKey"].as_str(),
         Some("classification.confidential")
     );
-    assert_eq!(apply_payload["lifecycleStatus"].as_str(), Some("active"));
+    assert_eq!(apply_item["lifecycleStatus"].as_str(), Some("active"));
 
     let apply_second = app
         .clone()
@@ -16801,7 +16998,7 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
 
     let (first_items, next_token) = fetch_paged_items_as(
         app.clone(),
-        "/app/v3/api/drive/nodes/node-label/labels?pageSize=1",
+        "/app/v3/api/drive/nodes/node-label/labels?page_size=1",
         "tenant-label",
         "user-owner",
     )
@@ -16814,7 +17011,7 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
     let next_token = next_token.expect("node label list should expose next page token");
     let (second_items, final_token) = fetch_paged_items_as(
         app.clone(),
-        &format!("/app/v3/api/drive/nodes/node-label/labels?pageSize=1&pageToken={next_token}"),
+        &format!("/app/v3/api/drive/nodes/node-label/labels?page_size=1&cursor={next_token}"),
         "tenant-label",
         "user-owner",
     )
@@ -16853,14 +17050,7 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
         )
         .await
         .expect("remove label request should be handled");
-    assert_eq!(remove_response.status(), StatusCode::OK);
-    let remove_payload: serde_json::Value = serde_json::from_slice(
-        &to_bytes(remove_response.into_body(), usize::MAX)
-            .await
-            .expect("remove label response should be read"),
-    )
-    .expect("remove label response should be valid json");
-    assert_eq!(remove_payload["removed"].as_bool(), Some(true));
+    common::assert_no_content_response(remove_response).await;
 
     let remaining = fetch_paged_items_as(
         app.clone(),
@@ -16960,14 +17150,15 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
             .expect("changes watch response should be read"),
     )
     .expect("changes watch response should be valid json");
-    assert_eq!(changes_payload["id"].as_str(), Some("watch-changes-001"));
-    assert_eq!(changes_payload["resourceType"].as_str(), Some("changes"));
-    assert_eq!(changes_payload["spaceId"].as_str(), Some("space-watch"));
-    assert_eq!(changes_payload["channelType"].as_str(), Some("web_hook"));
-    assert_eq!(changes_payload["lifecycleStatus"].as_str(), Some("active"));
-    assert_eq!(changes_payload["version"].as_i64(), Some(1));
+    let changes_item = common::envelope_item(&changes_payload);
+    assert_eq!(changes_item["id"].as_str(), Some("watch-changes-001"));
+    assert_eq!(changes_item["resourceType"].as_str(), Some("changes"));
+    assert_eq!(changes_item["spaceId"].as_str(), Some("space-watch"));
+    assert_eq!(changes_item["channelType"].as_str(), Some("web_hook"));
+    assert_eq!(changes_item["lifecycleStatus"].as_str(), Some("active"));
+    assert_eq!(changes_item["version"].as_i64(), Some(1));
     assert!(
-        changes_payload.get("token").is_none(),
+        changes_item.get("token").is_none(),
         "watch channel response must not echo notification token"
     );
 
@@ -17020,13 +17211,14 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
             .expect("node watch response should be read"),
     )
     .expect("node watch response should be valid json");
-    assert_eq!(node_payload["resourceType"].as_str(), Some("node"));
-    assert_eq!(node_payload["resourceId"].as_str(), Some("node-watch"));
-    assert_eq!(node_payload["nodeId"].as_str(), Some("node-watch"));
+    let node_item = common::envelope_item(&node_payload);
+    assert_eq!(node_item["resourceType"].as_str(), Some("node"));
+    assert_eq!(node_item["resourceId"].as_str(), Some("node-watch"));
+    assert_eq!(node_item["nodeId"].as_str(), Some("node-watch"));
 
     let (first_items, next_token) = fetch_paged_items_as(
         app.clone(),
-        "/app/v3/api/drive/watch_channels?pageSize=1",
+        "/app/v3/api/drive/watch_channels?page_size=1",
         "tenant-watch",
         "user-owner",
     )
@@ -17036,7 +17228,7 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
     let next_token = next_token.expect("watch channel list should expose next page token");
     let (second_items, final_token) = fetch_paged_items_as(
         app.clone(),
-        &format!("/app/v3/api/drive/watch_channels?pageSize=1&pageToken={next_token}"),
+        &format!("/app/v3/api/drive/watch_channels?page_size=1&cursor={next_token}"),
         "tenant-watch",
         "user-owner",
     )
@@ -17063,11 +17255,12 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
         "user-owner",
     )
     .await;
+    let get_item = common::envelope_item(&get_payload);
     assert_eq!(
-        get_payload["address"].as_str(),
+        get_item["address"].as_str(),
         Some("https://hooks.example.com/drive/node")
     );
-    assert_eq!(get_payload["lifecycleStatus"].as_str(), Some("active"));
+    assert_eq!(get_item["lifecycleStatus"].as_str(), Some("active"));
 
     let stop_response = app
         .clone()
@@ -17103,12 +17296,13 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
             .expect("stop watch response should be read"),
     )
     .expect("stop watch response should be valid json");
-    assert_eq!(stop_payload["stopped"].as_bool(), Some(true));
+    let stop_data = common::envelope_data(&stop_payload);
+    assert_eq!(stop_data["stopped"].as_bool(), Some(true));
     assert_eq!(
-        stop_payload["channel"]["lifecycleStatus"].as_str(),
+        stop_data["channel"]["lifecycleStatus"].as_str(),
         Some("stopped")
     );
-    assert_eq!(stop_payload["channel"]["version"].as_i64(), Some(2));
+    assert_eq!(stop_data["channel"]["version"].as_i64(), Some(2));
 
     let active_after_stop = fetch_paged_items_as(
         app.clone(),
@@ -17635,7 +17829,7 @@ async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_r
                     common::access_token("tenant-search-acl", "user-reviewer", "appbase"),
                 )
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/search?spaceId=space-search-acl&q=secret&pageSize=1")
+                .uri("/app/v3/api/drive/search?spaceId=space-search-acl&q=secret&page_size=1")
                 .body(Body::empty())
                 .expect("search first page request should be built"),
         )
@@ -17663,7 +17857,8 @@ async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_r
         first_id != "node-search-hidden",
         "search must not leak nodes without reader access"
     );
-    let next_page_token = common::envelope_next_page_token(&first_payload).expect("search first page should expose nextPageToken when more visible rows exist");
+    let next_page_token = common::envelope_next_page_token(&first_payload)
+        .expect("search first page should expose nextPageToken when more visible rows exist");
 
     let second_response = app
         .oneshot(
@@ -17681,7 +17876,7 @@ async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_r
                 )
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/search?spaceId=space-search-acl&q=secret&pageSize=1&pageToken={next_page_token}"
+                    "/app/v3/api/drive/search?spaceId=space-search-acl&q=secret&page_size=1&cursor={next_page_token}"
                 ))
                 .body(Body::empty())
                 .expect("search second page request should be built"),
@@ -17816,7 +18011,7 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
                     common::access_token("tenant-list-acl", "user-reviewer", "appbase"),
                 )
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces/space-list-acl/nodes?pageSize=10")
+                .uri("/app/v3/api/drive/spaces/space-list-acl/nodes?page_size=10")
                 .body(Body::empty())
                 .expect("list request should be built"),
         )
@@ -17861,7 +18056,7 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
                     common::access_token("tenant-list-acl", "user-reviewer", "appbase"),
                 )
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/spaces/space-list-acl/nodes?pageSize=1")
+                .uri("/app/v3/api/drive/spaces/space-list-acl/nodes?page_size=1")
                 .body(Body::empty())
                 .expect("list first page request should be built"),
         )
@@ -17882,7 +18077,8 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
         .as_str()
         .expect("list item id should be present");
     assert_ne!(first_id, "node-list-hidden");
-    let next_page_token = common::envelope_next_page_token(&paged_payload).expect("list first page should expose nextPageToken when more visible rows exist");
+    let next_page_token = common::envelope_next_page_token(&paged_payload)
+        .expect("list first page should expose nextPageToken when more visible rows exist");
 
     let second_response = app
         .clone()
@@ -17901,7 +18097,7 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
                 )
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/spaces/space-list-acl/nodes?pageSize=1&pageToken={next_page_token}"
+                    "/app/v3/api/drive/spaces/space-list-acl/nodes?page_size=1&cursor={next_page_token}"
                 ))
                 .body(Body::empty())
                 .expect("list second page request should be built"),
@@ -18509,7 +18705,7 @@ async fn app_drive_change_feed_skips_nodes_without_reader_acl_and_paginates_visi
                     common::access_token("tenant-change-acl", "user-reviewer", "appbase"),
                 )
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?spaceId=space-change-acl&pageSize=1")
+                .uri("/app/v3/api/drive/changes?spaceId=space-change-acl&page_size=1")
                 .body(Body::empty())
                 .expect("change feed first page request should be built"),
         )
@@ -18526,7 +18722,8 @@ async fn app_drive_change_feed_skips_nodes_without_reader_acl_and_paginates_visi
         common::envelope_items(&first_page_payload)[0]["nodeId"].as_str(),
         Some("node-change-visible-a")
     );
-    let next_page_token = common::envelope_next_page_token(&first_page_payload).expect("change feed should expose nextPageToken");
+    let next_page_token = common::envelope_next_page_token(&first_page_payload)
+        .expect("change feed should expose nextPageToken");
 
     let second_page = app
         .oneshot(
@@ -18544,7 +18741,7 @@ async fn app_drive_change_feed_skips_nodes_without_reader_acl_and_paginates_visi
                 )
                 .method(Method::GET)
                 .uri(format!(
-                    "/app/v3/api/drive/changes?spaceId=space-change-acl&pageSize=1&pageToken={next_page_token}"
+                    "/app/v3/api/drive/changes?spaceId=space-change-acl&page_size=1&cursor={next_page_token}"
                 ))
                 .body(Body::empty())
                 .expect("change feed second page request should be built"),
@@ -18896,7 +19093,13 @@ async fn app_drive_space_routes_enforce_acl_roles() {
             .expect("list spaces response should be read"),
     )
     .expect("list spaces response should be valid json");
-    assert_eq!(common::envelope_items(&list_payload).as_array().unwrap().len(), 0);
+    assert_eq!(
+        common::envelope_items(&list_payload)
+            .as_array()
+            .unwrap()
+            .len(),
+        0
+    );
 }
 
 #[tokio::test]
@@ -19360,7 +19563,7 @@ async fn app_drive_delete_team_space_allows_root_owner_creator() {
         )
         .await
         .expect("delete team space request should be handled");
-    assert_eq!(delete_response.status(), StatusCode::OK);
+    common::assert_no_content_response(delete_response).await;
 
     let lifecycle_status: String = sqlx::query_scalar(
         "SELECT lifecycle_status FROM dr_drive_space
@@ -19615,8 +19818,9 @@ async fn app_drive_claim_share_link_grants_access_and_lists_in_shared_with_me() 
             .expect("claim share link response should be read"),
     )
     .expect("claim share link response should be valid json");
-    assert_eq!(claim_payload["nodeId"].as_str(), Some("node-claim-target"));
-    assert_eq!(claim_payload["alreadyClaimed"].as_bool(), Some(false));
+    let claim_data = common::envelope_data(&claim_payload);
+    assert_eq!(claim_data["nodeId"].as_str(), Some("node-claim-target"));
+    assert_eq!(claim_data["alreadyClaimed"].as_bool(), Some(false));
 
     let shared_response = app
         .oneshot(
@@ -19747,7 +19951,7 @@ async fn app_drive_claim_share_link_is_idempotent_and_rejects_cross_tenant() {
         )
         .expect("claim share link response should be valid json");
         assert_eq!(
-            payload["alreadyClaimed"].as_bool(),
+            common::envelope_data(&payload)["alreadyClaimed"].as_bool(),
             Some(expected_status == StatusCode::OK)
         );
     }
@@ -19791,7 +19995,6 @@ async fn drive_problem_responses_include_correlation_ids() {
     let response = app
         .oneshot(
             Request::builder()
-                .header("x-trace-id", "corr-trace-001")
                 .header(
                     "authorization",
                     format!(

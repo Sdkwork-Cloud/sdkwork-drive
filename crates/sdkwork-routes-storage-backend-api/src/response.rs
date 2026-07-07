@@ -1,8 +1,5 @@
 use axum::Json;
-use sdkwork_utils_rust::{
-    offset_list_page_data, OffsetListPageParams, PageInfo, PageMode, SdkWorkApiResponse,
-    SdkWorkPageData,
-};
+use sdkwork_utils_rust::{PageInfo, PageMode, SdkWorkApiResponse, SdkWorkPageData};
 use serde::Serialize;
 
 use crate::dto::OffsetPage;
@@ -11,6 +8,10 @@ pub(crate) type StorageListHttpResponse<T> = Json<SdkWorkApiResponse<SdkWorkPage
 
 pub(crate) fn current_trace_id() -> String {
     sdkwork_drive_http::problem_correlation::current_problem_correlation().trace_id
+}
+
+pub(crate) fn no_content() -> axum::http::StatusCode {
+    axum::http::StatusCode::NO_CONTENT
 }
 
 pub(crate) fn page_info_from_offset_token(
@@ -38,17 +39,6 @@ pub(crate) fn success_list_page_simple<T: Serialize>(
             items,
             page_info: page_info_from_offset_token(page, next_page_token),
         },
-        current_trace_id(),
-    ))
-}
-
-pub(crate) fn success_offset_list_page<T: Serialize>(
-    items: Vec<T>,
-    total_items: i64,
-    params: OffsetListPageParams,
-) -> StorageListHttpResponse<T> {
-    Json(SdkWorkApiResponse::success(
-        offset_list_page_data(items, total_items, params),
         current_trace_id(),
     ))
 }

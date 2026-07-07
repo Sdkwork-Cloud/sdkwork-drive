@@ -5,11 +5,14 @@ use crate::dto::{
     CreateWatchChannelRequest, DriveWatchChannelResponse, InsertWatchChannel,
     StopWatchChannelRequest, StopWatchChannelResponse, WatchChannelListQuery,
 };
-use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::hashing::sha256_raw_hex;
 use crate::mappers::map_watch_channel_row;
 use crate::node_repository::find_active_node;
+use crate::response::{
+    success_created_resource, success_envelope, success_list_page_simple, success_resource,
+    DriveListHttpResponse,
+};
 use crate::route_change::record_change;
 use crate::space_repository::validate_space_exists;
 use crate::state::AppState;
@@ -23,6 +26,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 
 fn hash_watch_token(token: &str) -> String {
     sha256_raw_hex(token.trim().as_bytes())
@@ -32,7 +36,13 @@ pub(crate) async fn watch_changes(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateWatchChannelRequest>,
-) -> Result<(StatusCode, Json<DriveWatchChannelResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<DriveWatchChannelResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let space_id = require_body_value(payload.space_id, "spaceId")?;
     validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
@@ -73,9 +83,8 @@ pub(crate) async fn watch_changes(
         &operator_id,
     )
     .await?;
-    Ok((
-        StatusCode::CREATED,
-        Json(find_watch_channel(&state.pool, &tenant_id, &channel_id).await?),
+    Ok(success_created_resource(
+        find_watch_channel(&state.pool, &tenant_id, &channel_id).await?,
     ))
 }
 
@@ -84,7 +93,13 @@ pub(crate) async fn watch_node(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CreateWatchChannelRequest>,
-) -> Result<(StatusCode, Json<DriveWatchChannelResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<DriveWatchChannelResponse>>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
@@ -124,9 +139,8 @@ pub(crate) async fn watch_node(
         &operator_id,
     )
     .await?;
-    Ok((
-        StatusCode::CREATED,
-        Json(find_watch_channel(&state.pool, &tenant_id, &channel_id).await?),
+    Ok(success_created_resource(
+        find_watch_channel(&state.pool, &tenant_id, &channel_id).await?,
     ))
 }
 
@@ -225,11 +239,14 @@ pub(crate) async fn get_watch_channel(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(channel_id): Path<String>,
-) -> Result<Json<DriveWatchChannelResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<DriveWatchChannelResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let channel = find_watch_channel(&state.pool, &tenant_id, &channel_id).await?;
     acl::ensure_watch_channel_role(&state.pool, &ctx, &channel, "reader").await?;
-    Ok(Json(channel))
+    Ok(success_resource(channel))
 }
 
 pub(crate) async fn stop_watch_channel(
@@ -237,7 +254,7 @@ pub(crate) async fn stop_watch_channel(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(channel_id): Path<String>,
     Json(payload): Json<StopWatchChannelRequest>,
-) -> Result<Json<StopWatchChannelResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<Json<SdkWorkApiResponse<StopWatchChannelResponse>>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let current = find_watch_channel(&state.pool, &tenant_id, &channel_id).await?;
@@ -271,7 +288,7 @@ pub(crate) async fn stop_watch_channel(
         )
         .await?;
     }
-    Ok(Json(StopWatchChannelResponse {
+    Ok(success_envelope(StopWatchChannelResponse {
         stopped: affected > 0,
         channel: find_watch_channel(&state.pool, &tenant_id, &channel_id).await?,
     }))

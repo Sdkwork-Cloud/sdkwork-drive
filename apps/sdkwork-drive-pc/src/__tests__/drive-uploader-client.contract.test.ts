@@ -13,9 +13,9 @@ function createReplacementTransport(): {
     drive: {
       uploader: {
         uploads: {
-          prepare: vi.fn(),
+          create: vi.fn(),
           parts: {
-            markUploaded: vi.fn(),
+            update: vi.fn(),
           },
         },
       },
@@ -38,8 +38,8 @@ function createReplacementTransport(): {
           };
         }),
         parts: {
-          presign: vi.fn(async (_uploadSessionId, partNo) => {
-            calls.push('uploadSessions.parts.presign');
+          update: vi.fn(async (_uploadSessionId, partNo) => {
+            calls.push('uploadSessions.parts.update');
             return {
               uploadUrl: `https://storage.example.test/replacement/${partNo}`,
               method: 'PUT' as const,
@@ -97,8 +97,8 @@ describe('Drive uploader composed client contract', () => {
       drive: {
         uploader: {
           uploads: {
-            prepare: vi.fn(async (body) => {
-              calls.push('uploader.uploads.prepare');
+            create: vi.fn(async (body) => {
+              calls.push('uploader.uploads.create');
               return {
                 uploadItem: {
                   id: body.nowEpochMs === '1700000000000' ? 'upload-item-a' : 'upload-item-b',
@@ -147,8 +147,8 @@ describe('Drive uploader composed client contract', () => {
               };
             }),
             parts: {
-              markUploaded: vi.fn(async (_uploadItemId, partNo) => {
-                calls.push(`markUploaded:${partNo}`);
+              update: vi.fn(async (_uploadItemId, partNo) => {
+                calls.push(`uploader.uploads.parts.update:${partNo}`);
                 return { id: `part-${partNo}`, status: 'uploaded' } as any;
               }),
             },
@@ -157,8 +157,8 @@ describe('Drive uploader composed client contract', () => {
         uploadSessions: {
           create: vi.fn() as any,
           parts: {
-            presign: vi.fn(async (_uploadSessionId, partNo) => {
-              calls.push(`presign:${partNo}`);
+            update: vi.fn(async (_uploadSessionId, partNo) => {
+              calls.push(`uploadSessions.parts.update:${partNo}`);
               return {
                 uploadUrl: `https://storage.example.test/upload/${partNo}`,
                 method: 'PUT' as const,
@@ -273,7 +273,7 @@ describe('Drive uploader composed client contract', () => {
 
     expect(calls).toEqual([
       'uploadSessions.create',
-      'uploadSessions.parts.presign',
+      'uploadSessions.parts.update',
       'uploadSessions.complete',
     ]);
     expect(transport.drive.uploadSessions.create).toHaveBeenCalledWith(expect.objectContaining({
@@ -340,7 +340,7 @@ describe('Drive uploader composed client contract', () => {
 
     expect(calls).toEqual([
       'uploadSessions.create',
-      'uploadSessions.parts.presign',
+      'uploadSessions.parts.update',
       'uploadSessions.abort',
     ]);
     expect(transport.drive.uploadSessions.abort).toHaveBeenCalledWith(
@@ -352,8 +352,8 @@ describe('Drive uploader composed client contract', () => {
 
   it('aborts prepared upload sessions inside the composed SDK when provider upload fails', async () => {
     const { transport, calls } = createReplacementTransport();
-    transport.drive.uploader.uploads.prepare = vi.fn(async (body) => {
-      calls.push('uploader.uploads.prepare');
+    transport.drive.uploader.uploads.create = vi.fn(async (body) => {
+      calls.push('uploader.uploads.create');
       return {
         uploadItem: {
           id: body.id || 'upload-item-failed',
@@ -401,8 +401,8 @@ describe('Drive uploader composed client contract', () => {
         },
       };
     });
-    transport.drive.uploadSessions.parts.presign = vi.fn(async (_uploadSessionId, partNo) => {
-      calls.push('uploadSessions.parts.presign');
+    transport.drive.uploadSessions.parts.update = vi.fn(async (_uploadSessionId, partNo) => {
+      calls.push('uploadSessions.parts.update');
       return {
         uploadUrl: `https://storage.example.test/upload-failed/${partNo}`,
         method: 'PUT' as const,
@@ -430,8 +430,8 @@ describe('Drive uploader composed client contract', () => {
     })).rejects.toThrow('Drive uploader signed upload failed with HTTP 503.');
 
     expect(calls).toEqual([
-      'uploader.uploads.prepare',
-      'uploadSessions.parts.presign',
+      'uploader.uploads.create',
+      'uploadSessions.parts.update',
     ]);
     expect(transport.drive.uploadSessions.abort).not.toHaveBeenCalled();
   });
@@ -470,19 +470,19 @@ describe('Drive uploader composed client contract', () => {
 
     expect(calls).toEqual([
       'uploadSessions.create',
-      'uploadSessions.parts.presign',
-      'uploadSessions.parts.presign',
+      'uploadSessions.parts.update',
+      'uploadSessions.parts.update',
       'uploadSessions.complete',
     ]);
     expect(uploadedBodies).toEqual(['01234', '56789']);
-    expect(transport.drive.uploadSessions.parts.presign).toHaveBeenNthCalledWith(
+    expect(transport.drive.uploadSessions.parts.update).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
       1,
       expect.any(Object),
       expect.any(Object),
     );
-    expect(transport.drive.uploadSessions.parts.presign).toHaveBeenNthCalledWith(
+    expect(transport.drive.uploadSessions.parts.update).toHaveBeenNthCalledWith(
       2,
       expect.any(String),
       2,

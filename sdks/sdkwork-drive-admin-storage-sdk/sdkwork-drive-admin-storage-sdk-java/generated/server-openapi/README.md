@@ -38,7 +38,7 @@ public class Main {
         // Use the SDK
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("status", "status");
-        ListStorageProvidersResponse result = client.getDrive().storageProvidersList(params);
+        StorageProvidersListResponse result = client.getDrive().storageProvidersList(params);
         System.out.println(result);
     }
 }
@@ -93,7 +93,7 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 // GET /backend/v3/api/drive/storage/providers
 Map<String, Object> params = new LinkedHashMap<>();
 params.put("status", "status");
-ListStorageProvidersResponse result = client.getDrive().storageProvidersList(params);
+StorageProvidersListResponse result = client.getDrive().storageProvidersList(params);
 System.out.println(result);
 ```
 
@@ -103,7 +103,7 @@ System.out.println(result);
 try {
     Map<String, Object> params = new LinkedHashMap<>();
     params.put("status", "status");
-    ListStorageProvidersResponse result = client.getDrive().storageProvidersList(params);
+    StorageProvidersListResponse result = client.getDrive().storageProvidersList(params);
     System.out.println(result);
 } catch (Exception e) {
     System.err.println("Error: " + e.getMessage());

@@ -18,6 +18,14 @@ pub fn installed_database_engine() -> Option<DatabaseEngine> {
     DRIVE_INSTALLED_ENGINE.get().copied()
 }
 
+/// Registers the installed database engine for transaction SQL selection.
+///
+/// Called by schema installation and test harnesses that install schema without
+/// registering the full runtime pool.
+pub fn register_installed_database_engine(engine: DatabaseEngine) {
+    let _ = DRIVE_INSTALLED_ENGINE.set(engine);
+}
+
 fn installed_drive_any_pool() -> Option<AnyPool> {
     DRIVE_ANY_POOL.get().cloned()
 }
@@ -50,16 +58,35 @@ pub async fn install_any_schema(pool: &AnyPool, engine: DatabaseEngine) -> Resul
     sqlx::any::install_default_drivers();
     match engine {
         DatabaseEngine::Sqlite => {
+            if sqlite_table_exists(pool, "dr_drive_node").await? {
+                upgrade_sqlite_dr_drive_node_head_columns(pool).await?;
+            }
+            if sqlite_table_exists(pool, "dr_drive_node_share_link").await? {
+                upgrade_sqlite_dr_drive_node_share_link_access_code_column(pool).await?;
+            }
             sqlx::raw_sql(SQLITE_CORE_SQL).execute(pool).await?;
             upgrade_sqlite_dr_drive_node_head_columns(pool).await?;
             upgrade_sqlite_dr_drive_node_share_link_access_code_column(pool).await?;
             upgrade_sqlite_dr_drive_domain_outbox_pending_dispatch_index(pool).await?;
+            upgrade_sqlite_dr_drive_maintenance_leader_table(pool).await?;
+            upgrade_sqlite_dr_drive_domain_outbox_channel_delivery_table(pool).await?;
+            upgrade_sqlite_dr_drive_node_space_parent_type_index(pool).await?;
         }
         DatabaseEngine::Postgresql => {
             sqlx::raw_sql(POSTGRES_CORE_SQL).execute(pool).await?;
         }
     }
+    register_installed_database_engine(engine);
     Ok(())
+}
+
+async fn sqlite_table_exists(pool: &AnyPool, table_name: &str) -> Result<bool, sqlx::Error> {
+    let count: i64 =
+        sqlx::query_scalar("SELECT COUNT(1) FROM sqlite_master WHERE type = 'table' AND name = ?1")
+            .bind(table_name)
+            .fetch_one(pool)
+            .await?;
+    Ok(count > 0)
 }
 
 async fn upgrade_sqlite_dr_drive_node_head_columns(pool: &AnyPool) -> Result<(), sqlx::Error> {
@@ -112,6 +139,60 @@ async fn upgrade_sqlite_dr_drive_domain_outbox_pending_dispatch_index(
         "CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending_dispatch
          ON dr_drive_domain_outbox (attempt_count, created_at)
          WHERE delivery_status = 'pending'",
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+async fn upgrade_sqlite_dr_drive_maintenance_leader_table(
+    pool: &AnyPool,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS dr_drive_maintenance_leader (
+            lock_key TEXT PRIMARY KEY,
+            holder_id TEXT NOT NULL,
+            acquired_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )",
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+async fn upgrade_sqlite_dr_drive_domain_outbox_channel_delivery_table(
+    pool: &AnyPool,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS dr_drive_domain_outbox_channel_delivery (
+            outbox_id TEXT NOT NULL,
+            channel_id TEXT NOT NULL,
+            delivered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (outbox_id, channel_id),
+            FOREIGN KEY (outbox_id) REFERENCES dr_drive_domain_outbox(id) ON DELETE CASCADE
+        )",
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_channel_delivery_channel
+         ON dr_drive_domain_outbox_channel_delivery (channel_id, delivered_at DESC)",
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+async fn upgrade_sqlite_dr_drive_node_space_parent_type_index(
+    pool: &AnyPool,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("DROP INDEX IF EXISTS ix_dr_drive_node_space_parent_type")
+        .execute(pool)
+        .await?;
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS ix_dr_drive_node_space_parent_type
+         ON dr_drive_node (tenant_id, space_id, parent_node_id, head_content_type_group, updated_at DESC)
+         WHERE lifecycle_status = 'active' AND node_type = 'file'",
     )
     .execute(pool)
     .await?;

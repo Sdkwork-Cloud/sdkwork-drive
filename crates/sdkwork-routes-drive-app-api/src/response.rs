@@ -1,7 +1,6 @@
 use axum::Json;
 use sdkwork_utils_rust::{
-    offset_limit_page_info, offset_list_page_data, OffsetListPageParams,
-    PageInfo, PageMode, SdkWorkApiResponse, SdkWorkPageData,
+    PageInfo, PageMode, SdkWorkApiResponse, SdkWorkPageData, SdkWorkResourceData,
 };
 use serde::Serialize;
 
@@ -26,7 +25,11 @@ pub(crate) fn current_trace_id() -> String {
     sdkwork_drive_http::problem_correlation::current_problem_correlation().trace_id
 }
 
-/// Build cursor-mode `PageInfo` for legacy numeric `pageToken` offset continuation.
+pub(crate) fn no_content() -> axum::http::StatusCode {
+    axum::http::StatusCode::NO_CONTENT
+}
+
+/// Build cursor-mode `PageInfo` for numeric cursor offset continuation.
 pub(crate) fn page_info_from_offset_token(
     page: PageRequest,
     next_page_token: Option<String>,
@@ -72,15 +75,70 @@ pub(crate) fn success_list_page_simple<T: Serialize>(
     ))
 }
 
-pub(crate) fn success_offset_list_page<T: Serialize>(
+/// Full list payload when every item is returned in a single response (no continuation).
+pub(crate) fn success_full_list<T: Serialize>(
     items: Vec<T>,
-    total_items: i64,
-    params: OffsetListPageParams,
 ) -> Json<SdkWorkApiResponse<SdkWorkPageData<T>>> {
+    let total_items = items.len() as i64;
+    let page_size = usize::max(items.len(), 1) as i32;
     Json(SdkWorkApiResponse::success(
-        offset_list_page_data(items, total_items, params),
+        SdkWorkPageData {
+            items,
+            page_info: PageInfo {
+                mode: PageMode::Offset,
+                page: Some(1),
+                page_size: Some(page_size),
+                total_items: Some(total_items.to_string()),
+                total_pages: Some(1),
+                next_cursor: None,
+                has_more: Some(false),
+            },
+        },
         current_trace_id(),
     ))
+}
+
+pub(crate) fn success_created_command_data<T: Serialize>(
+    data: T,
+) -> (axum::http::StatusCode, Json<SdkWorkApiResponse<T>>) {
+    (
+        axum::http::StatusCode::CREATED,
+        Json(SdkWorkApiResponse::success(data, current_trace_id())),
+    )
+}
+
+pub(crate) fn success_resource<T: Serialize>(
+    item: T,
+) -> Json<SdkWorkApiResponse<SdkWorkResourceData<T>>> {
+    Json(SdkWorkApiResponse::success(
+        SdkWorkResourceData { item },
+        current_trace_id(),
+    ))
+}
+
+pub(crate) fn success_created_resource<T: Serialize>(
+    item: T,
+) -> (
+    axum::http::StatusCode,
+    Json<SdkWorkApiResponse<SdkWorkResourceData<T>>>,
+) {
+    (
+        axum::http::StatusCode::CREATED,
+        Json(SdkWorkApiResponse::success(
+            SdkWorkResourceData { item },
+            current_trace_id(),
+        )),
+    )
+}
+
+pub(crate) fn success_envelope<T: Serialize>(data: T) -> Json<SdkWorkApiResponse<T>> {
+    Json(SdkWorkApiResponse::success(data, current_trace_id()))
+}
+
+pub(crate) fn success_created_envelope<T: Serialize>(
+    data: T,
+) -> (axum::http::StatusCode, Json<SdkWorkApiResponse<T>>) {
+    success_created_command_data(data)
 }
 
 pub(crate) fn success_cursor_list_page<T: Serialize>(
@@ -103,25 +161,4 @@ pub(crate) fn success_cursor_list_page<T: Serialize>(
         },
         current_trace_id(),
     ))
-}
-
-pub(crate) fn offset_page_info_from_token(
-    _page: PageRequest,
-    next_page_token: Option<String>,
-) -> PageInfo {
-    let has_more = next_page_token.is_some();
-    offset_limit_page_info(next_page_token, has_more)
-}
-
-pub(crate) fn offset_list_params_from_page(page: PageRequest) -> OffsetListPageParams {
-    let page_no = if page.limit > 0 {
-        (page.offset / page.limit) + 1
-    } else {
-        1
-    };
-    OffsetListPageParams {
-        page: page_no,
-        page_size: page.limit,
-        offset: page.offset,
-    }
 }

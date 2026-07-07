@@ -18,41 +18,41 @@ func NewNodePropertiesApi(client *sdkhttp.Client) *NodePropertiesApi {
 }
 
 // List node custom properties
-func (a *NodePropertiesApi) List(nodeId string, visibility *string, pageSize *int, pageToken *string) (sdktypes.NodePropertyListResponse, error) {
+func (a *NodePropertiesApi) List(nodeId string, visibility *string, pageSize *int, cursor *string) (sdktypes.NodePropertiesListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "visibility", Value: func() interface{} { if visibility == nil { return nil }; return *visibility }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
-        {Name: "pageToken", Value: func() interface{} { if pageToken == nil { return nil }; return *pageToken }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath(fmt.Sprintf("/drive/nodes/%s/properties", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {
-        var zero sdktypes.NodePropertyListResponse
+        var zero sdktypes.NodePropertiesListResponse
         return zero, err
     }
-    return decodeResult[sdktypes.NodePropertyListResponse](raw)
+    return decodeResult[sdktypes.NodePropertiesListResponse](raw)
 }
 
 // Create or update a node custom property
-func (a *NodePropertiesApi) Set(nodeId string, propertyKey string, body sdktypes.SetNodePropertyRequest) (sdktypes.DriveNodeProperty, error) {
+func (a *NodePropertiesApi) Update(nodeId string, propertyKey string, body sdktypes.SetNodePropertyRequest) (sdktypes.NodePropertiesUpdateResponse, error) {
     raw, err := a.client.Put(AppApiPath(fmt.Sprintf("/drive/nodes/%s/properties/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}), SerializePathParameter(propertyKey, PathParameterSpec{Name: "propertyKey", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.DriveNodeProperty
+        var zero sdktypes.NodePropertiesUpdateResponse
         return zero, err
     }
-    return decodeResult[sdktypes.DriveNodeProperty](raw)
+    return decodeResult[sdktypes.NodePropertiesUpdateResponse](raw)
 }
 
 // Delete a node custom property
-func (a *NodePropertiesApi) Delete(nodeId string, propertyKey string, visibility *string) (sdktypes.DeleteNodePropertyResponse, error) {
+func (a *NodePropertiesApi) Delete(nodeId string, propertyKey string, visibility *string) (struct{}, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "visibility", Value: func() interface{} { if visibility == nil { return nil }; return *visibility }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Delete(AppendQueryString(AppApiPath(fmt.Sprintf("/drive/nodes/%s/properties/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}), SerializePathParameter(propertyKey, PathParameterSpec{Name: "propertyKey", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {
-        var zero sdktypes.DeleteNodePropertyResponse
+        var zero struct{}
         return zero, err
     }
-    return decodeResult[sdktypes.DeleteNodePropertyResponse](raw)
+    return decodeResult[struct{}](raw)
 }
 
 type PathParameterSpec struct {

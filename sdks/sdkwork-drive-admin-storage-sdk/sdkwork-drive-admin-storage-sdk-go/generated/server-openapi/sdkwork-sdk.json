@@ -5,6 +5,8 @@
   "language": "go",
   "sdkType": "custom",
   "packageName": "sdkwork-drive-admin-storage-sdk-generated-go",
+  "transportPackageName": "sdkwork-drive-admin-storage-sdk-generated-go",
+  "consumerPackageName": "@sdkwork/drive-admin-storage-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

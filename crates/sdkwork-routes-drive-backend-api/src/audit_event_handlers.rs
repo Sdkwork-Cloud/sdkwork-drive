@@ -3,7 +3,6 @@ use crate::error::{map_service_error, service_error_kind, ProblemDetail};
 use crate::response::{success_offset_list_page, DriveListHttpResponse};
 use crate::state::BackendState;
 use crate::tenant_context::authenticated_tenant_id;
-use sdkwork_utils_rust::OffsetListPageParams;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Extension;
@@ -14,6 +13,7 @@ use sdkwork_drive_workspace_service::application::audit_service::{
     DriveAuditService, ListAuditEventsCommand,
 };
 use sdkwork_drive_workspace_service::infrastructure::sql::audit_store::SqlAuditStore;
+use sdkwork_utils_rust::OffsetListPageParams;
 
 pub(crate) async fn list_audit_events(
     State(state): State<BackendState>,
@@ -78,8 +78,7 @@ pub(crate) async fn list_audit_events(
     );
 
     Ok(success_offset_list_page(
-        page
-            .items
+        page.items
             .into_iter()
             .map(|item| AuditEventItemResponse {
                 id: item.id,

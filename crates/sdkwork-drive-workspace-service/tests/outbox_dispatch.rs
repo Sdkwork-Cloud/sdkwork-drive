@@ -18,7 +18,7 @@ async fn sqlite_outbox_pool() -> AnyPool {
 }
 
 #[tokio::test]
-async fn sqlite_claims_pending_outbox_event_without_skip_locked() {
+async fn sqlite_claims_pending_outbox_event_with_begin_immediate() {
     let pool = sqlite_outbox_pool().await;
     sqlx::query(
         "INSERT INTO dr_drive_domain_outbox (

@@ -14,41 +14,41 @@ public class LabelsApi {
     }
 
     /** List Drive label definitions */
-    public LabelListResponse list(String lifecycleStatus, Integer pageSize, String pageToken) throws Exception {
+    public LabelsListResponse list(String lifecycleStatus, Integer pageSize, String cursor) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("lifecycleStatus", lifecycleStatus, "form", true, false, null),
-            new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
-            new QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("cursor", cursor, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/labels"), query));
-        return client.convertValue(raw, new TypeReference<LabelListResponse>() {});
+        return client.convertValue(raw, new TypeReference<LabelsListResponse>() {});
     }
 
     /** Create a Drive label definition */
-    public DriveLabel create(CreateLabelRequest body) throws Exception {
+    public LabelsCreateResponse201 create(CreateLabelRequest body) throws Exception {
         Object raw = client.post(ApiPaths.backendPath("/drive/labels"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<DriveLabel>() {});
+        return client.convertValue(raw, new TypeReference<LabelsCreateResponse201>() {});
     }
 
     /** Get a Drive label definition */
-    public DriveLabel get(String labelId) throws Exception {
+    public LabelsRetrieveResponse retrieve(String labelId) throws Exception {
         Object raw = client.get(ApiPaths.backendPath("/drive/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""));
-        return client.convertValue(raw, new TypeReference<DriveLabel>() {});
+        return client.convertValue(raw, new TypeReference<LabelsRetrieveResponse>() {});
     }
 
     /** Update a Drive label definition */
-    public DriveLabel update(String labelId, UpdateLabelRequest body) throws Exception {
+    public LabelsUpdateResponse update(String labelId, UpdateLabelRequest body) throws Exception {
         Object raw = client.patch(ApiPaths.backendPath("/drive/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<DriveLabel>() {});
+        return client.convertValue(raw, new TypeReference<LabelsUpdateResponse>() {});
     }
 
     /** Delete a Drive label definition */
-    public DeleteLabelResponse delete(String labelId, String operatorId) throws Exception {
+    public Void delete(String labelId, String operatorId) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
         ));
-        Object raw = client.delete(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""), query));
-        return client.convertValue(raw, new TypeReference<DeleteLabelResponse>() {});
+        client.delete(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""), query));
+        return null;
     }
 
     private record PathParameterSpec(String name, String style, boolean explode) {}

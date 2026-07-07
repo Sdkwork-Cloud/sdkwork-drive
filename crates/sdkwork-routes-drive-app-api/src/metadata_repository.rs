@@ -80,8 +80,15 @@ pub(crate) async fn present_node_list(
     next_page_token: Option<String>,
     incomplete_page: bool,
 ) -> Result<
-    axum::Json<sdkwork_utils_rust::SdkWorkApiResponse<crate::response::DriveListPageData<crate::dto::DriveNodeResponse>>>,
-    (axum::http::StatusCode, axum::Json<crate::error::ProblemDetail>),
+    axum::Json<
+        sdkwork_utils_rust::SdkWorkApiResponse<
+            crate::response::DriveListPageData<crate::dto::DriveNodeResponse>,
+        >,
+    >,
+    (
+        axum::http::StatusCode,
+        axum::Json<crate::error::ProblemDetail>,
+    ),
 > {
     enrich_drive_nodes_with_folder_colors(pool, tenant_id, &mut items).await?;
     Ok(crate::response::success_list_page(

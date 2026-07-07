@@ -181,4 +181,9 @@ export default {
   unexpectedServiceError: 'An unexpected Drive service error occurred.',
   loadMoreFailed: 'Failed to load more files.',
   loadingAllForSort: 'Loading remaining items for sorting...',
+  nameConflict: 'An item with this name already exists in this folder.',
+  folderName: 'Folder name',
+  moveNameConflict: 'Cannot move here because an item with the same name already exists in the destination folder.',
+  toastUploadRenamed: 'Uploaded as "{name}" because a file with the same name already exists.',
+  toastCopyRenamed: 'Copied as "{name}" because the destination already contains an item with that name.',
 };

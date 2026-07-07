@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import DeleteNodePropertyResponse, DriveNodeProperty, NodePropertyListResponse, SetNodePropertyRequest
+from ..models import NodePropertiesListResponse, NodePropertiesUpdateResponse, SetNodePropertyRequest
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -191,20 +191,20 @@ class NodePropertiesApi:
         self._client = client
 
 
-    def list(self, node_id: str, visibility: Optional[str] = None, page_size: Optional[int] = None, page_token: Optional[str] = None) -> NodePropertyListResponse:
+    def list(self, node_id: str, visibility: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> NodePropertiesListResponse:
         """List node custom properties"""
         query = build_query_string([
             {'name': 'visibility', 'value': visibility, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
-            {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/properties", query))
 
-    def set(self, node_id: str, property_key: str, body: SetNodePropertyRequest) -> DriveNodeProperty:
+    def update(self, node_id: str, property_key: str, body: SetNodePropertyRequest) -> NodePropertiesUpdateResponse:
         """Create or update a node custom property"""
         return self._client.put(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/properties/{serialize_path_parameter(property_key, {'name': 'propertyKey', 'style': 'simple', 'explode': False})}", json=body)
 
-    def delete(self, node_id: str, property_key: str, visibility: Optional[str] = None) -> DeleteNodePropertyResponse:
+    def delete(self, node_id: str, property_key: str, visibility: Optional[str] = None) -> None:
         """Delete a node custom property"""
         query = build_query_string([
             {'name': 'visibility', 'value': visibility, 'style': 'form', 'explode': True, 'allow_reserved': False},

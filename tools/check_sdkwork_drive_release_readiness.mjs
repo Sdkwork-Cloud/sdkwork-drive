@@ -11,13 +11,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const scriptRepoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const rootFlagIndex = process.argv.indexOf('--root');
+const workspaceRoot = rootFlagIndex >= 0
+  ? path.resolve(process.argv[rootFlagIndex + 1])
+  : scriptRepoRoot;
 const strict = process.env.SDKWORK_RELEASE_VALIDATION === 'strict';
 const failures = [];
 const warnings = [];
 
 function readJson(relativePath) {
-  const absolutePath = path.join(repoRoot, relativePath);
+  const absolutePath = path.join(workspaceRoot, relativePath);
   if (!fs.existsSync(absolutePath)) {
     failures.push(`${relativePath} must exist`);
     return null;
@@ -111,11 +115,11 @@ function main() {
     }
   }
 
-  if (!fs.existsSync(path.join(repoRoot, 'sdkwork.workflow.json'))) {
+  if (!fs.existsSync(path.join(workspaceRoot, 'sdkwork.workflow.json'))) {
     fail('sdkwork.workflow.json must exist for release governance');
   }
 
-  if (!fs.existsSync(path.join(repoRoot, 'tools/generate_release_sbom.mjs'))) {
+  if (!fs.existsSync(path.join(workspaceRoot, 'tools/generate_release_sbom.mjs'))) {
     fail('tools/generate_release_sbom.mjs must exist when security.sbomRequired is enabled');
   }
 
@@ -150,6 +154,9 @@ function main() {
       continue;
     }
     if (pkg.metadata?.releaseBuildDeferred === true) {
+      if (pkg.checksum && isPlaceholderChecksum(pkg.checksum)) {
+        fail(`package ${pkg.id} must not keep placeholder checksum fields while releaseBuildDeferred is true`);
+      }
       if (!pkg.checksum || isPlaceholderChecksum(pkg.checksum)) {
         if (!pkg.metadata?.releaseBuildMaterializedAt) {
           const maturity = manifest.publish?.releaseMaturity ?? 'GA';
@@ -180,7 +187,7 @@ function main() {
     strictFail(`${placeholder} is still a generated placeholder; replace with Drive-hosted production media`);
   }
 
-  for (const deferred of collectDeferredCatalogMedia(manifest, repoRoot)) {
+  for (const deferred of collectDeferredCatalogMedia(manifest, workspaceRoot)) {
     const maturity = manifest.publish?.releaseMaturity ?? 'GA';
     const message = deferred;
     if (strict && maturity === 'GA' && manifest.publish?.status === 'ACTIVE') {

@@ -30,7 +30,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(open.contains("\"title\": \"SDKWork Drive Open API\""));
     assert!(open.contains("/open/v3/api/drive/share_links/{token}"));
     assert!(open.contains("/open/v3/api/drive/share_links/{token}/download_url"));
-    assert!(open.contains("\"operationId\": \"openShareLinks.resolve\""));
+    assert!(open.contains("\"operationId\": \"openShareLinks.retrieve\""));
     assert!(open.contains("\"operationId\": \"openShareLinks.downloadUrls.create\""));
     assert!(open.contains("\"DriveOpenShareLink\""));
     assert!(app.contains("/app/v3/api/drive/spaces"));
@@ -84,74 +84,74 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(app.contains("/app/v3/api/drive/upload_sessions/{uploadSessionId}/abort"));
     assert!(app.contains("\"operationId\": \"spaces.list\""));
     assert!(app.contains("\"operationId\": \"spaces.create\""));
-    assert!(app.contains("\"operationId\": \"spaces.get\""));
+    assert!(app.contains("\"operationId\": \"spaces.retrieve\""));
     assert!(app.contains("\"operationId\": \"spaces.update\""));
     assert!(app.contains("\"operationId\": \"spaces.delete\""));
     assert!(app.contains("\"operationId\": \"nodes.list\""));
     assert!(app.contains("\"operationId\": \"nodes.folders.create\""));
     assert!(app.contains("\"operationId\": \"nodes.files.create\""));
     assert!(app.contains("\"operationId\": \"nodes.shortcuts.create\""));
-    assert!(app.contains("\"operationId\": \"nodes.get\""));
-    assert!(app.contains("\"operationId\": \"nodes.path.get\""));
-    assert!(app.contains("\"operationId\": \"nodes.capabilities.get\""));
+    assert!(app.contains("\"operationId\": \"nodes.retrieve\""));
+    assert!(app.contains("\"operationId\": \"nodes.path.retrieve\""));
+    assert!(app.contains("\"operationId\": \"nodes.capabilities.list\""));
     assert!(app.contains("\"operationId\": \"nodeProperties.list\""));
-    assert!(app.contains("\"operationId\": \"nodeProperties.set\""));
+    assert!(app.contains("\"operationId\": \"nodeProperties.update\""));
     assert!(app.contains("\"operationId\": \"nodeProperties.delete\""));
     assert!(app.contains("\"operationId\": \"nodeLabels.list\""));
-    assert!(app.contains("\"operationId\": \"nodeLabels.apply\""));
-    assert!(app.contains("\"operationId\": \"nodeLabels.remove\""));
+    assert!(app.contains("\"operationId\": \"nodeLabels.update\""));
+    assert!(app.contains("\"operationId\": \"nodeLabels.delete\""));
     assert!(app.contains("\"operationId\": \"nodes.update\""));
     assert!(app.contains("\"operationId\": \"nodes.move\""));
     assert!(app.contains("\"operationId\": \"nodes.copy\""));
     assert!(app.contains("\"operationId\": \"nodes.delete\""));
-    assert!(app.contains("\"operationId\": \"nodes.downloadUrls.create\""));
+    assert!(app.contains("\"operationId\": \"nodes.downloadUrls.retrieve\""));
     assert!(app.contains("\"incompletePage\""));
     assert!(app.contains("\"uri\""));
-    assert!(app.contains("\"operationId\": \"trash.move\""));
+    assert!(app.contains("\"operationId\": \"trash.create\""));
     assert!(app.contains("\"operationId\": \"trash.restore\""));
     assert!(app.contains("\"operationId\": \"trash.list\""));
     assert!(app.contains("\"operationId\": \"trash.empty\""));
     assert!(app.contains("\"operationId\": \"recent.list\""));
     assert!(app.contains("\"operationId\": \"sharedWithMe.list\""));
     assert!(app.contains("\"operationId\": \"favorites.list\""));
-    assert!(app.contains("\"operationId\": \"favorites.set\""));
+    assert!(app.contains("\"operationId\": \"favorites.update\""));
     assert!(app.contains("\"operationId\": \"favorites.delete\""));
-    assert!(app.contains("\"operationId\": \"quotas.summary\""));
-    assert!(app.contains("\"operationId\": \"uploadSessions.get\""));
-    assert!(app.contains("\"operationId\": \"uploadSessions.parts.presign\""));
+    assert!(app.contains("\"operationId\": \"quotas.retrieve\""));
+    assert!(app.contains("\"operationId\": \"uploadSessions.retrieve\""));
+    assert!(app.contains("\"operationId\": \"uploadSessions.parts.update\""));
     assert!(app.contains("\"operationId\": \"uploadSessions.complete\""));
     assert!(app.contains("\"operationId\": \"uploadSessions.abort\""));
     assert!(app.contains("\"operationId\": \"versions.list\""));
-    assert!(app.contains("\"operationId\": \"versions.get\""));
+    assert!(app.contains("\"operationId\": \"versions.retrieve\""));
     assert!(app.contains("\"operationId\": \"versions.delete\""));
-    assert!(app.contains("\"operationId\": \"permissions.get\""));
+    assert!(app.contains("\"operationId\": \"permissions.retrieve\""));
     assert!(app.contains("\"operationId\": \"permissions.create\""));
     assert!(app.contains("\"operationId\": \"permissions.update\""));
     assert!(app.contains("/app/v3/api/drive/nodes/{nodeId}/permissions/effective"));
     assert!(app.contains("\"operationId\": \"permissions.effective.list\""));
     assert!(app.contains("\"EffectivePermission\""));
-    assert!(app.contains("\"operationId\": \"shareLinks.get\""));
+    assert!(app.contains("\"operationId\": \"shareLinks.retrieve\""));
     assert!(app.contains("\"operationId\": \"shareLinks.create\""));
     assert!(app.contains("\"operationId\": \"shareLinks.list\""));
     assert!(app.contains("\"operationId\": \"shareLinks.update\""));
     assert!(app.contains("\"operationId\": \"comments.list\""));
     assert!(app.contains("\"operationId\": \"comments.create\""));
-    assert!(app.contains("\"operationId\": \"comments.get\""));
+    assert!(app.contains("\"operationId\": \"comments.retrieve\""));
     assert!(app.contains("\"operationId\": \"comments.update\""));
     assert!(app.contains("\"operationId\": \"comments.delete\""));
     assert!(app.contains("\"operationId\": \"commentReplies.list\""));
     assert!(app.contains("\"operationId\": \"commentReplies.create\""));
-    assert!(app.contains("\"operationId\": \"commentReplies.get\""));
+    assert!(app.contains("\"operationId\": \"commentReplies.retrieve\""));
     assert!(app.contains("\"operationId\": \"commentReplies.update\""));
     assert!(app.contains("\"operationId\": \"commentReplies.delete\""));
-    assert!(app.contains("\"operationId\": \"search.query\""));
+    assert!(app.contains("\"operationId\": \"search.list\""));
     assert!(app.contains("\"operationId\": \"changes.list\""));
     assert!(app.contains("/app/v3/api/drive/changes/start_page_token"));
-    assert!(app.contains("\"operationId\": \"changes.startPageToken.get\""));
+    assert!(app.contains("\"operationId\": \"changes.startPageToken.retrieve\""));
     assert!(app.contains("\"operationId\": \"changes.watch\""));
     assert!(app.contains("\"operationId\": \"nodes.watch\""));
     assert!(app.contains("\"operationId\": \"watchChannels.list\""));
-    assert!(app.contains("\"operationId\": \"watchChannels.get\""));
+    assert!(app.contains("\"operationId\": \"watchChannels.retrieve\""));
     assert!(app.contains("\"operationId\": \"watchChannels.stop\""));
     assert!(backend.contains("\"title\": \"SDKWork Drive Backend API\""));
     assert!(
@@ -213,7 +213,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(app.contains("/app/v3/api/iam/users/current"));
     assert!(app.contains("\"operationId\": \"downloadUrls.create\""));
     assert!(app.contains("\"operationId\": \"downloadPackages.create\""));
-    assert!(app.contains("\"operationId\": \"downloadPackages.downloadUrls.get\""));
+    assert!(app.contains("\"operationId\": \"downloadPackages.downloadUrls.retrieve\""));
     assert!(
         !app.contains("\"operationId\": \"storageProviders."),
         "app api must not expose storage provider administration operation ids"
@@ -233,25 +233,25 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(app.contains("\"operationId\": \"users.current.retrieve\""));
     assert!(app.contains("\"signedSourceUrl\""));
     assert!(backend.contains("/backend/v3/api/drive/quotas"));
-    assert!(backend.contains("\"operationId\": \"quotas.summary\""));
+    assert!(backend.contains("\"operationId\": \"quotas.retrieve\""));
     assert!(backend.contains("\"operationId\": \"quotas.update\""));
     assert!(backend.contains("/backend/v3/api/drive/labels"));
     assert!(backend.contains("/backend/v3/api/drive/labels/{labelId}"));
     assert!(backend.contains("\"operationId\": \"labels.list\""));
     assert!(backend.contains("\"operationId\": \"labels.create\""));
-    assert!(backend.contains("\"operationId\": \"labels.get\""));
+    assert!(backend.contains("\"operationId\": \"labels.retrieve\""));
     assert!(backend.contains("\"operationId\": \"labels.update\""));
     assert!(backend.contains("\"operationId\": \"labels.delete\""));
     assert!(backend.contains("/backend/v3/api/drive/audit_events"));
     assert!(backend.contains("\"operationId\": \"auditEvents.list\""));
     assert!(backend.contains("/backend/v3/api/drive/maintenance/object_sweep"));
-    assert!(backend.contains("\"operationId\": \"maintenance.objectSweep.start\""));
+    assert!(backend.contains("\"operationId\": \"maintenance.objectSweep\""));
     assert!(backend.contains("/backend/v3/api/drive/maintenance/upload_session_sweep"));
-    assert!(backend.contains("\"operationId\": \"maintenance.uploadSessionSweep.start\""));
+    assert!(backend.contains("\"operationId\": \"maintenance.uploadSessionSweep\""));
     assert!(backend.contains("/backend/v3/api/drive/maintenance/expired_upload_content_sweep"));
-    assert!(backend.contains("\"operationId\": \"maintenance.expiredUploadContentSweep.start\""));
+    assert!(backend.contains("\"operationId\": \"maintenance.expiredUploadContentSweep\""));
     assert!(backend.contains("/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep"));
-    assert!(backend.contains("\"operationId\": \"maintenance.abandonedUploadTaskSweep.start\""));
+    assert!(backend.contains("\"operationId\": \"maintenance.abandonedUploadTaskSweep\""));
     assert!(backend.contains("/backend/v3/api/drive/maintenance/jobs"));
     assert!(backend.contains("\"operationId\": \"maintenance.jobs.list\""));
     assert!(backend.contains("/backend/v3/api/drive/download_packages"));
@@ -301,28 +301,19 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_schema_property_minimum(&app_json, "DriveShareLink", "expiresAtEpochMs", 1);
     assert_schema_property_minimum(&app_json, "DriveShareLink", "downloadLimit", 0);
     assert_schema_property_minimum(&app_json, "DriveShareLink", "downloadCount", 0);
-    assert_schema_property_exists(&app_json, "ShareLinkListResponse", "items");
-    assert_schema_property_exists(&app_json, "DeleteVersionResponse", "deleted");
     assert_schema_property_exists(&app_json, "FavoriteNodeRequest", "subjectType");
     assert_schema_property_exists(&app_json, "FavoriteNodeResponse", "favorited");
     assert_schema_property_absent(&app_json, "DriveShareLink", "token");
     assert_schema_property_absent(&app_json, "DriveShareLink", "tokenHash");
     assert_schema_property_exists(&app_json, "CreateShareLinkResponse", "token");
     assert_schema_property_exists(&app_json, "MoveNodeRequest", "targetParentNodeId");
-    assert_schema_property_exists(&app_json, "NodeListResponse", "nextPageToken");
-    assert_schema_property_exists(&app_json, "VersionListResponse", "nextPageToken");
-    assert_schema_property_exists(&app_json, "PermissionListResponse", "nextPageToken");
-    assert_schema_property_exists(&app_json, "ShareLinkListResponse", "nextPageToken");
     assert_schema_property_exists(&app_json, "DriveComment", "content");
     assert_schema_property_exists(&app_json, "DriveComment", "resolved");
-    assert_schema_property_exists(&app_json, "CommentListResponse", "nextPageToken");
     assert_schema_property_exists(&app_json, "CreateCommentRequest", "anchor");
     assert_schema_property_exists(&app_json, "UpdateCommentRequest", "resolved");
     assert_schema_property_exists(&app_json, "DriveCommentReply", "commentId");
-    assert_schema_property_exists(&app_json, "CommentReplyListResponse", "nextPageToken");
     assert_schema_property_exists(&app_json, "CreateCommentReplyRequest", "content");
     assert_schema_property_exists(&app_json, "UpdateCommentReplyRequest", "content");
-    assert_schema_property_exists(&app_json, "ChangeListResponse", "nextPageToken");
     assert_schema_property_exists(&app_json, "StartPageTokenResponse", "startPageToken");
     assert_schema_property_exists(&app_json, "CreateFileRequest", "uploadSessionId");
     assert_schema_property_deprecated(&app_json, "CreateFileRequest", "objectKey");
@@ -384,7 +375,6 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_schema_property_exists(&app_json, "DriveUploadSession", "storageUploadId");
     assert_schema_property_exists(&app_json, "DriveUploadSession", "storageProviderId");
     assert_schema_property_enum_contains(&app_json, "DriveUploadSession", "state", "completing");
-    assert_schema_property_exists(&app_json, "DeleteNodeResponse", "deleted");
     assert_schema_property_exists(&app_json, "NodePathResponse", "items");
     assert_schema_property_exists(&app_json, "NodePathResponse", "pathSegments");
     assert_schema_property_exists(&app_json, "SetNodePropertyRequest", "value");
@@ -392,16 +382,11 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_schema_property_exists(&app_json, "DriveNodeProperty", "propertyKey");
     assert_schema_property_exists(&app_json, "DriveNodeProperty", "propertyValue");
     assert_schema_property_exists(&app_json, "DriveNodeProperty", "visibility");
-    assert_schema_property_exists(&app_json, "NodePropertyListResponse", "nextPageToken");
-    assert_schema_property_exists(&app_json, "DeleteNodePropertyResponse", "deleted");
     assert_schema_property_exists(&app_json, "DriveLabelSummary", "labelKey");
     assert_schema_property_exists(&app_json, "NodeLabel", "label");
-    assert_schema_property_exists(&app_json, "NodeLabelListResponse", "nextPageToken");
     assert_schema_property_absent(&app_json, "ApplyNodeLabelRequest", "tenantId");
-    assert_schema_property_exists(&app_json, "RemoveNodeLabelResponse", "removed");
     assert_schema_property_exists(&app_json, "DriveWatchChannel", "resourceType");
     assert_schema_property_exists(&app_json, "DriveWatchChannel", "expirationEpochMs");
-    assert_schema_property_exists(&app_json, "DriveWatchChannelListResponse", "nextPageToken");
     assert_schema_property_exists(&app_json, "CreateWatchChannelRequest", "address");
     assert_schema_property_absent(&app_json, "StopWatchChannelRequest", "tenantId");
     assert_schema_property_exists(&app_json, "StopWatchChannelResponse", "stopped");
@@ -556,7 +541,6 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     );
     assert_schema_property_exists(&backend_json, "DownloadPackage", "archiveObjectKey");
     assert_schema_property_exists(&backend_json, "DownloadPackage", "archiveSizeBytes");
-    assert_schema_property_exists(&backend_json, "DownloadPackagePage", "items");
     assert_query_parameter_enum(
         &backend_json,
         "/backend/v3/api/drive/download_packages",
@@ -569,91 +553,97 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         &app_json,
         "/app/v3/api/drive/spaces/{spaceId}/nodes",
         "get",
-        "pageSize",
+        "page_size",
     );
     assert_query_parameter_exists(
         &app_json,
         "/app/v3/api/drive/spaces/{spaceId}/nodes",
         "get",
-        "pageToken",
+        "cursor",
     );
-    assert_query_parameter_exists(&app_json, "/app/v3/api/drive/recent", "get", "pageSize");
+    assert_query_parameter_exists(&app_json, "/app/v3/api/drive/recent", "get", "page_size");
     assert_query_parameter_exists(
         &app_json,
         "/app/v3/api/drive/nodes/{nodeId}/versions",
         "get",
-        "pageToken",
+        "cursor",
     );
     assert_query_parameter_exists(
         &app_json,
         "/app/v3/api/drive/nodes/{nodeId}/comments",
         "get",
-        "pageSize",
+        "page_size",
     );
     assert_query_parameter_exists(
         &app_json,
         "/app/v3/api/drive/nodes/{nodeId}/comments",
         "get",
-        "pageToken",
+        "cursor",
     );
     assert_query_parameter_exists(
         &app_json,
         "/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}/replies",
         "get",
-        "pageSize",
+        "page_size",
     );
     assert_query_parameter_exists(
         &app_json,
         "/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}/replies",
         "get",
-        "pageToken",
+        "cursor",
     );
     assert_query_parameter_exists(
         &app_json,
         "/app/v3/api/drive/nodes/{nodeId}/permissions/effective",
         "get",
-        "pageSize",
+        "page_size",
     );
     assert_query_parameter_exists(
         &app_json,
         "/app/v3/api/drive/nodes/{nodeId}/permissions/effective",
         "get",
-        "pageToken",
+        "cursor",
     );
     assert_query_parameter_exists(
         &app_json,
         "/app/v3/api/drive/nodes/{nodeId}/properties",
         "get",
-        "pageSize",
+        "page_size",
     );
     assert_query_parameter_exists(
         &app_json,
         "/app/v3/api/drive/nodes/{nodeId}/properties",
         "get",
-        "pageToken",
+        "cursor",
     );
-    assert_query_parameter_exists(&app_json, "/app/v3/api/drive/changes", "get", "pageSize");
-    assert_query_parameter_exists(&app_json, "/app/v3/api/drive/changes", "get", "pageToken");
+    assert_query_parameter_exists(&app_json, "/app/v3/api/drive/changes", "get", "page_size");
+    assert_query_parameter_exists(&app_json, "/app/v3/api/drive/changes", "get", "cursor");
     assert_query_parameter_minimum(
         &app_json,
         "/app/v3/api/drive/spaces/{spaceId}/nodes",
         "get",
-        "pageSize",
+        "page_size",
         1,
     );
     assert_query_parameter_maximum(
         &app_json,
         "/app/v3/api/drive/spaces/{spaceId}/nodes",
         "get",
-        "pageSize",
+        "page_size",
         200,
     );
-    assert_query_parameter_minimum(&app_json, "/app/v3/api/drive/changes", "get", "pageSize", 1);
+    assert_query_parameter_minimum(
+        &app_json,
+        "/app/v3/api/drive/changes",
+        "get",
+        "page_size",
+        1,
+    );
     assert_query_parameter_maximum(
         &app_json,
         "/app/v3/api/drive/changes",
         "get",
-        "pageSize",
+        "page_size",
         200,
     );
     assert_query_parameter_minimum(
@@ -674,28 +664,28 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         &backend_json,
         "/backend/v3/api/drive/download_packages",
         "get",
-        "pageSize",
+        "page_size",
         1,
     );
     assert_query_parameter_maximum(
         &backend_json,
         "/backend/v3/api/drive/download_packages",
         "get",
-        "pageSize",
+        "page_size",
         100,
     );
     assert_query_parameter_minimum(
         &backend_json,
         "/backend/v3/api/drive/labels",
         "get",
-        "pageSize",
+        "page_size",
         1,
     );
     assert_query_parameter_maximum(
         &backend_json,
         "/backend/v3/api/drive/labels",
         "get",
-        "pageSize",
+        "page_size",
         200,
     );
     assert_query_parameter_string_constraints(
@@ -718,7 +708,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         &backend_json,
         "/backend/v3/api/drive/audit_events",
         "get",
-        "requestId",
+        "correlationId",
         64,
         "^[A-Za-z0-9._:@-]+$",
     );
@@ -743,7 +733,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     );
     assert_property_string_constraints(
         sweep_object_properties,
-        "requestId",
+        "correlationId",
         64,
         "^[A-Za-z0-9._:@-]+$",
     );
@@ -766,7 +756,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     );
     assert_property_string_constraints(
         sweep_upload_properties,
-        "requestId",
+        "correlationId",
         64,
         "^[A-Za-z0-9._:@-]+$",
     );
@@ -778,7 +768,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     );
 
     assert_property_string_constraints(properties, "operatorId", 128, "^[A-Za-z0-9._:@-]+$");
-    assert_property_string_constraints(properties, "requestId", 64, "^[A-Za-z0-9._:@-]+$");
+    assert_property_string_constraints(properties, "correlationId", 64, "^[A-Za-z0-9._:@-]+$");
     assert_property_string_constraints(properties, "traceId", 128, "^[A-Za-z0-9._:@-]+$");
 
     let admin_storage_schemas = admin_storage_json
@@ -810,6 +800,8 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     let provider_kind_pattern =
         "^(local_filesystem|s3_compatible|google_cloud_storage|aliyun_oss|tencent_cos|huawei_obs|volcengine_tos|custom:[a-z0-9_-]{2,32})$";
     let object_key_pattern = "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\u0000).*(?:[^/])$";
+    let object_list_entry_key_pattern =
+        "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\u0000).+$";
     assert_enum_values(
         create_storage_provider_properties,
         "providerKind",
@@ -860,9 +852,15 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     );
     assert_schema_property_exists(&admin_storage_json, "ProviderBucket", "exists");
     assert_schema_property_exists(&admin_storage_json, "ProviderBucketMutation", "changed");
+    assert_schema_property_exists(&admin_storage_json, "ProviderObject", "objectKind");
     assert_schema_property_exists(&admin_storage_json, "ProviderObject", "objectKey");
     assert_schema_property_exists(&admin_storage_json, "ProviderObject", "contentLength");
-    assert_schema_property_exists(&admin_storage_json, "ProviderObjectList", "nextPageToken");
+    assert_schema_property_enum_equals(
+        &admin_storage_json,
+        "ProviderObject",
+        "objectKind",
+        &["object", "prefix"],
+    );
     assert_schema_property_exists(&admin_storage_json, "ProviderObjectMutation", "changed");
     assert_schema_property_exists(
         &admin_storage_json,
@@ -881,7 +879,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         admin_storage_json
             .pointer("/components/schemas/ProviderObject/properties/objectKey")
             .expect("ProviderObject.objectKey should exist"),
-        object_key_pattern,
+        object_list_entry_key_pattern,
         "ProviderObject.objectKey",
     );
     assert_string_schema_bounds(
@@ -937,13 +935,10 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         "StorageProviderBinding",
         "storageProvider",
     );
-    assert_schema_property_exists(&admin_storage_json, "ProviderBucketList", "items");
     assert_schema_property_exists(&admin_storage_json, "ProviderBucketListItem", "configured");
     assert_schema_property_exists(&backend_json, "DriveLabel", "labelKey");
     assert_schema_property_exists(&backend_json, "CreateLabelRequest", "labelKey");
     assert_schema_property_exists(&backend_json, "UpdateLabelRequest", "operatorId");
-    assert_schema_property_exists(&backend_json, "LabelListResponse", "nextPageToken");
-    assert_schema_property_exists(&backend_json, "DeleteLabelResponse", "deleted");
     assert_enum_values(
         storage_provider_properties,
         "providerKind",
@@ -957,6 +952,96 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         Some(provider_kind_pattern),
         "StorageProvider.providerKind pattern should match"
     );
+    for path_key in [
+        "/app/v3/api/drive/nodes/{nodeId}",
+        "/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}",
+        "/app/v3/api/drive/nodes/{nodeId}/comments/{commentId}/replies/{replyId}",
+        "/app/v3/api/drive/nodes/{nodeId}/favorite",
+        "/app/v3/api/drive/nodes/{nodeId}/labels/{labelId}",
+        "/app/v3/api/drive/nodes/{nodeId}/permissions/{permissionId}",
+        "/app/v3/api/drive/nodes/{nodeId}/properties/{propertyKey}",
+        "/app/v3/api/drive/nodes/{nodeId}/versions/{versionId}",
+        "/app/v3/api/drive/share_links/{shareLinkId}",
+        "/app/v3/api/drive/spaces/{spaceId}",
+        "/app/v3/api/assets/collections/{collectionId}/items/{itemId}",
+        "/app/v3/api/assets/{assetId}/relations/{relationId}",
+    ] {
+        assert_no_content_response(&app_json, path_key, "delete");
+    }
+    assert_no_content_response(
+        &backend_json,
+        "/backend/v3/api/drive/labels/{labelId}",
+        "delete",
+    );
+    for path_key in [
+        "/backend/v3/api/drive/storage/bindings/default",
+        "/backend/v3/api/drive/storage/providers/{providerId}",
+        "/backend/v3/api/drive/storage/providers/{providerId}/bucket",
+        "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
+    ] {
+        assert_no_content_response(&admin_storage_json, path_key, "delete");
+    }
+    for schema_name in [
+        "ArchiveEntryListResponse",
+        "AssetCollectionPage",
+        "AssetPage",
+        "ChangeListResponse",
+        "CommentListResponse",
+        "CommentReplyListResponse",
+        "DeleteAssetCollectionItemHttpResponse",
+        "DeleteAssetCollectionItemResponse",
+        "DeleteAssetRelationHttpResponse",
+        "DeleteAssetRelationResponse",
+        "DeleteNodePropertyHttpResponse",
+        "DeleteNodePropertyResponse",
+        "DeleteNodeResponse",
+        "DeleteSpaceHttpResponse",
+        "DeleteSpaceResponse",
+        "DeleteVersionHttpResponse",
+        "DeleteVersionResponse",
+        "DeletedCommandHttpResponse",
+        "DriveWatchChannelListResponse",
+        "EffectivePermissionListResponse",
+        "ListSpacesResponse",
+        "NodeLabelListResponse",
+        "NodeListResponse",
+        "NodePropertyListResponse",
+        "PermissionListResponse",
+        "RemoveNodeLabelResponse",
+        "RevokeShareLinkResponse",
+        "SdkWorkListResponse",
+        "ShareLinkListResponse",
+        "VersionListResponse",
+    ] {
+        assert_schema_missing(&app_json, schema_name);
+    }
+    for schema_name in [
+        "AuditEventPage",
+        "AuditEventPageSdkWorkEnvelope",
+        "DeleteLabelResponse",
+        "DownloadPackagePage",
+        "DownloadPackagePageSdkWorkEnvelope",
+        "LabelListResponse",
+        "LabelListResponseSdkWorkEnvelope",
+        "ListSpacesResponse",
+        "ListSpacesResponseSdkWorkEnvelope",
+        "MaintenanceJobPage",
+        "MaintenanceJobPageSdkWorkEnvelope",
+        "SdkWorkListResponse",
+    ] {
+        assert_schema_missing(&backend_json, schema_name);
+    }
+    for schema_name in [
+        "DeleteStorageProviderBindingResponse",
+        "DeleteStorageProviderResponse",
+        "ListStorageProvidersResponse",
+        "ProviderBucketList",
+        "ProviderObjectList",
+        "SdkWorkListResponse",
+        "StorageProviderBindingListResponse",
+    ] {
+        assert_schema_missing(&admin_storage_json, schema_name);
+    }
 }
 
 #[test]
@@ -989,17 +1074,10 @@ fn admin_storage_mutation_operations_require_operator_id_contract() {
 
     assert_schema_property_exists(&admin_json, "CopyProviderObjectRequest", "operatorId");
     assert_schema_required(&admin_json, "CopyProviderObjectRequest", "operatorId");
-    assert_schema_property_exists(&admin_json, "StorageProviderBindingListResponse", "items");
-    assert_schema_required(&admin_json, "StorageProviderBindingListResponse", "items");
-    assert_schema_property_exists(
+    assert_no_content_response(
         &admin_json,
-        "DeleteStorageProviderBindingResponse",
-        "deleted",
-    );
-    assert_schema_required(
-        &admin_json,
-        "DeleteStorageProviderBindingResponse",
-        "deleted",
+        "/backend/v3/api/drive/storage/bindings/default",
+        "delete",
     );
 }
 
@@ -1534,6 +1612,40 @@ fn assert_response_status_exists(openapi: &Value, path_key: &str, method: &str, 
     assert!(
         responses.get(status).is_some(),
         "{method} {path_key} response {status} should exist"
+    );
+}
+
+fn assert_no_content_response(openapi: &Value, path_key: &str, method: &str) {
+    let responses = openapi
+        .get("paths")
+        .and_then(|value| value.get(path_key))
+        .and_then(|value| value.get(method))
+        .and_then(|value| value.get("responses"))
+        .unwrap_or_else(|| panic!("{method} {path_key} responses should exist"));
+    let no_content = responses
+        .get("204")
+        .unwrap_or_else(|| panic!("{method} {path_key} response 204 should exist"));
+    assert!(
+        no_content.get("content").is_none(),
+        "{method} {path_key} 204 response must not declare content"
+    );
+    assert!(
+        responses
+            .get("200")
+            .and_then(|value| value.get("content"))
+            .is_none(),
+        "{method} {path_key} must not keep legacy 200 JSON delete content"
+    );
+}
+
+fn assert_schema_missing(openapi: &Value, schema_name: &str) {
+    let schemas = openapi
+        .get("components")
+        .and_then(|value| value.get("schemas"))
+        .unwrap_or_else(|| panic!("components.schemas should exist"));
+    assert!(
+        schemas.get(schema_name).is_none(),
+        "{schema_name} must not be exposed"
     );
 }
 

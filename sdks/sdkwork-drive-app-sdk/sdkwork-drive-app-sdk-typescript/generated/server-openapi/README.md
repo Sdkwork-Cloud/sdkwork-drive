@@ -27,7 +27,7 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-const result = await client.drive.quotas.summary();
+const result = await client.drive.quotas.retrieve();
 ```
 
 ## Authentication
@@ -67,7 +67,7 @@ const client = new SdkworkAppClient({
 
 ```typescript
 // GET /app/v3/api/drive/quotas/summary
-const result = await client.drive.quotas.summary();
+const result = await client.drive.quotas.retrieve();
 ```
 
 ### node_labels
@@ -77,8 +77,8 @@ const result = await client.drive.quotas.summary();
 const nodeId = '1';
 const params = {
   labelKey: 'labelKey',
-  pageSize: 2,
-  pageToken: 'pageToken',
+  page_size: 2,
+  cursor: 'cursor',
 };
 const result = await client.nodeLabels.list(nodeId, params);
 ```
@@ -90,8 +90,8 @@ const result = await client.nodeLabels.list(nodeId, params);
 const nodeId = '1';
 const params = {
   visibility: 'private',
-  pageSize: 2,
-  pageToken: 'pageToken',
+  page_size: 2,
+  cursor: 'cursor',
 };
 const result = await client.nodeProperties.list(nodeId, params);
 ```
@@ -117,8 +117,8 @@ const result = await client.nodes.shortcuts.create(body);
 const params = {
   resourceType: 'changes',
   lifecycleStatus: 'active',
-  pageSize: 3,
-  pageToken: 'pageToken',
+  page_size: 3,
+  cursor: 'cursor',
 };
 const result = await client.watchChannels.list(params);
 ```
@@ -129,7 +129,7 @@ const result = await client.watchChannels.list(params);
 // List asset collections
 const params = {
   cursor: 'cursor',
-  pageSize: 2,
+  page_size: 2,
 };
 const result = await client.assets.assetCollections.list(params);
 ```
@@ -140,7 +140,7 @@ const result = await client.assets.assetCollections.list(params);
 import { SdkworkAppClient, NetworkError, TimeoutError, AuthenticationError } from 'sdkwork-drive-app-sdk-generated-typescript';
 
 try {
-  const result = await client.drive.quotas.summary();
+  const result = await client.drive.quotas.retrieve();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

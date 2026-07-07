@@ -41,12 +41,16 @@
       "types": "./src/composition/index.ts",
       "import": "./src/composition/index.ts",
       "default": "./src/composition/index.ts"
+    },
+    "./types": {
+      "types": "./src/types/index.ts",
+      "import": "./src/types/index.ts",
+      "default": "./src/types/index.ts"
     }
   },
   "dependencies": {
     "@sdkwork/drive-app-sdk": "workspace:*",
-    "@sdkwork/utils": "workspace:*",
-    "sdkwork-drive-pc-types": "workspace:*"
+    "@sdkwork/utils": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.0.0",

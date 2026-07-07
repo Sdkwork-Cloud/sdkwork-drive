@@ -166,11 +166,14 @@ where
             ));
         }
 
+        let space_type = validate_optional_space_type(command.space_type.as_deref())?;
+
         self.store
             .list_spaces(
                 command.tenant_id.trim(),
                 owner_type,
                 owner_id,
+                space_type.as_deref(),
                 command.offset,
                 command.limit,
             )
@@ -184,8 +187,7 @@ where
         let tenant_id = require_non_empty(command.tenant_id, "tenant_id")?;
         let viewer_subject_type =
             require_non_empty(command.viewer_subject_type, "viewer_subject_type")?;
-        let viewer_subject_id =
-            require_non_empty(command.viewer_subject_id, "viewer_subject_id")?;
+        let viewer_subject_id = require_non_empty(command.viewer_subject_id, "viewer_subject_id")?;
         let owner_type = command.owner_subject_type.as_deref();
         let owner_id = command.owner_subject_id.as_deref();
         if (owner_type.is_some() && owner_id.is_none())
@@ -195,6 +197,7 @@ where
                 "owner_subject_type and owner_subject_id must be provided together".to_string(),
             ));
         }
+        let space_type = validate_optional_space_type(command.space_type.as_deref())?;
 
         self.store
             .list_accessible_spaces(
@@ -203,6 +206,7 @@ where
                 &viewer_subject_id,
                 owner_type,
                 owner_id,
+                space_type.as_deref(),
                 command.offset,
                 command.limit,
             )
@@ -274,6 +278,7 @@ pub struct ListSpacesCommand {
     pub tenant_id: String,
     pub owner_subject_type: Option<String>,
     pub owner_subject_id: Option<String>,
+    pub space_type: Option<String>,
     pub offset: i64,
     pub limit: i64,
 }
@@ -285,6 +290,7 @@ pub struct ListAccessibleSpacesCommand {
     pub viewer_subject_id: String,
     pub owner_subject_type: Option<String>,
     pub owner_subject_id: Option<String>,
+    pub space_type: Option<String>,
     pub offset: i64,
     pub limit: i64,
 }
@@ -317,4 +323,16 @@ fn normalize_optional_text(value: Option<String>) -> Option<String> {
 
 fn normalize_optional_text_ref(value: Option<&str>) -> Option<&str> {
     value.map(str::trim).filter(|trimmed| !trimmed.is_empty())
+}
+
+fn validate_optional_space_type(value: Option<&str>) -> Result<Option<String>, DriveServiceError> {
+    let Some(raw) = normalize_optional_text_ref(value) else {
+        return Ok(None);
+    };
+    if DriveSpaceType::try_from_str(raw).is_none() {
+        return Err(DriveServiceError::Validation(
+            "space_type is invalid".to_string(),
+        ));
+    }
+    Ok(Some(raw.to_string()))
 }

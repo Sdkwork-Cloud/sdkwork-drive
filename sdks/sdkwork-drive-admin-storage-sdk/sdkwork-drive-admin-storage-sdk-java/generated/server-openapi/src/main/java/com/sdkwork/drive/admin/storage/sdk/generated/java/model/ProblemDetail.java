@@ -1,14 +1,16 @@
 package com.sdkwork.drive.admin.storage.sdk.generated.java.model;
 
+import java.util.List;
 
 public class ProblemDetail {
     private String type;
     private String title;
     private Integer status;
     private String detail;
-    private String code;
+    private String instance;
+    private Integer code;
     private String traceId;
-    private String requestId;
+    private List<FieldError> errors;
 
     public String getType() {
         return this.type;
@@ -42,11 +44,19 @@ public class ProblemDetail {
         this.detail = detail;
     }
 
-    public String getCode() {
+    public String getInstance() {
+        return this.instance;
+    }
+
+    public void setInstance(String instance) {
+        this.instance = instance;
+    }
+
+    public Integer getCode() {
         return this.code;
     }
 
-    public void setCode(String code) {
+    public void setCode(Integer code) {
         this.code = code;
     }
 
@@ -58,11 +68,11 @@ public class ProblemDetail {
         this.traceId = traceId;
     }
 
-    public String getRequestId() {
-        return this.requestId;
+    public List<FieldError> getErrors() {
+        return this.errors;
     }
 
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
+    public void setErrors(List<FieldError> errors) {
+        this.errors = errors;
     }
 }

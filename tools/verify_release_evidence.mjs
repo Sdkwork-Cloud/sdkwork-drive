@@ -10,7 +10,13 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const scriptRepoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const rootFlagIndex = process.argv.indexOf('--root');
+if (rootFlagIndex >= 0 && !process.argv[rootFlagIndex + 1]) {
+  console.error('[release-evidence-verify] --root requires a workspace path');
+  process.exit(1);
+}
+const workspaceRoot = rootFlagIndex >= 0 ? path.resolve(process.argv[rootFlagIndex + 1]) : scriptRepoRoot;
 const failures = [];
 
 function fail(message) {
@@ -32,9 +38,9 @@ function isPlaceholderChecksum(checksum) {
 }
 
 async function main() {
-  const manifestPath = path.join(repoRoot, 'sdkwork.app.config.json');
-  const evidencePath = path.join(repoRoot, 'target', 'release', 'release-evidence.json');
-  const catalogEvidencePath = path.join(repoRoot, 'target', 'release', 'catalog-media-evidence.json');
+  const manifestPath = path.join(workspaceRoot, 'sdkwork.app.config.json');
+  const evidencePath = path.join(workspaceRoot, 'target', 'release', 'release-evidence.json');
+  const catalogEvidencePath = path.join(workspaceRoot, 'target', 'release', 'catalog-media-evidence.json');
 
   if (!existsSync(manifestPath)) {
     fail('sdkwork.app.config.json must exist');
@@ -46,6 +52,14 @@ async function main() {
 
   for (const pkg of packages) {
     if (pkg.enabled === false || pkg.metadata?.releaseBuildDeferred === true) {
+      if (
+        pkg.enabled !== false
+        && pkg.metadata?.releaseBuildDeferred === true
+        && pkg.checksum
+        && isPlaceholderChecksum(pkg.checksum)
+      ) {
+        fail(`package ${pkg.id} must not keep placeholder checksum fields while releaseBuildDeferred is true`);
+      }
       continue;
     }
     const artifactRelative = pkg.metadata?.releaseArtifactPath;
@@ -53,7 +67,7 @@ async function main() {
       fail(`package ${pkg.id} is enabled and not deferred but missing metadata.releaseArtifactPath`);
       continue;
     }
-    const artifactPath = path.join(repoRoot, artifactRelative);
+    const artifactPath = path.join(workspaceRoot, artifactRelative);
     if (!existsSync(artifactPath)) {
       fail(`package ${pkg.id} artifact missing on disk: ${artifactRelative}`);
       continue;
@@ -88,7 +102,7 @@ async function main() {
   } else {
     const catalogEvidence = JSON.parse(await readFile(catalogEvidencePath, 'utf8'));
     for (const entry of catalogEvidence.catalogMedia ?? []) {
-      const stagedPath = path.join(repoRoot, entry.stagedPath);
+      const stagedPath = path.join(workspaceRoot, entry.stagedPath);
       if (!existsSync(stagedPath)) {
         fail(`catalog media staged artifact missing on disk: ${entry.stagedPath}`);
         continue;
@@ -100,7 +114,7 @@ async function main() {
     }
   }
 
-  const sbomPath = path.join(repoRoot, 'target', 'release', 'sbom.sdkwork-drive.json');
+  const sbomPath = path.join(workspaceRoot, 'target', 'release', 'sbom.sdkwork-drive.json');
   if (manifest.security?.sbomRequired === true && !existsSync(sbomPath)) {
     fail('target/release/sbom.sdkwork-drive.json must exist when security.sbomRequired is true');
   }

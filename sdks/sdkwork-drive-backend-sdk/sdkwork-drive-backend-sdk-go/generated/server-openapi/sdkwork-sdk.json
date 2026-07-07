@@ -5,6 +5,8 @@
   "language": "go",
   "sdkType": "backend",
   "packageName": "sdkwork-drive-backend-sdk-generated-go",
+  "transportPackageName": "sdkwork-drive-backend-sdk-generated-go",
+  "consumerPackageName": "@sdkwork/drive-backend-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

@@ -42,23 +42,6 @@ pub(crate) fn map_space_response(space: DriveSpace) -> CreateSpaceResponse {
     }
 }
 
-pub(crate) fn map_space_row(row: &sqlx::any::AnyRow) -> CreateSpaceResponse {
-    CreateSpaceResponse {
-        id: row.get("id"),
-        tenant_id: row.get("tenant_id"),
-        owner_subject_type: row.get("owner_subject_type"),
-        owner_subject_id: row.get("owner_subject_id"),
-        display_name: row.get("display_name"),
-        space_type: row.get("space_type"),
-        presentation_icon: row.try_get("presentation_icon").ok().flatten(),
-        presentation_color: row.try_get("presentation_color").ok().flatten(),
-        description: row.try_get("description").ok().flatten(),
-        lifecycle_status: row.get("lifecycle_status"),
-        version: row.get("version"),
-        created_by: row.get("created_by"),
-    }
-}
-
 pub(crate) fn map_permission_row(row: &sqlx::any::AnyRow) -> PermissionResponse {
     let inherited: i64 = row.get("inherited");
     PermissionResponse {

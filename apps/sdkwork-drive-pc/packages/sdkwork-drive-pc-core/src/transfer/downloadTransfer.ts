@@ -1,12 +1,12 @@
 import type { HostAdapter } from '../host/hostAdapter';
-import type { DownloadGrantLike, DownloadJob } from 'sdkwork-drive-pc-types';
+import type { DownloadGrantLike, DownloadJob } from '../types';
 import {
   applyDownloadCompletionToJob,
   applyDownloadGrantToJob,
   applyDownloadProgressToJob,
   applyTransferFailure,
   resolveTransferOpenUrl,
-} from 'sdkwork-drive-pc-types';
+} from '../types';
 
 export interface ExecuteDownloadTransferOptions {
   signal?: AbortSignal;

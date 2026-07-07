@@ -26,6 +26,8 @@ pnpm api:envelope:check
 pnpm api:schema:check
 ```
 
+CI also runs PostgreSQL workspace-service integration tests (`postgres-integration` job in `.github/workflows/verify.yml`).
+
 Start standalone gateway (development profile):
 
 ```bash
@@ -70,10 +72,15 @@ Production profile hardening:
 
 Complete [pre-launch-checklist.md](./pre-launch-checklist.md) **Admin Operations Smoke** section against the pilot backend.
 
+```bash
+# Configure SDKWORK_DRIVE_STAGING_* — see pre-launch-checklist.md
+pnpm smoke:staging-admin
+```
+
 Record evidence:
 
 - `pnpm check` output (commit SHA)
-- Staging smoke test results
+- Staging smoke script output (`pnpm smoke:staging-admin`)
 - Audit/maintenance dry-run job IDs
 
 ## Phase 4 — CI release artifacts (pre-GA)
@@ -88,6 +95,7 @@ After CI completes:
 ```bash
 pnpm release:evidence
 pnpm release:validate
+SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate
 SDKWORK_RELEASE_VALIDATION=strict pnpm check:release-readiness
 ```
 
@@ -96,6 +104,7 @@ Remaining GA blockers (CI/ops only):
 - Artifact signing (`security.signatureRequired`)
 - macOS DMG / Linux AppImage checksums from cross-platform runners
 - Catalog media CDN upload (local staging via `pnpm release:catalog-media`)
+- Immutable Kubernetes image digests for every `deployments/kubernetes/drive-services.yaml` image reference
 
 ## Phase 5 — GA promotion
 
@@ -104,7 +113,12 @@ Only after Phase 3–4 evidence is recorded:
 1. Upload catalog media to CDN; clear `catalogMediaDeferred` in `sdkwork.app.config.json`.
 2. Set immutable K8s digests (replace `REPLACE_WITH_RELEASE_DIGEST`).
 3. Set `publish.status=ACTIVE` in `sdkwork.app.config.json`.
-4. Re-run strict release readiness with zero blocking failures.
+4. Re-run strict deployment and release readiness with zero blocking failures:
+
+```bash
+SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate
+SDKWORK_RELEASE_VALIDATION=strict pnpm check:release-readiness
+```
 
 See [releases/README.md](../../releases/README.md) for release train governance.
 

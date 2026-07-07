@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use axum::body::Body;
+use axum::body::{to_bytes, Body};
 use axum::Router;
-use http::{Method, Request};
+use http::{Method, Request, Response, StatusCode};
 use sdkwork_routes_drive_app_api::build_router_with_pool_and_iam;
 use sdkwork_web_core::{access_token_jwt, auth_token_jwt, encode_unsigned_test_jwt};
 use serde_json::json;
@@ -136,6 +136,39 @@ pub fn authed_post_json(
         .expect("authed post request should be built")
 }
 
+pub fn envelope_item(payload: &serde_json::Value) -> &serde_json::Value {
+    if let Some(item) = payload.pointer("/data/item") {
+        return item;
+    }
+    payload.get("item").unwrap_or(payload)
+}
+
+pub fn envelope_data(payload: &serde_json::Value) -> &serde_json::Value {
+    payload
+        .get("data")
+        .expect("response should expose operation payload in data")
+}
+
+/// Unwrap `data.item` for resource responses, otherwise `data`, otherwise the root payload.
+pub fn envelope_body(payload: &serde_json::Value) -> &serde_json::Value {
+    if let Some(data) = payload.get("data") {
+        if let Some(item) = data.get("item") {
+            return item;
+        }
+        return data;
+    }
+    payload.get("item").unwrap_or(payload)
+}
+
+pub fn envelope_field<'a>(payload: &'a serde_json::Value, field: &str) -> &'a serde_json::Value {
+    if let Some(value) = payload.pointer(&format!("/data/{field}")) {
+        return value;
+    }
+    payload
+        .get(field)
+        .unwrap_or_else(|| panic!("response should expose {field} in data.{field} or {field}"))
+}
+
 pub fn envelope_items(payload: &serde_json::Value) -> &serde_json::Value {
     if let Some(items) = payload.pointer("/data/items") {
         return items;
@@ -162,4 +195,15 @@ pub fn envelope_next_page_token(payload: &serde_json::Value) -> Option<String> {
                 .and_then(|value| value.as_str())
                 .map(str::to_string)
         })
+}
+
+pub async fn assert_no_content_response(response: Response<Body>) {
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    let body = to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("204 response body should be readable");
+    assert!(
+        body.is_empty(),
+        "204 delete response must not include a JSON body"
+    );
 }

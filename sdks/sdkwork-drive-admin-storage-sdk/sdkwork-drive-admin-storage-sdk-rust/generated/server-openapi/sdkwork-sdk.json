@@ -5,6 +5,8 @@
   "language": "rust",
   "sdkType": "custom",
   "packageName": "sdkwork-drive-admin-storage-sdk-generated-rust",
+  "transportPackageName": "sdkwork-drive-admin-storage-sdk-generated-rust",
+  "consumerPackageName": "@sdkwork/drive-admin-storage-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

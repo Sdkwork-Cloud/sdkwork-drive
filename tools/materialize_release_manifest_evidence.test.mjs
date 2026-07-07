@@ -104,4 +104,36 @@ await withTempRepo(async ({ tempRoot, manifestPath }) => {
   assert.ok(evidence.warnings.some((warning) => warning.includes('macos-universal')));
 });
 
+{
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'sdkwork-drive-release-evidence-deferred-'));
+  await writeFile(
+    path.join(tempRoot, 'sdkwork.app.config.json'),
+    `${JSON.stringify({
+      schemaVersion: 3,
+      kind: 'sdkwork.app',
+      security: { checksumRequired: true, signatureRequired: false, sbomRequired: true },
+      artifacts: {
+        installConfig: {
+          packages: [
+            {
+              id: 'macos-universal-standalone-desktop-dmg',
+              enabled: true,
+              checksumAlgorithm: 'SHA-256',
+              checksum: '5ceffa105ceffa105ceffa105ceffa105ceffa105ceffa105ceffa105ceffa10',
+              metadata: {
+                releaseBuildDeferred: true,
+              },
+            },
+          ],
+        },
+      },
+    }, null, 2)}\n`,
+    'utf8',
+  );
+
+  const result = spawnSync(process.execPath, [toolPath, '--root', tempRoot], { cwd: tempRoot, encoding: 'utf8' });
+  assert.notEqual(result.status, 0, result.stdout);
+  assert.match(result.stderr, /must not keep placeholder checksum fields while releaseBuildDeferred is true/);
+}
+
 console.log('materialize_release_manifest_evidence.test.mjs passed');

@@ -224,6 +224,7 @@ pub struct ListObjectsResponse {
     pub bucket: String,
     pub prefix: Option<String>,
     pub items: Vec<ListedObject>,
+    pub prefixes: Vec<String>,
     pub next_continuation_token: Option<String>,
     pub is_truncated: bool,
 }

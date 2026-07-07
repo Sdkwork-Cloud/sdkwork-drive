@@ -113,12 +113,7 @@ async fn backend_production_routes_require_valid_dual_tokens() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        missing_credentials,
-        StatusCode::UNAUTHORIZED,
-        40101,
-    )
-    .await;
+    assert_problem(missing_credentials, StatusCode::UNAUTHORIZED, 40101).await;
 
     let missing_access = app
         .clone()
@@ -135,12 +130,7 @@ async fn backend_production_routes_require_valid_dual_tokens() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        missing_access,
-        StatusCode::UNAUTHORIZED,
-        40101,
-    )
-    .await;
+    assert_problem(missing_access, StatusCode::UNAUTHORIZED, 40101).await;
 
     let invalid_credentials = app
         .oneshot(
@@ -154,12 +144,7 @@ async fn backend_production_routes_require_valid_dual_tokens() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        invalid_credentials,
-        StatusCode::UNAUTHORIZED,
-        40103,
-    )
-    .await;
+    assert_problem(invalid_credentials, StatusCode::UNAUTHORIZED, 40103).await;
 }
 
 #[tokio::test]
@@ -182,12 +167,7 @@ async fn backend_routes_validate_token_derived_app_context() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        tenant_conflict,
-        StatusCode::FORBIDDEN,
-        40301,
-    )
-    .await;
+    assert_problem(tenant_conflict, StatusCode::FORBIDDEN, 40301).await;
 
     let operator_conflict = app
         .clone()
@@ -208,12 +188,7 @@ async fn backend_routes_validate_token_derived_app_context() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        operator_conflict,
-        StatusCode::FORBIDDEN,
-        40303,
-    )
-    .await;
+    assert_problem(operator_conflict, StatusCode::FORBIDDEN, 40303).await;
 
     let allowed = app
         .oneshot(
@@ -256,12 +231,7 @@ async fn backend_routes_reject_personal_login_scope_session() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(
-        personal_session,
-        StatusCode::FORBIDDEN,
-        40301,
-    )
-    .await;
+    assert_problem(personal_session, StatusCode::FORBIDDEN, 40301).await;
 }
 
 #[tokio::test]
@@ -314,12 +284,7 @@ async fn backend_routes_enforce_per_operation_admin_scopes() {
         )
         .await
         .expect("quota request should be handled");
-    assert_problem(
-        quota_denied,
-        StatusCode::FORBIDDEN,
-        40301,
-    )
-    .await;
+    assert_problem(quota_denied, StatusCode::FORBIDDEN, 40301).await;
 }
 
 async fn backend_router_allowing_unsigned_context() -> axum::Router {

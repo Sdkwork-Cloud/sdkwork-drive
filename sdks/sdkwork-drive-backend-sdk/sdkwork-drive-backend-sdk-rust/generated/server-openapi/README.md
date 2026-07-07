@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client.set_auth_token("your-auth-token");
 client.set_access_token("your-access-token");
 
-    let result = client.drive().quotas_summary().await?;
+    let result = client.drive().quotas_retrieve().await?;
     println!("{result:?}");
     Ok(())
 }
@@ -52,7 +52,7 @@ client.set_header("X-Custom-Header", "value");
 
 ```rust
 // GET /backend/v3/api/drive/quotas
-let result = client.drive().quotas_summary().await?;
+let result = client.drive().quotas_retrieve().await?;
 println!("{result:?}");
 ```
 
@@ -63,8 +63,8 @@ use std::collections::HashMap;
 // List Drive label definitions
 let mut query = HashMap::new();
 query.insert("lifecycleStatus".to_string(), serde_json::json!("active"));
-query.insert("pageSize".to_string(), serde_json::json!(2));
-query.insert("pageToken".to_string(), serde_json::json!("token"));
+query.insert("page_size".to_string(), serde_json::json!(2));
+query.insert("cursor".to_string(), serde_json::json!("cursor"));
 let result = client.labels().list(Some(&query)).await?;
 println!("{result:?}");
 ```
@@ -78,7 +78,7 @@ use sdkwork_drive_backend_sdk_generated_rust::{SdkworkBackendClient, SdkworkConf
 let client = SdkworkBackendClient::new(SdkworkConfig::new("http://127.0.0.1:18080"))?;
 
 let outcome: Result<(), _> = async {
-    client.drive().quotas_summary().await?;
+    client.drive().quotas_retrieve().await?;
     Ok(())
 }.await;
 

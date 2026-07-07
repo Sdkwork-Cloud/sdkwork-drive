@@ -44,14 +44,6 @@ pub(crate) struct UpdateSpaceRequest {
     pub(crate) operator_id: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct DeleteSpaceResponse {
-    pub(crate) deleted: bool,
-    pub(crate) space: CreateSpaceResponse,
-    pub(crate) deleted_node_count: i64,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateUploadSessionRequest {
@@ -321,12 +313,6 @@ pub(crate) struct ArchiveEntryResponse {
     pub(crate) content_type: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ArchiveEntryListResponse {
-    pub(crate) items: Vec<ArchiveEntryResponse>,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ExtractArchiveEntriesRequest {
@@ -347,23 +333,20 @@ pub(crate) struct ExtractArchiveEntriesResponse {
 pub(crate) struct ListSpacesQuery {
     pub(crate) owner_subject_type: Option<String>,
     pub(crate) owner_subject_id: Option<String>,
+    pub(crate) space_type: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ListSpacesResponse {
-    pub(crate) items: Vec<CreateSpaceResponse>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) next_page_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListNodesQuery {
     pub(crate) parent_node_id: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
     pub(crate) sort_by: Option<String>,
     pub(crate) sort_order: Option<String>,
@@ -459,6 +442,8 @@ pub(crate) struct EmptyTrashRequest {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct EmptyTrashResponse {
     pub(crate) deleted_count: i64,
+    pub(crate) skipped_count: i64,
+    pub(crate) has_more: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -466,7 +451,9 @@ pub(crate) struct EmptyTrashResponse {
 pub(crate) struct NodeViewQuery {
     pub(crate) space_id: Option<String>,
     pub(crate) parent_node_id: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
     pub(crate) sort_by: Option<String>,
     pub(crate) sort_order: Option<String>,
@@ -478,7 +465,9 @@ pub(crate) struct SubjectNodeViewQuery {
     pub(crate) subject_type: Option<String>,
     pub(crate) subject_id: Option<String>,
     pub(crate) space_id: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
     pub(crate) sort_by: Option<String>,
     pub(crate) sort_order: Option<String>,
@@ -513,6 +502,32 @@ pub(crate) struct FavoriteNodeResponse {
     pub(crate) favorited: bool,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct CheckFavoriteNodesRequest {
+    pub(crate) node_ids: Vec<String>,
+    pub(crate) subject_type: Option<String>,
+    pub(crate) subject_id: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct FavoriteNodeCheckItem {
+    pub(crate) node_id: String,
+    pub(crate) favorited: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ListMoveDestinationsQuery {
+    /// Comma-separated node IDs to exclude from results and subtree traversal.
+    pub(crate) exclude_node_ids: Option<String>,
+    #[serde(rename = "page_size")]
+    pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
+    pub(crate) page_token: Option<String>,
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct DriveNodeResponse {
@@ -539,15 +554,6 @@ pub(crate) struct DriveNodeResponse {
     pub(crate) folder_color: Option<String>,
     pub(crate) lifecycle_status: String,
     pub(crate) version: i64,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct NodeListResponse {
-    pub(crate) items: Vec<DriveNodeResponse>,
-    pub(crate) next_page_token: Option<String>,
-    #[serde(skip_serializing_if = "is_false_bool")]
-    pub(crate) incomplete_page: bool,
 }
 
 pub(crate) fn is_false_bool(value: &bool) -> bool {
@@ -591,7 +597,9 @@ pub(crate) struct NodeCapabilitiesResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NodePropertyListQuery {
     pub(crate) visibility: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
 }
 
@@ -623,24 +631,13 @@ pub(crate) struct NodePropertyResponse {
     pub(crate) version: i64,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct NodePropertyListResponse {
-    pub(crate) items: Vec<NodePropertyResponse>,
-    pub(crate) next_page_token: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct DeleteNodePropertyResponse {
-    pub(crate) deleted: bool,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NodeLabelListQuery {
     pub(crate) label_key: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
 }
 
@@ -681,25 +678,14 @@ pub(crate) struct NodeLabelResponse {
     pub(crate) label: LabelSummaryResponse,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct NodeLabelListResponse {
-    pub(crate) items: Vec<NodeLabelResponse>,
-    pub(crate) next_page_token: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct RemoveNodeLabelResponse {
-    pub(crate) removed: bool,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct WatchChannelListQuery {
     pub(crate) resource_type: Option<String>,
     pub(crate) lifecycle_status: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
 }
 
@@ -739,13 +725,6 @@ pub(crate) struct DriveWatchChannelResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct WatchChannelListResponse {
-    pub(crate) items: Vec<DriveWatchChannelResponse>,
-    pub(crate) next_page_token: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub(crate) struct StopWatchChannelResponse {
     pub(crate) stopped: bool,
     pub(crate) channel: DriveWatchChannelResponse,
@@ -779,19 +758,6 @@ pub(crate) struct NodeDownloadUrlQuery {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct DeleteNodeResponse {
-    pub(crate) deleted: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct VersionListResponse {
-    pub(crate) items: Vec<FileVersionResponse>,
-    pub(crate) next_page_token: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub(crate) struct FileVersionResponse {
     pub(crate) id: String,
     pub(crate) tenant_id: String,
@@ -804,12 +770,6 @@ pub(crate) struct FileVersionResponse {
     pub(crate) checksum_sha256_hex: String,
     pub(crate) lifecycle_status: String,
     pub(crate) created_at: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct DeleteVersionResponse {
-    pub(crate) deleted: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -846,13 +806,6 @@ pub(crate) struct PermissionResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct PermissionListResponse {
-    pub(crate) items: Vec<PermissionResponse>,
-    pub(crate) next_page_token: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub(crate) struct EffectivePermissionResponse {
     pub(crate) id: String,
     pub(crate) tenant_id: String,
@@ -865,13 +818,6 @@ pub(crate) struct EffectivePermissionResponse {
     pub(crate) inherited_from_node_id: Option<String>,
     pub(crate) lifecycle_status: String,
     pub(crate) version: i64,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct EffectivePermissionListResponse {
-    pub(crate) items: Vec<EffectivePermissionResponse>,
-    pub(crate) next_page_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -912,13 +858,6 @@ pub(crate) struct CreateShareLinkResponse {
     pub(crate) token: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) access_code: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ShareLinkListResponse {
-    pub(crate) items: Vec<ShareLinkResponse>,
-    pub(crate) next_page_token: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -979,13 +918,6 @@ pub(crate) struct CommentResponse {
     pub(crate) updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct CommentListResponse {
-    pub(crate) items: Vec<CommentResponse>,
-    pub(crate) next_page_token: Option<String>,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateCommentReplyRequest {
@@ -1018,13 +950,6 @@ pub(crate) struct CommentReplyResponse {
     pub(crate) updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct CommentReplyListResponse {
-    pub(crate) items: Vec<CommentReplyResponse>,
-    pub(crate) next_page_token: Option<String>,
-}
-
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) enum OptionalI64Patch {
     #[default]
@@ -1038,7 +963,9 @@ pub(crate) enum OptionalI64Patch {
 pub(crate) struct SearchQuery {
     pub(crate) q: Option<String>,
     pub(crate) space_id: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
 }
 
@@ -1046,9 +973,9 @@ pub(crate) struct SearchQuery {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ChangesQuery {
     pub(crate) space_id: Option<String>,
-    pub(crate) cursor: Option<i64>,
+    pub(crate) cursor: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
-    pub(crate) page_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1060,7 +987,9 @@ pub(crate) struct StartPageTokenQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct PageQuery {
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
 }
 
@@ -1124,14 +1053,6 @@ pub(crate) struct UploadSessionMutationResponse {
     pub(crate) storage_upload_id: String,
     pub(crate) expires_at_epoch_ms: i64,
     pub(crate) version: i64,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ChangeListResponse {
-    pub(crate) items: Vec<ChangeResponse>,
-    pub(crate) next_cursor: Option<i64>,
-    pub(crate) next_page_token: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1498,6 +1419,7 @@ pub(crate) const ASSET_NODE_SELECT_COLUMNS: &str = "\
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListAssetsQuery {
     pub(crate) cursor: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
     pub(crate) kind: Option<String>,
     pub(crate) source_type: Option<String>,
@@ -1586,18 +1508,11 @@ pub(crate) struct AssetItemResponse {
     pub(crate) updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct AssetPageResponse {
-    pub(crate) items: Vec<AssetItemResponse>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) next_cursor: Option<String>,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListAssetCollectionsQuery {
     pub(crate) cursor: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
 }
 
@@ -1631,14 +1546,6 @@ pub(crate) struct AssetCollectionResponse {
     pub(crate) updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct AssetCollectionPageResponse {
-    pub(crate) items: Vec<AssetCollectionResponse>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) next_cursor: Option<String>,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateAssetCollectionItemRequest {
@@ -1655,12 +1562,6 @@ pub(crate) struct AssetCollectionItemResponse {
     pub(crate) asset_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) sort_order: Option<i64>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct DeleteAssetCollectionItemResponse {
-    pub(crate) deleted: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1692,12 +1593,6 @@ pub(crate) struct AssetRelationResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) metadata: Option<serde_json::Value>,
     pub(crate) lifecycle_status: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct DeleteAssetRelationResponse {
-    pub(crate) deleted: bool,
 }
 
 #[cfg(test)]
@@ -1736,12 +1631,14 @@ mod node_view_query_tests {
         let query: NodeViewQuery = serde_json::from_value(serde_json::json!({
             "spaceId": "space-001",
             "parentNodeId": "folder-trashed-001",
-            "pageSize": 50,
+            "page_size": 50,
+            "cursor": "100",
         }))
         .expect("trash list query should deserialize parentNodeId");
 
         assert_eq!(query.space_id.as_deref(), Some("space-001"));
         assert_eq!(query.parent_node_id.as_deref(), Some("folder-trashed-001"));
         assert_eq!(query.page_size, Some(50));
+        assert_eq!(query.page_token.as_deref(), Some("100"));
     }
 }

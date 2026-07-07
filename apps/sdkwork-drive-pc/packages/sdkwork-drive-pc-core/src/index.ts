@@ -12,3 +12,4 @@ export * from './session/osSecureSessionStorage';
 export * from './session/sessionTokenManager';
 export * from './transfer/transferJobStore';
 export * from './transfer/downloadTransfer';
+export * from './types';

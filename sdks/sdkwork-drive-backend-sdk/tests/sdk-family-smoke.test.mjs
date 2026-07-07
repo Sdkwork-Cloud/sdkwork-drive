@@ -12,17 +12,17 @@ const languages = ["typescript", "rust", "java", "python", "go"];
 const requiredOperations = [
   "labels.list",
   "labels.create",
-  "labels.get",
+  "labels.retrieve",
   "labels.update",
   "labels.delete",
-  "quotas.summary",
+  "quotas.retrieve",
   "quotas.update",
   "auditEvents.list",
   "maintenance.jobs.list",
-  "maintenance.objectSweep.start",
-  "maintenance.uploadSessionSweep.start",
-  "maintenance.expiredUploadContentSweep.start",
-  "maintenance.abandonedUploadTaskSweep.start",
+  "maintenance.objectSweep",
+  "maintenance.uploadSessionSweep",
+  "maintenance.expiredUploadContentSweep",
+  "maintenance.abandonedUploadTaskSweep",
   "spaces.admin.list",
   "downloadPackages.list",
 ];
@@ -133,4 +133,4 @@ test("sdkwork-drive-backend-sdk generated TypeScript exposes a real client surfa
   assert.match(source, /createClient/);
   assert.match(source, /export \* from ['"]\.\/api['"]/);
 });
-
+

@@ -64,8 +64,9 @@ async fn share_link_create_via_app_api_and_resolve_via_open_api_with_access_code
             .expect("create response should be read"),
     )
     .expect("create response should be json");
-    assert_eq!(create_payload["accessCodeRequired"], true);
-    let token = create_payload["token"]
+    let create_data = common::envelope_data(&create_payload);
+    assert_eq!(create_data["accessCodeRequired"], true);
+    let token = create_data["token"]
         .as_str()
         .expect("created share token should be returned");
 
@@ -75,7 +76,6 @@ async fn share_link_create_via_app_api_and_resolve_via_open_api_with_access_code
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .header("x-trace-id", "e2e-cross-api-trace-001")
                 .uri(format!("/open/v3/api/drive/share_links/{token}"))
                 .body(Body::empty())
                 .expect("resolve request should be built"),
@@ -83,12 +83,15 @@ async fn share_link_create_via_app_api_and_resolve_via_open_api_with_access_code
         .await
         .expect("resolve request should be handled");
     assert_eq!(denied.status(), StatusCode::FORBIDDEN);
-    assert_eq!(
-        denied
-            .headers()
-            .get("x-trace-id")
-            .and_then(|value| value.to_str().ok()),
-        Some("e2e-cross-api-trace-001")
+    let denied_trace_id = denied
+        .headers()
+        .get(sdkwork_utils_rust::SDKWORK_TRACE_ID_HEADER)
+        .and_then(|value| value.to_str().ok())
+        .expect("denied response should expose server trace header")
+        .to_string();
+    assert!(
+        !denied_trace_id.trim().is_empty(),
+        "server trace header must not be empty"
     );
     let denied_payload: serde_json::Value = serde_json::from_slice(
         &to_bytes(denied.into_body(), usize::MAX)
@@ -98,7 +101,7 @@ async fn share_link_create_via_app_api_and_resolve_via_open_api_with_access_code
     .expect("denied response should be json");
     assert_eq!(
         denied_payload["traceId"].as_str(),
-        Some("e2e-cross-api-trace-001")
+        Some(denied_trace_id.as_str())
     );
     assert_eq!(denied_payload["code"].as_i64(), Some(40301));
 

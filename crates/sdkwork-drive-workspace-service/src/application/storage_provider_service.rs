@@ -3,6 +3,7 @@ use crate::ports::storage_provider_store::{
     DriveStorageProviderStore, NewDriveStorageProvider, UpdateDriveStorageProvider,
 };
 use crate::DriveServiceError;
+use sdkwork_drive_config::allows_plain_credential_refs;
 
 #[derive(Debug, Clone)]
 pub struct CreateStorageProviderCommand {
@@ -304,6 +305,10 @@ where
             .unwrap_or_else(|| Self::default_strict_tls_for_endpoint(&endpoint_url));
         validate_strict_tls_endpoint(strict_tls, &endpoint_url)?;
 
+        if let Some(ref credential_ref) = command.credential_ref {
+            validate_credential_ref(credential_ref)?;
+        }
+
         self.store
             .insert_storage_provider(&NewDriveStorageProvider {
                 id: command.id,
@@ -438,6 +443,15 @@ where
             None => current.default_storage_class,
         };
 
+        let credential_ref = match command.credential_ref {
+            Some(ref value) if value.trim().is_empty() => None,
+            Some(value) => {
+                validate_credential_ref(&value)?;
+                Some(value.clone())
+            }
+            None => current.credential_ref,
+        };
+
         self.store
             .update_storage_provider(
                 provider_id,
@@ -448,11 +462,7 @@ where
                     bucket,
                     path_style,
                     strict_tls,
-                    credential_ref: match command.credential_ref {
-                        Some(ref value) if value.trim().is_empty() => None,
-                        Some(value) => Some(value),
-                        None => current.credential_ref,
-                    },
+                    credential_ref,
                     server_side_encryption_mode,
                     default_storage_class,
                     status,
@@ -547,6 +557,7 @@ where
                 "credential_ref must start with env:, secret:, kms:, vault:, or plain:".to_string(),
             ));
         }
+        validate_credential_ref(credential_ref)?;
         let current = self
             .store
             .find_storage_provider(provider_id)
@@ -828,6 +839,22 @@ fn is_supported_credential_ref(raw: &str) -> bool {
     ["env:", "secret:", "kms:", "vault:", "plain:"]
         .iter()
         .any(|prefix| raw.starts_with(prefix))
+}
+
+fn validate_credential_ref(raw: &str) -> Result<(), DriveServiceError> {
+    let trimmed = raw.trim();
+    if !is_supported_credential_ref(trimmed) {
+        return Err(DriveServiceError::Validation(
+            "credential_ref must start with env:, secret:, kms:, vault:, or plain:".to_string(),
+        ));
+    }
+    if trimmed.starts_with("plain:") && !allows_plain_credential_refs() {
+        return Err(DriveServiceError::Validation(
+            "plain credential_ref is not allowed in production runtime; use env:, secret:, kms:, or vault:"
+                .to_string(),
+        ));
+    }
+    Ok(())
 }
 
 fn capabilities_for_provider(provider: &DriveStorageProvider) -> StorageProviderCapabilities {

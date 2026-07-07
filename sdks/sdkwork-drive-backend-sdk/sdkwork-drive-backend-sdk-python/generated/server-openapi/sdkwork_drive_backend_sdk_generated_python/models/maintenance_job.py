@@ -15,6 +15,6 @@ class MaintenanceJob:
     started_at: str
     finished_at: str
     created_at: str
-    request_id: Optional[str] = None
+    correlation_id: Optional[str] = None
     trace_id: Optional[str] = None
     error_message: Optional[str] = None

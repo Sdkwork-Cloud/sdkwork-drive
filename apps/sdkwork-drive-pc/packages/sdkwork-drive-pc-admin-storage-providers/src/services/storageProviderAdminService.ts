@@ -3,6 +3,7 @@ import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
 import type {
   CreateStorageProviderInput,
   ListStorageProvidersInput,
+  ListStorageProvidersPageResult,
   ListStorageProviderObjectsInput,
   ListStorageProviderObjectsResult,
   SetDefaultStorageProviderBindingInput,
@@ -20,6 +21,7 @@ type JsonRecord = Record<string, unknown>;
 
 export interface StorageProviderAdminService {
   listProviders(input?: ListStorageProvidersInput): Promise<StorageProviderView[]>;
+  listProvidersPage(input?: ListStorageProvidersInput): Promise<ListStorageProvidersPageResult>;
   createProvider(
     input: CreateStorageProviderInput,
     options?: StorageProviderMutationOptions,
@@ -90,14 +92,28 @@ export function createStorageProviderAdminService({
 }: CreateStorageProviderAdminServiceOptions): StorageProviderAdminService {
   const service: StorageProviderAdminService = {
     async listProviders(input = {}) {
+      const page = await service.listProvidersPage(input);
+      return page.items;
+    },
+    async listProvidersPage(input = {}) {
       const response = await adminStorageSdkClient.request<unknown>({
         operationId: 'storageProviders.list',
         signal: input.signal,
         query: {
           status: input.status,
+          page_size: input.pageSize ?? 20,
+          cursor: input.pageToken,
         },
       });
-      return extractItems(response).map(responseToStorageProvider);
+      const record = recordOf(response);
+      const pageInfo = isRecord(record.pageInfo) ? record.pageInfo : {};
+      const nextPageToken = stringField(pageInfo, 'nextCursor');
+      const hasMore = booleanField(pageInfo, 'hasMore') ?? Boolean(nextPageToken);
+      return {
+        items: extractItems(response).map(responseToStorageProvider),
+        nextPageToken,
+        hasMore,
+      };
     },
     async createProvider(input, options) {
       const identity = resolveAdminIdentity(getSession);
@@ -188,7 +204,7 @@ export function createStorageProviderAdminService({
     },
     async getCapabilities(providerId, options) {
       const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.capabilities.get',
+        operationId: 'storageProviders.capabilities.list',
         signal: options?.signal,
         pathParams: { providerId },
       });
@@ -196,7 +212,7 @@ export function createStorageProviderAdminService({
     },
     async headBucket(providerId, options) {
       const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.bucket.head',
+        operationId: 'storageProviders.bucket.retrieve',
         signal: options?.signal,
         pathParams: { providerId },
       });
@@ -210,7 +226,7 @@ export function createStorageProviderAdminService({
     async getDefaultBinding(spaceId, options) {
       const identity = resolveAdminIdentity(getSession);
       const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviderBindings.default.get',
+        operationId: 'storageProviderBindings.default.retrieve',
         signal: options?.signal,
         query: {
           spaceId,
@@ -221,7 +237,7 @@ export function createStorageProviderAdminService({
     async setDefaultBinding(input) {
       const identity = resolveAdminIdentity(getSession);
       const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviderBindings.default.set',
+        operationId: 'storageProviderBindings.default.update',
         signal: input.signal,
         body: {
           providerId: input.providerId,
@@ -291,7 +307,7 @@ export function createStorageProviderAdminService({
     },
     async createBucket(providerId, options) {
       const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviders.bucket.create',
+        operationId: 'storageProviders.bucket.update',
         signal: options?.signal,
         pathParams: { providerId },
       });
@@ -318,23 +334,17 @@ export function createStorageProviderAdminService({
         query: {
           prefix: input.prefix || undefined,
           delimiter: '/',
-          pageSize: input.pageSize ?? 100,
-          pageToken: input.pageToken || undefined,
+          page_size: input.pageSize ?? 100,
+          cursor: input.pageToken || undefined,
         },
       });
       const record = recordOf(response);
-      const prefixes = Array.isArray(record.prefixes)
-        ? record.prefixes.filter((item): item is string => typeof item === 'string')
-        : [];
-      const folders: StorageProviderObjectView[] = prefixes.map((prefix) => ({
-        key: prefix,
-        sizeBytes: 0,
-        isFolder: true,
-      }));
-      const files = extractItems(record).map((item) => {
+      const pageInfo = isRecord(record.pageInfo) ? record.pageInfo : {};
+      const items = extractItems(record).map((item) => {
         const objectRecord = recordOf(item);
         const objectKey =
           stringField(objectRecord, 'objectKey', 'object_key', 'key') ?? '';
+        const objectKind = stringField(objectRecord, 'objectKind', 'object_kind');
         const contentLength =
           numberField(objectRecord, 'contentLength', 'content_length', 'sizeBytes') ?? 0;
         const lastModifiedEpochMs = numberField(objectRecord, 'lastModifiedEpochMs');
@@ -346,14 +356,14 @@ export function createStorageProviderAdminService({
           lastModified: lastModifiedEpochMs
             ? new Date(lastModifiedEpochMs).toLocaleString()
             : undefined,
-          isFolder: false,
+          isFolder: objectKind === 'prefix',
         } satisfies StorageProviderObjectView;
       });
-      const nextPageToken = stringField(record, 'nextPageToken');
+      const nextPageToken = stringField(pageInfo, 'nextCursor');
       return {
-        items: [...folders, ...files],
+        items,
         nextPageToken,
-        hasMore: Boolean(nextPageToken),
+        hasMore: booleanField(pageInfo, 'hasMore') ?? Boolean(nextPageToken),
       };
     },
     async deleteObject(providerId, objectKey, options) {

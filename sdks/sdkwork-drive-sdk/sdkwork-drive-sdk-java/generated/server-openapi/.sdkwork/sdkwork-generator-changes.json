@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-sdk-generated-java"
   },
-  "changeFingerprint": "c5f77e18f17d7578fee1799c2cda2c6411dc8f552cb2ae73a0cbef0fa73da14b",
+  "changeFingerprint": "8a95bd1903f6da6fdb7137a4eb89d12a8f8e6a69e4692436848dab480f7b554a",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [],
@@ -33,6 +33,8 @@
       "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenDownloadUrlResponse.java",
       "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenNode.java",
       "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenShareLinkResolveResponse.java",
+      "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenShareLinksDownloadUrlsCreateResponse201.java",
+      "src/main/java/com/sdkwork/drive/sdk/generated/java/model/OpenShareLinksRetrieveResponse.java",
       "src/main/java/com/sdkwork/drive/sdk/generated/java/model/ProblemDetail.java",
       "src/main/java/com/sdkwork/drive/sdk/generated/java/model/SdkWorkApiResponse.java",
       "src/main/java/com/sdkwork/drive/sdk/generated/java/model/SdkWorkResourceData.java",

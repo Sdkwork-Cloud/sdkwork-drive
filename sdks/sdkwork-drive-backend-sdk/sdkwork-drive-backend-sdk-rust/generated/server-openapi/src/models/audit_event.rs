@@ -18,9 +18,9 @@ pub struct AuditEvent {
     #[serde(rename = "operatorId")]
     pub operator_id: String,
 
-    #[serde(rename = "requestId")]
+    #[serde(rename = "correlationId")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub request_id: Option<String>,
+    pub correlation_id: Option<String>,
 
     #[serde(rename = "traceId")]
     #[serde(default, skip_serializing_if = "Option::is_none")]

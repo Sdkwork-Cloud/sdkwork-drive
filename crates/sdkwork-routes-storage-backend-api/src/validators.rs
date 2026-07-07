@@ -1,6 +1,7 @@
 use crate::error::{validation_problem, ProblemDetail};
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_utils_rust::{DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE};
 
 pub(crate) fn decode_object_key(raw: &str) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
     let mut decoded = String::with_capacity(raw.len());
@@ -115,15 +116,21 @@ pub(crate) fn parse_offset_page(
     page_size: Option<i64>,
     page_token: Option<String>,
 ) -> Result<crate::dto::OffsetPage, (StatusCode, Json<ProblemDetail>)> {
-    let limit = validate_page_size_i64(page_size, 200, 1, 200, "pageSize")?;
+    let limit = validate_page_size_i64(
+        page_size,
+        i64::from(DEFAULT_LIST_PAGE_SIZE),
+        1,
+        i64::from(MAX_LIST_PAGE_SIZE),
+        "page_size",
+    )?;
     let offset = match normalize_optional_text(page_token) {
-        Some(raw) => raw.parse::<i64>().map_err(|_| {
-            validation_problem("pageToken is invalid")
-        })?,
+        Some(raw) => raw
+            .parse::<i64>()
+            .map_err(|_| validation_problem("cursor is invalid"))?,
         None => 0,
     };
     if offset < 0 {
-        return Err(validation_problem("pageToken is invalid"));
+        return Err(validation_problem("cursor is invalid"));
     }
     Ok(crate::dto::OffsetPage { limit, offset })
 }
@@ -144,7 +151,10 @@ pub(crate) fn validate_page_size_i64(
     Ok(page_size)
 }
 
-pub(crate) fn next_page_token<T>(items: &mut Vec<T>, page: crate::dto::OffsetPage) -> Option<String> {
+pub(crate) fn next_page_token<T>(
+    items: &mut Vec<T>,
+    page: crate::dto::OffsetPage,
+) -> Option<String> {
     if items.len() as i64 > page.limit {
         items.pop();
         Some((page.offset + page.limit).to_string())

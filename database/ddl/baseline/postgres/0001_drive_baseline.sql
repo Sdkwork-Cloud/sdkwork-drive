@@ -251,10 +251,10 @@ END $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_node_root_name_live
     ON dr_drive_node (tenant_id, space_id, node_name)
-    WHERE parent_node_id IS NULL AND lifecycle_status != 'deleted';
+    WHERE parent_node_id IS NULL AND lifecycle_status = 'active';
 CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_node_child_name_live
     ON dr_drive_node (tenant_id, space_id, parent_node_id, node_name)
-    WHERE parent_node_id IS NOT NULL AND lifecycle_status != 'deleted';
+    WHERE parent_node_id IS NOT NULL AND lifecycle_status = 'active';
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_space_parent
     ON dr_drive_node (tenant_id, space_id, parent_node_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_space_type_parent
@@ -1405,21 +1405,34 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending_dispatch
     ON dr_drive_domain_outbox (attempt_count, created_at)
     WHERE delivery_status = 'pending';
 
--- folded migration: migrations/postgres/0003_drive_tenant_quota.up.sql
+-- folded migration: migrations/postgres/0004_drive_maintenance_leader.up.sql
 -- sdkwork:migration
--- version: 0003
+-- version: 0004
 -- engine: postgres
 -- module: drive
--- description: Tenant quota policy table used by quotas.summary app API.
+-- description: Install-worker maintenance leader lock for SQLite parity and cross-engine leader metadata.
 
-CREATE TABLE IF NOT EXISTS dr_drive_tenant_quota (
-    tenant_id VARCHAR(64) PRIMARY KEY,
-    max_bytes BIGINT,
-    updated_by VARCHAR(128) NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    version BIGINT NOT NULL DEFAULT 1,
-    CONSTRAINT ck_dr_drive_tenant_quota_version
-        CHECK (version >= 1),
-    CONSTRAINT ck_dr_drive_tenant_quota_max_bytes
-        CHECK (max_bytes IS NULL OR max_bytes > 0)
+CREATE TABLE IF NOT EXISTS dr_drive_maintenance_leader (
+    lock_key VARCHAR(64) PRIMARY KEY,
+    holder_id VARCHAR(128) NOT NULL,
+    acquired_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- folded migration: migrations/postgres/0005_drive_outbox_channel_delivery.up.sql
+-- sdkwork:migration
+-- version: 0005
+-- engine: postgres
+-- module: drive
+-- description: Per-channel outbox webhook delivery ledger for idempotent fan-out.
+
+CREATE TABLE IF NOT EXISTS dr_drive_domain_outbox_channel_delivery (
+    outbox_id VARCHAR(64) NOT NULL,
+    channel_id VARCHAR(64) NOT NULL,
+    delivered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (outbox_id, channel_id),
+    CONSTRAINT fk_dr_drive_domain_outbox_channel_delivery_outbox_id
+        FOREIGN KEY (outbox_id) REFERENCES dr_drive_domain_outbox(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_channel_delivery_channel
+    ON dr_drive_domain_outbox_channel_delivery (channel_id, delivered_at DESC);

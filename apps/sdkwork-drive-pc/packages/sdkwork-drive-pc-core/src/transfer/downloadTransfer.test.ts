@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { DownloadJob } from 'sdkwork-drive-pc-types';
+import type { DownloadJob } from '../types';
 import {
   applyDownloadCompletionToJob,
   applyDownloadGrantToJob,
   applyDownloadProgressToJob,
   createDownloadJobForFiles,
-} from 'sdkwork-drive-pc-types';
+} from '../types';
 import { executeDownloadTransfer, isDriveAbortError, runManagedDownloadTransfer } from './downloadTransfer';
 
 const sourceFile = {

@@ -1,14 +1,17 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{DriveNodeResponse, NodeCommandRequest};
-use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
-use crate::metadata_repository::present_drive_node;
+use crate::error::{
+    internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode,
+};
 use crate::node_repository::{collect_node_subtree, find_node};
+use crate::response::success_resource;
 use crate::route_change::record_change;
 use crate::space_repository::ensure_git_repository_space_root_accepts_node_type;
 use crate::state::AppState;
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use sqlx::AnyPool;
 use sqlx::Row;
 use std::collections::{BTreeMap, BTreeSet};
@@ -20,7 +23,10 @@ pub(crate) async fn set_node_lifecycle(
     payload: NodeCommandRequest,
     lifecycle_status: &str,
     event_type: &str,
-) -> Result<Json<crate::dto::DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<crate::dto::DriveNodeResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
@@ -28,6 +34,31 @@ pub(crate) async fn set_node_lifecycle(
     let nodes_to_update = collect_node_subtree(&state.pool, &tenant_id, &node).await?;
     if lifecycle_status == "active" {
         ensure_restorable_subtree(&state.pool, &tenant_id, &nodes_to_update).await?;
+        for node_to_update in &nodes_to_update {
+            let unique_name = crate::node_support::resolve_live_unique_node_name_in_parent(
+                &state.pool,
+                &tenant_id,
+                &node_to_update.space_id,
+                node_to_update.parent_node_id.as_deref(),
+                &node_to_update.node_name,
+                Some(node_to_update.id.as_str()),
+            )
+            .await?;
+            if unique_name != node_to_update.node_name {
+                sqlx::query(
+                    "UPDATE dr_drive_node
+                     SET node_name=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
+                     WHERE tenant_id=$3 AND id=$4 AND lifecycle_status != 'deleted'",
+                )
+                .bind(&unique_name)
+                .bind(&operator_id)
+                .bind(&tenant_id)
+                .bind(&node_to_update.id)
+                .execute(&state.pool)
+                .await
+                .map_err(internal_sql_error("rename node before restore failed"))?;
+            }
+        }
     }
     let mut updated_count = 0_u64;
     for node_to_update in &nodes_to_update {
@@ -60,8 +91,8 @@ pub(crate) async fn set_node_lifecycle(
     if updated_count == 0 {
         return Err(not_found_problem("node not found"));
     }
-    Ok(Json(
-        present_drive_node(
+    Ok(success_resource(
+        crate::metadata_repository::present_drive_node(
             &state.pool,
             &tenant_id,
             find_node(&state.pool, &tenant_id, &node_id).await?,

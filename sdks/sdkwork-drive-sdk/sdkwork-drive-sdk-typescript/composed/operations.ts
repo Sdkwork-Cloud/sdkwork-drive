@@ -15,5 +15,5 @@ export const sdkMetadata = {
 
 export const operations = {
   "openShareLinks.downloadUrls.create": { method: "POST", path: "/open/v3/api/drive/share_links/{token}/download_url" },
-  "openShareLinks.resolve": { method: "GET", path: "/open/v3/api/drive/share_links/{token}" },
+  "openShareLinks.retrieve": { method: "GET", path: "/open/v3/api/drive/share_links/{token}" },
 } as const;

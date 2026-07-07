@@ -9,7 +9,7 @@ type MaintenanceJob struct {
 	ScannedCount int `json:"scannedCount"`
 	AffectedCount int `json:"affectedCount"`
 	OperatorId string `json:"operatorId"`
-	RequestId string `json:"requestId"`
+	CorrelationId string `json:"correlationId"`
 	TraceId string `json:"traceId"`
 	ErrorMessage string `json:"errorMessage"`
 	StartedAt string `json:"startedAt"`

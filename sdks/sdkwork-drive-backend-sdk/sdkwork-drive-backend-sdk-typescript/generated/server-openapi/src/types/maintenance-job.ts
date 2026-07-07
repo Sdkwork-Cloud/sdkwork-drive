@@ -6,7 +6,7 @@ export interface MaintenanceJob {
   scannedCount: string;
   affectedCount: string;
   operatorId: string;
-  requestId?: string;
+  correlationId?: string;
   traceId?: string;
   errorMessage?: string;
   startedAt: string;

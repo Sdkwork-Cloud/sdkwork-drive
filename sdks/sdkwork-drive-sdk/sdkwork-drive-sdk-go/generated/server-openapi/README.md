@@ -30,7 +30,7 @@ func main() {
     params := map[string]interface{}{
         "accessCode": "accessCode",
     }
-    result, err := client.Drive.OpenShareLinksResolve(token, params)
+    result, err := client.Drive.OpenShareLinksRetrieve(token, params)
     if err != nil {
         panic(err)
     }
@@ -89,7 +89,7 @@ token := "token"
 params := map[string]interface{}{
     "accessCode": "accessCode",
 }
-result, err := client.Drive.OpenShareLinksResolve(token, params)
+result, err := client.Drive.OpenShareLinksRetrieve(token, params)
 if err != nil {
     panic(err)
 }
@@ -103,7 +103,7 @@ token := "token"
 params := map[string]interface{}{
     "accessCode": "accessCode",
 }
-_, err := client.Drive.OpenShareLinksResolve(token, params)
+_, err := client.Drive.OpenShareLinksRetrieve(token, params)
 if err != nil {
     // Handle error
     fmt.Println("Error:", err)

@@ -181,4 +181,9 @@ export default {
   unexpectedServiceError: 'Drive 服务出现意外错误。',
   loadMoreFailed: '加载更多文件失败。',
   loadingAllForSort: '正在加载剩余条目以完成排序...',
+  nameConflict: '此文件夹中已存在同名项目。',
+  folderName: '文件夹名称',
+  moveNameConflict: '无法移动：目标文件夹中已存在同名项目。',
+  toastUploadRenamed: '目标位置已有同名文件，已上传为 "{name}"。',
+  toastCopyRenamed: '目标位置已有同名项目，已复制为 "{name}"。',
 };

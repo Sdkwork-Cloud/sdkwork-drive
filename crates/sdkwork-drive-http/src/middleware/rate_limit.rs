@@ -16,13 +16,14 @@
 //! | `SDKWORK_DRIVE_RATE_LIMIT_DEFAULT_WINDOW_SECONDS` | `60` | Default sliding window |
 //! | `SDKWORK_DRIVE_RATE_LIMIT_DEFAULT_MAX_REQUESTS` | `600` | Default max requests per window |
 //! | `SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY` | `false` | Trust `x-forwarded-for` / `x-real-ip` |
+//! | `SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED` | `false` | Deny when Redis backend is unavailable |
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{LazyLock, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 const MAX_RATE_LIMIT_BUCKETS: usize = 10_000;
@@ -34,6 +35,7 @@ pub struct RateLimitConfig {
     pub window: Duration,
     pub max_requests: u32,
     pub trust_proxy: bool,
+    pub fail_closed: bool,
 }
 
 impl RateLimitConfig {
@@ -72,16 +74,18 @@ impl RateLimitConfig {
             })
             .unwrap_or(default_max_requests);
         let trust_proxy = Self::env_bool("SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY", false);
+        let fail_closed = Self::env_bool("SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED", false);
 
         Self {
             enabled,
             window: Duration::from_secs(window_seconds),
             max_requests,
             trust_proxy,
+            fail_closed,
         }
     }
 
-    fn env_bool(key: &str, default: bool) -> bool {
+    pub(crate) fn env_bool(key: &str, default: bool) -> bool {
         std::env::var(key)
             .ok()
             .map(|v| {
@@ -124,9 +128,7 @@ impl InMemoryRateLimitBackend {
         if buckets.len() >= MAX_RATE_LIMIT_BUCKETS && !buckets.contains_key(key) {
             if let Some(oldest_key) = buckets
                 .iter()
-                .min_by_key(|(_, entries)| {
-                    entries.first().copied().unwrap_or_else(Instant::now)
-                })
+                .min_by_key(|(_, entries)| entries.first().copied().unwrap_or_else(Instant::now))
                 .map(|(bk, _)| bk.clone())
             {
                 buckets.remove(&oldest_key);
@@ -142,12 +144,6 @@ impl InMemoryRateLimitBackend {
         entries.push(now);
         true
     }
-}
-
-/// Shared rate-limit state (singleton per config).
-pub struct SharedRateLimitState {
-    backend: InMemoryRateLimitBackend,
-    backend_type: &'static str,
 }
 
 fn resolve_rate_limit_backend_type() -> &'static str {
@@ -168,29 +164,48 @@ fn resolve_rate_limit_backend_type() -> &'static str {
     })
 }
 
-/// Resolve or create a shared rate-limit state for a given config initialiser.
+/// Per-API-surface rate-limit state. Each surface keeps its own window and max request budget.
+pub struct SharedRateLimitState {
+    pub(crate) surface_id: &'static str,
+    pub(crate) config: RateLimitConfig,
+    backend: InMemoryRateLimitBackend,
+    backend_type: &'static str,
+}
+
+fn build_shared_rate_limit_state(
+    surface_id: &'static str,
+    config: RateLimitConfig,
+) -> SharedRateLimitState {
+    SharedRateLimitState {
+        surface_id,
+        backend: InMemoryRateLimitBackend::new(config),
+        config,
+        backend_type: resolve_rate_limit_backend_type(),
+    }
+}
+
+static RATE_LIMIT_STATES: LazyLock<Mutex<HashMap<&'static str, &'static SharedRateLimitState>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Resolve or create a shared rate-limit state for an API surface.
 pub fn shared_rate_limit_state(
+    surface_id: &'static str,
     init: impl FnOnce() -> RateLimitConfig,
 ) -> &'static SharedRateLimitState {
-    static STATE: OnceLock<SharedRateLimitState> = OnceLock::new();
-    STATE.get_or_init(|| {
-        let config = init();
-        let backend_type = resolve_rate_limit_backend_type();
-        SharedRateLimitState {
-            backend: InMemoryRateLimitBackend::new(config),
-            backend_type,
-        }
-    })
+    let mut states = RATE_LIMIT_STATES
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some(state) = states.get(surface_id) {
+        return state;
+    }
+    let state: &'static SharedRateLimitState =
+        Box::leak(Box::new(build_shared_rate_limit_state(surface_id, init())));
+    states.insert(surface_id, state);
+    state
 }
 
 /// Extract the client IP/identity from the request for rate-limit key derivation.
-pub fn rate_limit_client_key(request: &Request<Body>, fallback: &str) -> String {
-    // Check the config via a lazy static to avoid re-parsing env vars on every request.
-    static TRUST_PROXY: OnceLock<bool> = OnceLock::new();
-    let trust_proxy = *TRUST_PROXY.get_or_init(|| {
-        RateLimitConfig::env_bool("SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY", false)
-    });
-
+pub fn rate_limit_client_key(request: &Request<Body>, fallback: &str, trust_proxy: bool) -> String {
     if trust_proxy {
         if let Some(real_ip) = request
             .headers()
@@ -201,17 +216,21 @@ pub fn rate_limit_client_key(request: &Request<Body>, fallback: &str) -> String 
         {
             return real_ip.to_string();
         }
+
+        if let Some(forwarded_for) = request
+            .headers()
+            .get("x-forwarded-for")
+            .and_then(|value| value.to_str().ok())
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|value| value.split(',').next().unwrap_or(value).trim().to_string())
+            .filter(|value| !value.is_empty())
+        {
+            return forwarded_for;
+        }
     }
 
-    request
-        .headers()
-        .get("x-forwarded-for")
-        .and_then(|value| value.to_str().ok())
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(|value| value.split(',').next().unwrap_or(value).trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| fallback.to_string())
+    fallback.to_string()
 }
 
 /// Sliding-window rate-limit middleware.
@@ -221,8 +240,8 @@ pub async fn sliding_window_rate_limit(
     next: Next,
     message: &'static str,
 ) -> Response {
-    let client_key = rate_limit_client_key(&request, "direct-client");
-    let key = format!("{client_key}:{}", request.uri().path());
+    let client_key = rate_limit_client_key(&request, "direct-client", state.config.trust_proxy);
+    let key = format!("{}:{client_key}:{}", state.surface_id, request.uri().path());
     let allowed = if state.backend_type == "redis" {
         #[cfg(feature = "redis-rate-limit")]
         {
@@ -257,4 +276,26 @@ pub fn rate_limit_config_from_env(
         default_window_seconds,
         default_max_requests,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::Request;
+
+    #[test]
+    fn rate_limit_client_key_ignores_forwarded_headers_without_trust_proxy() {
+        let request = Request::builder()
+            .header("x-forwarded-for", "203.0.113.10")
+            .body(Body::empty())
+            .expect("request");
+        assert_eq!(
+            rate_limit_client_key(&request, "direct-client", false),
+            "direct-client"
+        );
+        assert_eq!(
+            rate_limit_client_key(&request, "direct-client", true),
+            "203.0.113.10"
+        );
+    }
 }

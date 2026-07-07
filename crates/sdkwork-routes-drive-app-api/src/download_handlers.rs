@@ -8,6 +8,7 @@ use crate::error::{
 };
 use crate::node_repository::find_active_node;
 use crate::object_store::build_download_service;
+use crate::response::{success_created_command_data, success_envelope};
 use crate::route_change::record_change;
 use crate::state::AppState;
 use crate::time::current_epoch_ms;
@@ -16,9 +17,6 @@ use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum::response::IntoResponse;
-use axum::response::Redirect;
-use axum::response::Response;
 use axum::Extension;
 use axum::Json;
 use sdkwork_drive_contract::drive::domain_events as drive_events;
@@ -27,13 +25,20 @@ use sdkwork_drive_workspace_service::application::download_service::{
     parse_download_token_for_tenant, CreateDownloadUrlCommand, ResolveDownloadTokenCommand,
 };
 use sdkwork_drive_workspace_service::DriveServiceError;
+use sdkwork_utils_rust::SdkWorkApiResponse;
 
 pub(crate) async fn create_node_download_grant(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CreateDownloadGrantRequest>,
-) -> Result<(StatusCode, Json<CreateDownloadUrlResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<CreateDownloadUrlResponse>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
@@ -73,22 +78,20 @@ pub(crate) async fn create_node_download_grant(
         &operator_id,
     )
     .await?;
-    Ok((
-        StatusCode::CREATED,
-        Json(CreateDownloadUrlResponse {
-            download_url: result.download_url,
-            signed_source_url: result.signed_source_url,
-            expires_at_epoch_ms: result.expires_at_epoch_ms,
-            method: result.method,
-        }),
-    ))
+    Ok(success_created_command_data(CreateDownloadUrlResponse {
+        download_url: result.download_url,
+        signed_source_url: result.signed_source_url,
+        expires_at_epoch_ms: result.expires_at_epoch_ms,
+        method: result.method,
+    }))
 }
 pub(crate) async fn create_node_download_url(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Query(query): Query<NodeDownloadUrlQuery>,
-) -> Result<Json<CreateDownloadUrlResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<Json<SdkWorkApiResponse<CreateDownloadUrlResponse>>, (StatusCode, Json<ProblemDetail>)>
+{
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
@@ -118,7 +121,7 @@ pub(crate) async fn create_node_download_url(
         })
         .await
         .map_err(map_service_error)?;
-    Ok(Json(CreateDownloadUrlResponse {
+    Ok(success_envelope(CreateDownloadUrlResponse {
         download_url: result.download_url,
         signed_source_url: result.signed_source_url,
         expires_at_epoch_ms: result.expires_at_epoch_ms,
@@ -129,7 +132,13 @@ pub(crate) async fn create_download_url(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Json(payload): Json<CreateDownloadUrlRequest>,
-) -> Result<(StatusCode, Json<CreateDownloadUrlResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<CreateDownloadUrlResponse>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let started = start_timer();
     let service = build_download_service(&state);
     let requested_ttl_seconds = validate_requested_ttl_seconds(
@@ -189,21 +198,19 @@ pub(crate) async fn create_download_url(
         method = result.method.as_str()
     );
 
-    Ok((
-        StatusCode::CREATED,
-        Json(CreateDownloadUrlResponse {
-            download_url: result.download_url,
-            signed_source_url: result.signed_source_url,
-            expires_at_epoch_ms: result.expires_at_epoch_ms,
-            method: result.method,
-        }),
-    ))
+    Ok(success_created_command_data(CreateDownloadUrlResponse {
+        download_url: result.download_url,
+        signed_source_url: result.signed_source_url,
+        expires_at_epoch_ms: result.expires_at_epoch_ms,
+        method: result.method,
+    }))
 }
 pub(crate) async fn resolve_download_token(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(token): Path<String>,
-) -> Result<Response, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<Json<SdkWorkApiResponse<CreateDownloadUrlResponse>>, (StatusCode, Json<ProblemDetail>)>
+{
     let started = start_timer();
     let tenant_id = ctx.resolve_tenant_id()?;
     let parsed = match parse_download_token_for_tenant(token.trim(), &tenant_id) {
@@ -259,7 +266,10 @@ pub(crate) async fn resolve_download_token(
     }
     let service = build_download_service(&state);
     let result_value = service
-        .resolve_download_token(ResolveDownloadTokenCommand { tenant_id, token })
+        .resolve_download_token(ResolveDownloadTokenCommand {
+            tenant_id,
+            token: token.clone(),
+        })
         .await;
     let result = match result_value {
         Ok(result) => result,
@@ -282,5 +292,15 @@ pub(crate) async fn resolve_download_token(
         method = "GET"
     );
 
-    Ok(Redirect::temporary(&result.signed_source_url).into_response())
+    let download_url = format!(
+        "{}/download_tokens/{}",
+        state.download_public_base_url.trim_end_matches('/'),
+        token.trim()
+    );
+    Ok(success_envelope(CreateDownloadUrlResponse {
+        download_url,
+        signed_source_url: result.signed_source_url,
+        expires_at_epoch_ms: result.expires_at_epoch_ms,
+        method: result.method,
+    }))
 }

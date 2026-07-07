@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { encodeLocalFilesystemId } from 'sdkwork-drive-pc-types';
+import { encodeLocalFilesystemId } from '../types';
 import { buildLocalFilesystemFolderPath } from './localFilesystemService';
 
 describe('buildLocalFilesystemFolderPath', () => {

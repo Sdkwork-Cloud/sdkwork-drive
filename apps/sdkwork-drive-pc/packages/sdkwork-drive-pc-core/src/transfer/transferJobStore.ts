@@ -2,7 +2,7 @@ import {
   applyTransferFailure,
   isActiveTransferStatus,
   type DownloadJob,
-} from 'sdkwork-drive-pc-types';
+} from '../types';
 import {
   TRANSFER_INTERRUPTION_TRANSFER_RETRY,
   TRANSFER_INTERRUPTION_UPLOAD_NATIVE_RETRY,

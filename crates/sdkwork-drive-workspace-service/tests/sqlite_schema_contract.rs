@@ -79,6 +79,8 @@ async fn sqlite_installer_uses_dr_drive_prefix_for_all_drive_tables() {
         "dr_drive_change_cursor",
         "dr_drive_change_log",
         "dr_drive_domain_outbox",
+        "dr_drive_domain_outbox_channel_delivery",
+        "dr_drive_maintenance_leader",
         "dr_drive_upload_session",
         "dr_drive_storage_provider",
         "dr_drive_storage_provider_binding",
@@ -160,6 +162,8 @@ async fn sqlite_installer_creates_special_space_profile_tables() {
         "dr_drive_change_cursor",
         "dr_drive_change_log",
         "dr_drive_domain_outbox",
+        "dr_drive_domain_outbox_channel_delivery",
+        "dr_drive_maintenance_leader",
         "dr_drive_storage_provider",
         "dr_drive_storage_provider_binding",
         "dr_drive_audit_event",
@@ -213,6 +217,7 @@ async fn sqlite_installer_creates_special_space_profile_tables() {
         "ix_dr_drive_change_log_tenant_space_created",
         "ix_dr_drive_domain_outbox_pending",
         "ix_dr_drive_domain_outbox_pending_dispatch",
+        "ix_dr_drive_domain_outbox_channel_delivery_channel",
         "ix_dr_drive_audit_event_tenant_created",
         "ix_dr_drive_audit_event_resource",
         "ix_dr_drive_audit_event_action_created",
@@ -603,6 +608,29 @@ async fn sqlite_schema_enforces_live_node_name_uniqueness_for_root_and_child_nod
         duplicate_child.is_err(),
         "schema must reject duplicate live child node names in the same parent"
     );
+
+    insert_node(
+        &pool,
+        "folder-root-trashed",
+        "space-uniq",
+        None,
+        "folder",
+        "Trashed Reports",
+        "trashed",
+    )
+    .await
+    .expect("trashed root folder insert should succeed");
+    insert_node(
+        &pool,
+        "folder-root-after-trash",
+        "space-uniq",
+        None,
+        "folder",
+        "Trashed Reports",
+        "active",
+    )
+    .await
+    .expect("active root folder should reuse a trashed sibling name");
 }
 
 #[tokio::test]

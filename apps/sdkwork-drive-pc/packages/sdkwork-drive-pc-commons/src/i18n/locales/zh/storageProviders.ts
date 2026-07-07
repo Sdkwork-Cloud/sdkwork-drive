@@ -294,4 +294,9 @@ export default {
   bindingsTenantDefaultClear: '清除租户默认',
   bindingsTenantDefaultSaved: '租户默认绑定已更新。',
   bindingsTenantDefaultCleared: '租户默认绑定已清除。',
+
+  // Pagination
+  pageLabel: '第 {page} 页',
+  previousPage: '上一页',
+  nextPage: '下一页',
 };

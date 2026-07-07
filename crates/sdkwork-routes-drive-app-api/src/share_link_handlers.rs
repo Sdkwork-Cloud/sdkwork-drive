@@ -5,14 +5,19 @@ use crate::collaboration_repository::{
 };
 use crate::dto::{
     apply_optional_i64_patch, ClaimShareLinkResponse, CreateShareLinkRequest,
-    CreateShareLinkResponse, NodeMutationQuery, PageQuery, ShareLinkResponse, UpdateShareLinkRequest,
+    CreateShareLinkResponse, NodeMutationQuery, PageQuery, ShareLinkResponse,
+    UpdateShareLinkRequest,
 };
-use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::error::{
     internal_problem, internal_sql_error, is_unique_constraint_error, map_service_error,
-    not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
+    not_found_problem, problem, ProblemDetail, SdkWorkResultCode,
+};
 use crate::mappers::map_share_link_row;
 use crate::node_repository::find_active_node;
+use crate::response::{
+    current_trace_id, no_content, success_created_command_data, success_list_page_simple,
+    success_resource, DriveListHttpResponse,
+};
 use crate::route_change::record_change;
 use crate::state::AppState;
 use crate::validators::{
@@ -32,7 +37,7 @@ use sdkwork_drive_workspace_service::ports::permission_store::{
 use sdkwork_drive_workspace_service::{
     drive_share_access_code_hash, generate_share_link_token, validate_share_link_access_code,
 };
-use serde_json::json;
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 
 pub(crate) async fn list_share_links(
     State(state): State<AppState>,
@@ -69,7 +74,10 @@ pub(crate) async fn get_share_link(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(share_link_id): Path<String>,
-) -> Result<Json<ShareLinkResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<ShareLinkResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let current = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
     let node = find_active_node(&state.pool, &tenant_id, &current.node_id).await?;
@@ -81,7 +89,7 @@ pub(crate) async fn get_share_link(
         "reader",
     )
     .await?;
-    Ok(Json(ShareLinkResponse::from(current)))
+    Ok(success_resource(ShareLinkResponse::from(current)))
 }
 
 pub(crate) async fn create_share_link(
@@ -89,7 +97,13 @@ pub(crate) async fn create_share_link(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
     Json(payload): Json<CreateShareLinkRequest>,
-) -> Result<(StatusCode, Json<CreateShareLinkResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<CreateShareLinkResponse>>,
+    ),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
 
@@ -176,14 +190,11 @@ pub(crate) async fn create_share_link(
     .await
     .map_err(internal_sql_error("read dr_drive_node_share_link failed"))?;
     let response = map_share_link_row(&row);
-    Ok((
-        StatusCode::CREATED,
-        Json(CreateShareLinkResponse {
-            link: response,
-            token,
-            access_code: access_code_plain,
-        }),
-    ))
+    Ok(success_created_command_data(CreateShareLinkResponse {
+        link: response,
+        token,
+        access_code: access_code_plain,
+    }))
 }
 
 pub(crate) async fn update_share_link(
@@ -191,7 +202,10 @@ pub(crate) async fn update_share_link(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(share_link_id): Path<String>,
     Json(payload): Json<UpdateShareLinkRequest>,
-) -> Result<Json<ShareLinkResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<ShareLinkResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let current = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
@@ -239,7 +253,7 @@ pub(crate) async fn update_share_link(
     .await?;
 
     let updated = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
-    Ok(Json(ShareLinkResponse::from(updated)))
+    Ok(success_resource(ShareLinkResponse::from(updated)))
 }
 
 pub(crate) async fn revoke_share_link(
@@ -247,7 +261,7 @@ pub(crate) async fn revoke_share_link(
     Extension(ctx): Extension<DriveRequestContext>,
     Path(share_link_id): Path<String>,
     Query(query): Query<NodeMutationQuery>,
-) -> Result<Json<serde_json::Value>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let current = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
@@ -276,14 +290,18 @@ pub(crate) async fn revoke_share_link(
         )
         .await?;
     }
-    Ok(Json(json!({ "revoked": affected > 0 })))
+    let _revoked = affected > 0;
+    Ok(no_content())
 }
 
 pub(crate) async fn claim_share_link(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(token): Path<String>,
-) -> Result<(StatusCode, Json<ClaimShareLinkResponse>), (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    (StatusCode, Json<SdkWorkApiResponse<ClaimShareLinkResponse>>),
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
     validate_subject_type(&subject_type)?;
@@ -332,14 +350,17 @@ pub(crate) async fn claim_share_link(
         } else {
             StatusCode::CREATED
         },
-        Json(ClaimShareLinkResponse {
-            share_link_id: share_link.id,
-            node_id: share_link.node_id,
-            space_id: node.space_id,
-            role: claim_role.to_string(),
-            permission_id: grant.id,
-            already_claimed,
-        }),
+        Json(SdkWorkApiResponse::success(
+            ClaimShareLinkResponse {
+                share_link_id: share_link.id,
+                node_id: share_link.node_id,
+                space_id: node.space_id,
+                role: claim_role.to_string(),
+                permission_id: grant.id,
+                already_claimed,
+            },
+            current_trace_id(),
+        )),
     ))
 }
 

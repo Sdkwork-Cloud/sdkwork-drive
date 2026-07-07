@@ -68,6 +68,10 @@ fn build_business_router_layers(state: AppState) -> Router {
             get(list_spaces).post(create_space),
         )
         .route(
+            "/app/v3/api/drive/spaces/{space_id}/move_destinations",
+            get(list_move_destination_folders),
+        )
+        .route(
             "/app/v3/api/drive/spaces/{space_id}",
             get(get_space).patch(update_space).delete(delete_space),
         )
@@ -155,6 +159,10 @@ fn build_business_router_layers(state: AppState) -> Router {
         .route("/app/v3/api/drive/recent", get(list_recent_nodes))
         .route("/app/v3/api/drive/shared_with_me", get(list_shared_with_me))
         .route("/app/v3/api/drive/favorites", get(list_favorite_nodes))
+        .route(
+            "/app/v3/api/drive/favorites/check",
+            post(check_favorite_nodes),
+        )
         .route("/app/v3/api/drive/quotas/summary", get(get_quota_summary))
         .route(
             "/app/v3/api/drive/nodes/{node_id}/favorite",
@@ -282,21 +290,24 @@ fn build_business_router_layers(state: AppState) -> Router {
     let forbidden_asset_routes = Router::new()
         .route(
             "/app/v3/api/assets/upload",
-            post(asset_upload_not_implemented),
+            post(legacy_asset_upload_route_gone),
         )
         .route(
             "/app/v3/api/assets/presign",
-            post(asset_upload_not_implemented),
+            post(legacy_asset_upload_route_gone),
         )
         .route(
             "/app/v3/api/assets/upload_sessions",
-            post(asset_upload_not_implemented),
+            post(legacy_asset_upload_route_gone),
         );
 
     Router::new()
         .merge(
             drive_routes
                 .merge(forbidden_asset_routes)
+                .route_layer(middleware::from_fn(
+                    crate::pagination_guard::reject_legacy_pagination_query,
+                ))
                 .route_layer(middleware::from_fn(crate::rate_limit::app_api_rate_limit)),
         )
         .layer(middleware::from_fn(

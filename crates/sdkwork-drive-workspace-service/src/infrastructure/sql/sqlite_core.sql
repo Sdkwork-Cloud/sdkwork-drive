@@ -132,10 +132,10 @@ CREATE TABLE IF NOT EXISTS dr_drive_node (
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_node_root_name_live
     ON dr_drive_node (tenant_id, space_id, node_name)
-    WHERE parent_node_id IS NULL AND lifecycle_status != 'deleted';
+    WHERE parent_node_id IS NULL AND lifecycle_status = 'active';
 CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_node_child_name_live
     ON dr_drive_node (tenant_id, space_id, parent_node_id, node_name)
-    WHERE parent_node_id IS NOT NULL AND lifecycle_status != 'deleted';
+    WHERE parent_node_id IS NOT NULL AND lifecycle_status = 'active';
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_space_parent
     ON dr_drive_node (tenant_id, space_id, parent_node_id, updated_at);
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_space_type_parent
@@ -147,7 +147,8 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_node_asset_list
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_asset_scene_source
     ON dr_drive_node (tenant_id, node_type, scene, source, lifecycle_status, updated_at, id);
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_space_parent_type
-    ON dr_drive_node (tenant_id, space_id, parent_node_id, node_type, updated_at);
+    ON dr_drive_node (tenant_id, space_id, parent_node_id, head_content_type_group, updated_at DESC)
+    WHERE lifecycle_status = 'active' AND node_type = 'file';
 
 CREATE TRIGGER IF NOT EXISTS tr_dr_drive_node_space_type_sync_insert
 AFTER INSERT ON dr_drive_node
@@ -1216,3 +1217,20 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending
 CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_pending_dispatch
     ON dr_drive_domain_outbox (attempt_count, created_at)
     WHERE delivery_status = 'pending';
+
+CREATE TABLE IF NOT EXISTS dr_drive_domain_outbox_channel_delivery (
+    outbox_id TEXT NOT NULL,
+    channel_id TEXT NOT NULL,
+    delivered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (outbox_id, channel_id),
+    FOREIGN KEY (outbox_id) REFERENCES dr_drive_domain_outbox(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS ix_dr_drive_domain_outbox_channel_delivery_channel
+    ON dr_drive_domain_outbox_channel_delivery (channel_id, delivered_at DESC);
+
+CREATE TABLE IF NOT EXISTS dr_drive_maintenance_leader (
+    lock_key TEXT PRIMARY KEY,
+    holder_id TEXT NOT NULL,
+    acquired_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

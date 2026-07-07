@@ -171,10 +171,22 @@ fn governed_database_migrations_exist_for_postgres_and_sqlite() {
         "database/migrations/postgres/0002_drive_outbox_pending_dispatch_index.down.sql",
         "database/migrations/postgres/0003_drive_tenant_quota.up.sql",
         "database/migrations/postgres/0003_drive_tenant_quota.down.sql",
+        "database/migrations/postgres/0004_drive_maintenance_leader.up.sql",
+        "database/migrations/postgres/0004_drive_maintenance_leader.down.sql",
+        "database/migrations/postgres/0005_drive_outbox_channel_delivery.up.sql",
+        "database/migrations/postgres/0005_drive_outbox_channel_delivery.down.sql",
+        "database/migrations/postgres/0006_drive_node_name_active_only.up.sql",
+        "database/migrations/postgres/0006_drive_node_name_active_only.down.sql",
         "database/migrations/sqlite/0002_drive_outbox_pending_dispatch_index.up.sql",
         "database/migrations/sqlite/0002_drive_outbox_pending_dispatch_index.down.sql",
         "database/migrations/sqlite/0003_drive_tenant_quota.up.sql",
         "database/migrations/sqlite/0003_drive_tenant_quota.down.sql",
+        "database/migrations/sqlite/0004_drive_maintenance_leader.up.sql",
+        "database/migrations/sqlite/0004_drive_maintenance_leader.down.sql",
+        "database/migrations/sqlite/0005_drive_outbox_channel_delivery.up.sql",
+        "database/migrations/sqlite/0005_drive_outbox_channel_delivery.down.sql",
+        "database/migrations/sqlite/0006_drive_node_name_active_only.up.sql",
+        "database/migrations/sqlite/0006_drive_node_name_active_only.down.sql",
     ] {
         read_workspace_file(path);
     }

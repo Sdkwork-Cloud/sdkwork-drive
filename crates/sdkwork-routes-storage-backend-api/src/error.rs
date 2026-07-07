@@ -51,9 +51,12 @@ pub(crate) fn map_service_error(error: DriveServiceError) -> (StatusCode, Json<P
             };
             problem(StatusCode::BAD_REQUEST, "validation failed", detail, code)
         }
-        DriveServiceError::Conflict(detail) => {
-            problem(StatusCode::CONFLICT, "conflict", detail, SdkWorkResultCode::Conflict)
-        }
+        DriveServiceError::Conflict(detail) => problem(
+            StatusCode::CONFLICT,
+            "conflict",
+            detail,
+            SdkWorkResultCode::Conflict,
+        ),
         DriveServiceError::NotFound(detail) => problem(
             StatusCode::NOT_FOUND,
             "not found",

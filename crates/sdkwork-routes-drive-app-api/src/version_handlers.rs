@@ -1,14 +1,15 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
-    DeleteVersionResponse, DriveNodeResponse, FileVersionResponse, NodeCommandRequest,
-    NodeMutationQuery, PageQuery,
+    DriveNodeResponse, FileVersionResponse, NodeCommandRequest, NodeMutationQuery, PageQuery,
 };
-use crate::response::{success_list_page_simple, DriveListHttpResponse};
-use crate::error::{internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode};
+use crate::error::{
+    internal_sql_error, not_found_problem, problem, ProblemDetail, SdkWorkResultCode,
+};
 use crate::mappers::map_file_version_row;
-use crate::metadata_repository::present_drive_node;
 use crate::node_repository::{find_active_node, find_node};
+use crate::response::success_resource;
+use crate::response::{no_content, success_list_page_simple, DriveListHttpResponse};
 use crate::route_change::record_change;
 use crate::state::AppState;
 use crate::validators::{next_page_token, parse_page_request};
@@ -16,6 +17,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
+use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use sqlx::Row;
 
 pub(crate) async fn list_versions(
@@ -86,7 +88,10 @@ pub(crate) async fn get_version(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, version_id)): Path<(String, String)>,
-) -> Result<Json<FileVersionResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<FileVersionResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
@@ -103,7 +108,7 @@ pub(crate) async fn get_version(
     .await
     .map_err(internal_sql_error("read dr_drive_node_version failed"))?;
     if let Some(row) = logical_row {
-        return Ok(Json(map_file_version_row(&row)));
+        return Ok(success_resource(map_file_version_row(&row)));
     }
     let row = sqlx::query(
         "SELECT id, tenant_id, node_id, version_no, NULL AS storage_object_id, content_type, content_length,
@@ -122,14 +127,17 @@ pub(crate) async fn get_version(
     let Some(row) = row else {
         return Err(not_found_problem("version not found"));
     };
-    Ok(Json(map_file_version_row(&row)))
+    Ok(success_resource(map_file_version_row(&row)))
 }
 pub(crate) async fn restore_version(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, version_id)): Path<(String, String)>,
     Json(payload): Json<NodeCommandRequest>,
-) -> Result<Json<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<
+    Json<SdkWorkApiResponse<SdkWorkResourceData<DriveNodeResponse>>>,
+    (StatusCode, Json<ProblemDetail>),
+> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -190,8 +198,8 @@ pub(crate) async fn restore_version(
             &operator_id,
         )
         .await?;
-        return Ok(Json(
-            present_drive_node(
+        return Ok(success_resource(
+            crate::metadata_repository::present_drive_node(
                 &state.pool,
                 &tenant_id,
                 find_node(&state.pool, &tenant_id, &node_id).await?,
@@ -226,8 +234,8 @@ pub(crate) async fn restore_version(
         &operator_id,
     )
     .await?;
-    Ok(Json(
-        present_drive_node(
+    Ok(success_resource(
+        crate::metadata_repository::present_drive_node(
             &state.pool,
             &tenant_id,
             find_node(&state.pool, &tenant_id, &node_id).await?,
@@ -240,7 +248,7 @@ pub(crate) async fn delete_version(
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, version_id)): Path<(String, String)>,
     Query(query): Query<NodeMutationQuery>,
-) -> Result<Json<DeleteVersionResponse>, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let operator_id = ctx.resolve_operator_id(query.operator_id)?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
@@ -321,9 +329,8 @@ pub(crate) async fn delete_version(
             )
             .await?;
         }
-        return Ok(Json(DeleteVersionResponse {
-            deleted: affected > 0,
-        }));
+        let _deleted = affected > 0;
+        return Ok(no_content());
     }
     let current_status: Option<String> = sqlx::query_scalar(
         "SELECT lifecycle_status
@@ -393,7 +400,6 @@ pub(crate) async fn delete_version(
         )
         .await?;
     }
-    Ok(Json(DeleteVersionResponse {
-        deleted: affected > 0,
-    }))
+    let _deleted = affected > 0;
+    Ok(no_content())
 }

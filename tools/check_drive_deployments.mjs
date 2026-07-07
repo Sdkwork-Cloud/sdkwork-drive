@@ -9,8 +9,27 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateDeploy } from '../../sdkwork-specs/tools/deploy/validate.mjs';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const defaultRepoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+function parseArgs(argv) {
+  const rootFlagIndex = argv.indexOf('--root');
+  if (rootFlagIndex >= 0 && !argv[rootFlagIndex + 1]) {
+    console.error('[deploy-validate] --root requires a workspace path');
+    process.exit(1);
+  }
+  return {
+    repoRoot: rootFlagIndex >= 0 ? path.resolve(argv[rootFlagIndex + 1]) : defaultRepoRoot,
+  };
+}
+
+const { repoRoot } = parseArgs(process.argv.slice(2));
+const strictDeployValidation =
+  process.env.SDKWORK_DEPLOY_VALIDATION === 'strict' ||
+  process.env.SDKWORK_RELEASE_VALIDATION === 'strict';
 const failures = [];
+const warnings = [];
+const releaseDigestPlaceholder = 'REPLACE_WITH_RELEASE_DIGEST';
+const sha256ImageDigestPattern = /@sha256:[a-f0-9]{64}$/iu;
 
 function deploymentBlock(manifest, deploymentName) {
   const start = manifest.indexOf(`name: ${deploymentName}`);
@@ -28,6 +47,46 @@ function requirePath(relativePath, reason) {
   }
 }
 
+function extractImageReferences(manifest) {
+  return [...manifest.matchAll(/^\s*image:\s*["']?([^"'\s#]+)["']?/gmu)].map(
+    (match) => match[1],
+  );
+}
+
+function validateKubernetesImageDigests(manifest) {
+  const imageReferences = extractImageReferences(manifest);
+  if (imageReferences.length === 0) {
+    failures.push('deployments/kubernetes/drive-services.yaml must declare container image references');
+    return;
+  }
+
+  const placeholderReferences = imageReferences.filter((imageRef) =>
+    imageRef.includes(releaseDigestPlaceholder),
+  );
+  if (placeholderReferences.length > 0) {
+    const message =
+      `deployments/kubernetes/drive-services.yaml contains ${releaseDigestPlaceholder}; ` +
+      'replace placeholders with immutable release evidence digests before production deployment';
+    if (strictDeployValidation) {
+      failures.push(`${message} (strict deployment validation)`);
+    } else {
+      warnings.push(message);
+    }
+  }
+
+  if (!strictDeployValidation) {
+    return;
+  }
+
+  for (const imageRef of imageReferences) {
+    if (!sha256ImageDigestPattern.test(imageRef)) {
+      failures.push(
+        `Kubernetes image "${imageRef}" must use an immutable @sha256:<64 hex> digest in strict deployment validation`,
+      );
+    }
+  }
+}
+
 requirePath('deployments/deploy.yaml', 'SDKWORK_DEPLOY_SPEC.md deployctl contract');
 
 const deployResult = validateDeploy(
@@ -35,7 +94,7 @@ const deployResult = validateDeploy(
   process.env.SDKWORK_DRIVE_PROFILE_ID ?? process.env.SDKWORK_DEPLOY_PROFILE,
 );
 for (const warning of deployResult.warnings ?? []) {
-  console.warn(`[deploy-validate] warning: ${warning}`);
+  warnings.push(warning);
 }
 if (!deployResult.ok) {
   for (const error of deployResult.errors ?? []) {
@@ -55,6 +114,7 @@ if (!/kind:\s*Ingress/u.test(kubernetesManifest)) {
 if (!/nginx\.ingress\.kubernetes\.io\/limit-rps/u.test(kubernetesManifest)) {
   failures.push('drive Kubernetes Ingress must configure nginx limit-rps edge rate limiting');
 }
+validateKubernetesImageDigests(kubernetesManifest);
 for (const deploymentName of [
   'sdkwork-drive-app-api',
   'sdkwork-drive-backend-api',
@@ -146,6 +206,10 @@ for (const service of [
   if (unit.includes('SDKWORK_DRIVE_DEPLOYMENT_MODE')) {
     failures.push(`${service} must not use deprecated SDKWORK_DRIVE_DEPLOYMENT_MODE`);
   }
+}
+
+for (const warning of warnings) {
+  console.warn(`[deploy-validate] warning: ${warning}`);
 }
 
 if (failures.length > 0) {

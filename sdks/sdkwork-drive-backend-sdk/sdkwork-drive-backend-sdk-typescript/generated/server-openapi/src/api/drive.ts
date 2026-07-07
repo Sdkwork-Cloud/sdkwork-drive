@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { AuditEventPage, DownloadPackagePage, ListSpacesResponse, MaintenanceJobPage, QuotaSummary, SweepObjectStoreRequest, SweepResponse, SweepUploadSessionsRequest, UpdateQuotaPolicyRequest } from '../types';
+import type { SweepObjectStoreRequest, SweepUploadSessionsRequest, UpdateQuotaPolicyRequest } from '../types';
 
 
 export interface DriveDownloadPackagesListParams {
@@ -18,19 +18,21 @@ export class DriveDownloadPackagesApi {
   }
 
 
-async list(params?: DriveDownloadPackagesListParams): Promise<DownloadPackagePage> {
+async list(params?: DriveDownloadPackagesListParams): Promise<unknown> {
     const query = buildQueryString([
       { name: 'state', value: params?.state, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<DownloadPackagePage>(appendQueryString(backendApiPath(`/drive/download_packages`), query));
+    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/download_packages`), query));
   }
 }
 
 export interface DriveSpacesAdminListParams {
   ownerSubjectType?: string;
   ownerSubjectId?: string;
+  pageSize?: number;
+  cursor?: string;
 }
 
 export class DriveSpacesAdminApi {
@@ -41,12 +43,14 @@ export class DriveSpacesAdminApi {
   }
 
 
-async list(params?: DriveSpacesAdminListParams): Promise<ListSpacesResponse> {
+async list(params?: DriveSpacesAdminListParams): Promise<unknown> {
     const query = buildQueryString([
       { name: 'ownerSubjectType', value: params?.ownerSubjectType, style: 'form', explode: true, allowReserved: false },
       { name: 'ownerSubjectId', value: params?.ownerSubjectId, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<ListSpacesResponse>(appendQueryString(backendApiPath(`/drive/spaces`), query));
+    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/spaces`), query));
   }
 }
 
@@ -69,65 +73,13 @@ export class DriveQuotasApi {
   }
 
 
-async summary(): Promise<QuotaSummary> {
-    return this.client.get<QuotaSummary>(backendApiPath(`/drive/quotas`));
+async retrieve(): Promise<unknown> {
+    return this.client.get<unknown>(backendApiPath(`/drive/quotas`));
   }
 
 /** Update tenant quota policy */
-  async update(body: UpdateQuotaPolicyRequest): Promise<QuotaSummary> {
-    return this.client.put<QuotaSummary>(backendApiPath(`/drive/quotas`), body, undefined, undefined, 'application/json');
-  }
-}
-
-export class DriveMaintenanceAbandonedUploadTaskSweepApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-async start(body: SweepUploadSessionsRequest): Promise<SweepResponse> {
-    return this.client.post<SweepResponse>(backendApiPath(`/drive/maintenance/abandoned_upload_task_sweep`), body, undefined, undefined, 'application/json');
-  }
-}
-
-export class DriveMaintenanceExpiredUploadContentSweepApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-async start(body: SweepUploadSessionsRequest): Promise<SweepResponse> {
-    return this.client.post<SweepResponse>(backendApiPath(`/drive/maintenance/expired_upload_content_sweep`), body, undefined, undefined, 'application/json');
-  }
-}
-
-export class DriveMaintenanceUploadSessionSweepApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-async start(body: SweepUploadSessionsRequest): Promise<SweepResponse> {
-    return this.client.post<SweepResponse>(backendApiPath(`/drive/maintenance/upload_session_sweep`), body, undefined, undefined, 'application/json');
-  }
-}
-
-export class DriveMaintenanceObjectSweepApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-async start(body: SweepObjectStoreRequest): Promise<SweepResponse> {
-    return this.client.post<SweepResponse>(backendApiPath(`/drive/maintenance/object_sweep`), body, undefined, undefined, 'application/json');
+  async update(body: UpdateQuotaPolicyRequest): Promise<unknown> {
+    return this.client.put<unknown>(backendApiPath(`/drive/quotas`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -147,42 +99,50 @@ export class DriveMaintenanceJobsApi {
   }
 
 
-async list(params?: DriveMaintenanceJobsListParams): Promise<MaintenanceJobPage> {
+async list(params?: DriveMaintenanceJobsListParams): Promise<unknown> {
     const query = buildQueryString([
       { name: 'jobType', value: params?.jobType, style: 'form', explode: true, allowReserved: false },
       { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
       { name: 'operatorId', value: params?.operatorId, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<MaintenanceJobPage>(appendQueryString(backendApiPath(`/drive/maintenance/jobs`), query));
+    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/maintenance/jobs`), query));
   }
 }
 
 export class DriveMaintenanceApi {
   private client: HttpClient;
   public readonly jobs: DriveMaintenanceJobsApi;
-  public readonly objectSweep: DriveMaintenanceObjectSweepApi;
-  public readonly uploadSessionSweep: DriveMaintenanceUploadSessionSweepApi;
-  public readonly expiredUploadContentSweep: DriveMaintenanceExpiredUploadContentSweepApi;
-  public readonly abandonedUploadTaskSweep: DriveMaintenanceAbandonedUploadTaskSweepApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.jobs = new DriveMaintenanceJobsApi(client);
-    this.objectSweep = new DriveMaintenanceObjectSweepApi(client);
-    this.uploadSessionSweep = new DriveMaintenanceUploadSessionSweepApi(client);
-    this.expiredUploadContentSweep = new DriveMaintenanceExpiredUploadContentSweepApi(client);
-    this.abandonedUploadTaskSweep = new DriveMaintenanceAbandonedUploadTaskSweepApi(client);
   }
 
+
+async objectSweep(body: SweepObjectStoreRequest): Promise<unknown> {
+    return this.client.post<unknown>(backendApiPath(`/drive/maintenance/object_sweep`), body, undefined, undefined, 'application/json');
+  }
+
+async uploadSessionSweep(body: SweepUploadSessionsRequest): Promise<unknown> {
+    return this.client.post<unknown>(backendApiPath(`/drive/maintenance/upload_session_sweep`), body, undefined, undefined, 'application/json');
+  }
+
+async expiredUploadContentSweep(body: SweepUploadSessionsRequest): Promise<unknown> {
+    return this.client.post<unknown>(backendApiPath(`/drive/maintenance/expired_upload_content_sweep`), body, undefined, undefined, 'application/json');
+  }
+
+async abandonedUploadTaskSweep(body: SweepUploadSessionsRequest): Promise<unknown> {
+    return this.client.post<unknown>(backendApiPath(`/drive/maintenance/abandoned_upload_task_sweep`), body, undefined, undefined, 'application/json');
+  }
 }
 
 export interface DriveAuditEventsListParams {
   action?: string;
   resourceType?: string;
   resourceId?: string;
-  requestId?: string;
+  correlationId?: string;
   traceId?: string;
   page?: number;
   pageSize?: number;
@@ -196,17 +156,17 @@ export class DriveAuditEventsApi {
   }
 
 
-async list(params?: DriveAuditEventsListParams): Promise<AuditEventPage> {
+async list(params?: DriveAuditEventsListParams): Promise<unknown> {
     const query = buildQueryString([
       { name: 'action', value: params?.action, style: 'form', explode: true, allowReserved: false },
       { name: 'resourceType', value: params?.resourceType, style: 'form', explode: true, allowReserved: false },
       { name: 'resourceId', value: params?.resourceId, style: 'form', explode: true, allowReserved: false },
-      { name: 'requestId', value: params?.requestId, style: 'form', explode: true, allowReserved: false },
+      { name: 'correlationId', value: params?.correlationId, style: 'form', explode: true, allowReserved: false },
       { name: 'traceId', value: params?.traceId, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
-      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<AuditEventPage>(appendQueryString(backendApiPath(`/drive/audit_events`), query));
+    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/audit_events`), query));
   }
 }
 

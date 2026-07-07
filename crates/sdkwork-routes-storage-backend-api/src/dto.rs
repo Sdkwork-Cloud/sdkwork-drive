@@ -51,7 +51,9 @@ pub(crate) struct RotateStorageProviderCredentialRequest {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListStorageProvidersQuery {
     pub(crate) status: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
 }
 
@@ -86,7 +88,9 @@ pub(crate) struct ListStorageProviderBindingsQuery {
     pub(crate) space_id: Option<String>,
     pub(crate) provider_id: Option<String>,
     pub(crate) lifecycle_status: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
 }
 
@@ -111,7 +115,9 @@ pub(crate) struct SetDefaultStorageProviderBindingRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListProviderBucketsQuery {
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
 }
 
@@ -120,7 +126,9 @@ pub(crate) struct ListProviderBucketsQuery {
 pub(crate) struct ListProviderObjectsQuery {
     pub(crate) prefix: Option<String>,
     pub(crate) delimiter: Option<String>,
+    #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
+    #[serde(rename = "page_size")]
     pub(crate) page_size: Option<u16>,
 }
 
@@ -151,12 +159,6 @@ pub(crate) struct StorageProviderResponse {
     pub(crate) status: String,
     pub(crate) version: i64,
     pub(crate) credential_configured: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct StorageProviderListResponse {
-    pub(crate) items: Vec<StorageProviderResponse>,
 }
 
 #[derive(Debug, Serialize)]
@@ -199,14 +201,6 @@ pub(crate) struct ProviderBucketListItemResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ProviderBucketListResponse {
-    pub(crate) provider_id: String,
-    pub(crate) configured_bucket: String,
-    pub(crate) items: Vec<ProviderBucketListItemResponse>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub(crate) struct ProviderBucketMutationResponse {
     pub(crate) provider_id: String,
     pub(crate) bucket: String,
@@ -218,6 +212,7 @@ pub(crate) struct ProviderBucketMutationResponse {
 pub(crate) struct ProviderObjectResponse {
     pub(crate) provider_id: String,
     pub(crate) bucket: String,
+    pub(crate) object_kind: String,
     pub(crate) object_key: String,
     pub(crate) content_length: u64,
     pub(crate) content_type: Option<String>,
@@ -225,16 +220,6 @@ pub(crate) struct ProviderObjectResponse {
     pub(crate) version_id: Option<String>,
     pub(crate) storage_class: Option<String>,
     pub(crate) last_modified_epoch_ms: Option<i64>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ProviderObjectListResponse {
-    pub(crate) provider_id: String,
-    pub(crate) bucket: String,
-    pub(crate) prefix: Option<String>,
-    pub(crate) items: Vec<ProviderObjectResponse>,
-    pub(crate) next_page_token: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -259,18 +244,6 @@ pub(crate) struct StorageProviderBindingResponse {
     pub(crate) lifecycle_status: String,
     pub(crate) version: i64,
     pub(crate) storage_provider: StorageProviderResponse,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct StorageProviderBindingListResponse {
-    pub(crate) items: Vec<StorageProviderBindingResponse>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct DeleteStorageProviderBindingResponse {
-    pub(crate) deleted: bool,
 }
 
 #[derive(Debug, Clone, Copy)]

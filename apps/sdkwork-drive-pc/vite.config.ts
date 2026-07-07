@@ -40,6 +40,7 @@ export default defineConfig(({ mode }) => {
         'sdkwork-drive-pc-commons': path.resolve(__dirname, 'packages/sdkwork-drive-pc-commons/src'),
         'sdkwork-drive-pc-file': path.resolve(__dirname, 'packages/sdkwork-drive-pc-file/src'),
         'sdkwork-drive-pc-transfer': path.resolve(__dirname, 'packages/sdkwork-drive-pc-transfer/src'),
+        'sdkwork-drive-pc-core/types': path.resolve(__dirname, 'packages/sdkwork-drive-pc-core/src/types/index.ts'),
         'sdkwork-drive-pc-core': path.resolve(__dirname, 'packages/sdkwork-drive-pc-core/src'),
         'sdkwork-drive-pc-drive': path.resolve(__dirname, 'packages/sdkwork-drive-pc-drive/src'),
         'sdkwork-drive-pc-admin-core': path.resolve(__dirname, 'packages/sdkwork-drive-pc-admin-core/src'),

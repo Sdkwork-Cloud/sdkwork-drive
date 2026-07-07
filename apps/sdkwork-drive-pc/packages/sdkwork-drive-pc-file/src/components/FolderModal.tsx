@@ -1,28 +1,46 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { useTranslation } from 'sdkwork-drive-pc-commons';
+import { hasSiblingNameConflict, useTranslation } from 'sdkwork-drive-pc-commons';
 
 interface FolderModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (folderName: string) => void;
+  existingNames?: string[];
 }
 
-export function FolderModal({ isOpen, onClose, onSubmit }: FolderModalProps) {
+export function FolderModal({ isOpen, onClose, onSubmit, existingNames = [] }: FolderModalProps) {
   const { t } = useTranslation();
   const [newFolderName, setNewFolderName] = useState('');
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setNewFolderName('');
+      setNameError(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFolderName.trim()) return;
-    onSubmit(newFolderName.trim());
+    const trimmed = newFolderName.trim();
+    if (!trimmed) {
+      return;
+    }
+    if (hasSiblingNameConflict(trimmed, existingNames)) {
+      setNameError(t('fileBrowser.nameConflict'));
+      return;
+    }
+    onSubmit(trimmed);
     setNewFolderName('');
+    setNameError(null);
   };
 
   const handleClose = () => {
     setNewFolderName('');
+    setNameError(null);
     onClose();
   };
 
@@ -45,9 +63,22 @@ export function FolderModal({ isOpen, onClose, onSubmit }: FolderModalProps) {
               required
               placeholder={t('fileBrowser.folderNamePlaceholder')}
               value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-[#1e1e1e] transition-all"
+              onChange={(e) => {
+                setNewFolderName(e.target.value);
+                if (nameError) {
+                  setNameError(null);
+                }
+              }}
+              aria-invalid={nameError ? true : undefined}
+              className={`w-full bg-gray-50 dark:bg-neutral-900 border rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-[#1e1e1e] transition-all ${
+                nameError
+                  ? 'border-rose-500 dark:border-rose-400'
+                  : 'border-gray-200 dark:border-neutral-800'
+              }`}
             />
+            {nameError ? (
+              <p className="mt-1.5 text-xs text-rose-500 dark:text-rose-400">{nameError}</p>
+            ) : null}
           </div>
           <div className="flex items-center gap-2.5 pt-2">
             <button 

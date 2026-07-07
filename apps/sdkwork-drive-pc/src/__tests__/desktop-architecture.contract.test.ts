@@ -341,11 +341,14 @@ describe('desktop architecture contract', () => {
     expect(fileBrowser).toContain('pageToken: nextPageToken');
     expect(driveFileService).toContain('listFilesPage(');
     expect(fileBrowser).toContain('fileService.getFolderPath(currentFolderId, {');
-    expect(fileBrowser).not.toContain('fileService.getAllWorkspaceFiles({');
+    expect(fileBrowser).not.toContain('fileService.listCachedWorkspaceFiles({');
     expect(fileBrowser).toContain('signal: loadAbortController.signal');
     expect(fileBrowser).toContain('isDriveAbortError(err)');
     expect(driveFileService).toContain('export interface DriveFileReadOptions');
-    expect(driveFileService).toContain('getAllWorkspaceFiles(options?: DriveFileReadOptions)');
+    expect(driveFileService).toContain('listCachedWorkspaceFiles(options?: DriveFileReadOptions)');
+    expect(driveFileService).toContain(
+      'Returns in-memory node metadata accumulated from prior list/detail SDK calls (no network).',
+    );
     expect(driveFileService).toContain('getFolderPath(folderId: string, options?: DriveFileReadOptions)');
     expect(driveFileService).toContain('options?: DriveFileReadOptions');
     expect(driveFileService).toContain('signal: options?.signal');
@@ -574,7 +577,7 @@ describe('desktop architecture contract', () => {
     expect(pdfModule).toContain('signal: signAbortController.signal');
     expect(pdfModule).toContain('isDriveAbortError');
     expect(pdfModule).toContain('useTranslation');
-    expect(pdfModule).toContain("t('previewModules.pdfSigned')");
+    expect(pdfModule).toContain("t('previewModules.pdfAcknowledged')");
     expect(textEditorModule).toContain("t('previewModules.textSavedToDrive')");
     expect(imageModule).toContain('useTranslation');
     expect(imageModule).toContain("t('previewModules.mediaPreviewUnavailable')");
@@ -661,8 +664,8 @@ describe('desktop architecture contract', () => {
       'utf8',
     );
 
-    expect(generatedSdk).toContain('"quotas.summary"');
-    expect(driveFileService).toContain("operationId: 'quotas.summary'");
+    expect(generatedSdk).toContain('"quotas.retrieve"');
+    expect(driveFileService).toContain("operationId: 'quotas.retrieve'");
     expect(driveFileService).toContain('getStorageSummary(options?: DriveFileReadOptions)');
     expect(app).toContain('const storageAbortController = new AbortController()');
     expect(app).toContain('runtime.services.fileService');
@@ -728,23 +731,23 @@ describe('desktop architecture contract', () => {
     for (const operationId of [
       'storageProviders.list',
       'storageProviders.create',
-      'storageProviders.get',
+      'storageProviders.retrieve',
       'storageProviders.update',
       'storageProviders.delete',
       'storageProviders.test',
-      'storageProviders.capabilities.get',
+      'storageProviders.capabilities.list',
       'storageProviders.activate',
       'storageProviders.deactivate',
       'storageProviders.credentials.rotate',
-      'storageProviders.bucket.head',
-      'storageProviders.bucket.create',
+      'storageProviders.bucket.retrieve',
+      'storageProviders.bucket.update',
       'storageProviders.bucket.delete',
       'storageProviders.objects.list',
-      'storageProviders.objects.head',
+      'storageProviders.objects.retrieve',
       'storageProviders.objects.delete',
       'storageProviders.objects.copy',
-      'storageProviderBindings.default.get',
-      'storageProviderBindings.default.set',
+      'storageProviderBindings.default.retrieve',
+      'storageProviderBindings.default.update',
       'storageProviderBindings.default.delete',
       'storageProviderBindings.list',
       'storageProviders.buckets.list',
@@ -849,7 +852,7 @@ describe('desktop architecture contract', () => {
     expect(adminSource).toContain('adminStorageSdkClient.request');
     expect(adminSource).toContain("operationId: 'storageProviders.list'");
     expect(adminSource).toContain("operationId: 'storageProviders.create'");
-    expect(adminSource).toContain("operationId: 'storageProviderBindings.default.set'");
+    expect(adminSource).toContain("operationId: 'storageProviderBindings.default.update'");
     expect(adminSource).not.toMatch(/\bfetch\s*\(|axios\.|Authorization\s*:|Access-Token\s*:/);
     expect(adminSource).not.toContain('generated/server-openapi');
     expect(adminSource).not.toContain('sdkwork-drive-admin-storage-sdk-typescript');
@@ -916,7 +919,7 @@ describe('desktop architecture contract', () => {
     expect(app).toContain('runtime.admin.backend');
     expect(adminSource).toContain("operationId: 'auditEvents.list'");
     expect(adminSource).toContain("operationId: 'maintenance.jobs.list'");
-    expect(adminSource).toContain("operationId: 'quotas.summary'");
+    expect(adminSource).toContain("operationId: 'quotas.retrieve'");
     expect(adminSource).toContain("operationId: 'quotas.update'");
     expect(adminSource).toContain("operationId: 'labels.list'");
     expect(adminSource).toContain("operationId: 'labels.update'");
@@ -1012,7 +1015,7 @@ describe('desktop architecture contract', () => {
     expect(moveCopyModal).toContain('fileService.copyFile(file.id');
     expect(moveCopyModal).toContain('signal: controller.signal');
     expect(moveCopyModal).toContain('isDriveAbortError');
-    expect(moveCopyModal).not.toContain('getAllWorkspaceFiles');
+    expect(moveCopyModal).not.toContain('listCachedWorkspaceFiles');
     expect(fileBrowser).toContain('MoveCopyModal');
     expect(fileBrowser).toContain('openMoveCopyModal');
   });
@@ -1171,7 +1174,7 @@ describe('desktop architecture contract', () => {
     const fileSidebar = read('packages/sdkwork-drive-pc-file/src/components/FileSidebar.tsx');
     const downloadManager = read('packages/sdkwork-drive-pc-file/src/components/DownloadManager.tsx');
     const driveFileService = read('packages/sdkwork-drive-pc-core/src/services/driveFileService.ts');
-    const transferJobs = read('packages/sdkwork-drive-pc-types/src/transferJobs.ts');
+    const transferJobs = read('packages/sdkwork-drive-pc-core/src/types/transferJobs.ts');
     const transferPage = read('packages/sdkwork-drive-pc-transfer/src/pages/TransferPage.tsx');
     const transferSource = `${drivePage}\n${fileBrowser}\n${fileSidebar}\n${downloadManager}\n${transferJobs}\n${transferPage}`;
 
