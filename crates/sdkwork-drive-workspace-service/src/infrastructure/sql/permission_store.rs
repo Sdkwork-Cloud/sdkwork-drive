@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use sdkwork_drive_contract::api::pagination_cursor::{decode_offset_cursor, encode_offset_cursor};
 use sdkwork_utils_rust::{DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE};
 use sqlx::{AnyPool, Row};
 use uuid::Uuid;
@@ -277,18 +278,8 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
             .page_size
             .map(|value| i64::from(value.min(MAX_LIST_PAGE_SIZE as u32)))
             .unwrap_or(i64::from(DEFAULT_LIST_PAGE_SIZE));
-        let offset = match command.page_token.as_deref() {
-            Some(raw) if !raw.trim().is_empty() => raw
-                .trim()
-                .parse::<i64>()
-                .map_err(|_| DriveServiceError::Validation("page_token is invalid".to_string()))?,
-            _ => 0,
-        };
-        if offset < 0 {
-            return Err(DriveServiceError::Validation(
-                "page_token is invalid".to_string(),
-            ));
-        }
+        let offset = decode_offset_cursor(command.page_token.as_deref())
+            .map_err(|_| DriveServiceError::Validation("page_token is invalid".to_string()))?;
         let rows = sqlx::query(
             "SELECT id, node_id, subject_type, subject_id, role \
              FROM dr_drive_node_permission \
@@ -320,7 +311,7 @@ impl DrivePermissionStore for SqlDrivePermissionStore {
             .collect::<Vec<_>>();
 
         let next_page_token = if has_more {
-            Some((offset + page_size).to_string())
+            encode_offset_cursor(offset + page_size)
         } else {
             None
         };

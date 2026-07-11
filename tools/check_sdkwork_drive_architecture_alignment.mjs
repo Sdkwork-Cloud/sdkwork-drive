@@ -637,7 +637,7 @@ assert(
 const retiredEnvPrefixes = ['SDKWORK_CLAW_DATABASE_'];
 for (const relativePath of [
   '.env.postgres.example',
-  'configs/topology/standalone.unified-process.production.env',
+  'configs/topology/standalone.production.env',
 ]) {
   const text = readText(relativePath);
   for (const prefix of retiredEnvPrefixes) {

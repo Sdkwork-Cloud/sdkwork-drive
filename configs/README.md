@@ -10,7 +10,7 @@ Current templates:
 - `sdkwork-drive-standalone-gateway.production.toml.example`: standalone gateway production profile.
 - `sdkwork-api-cloud-gateway.drive.development.toml`: cloud unified gateway dev handoff for Drive surfaces.
 - `sdkwork-api-cloud-gateway.drive.production.toml`: cloud unified gateway production handoff for Drive surfaces.
-- `topology/`: runtime topology profile env files following `<deploymentProfile>.<serviceLayout>.<environment>.env` naming.
+- `topology/`: runtime topology profile env files following `<deploymentProfile>.<environment>.env` naming.
 
 Host-local overrides such as `.env.postgres`, `.env.local`, and
 `configs/*.local.toml` must stay out of source control. Runtime user-private

@@ -12891,9 +12891,13 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
             .expect("start page token response should be read"),
     )
     .expect("start page token response should be valid json");
-    assert_eq!(
-        common::envelope_data(&start_token_payload)["startPageToken"].as_str(),
-        Some("3")
+    let start_page_token = common::envelope_data(&start_token_payload)["startPageToken"]
+        .as_str()
+        .expect("start page token should be present");
+    assert_ne!(start_page_token, "3");
+    assert!(
+        !start_page_token.bytes().all(|byte| byte.is_ascii_digit()),
+        "start page token must be opaque"
     );
 
     let first_page = app
@@ -12936,13 +12940,12 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
         common::envelope_items(&first_page_payload)[0]["sequenceNo"].as_i64(),
         Some(1)
     );
-    assert_eq!(
-        common::envelope_next_page_token(&first_page_payload).as_deref(),
-        Some("1")
-    );
-    assert_eq!(
-        common::envelope_next_page_token(&first_page_payload).as_deref(),
-        Some("1")
+    let first_page_token = common::envelope_next_page_token(&first_page_payload)
+        .expect("first page should expose continuation token");
+    assert_ne!(first_page_token, "1");
+    assert!(
+        !first_page_token.bytes().all(|byte| byte.is_ascii_digit()),
+        "change continuation token must be opaque"
     );
 
     let second_page = app
@@ -12961,7 +12964,9 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
                     common::access_token("tenant-changes", "user-owner", "appbase"),
                 )
                 .method(Method::GET)
-                .uri("/app/v3/api/drive/changes?spaceId=space-changes&page_size=2&cursor=1")
+                .uri(format!(
+                    "/app/v3/api/drive/changes?spaceId=space-changes&page_size=2&cursor={first_page_token}"
+                ))
                 .body(Body::empty())
                 .expect("changes second page request should be built"),
         )

@@ -4,6 +4,9 @@ use crate::error::{problem, ProblemDetail, SdkWorkResultCode};
 use crate::time::current_epoch_ms;
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_drive_contract::api::pagination_cursor::{
+    decode_change_sequence_cursor, decode_offset_cursor, encode_offset_cursor,
+};
 
 pub(crate) fn require_query_value(
     value: Option<String>,
@@ -69,25 +72,14 @@ pub(crate) fn parse_page_request(
         MAX_LIST_PAGE_SIZE,
         "page_size",
     )?;
-    let offset = match normalize_optional_text(cursor) {
-        Some(raw) => raw.parse::<i64>().map_err(|_| {
-            problem(
-                StatusCode::BAD_REQUEST,
-                "validation failed",
-                "cursor is invalid",
-                SdkWorkResultCode::ValidationError,
-            )
-        })?,
-        None => 0,
-    };
-    if offset < 0 {
-        return Err(problem(
+    let offset = decode_offset_cursor(cursor.as_deref()).map_err(|_| {
+        problem(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "cursor is invalid",
             SdkWorkResultCode::ValidationError,
-        ));
-    }
+        )
+    })?;
     Ok(PageRequest { limit, offset })
 }
 
@@ -169,7 +161,7 @@ pub(crate) fn resolve_aliased_node_list_order_by(
 pub(crate) fn next_page_token<T>(items: &mut Vec<T>, page: PageRequest) -> Option<String> {
     if items.len() as i64 > page.limit {
         items.pop();
-        Some((page.offset + page.limit).to_string())
+        encode_offset_cursor(page.offset + page.limit)
     } else {
         None
     }
@@ -186,25 +178,14 @@ pub(crate) fn parse_change_page_request(
         MAX_LIST_PAGE_SIZE,
         "page_size",
     )?;
-    let offset = match normalize_optional_text(cursor) {
-        Some(raw) => raw.parse::<i64>().map_err(|_| {
-            problem(
-                StatusCode::BAD_REQUEST,
-                "validation failed",
-                "cursor is invalid",
-                SdkWorkResultCode::ValidationError,
-            )
-        })?,
-        None => 0,
-    };
-    if offset < 0 {
-        return Err(problem(
+    let offset = decode_change_sequence_cursor(cursor.as_deref()).map_err(|_| {
+        problem(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "cursor is invalid",
             SdkWorkResultCode::ValidationError,
-        ));
-    }
+        )
+    })?;
     Ok(PageRequest { limit, offset })
 }
 
@@ -642,6 +623,51 @@ mod nodes_list_order_tests {
     fn rejects_legacy_size_sort_field() {
         let err = parse_nodes_list_order_clause(Some("size".to_string()), Some("desc".to_string()))
             .expect_err("legacy size sort");
+        assert_eq!(err.0, axum::http::StatusCode::BAD_REQUEST);
+    }
+}
+
+#[cfg(test)]
+mod pagination_cursor_tests {
+    use super::{next_page_token, parse_change_page_request, parse_page_request};
+    use crate::dto::PageRequest;
+
+    fn is_numeric_token(value: &str) -> bool {
+        value.bytes().all(|byte| byte.is_ascii_digit())
+    }
+
+    #[test]
+    fn list_page_tokens_are_opaque_and_round_trip() {
+        let mut items = vec![1, 2];
+
+        let token = next_page_token(
+            &mut items,
+            PageRequest {
+                limit: 1,
+                offset: 0,
+            },
+        )
+        .expect("first page should expose continuation token");
+
+        assert!(!is_numeric_token(&token));
+        let parsed = parse_page_request(Some(1), Some(token)).expect("opaque cursor should parse");
+        assert_eq!(parsed.offset, 1);
+        assert_eq!(items, vec![1]);
+    }
+
+    #[test]
+    fn list_page_request_rejects_numeric_cursor_alias() {
+        let err = parse_page_request(Some(20), Some("20".to_string()))
+            .expect_err("numeric cursor is pre-launch pagination debt");
+
+        assert_eq!(err.0, axum::http::StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn change_page_request_rejects_numeric_cursor_alias() {
+        let err = parse_change_page_request(Some(20), Some("20".to_string()))
+            .expect_err("change cursor must be an opaque token");
+
         assert_eq!(err.0, axum::http::StatusCode::BAD_REQUEST);
     }
 }

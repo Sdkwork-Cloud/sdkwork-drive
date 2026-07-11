@@ -8,6 +8,7 @@ export type BackendOffsetListPageInfoWire = {
   totalItems?: PageInfo['totalItems'];
   totalPages?: number;
   hasMore?: boolean;
+  nextCursor?: string | null;
 };
 
 export type BackendOffsetListWire<T> = {
@@ -23,6 +24,7 @@ export interface BackendOffsetListPage<T> {
   page: number;
   pageSize: number;
   total: number;
+  pageInfo?: BackendOffsetListPageInfoWire;
 }
 
 function parseTotalItems(totalItems: PageInfo['totalItems'], fallback?: number): number {
@@ -48,5 +50,6 @@ export function normalizeBackendOffsetListPage<T>(
     page,
     pageSize,
     total,
+    pageInfo: payload.pageInfo,
   };
 }

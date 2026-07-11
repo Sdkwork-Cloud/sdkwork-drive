@@ -6,6 +6,9 @@ use crate::error::{
 use crate::node_repository::find_node;
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_drive_contract::api::pagination_cursor::{
+    encode_change_sequence_cursor, encode_offset_cursor,
+};
 use sdkwork_drive_workspace_service::application::permission_service::SqlDrivePermissionService;
 use sdkwork_drive_workspace_service::ports::permission_store::{
     DriveEffectiveNodeAccess, ResolveEffectiveNodeAccessCommand,
@@ -80,7 +83,7 @@ where
         .map(map_row)
         .collect::<Vec<_>>();
     let next_page_token = if has_more {
-        Some((page.offset + page.limit).to_string())
+        encode_offset_cursor(page.offset + page.limit)
     } else {
         None
     };
@@ -421,7 +424,9 @@ where
     let mut items = items;
     let next_page_token = if has_more {
         items.truncate(page.limit as usize);
-        items.last().map(|item| item.sequence_no.to_string())
+        items
+            .last()
+            .and_then(|item| encode_change_sequence_cursor(item.sequence_no))
     } else {
         None
     };

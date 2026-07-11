@@ -4,7 +4,7 @@
   "applicationCode": "drive",
   "packageName": "sdkwork-drive-gateway-assembly",
   "crateDir": "crates/sdkwork-drive-gateway-assembly",
-  "generatedAt": "2026-06-25T13:08:05.530Z",
+  "generatedAt": "2026-07-08T01:33:37.790Z",
   "routeCrates": [
     {
       "packageName": "sdkwork-routes-drive-app-api",

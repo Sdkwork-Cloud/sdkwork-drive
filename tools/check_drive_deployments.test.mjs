@@ -291,39 +291,51 @@ async function createTempWorkspace(imageRefs, options = {}) {
   await mkdir(path.join(tempRoot, 'docs/runbooks'), { recursive: true });
   await mkdir(path.join(tempRoot, 'docs/guides/operator'), { recursive: true });
   await mkdir(path.join(tempRoot, `apps/${appId}-pc`), { recursive: true });
+  await mkdir(path.join(tempRoot, 'configs/topology'), { recursive: true });
   await mkdir(path.join(tempRoot, 'specs'), { recursive: true });
   await mkdir(path.join(tempRoot, 'node_modules/yaml'), { recursive: true });
 
   await writeFile(
     path.join(tempRoot, 'deployments/deploy.yaml'),
-    `${JSON.stringify({
-      version: 1,
-      defaultProfile: 'cloud.split-services.production',
-      profiles: {
-        'cloud.split-services.production': {
-          install: {
-            layout: 'binary-package',
-          },
-          expose: [
-            {
-              domain: 'drive.example.com',
-              tls: 'managed',
-              mode: 'web+api',
-              web: 'pc',
-              apiPathStyle: 'full-prefix',
+    options.deployYaml ??
+      `${JSON.stringify({
+        version: 1,
+        defaultProfile: 'cloud.production',
+        profiles: {
+          'cloud.production': {
+            install: {
+              layout: 'binary-package',
             },
-          ],
-          packages: [],
-          overrides: {
-            proxy: {
-              upstreams: {
-                'application.public-ingress': 'http://127.0.0.1:3900',
+            expose: [
+              {
+                domain: 'drive.example.com',
+                tls: 'managed',
+                mode: 'web+api',
+                web: 'pc',
+                apiPathStyle: 'full-prefix',
+              },
+            ],
+            packages: [],
+            overrides: {
+              topology: {
+                spec: 'specs/topology.spec.json',
+                profile: 'cloud.production',
+                env: 'configs/topology/cloud.production.env',
+              },
+              proxy: {
+                upstreams: {
+                  'application.public-ingress': 'http://127.0.0.1:3900',
+                },
               },
             },
           },
         },
-      },
-    }, null, 2)}\n`,
+      }, null, 2)}\n`,
+    'utf8',
+  );
+  await writeFile(
+    path.join(tempRoot, 'configs/topology/cloud.production.env'),
+    'SDKWORK_DRIVE_PROFILE_ID=cloud.production\n',
     'utf8',
   );
   await writeFile(
@@ -341,7 +353,9 @@ async function createTempWorkspace(imageRefs, options = {}) {
     `${JSON.stringify({
       appId,
       database: { appPrefix: 'SDKWORK_DRIVE' },
-      profileFiles: {},
+      profileFiles: {
+        'cloud.production': 'configs/topology/cloud.production.env',
+      },
       surfaces: {
         'application.public-ingress': {
           bindEnv: 'SDKWORK_DRIVE_APPLICATION_PUBLIC_INGRESS_BIND',
@@ -441,6 +455,46 @@ function runDeployValidate(tempRoot, env = {}) {
   assert.match(result.stderr, /SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis/);
   assert.match(result.stderr, /SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED=true/);
   assert.match(result.stderr, /sdkwork-drive-rate-limit/);
+}
+
+{
+  const tempRoot = await createTempWorkspace(realDigestImages(), {
+    deployYaml: `${JSON.stringify({
+      version: 1,
+      defaultProfile: 'cloud.split-services.production',
+      profiles: {
+        'cloud.split-services.production': {
+          install: { layout: 'binary-package' },
+          expose: [
+            {
+              domain: 'drive.example.com',
+              tls: 'managed',
+              mode: 'web+api',
+              web: 'pc',
+              apiPathStyle: 'full-prefix',
+            },
+          ],
+          packages: [],
+          overrides: {
+            topology: {
+              spec: 'specs/topology.spec.json',
+              profile: 'cloud.split-services.production',
+              env: 'configs/topology/cloud.split-services.production.env',
+            },
+            proxy: {
+              upstreams: {
+                'application.public-ingress': 'http://127.0.0.1:3900',
+              },
+            },
+          },
+        },
+      },
+    }, null, 2)}\n`,
+  });
+  const result = runDeployValidate(tempRoot);
+  assert.notEqual(result.status, 0, result.stdout);
+  assert.match(result.stderr, /profile "cloud\.split-services\.production" is not listed in topology\.profileFiles/);
+  assert.match(result.stderr, /configs\/topology\/cloud\.split-services\.production\.env does not exist/);
 }
 
 console.log('check_drive_deployments.test.mjs passed');

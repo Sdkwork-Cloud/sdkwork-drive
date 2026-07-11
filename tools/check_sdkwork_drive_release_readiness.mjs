@@ -4,7 +4,8 @@
  * Follows RELEASE_SPEC.md and SUPPLY_CHAIN_SECURITY_SPEC.md.
  *
  * Default mode reports placeholder gaps as warnings so development can continue.
- * Set SDKWORK_RELEASE_VALIDATION=strict to fail on production-blocking manifest gaps.
+ * Strict mode fails on production-blocking signing, checksum, and catalog media gaps.
+ * Strict command: SDKWORK_RELEASE_VALIDATION=strict pnpm check:release-readiness
  */
 
 import fs from 'node:fs';
@@ -134,7 +135,7 @@ function main() {
 
   if (security.signatureRequired !== true) {
     if (security.signatureDeferred === true) {
-      warn('security.signatureRequired is deferred until protected CI signing credentials are configured');
+      strictFail('security.signatureRequired must be true; protected CI signing credentials are still deferred');
     } else {
       strictFail('security.signatureRequired must be true before externally distributed desktop/web packages ship');
     }
@@ -159,13 +160,8 @@ function main() {
       }
       if (!pkg.checksum || isPlaceholderChecksum(pkg.checksum)) {
         if (!pkg.metadata?.releaseBuildMaterializedAt) {
-          const maturity = manifest.publish?.releaseMaturity ?? 'GA';
           const message = `package ${pkg.id} is deferred to cross-platform CI release builds; materialize checksum evidence on the target runner`;
-          if (strict && maturity === 'GA') {
-            strictFail(message);
-          } else {
-            warn(message);
-          }
+          strictFail(message);
         }
       }
       continue;
@@ -188,13 +184,7 @@ function main() {
   }
 
   for (const deferred of collectDeferredCatalogMedia(manifest, workspaceRoot)) {
-    const maturity = manifest.publish?.releaseMaturity ?? 'GA';
-    const message = deferred;
-    if (strict && maturity === 'GA' && manifest.publish?.status === 'ACTIVE') {
-      strictFail(message);
-    } else {
-      warn(message);
-    }
+    strictFail(deferred);
   }
 
   if (manifest.publish?.status === 'ACTIVE') {

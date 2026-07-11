@@ -27,7 +27,7 @@ export interface DriveUploaderBlobLike {
   readonly size: number;
   readonly type?: string;
   readonly name?: string;
-  arrayBuffer(): Promise<ArrayBuffer>;
+  arrayBuffer?(): Promise<ArrayBuffer>;
   slice(start?: number, end?: number, contentType?: string): Blob;
   readRange?(offsetBytes: number, lengthBytes: number): Promise<ArrayBuffer>;
 }

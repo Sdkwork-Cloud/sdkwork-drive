@@ -35,39 +35,79 @@ export function SpacesAdminPage({ backendSdkClient, getSession }: SpacesAdminPag
   const [spaces, setSpaces] = useState<DriveSpaceAdminView[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
+  const [pageCursors, setPageCursors] = useState<Record<number, string | undefined>>({ 1: undefined });
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
   const [ownerSubjectType, setOwnerSubjectType] = useState('');
   const [ownerSubjectId, setOwnerSubjectId] = useState('');
+  const [appliedOwnerSubjectType, setAppliedOwnerSubjectType] = useState<string | undefined>();
+  const [appliedOwnerSubjectId, setAppliedOwnerSubjectId] = useState<string | undefined>();
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const load = (signal?: AbortSignal) => {
+  const currentPageToken = pageCursors[page];
+
+  useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
     setError(undefined);
     service.listSpaces({
-      ownerSubjectType: ownerSubjectType.trim() || undefined,
-      ownerSubjectId: ownerSubjectId.trim() || undefined,
+      ownerSubjectType: appliedOwnerSubjectType,
+      ownerSubjectId: appliedOwnerSubjectId,
       pageSize,
-      pageToken: page > 1 ? String((page - 1) * pageSize) : undefined,
-      signal,
+      pageToken: currentPageToken,
+      signal: controller.signal,
     })
       .then((result) => {
         setSpaces(result.items);
         setTotal(result.total);
+        const serverNextCursor = result.pageInfo?.nextCursor ?? null;
+        setNextPageToken(serverNextCursor);
+        setPageCursors((current) => {
+          const next = { ...current };
+          Object.keys(next)
+            .map(Number)
+            .filter((cursorPage) => cursorPage > page + 1)
+            .forEach((cursorPage) => {
+              delete next[cursorPage];
+            });
+          if (serverNextCursor) {
+            next[page + 1] = serverNextCursor;
+          } else {
+            delete next[page + 1];
+          }
+          return next;
+        });
       })
       .catch((err) => {
         if (!isAbortError(err)) setError(t('noticeLoadFailed'));
       })
       .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    const controller = new AbortController();
-    load(controller.signal);
     return () => controller.abort();
-  }, [service, page, pageSize]);
+  }, [
+    service,
+    appliedOwnerSubjectId,
+    appliedOwnerSubjectType,
+    currentPageToken,
+    page,
+    pageSize,
+    refreshKey,
+    t,
+  ]);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = nextPageToken
+    ? Math.max(page + 1, Math.ceil(total / pageSize), 1)
+    : Math.max(page, Math.ceil(total / pageSize), 1);
+
+  const applyFilters = () => {
+    setPageCursors({ 1: undefined });
+    setNextPageToken(null);
+    setAppliedOwnerSubjectType(ownerSubjectType.trim() || undefined);
+    setAppliedOwnerSubjectId(ownerSubjectId.trim() || undefined);
+    setPage(1);
+    setRefreshKey((current) => current + 1);
+  };
 
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#fafafa] dark:bg-[#111]">
@@ -89,10 +129,7 @@ export function SpacesAdminPage({ backendSdkClient, getSession }: SpacesAdminPag
           <button
             type="button"
             className={PRIMARY_BUTTON_CLASS}
-            onClick={() => {
-              setPage(1);
-              load();
-            }}
+            onClick={applyFilters}
           >
             {t('applyFilters')}
           </button>
@@ -145,7 +182,7 @@ export function SpacesAdminPage({ backendSdkClient, getSession }: SpacesAdminPag
               <button
                 type="button"
                 className={SECONDARY_BUTTON_CLASS}
-                disabled={page >= totalPages || loading}
+                disabled={!nextPageToken || loading}
                 onClick={() => setPage((current) => current + 1)}
               >
                 {t('nextPage')}

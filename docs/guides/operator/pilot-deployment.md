@@ -10,7 +10,7 @@ Use this guide after `pnpm check` passes on the release commit. Pilot validates 
 | Database | PostgreSQL provisioned; `pnpm db:migrate` applied against pilot schema |
 | IAM | Tenant org-scoped admin credentials; IAM DB session resolver reachable |
 | Secrets | `SDKWORK_DRIVE_DATABASE_*`, JWT/HMAC secrets, download token HMAC, and `sdkwork-drive-rate-limit` Redis URL for cloud production |
-| Topology | Profile selected from `configs/topology/` (pilot: `standalone.unified-process.development` or staging production profile) |
+| Topology | Profile selected from `configs/topology/` (pilot: `standalone.development` or staging production profile) |
 
 ## Phase 1 — Local / staging smoke
 
@@ -49,7 +49,7 @@ Validate:
 
 ## Phase 2 — Deploy to pilot environment
 
-1. Select profile in `deployments/deploy.yaml` (e.g. `standalone.unified-process.production` or `cloud.split-services.production`).
+1. Select profile in `deployments/deploy.yaml` (e.g. `standalone.production` or `cloud.production`).
 2. Apply topology env from `configs/topology/<profile>.env`.
 3. Run database lifecycle:
 
@@ -90,14 +90,16 @@ Trigger GitHub Actions **Package Application** (`.github/workflows/package.yml`)
 - **workflow_dispatch** with target platforms, or
 - Push semver tag `v*`
 
-After CI completes:
+After CI completes, or on a trusted local release host for pre-GA evidence rehearsal:
 
 ```bash
-pnpm release:evidence
+pnpm release:package
 pnpm release:validate
 SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate
 SDKWORK_RELEASE_VALIDATION=strict pnpm check:release-readiness
 ```
+
+`pnpm release:package` builds and stages local release artifacts, then materializes release evidence from those real files. Use `pnpm release:evidence` only when artifacts already exist and the operator needs to re-materialize or re-check manifest evidence; it is not a substitute for building missing packages.
 
 Remaining GA blockers (CI/ops only):
 

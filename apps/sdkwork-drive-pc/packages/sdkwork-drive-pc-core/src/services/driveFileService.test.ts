@@ -34,6 +34,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+async function readBlobTextForTest(blob: Blob): Promise<string> {
+  const arrayBuffer = (blob as Blob & { arrayBuffer?: () => Promise<ArrayBuffer> }).arrayBuffer;
+  if (typeof arrayBuffer === 'function') {
+    return new TextDecoder().decode(await arrayBuffer.call(blob));
+  }
+  if (typeof FileReader === 'function') {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result && typeof reader.result !== 'string') {
+          resolve(new TextDecoder().decode(reader.result));
+          return;
+        }
+        reject(new Error('Expected FileReader to return binary test data.'));
+      };
+      reader.onerror = () => reject(reader.error ?? new Error('Failed to read test Blob.'));
+      reader.onabort = () => reject(new Error('Test Blob read was aborted.'));
+      reader.readAsArrayBuffer(blob);
+    });
+  }
+  throw new Error('The test runtime cannot read Blob data.');
+}
+
 const folderNode = {
   id: 'folder-001',
   spaceId: 'my-storage',
@@ -2318,7 +2341,7 @@ describe('drive file service', () => {
     }));
     const replacementFile = replaceNodeContent.mock.calls[0]?.[0].file;
     expect(replacementFile).toEqual(expect.any(File));
-    expect(new TextDecoder().decode(await replacementFile?.arrayBuffer())).toBe('# Updated\n');
+    expect(await readBlobTextForTest(replacementFile as Blob)).toBe('# Updated\n');
     expect(requests).toEqual([]);
     expect(uploadFetch).not.toHaveBeenCalled();
   });
@@ -3056,7 +3079,7 @@ describe('drive file service', () => {
             traceId: 'trace-versions-1',
             data: {
               items: [{ versionNo: 2, createdAt: '2026-07-06T10:00:00Z', contentLength: 120 }],
-              pageInfo: { mode: 'offset', hasMore: true, nextPageToken: '20' },
+              pageInfo: { mode: 'offset', hasMore: true, nextPageToken: 'versions-page-2' },
             },
           };
         }
@@ -3083,6 +3106,6 @@ describe('drive file service', () => {
       { versionNo: 1, createdAt: '2026-07-05T10:00:00Z', contentLength: 80 },
     ]);
     expect(requests.filter((request) => request.operationId === 'versions.list')).toHaveLength(2);
-    expect(requests[1]?.query?.cursor).toBe('20');
+    expect(requests[1]?.query?.cursor).toBe('versions-page-2');
   });
 });

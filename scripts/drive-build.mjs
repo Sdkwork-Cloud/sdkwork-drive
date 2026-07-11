@@ -4,7 +4,6 @@ import { spawn } from 'node:child_process';
 import process from 'node:process';
 
 import {
-  DEFAULT_BUILD_PROFILE_ID,
   loadProfile,
   mergeRuntimeEnv,
   REPO_ROOT,
@@ -60,7 +59,7 @@ Defaults:
   deploymentProfile cloud       Release desktop builds target the cloud production profile.
   deploymentProfile standalone  Standalone desktop builds target local application ingress URLs.
 
-Profiles load from configs/topology according to deployment profile and service layout.
+Profiles load from configs/topology according to deployment profile and production environment.
 
 Options:
   --deployment-profile <cloud|standalone>  Deployment profile (default: cloud)

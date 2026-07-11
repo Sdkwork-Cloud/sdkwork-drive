@@ -18,7 +18,6 @@ const __dirname = dirname(__filename);
 const repoRoot = resolve(__dirname, "..");
 
 const ALLOWED_DATABASES = new Set(["postgres", "sqlite"]);
-const ALLOWED_SERVICE_LAYOUTS = new Set(["unified-process", "split-services"]);
 const ALLOWED_DEPLOYMENT_PROFILES = new Set(["standalone", "cloud"]);
 const ALLOWED_RUNTIME_TARGETS = new Set([
   "browser", "desktop", "server", "container",
@@ -50,14 +49,14 @@ function parseArgs(argv) {
 }
 
 function validateAxisValues(flags) {
-  const { database, "service-layout": serviceLayout, "deployment-profile": deploymentProfile, "runtime-target": runtimeTarget } = flags;
+  const { database, "deployment-profile": deploymentProfile, "runtime-target": runtimeTarget } = flags;
 
   if (database && !ALLOWED_DATABASES.has(database)) {
     console.error(`[sdkwork-drive] Invalid database: ${database}. Allowed: ${[...ALLOWED_DATABASES].join(", ")}`);
     process.exit(1);
   }
-  if (serviceLayout && !ALLOWED_SERVICE_LAYOUTS.has(serviceLayout)) {
-    console.error(`[sdkwork-drive] Invalid service-layout: ${serviceLayout}. Allowed: ${[...ALLOWED_SERVICE_LAYOUTS].join(", ")}`);
+  if (Object.hasOwn(flags, "service-layout")) {
+    console.error("[sdkwork-drive] --service-layout is internal topology detail; select --deployment-profile standalone|cloud instead.");
     process.exit(1);
   }
   if (deploymentProfile && !ALLOWED_DEPLOYMENT_PROFILES.has(deploymentProfile)) {
@@ -77,7 +76,7 @@ function validateAxisValues(flags) {
   }
 }
 
-function runNodeScript(scriptRelativePath, scriptArgs, cwd = repoRoot) {
+function runNodeScript(scriptRelativePath, scriptArgs = [], cwd = repoRoot) {
   const scriptPath = resolve(repoRoot, scriptRelativePath);
   const result = spawnSync("node", [scriptPath, ...scriptArgs], {
     cwd,
@@ -111,7 +110,6 @@ function dispatch(args) {
 
   const runtimeTarget = flags["runtime-target"] || "browser";
   const database = flags.database || "postgres";
-  const serviceLayout = flags["service-layout"] || "unified-process";
   const deploymentProfile = flags["deployment-profile"] || "standalone";
 
   switch (command) {
@@ -122,9 +120,11 @@ function dispatch(args) {
       const devArgs = [
         "--target", runtimeTarget,
         "--database", database,
-        "--service-layout", serviceLayout,
         "--deployment-profile", deploymentProfile,
       ];
+      if (flags["dry-run"] === true) {
+        devArgs.push("--dry-run");
+      }
       runNodeScript("scripts/drive-dev.mjs", devArgs);
       break;
     }
@@ -203,7 +203,7 @@ function dispatch(args) {
     }
     case "topology:plan":
     case "topology:validate": {
-      console.log(`[sdkwork-drive] topology ${command} for ${deploymentProfile}/${serviceLayout}/${database}`);
+      console.log(`[sdkwork-drive] topology ${command} for ${deploymentProfile}/development/${database}`);
       break;
     }
     case "release:plan": {
@@ -222,7 +222,7 @@ function dispatch(args) {
       }
       runNodeScript("scripts/release-catalog-media.mjs");
       runNodeScript("tools/materialize_catalog_media_evidence.mjs");
-      runNodeScript("scripts/gateway-standalone-pack.mjs", ["package", "--skip-build"]);
+      runNodeScript("scripts/gateway-standalone-pack.mjs", ["package"]);
       runNodeScript("tools/materialize_release_manifest_evidence.mjs");
       runNodeScript("tools/generate_release_sbom.mjs");
       runNodeScript("tools/check_sdkwork_drive_release_readiness.mjs");

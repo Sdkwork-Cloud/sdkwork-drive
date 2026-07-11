@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadDeployManifest, loadTopology } from '../../sdkwork-specs/tools/deploy/load-manifest.mjs';
 import { validateDeploy } from '../../sdkwork-specs/tools/deploy/validate.mjs';
 
 const defaultRepoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -31,6 +32,10 @@ const warnings = [];
 const releaseDigestPlaceholder = 'REPLACE_WITH_RELEASE_DIGEST';
 const sha256ImageDigestPattern = /@sha256:[a-f0-9]{64}$/iu;
 
+function repoRelativeSlash(relativePath) {
+  return String(relativePath ?? '').replace(/\\/gu, '/').replace(/^\.\//u, '');
+}
+
 function deploymentBlock(manifest, deploymentName) {
   const start = manifest.indexOf(`name: ${deploymentName}`);
   if (start < 0) {
@@ -44,6 +49,108 @@ function requirePath(relativePath, reason) {
   const absolutePath = path.join(repoRoot, relativePath);
   if (!fs.existsSync(absolutePath)) {
     failures.push(`${relativePath} is required (${reason})`);
+  }
+}
+
+function envFileExists(relativePath) {
+  return fs.existsSync(path.join(repoRoot, relativePath));
+}
+
+function validateTopologyProfileId(profileId, topology, location) {
+  const allowedDeploymentProfiles = new Set(
+    topology.vocabulary?.deploymentProfile?.allowed ?? ['standalone', 'cloud'],
+  );
+  const allowedEnvironments = new Set(
+    topology.vocabulary?.environment?.allowed ?? ['development', 'test', 'staging', 'production'],
+  );
+  const segments = String(profileId ?? '').split('.');
+  if (
+    segments.length !== 2 ||
+    !allowedDeploymentProfiles.has(segments[0]) ||
+    !allowedEnvironments.has(segments[1])
+  ) {
+    failures.push(
+      `${location}: profile "${profileId}" must use <deploymentProfile>.<environment> with deploymentProfile in ` +
+        `${[...allowedDeploymentProfiles].join(', ')} and environment in ${[...allowedEnvironments].join(', ')}`,
+    );
+  }
+}
+
+function validateDeployTopologyContract() {
+  let doc;
+  let topology;
+  try {
+    ({ doc } = loadDeployManifest(repoRoot));
+    topology = loadTopology(repoRoot);
+  } catch (error) {
+    failures.push(`deployments/deploy.yaml topology validation failed: ${error.message}`);
+    return;
+  }
+
+  const profileFiles = topology.profileFiles;
+  if (!profileFiles || typeof profileFiles !== 'object') {
+    failures.push('specs/topology.spec.json must declare profileFiles for deploy profile validation');
+    return;
+  }
+
+  const profiles =
+    doc.profiles && typeof doc.profiles === 'object'
+      ? doc.profiles
+      : {
+          [doc.profile]: {
+            install: doc.install,
+            expose: doc.expose,
+            packages: doc.packages,
+            overrides: doc.overrides,
+          },
+        };
+
+  if (doc.profiles && !Object.hasOwn(profiles, doc.defaultProfile)) {
+    failures.push(`defaultProfile "${doc.defaultProfile}" must exist in deployments/deploy.yaml profiles`);
+  }
+
+  for (const [profileId, block] of Object.entries(profiles)) {
+    validateTopologyProfileId(profileId, topology, `deployments/deploy.yaml profiles.${profileId}`);
+
+    const expectedEnv = profileFiles[profileId];
+    if (!expectedEnv) {
+      failures.push(`profile "${profileId}" is not listed in topology.profileFiles`);
+    } else if (!envFileExists(expectedEnv)) {
+      failures.push(`${repoRelativeSlash(expectedEnv)} does not exist`);
+    }
+
+    const topologyOverride = block?.overrides?.topology;
+    if (!topologyOverride || typeof topologyOverride !== 'object') {
+      failures.push(`profile "${profileId}" must declare overrides.topology with spec, profile, and env`);
+      continue;
+    }
+
+    const topologySpec = repoRelativeSlash(topologyOverride.spec);
+    if (topologySpec !== 'specs/topology.spec.json') {
+      failures.push(
+        `profile "${profileId}" overrides.topology.spec must be specs/topology.spec.json, got "${topologyOverride.spec}"`,
+      );
+    }
+
+    if (topologyOverride.profile !== profileId) {
+      failures.push(
+        `profile "${profileId}" overrides.topology.profile must match profile key, got "${topologyOverride.profile}"`,
+      );
+    }
+
+    const declaredEnv = repoRelativeSlash(topologyOverride.env);
+    if (!declaredEnv) {
+      failures.push(`profile "${profileId}" must declare overrides.topology.env`);
+    } else {
+      if (expectedEnv && declaredEnv !== repoRelativeSlash(expectedEnv)) {
+        failures.push(
+          `profile "${profileId}" overrides.topology.env must be ${repoRelativeSlash(expectedEnv)}, got ${declaredEnv}`,
+        );
+      }
+      if (!envFileExists(declaredEnv)) {
+        failures.push(`${declaredEnv} does not exist`);
+      }
+    }
   }
 }
 
@@ -121,6 +228,7 @@ function validateRedisRateLimit(deploymentName) {
 }
 
 requirePath('deployments/deploy.yaml', 'SDKWORK_DEPLOY_SPEC.md deployctl contract');
+validateDeployTopologyContract();
 
 const deployResult = validateDeploy(
   repoRoot,

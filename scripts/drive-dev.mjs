@@ -10,7 +10,6 @@ import { fileURLToPath } from 'node:url';
 
 import {
   assertPostgresReachableForIam,
-  DEFAULT_DEV_PROFILE_ID,
   describeIamDatabaseTarget,
   loadEnvFile as loadTopologyEnvFile,
   loadProfile,
@@ -369,7 +368,6 @@ function parseArgs(argv) {
     database: undefined,
     devEnvFile: null,
     deploymentProfile: 'standalone',
-    serviceLayout: 'unified-process',
     dryRun: false,
     help: false,
   };
@@ -424,18 +422,6 @@ function parseArgs(argv) {
         throw new Error('--deployment-profile requires a value (standalone or cloud)');
       }
       settings.deploymentProfile = value;
-      index += 1;
-      continue;
-    }
-    if (arg === '--service-layout') {
-      const value = argv[index + 1];
-      if (!value || value.startsWith('--')) {
-        throw new Error('--service-layout requires a value (unified-process or split-services)');
-      }
-      if (value !== 'unified-process' && value !== 'split-services') {
-        throw new Error('--service-layout must be unified-process or split-services');
-      }
-      settings.serviceLayout = value;
       index += 1;
       continue;
     }
@@ -695,13 +681,12 @@ Options:
   --target <browser|desktop>       Target platform (default: browser)
   --database <postgres|sqlite>     Database profile (default: postgres)
   --deployment-profile <standalone|cloud> Deployment profile (default: standalone)
-  --service-layout <unified-process|split-services> Service layout (default: unified-process)
   --dev-env-file <path>            Path to env file
   --dry-run                        Print plan without executing
   --help, -h                       Show this help
 
 Deployment policy (standalone default for dev):
-  Profiles load from configs/topology according to deployment profile and service layout.
+  Profiles load from configs/topology according to deployment profile and environment.
   Dev autostarts the gateway on ${DEFAULT_SDKWORK_API_CLOUD_GATEWAY_BIND} when it is not already listening.
   Use --deployment-profile cloud to route through sdkwork-api-cloud-gateway instead.
   IAM login requires PostgreSQL (copy .env.postgres.example to .env.postgres and start PostgreSQL).
@@ -732,7 +717,7 @@ async function main() {
     const postgresEnvFile = '.env.postgres';
     const envFile = settings.devEnvFile
       || (databaseProfile === 'postgres' ? postgresEnvFile : undefined);
-    const profileId = resolveDevProfileId(settings.deploymentProfile, settings.serviceLayout);
+    const profileId = resolveDevProfileId(settings.deploymentProfile);
     const profileEnv = loadProfile(profileId);
     const postgresEnv = loadEnvFile(postgresEnvFile);
     const fileEnv = loadEnvFile(envFile);
@@ -785,6 +770,9 @@ async function main() {
     processes.push(devServerProcess);
 
     if (settings.dryRun) {
+      console.log(`[sdkwork-drive] deploymentProfile=${settings.deploymentProfile}`);
+      console.log('[sdkwork-drive] environment=development');
+      console.log(`[sdkwork-drive] SDKWORK_DRIVE_PROFILE_ID=${profileId}`);
       console.log(`[sdkwork-drive] IAM database target: ${iamDatabaseTarget}`);
       for (const entry of processes) {
         console.log(`[${entry.label}] ${entry.command} ${entry.args.join(' ')}`);

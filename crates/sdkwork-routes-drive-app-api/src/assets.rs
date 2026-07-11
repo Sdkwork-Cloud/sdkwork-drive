@@ -28,6 +28,7 @@ use axum::http::StatusCode;
 use axum::Extension;
 use axum::Json;
 use sdkwork_drive_config::DatabaseEngine;
+use sdkwork_drive_contract::api::pagination_cursor::{decode_offset_cursor, encode_offset_cursor};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
 use sdkwork_drive_contract::{
     build_drive_backed_media_resource, BuildDriveBackedMediaResourceInput, DriveNodeId,
@@ -723,32 +724,21 @@ fn parse_asset_page_request(
         crate::constants::MAX_LIST_PAGE_SIZE,
         "page_size",
     )?;
-    let offset = match normalize_optional_text(cursor) {
-        Some(raw) => raw.parse::<i64>().map_err(|_| {
-            problem(
-                StatusCode::BAD_REQUEST,
-                "validation failed",
-                "cursor is invalid",
-                SdkWorkResultCode::ValidationError,
-            )
-        })?,
-        None => 0,
-    };
-    if offset < 0 {
-        return Err(problem(
+    let offset = decode_offset_cursor(cursor.as_deref()).map_err(|_| {
+        problem(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "cursor is invalid",
             SdkWorkResultCode::ValidationError,
-        ));
-    }
+        )
+    })?;
     Ok(PageRequest { limit, offset })
 }
 
 fn next_asset_cursor<T>(items: &mut Vec<T>, page: PageRequest) -> Option<String> {
     if items.len() as i64 > page.limit {
         items.pop();
-        Some((page.offset + page.limit).to_string())
+        encode_offset_cursor(page.offset + page.limit)
     } else {
         None
     }

@@ -2,6 +2,7 @@ use crate::dto::OffsetPage;
 use crate::error::{problem, ProblemDetail, SdkWorkResultCode};
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_drive_contract::api::pagination_cursor::{decode_offset_cursor, encode_offset_cursor};
 use sdkwork_utils_rust::{DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE};
 
 pub(crate) fn normalize_optional_text(value: Option<String>) -> Option<String> {
@@ -37,25 +38,14 @@ pub(crate) fn parse_offset_page(
         i64::from(MAX_LIST_PAGE_SIZE),
         "page_size",
     )?;
-    let offset = match normalize_optional_text(page_token) {
-        Some(raw) => raw.parse::<i64>().map_err(|_| {
-            problem(
-                StatusCode::BAD_REQUEST,
-                "validation failed",
-                "cursor is invalid",
-                SdkWorkResultCode::ValidationError,
-            )
-        })?,
-        None => 0,
-    };
-    if offset < 0 {
-        return Err(problem(
+    let offset = decode_offset_cursor(page_token.as_deref()).map_err(|_| {
+        problem(
             StatusCode::BAD_REQUEST,
             "validation failed",
             "cursor is invalid",
             SdkWorkResultCode::ValidationError,
-        ));
-    }
+        )
+    })?;
     Ok(OffsetPage { limit, offset })
 }
 
@@ -119,7 +109,7 @@ pub(crate) fn validate_page_size_u32(
 pub(crate) fn next_page_token<T>(items: &mut Vec<T>, page: OffsetPage) -> Option<String> {
     if items.len() as i64 > page.limit {
         items.pop();
-        Some((page.offset + page.limit).to_string())
+        encode_offset_cursor(page.offset + page.limit)
     } else {
         None
     }
@@ -188,4 +178,41 @@ pub(crate) fn validate_label_color(color: &str) -> Result<&str, (StatusCode, Jso
         "color is invalid",
         SdkWorkResultCode::ValidationError,
     ))
+}
+
+#[cfg(test)]
+mod pagination_cursor_tests {
+    use super::{next_page_token, parse_offset_page};
+    use crate::dto::OffsetPage;
+
+    fn is_numeric_token(value: &str) -> bool {
+        value.bytes().all(|byte| byte.is_ascii_digit())
+    }
+
+    #[test]
+    fn offset_page_tokens_are_opaque_and_round_trip() {
+        let mut items = vec![1, 2];
+
+        let token = next_page_token(
+            &mut items,
+            OffsetPage {
+                limit: 1,
+                offset: 0,
+            },
+        )
+        .expect("first page should expose continuation token");
+
+        assert!(!is_numeric_token(&token));
+        let parsed = parse_offset_page(Some(1), Some(token)).expect("opaque cursor should parse");
+        assert_eq!(parsed.offset, 1);
+        assert_eq!(items, vec![1]);
+    }
+
+    #[test]
+    fn offset_page_rejects_numeric_cursor_alias() {
+        let err = parse_offset_page(Some(20), Some("20".to_string()))
+            .expect_err("numeric cursor is pre-launch pagination debt");
+
+        assert_eq!(err.0, axum::http::StatusCode::BAD_REQUEST);
+    }
 }

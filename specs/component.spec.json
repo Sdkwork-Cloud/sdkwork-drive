@@ -134,6 +134,18 @@
       "sdkwork.workflow.json"
     ]
   },
+  "integration": {
+    "authority": "Root SDKWork specs remain authoritative. Local specs may extend but must not contradict them.",
+    "defaultConnectivityPlane": "application",
+    "defaultRuntimeMode": "same-origin-embedded",
+    "permissionManifest": "../sdkwork-iam/iam/modules/drive/iam.module.manifest.json",
+    "dependencyPolicy": "Consumers integrate Drive through generated SDK families, Drive Uploader facades, or declared service ports. Consumers must not copy Drive routes, upload DTOs, storage schemas, or permission catalogs.",
+    "sdkPolicy": "Generated Drive SDK clients are injected through service/runtime boundaries; frontend packages must not use raw Drive HTTP or manual auth headers.",
+    "languagePolicy": "Language-specific packages follow native manifests while preserving the same Drive component contract.",
+    "webFramework": "Drive HTTP route crates integrate through sdkwork-web-framework.",
+    "database": "Drive database lifecycle is managed by sdkwork-database contracts and migrations.",
+    "utils": "Drive TypeScript and Rust code use @sdkwork/utils and sdkwork-utils-rust for shared helpers."
+  },
   "verification": {
     "commands": [
       "cargo test --workspace",

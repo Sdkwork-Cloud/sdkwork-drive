@@ -1,18 +1,21 @@
-import { useContext } from 'react';
+import { useCallback, useContext, useMemo } from 'react';
 import { LanguageProviderContext } from 'sdkwork-drive-pc-commons';
+
+const fallbackSetLanguage = () => {};
 
 export function useTranslation() {
   const context = useContext(LanguageProviderContext);
-  if (context) {
-    const { t: baseT, language, setLanguage } = context;
-    const t = (key: string, params?: Record<string, string | number>) =>
-      baseT(`adminOperations.${key}`, params);
-    return { t, language, setLanguage };
-  }
+  const baseT = context?.t;
+  const language = context?.language ?? 'en';
+  const setLanguage = context?.setLanguage ?? fallbackSetLanguage;
+  const t = useCallback(
+    (key: string, params?: Record<string, string | number>) =>
+      baseT ? baseT(`adminOperations.${key}`, params) : key,
+    [baseT],
+  );
 
-  return {
-    t: (key: string, _params?: Record<string, string | number>) => key,
-    language: 'en' as const,
-    setLanguage: () => {},
-  };
+  return useMemo(
+    () => ({ t, language, setLanguage }),
+    [language, setLanguage, t],
+  );
 }

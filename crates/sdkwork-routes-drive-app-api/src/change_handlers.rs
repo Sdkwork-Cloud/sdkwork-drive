@@ -1,7 +1,7 @@
 use crate::acl;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{ChangeResponse, ChangesQuery, StartPageTokenQuery, StartPageTokenResponse};
-use crate::error::{map_service_error, ProblemDetail};
+use crate::error::{internal_problem, map_service_error, ProblemDetail};
 use crate::response::{success_cursor_list_page, success_envelope, DriveListHttpResponse};
 use crate::space_repository::{validate_space_exists, validate_space_exists_for_change_history};
 use crate::state::AppState;
@@ -9,6 +9,7 @@ use crate::validators::{parse_change_page_request, require_query_value};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
+use sdkwork_drive_contract::api::pagination_cursor::encode_change_sequence_cursor;
 use sdkwork_drive_workspace_service::application::change_feed_service::{
     ListChangesCommand, QueryStartPageTokenCommand, SqlDriveChangeFeedService,
 };
@@ -90,7 +91,8 @@ pub(crate) async fn get_changes_start_page_token(
     let start_page_token =
         query_start_page_token(&state.pool, &tenant_id, Some(space_id.as_str())).await?;
     Ok(success_envelope(StartPageTokenResponse {
-        start_page_token: start_page_token.to_string(),
+        start_page_token: encode_change_sequence_cursor(start_page_token)
+            .ok_or_else(|| internal_problem("change start page token is invalid"))?,
     }))
 }
 

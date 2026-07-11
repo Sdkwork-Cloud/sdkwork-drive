@@ -45,7 +45,7 @@ Runtime SQL must use PostgreSQL-compatible `$1`, `$2`, ... bind placeholders. SQ
 
 Supported runtime database engines are PostgreSQL and SQLite only. Enabling `sqlx::AnyPool` may pull SQLx MySQL internals into Cargo dependency resolution, but Drive configuration rejects MySQL URLs and Drive does not expose MySQL as a supported database backend.
 
-Direct SQL in request handlers is still allowed for narrow API-specific read models, but shared business persistence must be implemented through workspace-service store ports. New SQL must be validated against both PostgreSQL and SQLite semantics before being exposed through `pnpm dev` or `pnpm dev:sqlite`.
+Direct SQL in request handlers is still allowed for narrow API-specific read models, but shared business persistence must be implemented through workspace-service store ports. New SQL must be validated against both PostgreSQL and SQLite semantics before being exposed through `pnpm dev` or `pnpm dev:browser:sqlite`.
 
 ## Lifecycle And Migrations
 

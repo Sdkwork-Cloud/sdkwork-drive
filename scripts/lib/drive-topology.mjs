@@ -20,11 +20,10 @@ const spec = loadTopologySpec(SPEC_PATH);
 const runtime = createTopologyRuntime(spec, REPO_ROOT);
 
 export const VALID_DEPLOYMENT_PROFILES = runtime.deploymentProfileValues;
-export const VALID_SERVICE_LAYOUTS = runtime.serviceLayoutValues;
 export const VALID_ENVIRONMENTS = runtime.environmentValues;
 export const DEFAULT_DEV_PROFILE_ID = runtime.defaults.developmentProfileId;
-export const DEFAULT_BUILD_PROFILE_ID = runtime.defaults.desktopBuildProfileId;
-export const DEFAULT_STANDALONE_BUILD_PROFILE_ID = 'standalone.unified-process.production';
+export const DEFAULT_BUILD_PROFILE_ID = runtime.defaults.productionProfileId;
+export const DEFAULT_STANDALONE_BUILD_PROFILE_ID = 'standalone.production';
 export const DEFAULT_GATEWAY_BIND = runtime.defaults.gatewayBind;
 export const POSTGRES_REACHABILITY_TIMEOUT_MS = 2000;
 
@@ -44,12 +43,9 @@ export const IAM_APPLICATION_BOOTSTRAP_ENV = {
   SDKWORK_IAM_APP_ROOT: IAM_REPO_ROOT,
 };
 
-export function resolveDevProfileId(deploymentProfile, serviceLayout) {
+export function resolveDevProfileId(deploymentProfile) {
   runtime.assertDeploymentProfile(deploymentProfile);
-  const resolvedServiceLayout = serviceLayout
-    || (deploymentProfile === 'standalone' ? 'unified-process' : 'split-services');
-  runtime.assertServiceLayout(resolvedServiceLayout);
-  return buildProfileId(deploymentProfile, resolvedServiceLayout, 'development');
+  return buildProfileId(deploymentProfile, 'development');
 }
 
 export function resolveBuildProfileId(deploymentProfile) {

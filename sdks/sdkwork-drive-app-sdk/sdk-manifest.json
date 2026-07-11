@@ -6,7 +6,7 @@
   "sdkFamily": "sdkwork-drive-app-sdk",
   "sdkType": "app",
   "apiPrefix": "/app/v3/api",
-  "generationInputSpec": "../../target/drive-sdk-generator-input/sdkwork-drive-app-sdk/drive-app-api.openapi.json",
+  "generationInputSpec": "../../apis/app-api/drive/drive-app-api.openapi.json",
   "generatedPackages": {
     "typescript": {
       "language": "typescript",
@@ -57,5 +57,93 @@
   "standardProfile": "sdkwork-v3",
   "fixedSdkVersion": "0.1.0",
   "ownerOnlyOperationCount": 95,
-  "managedBy": "tools/drive_sdk_generator_runner.mjs"
+  "managedBy": "tools/drive_sdk_generator_runner.mjs",
+  "packageName": "@sdkwork/drive-app-sdk",
+  "transportPackageName": "sdkwork-drive-app-sdk-generated-typescript",
+  "typescript": {
+    "composedRoot": "sdkwork-drive-app-sdk-typescript",
+    "composedEntry": "sdkwork-drive-app-sdk-typescript/src/index.ts",
+    "transportRoot": "sdkwork-drive-app-sdk-typescript/generated/server-openapi",
+    "transportEntry": "sdkwork-drive-app-sdk-typescript/generated/server-openapi/src/index.ts"
+  },
+  "workspace": "sdkwork-drive-app-sdk",
+  "title": "SDKWork Drive App API SDK",
+  "apiVersion": "0.1.0",
+  "openapiVersion": "3.1.2",
+  "authoritySpec": "../../apis/app-api/drive/drive-app-api.openapi.json",
+  "derivedSpecs": {
+    "default": "../../apis/app-api/drive/drive-app-api.openapi.json"
+  },
+  "discoverySurface": {
+    "sdkTarget": "app",
+    "apiPrefix": "/app/v3/api",
+    "schemaUrl": "/app/v3/openapi.json",
+    "generatedProtocols": [
+      "http-openapi"
+    ],
+    "manualTransports": []
+  },
+  "languages": [
+    {
+      "language": "typescript",
+      "workspace": "sdkwork-drive-app-sdk-typescript",
+      "generationState": "declared",
+      "releaseState": "not_published",
+      "generatedPath": "sdkwork-drive-app-sdk-typescript/generated/server-openapi",
+      "manifestPath": "sdkwork-drive-app-sdk-typescript/generated/server-openapi/package.json",
+      "name": "@sdkwork-internal/drive-app-sdk-generated",
+      "version": "0.1.0",
+      "description": "Generator-owned TypeScript transport SDK for sdkwork-drive app API.",
+      "consumerSurface": {
+        "primaryClient": "SdkworkDriveAppClient",
+        "apiPrefix": "/app/v3/api"
+      },
+      "consumerPackageName": "@sdkwork/drive-app-sdk",
+      "transportPackageName": "sdkwork-drive-app-sdk-generated-typescript"
+    },
+    {
+      "language": "rust",
+      "workspace": "sdkwork-drive-app-sdk-rust",
+      "generationState": "declared",
+      "releaseState": "not_published",
+      "generatedPath": "sdkwork-drive-app-sdk-rust/generated/server-openapi",
+      "manifestPath": "sdkwork-drive-app-sdk-rust/generated/server-openapi/Cargo.toml",
+      "name": "sdkwork-drive-app-sdk-generated",
+      "version": "0.1.0",
+      "description": "Generator-owned Rust transport SDK for sdkwork-drive app API."
+    },
+    {
+      "language": "java",
+      "workspace": "sdkwork-drive-app-sdk-java",
+      "generationState": "declared",
+      "releaseState": "not_published",
+      "generatedPath": "sdkwork-drive-app-sdk-java/generated/server-openapi",
+      "manifestPath": "sdkwork-drive-app-sdk-java/generated/server-openapi/pom.xml",
+      "name": "com.sdkwork:drive-app-sdk-generated",
+      "version": "0.1.0",
+      "description": "Generator-owned Java transport SDK for sdkwork-drive app API."
+    },
+    {
+      "language": "python",
+      "workspace": "sdkwork-drive-app-sdk-python",
+      "generationState": "declared",
+      "releaseState": "not_published",
+      "generatedPath": "sdkwork-drive-app-sdk-python/generated/server-openapi",
+      "manifestPath": "sdkwork-drive-app-sdk-python/generated/server-openapi/pyproject.toml",
+      "name": "sdkwork-drive-app-sdk-generated",
+      "version": "0.1.0",
+      "description": "Generator-owned Python transport SDK for sdkwork-drive app API."
+    },
+    {
+      "language": "go",
+      "workspace": "sdkwork-drive-app-sdk-go",
+      "generationState": "declared",
+      "releaseState": "not_published",
+      "generatedPath": "sdkwork-drive-app-sdk-go/generated/server-openapi",
+      "manifestPath": "sdkwork-drive-app-sdk-go/generated/server-openapi/go.mod",
+      "name": "github.com/sdkwork/drive-app-sdk-generated",
+      "version": "0.1.0",
+      "description": "Generator-owned Go transport SDK for sdkwork-drive app API."
+    }
+  ]
 }

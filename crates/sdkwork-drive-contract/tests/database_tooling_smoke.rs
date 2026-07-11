@@ -35,6 +35,10 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
         .get("dev:desktop")
         .and_then(serde_json::Value::as_str)
         .expect("pnpm dev:desktop script should exist");
+    let dev_cloud_script = scripts
+        .get("dev:browser:postgres:cloud")
+        .and_then(serde_json::Value::as_str)
+        .expect("pnpm dev:browser:postgres:cloud script should exist");
 
     let dispatcher_path = root.join("scripts/sdkwork-command.mjs");
     let dispatcher = std::fs::read_to_string(&dispatcher_path)
@@ -62,8 +66,36 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
     );
 
     assert!(
-        dev_desktop_script.contains("dev:desktop:postgres:unified-process:standalone"),
-        "pnpm dev:desktop must delegate to the standalone desktop variant, got: {dev_desktop_script}"
+        dev_desktop_script.contains("sdkwork-command.mjs")
+            && dev_desktop_script.contains("--runtime-target desktop")
+            && dev_desktop_script.contains("--database postgres")
+            && dev_desktop_script.contains("--deployment-profile standalone"),
+        "pnpm dev:desktop must delegate through sdkwork-command.mjs with PostgreSQL and standalone profile, got: {dev_desktop_script}"
+    );
+    let retired_desktop_script = [
+        "dev",
+        "desktop",
+        "postgres",
+        "unified-process",
+        "standalone",
+    ]
+    .join(":");
+    assert!(
+        !scripts.contains_key(&retired_desktop_script),
+        "retired desktop dev script must not remain"
+    );
+    assert!(
+        dev_cloud_script.contains("sdkwork-command.mjs")
+            && dev_cloud_script.contains("--runtime-target browser")
+            && dev_cloud_script.contains("--database postgres")
+            && dev_cloud_script.contains("--deployment-profile cloud"),
+        "pnpm dev:browser:postgres:cloud must delegate through sdkwork-command.mjs with PostgreSQL and cloud profile, got: {dev_cloud_script}"
+    );
+    assert!(
+        dispatcher.contains("Object.hasOwn(flags, \"service-layout\")")
+            && dispatcher.contains("--service-layout is internal topology detail")
+            && !dispatcher.contains("\"--service-layout\","),
+        "sdkwork-command.mjs must reject public --service-layout without forwarding it to drive-dev.mjs"
     );
 
     let package_script = scripts
@@ -371,7 +403,7 @@ fn database_architecture_doc_records_runtime_boundary() {
         "PostgreSQL is the server, Docker, Kubernetes, and production target",
         "SQLite is the local/private lightweight mode",
         "pnpm dev",
-        "pnpm dev:sqlite",
+        "pnpm dev:browser:sqlite",
         "SDKWORK_DRIVE_CONFIG_FILE=./configs/drive.database.example.toml",
         "SDKWORK_DRIVE_DATABASE_ENGINE=postgresql",
         "SDKWORK_DRIVE_DATABASE_SSL_MODE",

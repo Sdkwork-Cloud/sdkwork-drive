@@ -40,6 +40,8 @@ export function StorageProvidersAdminPage({
   const [providers, setProviders] = useState<StorageProviderView[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
+  const [pageCursors, setPageCursors] = useState<Record<number, string | undefined>>({ 1: undefined });
+  const [nextPageToken, setNextPageToken] = useState<string | undefined>();
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
@@ -48,15 +50,32 @@ export function StorageProvidersAdminPage({
   const [editingProvider, setEditingProvider] = useState<StorageProviderView | undefined>();
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [detailProvider, setDetailProvider] = useState<StorageProviderView | undefined>();
+  const currentPageToken = pageCursors[page];
 
   const refreshProviders = async (signal?: AbortSignal) => {
     const result = await service.listProvidersPage({
       signal,
       pageSize,
-      pageToken: page > 1 ? String((page - 1) * pageSize) : undefined,
+      pageToken: currentPageToken,
     });
     setProviders(result.items);
-    setHasMore(result.hasMore);
+    setNextPageToken(result.nextPageToken);
+    setHasMore(Boolean(result.nextPageToken));
+    setPageCursors((current) => {
+      const next = { ...current };
+      Object.keys(next)
+        .map(Number)
+        .filter((cursorPage) => cursorPage > page + 1)
+        .forEach((cursorPage) => {
+          delete next[cursorPage];
+        });
+      if (result.nextPageToken) {
+        next[page + 1] = result.nextPageToken;
+      } else {
+        delete next[page + 1];
+      }
+      return next;
+    });
     return result.items;
   };
 
@@ -73,7 +92,7 @@ export function StorageProvidersAdminPage({
     const c = new AbortController();
     reload(c.signal);
     return () => c.abort();
-  }, [service, page, pageSize]);
+  }, [currentPageToken, service, page, pageSize]);
 
   const syncProviderViews = (items: StorageProviderView[], saved?: StorageProviderView) => {
     setProviders(items);
@@ -251,7 +270,7 @@ export function StorageProvidersAdminPage({
                 <button
                   type="button"
                   className={SECONDARY_BUTTON_CLASS}
-                  disabled={!hasMore || loading}
+                  disabled={!hasMore || !nextPageToken || loading}
                   onClick={() => setPage((current) => current + 1)}
                 >
                   {t('nextPage')}

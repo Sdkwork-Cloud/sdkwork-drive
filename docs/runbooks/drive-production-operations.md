@@ -2,7 +2,7 @@
 
 Status: active
 Owner: SDKWork maintainers
-Updated: 2026-07-07
+Updated: 2026-07-08
 Specs: OBSERVABILITY_SPEC.md, DEPLOYMENT_SPEC.md, RELEASE_SPEC.md
 
 ## 1. Service Health
@@ -81,7 +81,7 @@ Share claim deep links use `/share/{token}` (not `/drive/shared/claim/...`).
 
 Production requires JWT HMAC or JWKS (`SDKWORK_DRIVE_JWT_HMAC_SECRET`, `SDKWORK_DRIVE_JWT_HMAC_SECRETS_JSON`, or `SDKWORK_DRIVE_JWT_JWKS_URL`). Startup fails if `SDKWORK_DRIVE_RUNTIME_PROFILE=production` without signing material.
 
-Kubernetes split-services mounts:
+Kubernetes deployment secret mounts:
 
 | Secret | Consumers | Required keys |
 | --- | --- | --- |
@@ -104,10 +104,13 @@ Set `SDKWORK_DRIVE_UPLOAD_CONTENT_POLICY_MODE` to `enforce` in production Kubern
 Before catalog publication:
 
 ```bash
-SDKWORK_RELEASE_VALIDATION=strict pnpm check:release-readiness
+pnpm release:package
 pnpm release:validate
+SDKWORK_RELEASE_VALIDATION=strict pnpm check:release-readiness
 pnpm verify
 ```
+
+`pnpm release:package` is the local/CI-equivalent build and staging path for release evidence. `pnpm release:evidence` may be used only to re-materialize evidence from already-built artifacts; it must not be used to claim missing packages, signatures, checksums, CDN media, or image digests exist.
 
 Optional staging smoke (GitHub Actions `Drive Staging E2E` workflow_dispatch; configure repository secrets `DRIVE_E2E_OPEN_API_BASE_URL`, `DRIVE_E2E_SHARE_TOKEN`, `DRIVE_E2E_SHARE_ACCESS_CODE`, `DRIVE_E2E_PC_BASE_URL`, and optionally `DRIVE_E2E_PC_SESSION_JSON` / `DRIVE_E2E_PC_SHARE_TOKEN`).
 

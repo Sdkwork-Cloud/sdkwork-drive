@@ -77,7 +77,7 @@
           "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/icon-1024.png",
           "stagedChecksumAlgorithm": "SHA-256",
           "stagedChecksum": "c1e82f5f8e535e870d64fab14b8df9c60d890f3232758bf36cec724e4eba91a1",
-          "catalogMediaStagedAt": "2026-06-29T09:26:13.076Z"
+          "catalogMediaStagedAt": "2026-07-08T03:35:46.239Z"
         }
       },
       "platform": [],
@@ -110,7 +110,7 @@
           "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/desktop_windows-screenshot.png",
           "stagedChecksumAlgorithm": "SHA-256",
           "stagedChecksum": "878e85a25e9358068b35e81add3f4ea2e2ca31a891864183f6548de317634c78",
-          "catalogMediaStagedAt": "2026-06-29T09:26:13.076Z"
+          "catalogMediaStagedAt": "2026-07-08T03:35:46.239Z"
         }
       }
     ],
@@ -137,7 +137,7 @@
           "stagedArtifactPath": "dist/release/STABLE/0.1.0/media/preview-cover.png",
           "stagedChecksumAlgorithm": "SHA-256",
           "stagedChecksum": "1727302af4e20b3ee22e5ee569a7113fda90aebc70cc9153fe2f0b8183d5d499",
-          "catalogMediaStagedAt": "2026-06-29T09:26:13.076Z"
+          "catalogMediaStagedAt": "2026-07-08T03:35:46.239Z"
         }
       }
     ],
@@ -223,11 +223,11 @@
           "enabled": true,
           "metadata": {
             "releaseArtifactPath": "dist/release/STABLE/0.1.0/web.zip",
-            "releaseEvidenceMaterializedAt": "2026-06-23T04:44:51.646Z",
-            "releaseBuildMaterializedAt": "2026-06-23T04:44:51.646Z"
+            "releaseEvidenceMaterializedAt": "2026-07-08T03:35:49.261Z",
+            "releaseBuildMaterializedAt": "2026-07-08T03:35:49.261Z"
           },
           "checksumAlgorithm": "SHA-256",
-          "checksum": "c6c0917e02b6dc22d3ac7e4c14b9e5f6cc4ba1298f838a6f552a603a51279fad",
+          "checksum": "6ddc0056823e0968ddd377a094cc5cc509371e0711e21ba743f1a22e16272c1e",
           "architecture": "universal",
           "deploymentProfile": "cloud",
           "runtimeTarget": "browser"
@@ -242,12 +242,12 @@
           "enabled": true,
           "metadata": {
             "releaseArtifactPath": "dist/release/STABLE/0.1.0/windows/x64/app.zip",
-            "releaseEvidenceMaterializedAt": "2026-06-23T04:44:51.646Z",
-            "releaseBuildMaterializedAt": "2026-06-23T04:44:51.646Z"
+            "releaseEvidenceMaterializedAt": "2026-07-08T03:35:49.261Z",
+            "releaseBuildMaterializedAt": "2026-07-08T03:35:49.261Z"
           },
           "architecture": "x64",
           "checksumAlgorithm": "SHA-256",
-          "checksum": "e160289706ed042132c6de2b4fbb8e8bce05fe1a94d7e1c0d67d3a5309975aca",
+          "checksum": "6a05216f55569a73e1fcd1e8b04727b3781a75bf43656cff9ceee15d1167ad19",
           "deploymentProfile": "standalone",
           "runtimeTarget": "desktop"
         },

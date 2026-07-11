@@ -1361,17 +1361,19 @@ describe('desktop architecture contract', () => {
 
     expect(rootPackageJson.scripts.dev).toBe('pnpm dev:browser');
     expect(rootPackageJson.scripts['dev:browser']).toBe(
-      'node scripts/sdkwork-command.mjs dev --runtime-target browser --database postgres --service-layout unified-process --deployment-profile standalone',
+      'node scripts/sdkwork-command.mjs dev --runtime-target browser --database postgres --deployment-profile standalone',
     );
     expect(rootPackageJson.scripts['dev:pc']).toBeUndefined();
     expect(rootPackageJson.scripts['dev:desktop']).toBe(
-      'pnpm dev:desktop:postgres:unified-process:standalone',
+      'node scripts/sdkwork-command.mjs dev --runtime-target desktop --database postgres --deployment-profile standalone',
     );
-    expect(rootPackageJson.scripts['dev:desktop:postgres:unified-process:standalone']).toBe(
-      'node scripts/sdkwork-command.mjs dev --runtime-target desktop --database postgres --service-layout unified-process --deployment-profile standalone',
+    const retiredDesktopScript = ['dev', 'desktop', 'postgres', 'unified-process', 'standalone'].join(':');
+    expect(rootPackageJson.scripts[retiredDesktopScript]).toBeUndefined();
+    expect(rootPackageJson.scripts['dev:browser:postgres:cloud']).toBe(
+      'node scripts/sdkwork-command.mjs dev --runtime-target browser --database postgres --deployment-profile cloud',
     );
     expect(rootPackageJson.scripts['dev:desktop:sqlite']).toBe(
-      'node scripts/sdkwork-command.mjs dev --runtime-target desktop --database sqlite --service-layout unified-process --deployment-profile standalone',
+      'node scripts/sdkwork-command.mjs dev --runtime-target desktop --database sqlite --deployment-profile standalone',
     );
     expect(rootPackageJson.scripts.build).toBe(
       'node scripts/sdkwork-command.mjs build --deployment-profile cloud',

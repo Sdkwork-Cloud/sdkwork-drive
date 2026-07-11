@@ -1,21 +1,15 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 4,
   "kind": "sdkwork.app.topology",
   "appId": "sdkwork-drive",
   "archetype": "application-http-gateway",
   "profileRoot": "configs/topology",
-  "profilePattern": "{deploymentProfile}.{serviceLayout}.{environment}.env",
+  "profilePattern": "{deploymentProfile}.{environment}.env",
   "vocabulary": {
     "deploymentProfile": {
       "allowed": [
         "standalone",
         "cloud"
-      ]
-    },
-    "serviceLayout": {
-      "allowed": [
-        "unified-process",
-        "split-services"
       ]
     },
     "environment": {
@@ -26,21 +20,19 @@
     }
   },
   "defaults": {
-    "developmentProfileId": "standalone.unified-process.development",
-    "productionProfileId": "cloud.split-services.production",
-    "desktopBuildProfileId": "cloud.split-services.production",
+    "developmentProfileId": "standalone.development",
+    "productionProfileId": "cloud.production",
+    "desktopBuildProfileId": "standalone.production",
     "gatewayBind": "127.0.0.1:3900"
   },
   "profileFiles": {
-    "standalone.unified-process.development": "configs/topology/standalone.unified-process.development.env",
-    "standalone.split-services.development": "configs/topology/standalone.split-services.development.env",
-    "standalone.unified-process.production": "configs/topology/standalone.unified-process.production.env",
-    "cloud.split-services.development": "configs/topology/cloud.split-services.development.env",
-    "cloud.split-services.production": "configs/topology/cloud.split-services.production.env"
+    "standalone.development": "configs/topology/standalone.development.env",
+    "standalone.production": "configs/topology/standalone.production.env",
+    "cloud.development": "configs/topology/cloud.development.env",
+    "cloud.production": "configs/topology/cloud.production.env"
   },
   "envKeys": {
     "deploymentProfile": "SDKWORK_DRIVE_DEPLOYMENT_PROFILE",
-    "serviceLayout": "SDKWORK_DRIVE_SERVICE_LAYOUT",
     "environment": "SDKWORK_DRIVE_ENVIRONMENT",
     "profileId": "SDKWORK_DRIVE_PROFILE_ID",
     "clientDeploymentProfile": "VITE_DRIVE_PC_DEPLOYMENT_PROFILE",
@@ -101,7 +93,7 @@
   },
   "orchestration": {
     "profiles": {
-      "standalone.unified-process.development": {
+      "standalone.development": {
         "processes": [
           {
             "id": "application.public-ingress",
@@ -119,25 +111,7 @@
           "application.public-ingress"
         ]
       },
-      "standalone.split-services.development": {
-        "processes": [
-          {
-            "id": "application.public-ingress",
-            "binary": "sdkwork-drive-standalone-gateway",
-            "required": true
-          },
-          {
-            "id": "pc-renderer",
-            "package": "apps/sdkwork-drive-pc",
-            "script": "dev",
-            "required": true
-          }
-        ],
-        "healthSurfaces": [
-          "application.public-ingress"
-        ]
-      },
-      "cloud.split-services.development": {
+      "cloud.development": {
         "processes": [
           {
             "id": "platform.api-gateway",
@@ -156,7 +130,7 @@
           "platform.api-gateway"
         ]
       },
-      "cloud.split-services.production": {
+      "cloud.production": {
         "processes": [
           {
             "id": "platform.api-gateway",
@@ -180,6 +154,24 @@
         "healthSurfaces": [
           "application.public-ingress",
           "platform.api-gateway"
+        ]
+      },
+      "standalone.production": {
+        "processes": [
+          {
+            "id": "application.public-ingress",
+            "binary": "sdkwork-drive-standalone-gateway",
+            "required": true
+          },
+          {
+            "id": "pc-renderer",
+            "package": "apps/sdkwork-drive-pc",
+            "script": "dev",
+            "required": true
+          }
+        ],
+        "healthSurfaces": [
+          "application.public-ingress"
         ]
       }
     }

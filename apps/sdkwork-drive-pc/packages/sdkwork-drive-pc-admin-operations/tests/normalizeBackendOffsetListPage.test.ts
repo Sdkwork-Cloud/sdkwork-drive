@@ -19,6 +19,12 @@ describe('normalizeBackendOffsetListPage', () => {
       page: 2,
       pageSize: 25,
       total: 42,
+      pageInfo: {
+        mode: 'offset',
+        page: 2,
+        pageSize: 25,
+        totalItems: '42',
+      },
     });
   });
 
@@ -41,5 +47,24 @@ describe('normalizeBackendOffsetListPage', () => {
 
     expect(page.total).toBe(3);
     expect(page.pageSize).toBe(10);
+  });
+
+  it('preserves opaque cursor metadata returned by backend list responses', () => {
+    const page = normalizeBackendOffsetListPage({
+      items: [{ id: 1 }],
+      pageInfo: {
+        mode: 'cursor',
+        pageSize: 20,
+        hasMore: true,
+        nextCursor: 'opaque-next',
+      },
+    });
+
+    expect(page.pageInfo).toEqual({
+      mode: 'cursor',
+      pageSize: 20,
+      hasMore: true,
+      nextCursor: 'opaque-next',
+    });
   });
 });

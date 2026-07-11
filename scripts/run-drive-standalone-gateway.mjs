@@ -490,7 +490,7 @@ function printHelp() {
 
 Database policy:
   pnpm dev          uses PostgreSQL via .env.postgres
-  pnpm dev:sqlite   uses sqlite://target/dev/sdkwork-drive.sqlite
+  pnpm dev:browser:sqlite uses sqlite://target/dev/sdkwork-drive.sqlite
 
 Gateway policy:
   The script checks if sdkwork-api-cloud-gateway is already running at http://127.0.0.1:3900.

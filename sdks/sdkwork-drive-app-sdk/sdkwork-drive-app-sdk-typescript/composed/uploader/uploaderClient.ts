@@ -68,12 +68,69 @@ async function readUploadPartBody(
 ): Promise<Blob> {
   if (file.readRange) {
     const bytes = await file.readRange(offsetBytes, sizeBytes);
-    return new Blob([bytes], { type: contentType });
+    return readableBlob(new Blob([bytes], { type: contentType }));
   }
-  return file.slice(offsetBytes, offsetBytes + sizeBytes, contentType);
+  return readableBlob(file.slice(offsetBytes, offsetBytes + sizeBytes, contentType));
 }
 
 const UPLOADER_CHECKSUM_CHUNK_BYTES = 4 * 1024 * 1024;
+
+type BlobReadable = Blob & {
+  arrayBuffer?: () => Promise<ArrayBuffer>;
+  bytes?: () => Promise<Uint8Array>;
+};
+
+function arrayBufferFromView(view: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(view.byteLength);
+  new Uint8Array(buffer).set(view);
+  return buffer;
+}
+
+async function readBlobByRuntimeFallback(blob: BlobReadable): Promise<ArrayBuffer> {
+  if (typeof blob.bytes === "function") {
+    return arrayBufferFromView(await blob.bytes());
+  }
+
+  if (typeof FileReader === "function") {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result && typeof reader.result !== "string") {
+          resolve(reader.result);
+          return;
+        }
+        reject(new Error("Drive uploader Blob reader did not return binary data."));
+      };
+      reader.onerror = () => reject(reader.error || new Error("Drive uploader Blob read failed."));
+      reader.onabort = () => reject(new Error("Drive uploader Blob read was aborted."));
+      reader.readAsArrayBuffer(blob);
+    });
+  }
+
+  throw new Error("Drive uploader runtime cannot read Blob data.");
+}
+
+async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  const readable = blob as BlobReadable;
+  if (typeof readable.arrayBuffer === "function") {
+    return readable.arrayBuffer();
+  }
+  return readBlobByRuntimeFallback(readable);
+}
+
+function readableBlob(blob: Blob): Blob {
+  const readable = blob as BlobReadable;
+  if (typeof readable.arrayBuffer === "function") {
+    return blob;
+  }
+
+  Object.defineProperty(readable, "arrayBuffer", {
+    configurable: true,
+    enumerable: false,
+    value: () => readBlobByRuntimeFallback(readable),
+  });
+  return blob;
+}
 
 async function sha256Checksum(file: DriveUploaderBlobLike): Promise<string> {
   const hasher = new Sha256Hasher();
@@ -89,7 +146,7 @@ async function sha256Checksum(file: DriveUploaderBlobLike): Promise<string> {
       continue;
     }
     const blob = file.slice(offset, offset + length, file.type);
-    hasher.update(new Uint8Array(await blob.arrayBuffer()));
+    hasher.update(new Uint8Array(await blobToArrayBuffer(blob)));
   }
 
   return `sha256:${hexEncode(hasher.digest())}`;
