@@ -45,7 +45,7 @@ pub(crate) async fn list_versions(
     let rows = if logical_version_count > 0 {
         sqlx::query(
             "SELECT id, tenant_id, node_id, version_no, storage_object_id, content_type, content_length,
-                    checksum_sha256_hex, lifecycle_status, created_at
+                    checksum_sha256_hex, lifecycle_status, CAST(created_at AS TEXT) AS created_at
              FROM dr_drive_node_version
              WHERE tenant_id=$1 AND node_id=$2
              ORDER BY version_no DESC
@@ -63,7 +63,7 @@ pub(crate) async fn list_versions(
     } else {
         sqlx::query(
             "SELECT id, tenant_id, node_id, version_no, NULL AS storage_object_id, content_type, content_length,
-                    checksum_sha256_hex, lifecycle_status, created_at
+                    checksum_sha256_hex, lifecycle_status, CAST(created_at AS TEXT) AS created_at
              FROM dr_drive_storage_object
              WHERE tenant_id=$1 AND node_id=$2
              ORDER BY version_no DESC
@@ -97,7 +97,7 @@ pub(crate) async fn get_version(
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let logical_row = sqlx::query(
         "SELECT id, tenant_id, node_id, version_no, storage_object_id, content_type, content_length,
-                checksum_sha256_hex, lifecycle_status, created_at
+                checksum_sha256_hex, lifecycle_status, CAST(created_at AS TEXT) AS created_at
          FROM dr_drive_node_version
          WHERE tenant_id=$1 AND node_id=$2 AND id=$3",
     )
@@ -112,7 +112,7 @@ pub(crate) async fn get_version(
     }
     let row = sqlx::query(
         "SELECT id, tenant_id, node_id, version_no, NULL AS storage_object_id, content_type, content_length,
-                checksum_sha256_hex, lifecycle_status, created_at
+                checksum_sha256_hex, lifecycle_status, CAST(created_at AS TEXT) AS created_at
          FROM dr_drive_storage_object
          WHERE tenant_id=$1 AND node_id=$2 AND id=$3",
     )

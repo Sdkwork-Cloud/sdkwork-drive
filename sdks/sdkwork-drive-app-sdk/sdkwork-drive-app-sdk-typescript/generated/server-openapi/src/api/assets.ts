@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { AssetActionRequest, CreateAssetCollectionItemRequest, CreateAssetCollectionRequest, CreateAssetRelationRequest, CreateAssetRequest, UpdateAssetRequest } from '../types';
+import type { AssetActionRequest, AssetCollection, AssetCollectionItem, AssetCollectionListData, AssetItem, AssetListData, AssetRelation, CreateAssetCollectionItemRequest, CreateAssetCollectionRequest, CreateAssetRelationRequest, CreateAssetRequest, UpdateAssetRequest } from '../types';
 
 
 export class AssetsAssetRelationsApi {
@@ -13,8 +13,8 @@ export class AssetsAssetRelationsApi {
 
 
 /** Create an asset relation */
-  async create(assetId: string, body: CreateAssetRelationRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/relations`), body, undefined, undefined, 'application/json');
+  async create(assetId: string, body: CreateAssetRelationRequest): Promise<AssetRelation> {
+    return this.client.post<AssetRelation>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/relations`), body, undefined, undefined, 'application/json');
   }
 
 /** Delete an asset relation */
@@ -32,8 +32,8 @@ export class AssetsAssetCollectionItemsApi {
 
 
 /** Add an asset to a collection */
-  async create(collectionId: string, body: CreateAssetCollectionItemRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/assets/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}/items`), body, undefined, undefined, 'application/json');
+  async create(collectionId: string, body: CreateAssetCollectionItemRequest): Promise<AssetCollectionItem> {
+    return this.client.post<AssetCollectionItem>(appApiPath(`/assets/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}/items`), body, undefined, undefined, 'application/json');
   }
 
 /** Remove an asset from a collection */
@@ -56,17 +56,17 @@ export class AssetsAssetCollectionsApi {
 
 
 /** List asset collections */
-  async list(params?: AssetsAssetCollectionsListParams): Promise<unknown> {
+  async list(params?: AssetsAssetCollectionsListParams): Promise<AssetCollectionListData> {
     const query = buildQueryString([
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/assets/collections`), query));
+    return this.client.get<AssetCollectionListData>(appendQueryString(appApiPath(`/assets/collections`), query));
   }
 
 /** Create an asset collection */
-  async create(body: CreateAssetCollectionRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/assets/collections`), body, undefined, undefined, 'application/json');
+  async create(body: CreateAssetCollectionRequest): Promise<AssetCollection> {
+    return this.client.post<AssetCollection>(appApiPath(`/assets/collections`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -93,7 +93,7 @@ export class AssetsApi {
 
 
 /** List global assets */
-  async list(params?: AssetsListParams): Promise<unknown> {
+  async list(params?: AssetsListParams): Promise<AssetListData> {
     const query = buildQueryString([
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
@@ -101,32 +101,32 @@ export class AssetsApi {
       { name: 'sourceType', value: params?.sourceType, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/assets`), query));
+    return this.client.get<AssetListData>(appendQueryString(appApiPath(`/assets`), query));
   }
 
 /** Create a global asset metadata record */
-  async create(body: CreateAssetRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/assets`), body, undefined, undefined, 'application/json');
+  async create(body: CreateAssetRequest): Promise<AssetItem> {
+    return this.client.post<AssetItem>(appApiPath(`/assets`), body, undefined, undefined, 'application/json');
   }
 
 /** Get a global asset */
-  async retrieve(assetId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}`));
+  async retrieve(assetId: string): Promise<AssetItem> {
+    return this.client.get<AssetItem>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}`));
   }
 
 /** Update a global asset */
-  async update(assetId: string, body: UpdateAssetRequest): Promise<unknown> {
-    return this.client.patch<unknown>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(assetId: string, body: UpdateAssetRequest): Promise<AssetItem> {
+    return this.client.patch<AssetItem>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
 /** Archive a global asset */
-  async archive(assetId: string, body: AssetActionRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/archive`), body, undefined, undefined, 'application/json');
+  async archive(assetId: string, body: AssetActionRequest): Promise<AssetItem> {
+    return this.client.post<AssetItem>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/archive`), body, undefined, undefined, 'application/json');
   }
 
 /** Restore an archived global asset */
-  async restore(assetId: string, body: AssetActionRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/restore`), body, undefined, undefined, 'application/json');
+  async restore(assetId: string, body: AssetActionRequest): Promise<AssetItem> {
+    return this.client.post<AssetItem>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/restore`), body, undefined, undefined, 'application/json');
   }
 }
 

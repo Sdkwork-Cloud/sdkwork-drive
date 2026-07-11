@@ -99,6 +99,10 @@ export interface DriveFileReadOptions {
   sortOrder?: 'asc' | 'desc';
 }
 
+export interface DriveNodeReadOptions extends DriveFileReadOptions {
+  spaceId?: string;
+}
+
 export interface DriveFileListPage {
   files: DriveFile[];
   nextPageToken?: string;
@@ -185,6 +189,7 @@ export interface DriveFileService {
     parentId?: string | null,
     options?: DriveFileReadOptions,
   ): Promise<DriveFileListPage>;
+  getNodeDetails(nodeId: string, options?: DriveNodeReadOptions): Promise<DriveFile>;
   getFolderDetails(folderId: string, options?: DriveFileReadOptions): Promise<DriveFile | undefined>;
   setFolderColor(folderId: string, color?: string, options?: DriveFileWriteOptions): Promise<void>;
   createFolder(
@@ -1547,6 +1552,42 @@ function createSdkBackedDriveFileService(
     }
   };
 
+  const retrieveNodeDetails = async (
+    nodeId: string,
+    options: DriveNodeReadOptions = {},
+  ): Promise<DriveFile> => {
+    const identity = resolveIdentity(getSession);
+    const response = await sdkRequest<unknown>({
+      operationId: 'nodes.retrieve',
+      signal: options.signal,
+      pathParams: { nodeId },
+      query: {},
+    });
+    const node = extractSdkWorkResourceItem<unknown>(response);
+    if (!isRecord(node)) {
+      throw new Error('Drive App SDK nodes.retrieve did not return node metadata.');
+    }
+
+    const retrievedNodeId = stringField(node, 'id', 'nodeId', 'node_id');
+    if (!retrievedNodeId || retrievedNodeId !== nodeId) {
+      throw new Error('Drive App SDK nodes.retrieve returned an unexpected node.');
+    }
+
+    const retrievedSpaceId = stringField(node, 'spaceId', 'space_id');
+    if (options.spaceId && retrievedSpaceId && options.spaceId !== retrievedSpaceId) {
+      throw new Error('Drive App SDK nodes.retrieve returned a node from an unexpected space.');
+    }
+
+    const file = await mapDecoratedNode(
+      node,
+      identity,
+      retrievedSpaceId ? {} : { spaceId: options.spaceId },
+      options,
+    );
+    rememberFiles([file]);
+    return file;
+  };
+
   const service: DriveFileService = {
     async listCachedWorkspaceFiles() {
       return Array.from(knownFiles.values());
@@ -1815,18 +1856,11 @@ function createSdkBackedDriveFileService(
         `Drive App SDK versions.list exceeded the configured page limit (${MAX_VERSION_LIST_PAGES} pages).`,
       );
     },
+    async getNodeDetails(nodeId, options) {
+      return retrieveNodeDetails(nodeId, options);
+    },
     async getFolderDetails(folderId, options) {
-      const identity = resolveIdentity(getSession);
-      const response = await sdkRequest<unknown>({
-        operationId: 'nodes.retrieve',
-        signal: options?.signal,
-        pathParams: { nodeId: folderId },
-        query: {
-        },
-      });
-      const file = await mapDecoratedNode(extractSdkWorkResourceItem(response), identity, {}, options);
-      rememberFiles([file]);
-      return file;
+      return retrieveNodeDetails(folderId, options);
     },
     async setFolderColor(folderId, color, options) {
       if (color) {

@@ -1,4 +1,6 @@
 export { DriveView } from './DriveView';
+export type { DriveViewProps } from './DriveView';
+export type { DriveOpenRequest } from 'sdkwork-drive-pc-file';
 export { configureDrivePcRuntime } from './runtime';
 export type { ConfigureDrivePcRuntimeOptions } from './runtime';
 export type { DrivePcSdkPorts } from './sdkPorts';

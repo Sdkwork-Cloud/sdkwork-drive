@@ -55,14 +55,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ChangeListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ChangeListHttpResponse"
                 }
               }
             }
@@ -162,14 +155,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/StartPageTokenHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/StartPageTokenHttpResponse"
                 }
               }
             }
@@ -269,14 +255,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
                 }
               }
             }
@@ -376,14 +355,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
                 }
               }
             }
@@ -514,14 +486,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeListHttpResponse"
                 }
               }
             }
@@ -662,14 +627,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/QuotaSummaryHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/QuotaSummaryHttpResponse"
                 }
               }
             }
@@ -749,14 +707,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeHttpResponse"
                 }
               }
             }
@@ -854,14 +805,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeHttpResponse"
                 }
               }
             }
@@ -1022,14 +966,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/NodeCapabilitiesHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/NodeCapabilitiesHttpResponse"
                 }
               }
             }
@@ -1133,14 +1070,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveCommentListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveCommentListHttpResponse"
                 }
               }
             }
@@ -1248,14 +1178,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveCommentHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveCommentHttpResponse"
                 }
               }
             }
@@ -1363,14 +1286,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveCommentHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveCommentHttpResponse"
                 }
               }
             }
@@ -1486,14 +1402,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveCommentHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveCommentHttpResponse"
                 }
               }
             }
@@ -1719,14 +1628,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveCommentReplyListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveCommentReplyListHttpResponse"
                 }
               }
             }
@@ -1842,14 +1744,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveCommentReplyHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveCommentReplyHttpResponse"
                 }
               }
             }
@@ -1965,14 +1860,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveCommentReplyHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveCommentReplyHttpResponse"
                 }
               }
             }
@@ -2096,14 +1984,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveCommentReplyHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveCommentReplyHttpResponse"
                 }
               }
             }
@@ -2320,14 +2201,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeHttpResponse"
                 }
               }
             }
@@ -2437,14 +2311,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
                 }
               }
             }
@@ -2539,14 +2406,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/CreateDownloadUrlHttpResponse"
                 }
               }
             }
@@ -2641,14 +2501,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/FavoriteNodeHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/FavoriteNodeHttpResponse"
                 }
               }
             }
@@ -2875,14 +2728,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/NodeLabelListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/NodeLabelListHttpResponse"
                 }
               }
             }
@@ -3007,14 +2853,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/NodeLabelHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/NodeLabelHttpResponse"
                 }
               }
             }
@@ -3230,14 +3069,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeHttpResponse"
                 }
               }
             }
@@ -3337,14 +3169,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/NodePathHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/NodePathHttpResponse"
                 }
               }
             }
@@ -3463,14 +3288,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DrivePermissionListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DrivePermissionListHttpResponse"
                 }
               }
             }
@@ -3578,14 +3396,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DrivePermissionHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DrivePermissionHttpResponse"
                 }
               }
             }
@@ -3802,14 +3613,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DrivePermissionHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DrivePermissionHttpResponse"
                 }
               }
             }
@@ -3915,14 +3719,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DrivePermissionHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DrivePermissionHttpResponse"
                 }
               }
             }
@@ -4041,14 +3838,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/EffectivePermissionListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/EffectivePermissionListHttpResponse"
                 }
               }
             }
@@ -4188,14 +3978,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodePropertyListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodePropertyListHttpResponse"
                 }
               }
             }
@@ -4307,14 +4090,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodePropertyHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodePropertyHttpResponse"
                 }
               }
             }
@@ -4516,14 +4292,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CreateShareLinkHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/CreateShareLinkHttpResponse"
                 }
               }
             }
@@ -4640,14 +4409,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ShareLinkListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ShareLinkListHttpResponse"
                 }
               }
             }
@@ -4757,14 +4519,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeHttpResponse"
                 }
               }
             }
@@ -4883,14 +4638,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/FileVersionListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/FileVersionListHttpResponse"
                 }
               }
             }
@@ -5097,14 +4845,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/FileVersionHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/FileVersionHttpResponse"
                 }
               }
             }
@@ -5222,14 +4963,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeHttpResponse"
                 }
               }
             }
@@ -5319,14 +5053,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CreateFileHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/CreateFileHttpResponse"
                 }
               }
             }
@@ -5436,14 +5163,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeHttpResponse"
                 }
               }
             }
@@ -5544,14 +5264,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeHttpResponse"
                 }
               }
             }
@@ -5697,14 +5410,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeListHttpResponse"
                 }
               }
             }
@@ -5831,14 +5537,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeListHttpResponse"
                 }
               }
             }
@@ -5938,14 +5637,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ClaimShareLinkHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ClaimShareLinkHttpResponse"
                 }
               }
             }
@@ -5955,14 +5647,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ClaimShareLinkHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ClaimShareLinkHttpResponse"
                 }
               }
             }
@@ -6178,14 +5863,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ShareLinkHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ShareLinkHttpResponse"
                 }
               }
             }
@@ -6283,14 +5961,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ShareLinkHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ShareLinkHttpResponse"
                 }
               }
             }
@@ -6436,14 +6107,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeListHttpResponse"
                 }
               }
             }
@@ -6587,14 +6251,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveSpaceListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveSpaceListHttpResponse"
                 }
               }
             }
@@ -6662,14 +6319,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveSpaceHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveSpaceHttpResponse"
                 }
               }
             }
@@ -6782,14 +6432,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeListHttpResponse"
                 }
               }
             }
@@ -6859,14 +6502,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveSpaceHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveSpaceHttpResponse"
                 }
               }
             }
@@ -6959,14 +6595,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveSpaceHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveSpaceHttpResponse"
                 }
               }
             }
@@ -7211,14 +6840,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeListHttpResponse"
                 }
               }
             }
@@ -7372,14 +6994,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeListHttpResponse"
                 }
               }
             }
@@ -7489,14 +7104,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveNodeHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveNodeHttpResponse"
                 }
               }
             }
@@ -7586,14 +7194,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/EmptyTrashHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/EmptyTrashHttpResponse"
                 }
               }
             }
@@ -7703,14 +7304,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
                 }
               }
             }
@@ -7795,14 +7389,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
                 }
               }
             }
@@ -7912,14 +7499,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
                 }
               }
             }
@@ -8029,14 +7609,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveUploadSessionHttpResponse"
                 }
               }
             }
@@ -8156,14 +7729,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/PresignedUploadPartHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/PresignedUploadPartHttpResponse"
                 }
               }
             }
@@ -8264,14 +7830,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveWatchChannelHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveWatchChannelHttpResponse"
                 }
               }
             }
@@ -8385,14 +7944,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveWatchChannelHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveWatchChannelHttpResponse"
                 }
               }
             }
@@ -8532,14 +8084,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveWatchChannelListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveWatchChannelListHttpResponse"
                 }
               }
             }
@@ -8643,14 +8188,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DriveWatchChannelHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DriveWatchChannelHttpResponse"
                 }
               }
             }
@@ -8764,14 +8302,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/StopWatchChannelHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/StopWatchChannelHttpResponse"
                 }
               }
             }
@@ -8871,14 +8402,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DownloadPackageHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DownloadPackageHttpResponse"
                 }
               }
             }
@@ -8995,14 +8519,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DownloadPackageHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/DownloadPackageHttpResponse"
                 }
               }
             }
@@ -9117,14 +8634,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ArchiveEntryListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ArchiveEntryListHttpResponse"
                 }
               }
             }
@@ -9234,14 +8744,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ExtractArchiveEntriesHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ExtractArchiveEntriesHttpResponse"
                 }
               }
             }
@@ -9341,14 +8844,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/PrepareUploaderUploadHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/PrepareUploaderUploadHttpResponse"
                 }
               }
             }
@@ -9469,14 +8965,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UploaderUploadPartHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/UploaderUploadPartHttpResponse"
                 }
               }
             }
@@ -9613,14 +9102,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/AssetListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AssetListHttpResponse"
                 }
               }
             }
@@ -9735,14 +9217,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/AssetItemHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AssetItemHttpResponse"
                 }
               }
             }
@@ -9858,14 +9333,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/AssetItemHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AssetItemHttpResponse"
                 }
               }
             }
@@ -9989,14 +9457,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/AssetItemHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AssetItemHttpResponse"
                 }
               }
             }
@@ -10122,14 +9583,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/AssetItemHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AssetItemHttpResponse"
                 }
               }
             }
@@ -10255,14 +9709,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/AssetItemHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AssetItemHttpResponse"
                 }
               }
             }
@@ -10389,14 +9836,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/AssetCollectionListHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AssetCollectionListHttpResponse"
                 }
               }
             }
@@ -10511,14 +9951,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/AssetCollectionHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AssetCollectionHttpResponse"
                 }
               }
             }
@@ -10644,14 +10077,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/AssetCollectionItemHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AssetCollectionItemHttpResponse"
                 }
               }
             }
@@ -10894,14 +10320,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/SdkWorkApiResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/AssetRelationHttpResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AssetRelationHttpResponse"
                 }
               }
             }
@@ -12009,7 +11428,9 @@
           "nodeName",
           "lifecycleStatus",
           "version",
-          "spaceType"
+          "spaceType",
+          "createdAt",
+          "updatedAt"
         ],
         "properties": {
           "id": {
@@ -12121,6 +11542,16 @@
           "folderColor": {
             "type": "string",
             "description": "Optional UI folder color from node property ui.folderColor."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-owned node creation timestamp."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-owned node last modification timestamp."
           }
         }
       },
@@ -15564,26 +14995,7 @@
             ],
             "properties": {
               "data": {
-                "type": "object",
-                "required": [
-                  "items",
-                  "pageInfo"
-                ],
-                "properties": {
-                  "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/DriveNode"
-                    }
-                  },
-                  "pageInfo": {
-                    "$ref": "#/components/schemas/PageInfo"
-                  },
-                  "incompletePage": {
-                    "type": "boolean",
-                    "description": "True when ACL pagination scan budget was exhausted before the requested page could be filled."
-                  }
-                }
+                "$ref": "#/components/schemas/DriveNodeListData"
               }
             }
           }
@@ -15601,22 +15013,7 @@
             ],
             "properties": {
               "data": {
-                "type": "object",
-                "required": [
-                  "items",
-                  "pageInfo"
-                ],
-                "properties": {
-                  "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/Change"
-                    }
-                  },
-                  "pageInfo": {
-                    "$ref": "#/components/schemas/PageInfo"
-                  }
-                }
+                "$ref": "#/components/schemas/ChangeListData"
               }
             }
           }
@@ -15634,22 +15031,7 @@
             ],
             "properties": {
               "data": {
-                "type": "object",
-                "required": [
-                  "items",
-                  "pageInfo"
-                ],
-                "properties": {
-                  "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/FileVersion"
-                    }
-                  },
-                  "pageInfo": {
-                    "$ref": "#/components/schemas/PageInfo"
-                  }
-                }
+                "$ref": "#/components/schemas/FileVersionListData"
               }
             }
           }
@@ -15667,22 +15049,7 @@
             ],
             "properties": {
               "data": {
-                "type": "object",
-                "required": [
-                  "items",
-                  "pageInfo"
-                ],
-                "properties": {
-                  "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/DriveWatchChannel"
-                    }
-                  },
-                  "pageInfo": {
-                    "$ref": "#/components/schemas/PageInfo"
-                  }
-                }
+                "$ref": "#/components/schemas/DriveWatchChannelListData"
               }
             }
           }
@@ -15700,22 +15067,7 @@
             ],
             "properties": {
               "data": {
-                "type": "object",
-                "required": [
-                  "items",
-                  "pageInfo"
-                ],
-                "properties": {
-                  "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/AssetItem"
-                    }
-                  },
-                  "pageInfo": {
-                    "$ref": "#/components/schemas/PageInfo"
-                  }
-                }
+                "$ref": "#/components/schemas/AssetListData"
               }
             }
           }
@@ -15733,26 +15085,129 @@
             ],
             "properties": {
               "data": {
-                "type": "object",
-                "required": [
-                  "items",
-                  "pageInfo"
-                ],
-                "properties": {
-                  "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/AssetCollection"
-                    }
-                  },
-                  "pageInfo": {
-                    "$ref": "#/components/schemas/PageInfo"
-                  }
-                }
+                "$ref": "#/components/schemas/AssetCollectionListData"
               }
             }
           }
         ]
+      },
+      "DriveNodeListData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriveNode"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          },
+          "incompletePage": {
+            "type": "boolean",
+            "description": "True when ACL pagination scan budget was exhausted before the requested page could be filled."
+          }
+        }
+      },
+      "ChangeListData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Change"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "FileVersionListData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileVersion"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "DriveWatchChannelListData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriveWatchChannel"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "AssetListData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssetItem"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "AssetCollectionListData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssetCollection"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
       },
       "SdkWorkResourceData": {
         "type": "object",

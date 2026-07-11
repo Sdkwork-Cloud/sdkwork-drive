@@ -22,6 +22,7 @@ import {
 import type { DriveFileService } from "sdkwork-drive-pc-core";
 import { isDriveAbortError, NativeLocalUploadFile, runManagedDownloadTransfer, createHostDownloadStreamAdapter, useDriveRuntime } from "sdkwork-drive-pc-core";
 import type { DriveSection } from "../pages/DrivePage";
+import type { DriveOpenRequest } from "../types/driveOpenRequest";
 import { DownloadManager, type DownloadJob } from "./DownloadManager";
 import { FileBrowserHeader } from "./FileBrowserHeader";
 import { FileDetailModal } from "./FileDetailModal";
@@ -66,6 +67,7 @@ import { MoveCopyModal, type MoveCopyMode } from "./MoveCopyModal";
 interface FileBrowserProps {
   activeSection: DriveSection;
   fileService: DriveFileService;
+  openRequest?: DriveOpenRequest;
   downloadJobs: DownloadJob[];
   setDownloadJobs: React.Dispatch<React.SetStateAction<DownloadJob[]>>;
   onOpenDownload?: (url: string) => Promise<void> | void;
@@ -75,6 +77,7 @@ interface FileBrowserProps {
   createDownloadAbortController: (jobId: string) => AbortController;
   releaseDownloadAbortController: (jobId: string) => void;
   onCancelJob: (id: string) => void;
+  onOpenRequestHandled?: (requestId: string) => void;
 }
 
 function collectSiblingNames(files: DriveFile[]): string[] {
@@ -84,6 +87,7 @@ function collectSiblingNames(files: DriveFile[]): string[] {
 export function FileBrowser({
   activeSection,
   fileService,
+  openRequest,
   downloadJobs,
   setDownloadJobs,
   onOpenDownload,
@@ -93,6 +97,7 @@ export function FileBrowser({
   createDownloadAbortController,
   releaseDownloadAbortController,
   onCancelJob,
+  onOpenRequestHandled,
 }: FileBrowserProps) {
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,6 +248,18 @@ export function FileBrowser({
   const [selectedPreviewFile, setSelectedPreviewFile] = useState<
     (DriveFile & { isStarred?: boolean; color?: string }) | null
   >(null);
+  const previewFiles = React.useMemo(() => {
+    if (!selectedPreviewFile || files.some((file) => file.id === selectedPreviewFile.id)) {
+      return files;
+    }
+    return [selectedPreviewFile, ...files];
+  }, [files, selectedPreviewFile]);
+  const openRequestAbortControllerRef = useRef<AbortController | null>(null);
+  const openRequestAttemptRef = useRef<string | null>(null);
+  const onOpenRequestHandledRef = useRef(onOpenRequestHandled);
+  onOpenRequestHandledRef.current = onOpenRequestHandled;
+  const [openRequestFailure, setOpenRequestFailure] = useState<DriveOpenRequest | null>(null);
+  const [openRequestRetryVersion, setOpenRequestRetryVersion] = useState(0);
 
   const createFileWriteAbortController = (key: string) => {
     fileWriteAbortControllersRef.current.get(key)?.abort();
@@ -699,6 +716,82 @@ export function FileBrowser({
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  const retryOpenRequest = React.useCallback(() => {
+    if (!openRequestFailure) {
+      return;
+    }
+    openRequestAbortControllerRef.current?.abort();
+    openRequestAttemptRef.current = null;
+    setOpenRequestFailure(null);
+    setOpenRequestRetryVersion((current) => current + 1);
+  }, [openRequestFailure]);
+
+  const dismissOpenRequestFailure = React.useCallback(() => {
+    const requestId = openRequestFailure?.requestId;
+    setOpenRequestFailure(null);
+    if (requestId) {
+      onOpenRequestHandledRef.current?.(requestId);
+    }
+  }, [openRequestFailure]);
+
+  useEffect(() => {
+    if (!openRequest || activeSection !== openRequest.section) {
+      openRequestAbortControllerRef.current?.abort();
+      openRequestAbortControllerRef.current = null;
+      return;
+    }
+    if (openRequestAttemptRef.current === openRequest.requestId) {
+      return;
+    }
+
+    openRequestAbortControllerRef.current?.abort();
+    openRequestAbortControllerRef.current = null;
+
+    openRequestAttemptRef.current = openRequest.requestId;
+    setOpenRequestFailure(null);
+    const controller = new AbortController();
+    openRequestAbortControllerRef.current = controller;
+    let active = true;
+
+    fileService
+      .getNodeDetails(openRequest.nodeId, {
+        signal: controller.signal,
+        spaceId: openRequest.spaceId,
+      })
+      .then((file) => {
+        if (!active) {
+          return;
+        }
+        setSelectedPreviewFile(file);
+        onOpenRequestHandledRef.current?.(openRequest.requestId);
+      })
+      .catch((error: unknown) => {
+        if (!active || isDriveAbortError(error)) {
+          return;
+        }
+        openRequestAttemptRef.current = null;
+        setOpenRequestFailure(openRequest);
+      })
+      .finally(() => {
+        if (openRequestAbortControllerRef.current === controller) {
+          openRequestAbortControllerRef.current = null;
+        }
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+      if (openRequestAbortControllerRef.current === controller) {
+        openRequestAbortControllerRef.current = null;
+      }
+    };
+  }, [
+    activeSection,
+    fileService,
+    openRequest,
+    openRequestRetryVersion,
+  ]);
 
   // Fetch file directory and complete items flat list
   const loadFiles = () => {
@@ -1394,6 +1487,32 @@ export function FileBrowser({
         </div>
       )}
 
+      {openRequestFailure && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="absolute top-20 left-1/2 z-50 flex max-w-[min(92vw,36rem)] -translate-x-1/2 items-center gap-3 rounded-lg border border-red-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-xl dark:border-red-900/50 dark:bg-[#252525] dark:text-gray-100"
+        >
+          <AlertCircle className="shrink-0 text-red-500" size={18} />
+          <span className="min-w-0 flex-1">{t("fileBrowser.openDocumentFailed")}</span>
+          <button
+            type="button"
+            className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/40"
+            onClick={retryOpenRequest}
+          >
+            {t("fileBrowser.retry")}
+          </button>
+          <button
+            type="button"
+            aria-label={t("fileBrowser.dismiss")}
+            className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-neutral-800 dark:hover:text-gray-200"
+            onClick={dismissOpenRequestFailure}
+          >
+            <X aria-hidden="true" size={14} />
+          </button>
+        </div>
+      )}
+
       <FileBrowserHeader
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
@@ -1937,7 +2056,7 @@ export function FileBrowser({
           onDownload={handlePrepareDownload}
           onToggleStar={handleToggleStarAction}
           onRename={handleRenameAction}
-          files={files}
+          files={previewFiles}
           isTrashSection={activeSection === "trash"}
           onNavigatePreview={(targetFile) => {
             setSelectedPreviewFile(targetFile);

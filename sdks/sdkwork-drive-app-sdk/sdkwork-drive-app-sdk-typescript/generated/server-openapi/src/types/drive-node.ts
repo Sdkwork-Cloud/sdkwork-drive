@@ -26,4 +26,8 @@ export interface DriveNode {
   contentLength?: string;
   /** Optional UI folder color from node property ui.folderColor. */
   folderColor?: string;
+  /** Server-owned node creation timestamp. */
+  createdAt: string;
+  /** Server-owned node last modification timestamp. */
+  updatedAt: string;
 }

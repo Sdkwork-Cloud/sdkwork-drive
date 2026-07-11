@@ -19,7 +19,7 @@ pub(crate) async fn find_comment(
 ) -> Result<CommentRecord, (StatusCode, Json<ProblemDetail>)> {
     let row = sqlx::query(
         "SELECT id, tenant_id, node_id, content, anchor, resolved, lifecycle_status,
-                version, created_by, updated_by, created_at, updated_at
+                version, created_by, updated_by, CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at
          FROM dr_drive_node_comment
          WHERE tenant_id=$1 AND node_id=$2 AND id=$3 AND lifecycle_status='active'",
     )
@@ -44,7 +44,7 @@ pub(crate) async fn find_comment_reply(
 ) -> Result<CommentReplyRecord, (StatusCode, Json<ProblemDetail>)> {
     let row = sqlx::query(
         "SELECT id, tenant_id, node_id, comment_id, content, lifecycle_status,
-                version, created_by, updated_by, created_at, updated_at
+                version, created_by, updated_by, CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at
          FROM dr_drive_node_comment_reply
          WHERE tenant_id=$1
            AND node_id=$2

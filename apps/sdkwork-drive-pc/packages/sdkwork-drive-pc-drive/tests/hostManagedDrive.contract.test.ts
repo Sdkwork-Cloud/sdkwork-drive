@@ -58,6 +58,36 @@ describe('sdkwork-drive-pc-drive host module contract', () => {
     expect(driveView).toContain('subscribeHostLanguage');
   });
 
+  it('accepts stable Drive node preview requests from an embedding host', () => {
+    const driveView = readFileSync(path.join(packageRoot, 'src', 'DriveView.tsx'), 'utf8');
+    const driveIndex = readFileSync(path.join(packageRoot, 'src', 'index.ts'), 'utf8');
+    const filePackageRoot = path.resolve(packageRoot, '..', 'sdkwork-drive-pc-file');
+    const drivePage = readFileSync(
+      path.join(filePackageRoot, 'src', 'pages', 'DrivePage.tsx'),
+      'utf8',
+    );
+    const fileBrowser = readFileSync(
+      path.join(filePackageRoot, 'src', 'components', 'FileBrowser.tsx'),
+      'utf8',
+    );
+    const openRequestType = readFileSync(
+      path.join(filePackageRoot, 'src', 'types', 'driveOpenRequest.ts'),
+      'utf8',
+    );
+
+    expect(openRequestType).toContain("section: 'recent'");
+    expect(openRequestType).toContain("intent: 'preview'");
+    expect(openRequestType).toContain('nodeId: string');
+    expect(openRequestType).toContain('spaceId?: string');
+    expect(driveIndex).toContain('DriveOpenRequest');
+    expect(driveView).toContain('openRequest={openRequest}');
+    expect(drivePage).toContain('setActiveSection(openRequest.section)');
+    expect(fileBrowser).toContain('.getNodeDetails(openRequest.nodeId');
+    expect(fileBrowser).toContain('setSelectedPreviewFile(file)');
+    expect(fileBrowser).not.toContain('openRequest.downloadUrl');
+    expect(fileBrowser).not.toContain('openRequest.signedSourceUrl');
+  });
+
   it('ships workspace chrome layout rules through driveSurface.css', () => {
     const driveSurface = readFileSync(
       path.join(packageRoot, 'src', 'driveSurface.css'),

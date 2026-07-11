@@ -13619,6 +13619,22 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             "node-active".to_string()
         ]
     );
+    let recent_items = common::envelope_items(&recent_payload)
+        .as_array()
+        .expect("recent items should be an array");
+    assert!(
+        recent_items.iter().all(|item| {
+            item["createdAt"]
+                .as_str()
+                .is_some_and(|timestamp| timestamp.contains('T') && timestamp.ends_with('Z'))
+        }),
+        "recent nodes should expose their persisted creation timestamp as RFC3339 UTC"
+    );
+    assert_eq!(
+        recent_items[0]["updatedAt"].as_str(),
+        Some("2026-06-04T12:00:00Z"),
+        "recent nodes should expose the persisted ordering timestamp as RFC3339 UTC"
+    );
 
     let shared_response = app
         .clone()

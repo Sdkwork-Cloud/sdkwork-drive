@@ -35,7 +35,7 @@ pub(crate) async fn list_comments(
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
     let rows = sqlx::query(
         "SELECT id, tenant_id, node_id, content, anchor, resolved, lifecycle_status,
-                version, created_by, updated_by, created_at, updated_at
+                version, created_by, updated_by, CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at
          FROM dr_drive_node_comment
          WHERE tenant_id=$1 AND node_id=$2 AND lifecycle_status='active'
          ORDER BY created_at DESC, id DESC
@@ -250,7 +250,7 @@ pub(crate) async fn list_comment_replies(
     find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
     let rows = sqlx::query(
         "SELECT id, tenant_id, node_id, comment_id, content, lifecycle_status,
-                version, created_by, updated_by, created_at, updated_at
+                version, created_by, updated_by, CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at
          FROM dr_drive_node_comment_reply
          WHERE tenant_id=$1 AND node_id=$2 AND comment_id=$3 AND lifecycle_status='active'
          ORDER BY created_at ASC, id ASC

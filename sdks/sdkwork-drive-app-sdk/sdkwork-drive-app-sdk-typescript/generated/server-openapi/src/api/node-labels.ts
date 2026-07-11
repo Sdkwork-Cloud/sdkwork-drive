@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ApplyNodeLabelRequest } from '../types';
+import type { ApplyNodeLabelRequest, NodeLabel, PageInfo } from '../types';
 
 
 export interface NodeLabelsListParams {
@@ -19,18 +19,18 @@ export class NodeLabelsApi {
 
 
 /** List labels applied to a node */
-  async list(nodeId: string, params?: NodeLabelsListParams): Promise<unknown> {
+  async list(nodeId: string, params?: NodeLabelsListParams): Promise<Record<string, unknown>> {
     const query = buildQueryString([
       { name: 'labelKey', value: params?.labelKey, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels`), query));
+    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels`), query));
   }
 
 /** Apply a label to a node */
-  async update(nodeId: string, labelId: string, body: ApplyNodeLabelRequest): Promise<unknown> {
-    return this.client.put<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(nodeId: string, labelId: string, body: ApplyNodeLabelRequest): Promise<NodeLabel> {
+    return this.client.put<NodeLabel>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
 /** Remove a label from a node */

@@ -70,7 +70,7 @@ pub(crate) async fn list_download_packages(
                 "SELECT id, tenant_id, package_name, state, storage_provider_id,
                     bucket, archive_object_key, content_type, file_count,
                     total_bytes, archive_size_bytes, expires_at_epoch_ms,
-                    error_message, created_by, updated_by, created_at, updated_at
+                    error_message, created_by, updated_by, CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at
              FROM dr_drive_download_package
              WHERE tenant_id=$1 AND state=$2
              ORDER BY created_at DESC, id ASC
@@ -88,7 +88,7 @@ pub(crate) async fn list_download_packages(
                 "SELECT id, tenant_id, package_name, state, storage_provider_id,
                     bucket, archive_object_key, content_type, file_count,
                     total_bytes, archive_size_bytes, expires_at_epoch_ms,
-                    error_message, created_by, updated_by, created_at, updated_at
+                    error_message, created_by, updated_by, CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at
              FROM dr_drive_download_package
              WHERE tenant_id=$1
              ORDER BY created_at DESC, id ASC

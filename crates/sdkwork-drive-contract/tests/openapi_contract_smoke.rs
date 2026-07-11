@@ -325,6 +325,36 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_schema_property_exists(&app_json, "CreateFileResponse", "uploadSession");
     assert_schema_property_exists(&app_json, "CreateShortcutRequest", "targetNodeId");
     assert_schema_property_exists(&app_json, "DriveNode", "shortcutTargetNodeId");
+    assert_schema_property_exists(&app_json, "DriveNode", "createdAt");
+    assert_schema_property_exists(&app_json, "DriveNode", "updatedAt");
+    assert_schema_required(&app_json, "DriveNode", "createdAt");
+    assert_schema_required(&app_json, "DriveNode", "updatedAt");
+    assert_schema_array_items_ref(
+        &app_json,
+        "DriveNodeListData",
+        "items",
+        "#/components/schemas/DriveNode",
+    );
+    assert_schema_property_ref(
+        &app_json,
+        "DriveNodeListData",
+        "pageInfo",
+        "#/components/schemas/PageInfo",
+    );
+    assert_schema_required(&app_json, "DriveNodeListData", "items");
+    assert_schema_required(&app_json, "DriveNodeListData", "pageInfo");
+    assert_envelope_data_schema_ref(
+        &app_json,
+        "DriveNodeListHttpResponse",
+        "#/components/schemas/DriveNodeListData",
+    );
+    assert_operation_response_schema_ref(
+        &app_json,
+        "/app/v3/api/drive/recent",
+        "get",
+        "200",
+        "#/components/schemas/DriveNodeListHttpResponse",
+    );
     assert_schema_property_exists(&app_json, "EmptyTrashRequest", "spaceId");
     assert_schema_property_exists(&app_json, "EmptyTrashResponse", "deletedCount");
     assert_schema_property_exists(&app_json, "CopyNodeRequest", "id");
@@ -1538,6 +1568,65 @@ fn assert_schema_property_exists(openapi: &Value, schema_name: &str, field_name:
     );
 }
 
+fn assert_schema_property_ref(
+    openapi: &Value,
+    schema_name: &str,
+    field_name: &str,
+    expected_ref: &str,
+) {
+    let field = schema_properties(openapi, schema_name)
+        .get(field_name)
+        .unwrap_or_else(|| panic!("{schema_name}.{field_name} should exist"));
+    assert_eq!(
+        field.get("$ref").and_then(Value::as_str),
+        Some(expected_ref),
+        "{schema_name}.{field_name} should reference {expected_ref}"
+    );
+}
+
+fn assert_schema_array_items_ref(
+    openapi: &Value,
+    schema_name: &str,
+    field_name: &str,
+    expected_ref: &str,
+) {
+    let field = schema_properties(openapi, schema_name)
+        .get(field_name)
+        .unwrap_or_else(|| panic!("{schema_name}.{field_name} should exist"));
+    assert_eq!(
+        field
+            .get("items")
+            .and_then(|value| value.get("$ref"))
+            .and_then(Value::as_str),
+        Some(expected_ref),
+        "{schema_name}.{field_name} items should reference {expected_ref}"
+    );
+}
+
+fn assert_envelope_data_schema_ref(openapi: &Value, schema_name: &str, expected_ref: &str) {
+    let schema = openapi
+        .get("components")
+        .and_then(|value| value.get("schemas"))
+        .and_then(|value| value.get(schema_name))
+        .unwrap_or_else(|| panic!("{schema_name} should exist"));
+    let data_ref = schema
+        .get("allOf")
+        .and_then(Value::as_array)
+        .and_then(|parts| {
+            parts.iter().find_map(|part| {
+                part.get("properties")
+                    .and_then(|value| value.get("data"))
+                    .and_then(|value| value.get("$ref"))
+                    .and_then(Value::as_str)
+            })
+        });
+    assert_eq!(
+        data_ref,
+        Some(expected_ref),
+        "{schema_name}.data should reference {expected_ref}"
+    );
+}
+
 fn assert_schema_property_absent(openapi: &Value, schema_name: &str, field_name: &str) {
     let properties = schema_properties(openapi, schema_name);
     assert!(
@@ -1612,6 +1701,34 @@ fn assert_response_status_exists(openapi: &Value, path_key: &str, method: &str, 
     assert!(
         responses.get(status).is_some(),
         "{method} {path_key} response {status} should exist"
+    );
+}
+
+fn assert_operation_response_schema_ref(
+    openapi: &Value,
+    path_key: &str,
+    method: &str,
+    status: &str,
+    expected_ref: &str,
+) {
+    let schema = openapi
+        .get("paths")
+        .and_then(|value| value.get(path_key))
+        .and_then(|value| value.get(method))
+        .and_then(|value| value.get("responses"))
+        .and_then(|value| value.get(status))
+        .and_then(|value| value.get("content"))
+        .and_then(|value| value.get("application/json"))
+        .and_then(|value| value.get("schema"))
+        .unwrap_or_else(|| panic!("{method} {path_key} response {status} schema should exist"));
+    assert_eq!(
+        schema.get("$ref").and_then(Value::as_str),
+        Some(expected_ref),
+        "{method} {path_key} response {status} should reference {expected_ref} directly"
+    );
+    assert!(
+        schema.get("allOf").is_none(),
+        "{method} {path_key} response {status} must not duplicate-wrap an enveloped schema"
     );
 }
 

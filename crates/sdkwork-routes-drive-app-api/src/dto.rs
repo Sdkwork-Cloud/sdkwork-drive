@@ -554,6 +554,8 @@ pub(crate) struct DriveNodeResponse {
     pub(crate) folder_color: Option<String>,
     pub(crate) lifecycle_status: String,
     pub(crate) version: i64,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: String,
 }
 
 pub(crate) fn is_false_bool(value: &bool) -> bool {
@@ -1413,7 +1415,7 @@ pub(crate) const ASSET_NODE_SELECT_COLUMNS: &str = "\
     id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, \
     node_type, node_name, scene, source, content_state, file_extension, \
     head_content_type, head_content_type_group, head_content_length, \
-    lifecycle_status, version, created_at, updated_at";
+    lifecycle_status, version, CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at";
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

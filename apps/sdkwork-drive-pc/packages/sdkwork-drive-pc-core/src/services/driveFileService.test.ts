@@ -1124,6 +1124,42 @@ describe('drive file service', () => {
     ).toEqual([undefined]);
   });
 
+  it('retrieves a requested node through nodes.retrieve for host-driven previews', async () => {
+    const abortController = new AbortController();
+    const { service, requests } = createRemoteService({
+      'nodes.retrieve': {
+        ...fileNode,
+        id: 'file-workspace-recent',
+        spaceId: 'space-personal-real',
+        nodeName: 'Quarterly plan.pdf',
+        contentType: 'application/pdf',
+        contentLength: 4096,
+        updatedAt: '2026-07-11T08:30:00.000Z',
+      },
+    });
+
+    const file = await service.getNodeDetails('file-workspace-recent', {
+      signal: abortController.signal,
+      spaceId: 'space-personal-real',
+    });
+
+    expect(file).toEqual(expect.objectContaining({
+      id: 'file-workspace-recent',
+      spaceId: 'space-personal-real',
+      name: 'Quarterly plan.pdf',
+      mimeType: 'application/pdf',
+      size: 4096,
+      updatedAt: '2026-07-11T08:30:00.000Z',
+    }));
+    expect(requests).toEqual([
+      expect.objectContaining({
+        operationId: 'nodes.retrieve',
+        signal: abortController.signal,
+        pathParams: { nodeId: 'file-workspace-recent' },
+      }),
+    ]);
+  });
+
   it('keeps observed remote nodes available for transfer retry lookup across workspace refreshes', async () => {
     const requests: DriveAppSdkRequest[] = [];
     const appSdkClient = attachUploader({

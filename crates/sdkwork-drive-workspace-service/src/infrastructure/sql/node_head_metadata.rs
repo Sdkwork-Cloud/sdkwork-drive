@@ -21,7 +21,7 @@ pub const NODE_API_SELECT_JOIN_COLUMNS: &str = "\
     n.id, n.tenant_id, n.space_id, n.space_type, n.parent_node_id, n.shortcut_target_node_id, \
     n.node_type, n.node_name, n.scene, n.source, n.content_state, n.file_extension, \
     n.head_content_type, n.head_content_type_group, n.head_content_length, \
-    n.lifecycle_status, n.version";
+    n.lifecycle_status, n.version, CAST(n.created_at AS TEXT) AS created_at, CAST(n.updated_at AS TEXT) AS updated_at";
 
 pub fn file_extension_from_name(file_name: &str) -> Option<String> {
     let normalized = file_name.trim();
@@ -37,7 +37,7 @@ pub const NODE_API_SELECT_COLUMNS: &str = "\
     id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id, \
     node_type, node_name, scene, source, content_state, file_extension, \
     head_content_type, head_content_type_group, head_content_length, \
-    lifecycle_status, version";
+    lifecycle_status, version, CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at";
 
 pub async fn apply_file_node_head_snapshot(
     pool: &AnyPool,

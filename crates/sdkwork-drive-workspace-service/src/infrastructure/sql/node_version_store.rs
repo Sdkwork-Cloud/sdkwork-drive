@@ -116,7 +116,8 @@ impl DriveNodeVersionStore for SqlDriveNodeVersionStore {
                     content_type, content_length, checksum_sha256_hex,
                     version_kind, version_label, change_source, change_summary,
                     restored_from_version_id, app_id, app_resource_type, app_resource_id,
-                    scene, source, lifecycle_status, created_by, updated_by, created_at, updated_at
+                    scene, source, lifecycle_status, created_by, updated_by,
+                    CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at
              FROM dr_drive_node_version
              WHERE tenant_id=$1 AND node_id=$2
              ORDER BY version_no DESC
@@ -142,7 +143,8 @@ fn node_version_select_sql(predicate: &str) -> String {
                 content_type, content_length, checksum_sha256_hex,
                 version_kind, version_label, change_source, change_summary,
                 restored_from_version_id, app_id, app_resource_type, app_resource_id,
-                scene, source, lifecycle_status, created_by, updated_by, created_at, updated_at
+                scene, source, lifecycle_status, created_by, updated_by,
+                CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at
          FROM dr_drive_node_version
          {predicate}"
     )

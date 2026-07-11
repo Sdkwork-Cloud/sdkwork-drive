@@ -399,6 +399,43 @@ test("sdkwork-drive-app-sdk generated TypeScript exposes DriveNode usage context
   assert.match(source, /source\?: string/);
 });
 
+test("sdkwork-drive-app-sdk generated TypeScript exposes typed recent node metadata", () => {
+  const driveApiSource = readFileSync(
+    path.join(
+      sdkRoot,
+      "sdkwork-drive-app-sdk-typescript",
+      "generated/server-openapi/src/api/drive.ts",
+    ),
+    "utf8",
+  );
+  const driveNodeSource = readFileSync(
+    path.join(
+      sdkRoot,
+      "sdkwork-drive-app-sdk-typescript",
+      "generated/server-openapi/src/types/drive-node.ts",
+    ),
+    "utf8",
+  );
+  const listDataSource = readFileSync(
+    path.join(
+      sdkRoot,
+      "sdkwork-drive-app-sdk-typescript",
+      "generated/server-openapi/src/types/drive-node-list-data.ts",
+    ),
+    "utf8",
+  );
+
+  assert.match(
+    driveApiSource,
+    /async list\(params\?: DriveRecentListParams\): Promise<DriveNodeListData>/,
+  );
+  assert.match(driveApiSource, /appApiPath\(`\/drive\/recent`\)/);
+  assert.match(driveNodeSource, /createdAt: string/);
+  assert.match(driveNodeSource, /updatedAt: string/);
+  assert.match(listDataSource, /items: DriveNode\[\]/);
+  assert.match(listDataSource, /incompletePage\?: boolean/);
+});
+
 test("sdkwork-drive-app-sdk generated TypeScript does not export appbase dependency models", () => {
   const typeIndex = readFileSync(
     path.join(

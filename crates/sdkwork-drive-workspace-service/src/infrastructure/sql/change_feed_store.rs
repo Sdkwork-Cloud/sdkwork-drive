@@ -24,7 +24,8 @@ impl SqlChangeFeedStore {
         limit: i64,
     ) -> Result<Vec<DriveChangeRecord>, DriveServiceError> {
         let rows = sqlx::query(
-            "SELECT sequence_no, tenant_id, space_id, node_id, event_type, actor_id, created_at
+            "SELECT sequence_no, tenant_id, space_id, node_id, event_type, actor_id,
+                    CAST(created_at AS TEXT) AS created_at
              FROM dr_drive_change_log
              WHERE tenant_id=$1 AND space_id=$2 AND sequence_no > $3
              ORDER BY sequence_no ASC
@@ -54,7 +55,8 @@ impl SqlChangeFeedStore {
     ) -> Result<Vec<DriveChangeRecord>, DriveServiceError> {
         let reader_acl_predicate = reader_inherited_permission_exists_sql("n", "$4", "$5");
         let rows = sqlx::query(&format!(
-            "SELECT cl.sequence_no, cl.tenant_id, cl.space_id, cl.node_id, cl.event_type, cl.actor_id, cl.created_at
+            "SELECT cl.sequence_no, cl.tenant_id, cl.space_id, cl.node_id, cl.event_type, cl.actor_id,
+                    CAST(cl.created_at AS TEXT) AS created_at
              FROM dr_drive_change_log cl
              LEFT JOIN dr_drive_node n
                ON n.tenant_id = cl.tenant_id

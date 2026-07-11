@@ -10,6 +10,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { FileSidebar } from '../components/FileSidebar';
 import { FileBrowser } from '../components/FileBrowser';
+import type { DriveOpenRequest } from '../types/driveOpenRequest';
 import {
   cancelTransferJob,
   applyTransferFailure,
@@ -41,12 +42,14 @@ const TransferPage = React.lazy(() =>
 
 export type DriveSection = string;
 
-interface DrivePageProps {
+export interface DrivePageProps {
   activeSection?: DriveSection;
   fileService: DriveFileService;
+  openRequest?: DriveOpenRequest;
   storageSummary?: DriveStorageSummary;
   storageSummaryUnavailable?: boolean;
   onOpenExternal?: (url: string) => Promise<void> | void;
+  onOpenRequestHandled?: (requestId: string) => void;
   onOpenStorageSettings?: () => void;
   onSectionChange?: (section: DriveSection) => void;
   shareClaimToken?: string;
@@ -132,9 +135,11 @@ export function buildUploadRetryMismatchMessage(job: DownloadJob): string {
 export function DrivePage({
   activeSection: propActiveSection,
   fileService,
+  openRequest,
   storageSummary,
   storageSummaryUnavailable = false,
   onOpenExternal,
+  onOpenRequestHandled,
   onOpenStorageSettings,
   onSectionChange,
   shareClaimToken,
@@ -151,6 +156,12 @@ export function DrivePage({
   const [localActiveSection, setLocalActiveSection] = useState<DriveSection>('my-storage');
   const activeSection = propActiveSection !== undefined ? propActiveSection : localActiveSection;
   const setActiveSection = onSectionChange !== undefined ? onSectionChange : setLocalActiveSection;
+
+  useEffect(() => {
+    if (openRequest && activeSection !== openRequest.section) {
+      setActiveSection(openRequest.section);
+    }
+  }, [activeSection, openRequest, setActiveSection]);
   
   const [downloadJobs, setDownloadJobs] = useState<DownloadJob[]>(() => loadPersistedTransferJobs());
   const [sharedSpaces, setSharedSpaces] = useState<SharedSpace[]>([]);
@@ -824,6 +835,7 @@ export function DrivePage({
         <FileBrowser 
           activeSection={activeSection} 
           fileService={fileService}
+          openRequest={openRequest}
           downloadJobs={downloadJobs}
           setDownloadJobs={setDownloadJobs}
           onOpenDownload={onOpenExternal}
@@ -833,6 +845,7 @@ export function DrivePage({
           createDownloadAbortController={createDownloadAbortController}
           releaseDownloadAbortController={releaseDownloadAbortController}
           onCancelJob={handleCancelJob}
+          onOpenRequestHandled={onOpenRequestHandled}
         />
       )}
 

@@ -12,6 +12,7 @@ import {
 } from 'sdkwork-drive-pc-core';
 import {
   DrivePage,
+  type DriveOpenRequest,
   type DriveSection,
 } from 'sdkwork-drive-pc-file';
 
@@ -42,7 +43,15 @@ function createBrowserPreferenceStorage(): PreferenceStorage | undefined {
   };
 }
 
-export const DriveView: React.FC = () => {
+export interface DriveViewProps {
+  openRequest?: DriveOpenRequest;
+  onOpenRequestHandled?: (requestId: string) => void;
+}
+
+export const DriveView: React.FC<DriveViewProps> = ({
+  openRequest,
+  onOpenRequestHandled,
+}) => {
   const runtime = useMemo(() => createHostManagedDriveRuntime(), []);
   const preferenceStorage = useMemo(() => createBrowserPreferenceStorage(), []);
   const hostLanguagePorts = useMemo(() => {
@@ -117,8 +126,10 @@ export const DriveView: React.FC = () => {
               <DrivePage
                 activeSection={activeSection}
                 fileService={runtime.services.fileService}
+                openRequest={openRequest}
                 storageSummary={storageSummary}
                 onOpenExternal={runtime.host.openExternal}
+                onOpenRequestHandled={onOpenRequestHandled}
                 onSectionChange={setActiveSection}
               />
             </React.Suspense>

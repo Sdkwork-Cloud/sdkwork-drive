@@ -10,6 +10,51 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const openApiPath = path.join(repoRoot, 'apis/app-api/drive/drive-app-api.openapi.json');
 const doc = JSON.parse(readFileSync(openApiPath, 'utf8'));
 
+function schemaRefName(schema) {
+  if (!schema || typeof schema !== 'object' || typeof schema.$ref !== 'string') {
+    return undefined;
+  }
+  return schema.$ref.match(/#\/components\/schemas\/(.+)$/)?.[1];
+}
+
+function schemaExtendsSdkWorkApiResponse(schemaName, visited = new Set()) {
+  if (!schemaName || schemaName === 'SdkWorkApiResponse' || visited.has(schemaName)) {
+    return schemaName === 'SdkWorkApiResponse';
+  }
+  visited.add(schemaName);
+  const schema = doc.components?.schemas?.[schemaName];
+  if (!schema || typeof schema !== 'object') {
+    return false;
+  }
+  if (Array.isArray(schema.required) && schema.required.includes('code') && schema.required.includes('traceId')) {
+    return true;
+  }
+  return Array.isArray(schema.allOf) && schema.allOf.some((part) => {
+    const partName = schemaRefName(part);
+    return partName === 'SdkWorkApiResponse'
+      || schemaExtendsSdkWorkApiResponse(partName, visited);
+  });
+}
+
+function collapseDuplicateEnvelopeSchema(schema) {
+  if (!schema || typeof schema !== 'object' || !Array.isArray(schema.allOf)) {
+    return undefined;
+  }
+  const hasBaseEnvelope = schema.allOf.some(
+    (part) => schemaRefName(part) === 'SdkWorkApiResponse',
+  );
+  if (!hasBaseEnvelope) {
+    return undefined;
+  }
+  for (const part of schema.allOf) {
+    const schemaName = schemaRefName(part);
+    if (schemaName && schemaName !== 'SdkWorkApiResponse' && schemaExtendsSdkWorkApiResponse(schemaName)) {
+      return { $ref: `#/components/schemas/${schemaName}` };
+    }
+  }
+  return undefined;
+}
+
 function resourceHttpResponse(name, itemSchema) {
   return {
     allOf: [
@@ -46,7 +91,23 @@ function commandHttpResponse(name, dataSchema) {
   };
 }
 
-function listHttpResponse(itemSchema, extraDataProperties = {}) {
+function listDataSchema(itemSchema, extraDataProperties = {}) {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    required: ['items', 'pageInfo'],
+    properties: {
+      items: {
+        type: 'array',
+        items: { $ref: `#/components/schemas/${itemSchema}` },
+      },
+      pageInfo: { $ref: '#/components/schemas/PageInfo' },
+      ...extraDataProperties,
+    },
+  };
+}
+
+function listHttpResponse(dataSchema) {
   return {
     allOf: [
       { $ref: '#/components/schemas/SdkWorkApiResponse' },
@@ -54,18 +115,7 @@ function listHttpResponse(itemSchema, extraDataProperties = {}) {
         type: 'object',
         required: ['data'],
         properties: {
-          data: {
-            type: 'object',
-            required: ['items', 'pageInfo'],
-            properties: {
-              items: {
-                type: 'array',
-                items: { $ref: `#/components/schemas/${itemSchema}` },
-              },
-              pageInfo: { $ref: '#/components/schemas/PageInfo' },
-              ...extraDataProperties,
-            },
-          },
+          data: { $ref: `#/components/schemas/${dataSchema}` },
         },
       },
     ],
@@ -76,6 +126,7 @@ function listHttpResponse(itemSchema, extraDataProperties = {}) {
 const legacyListSchemaMap = {
   NodeListResponse: {
     wrapperName: 'DriveNodeListHttpResponse',
+    dataSchemaName: 'DriveNodeListData',
     itemSchema: 'DriveNode',
     extraDataProperties: {
       incompletePage: {
@@ -84,24 +135,39 @@ const legacyListSchemaMap = {
       },
     },
   },
-  ChangeListResponse: { wrapperName: 'ChangeListHttpResponse', itemSchema: 'Change' },
-  VersionListResponse: { wrapperName: 'FileVersionListHttpResponse', itemSchema: 'FileVersion' },
+  ChangeListResponse: {
+    wrapperName: 'ChangeListHttpResponse',
+    dataSchemaName: 'ChangeListData',
+    itemSchema: 'Change',
+  },
+  VersionListResponse: {
+    wrapperName: 'FileVersionListHttpResponse',
+    dataSchemaName: 'FileVersionListData',
+    itemSchema: 'FileVersion',
+  },
   DriveWatchChannelListResponse: {
     wrapperName: 'DriveWatchChannelListHttpResponse',
+    dataSchemaName: 'DriveWatchChannelListData',
     itemSchema: 'DriveWatchChannel',
   },
-  AssetPage: { wrapperName: 'AssetListHttpResponse', itemSchema: 'AssetItem' },
+  AssetPage: {
+    wrapperName: 'AssetListHttpResponse',
+    dataSchemaName: 'AssetListData',
+    itemSchema: 'AssetItem',
+  },
   AssetCollectionPage: {
     wrapperName: 'AssetCollectionListHttpResponse',
+    dataSchemaName: 'AssetCollectionListData',
     itemSchema: 'AssetCollection',
   },
 };
 
 for (const binding of Object.values(legacyListSchemaMap)) {
-  doc.components.schemas[binding.wrapperName] = listHttpResponse(
+  doc.components.schemas[binding.dataSchemaName] = listDataSchema(
     binding.itemSchema,
     binding.extraDataProperties,
   );
+  doc.components.schemas[binding.wrapperName] = listHttpResponse(binding.dataSchemaName);
 }
 
 const noContentOperationIds = new Set([
@@ -212,6 +278,17 @@ for (const pathItem of Object.values(doc.paths ?? {})) {
     if (!operation?.operationId) {
       continue;
     }
+
+    for (const status of ['200', '201', '202']) {
+      const response = operation.responses?.[status];
+      const mediaType = response?.content?.['application/json'];
+      const collapsedSchema = collapseDuplicateEnvelopeSchema(mediaType?.schema);
+      if (collapsedSchema) {
+        mediaType.schema = collapsedSchema;
+        updatedOperations += 1;
+      }
+    }
+
     if (noContentOperationIds.has(operation.operationId)) {
       operation.responses = operation.responses ?? {};
       if (operation.responses['200']) {
@@ -300,6 +377,22 @@ for (const schemaName of [
   if (doc.components.schemas[schemaName]) {
     delete doc.components.schemas[schemaName];
     updatedOperations += 1;
+  }
+}
+
+for (const pathItem of Object.values(doc.paths ?? {})) {
+  for (const operation of Object.values(pathItem)) {
+    if (!operation?.operationId) {
+      continue;
+    }
+    for (const status of ['200', '201', '202']) {
+      const schema = operation.responses?.[status]?.content?.['application/json']?.schema;
+      if (collapseDuplicateEnvelopeSchema(schema)) {
+        throw new Error(
+          `${operation.operationId} ${status} still wraps an enveloped response inside SdkWorkApiResponse`,
+        );
+      }
+    }
   }
 }
 

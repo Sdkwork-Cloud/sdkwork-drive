@@ -177,6 +177,8 @@ export default {
   downloadBundleFailed: '准备下载包失败',
   downloadPrepareFailed: '准备下载失败',
   openLocalFileFailed: '打开本地文件失败',
+  openDocumentFailed: '无法打开此 Drive 文档，请重试。',
+  dismiss: '关闭提示',
   batchOperationFailed: '部分操作失败。',
   unexpectedServiceError: 'Drive 服务出现意外错误。',
   loadMoreFailed: '加载更多文件失败。',

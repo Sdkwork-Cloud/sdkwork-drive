@@ -1,4 +1,5 @@
 use crate::dto::*;
+use chrono::{DateTime, SecondsFormat, Utc};
 use sdkwork_drive_workspace_service::domain::space::DriveSpace;
 use sqlx::Row;
 
@@ -22,6 +23,92 @@ pub(crate) fn map_node_row(row: &sqlx::any::AnyRow) -> DriveNodeResponse {
         folder_color: None,
         lifecycle_status: row.get("lifecycle_status"),
         version: row.get("version"),
+        created_at: normalize_timestamp_text(row.get("created_at")),
+        updated_at: normalize_timestamp_text(row.get("updated_at")),
+    }
+}
+
+fn normalize_timestamp_text(value: String) -> String {
+    let trimmed = value.trim();
+    let with_t = trimmed.replacen(' ', "T", 1);
+    let with_offset = normalize_offset_suffix(&with_t);
+    let candidate = if with_offset.ends_with('Z') || has_timezone_suffix(&with_offset) {
+        with_offset
+    } else {
+        format!("{with_offset}Z")
+    };
+
+    DateTime::parse_from_rfc3339(&candidate)
+        .map(|timestamp| {
+            timestamp
+                .with_timezone(&Utc)
+                .to_rfc3339_opts(SecondsFormat::AutoSi, true)
+        })
+        .unwrap_or_else(|_| trimmed.to_string())
+}
+
+fn has_timezone_suffix(value: &str) -> bool {
+    let Some(time_start) = value.find('T') else {
+        return false;
+    };
+    value[time_start..]
+        .rfind('+')
+        .or_else(|| value[time_start..].rfind('-'))
+        .is_some_and(|index| index > 0)
+}
+
+fn normalize_offset_suffix(value: &str) -> String {
+    let Some(time_start) = value.find('T') else {
+        return value.to_string();
+    };
+    let Some(relative_index) = value[time_start..]
+        .rfind('+')
+        .or_else(|| value[time_start..].rfind('-'))
+    else {
+        return value.to_string();
+    };
+    let offset_index = time_start + relative_index;
+    let offset = &value[offset_index..];
+    match offset.len() {
+        3 => format!("{}{}:00", &value[..offset_index], offset),
+        5 if !offset.contains(':') => {
+            format!(
+                "{}{}:{}",
+                &value[..offset_index],
+                &offset[..3],
+                &offset[3..]
+            )
+        }
+        _ => value.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_timestamp_text;
+
+    #[test]
+    fn normalizes_sqlite_timestamp_to_rfc3339_utc() {
+        assert_eq!(
+            normalize_timestamp_text("2026-06-04 12:00:00".to_string()),
+            "2026-06-04T12:00:00Z"
+        );
+    }
+
+    #[test]
+    fn normalizes_postgres_short_offset_to_rfc3339_utc() {
+        assert_eq!(
+            normalize_timestamp_text("2026-06-17 12:34:56.789+00".to_string()),
+            "2026-06-17T12:34:56.789Z"
+        );
+    }
+
+    #[test]
+    fn normalizes_rfc3339_offset_to_utc() {
+        assert_eq!(
+            normalize_timestamp_text("2026-06-17T08:34:56-04:00".to_string()),
+            "2026-06-17T12:34:56Z"
+        );
     }
 }
 

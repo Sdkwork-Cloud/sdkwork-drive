@@ -65,6 +65,7 @@ sdks/**/.sdkwork/manual-backups/
 
 # Test artifacts
 *.test.tmp
+*.tmp
 
 # SDKWork local runtime state
 .runtime/

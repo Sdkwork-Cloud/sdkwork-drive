@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { CheckFavoriteNodesRequest, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateFileRequest, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateSpaceRequest, CreateUploadSessionRequest, EmptyTrashRequest, ExtractArchiveEntriesRequest, FavoriteNodeRequest, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCommandRequest, PrepareUploaderUploadRequest, PresignUploadPartRequest, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest } from '../types';
+import type { ArchiveEntry, ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DrivePermission, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermission, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodePathResponse, PageInfo, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, QuotaSummary, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart } from '../types';
 
 
 export class DriveUploaderUploadsPartsApi {
@@ -12,8 +12,8 @@ export class DriveUploaderUploadsPartsApi {
   }
 
 
-async update(uploadItemId: string, partNo: number, body: MarkUploaderPartUploadedRequest): Promise<unknown> {
-    return this.client.put<unknown>(appApiPath(`/drive/uploader/uploads/${serializePathParameter(uploadItemId, { name: 'uploadItemId', style: 'simple', explode: false })}/parts/${serializePathParameter(partNo, { name: 'partNo', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+async update(uploadItemId: string, partNo: number, body: MarkUploaderPartUploadedRequest): Promise<UploaderUploadPart> {
+    return this.client.put<UploaderUploadPart>(appApiPath(`/drive/uploader/uploads/${serializePathParameter(uploadItemId, { name: 'uploadItemId', style: 'simple', explode: false })}/parts/${serializePathParameter(partNo, { name: 'partNo', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -27,8 +27,8 @@ export class DriveUploaderUploadsApi {
   }
 
 
-async create(body: PrepareUploaderUploadRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/uploader/uploads`), body, undefined, undefined, 'application/json');
+async create(body: PrepareUploaderUploadRequest): Promise<PrepareUploaderUploadResponse> {
+    return this.client.post<PrepareUploaderUploadResponse>(appApiPath(`/drive/uploader/uploads`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -51,12 +51,12 @@ export class DriveArchiveEntriesApi {
   }
 
 
-async list(nodeId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/archive_entries`));
+async list(nodeId: string): Promise<Record<string, unknown>> {
+    return this.client.get<Record<string, unknown>>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/archive_entries`));
   }
 
-async extract(nodeId: string, body: ExtractArchiveEntriesRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/archive_entries/extract`), body, undefined, undefined, 'application/json');
+async extract(nodeId: string, body: ExtractArchiveEntriesRequest): Promise<ExtractArchiveEntriesResponse> {
+    return this.client.post<ExtractArchiveEntriesResponse>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/archive_entries/extract`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -68,8 +68,8 @@ export class DriveDownloadPackagesDownloadUrlsApi {
   }
 
 
-async retrieve(packageId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/download_packages/${serializePathParameter(packageId, { name: 'packageId', style: 'simple', explode: false })}/download_url`));
+async retrieve(packageId: string): Promise<DownloadPackageResponse> {
+    return this.client.get<DownloadPackageResponse>(appApiPath(`/drive/download_packages/${serializePathParameter(packageId, { name: 'packageId', style: 'simple', explode: false })}/download_url`));
   }
 }
 
@@ -83,8 +83,8 @@ export class DriveDownloadPackagesApi {
   }
 
 
-async create(body: CreateDownloadPackageRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/download_packages`), body, undefined, undefined, 'application/json');
+async create(body: CreateDownloadPackageRequest): Promise<DownloadPackageResponse> {
+    return this.client.post<DownloadPackageResponse>(appApiPath(`/drive/download_packages`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -96,8 +96,8 @@ export class DriveUploadSessionsPartsApi {
   }
 
 
-async update(uploadSessionId: string, partNo: number, body: PresignUploadPartRequest): Promise<unknown> {
-    return this.client.put<unknown>(appApiPath(`/drive/upload_sessions/${serializePathParameter(uploadSessionId, { name: 'uploadSessionId', style: 'simple', explode: false })}/parts/${serializePathParameter(partNo, { name: 'partNo', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+async update(uploadSessionId: string, partNo: number, body: PresignUploadPartRequest): Promise<PresignedUploadPart> {
+    return this.client.put<PresignedUploadPart>(appApiPath(`/drive/upload_sessions/${serializePathParameter(uploadSessionId, { name: 'uploadSessionId', style: 'simple', explode: false })}/parts/${serializePathParameter(partNo, { name: 'partNo', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -111,20 +111,20 @@ export class DriveUploadSessionsApi {
   }
 
 
-async create(body: CreateUploadSessionRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/upload_sessions`), body, undefined, undefined, 'application/json');
+async create(body: CreateUploadSessionRequest): Promise<DriveUploadSession> {
+    return this.client.post<DriveUploadSession>(appApiPath(`/drive/upload_sessions`), body, undefined, undefined, 'application/json');
   }
 
-async retrieve(uploadSessionId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/upload_sessions/${serializePathParameter(uploadSessionId, { name: 'uploadSessionId', style: 'simple', explode: false })}`));
+async retrieve(uploadSessionId: string): Promise<DriveUploadSession> {
+    return this.client.get<DriveUploadSession>(appApiPath(`/drive/upload_sessions/${serializePathParameter(uploadSessionId, { name: 'uploadSessionId', style: 'simple', explode: false })}`));
   }
 
-async abort(uploadSessionId: string, body: NodeCommandRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/upload_sessions/${serializePathParameter(uploadSessionId, { name: 'uploadSessionId', style: 'simple', explode: false })}/abort`), body, undefined, undefined, 'application/json');
+async abort(uploadSessionId: string, body: NodeCommandRequest): Promise<DriveUploadSession> {
+    return this.client.post<DriveUploadSession>(appApiPath(`/drive/upload_sessions/${serializePathParameter(uploadSessionId, { name: 'uploadSessionId', style: 'simple', explode: false })}/abort`), body, undefined, undefined, 'application/json');
   }
 
-async complete(uploadSessionId: string, body: CompleteUploadSessionRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/upload_sessions/${serializePathParameter(uploadSessionId, { name: 'uploadSessionId', style: 'simple', explode: false })}/complete`), body, undefined, undefined, 'application/json');
+async complete(uploadSessionId: string, body: CompleteUploadSessionRequest): Promise<DriveUploadSession> {
+    return this.client.post<DriveUploadSession>(appApiPath(`/drive/upload_sessions/${serializePathParameter(uploadSessionId, { name: 'uploadSessionId', style: 'simple', explode: false })}/complete`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -142,13 +142,13 @@ export class DriveMoveDestinationsApi {
   }
 
 
-async list(spaceId: string, params?: DriveMoveDestinationsListParams): Promise<unknown> {
+async list(spaceId: string, params?: DriveMoveDestinationsListParams): Promise<DriveNodeListData> {
     const query = buildQueryString([
       { name: 'excludeNodeIds', value: params?.excludeNodeIds, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/move_destinations`), query));
+    return this.client.get<DriveNodeListData>(appendQueryString(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/move_destinations`), query));
   }
 }
 
@@ -168,7 +168,7 @@ export class DriveSpacesApi {
   }
 
 
-async list(params?: DriveSpacesListParams): Promise<unknown> {
+async list(params?: DriveSpacesListParams): Promise<Record<string, unknown>> {
     const query = buildQueryString([
       { name: 'ownerSubjectType', value: params?.ownerSubjectType, style: 'form', explode: true, allowReserved: false },
       { name: 'ownerSubjectId', value: params?.ownerSubjectId, style: 'form', explode: true, allowReserved: false },
@@ -176,19 +176,19 @@ async list(params?: DriveSpacesListParams): Promise<unknown> {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/spaces`), query));
+    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/spaces`), query));
   }
 
-async create(body: CreateSpaceRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/spaces`), body, undefined, undefined, 'application/json');
+async create(body: CreateSpaceRequest): Promise<DriveSpace> {
+    return this.client.post<DriveSpace>(appApiPath(`/drive/spaces`), body, undefined, undefined, 'application/json');
   }
 
-async retrieve(spaceId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}`));
+async retrieve(spaceId: string): Promise<DriveSpace> {
+    return this.client.get<DriveSpace>(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}`));
   }
 
-async update(spaceId: string, body: UpdateSpaceRequest): Promise<unknown> {
-    return this.client.patch<unknown>(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+async update(spaceId: string, body: UpdateSpaceRequest): Promise<DriveSpace> {
+    return this.client.patch<DriveSpace>(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
 async delete(spaceId: string): Promise<void> {
@@ -212,7 +212,7 @@ export class DriveSharedWithMeApi {
   }
 
 
-async list(params?: DriveSharedWithMeListParams): Promise<unknown> {
+async list(params?: DriveSharedWithMeListParams): Promise<DriveNodeListData> {
     const query = buildQueryString([
       { name: 'spaceId', value: params?.spaceId, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
@@ -220,7 +220,7 @@ async list(params?: DriveSharedWithMeListParams): Promise<unknown> {
       { name: 'sortBy', value: params?.sortBy, style: 'form', explode: true, allowReserved: false },
       { name: 'sortOrder', value: params?.sortOrder, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/shared_with_me`), query));
+    return this.client.get<DriveNodeListData>(appendQueryString(appApiPath(`/drive/shared_with_me`), query));
   }
 }
 
@@ -239,14 +239,14 @@ export class DriveSearchApi {
   }
 
 
-async list(params?: DriveSearchListParams): Promise<unknown> {
+async list(params?: DriveSearchListParams): Promise<DriveNodeListData> {
     const query = buildQueryString([
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
       { name: 'spaceId', value: params?.spaceId, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/search`), query));
+    return this.client.get<DriveNodeListData>(appendQueryString(appApiPath(`/drive/search`), query));
   }
 }
 
@@ -266,7 +266,7 @@ export class DriveRecentApi {
   }
 
 
-async list(params?: DriveRecentListParams): Promise<unknown> {
+async list(params?: DriveRecentListParams): Promise<DriveNodeListData> {
     const query = buildQueryString([
       { name: 'spaceId', value: params?.spaceId, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
@@ -274,7 +274,7 @@ async list(params?: DriveRecentListParams): Promise<unknown> {
       { name: 'sortBy', value: params?.sortBy, style: 'form', explode: true, allowReserved: false },
       { name: 'sortOrder', value: params?.sortOrder, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/recent`), query));
+    return this.client.get<DriveNodeListData>(appendQueryString(appApiPath(`/drive/recent`), query));
   }
 }
 
@@ -291,24 +291,24 @@ export class DriveVersionsApi {
   }
 
 
-async list(nodeId: string, params?: DriveVersionsListParams): Promise<unknown> {
+async list(nodeId: string, params?: DriveVersionsListParams): Promise<FileVersionListData> {
     const query = buildQueryString([
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/versions`), query));
+    return this.client.get<FileVersionListData>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/versions`), query));
   }
 
 async delete(nodeId: string, versionId: string): Promise<void> {
     return this.client.delete<void>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/versions/${serializePathParameter(versionId, { name: 'versionId', style: 'simple', explode: false })}`));
   }
 
-async retrieve(nodeId: string, versionId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/versions/${serializePathParameter(versionId, { name: 'versionId', style: 'simple', explode: false })}`));
+async retrieve(nodeId: string, versionId: string): Promise<FileVersion> {
+    return this.client.get<FileVersion>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/versions/${serializePathParameter(versionId, { name: 'versionId', style: 'simple', explode: false })}`));
   }
 
-async restore(nodeId: string, versionId: string, body: NodeCommandRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/versions/${serializePathParameter(versionId, { name: 'versionId', style: 'simple', explode: false })}/restore`), body, undefined, undefined, 'application/json');
+async restore(nodeId: string, versionId: string, body: NodeCommandRequest): Promise<DriveNode> {
+    return this.client.post<DriveNode>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/versions/${serializePathParameter(versionId, { name: 'versionId', style: 'simple', explode: false })}/restore`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -329,11 +329,11 @@ export class DriveTrashApi {
   }
 
 
-async create(nodeId: string, body: NodeCommandRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/trash`), body, undefined, undefined, 'application/json');
+async create(nodeId: string, body: NodeCommandRequest): Promise<DriveNode> {
+    return this.client.post<DriveNode>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/trash`), body, undefined, undefined, 'application/json');
   }
 
-async list(params?: DriveTrashListParams): Promise<unknown> {
+async list(params?: DriveTrashListParams): Promise<DriveNodeListData> {
     const query = buildQueryString([
       { name: 'spaceId', value: params?.spaceId, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
@@ -342,15 +342,15 @@ async list(params?: DriveTrashListParams): Promise<unknown> {
       { name: 'sortBy', value: params?.sortBy, style: 'form', explode: true, allowReserved: false },
       { name: 'sortOrder', value: params?.sortOrder, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/trash`), query));
+    return this.client.get<DriveNodeListData>(appendQueryString(appApiPath(`/drive/trash`), query));
   }
 
-async restore(nodeId: string, body: NodeCommandRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/trash/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/restore`), body, undefined, undefined, 'application/json');
+async restore(nodeId: string, body: NodeCommandRequest): Promise<DriveNode> {
+    return this.client.post<DriveNode>(appApiPath(`/drive/trash/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/restore`), body, undefined, undefined, 'application/json');
   }
 
-async empty(body: EmptyTrashRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/trash/empty`), body, undefined, undefined, 'application/json');
+async empty(body: EmptyTrashRequest): Promise<EmptyTrashResponse> {
+    return this.client.post<EmptyTrashResponse>(appApiPath(`/drive/trash/empty`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -367,32 +367,32 @@ export class DriveShareLinksApi {
   }
 
 
-async create(nodeId: string, body: CreateShareLinkRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/share_links`), body, undefined, undefined, 'application/json');
+async create(nodeId: string, body: CreateShareLinkRequest): Promise<CreateShareLinkResponse> {
+    return this.client.post<CreateShareLinkResponse>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/share_links`), body, undefined, undefined, 'application/json');
   }
 
-async list(nodeId: string, params?: DriveShareLinksListParams): Promise<unknown> {
+async list(nodeId: string, params?: DriveShareLinksListParams): Promise<Record<string, unknown>> {
     const query = buildQueryString([
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/share_links`), query));
+    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/share_links`), query));
   }
 
-async claim(token: string): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/share_links/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}/claim`));
+async claim(token: string): Promise<ClaimShareLinkResponse> {
+    return this.client.post<ClaimShareLinkResponse>(appApiPath(`/drive/share_links/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}/claim`));
   }
 
 async delete(shareLinkId: string): Promise<void> {
     return this.client.delete<void>(appApiPath(`/drive/share_links/${serializePathParameter(shareLinkId, { name: 'shareLinkId', style: 'simple', explode: false })}`));
   }
 
-async update(shareLinkId: string, body: UpdateShareLinkRequest): Promise<unknown> {
-    return this.client.patch<unknown>(appApiPath(`/drive/share_links/${serializePathParameter(shareLinkId, { name: 'shareLinkId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+async update(shareLinkId: string, body: UpdateShareLinkRequest): Promise<DriveShareLink> {
+    return this.client.patch<DriveShareLink>(appApiPath(`/drive/share_links/${serializePathParameter(shareLinkId, { name: 'shareLinkId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
-async retrieve(shareLinkId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/share_links/${serializePathParameter(shareLinkId, { name: 'shareLinkId', style: 'simple', explode: false })}`));
+async retrieve(shareLinkId: string): Promise<DriveShareLink> {
+    return this.client.get<DriveShareLink>(appApiPath(`/drive/share_links/${serializePathParameter(shareLinkId, { name: 'shareLinkId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -409,12 +409,12 @@ export class DrivePermissionsEffectiveApi {
   }
 
 
-async list(nodeId: string, params?: DrivePermissionsEffectiveListParams): Promise<unknown> {
+async list(nodeId: string, params?: DrivePermissionsEffectiveListParams): Promise<Record<string, unknown>> {
     const query = buildQueryString([
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions/effective`), query));
+    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions/effective`), query));
   }
 }
 
@@ -433,28 +433,28 @@ export class DrivePermissionsApi {
   }
 
 
-async list(nodeId: string, params?: DrivePermissionsListParams): Promise<unknown> {
+async list(nodeId: string, params?: DrivePermissionsListParams): Promise<Record<string, unknown>> {
     const query = buildQueryString([
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions`), query));
+    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions`), query));
   }
 
-async create(nodeId: string, body: CreatePermissionRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions`), body, undefined, undefined, 'application/json');
+async create(nodeId: string, body: CreatePermissionRequest): Promise<DrivePermission> {
+    return this.client.post<DrivePermission>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions`), body, undefined, undefined, 'application/json');
   }
 
 async delete(nodeId: string, permissionId: string): Promise<void> {
     return this.client.delete<void>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions/${serializePathParameter(permissionId, { name: 'permissionId', style: 'simple', explode: false })}`));
   }
 
-async update(nodeId: string, permissionId: string, body: UpdatePermissionRequest): Promise<unknown> {
-    return this.client.patch<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions/${serializePathParameter(permissionId, { name: 'permissionId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+async update(nodeId: string, permissionId: string, body: UpdatePermissionRequest): Promise<DrivePermission> {
+    return this.client.patch<DrivePermission>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions/${serializePathParameter(permissionId, { name: 'permissionId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
-async retrieve(nodeId: string, permissionId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions/${serializePathParameter(permissionId, { name: 'permissionId', style: 'simple', explode: false })}`));
+async retrieve(nodeId: string, permissionId: string): Promise<DrivePermission> {
+    return this.client.get<DrivePermission>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions/${serializePathParameter(permissionId, { name: 'permissionId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -466,8 +466,8 @@ export class DriveDownloadGrantsApi {
   }
 
 
-async create(nodeId: string, body?: CreateDownloadGrantRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/download_grants`), body, undefined, undefined, 'application/json');
+async create(nodeId: string, body?: CreateDownloadGrantRequest): Promise<CreateDownloadUrlResponse> {
+    return this.client.post<CreateDownloadUrlResponse>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/download_grants`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -484,24 +484,24 @@ export class DriveCommentRepliesApi {
   }
 
 
-async list(nodeId: string, commentId: string, params?: DriveCommentRepliesListParams): Promise<unknown> {
+async list(nodeId: string, commentId: string, params?: DriveCommentRepliesListParams): Promise<Record<string, unknown>> {
     const query = buildQueryString([
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}/replies`), query));
+    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}/replies`), query));
   }
 
-async create(nodeId: string, commentId: string, body: CreateCommentReplyRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}/replies`), body, undefined, undefined, 'application/json');
+async create(nodeId: string, commentId: string, body: CreateCommentReplyRequest): Promise<DriveCommentReply> {
+    return this.client.post<DriveCommentReply>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}/replies`), body, undefined, undefined, 'application/json');
   }
 
-async retrieve(nodeId: string, commentId: string, replyId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}/replies/${serializePathParameter(replyId, { name: 'replyId', style: 'simple', explode: false })}`));
+async retrieve(nodeId: string, commentId: string, replyId: string): Promise<DriveCommentReply> {
+    return this.client.get<DriveCommentReply>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}/replies/${serializePathParameter(replyId, { name: 'replyId', style: 'simple', explode: false })}`));
   }
 
-async update(nodeId: string, commentId: string, replyId: string, body: UpdateCommentReplyRequest): Promise<unknown> {
-    return this.client.patch<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}/replies/${serializePathParameter(replyId, { name: 'replyId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+async update(nodeId: string, commentId: string, replyId: string, body: UpdateCommentReplyRequest): Promise<DriveCommentReply> {
+    return this.client.patch<DriveCommentReply>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}/replies/${serializePathParameter(replyId, { name: 'replyId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
 async delete(nodeId: string, commentId: string, replyId: string): Promise<void> {
@@ -522,24 +522,24 @@ export class DriveCommentsApi {
   }
 
 
-async list(nodeId: string, params?: DriveCommentsListParams): Promise<unknown> {
+async list(nodeId: string, params?: DriveCommentsListParams): Promise<Record<string, unknown>> {
     const query = buildQueryString([
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments`), query));
+    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments`), query));
   }
 
-async create(nodeId: string, body: CreateCommentRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments`), body, undefined, undefined, 'application/json');
+async create(nodeId: string, body: CreateCommentRequest): Promise<DriveComment> {
+    return this.client.post<DriveComment>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments`), body, undefined, undefined, 'application/json');
   }
 
-async retrieve(nodeId: string, commentId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}`));
+async retrieve(nodeId: string, commentId: string): Promise<DriveComment> {
+    return this.client.get<DriveComment>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}`));
   }
 
-async update(nodeId: string, commentId: string, body: UpdateCommentRequest): Promise<unknown> {
-    return this.client.patch<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+async update(nodeId: string, commentId: string, body: UpdateCommentRequest): Promise<DriveComment> {
+    return this.client.patch<DriveComment>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
 async delete(nodeId: string, commentId: string): Promise<void> {
@@ -555,8 +555,8 @@ export class DriveNodesFoldersApi {
   }
 
 
-async create(body: CreateFolderRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/folders`), body, undefined, undefined, 'application/json');
+async create(body: CreateFolderRequest): Promise<DriveNode> {
+    return this.client.post<DriveNode>(appApiPath(`/drive/nodes/folders`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -568,8 +568,8 @@ export class DriveNodesFilesApi {
   }
 
 
-async create(body: CreateFileRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/files`), body, undefined, undefined, 'application/json');
+async create(body: CreateFileRequest): Promise<CreateFileResponse> {
+    return this.client.post<CreateFileResponse>(appApiPath(`/drive/nodes/files`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -581,8 +581,8 @@ export class DriveNodesPathApi {
   }
 
 
-async retrieve(nodeId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/path`));
+async retrieve(nodeId: string): Promise<NodePathResponse> {
+    return this.client.get<NodePathResponse>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/path`));
   }
 }
 
@@ -598,11 +598,11 @@ export class DriveNodesDownloadUrlsApi {
   }
 
 
-async retrieve(nodeId: string, params?: DriveNodesDownloadUrlsRetrieveParams): Promise<unknown> {
+async retrieve(nodeId: string, params?: DriveNodesDownloadUrlsRetrieveParams): Promise<CreateDownloadUrlResponse> {
     const query = buildQueryString([
       { name: 'requestedTtlSeconds', value: params?.requestedTtlSeconds, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/download_url`), query));
+    return this.client.get<CreateDownloadUrlResponse>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/download_url`), query));
   }
 }
 
@@ -614,8 +614,8 @@ export class DriveNodesCapabilitiesApi {
   }
 
 
-async list(nodeId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/capabilities`));
+async list(nodeId: string): Promise<NodeCapabilitiesResponse> {
+    return this.client.get<NodeCapabilitiesResponse>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/capabilities`));
   }
 }
 
@@ -645,27 +645,27 @@ export class DriveNodesApi {
   }
 
 
-async update(nodeId: string, body: UpdateNodeRequest): Promise<unknown> {
-    return this.client.patch<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+async update(nodeId: string, body: UpdateNodeRequest): Promise<DriveNode> {
+    return this.client.patch<DriveNode>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 
-async retrieve(nodeId: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`));
+async retrieve(nodeId: string): Promise<DriveNode> {
+    return this.client.get<DriveNode>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`));
   }
 
 async delete(nodeId: string): Promise<void> {
     return this.client.delete<void>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`));
   }
 
-async copy(nodeId: string, body: CopyNodeRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/copy`), body, undefined, undefined, 'application/json');
+async copy(nodeId: string, body: CopyNodeRequest): Promise<DriveNode> {
+    return this.client.post<DriveNode>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/copy`), body, undefined, undefined, 'application/json');
   }
 
-async move(nodeId: string, body: MoveNodeRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/move`), body, undefined, undefined, 'application/json');
+async move(nodeId: string, body: MoveNodeRequest): Promise<DriveNode> {
+    return this.client.post<DriveNode>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/move`), body, undefined, undefined, 'application/json');
   }
 
-async list(spaceId: string, params?: DriveNodesListParams): Promise<unknown> {
+async list(spaceId: string, params?: DriveNodesListParams): Promise<DriveNodeListData> {
     const query = buildQueryString([
       { name: 'parentNodeId', value: params?.parentNodeId, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
@@ -673,7 +673,7 @@ async list(spaceId: string, params?: DriveNodesListParams): Promise<unknown> {
       { name: 'sortBy', value: params?.sortBy, style: 'form', explode: true, allowReserved: false },
       { name: 'sortOrder', value: params?.sortOrder, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/nodes`), query));
+    return this.client.get<DriveNodeListData>(appendQueryString(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/nodes`), query));
   }
 }
 
@@ -685,8 +685,8 @@ export class DriveQuotasApi {
   }
 
 
-async retrieve(): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/quotas/summary`));
+async retrieve(): Promise<QuotaSummary> {
+    return this.client.get<QuotaSummary>(appApiPath(`/drive/quotas/summary`));
   }
 }
 
@@ -706,7 +706,7 @@ export class DriveFavoritesApi {
   }
 
 
-async list(params?: DriveFavoritesListParams): Promise<unknown> {
+async list(params?: DriveFavoritesListParams): Promise<DriveNodeListData> {
     const query = buildQueryString([
       { name: 'spaceId', value: params?.spaceId, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
@@ -714,15 +714,15 @@ async list(params?: DriveFavoritesListParams): Promise<unknown> {
       { name: 'sortBy', value: params?.sortBy, style: 'form', explode: true, allowReserved: false },
       { name: 'sortOrder', value: params?.sortOrder, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/favorites`), query));
+    return this.client.get<DriveNodeListData>(appendQueryString(appApiPath(`/drive/favorites`), query));
   }
 
 async check(body: CheckFavoriteNodesRequest): Promise<unknown> {
     return this.client.post<unknown>(appApiPath(`/drive/favorites/check`), body, undefined, undefined, 'application/json');
   }
 
-async update(nodeId: string, body: FavoriteNodeRequest): Promise<unknown> {
-    return this.client.put<unknown>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/favorite`), body, undefined, undefined, 'application/json');
+async update(nodeId: string, body: FavoriteNodeRequest): Promise<FavoriteNodeResponse> {
+    return this.client.put<FavoriteNodeResponse>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/favorite`), body, undefined, undefined, 'application/json');
   }
 
 async delete(nodeId: string): Promise<void> {
@@ -738,8 +738,8 @@ export class DriveDownloadUrlsApi {
   }
 
 
-async create(body: CreateDownloadUrlRequest): Promise<unknown> {
-    return this.client.post<unknown>(appApiPath(`/drive/download_urls`), body, undefined, undefined, 'application/json');
+async create(body: CreateDownloadUrlRequest): Promise<CreateDownloadUrlResponse> {
+    return this.client.post<CreateDownloadUrlResponse>(appApiPath(`/drive/download_urls`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -751,8 +751,8 @@ export class DriveDownloadTokensApi {
   }
 
 
-async retrieve(token: string): Promise<unknown> {
-    return this.client.get<unknown>(appApiPath(`/drive/download_tokens/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}`));
+async retrieve(token: string): Promise<CreateDownloadUrlResponse> {
+    return this.client.get<CreateDownloadUrlResponse>(appApiPath(`/drive/download_tokens/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}`));
   }
 }
 
@@ -768,11 +768,11 @@ export class DriveChangesStartPageTokenApi {
   }
 
 
-async retrieve(params: DriveChangesStartPageTokenRetrieveParams): Promise<unknown> {
+async retrieve(params: DriveChangesStartPageTokenRetrieveParams): Promise<StartPageTokenResponse> {
     const query = buildQueryString([
       { name: 'spaceId', value: params.spaceId, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/changes/start_page_token`), query));
+    return this.client.get<StartPageTokenResponse>(appendQueryString(appApiPath(`/drive/changes/start_page_token`), query));
   }
 }
 
@@ -792,13 +792,13 @@ export class DriveChangesApi {
   }
 
 
-async list(params: DriveChangesListParams): Promise<unknown> {
+async list(params: DriveChangesListParams): Promise<ChangeListData> {
     const query = buildQueryString([
       { name: 'spaceId', value: params.spaceId, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params.cursor, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(appApiPath(`/drive/changes`), query));
+    return this.client.get<ChangeListData>(appendQueryString(appApiPath(`/drive/changes`), query));
   }
 }
 

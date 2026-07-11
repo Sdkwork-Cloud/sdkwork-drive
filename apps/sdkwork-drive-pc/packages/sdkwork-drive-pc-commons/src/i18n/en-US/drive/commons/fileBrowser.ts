@@ -177,6 +177,8 @@ export default {
   downloadBundleFailed: 'Failed to prepare download bundle',
   downloadPrepareFailed: 'Failed to prepare download',
   openLocalFileFailed: 'Failed to open local file',
+  openDocumentFailed: 'Unable to open this Drive document. Please try again.',
+  dismiss: 'Dismiss',
   batchOperationFailed: 'One or more operations failed.',
   unexpectedServiceError: 'An unexpected Drive service error occurred.',
   loadMoreFailed: 'Failed to load more files.',
