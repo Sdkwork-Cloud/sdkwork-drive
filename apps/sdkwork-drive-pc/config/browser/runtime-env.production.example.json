@@ -24,7 +24,7 @@
   },
   "auth": {
     "tokenManagerMode": "appbase-global",
-    "tokenStorage": "browser-session",
+    "tokenStorage": "browser-local",
     "accessTokenHeader": "Access-Token",
     "authTokenHeader": "Authorization",
     "refreshEnabled": true

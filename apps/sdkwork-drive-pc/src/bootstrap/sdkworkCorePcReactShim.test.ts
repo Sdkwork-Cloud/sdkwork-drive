@@ -78,7 +78,7 @@ describe('sdkworkCorePcReactShim', () => {
     }
   });
 
-  it('uses sessionStorage when the configured token storage is browser-session', () => {
+  it('migrates legacy browser-session storage to durable local storage', () => {
     const { localStorage, restore, sessionStorage } = installBrowserStorage();
     vi.stubEnv('VITE_DRIVE_PC_TOKEN_STORAGE', 'browser-session');
 
@@ -89,8 +89,8 @@ describe('sdkworkCorePcReactShim', () => {
         refreshToken: 'refresh-token',
       });
 
-      expect(localStorage.getItem(DEFAULT_SESSION_STORAGE_KEY)).toBeNull();
-      expect(sessionStorage.getItem(DEFAULT_SESSION_STORAGE_KEY)).toContain('access-token');
+      expect(localStorage.getItem(DEFAULT_SESSION_STORAGE_KEY)).toContain('access-token');
+      expect(sessionStorage.getItem(DEFAULT_SESSION_STORAGE_KEY)).toBeNull();
       expect(readPcReactRuntimeSession()).toEqual({
         accessToken: 'access-token',
         authToken: 'auth-token',
@@ -99,7 +99,7 @@ describe('sdkworkCorePcReactShim', () => {
 
       clearPcReactRuntimeSession();
 
-      expect(sessionStorage.getItem(DEFAULT_SESSION_STORAGE_KEY)).toBeNull();
+      expect(localStorage.getItem(DEFAULT_SESSION_STORAGE_KEY)).toBeNull();
     } finally {
       restore();
     }

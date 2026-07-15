@@ -22,7 +22,7 @@ use sdkwork_routes_storage_backend_api::{
     AdminStorageConfig,
 };
 use tower::ServiceExt;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 
 /// Maximum request body size: 32 MB.
 /// Requests exceeding this limit receive a 413 Payload Too Large response.
@@ -117,20 +117,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 
 fn build_cors_layer(config: &ResolvedGatewayConfig) -> CorsLayer {
-    if config.allow_any_origin {
-        return CorsLayer::new()
-            .allow_origin(Any)
-            .allow_methods(Any)
-            .allow_headers(Any);
-    }
-
-    let mut layer = CorsLayer::new().allow_methods(Any).allow_headers(Any);
+    let mut policy = if matches!(
+        config.environment.trim().to_ascii_lowercase().as_str(),
+        "dev" | "development" | "test" | "testing" | "local"
+    ) {
+        sdkwork_web_core::CorsPolicy::development_private_network()
+    } else {
+        sdkwork_web_core::CorsPolicy::default()
+    };
     for origin in &config.allowed_origins {
-        if let Ok(parsed) = origin.parse::<axum::http::HeaderValue>() {
-            layer = layer.allow_origin(parsed);
+        if !policy.allowed_origins.contains(origin) {
+            policy.allowed_origins.push(origin.clone());
         }
     }
-    layer
+    sdkwork_web_axum::cors_layer_from_policy(policy)
 }
 
 async fn shutdown_signal() {

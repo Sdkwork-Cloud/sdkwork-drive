@@ -16,6 +16,8 @@ tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "net", "sig
 toml = { workspace = true }
 tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.6", features = ["cors", "trace"] }
+sdkwork-web-axum.workspace = true
+sdkwork-web-core.workspace = true
 tracing = { workspace = true }
 sdkwork-drive-config.workspace = true
 sdkwork-drive-http = { workspace = true, features = ["redis-rate-limit"] }

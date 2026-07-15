@@ -19,13 +19,21 @@ function readBrowserStorage(): Storage | undefined {
   }
 
   const tokenStorage = createRuntimeConfig(import.meta.env).auth.tokenStorage;
-  if (tokenStorage === 'browser-local') {
+  if (tokenStorage === 'browser-local' || tokenStorage === 'browser-session') {
+    migrateLegacyBrowserSession();
     return window.localStorage;
   }
-  if (tokenStorage === 'browser-session') {
-    return window.sessionStorage;
-  }
   return undefined;
+}
+
+function migrateLegacyBrowserSession(): void {
+  const legacySession = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+  if (legacySession && !window.localStorage.getItem(SESSION_STORAGE_KEY)) {
+    window.localStorage.setItem(SESSION_STORAGE_KEY, legacySession);
+  }
+  if (legacySession) {
+    window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  }
 }
 
 function normalizeToken(value: unknown): string | undefined {

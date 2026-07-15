@@ -6,6 +6,7 @@ import {
   createOsSecureSessionStorage,
   createRuntimeConfig,
   createSessionStore,
+  DEFAULT_SESSION_STORAGE_KEY,
   type SessionStorageLike,
 } from 'sdkwork-drive-pc-core';
 import {
@@ -79,14 +80,22 @@ async function resolveSessionStorage(
   if (typeof window === 'undefined') {
     return undefined;
   }
-  if (tokenStorage === 'browser-local') {
+  if (tokenStorage === 'browser-local' || tokenStorage === 'browser-session') {
+    migrateLegacyBrowserSession();
     return window.localStorage;
   }
   if (tokenStorage === 'os-secure-storage') {
     return createOsSecureSessionStorage();
   }
-  if (tokenStorage === 'browser-session') {
-    return window.sessionStorage;
-  }
   return undefined;
+}
+
+function migrateLegacyBrowserSession(): void {
+  const legacySession = window.sessionStorage.getItem(DEFAULT_SESSION_STORAGE_KEY);
+  if (legacySession && !window.localStorage.getItem(DEFAULT_SESSION_STORAGE_KEY)) {
+    window.localStorage.setItem(DEFAULT_SESSION_STORAGE_KEY, legacySession);
+  }
+  if (legacySession) {
+    window.sessionStorage.removeItem(DEFAULT_SESSION_STORAGE_KEY);
+  }
 }

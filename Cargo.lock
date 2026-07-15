@@ -2863,6 +2863,15 @@ dependencies = [
 
 [[package]]
 name = "quick-xml"
+version = "0.37.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "331e97a1af0bf59823e6eadffe373d7b27f485be8748f71471c662c1f269b7fb"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
+name = "quick-xml"
 version = "0.39.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdcc8dd4e2f670d309a5f0e83fe36dfdc05af317008fea29144da1a2ac858e5e"
@@ -3525,6 +3534,7 @@ dependencies = [
  "sha2 0.10.9",
  "sqlx",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -3724,6 +3734,8 @@ dependencies = [
  "sdkwork-iam-embedded-application-bootstrap",
  "sdkwork-routes-iam-app-api",
  "sdkwork-routes-storage-backend-api",
+ "sdkwork-web-axum",
+ "sdkwork-web-core",
  "serde",
  "serde_json",
  "sqlx",
@@ -3905,14 +3917,17 @@ dependencies = [
 name = "sdkwork-iam-web-adapter"
 version = "0.1.0"
 dependencies = [
+ "aes",
  "aes-gcm",
  "argon2",
  "async-trait",
  "axum",
  "base64",
+ "cbc",
  "chrono",
  "hmac 0.12.1",
  "password-hash",
+ "quick-xml 0.37.5",
  "rand_core 0.6.4",
  "reqwest 0.12.28",
  "sdkwork-database-config",
@@ -4111,6 +4126,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tower",
+ "tower-http",
  "tracing",
 ]
 
@@ -4129,6 +4145,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
+ "tower-http",
  "tracing",
  "tracing-subscriber",
 ]

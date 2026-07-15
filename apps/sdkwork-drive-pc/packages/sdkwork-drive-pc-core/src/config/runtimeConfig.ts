@@ -300,7 +300,7 @@ function normalizeTokenStorage(
   if (environment === 'test') {
     return 'memory';
   }
-  return runtimeTarget === 'desktop' ? 'os-secure-storage' : 'browser-session';
+  return runtimeTarget === 'desktop' ? 'os-secure-storage' : 'browser-local';
 }
 
 export function createRuntimeConfig(env: RuntimeEnv = {}): DriveRuntimeConfig {
