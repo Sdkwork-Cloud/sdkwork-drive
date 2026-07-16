@@ -12,6 +12,7 @@ Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md
 - [TECH-drive-observability-event-dictionary.md](TECH-drive-observability-event-dictionary.md)
 - [TECH-drive-iam-integration-standard.md](TECH-drive-iam-integration-standard.md)
 - [TECH-drive-sdk-integration-standard.md](TECH-drive-sdk-integration-standard.md)
+- [TECH-drive-sandbox-explorer-standard.md](TECH-drive-sandbox-explorer-standard.md)
 - [TECH-drive-sibling-naming-standard.md](TECH-drive-sibling-naming-standard.md)
 - [TECH-drive-topology-standard.md](TECH-drive-topology-standard.md)
 - [TECH-drive-uploader-standard.md](TECH-drive-uploader-standard.md)
@@ -58,10 +59,12 @@ Deployment profiles:
 | Module | Responsibility |
 | --- | --- |
 | `sdkwork-routes-drive-app-api` | End-user file workspace HTTP surface |
-| `sdkwork-routes-drive-backend-api` | Tenant admin operations: audit, maintenance, quotas, labels, spaces, download packages |
+| `sdkwork-routes-drive-backend-api` | Tenant admin operations: audit, maintenance, quotas, labels, spaces, download packages, sandbox volume/grant configuration |
 | `sdkwork-routes-drive-open-api` | Public share-link resolve/download |
 | `sdkwork-routes-storage-backend-api` | Storage provider admin APIs |
 | `sdkwork-drive-workspace-service` | Domain logic, SQL, outbox, uploader orchestration |
+| `sdkwork-drive-sandbox-*` | Authorized server sandbox contracts, policy, provider containment, and audit |
+| `@sdkwork/drive-pc-sandbox-explorer` | Reusable browser/Tauri renderer capability for logical sandbox navigation |
 | `sdkwork-drive-install-worker` | Maintenance leader, outbox dispatch loop |
 | `sdkwork-drive-standalone-gateway` | Dev/all-in-one HTTP gateway |
 | `apps/sdkwork-drive-pc` | Browser and desktop application shell |
@@ -82,7 +85,8 @@ See repository `AGENTS.md` dictionary. Generated SDK output lives under `sdks/` 
 
 - Protected routers finalize with IAM database session resolution in production assembly paths.
 - Backend and admin-storage APIs reject personal IAM sessions (`login_scope=TENANT`); organization-scoped tokens only.
-- Backend and admin-storage route guards enforce per-operation capability scopes (`drive.audit.admin`, `drive.quota.admin`, and so on), with `drive.storage.admin` and `drive.*` as umbrella grants. IAM should provision least-privilege roles where operators do not require full storage administration.
+- Backend and admin-storage route guards enforce per-operation capability scopes (`drive.audit.admin`, `drive.quota.admin`, `drive.sandboxes.admin`, and so on), with `drive.storage.admin` and `drive.*` as umbrella grants. IAM should provision least-privilege roles where operators do not require full storage administration.
+- Sandbox app/open APIs never expose physical provider roots. Only organization-scoped backend operators with sandbox-admin privilege may receive `providerRootRef`; audit facts and logs remain path-free.
 - HTTP 500 responses return generic client-safe problem details; SQL and internal errors are logged server-side only.
 - Download tokens require production signing secrets (`SDKWORK_DRIVE_RUNTIME_PROFILE=production`).
 - Webhook outbox dispatch validates HTTPS URLs and DNS-resolved addresses before egress.

@@ -39,11 +39,12 @@ const schemaYaml = [
   'schema_version: 1',
   'kind: sdkwork.database.schema',
   'module_id: drive',
-  'contract_version: 1.0.0',
+  'contract_version: 1.1.0',
   'owner_team: drive-platform',
   'compliance_level: L2',
   'engines:',
   '  - postgres',
+  '  - sqlite',
   'table_prefix: dr_',
   'tables:',
   ...tableNames.map(
@@ -64,7 +65,8 @@ fs.writeFileSync(path.join(root, 'database/contract/schema.yaml'), schemaYaml);
 
 const manifestPath = path.join(root, 'database/database.manifest.json');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-manifest.contractVersion = '1.0.0';
+manifest.contractVersion = '1.1.0';
+manifest.tablePrefix = 'dr_';
 manifest.lifecycle.autoMigrate = true;
 fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 

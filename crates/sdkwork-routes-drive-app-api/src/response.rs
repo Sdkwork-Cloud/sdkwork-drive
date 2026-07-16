@@ -75,6 +75,34 @@ pub(crate) fn success_list_page_simple<T: Serialize>(
     ))
 }
 
+pub(crate) fn success_offset_list_page<T: Serialize>(
+    items: Vec<T>,
+    page: i32,
+    page_size: i32,
+    total_items: i64,
+) -> Json<SdkWorkApiResponse<SdkWorkPageData<T>>> {
+    let total_pages = if total_items == 0 {
+        0
+    } else {
+        (total_items + i64::from(page_size) - 1) / i64::from(page_size)
+    };
+    Json(SdkWorkApiResponse::success(
+        SdkWorkPageData {
+            items,
+            page_info: PageInfo {
+                mode: PageMode::Offset,
+                page: Some(page),
+                page_size: Some(page_size),
+                total_items: Some(total_items.to_string()),
+                total_pages: Some(total_pages as i32),
+                next_cursor: None,
+                has_more: Some(i64::from(page) < total_pages),
+            },
+        },
+        current_trace_id(),
+    ))
+}
+
 /// Full list payload when every item is returned in a single response (no continuation).
 pub(crate) fn success_full_list<T: Serialize>(
     items: Vec<T>,

@@ -1,5 +1,10 @@
 use crate::constants::DEFAULT_DOWNLOAD_PUBLIC_BASE_URL;
 use crate::handlers::*;
+use crate::sandbox_handlers::{
+    create_sandbox_directory, create_sandbox_file, list_sandbox_entries, list_sandboxes,
+    move_sandbox_entry, purge_sandbox_entry, read_sandbox_file_content,
+    update_sandbox_file_content,
+};
 use crate::state::AppState;
 use axum::middleware;
 use axum::routing::{get, post, put};
@@ -63,6 +68,31 @@ pub async fn build_router_with_database_config(
 
 fn build_business_router_layers(state: AppState) -> Router {
     let drive_routes = Router::new()
+        .route("/app/v3/api/drive/sandboxes", get(list_sandboxes))
+        .route(
+            "/app/v3/api/drive/sandboxes/{sandboxId}/entries",
+            get(list_sandbox_entries),
+        )
+        .route(
+            "/app/v3/api/drive/sandboxes/{sandboxId}/directories",
+            post(create_sandbox_directory),
+        )
+        .route(
+            "/app/v3/api/drive/sandboxes/{sandboxId}/files",
+            post(create_sandbox_file),
+        )
+        .route(
+            "/app/v3/api/drive/sandboxes/{sandboxId}/files/{entryId}/content",
+            get(read_sandbox_file_content).put(update_sandbox_file_content),
+        )
+        .route(
+            "/app/v3/api/drive/sandboxes/{sandboxId}/entries/{entryId}",
+            axum::routing::patch(move_sandbox_entry),
+        )
+        .route(
+            "/app/v3/api/drive/sandboxes/{sandboxId}/entries/{entryId}/purge",
+            post(purge_sandbox_entry),
+        )
         .route(
             "/app/v3/api/drive/spaces",
             get(list_spaces).post(create_space),

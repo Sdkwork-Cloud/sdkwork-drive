@@ -36,7 +36,7 @@ fn default_test_app_context() -> DriveAppContext {
     DriveAppContext {
         tenant_id: "tenant-001".to_string(),
         user_id: "user-001".to_string(),
-        organization_id: None,
+        organization_id: Some("organization-001".to_string()),
         session_id: None,
         app_id: Some("appbase".to_string()),
         environment: Some("dev".to_string()),
@@ -118,6 +118,26 @@ fn build_business_router_layers(state: BackendState, require_iam: bool) -> Route
         )
         .route("/backend/v3/api/drive/spaces", get(list_spaces))
         .route(
+            "/backend/v3/api/drive/sandbox_volumes",
+            get(list_sandbox_volumes).post(create_sandbox_volume),
+        )
+        .route(
+            "/backend/v3/api/drive/sandbox_volumes/{sandbox_id}",
+            get(get_sandbox_volume)
+                .patch(update_sandbox_volume)
+                .delete(delete_sandbox_volume),
+        )
+        .route(
+            "/backend/v3/api/drive/sandbox_volumes/{sandbox_id}/grants",
+            get(list_sandbox_grants).post(create_sandbox_grant),
+        )
+        .route(
+            "/backend/v3/api/drive/sandbox_volumes/{sandbox_id}/grants/{grant_id}",
+            get(get_sandbox_grant)
+                .patch(update_sandbox_grant)
+                .delete(delete_sandbox_grant),
+        )
+        .route(
             "/backend/v3/api/drive/quotas",
             get(list_quotas).put(update_quota_policy),
         )
@@ -126,12 +146,13 @@ fn build_business_router_layers(state: BackendState, require_iam: bool) -> Route
         ));
 
     if require_iam {
-        drive_routes = drive_routes
-            .route_layer(middleware::from_fn(
-                sdkwork_drive_http::problem_correlation::problem_correlation_middleware,
-            ))
-            .route_layer(middleware::from_fn(drive_context_projection_guard));
+        drive_routes =
+            drive_routes.route_layer(middleware::from_fn(drive_context_projection_guard));
     }
+
+    drive_routes = drive_routes.route_layer(middleware::from_fn(
+        sdkwork_drive_http::problem_correlation::problem_correlation_middleware,
+    ));
 
     Router::new().merge(drive_routes).with_state(state)
 }

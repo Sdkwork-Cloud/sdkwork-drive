@@ -14,7 +14,7 @@ public class AssetsApi {
     }
 
     /** List global assets */
-    public AssetsListResponse list(String cursor, Integer pageSize, String kind, String sourceType, String q) throws Exception {
+    public AssetListHttpResponse list(String cursor, Integer pageSize, String kind, String sourceType, String q) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("cursor", cursor, "form", true, false, null),
             new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
@@ -23,59 +23,59 @@ public class AssetsApi {
             new QueryParameterSpec("q", q, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/assets"), query));
-        return client.convertValue(raw, new TypeReference<AssetsListResponse>() {});
+        return client.convertValue(raw, new TypeReference<AssetListHttpResponse>() {});
     }
 
     /** Create a global asset metadata record */
-    public AssetsCreateResponse201 create(CreateAssetRequest body) throws Exception {
+    public AssetItemHttpResponse create(CreateAssetRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/assets"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<AssetsCreateResponse201>() {});
+        return client.convertValue(raw, new TypeReference<AssetItemHttpResponse>() {});
     }
 
     /** Get a global asset */
-    public AssetsRetrieveResponse retrieve(String assetId) throws Exception {
+    public AssetItemHttpResponse retrieve(String assetId) throws Exception {
         Object raw = client.get(ApiPaths.appPath("/assets/" + serializePathParameter(assetId, new PathParameterSpec("assetId", "simple", false)) + ""));
-        return client.convertValue(raw, new TypeReference<AssetsRetrieveResponse>() {});
+        return client.convertValue(raw, new TypeReference<AssetItemHttpResponse>() {});
     }
 
     /** Update a global asset */
-    public AssetsUpdateResponse update(String assetId, UpdateAssetRequest body) throws Exception {
+    public AssetItemHttpResponse update(String assetId, UpdateAssetRequest body) throws Exception {
         Object raw = client.patch(ApiPaths.appPath("/assets/" + serializePathParameter(assetId, new PathParameterSpec("assetId", "simple", false)) + ""), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<AssetsUpdateResponse>() {});
+        return client.convertValue(raw, new TypeReference<AssetItemHttpResponse>() {});
     }
 
     /** Archive a global asset */
-    public AssetsArchiveResponse archive(String assetId, AssetActionRequest body) throws Exception {
+    public AssetItemHttpResponse archive(String assetId, AssetActionRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/assets/" + serializePathParameter(assetId, new PathParameterSpec("assetId", "simple", false)) + "/archive"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<AssetsArchiveResponse>() {});
+        return client.convertValue(raw, new TypeReference<AssetItemHttpResponse>() {});
     }
 
     /** Restore an archived global asset */
-    public AssetsRestoreResponse restore(String assetId, AssetActionRequest body) throws Exception {
+    public AssetItemHttpResponse restore(String assetId, AssetActionRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/assets/" + serializePathParameter(assetId, new PathParameterSpec("assetId", "simple", false)) + "/restore"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<AssetsRestoreResponse>() {});
+        return client.convertValue(raw, new TypeReference<AssetItemHttpResponse>() {});
     }
 
     /** List asset collections */
-    public AssetCollectionsListResponse assetCollectionsList(String cursor, Integer pageSize) throws Exception {
+    public AssetCollectionListHttpResponse assetCollectionsList(String cursor, Integer pageSize) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("cursor", cursor, "form", true, false, null),
             new QueryParameterSpec("page_size", pageSize, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/assets/collections"), query));
-        return client.convertValue(raw, new TypeReference<AssetCollectionsListResponse>() {});
+        return client.convertValue(raw, new TypeReference<AssetCollectionListHttpResponse>() {});
     }
 
     /** Create an asset collection */
-    public AssetCollectionsCreateResponse201 assetCollectionsCreate(CreateAssetCollectionRequest body) throws Exception {
+    public AssetCollectionHttpResponse assetCollectionsCreate(CreateAssetCollectionRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/assets/collections"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<AssetCollectionsCreateResponse201>() {});
+        return client.convertValue(raw, new TypeReference<AssetCollectionHttpResponse>() {});
     }
 
     /** Add an asset to a collection */
-    public AssetCollectionItemsCreateResponse201 assetCollectionItemsCreate(String collectionId, CreateAssetCollectionItemRequest body) throws Exception {
+    public AssetCollectionItemHttpResponse assetCollectionItemsCreate(String collectionId, CreateAssetCollectionItemRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/assets/collections/" + serializePathParameter(collectionId, new PathParameterSpec("collectionId", "simple", false)) + "/items"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<AssetCollectionItemsCreateResponse201>() {});
+        return client.convertValue(raw, new TypeReference<AssetCollectionItemHttpResponse>() {});
     }
 
     /** Remove an asset from a collection */
@@ -85,9 +85,9 @@ public class AssetsApi {
     }
 
     /** Create an asset relation */
-    public AssetRelationsCreateResponse201 assetRelationsCreate(String assetId, CreateAssetRelationRequest body) throws Exception {
+    public AssetRelationHttpResponse assetRelationsCreate(String assetId, CreateAssetRelationRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/assets/" + serializePathParameter(assetId, new PathParameterSpec("assetId", "simple", false)) + "/relations"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<AssetRelationsCreateResponse201>() {});
+        return client.convertValue(raw, new TypeReference<AssetRelationHttpResponse>() {});
     }
 
     /** Delete an asset relation */

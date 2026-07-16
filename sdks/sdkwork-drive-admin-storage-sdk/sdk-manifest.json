@@ -58,18 +58,7 @@
   "fixedSdkVersion": "0.1.0",
   "ownerOnlyOperationCount": 22,
   "managedBy": "tools/drive_sdk_generator_runner.mjs",
-  "packageName": "@sdkwork/drive-admin-storage-sdk",
-  "transportPackageName": "sdkwork-drive-admin-storage-sdk-generated-typescript",
-  "typescript": {
-    "composedRoot": "sdkwork-drive-admin-storage-sdk-typescript",
-    "composedEntry": "sdkwork-drive-admin-storage-sdk-typescript/src/index.ts",
-    "transportRoot": "sdkwork-drive-admin-storage-sdk-typescript/generated/server-openapi",
-    "transportEntry": "sdkwork-drive-admin-storage-sdk-typescript/generated/server-openapi/src/index.ts"
-  },
   "workspace": "sdkwork-drive-admin-storage-sdk",
-  "title": "sdkwork-drive-admin-storage-sdk",
-  "apiVersion": "0.1.0",
-  "openapiVersion": "3.1.2",
   "authoritySpec": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json",
   "derivedSpecs": {
     "default": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json"
@@ -140,5 +129,13 @@
       "version": "0.1.0",
       "description": "Generator-owned Go transport SDK for sdkwork-drive-admin-storage-sdk."
     }
-  ]
+  ],
+  "packageName": "@sdkwork/drive-admin-storage-sdk",
+  "transportPackageName": "sdkwork-drive-admin-storage-sdk-generated-typescript",
+  "typescript": {
+    "composedRoot": "sdkwork-drive-admin-storage-sdk-typescript",
+    "composedEntry": "sdkwork-drive-admin-storage-sdk-typescript/src/index.ts",
+    "transportRoot": "sdkwork-drive-admin-storage-sdk-typescript/generated/server-openapi",
+    "transportEntry": "sdkwork-drive-admin-storage-sdk-typescript/generated/server-openapi/src/index.ts"
+  }
 }

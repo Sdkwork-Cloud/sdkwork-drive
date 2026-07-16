@@ -14,11 +14,11 @@ func NewNodesApi(client *sdkhttp.Client) *NodesApi {
 }
 
 // Create a shortcut node
-func (a *NodesApi) ShortcutsCreate(body sdktypes.CreateShortcutRequest) (sdktypes.NodesShortcutsCreateResponse201, error) {
+func (a *NodesApi) ShortcutsCreate(body sdktypes.CreateShortcutRequest) (sdktypes.DriveNodeHttpResponse, error) {
     raw, err := a.client.Post(AppApiPath("/drive/nodes/shortcuts"), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.NodesShortcutsCreateResponse201
+        var zero sdktypes.DriveNodeHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.NodesShortcutsCreateResponse201](raw)
+    return decodeResult[sdktypes.DriveNodeHttpResponse](raw)
 }

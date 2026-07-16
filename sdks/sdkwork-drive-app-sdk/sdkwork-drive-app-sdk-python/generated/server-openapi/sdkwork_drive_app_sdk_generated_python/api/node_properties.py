@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import NodePropertiesListResponse, NodePropertiesUpdateResponse, SetNodePropertyRequest
+from ..models import DriveNodePropertyHttpResponse, DriveNodePropertyListHttpResponse, SetNodePropertyRequest
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -191,7 +191,7 @@ class NodePropertiesApi:
         self._client = client
 
 
-    def list(self, node_id: str, visibility: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> NodePropertiesListResponse:
+    def list(self, node_id: str, visibility: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> DriveNodePropertyListHttpResponse:
         """List node custom properties"""
         query = build_query_string([
             {'name': 'visibility', 'value': visibility, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -200,7 +200,7 @@ class NodePropertiesApi:
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/properties", query))
 
-    def update(self, node_id: str, property_key: str, body: SetNodePropertyRequest) -> NodePropertiesUpdateResponse:
+    def update(self, node_id: str, property_key: str, body: SetNodePropertyRequest) -> DriveNodePropertyHttpResponse:
         """Create or update a node custom property"""
         return self._client.put(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/properties/{serialize_path_parameter(property_key, {'name': 'propertyKey', 'style': 'simple', 'explode': False})}", json=body)
 

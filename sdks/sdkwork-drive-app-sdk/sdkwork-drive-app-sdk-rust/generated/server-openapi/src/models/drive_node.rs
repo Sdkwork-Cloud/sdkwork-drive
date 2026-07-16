@@ -71,4 +71,12 @@ pub struct DriveNode {
     #[serde(rename = "folderColor")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub folder_color: Option<String>,
+
+    /// Server-owned node creation timestamp.
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+
+    /// Server-owned node last modification timestamp.
+    #[serde(rename = "updatedAt")]
+    pub updated_at: String,
 }

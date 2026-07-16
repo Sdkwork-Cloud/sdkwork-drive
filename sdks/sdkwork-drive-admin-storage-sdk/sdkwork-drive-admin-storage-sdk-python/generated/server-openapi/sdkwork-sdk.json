@@ -6,7 +6,7 @@
   "sdkType": "custom",
   "packageName": "sdkwork-drive-admin-storage-sdk-generated-python",
   "transportPackageName": "sdkwork-drive-admin-storage-sdk-generated-python",
-  "consumerPackageName": "@sdkwork/drive-admin-storage-sdk",
+  "consumerPackageName": "sdkwork-drive-admin-storage-sdk-generated-python",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

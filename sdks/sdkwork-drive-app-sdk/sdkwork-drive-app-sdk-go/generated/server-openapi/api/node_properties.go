@@ -18,7 +18,7 @@ func NewNodePropertiesApi(client *sdkhttp.Client) *NodePropertiesApi {
 }
 
 // List node custom properties
-func (a *NodePropertiesApi) List(nodeId string, visibility *string, pageSize *int, cursor *string) (sdktypes.NodePropertiesListResponse, error) {
+func (a *NodePropertiesApi) List(nodeId string, visibility *string, pageSize *int, cursor *string) (sdktypes.DriveNodePropertyListHttpResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "visibility", Value: func() interface{} { if visibility == nil { return nil }; return *visibility }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
@@ -26,20 +26,20 @@ func (a *NodePropertiesApi) List(nodeId string, visibility *string, pageSize *in
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath(fmt.Sprintf("/drive/nodes/%s/properties", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {
-        var zero sdktypes.NodePropertiesListResponse
+        var zero sdktypes.DriveNodePropertyListHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.NodePropertiesListResponse](raw)
+    return decodeResult[sdktypes.DriveNodePropertyListHttpResponse](raw)
 }
 
 // Create or update a node custom property
-func (a *NodePropertiesApi) Update(nodeId string, propertyKey string, body sdktypes.SetNodePropertyRequest) (sdktypes.NodePropertiesUpdateResponse, error) {
+func (a *NodePropertiesApi) Update(nodeId string, propertyKey string, body sdktypes.SetNodePropertyRequest) (sdktypes.DriveNodePropertyHttpResponse, error) {
     raw, err := a.client.Put(AppApiPath(fmt.Sprintf("/drive/nodes/%s/properties/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}), SerializePathParameter(propertyKey, PathParameterSpec{Name: "propertyKey", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.NodePropertiesUpdateResponse
+        var zero sdktypes.DriveNodePropertyHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.NodePropertiesUpdateResponse](raw)
+    return decodeResult[sdktypes.DriveNodePropertyHttpResponse](raw)
 }
 
 // Delete a node custom property

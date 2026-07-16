@@ -1,4 +1,5 @@
 packages:
+  - "../sdkwork-app-topology"
   - "apps/sdkwork-drive-pc"
   - "apps/sdkwork-drive-pc/packages/*"
   - "sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript"

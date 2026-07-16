@@ -2,6 +2,10 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  containsLegacyPackageToken,
+  expectedDrivePcPackageName,
+} from './drive_pc_package_naming.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const appRoot = path.join(repoRoot, 'apps', 'sdkwork-drive-pc');
@@ -18,6 +22,9 @@ const expectedPackageDirs = [
   'sdkwork-drive-pc-admin-core',
   'sdkwork-drive-pc-admin-storage-providers',
   'sdkwork-drive-pc-admin-operations',
+  'sdkwork-drive-pc-sandbox-contracts',
+  'sdkwork-drive-pc-sandbox-explorer',
+  'sdkwork-drive-pc-sandbox-explorer-sdk-adapter',
 ];
 
 const oldPackageTokens = [
@@ -133,11 +140,14 @@ function assertPackageSpec(packageDir) {
     return;
   }
 
-  if (packageJson.name !== packageDir) {
-    fail(`${packageDir}/package.json name must be ${packageDir}`);
+  const expectedPackageName = expectedDrivePcPackageName(packageDir);
+  if (packageJson.name !== expectedPackageName) {
+    fail(`${packageDir}/package.json name must be ${expectedPackageName}`);
   }
-  if (componentSpec.component?.name !== packageDir) {
-    fail(`${packageDir}/specs/component.spec.json component.name must be ${packageDir}`);
+  if (componentSpec.component?.name !== expectedPackageName) {
+    fail(
+      `${packageDir}/specs/component.spec.json component.name must be ${expectedPackageName}`,
+    );
   }
   if (componentSpec.component?.root !== '.') {
     fail(`${packageDir}/specs/component.spec.json component.root must be "." per COMPONENT_SPEC.md`);
@@ -214,7 +224,7 @@ function assertNoOldTokens() {
     const relativePath = path.relative(repoRoot, file).replaceAll(path.sep, '/');
     const source = readFileSync(file, 'utf8');
     for (const token of oldPackageTokens) {
-      if (source.includes(token)) {
+      if (containsLegacyPackageToken(source, token)) {
         fail(`${relativePath} still contains legacy package token ${token}`);
       }
     }
@@ -424,9 +434,9 @@ for (const packageDir of expectedPackageDirs) {
 assertExplicitSdkDependencies('apps/sdkwork-drive-pc/specs/component.spec.json');
 assertExplicitSdkDependencies('sdks/sdkwork-drive-sdk/specs/component.spec.json');
 
-const openSdkAssembly = readJson('sdks/sdkwork-drive-sdk/.sdkwork-assembly.json');
-if (openSdkAssembly && !Array.isArray(openSdkAssembly.sdkDependencies)) {
-  fail('sdks/sdkwork-drive-sdk/.sdkwork-assembly.json must declare sdkDependencies: []');
+const openSdkManifest = readJson('sdks/sdkwork-drive-sdk/sdk-manifest.json');
+if (openSdkManifest && !Array.isArray(openSdkManifest.sdkDependencies)) {
+  fail('sdks/sdkwork-drive-sdk/sdk-manifest.json must declare sdkDependencies: []');
 }
 
 const gitignore = existsSync(path.join(appRoot, '.gitignore'))

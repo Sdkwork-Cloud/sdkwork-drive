@@ -95,6 +95,7 @@ pub(crate) async fn create_label(
     let created = find_label(&state, &tenant_id, &id).await?;
     record_label_audit(
         &state,
+        &tenant_id,
         admin_audit::label::CREATED,
         &created.id,
         &operator_id,
@@ -146,6 +147,7 @@ pub(crate) async fn update_label(
     let updated = find_label(&state, &tenant_id, &label_id).await?;
     record_label_audit(
         &state,
+        &tenant_id,
         admin_audit::label::UPDATED,
         &updated.id,
         &operator_id,
@@ -184,7 +186,14 @@ pub(crate) async fn delete_label(
     .await
     .map_err(internal_sql_error("delete dr_drive_label failed"))?;
 
-    record_label_audit(&state, admin_audit::label::DELETED, &label_id, &operator_id).await?;
+    record_label_audit(
+        &state,
+        &tenant_id,
+        admin_audit::label::DELETED,
+        &label_id,
+        &operator_id,
+    )
+    .await?;
     Ok(no_content())
 }
 

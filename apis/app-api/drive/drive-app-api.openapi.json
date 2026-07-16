@@ -6185,6 +6185,812 @@
         "x-sdkwork-api-surface": "app-api"
       }
     },
+    "/app/v3/api/drive/sandboxes": {
+      "get": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "sandboxes.list",
+        "description": "Lists only sandbox volumes explicitly authorized for the authenticated effective principal set. Physical paths and provider configuration are never returned.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveSandboxVolumeListHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token"
+      }
+    },
+    "/app/v3/api/drive/sandboxes/{sandboxId}/entries": {
+      "get": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "sandboxEntries.list",
+        "description": "Lists one page of direct children below a sandbox-relative logical directory. Physical paths and provider configuration are never accepted or returned.",
+        "parameters": [
+          {
+            "name": "sandboxId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          },
+          {
+            "name": "parent_path",
+            "in": "query",
+            "required": false,
+            "description": "Canonical sandbox-relative logical path. The empty value selects the sandbox root.",
+            "schema": {
+              "type": "string",
+              "maxLength": 4096,
+              "default": ""
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque continuation cursor returned by the previous page.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveSandboxEntryListHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid logical path, cursor, or page size",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sandbox read access denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sandbox or logical directory not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token"
+      }
+    },
+    "/app/v3/api/drive/sandboxes/{sandboxId}/directories": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "sandboxDirectories.create",
+        "description": "Creates a directory below a sandbox-relative logical path after resolving effective full access and lifecycle policy.",
+        "parameters": [
+          {
+            "name": "sandboxId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "Opaque caller-generated key binding retries to the same directory creation request.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDriveSandboxDirectoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveSandboxEntryHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid logical path or directory name",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sandbox full access denied or sandbox is read only",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sandbox or parent directory not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Directory already exists",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-idempotent": true
+      }
+    },
+    "/app/v3/api/drive/sandboxes/{sandboxId}/files": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "sandboxFiles.create",
+        "description": "Atomically creates a bounded file below a canonical sandbox-relative logical directory. Physical provider paths are never accepted or returned.",
+        "parameters": [
+          {
+            "name": "sandboxId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDriveSandboxFileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveSandboxEntryHttpResponse"
+                }
+              }
+            }
+          },
+          "400": { "description": "Request validation failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Authentication failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Sandbox access is denied.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Sandbox or logical entry was not found.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "409": { "description": "Sandbox entry state or idempotency conflict.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "413": { "description": "File content exceeds the bounded content limit.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": { "description": "Internal sandbox file-system failure.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-idempotent": true
+      }
+    },
+    "/app/v3/api/drive/sandboxes/{sandboxId}/files/{entryId}/content": {
+      "get": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "sandboxFileContents.retrieve",
+        "description": "Reads one bounded file by opaque entry identity plus its canonical sandbox-relative logical path, encoded as UTF-8 or base64.",
+        "parameters": [
+          {
+            "name": "sandboxId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          },
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          },
+          {
+            "name": "logical_path",
+            "in": "query",
+            "required": true,
+            "description": "Canonical sandbox-relative logical file path. It is verified against entryId and is never a physical path.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            }
+          },
+          {
+            "name": "encoding",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "utf8",
+                "base64"
+              ],
+              "default": "utf8"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveSandboxFileContentHttpResponse"
+                }
+              }
+            }
+          },
+          "400": { "description": "Request validation failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Authentication failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Sandbox access is denied.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Sandbox or logical entry was not found.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "413": { "description": "File content exceeds the bounded content limit.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": { "description": "Internal sandbox file-system failure.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token"
+      },
+      "put": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "sandboxFileContents.update",
+        "description": "Atomically replaces one bounded file after validating opaque entry identity and a strong If-Match revision.",
+        "parameters": [
+          {
+            "name": "sandboxId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          },
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "description": "One quoted strong revision returned by the latest sandbox entry or file-content response.",
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 130,
+              "pattern": "^\"[^\"\\r\\n]+\"$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDriveSandboxFileContentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveSandboxEntryHttpResponse"
+                }
+              }
+            }
+          },
+          "400": { "description": "Request validation failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Authentication failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Sandbox access is denied.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Sandbox or logical entry was not found.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "409": { "description": "Sandbox entry state or idempotency conflict.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "412": { "description": "The supplied revision no longer matches the entry.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "413": { "description": "File content exceeds the bounded content limit.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "428": { "description": "A strong If-Match revision is required.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": { "description": "Internal sandbox file-system failure.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-idempotent": true
+      }
+    },
+    "/app/v3/api/drive/sandboxes/{sandboxId}/entries/{entryId}": {
+      "patch": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "sandboxEntries.update",
+        "description": "Renames or moves one sandbox entry after validating opaque entry identity and a strong If-Match revision.",
+        "parameters": [
+          {
+            "name": "sandboxId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          },
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 130,
+              "pattern": "^\"[^\"\\r\\n]+\"$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDriveSandboxEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveSandboxEntryHttpResponse"
+                }
+              }
+            }
+          },
+          "400": { "description": "Request validation failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Authentication failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Sandbox access is denied.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Sandbox or logical entry was not found.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "409": { "description": "Sandbox entry state or idempotency conflict.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "412": { "description": "The supplied revision no longer matches the entry.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "428": { "description": "A strong If-Match revision is required.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": { "description": "Internal sandbox file-system failure.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-idempotent": true
+      }
+    },
+    "/app/v3/api/drive/sandboxes/{sandboxId}/entries/{entryId}/purge": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "sandboxEntries.purge",
+        "description": "Permanently deletes one file or directory. Non-empty directory deletion requires recursive=true explicitly.",
+        "parameters": [
+          {
+            "name": "sandboxId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          },
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 130,
+              "pattern": "^\"[^\"\\r\\n]+\"$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeDriveSandboxEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriveSandboxMutationCommandHttpResponse"
+                }
+              }
+            }
+          },
+          "400": { "description": "Request validation failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Authentication failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Sandbox access is denied.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Sandbox or logical entry was not found.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "409": { "description": "Sandbox entry state or idempotency conflict.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "412": { "description": "The supplied revision no longer matches the entry.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "428": { "description": "A strong If-Match revision is required.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": { "description": "Internal sandbox file-system failure.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-idempotent": true,
+        "x-sdkwork-audit-event": "drive.sandbox.entry.deleted"
+      }
+    },
     "/app/v3/api/drive/spaces": {
       "get": {
         "tags": [
@@ -12380,6 +13186,98 @@
     }
   },
   "components": {
+    "responses": {
+      "SandboxValidationProblem": {
+        "description": "Sandbox request validation failed.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "SandboxAuthenticationProblem": {
+        "description": "Authentication failed.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "SandboxPermissionProblem": {
+        "description": "Sandbox access is denied.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "SandboxNotFoundProblem": {
+        "description": "Sandbox or logical entry was not found.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "SandboxConflictProblem": {
+        "description": "Sandbox entry state or idempotency conflict.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "SandboxPreconditionFailedProblem": {
+        "description": "The supplied sandbox revision no longer matches the entry.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "SandboxPayloadTooLargeProblem": {
+        "description": "Sandbox file content exceeds the bounded content limit.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "SandboxPreconditionRequiredProblem": {
+        "description": "A strong If-Match sandbox revision is required.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "SandboxInternalProblem": {
+        "description": "Internal sandbox file-system failure.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      }
+    },
     "schemas": {
       "ApplyNodeLabelRequest": {
         "type": "object",
@@ -13862,6 +14760,496 @@
             "properties": {
               "data": {
                 "$ref": "#/components/schemas/ClaimShareLinkResponse"
+              }
+            }
+          }
+        ]
+      },
+      "DriveSandboxVolume": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "displayName",
+          "rootEntryId",
+          "effectiveAccess",
+          "lifecycleStatus",
+          "capabilities",
+          "revision"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Opaque sandbox identifier."
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rootEntryId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Opaque logical root entry identifier."
+          },
+          "effectiveAccess": {
+            "type": "string",
+            "enum": [
+              "full",
+              "read_only"
+            ]
+          },
+          "lifecycleStatus": {
+            "type": "string",
+            "enum": [
+              "active",
+              "read_only"
+            ]
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/DriveSandboxCapabilities"
+          },
+          "revision": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "Opaque optimistic concurrency revision."
+          }
+        }
+      },
+      "DriveSandboxCapabilities": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "browse",
+          "createDirectory",
+          "selectDirectory",
+          "readFile",
+          "createFile",
+          "writeFile",
+          "moveEntry",
+          "deleteEntry"
+        ],
+        "properties": {
+          "browse": {
+            "type": "boolean"
+          },
+          "createDirectory": {
+            "type": "boolean"
+          },
+          "selectDirectory": {
+            "type": "boolean"
+          },
+          "readFile": {
+            "type": "boolean"
+          },
+          "createFile": {
+            "type": "boolean"
+          },
+          "writeFile": {
+            "type": "boolean"
+          },
+          "moveEntry": {
+            "type": "boolean"
+          },
+          "deleteEntry": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DriveSandboxVolumeListData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriveSandboxVolume"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "DriveSandboxVolumeListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/DriveSandboxVolumeListData"
+              }
+            }
+          }
+        ]
+      },
+      "DriveSandboxEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "sandboxId",
+          "name",
+          "kind",
+          "logicalPath",
+          "revision"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Stable opaque identity derived by the server from the sandbox and canonical logical path."
+          },
+          "sandboxId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "description": "Opaque parent identity when available. Clients navigate by logicalPath, not by decoding this value."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "directory",
+              "file"
+            ]
+          },
+          "logicalPath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "Canonical sandbox-relative logical path using '/' separators. This is never a physical provider path."
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Opaque filesystem metadata revision for view reconciliation."
+          }
+        }
+      },
+      "CreateDriveSandboxDirectoryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "parentPath",
+          "name"
+        ],
+        "properties": {
+          "parentPath": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Canonical sandbox-relative logical parent path. The empty value selects the sandbox root."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Portable single directory name. Separators, dot segments, control characters, and operating-system reserved names are rejected."
+          }
+        }
+      },
+      "CreateDriveSandboxFileRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "parentPath",
+          "name",
+          "content",
+          "encoding"
+        ],
+        "properties": {
+          "parentPath": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Canonical sandbox-relative logical parent path. The empty value selects the sandbox root."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Portable single file name. Separators, dot segments, control characters, and operating-system reserved names are rejected."
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 5592408,
+            "description": "UTF-8 text or canonical base64 content. Decoded content is limited to 4194304 bytes."
+          },
+          "encoding": {
+            "type": "string",
+            "enum": [
+              "utf8",
+              "base64"
+            ]
+          }
+        }
+      },
+      "UpdateDriveSandboxFileContentRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "logicalPath",
+          "content",
+          "encoding"
+        ],
+        "properties": {
+          "logicalPath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "Canonical sandbox-relative logical file path verified against entryId."
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 5592408,
+            "description": "UTF-8 text or canonical base64 content. Decoded content is limited to 4194304 bytes."
+          },
+          "encoding": {
+            "type": "string",
+            "enum": [
+              "utf8",
+              "base64"
+            ]
+          }
+        }
+      },
+      "UpdateDriveSandboxEntryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "logicalPath",
+          "destinationParentPath",
+          "destinationName"
+        ],
+        "properties": {
+          "logicalPath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "Current canonical sandbox-relative logical path verified against entryId."
+          },
+          "destinationParentPath": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Canonical sandbox-relative destination directory."
+          },
+          "destinationName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Portable destination name used for move or rename."
+          }
+        }
+      },
+      "PurgeDriveSandboxEntryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "logicalPath",
+          "recursive"
+        ],
+        "properties": {
+          "logicalPath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "Canonical sandbox-relative logical path verified against entryId."
+          },
+          "recursive": {
+            "type": "boolean",
+            "description": "Must be true to remove a non-empty directory. Files and empty directories may use false."
+          }
+        }
+      },
+      "DriveSandboxFileContent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entry",
+          "encoding",
+          "content",
+          "sizeBytes",
+          "checksumSha256"
+        ],
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/DriveSandboxEntry"
+          },
+          "encoding": {
+            "type": "string",
+            "enum": [
+              "utf8",
+              "base64"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 5592408
+          },
+          "sizeBytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "checksumSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "DriveSandboxFileContentData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item"
+        ],
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/DriveSandboxFileContent"
+          }
+        }
+      },
+      "DriveSandboxFileContentHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/DriveSandboxFileContentData"
+              }
+            }
+          }
+        ]
+      },
+      "DriveSandboxMutationCommandData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "accepted",
+          "resourceId",
+          "status"
+        ],
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "const": true
+          },
+          "resourceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "deleted"
+            ]
+          }
+        }
+      },
+      "DriveSandboxMutationCommandHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/DriveSandboxMutationCommandData"
+              }
+            }
+          }
+        ]
+      },
+      "DriveSandboxEntryData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item"
+        ],
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/DriveSandboxEntry"
+          }
+        }
+      },
+      "DriveSandboxEntryHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/DriveSandboxEntryData"
+              }
+            }
+          }
+        ]
+      },
+      "DriveSandboxEntryListData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriveSandboxEntry"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "DriveSandboxEntryListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/DriveSandboxEntryListData"
               }
             }
           }

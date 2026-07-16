@@ -6,7 +6,7 @@
   "sdkType": "custom",
   "packageName": "sdkwork-drive-sdk-generated-java",
   "transportPackageName": "sdkwork-drive-sdk-generated-java",
-  "consumerPackageName": "@sdkwork/drive-sdk",
+  "consumerPackageName": "sdkwork-drive-sdk-generated-java",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

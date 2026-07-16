@@ -10,6 +10,9 @@ const sdkName = "sdkwork-drive-app-sdk";
 const apiPrefix = "/app/v3/api";
 const languages = ["typescript", "rust", "java", "python", "go"];
 const requiredOperations = [
+  "sandboxes.list",
+  "sandboxEntries.list",
+  "sandboxDirectories.create",
   "spaces.list",
   "spaces.create",
   "spaces.retrieve",

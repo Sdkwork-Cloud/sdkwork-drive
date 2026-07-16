@@ -14,9 +14,9 @@ public class NodesApi {
     }
 
     /** Create a shortcut node */
-    public NodesShortcutsCreateResponse201 shortcutsCreate(CreateShortcutRequest body) throws Exception {
+    public DriveNodeHttpResponse shortcutsCreate(CreateShortcutRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/drive/nodes/shortcuts"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<NodesShortcutsCreateResponse201>() {});
+        return client.convertValue(raw, new TypeReference<DriveNodeHttpResponse>() {});
     }
 
 

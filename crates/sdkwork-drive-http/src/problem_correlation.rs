@@ -1,7 +1,7 @@
 use axum::extract::Request;
 use axum::middleware::Next;
 use axum::response::Response;
-use http::{HeaderMap, HeaderValue};
+use http::{header, HeaderMap, HeaderValue};
 use sdkwork_drive_security::DriveAppContext;
 use sdkwork_drive_security::TRACE_ID_HEADER;
 use sdkwork_web_core::WebRequestContext;
@@ -30,6 +30,7 @@ pub async fn problem_correlation_middleware(request: Request, next: Next) -> Res
     let ids = correlation_ids_from_request(&request);
     let traceparent = optional_header(request.headers(), "traceparent");
     let mut response = with_problem_correlation(ids.clone(), next.run(request)).await;
+    normalize_problem_content_type(&mut response);
     inject_correlation_response_headers(response.headers_mut(), &ids, traceparent.as_deref());
     response
 }
@@ -105,6 +106,26 @@ fn inject_correlation_response_headers(
     }
 }
 
+fn normalize_problem_content_type(response: &mut Response) {
+    if !response.status().is_client_error() && !response.status().is_server_error() {
+        return;
+    }
+    let is_json = response
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| {
+            value.eq_ignore_ascii_case("application/json")
+                || value.to_ascii_lowercase().starts_with("application/json;")
+        });
+    if is_json {
+        response.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/problem+json"),
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -156,5 +177,43 @@ mod tests {
         let ids = correlation_ids_from_request(&request);
         assert_eq!(ids.request_id, "request-abc");
         assert_eq!(ids.trace_id, "trace-xyz");
+    }
+
+    #[test]
+    fn normalizes_json_error_responses_to_problem_json() {
+        let mut response = Response::builder()
+            .status(http::StatusCode::BAD_REQUEST)
+            .header(header::CONTENT_TYPE, "application/json; charset=utf-8")
+            .body(Body::empty())
+            .expect("response should be built");
+
+        normalize_problem_content_type(&mut response);
+
+        assert_eq!(
+            response
+                .headers()
+                .get(header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok()),
+            Some("application/problem+json")
+        );
+    }
+
+    #[test]
+    fn leaves_success_json_content_type_unchanged() {
+        let mut response = Response::builder()
+            .status(http::StatusCode::OK)
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::empty())
+            .expect("response should be built");
+
+        normalize_problem_content_type(&mut response);
+
+        assert_eq!(
+            response
+                .headers()
+                .get(header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok()),
+            Some("application/json")
+        );
     }
 }

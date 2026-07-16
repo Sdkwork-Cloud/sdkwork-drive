@@ -9,28 +9,10 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-typescript"
   },
-  "changeFingerprint": "d0b2542e847e8e5ce2fe9dd983fe55829b061846eac351dea1690713ca04dbac",
+  "changeFingerprint": "3f4afc92adbb4bf222aab2698ebe9b4cc95a069f80465e1a3793b46dd0188827",
   "changes": {
-    "createdGeneratedFiles": [
-      "src/types/asset-collection-list-data.ts",
-      "src/types/asset-list-data.ts",
-      "src/types/change-list-data.ts",
-      "src/types/drive-node-list-data.ts",
-      "src/types/drive-watch-channel-list-data.ts",
-      "src/types/file-version-list-data.ts"
-    ],
-    "updatedGeneratedFiles": [
-      "src/api/assets.ts",
-      "src/api/drive.ts",
-      "src/api/watch-channels.ts",
-      "src/types/asset-collection-list-http-response.ts",
-      "src/types/asset-list-http-response.ts",
-      "src/types/change-list-http-response.ts",
-      "src/types/drive-node-list-http-response.ts",
-      "src/types/drive-watch-channel-list-http-response.ts",
-      "src/types/file-version-list-http-response.ts",
-      "src/types/index.ts"
-    ],
+    "createdGeneratedFiles": [],
+    "updatedGeneratedFiles": [],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
@@ -42,12 +24,15 @@
       "package.json",
       "README.md",
       "sdkwork-sdk.json",
+      "src/api/assets.ts",
       "src/api/base.ts",
+      "src/api/drive.ts",
       "src/api/index.ts",
       "src/api/node-labels.ts",
       "src/api/node-properties.ts",
       "src/api/nodes.ts",
       "src/api/paths.ts",
+      "src/api/watch-channels.ts",
       "src/auth/index.ts",
       "src/http/client.ts",
       "src/http/index.ts",
@@ -60,11 +45,17 @@
       "src/types/asset-collection-http-response.ts",
       "src/types/asset-collection-item-http-response.ts",
       "src/types/asset-collection-item.ts",
+      "src/types/asset-collection-list-data.ts",
+      "src/types/asset-collection-list-http-response.ts",
       "src/types/asset-collection.ts",
       "src/types/asset-item-http-response.ts",
       "src/types/asset-item.ts",
+      "src/types/asset-list-data.ts",
+      "src/types/asset-list-http-response.ts",
       "src/types/asset-relation-http-response.ts",
       "src/types/asset-relation.ts",
+      "src/types/change-list-data.ts",
+      "src/types/change-list-http-response.ts",
       "src/types/change.ts",
       "src/types/check-favorite-nodes-request.ts",
       "src/types/claim-share-link-http-response.ts",
@@ -84,6 +75,8 @@
       "src/types/create-download-url-http-response.ts",
       "src/types/create-download-url-request.ts",
       "src/types/create-download-url-response.ts",
+      "src/types/create-drive-sandbox-directory-request.ts",
+      "src/types/create-drive-sandbox-file-request.ts",
       "src/types/create-file-http-response.ts",
       "src/types/create-file-request.ts",
       "src/types/create-file-response.ts",
@@ -107,6 +100,8 @@
       "src/types/drive-comment.ts",
       "src/types/drive-label-summary.ts",
       "src/types/drive-node-http-response.ts",
+      "src/types/drive-node-list-data.ts",
+      "src/types/drive-node-list-http-response.ts",
       "src/types/drive-node-property-http-response.ts",
       "src/types/drive-node-property-list-http-response.ts",
       "src/types/drive-node-property.ts",
@@ -114,6 +109,20 @@
       "src/types/drive-permission-http-response.ts",
       "src/types/drive-permission-list-http-response.ts",
       "src/types/drive-permission.ts",
+      "src/types/drive-sandbox-capabilities.ts",
+      "src/types/drive-sandbox-entry-data.ts",
+      "src/types/drive-sandbox-entry-http-response.ts",
+      "src/types/drive-sandbox-entry-list-data.ts",
+      "src/types/drive-sandbox-entry-list-http-response.ts",
+      "src/types/drive-sandbox-entry.ts",
+      "src/types/drive-sandbox-file-content-data.ts",
+      "src/types/drive-sandbox-file-content-http-response.ts",
+      "src/types/drive-sandbox-file-content.ts",
+      "src/types/drive-sandbox-mutation-command-data.ts",
+      "src/types/drive-sandbox-mutation-command-http-response.ts",
+      "src/types/drive-sandbox-volume-list-data.ts",
+      "src/types/drive-sandbox-volume-list-http-response.ts",
+      "src/types/drive-sandbox-volume.ts",
       "src/types/drive-share-link.ts",
       "src/types/drive-space-http-response.ts",
       "src/types/drive-space-list-http-response.ts",
@@ -121,6 +130,8 @@
       "src/types/drive-upload-session-http-response.ts",
       "src/types/drive-upload-session.ts",
       "src/types/drive-watch-channel-http-response.ts",
+      "src/types/drive-watch-channel-list-data.ts",
+      "src/types/drive-watch-channel-list-http-response.ts",
       "src/types/drive-watch-channel.ts",
       "src/types/effective-permission-list-http-response.ts",
       "src/types/effective-permission.ts",
@@ -135,7 +146,10 @@
       "src/types/favorite-node-response.ts",
       "src/types/field-error.ts",
       "src/types/file-version-http-response.ts",
+      "src/types/file-version-list-data.ts",
+      "src/types/file-version-list-http-response.ts",
       "src/types/file-version.ts",
+      "src/types/index.ts",
       "src/types/mark-uploader-part-uploaded-request.ts",
       "src/types/media-resource.ts",
       "src/types/move-node-request.ts",
@@ -155,6 +169,7 @@
       "src/types/presigned-upload-part-http-response.ts",
       "src/types/presigned-upload-part.ts",
       "src/types/problem-detail.ts",
+      "src/types/purge-drive-sandbox-entry-request.ts",
       "src/types/quota-summary-http-response.ts",
       "src/types/quota-summary.ts",
       "src/types/sdk-work-api-response.ts",
@@ -175,6 +190,8 @@
       "src/types/update-asset-request.ts",
       "src/types/update-comment-reply-request.ts",
       "src/types/update-comment-request.ts",
+      "src/types/update-drive-sandbox-entry-request.ts",
+      "src/types/update-drive-sandbox-file-content-request.ts",
       "src/types/update-node-request.ts",
       "src/types/update-permission-request.ts",
       "src/types/update-share-link-request.ts",
@@ -196,93 +213,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface",
-      "models"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "src/api/assets.ts",
-          "src/api/drive.ts",
-          "src/api/watch-channels.ts"
-        ]
-      },
-      {
-        "area": "models",
-        "paths": [
-          "src/types/asset-collection-list-data.ts",
-          "src/types/asset-collection-list-http-response.ts",
-          "src/types/asset-list-data.ts",
-          "src/types/asset-list-http-response.ts",
-          "src/types/change-list-data.ts",
-          "src/types/change-list-http-response.ts",
-          "src/types/drive-node-list-data.ts",
-          "src/types/drive-node-list-http-response.ts",
-          "src/types/drive-watch-channel-list-data.ts",
-          "src/types/drive-watch-channel-list-http-response.ts",
-          "src/types/file-version-list-data.ts",
-          "src/types/file-version-list-http-response.ts",
-          "src/types/index.ts"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "typescript",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action check"
-      },
-      {
-        "id": "build",
-        "title": "Unified package build",
-        "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "typescript",
-          "--project-dir",
-          ".",
-          "--action",
-          "build"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action build"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

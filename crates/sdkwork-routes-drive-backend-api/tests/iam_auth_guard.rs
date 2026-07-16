@@ -264,6 +264,7 @@ async fn backend_routes_enforce_per_operation_admin_scopes() {
     assert_ne!(audit_allowed.status(), StatusCode::FORBIDDEN);
 
     let quota_denied = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
@@ -285,6 +286,54 @@ async fn backend_routes_enforce_per_operation_admin_scopes() {
         .await
         .expect("quota request should be handled");
     assert_problem(quota_denied, StatusCode::FORBIDDEN, 40301).await;
+
+    let sandbox_denied = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/backend/v3/api/drive/sandbox_volumes")
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        auth_token_with_scope("tenant-a", "admin-001", audit_scope)
+                    ),
+                )
+                .header(
+                    "access-token",
+                    access_token_with_scope("tenant-a", "admin-001", audit_scope),
+                )
+                .body(Body::empty())
+                .expect("sandbox request should be built"),
+        )
+        .await
+        .expect("sandbox request should be handled");
+    assert_problem(sandbox_denied, StatusCode::FORBIDDEN, 40301).await;
+
+    let sandbox_scope = "drive.sandboxes.admin";
+    let sandbox_allowed = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/backend/v3/api/drive/sandbox_volumes")
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        auth_token_with_scope("tenant-a", "admin-001", sandbox_scope)
+                    ),
+                )
+                .header(
+                    "access-token",
+                    access_token_with_scope("tenant-a", "admin-001", sandbox_scope),
+                )
+                .body(Body::empty())
+                .expect("sandbox request should be built"),
+        )
+        .await
+        .expect("sandbox request should be handled");
+    assert_ne!(sandbox_allowed.status(), StatusCode::FORBIDDEN);
 }
 
 async fn backend_router_allowing_unsigned_context() -> axum::Router {

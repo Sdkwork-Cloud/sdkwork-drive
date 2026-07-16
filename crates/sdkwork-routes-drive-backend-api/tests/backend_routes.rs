@@ -1,6 +1,7 @@
 use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use sdkwork_routes_drive_backend_api::build_router;
+use sdkwork_web_core::RateLimitTier;
 use tower::util::ServiceExt;
 
 #[tokio::test]
@@ -94,5 +95,38 @@ async fn backend_router_exposes_operations_and_quota_routes() {
             StatusCode::NOT_FOUND,
             "{uri} must be routed"
         );
+    }
+}
+
+#[test]
+fn sandbox_admin_manifest_rate_limits_high_risk_mutations() {
+    let manifest = sdkwork_routes_drive_backend_api::backend_route_manifest();
+    for operation_id in [
+        "sandboxVolumes.create",
+        "sandboxVolumes.update",
+        "sandboxVolumes.delete",
+        "sandboxGrants.create",
+        "sandboxGrants.update",
+        "sandboxGrants.delete",
+    ] {
+        let route = manifest
+            .routes()
+            .iter()
+            .find(|route| route.operation_id == operation_id)
+            .unwrap_or_else(|| panic!("sandbox admin route should exist: {operation_id}"));
+        assert_eq!(route.rate_limit_tier, Some(RateLimitTier::AuthCritical));
+    }
+    for operation_id in [
+        "sandboxVolumes.list",
+        "sandboxVolumes.retrieve",
+        "sandboxGrants.list",
+        "sandboxGrants.retrieve",
+    ] {
+        let route = manifest
+            .routes()
+            .iter()
+            .find(|route| route.operation_id == operation_id)
+            .unwrap_or_else(|| panic!("sandbox admin route should exist: {operation_id}"));
+        assert_eq!(route.rate_limit_tier, None);
     }
 }

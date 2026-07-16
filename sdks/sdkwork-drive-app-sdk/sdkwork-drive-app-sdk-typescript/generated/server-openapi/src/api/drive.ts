@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ArchiveEntry, ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DrivePermission, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermission, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodePathResponse, PageInfo, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, QuotaSummary, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart } from '../types';
+import type { ArchiveEntry, ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DrivePermission, DriveSandboxEntry, DriveSandboxEntryListData, DriveSandboxFileContent, DriveSandboxMutationCommandData, DriveSandboxVolumeListData, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermission, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodePathResponse, PageInfo, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, PurgeDriveSandboxEntryRequest, QuotaSummary, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart } from '../types';
 
 
 export class DriveUploaderUploadsPartsApi {
@@ -193,6 +193,168 @@ async update(spaceId: string, body: UpdateSpaceRequest): Promise<DriveSpace> {
 
 async delete(spaceId: string): Promise<void> {
     return this.client.delete<void>(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}`));
+  }
+}
+
+export interface DriveSandboxFileContentsRetrieveParams {
+  logicalPath: string;
+  encoding?: 'utf8' | 'base64';
+}
+
+export interface DriveSandboxFileContentsUpdateParams {
+  ifMatch: string;
+  idempotencyKey: string;
+}
+
+export class DriveSandboxFileContentsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+async retrieve(sandboxId: string, entryId: string, params: DriveSandboxFileContentsRetrieveParams): Promise<DriveSandboxFileContent> {
+    const query = buildQueryString([
+      { name: 'logical_path', value: params.logicalPath, style: 'form', explode: true, allowReserved: false },
+      { name: 'encoding', value: params.encoding, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<DriveSandboxFileContent>(appendQueryString(appApiPath(`/drive/sandboxes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/files/${serializePathParameter(entryId, { name: 'entryId', style: 'simple', explode: false })}/content`), query));
+  }
+
+async update(sandboxId: string, entryId: string, body: UpdateDriveSandboxFileContentRequest, params: DriveSandboxFileContentsUpdateParams): Promise<DriveSandboxEntry> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'If-Match': { value: params.ifMatch, style: 'simple', explode: false },
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.put<DriveSandboxEntry>(appApiPath(`/drive/sandboxes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/files/${serializePathParameter(entryId, { name: 'entryId', style: 'simple', explode: false })}/content`), body, undefined, requestHeaders, 'application/json');
+  }
+}
+
+export interface DriveSandboxFilesCreateParams {
+  idempotencyKey: string;
+}
+
+export class DriveSandboxFilesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+async create(sandboxId: string, body: CreateDriveSandboxFileRequest, params: DriveSandboxFilesCreateParams): Promise<DriveSandboxEntry> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.post<DriveSandboxEntry>(appApiPath(`/drive/sandboxes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/files`), body, undefined, requestHeaders, 'application/json');
+  }
+}
+
+export interface DriveSandboxDirectoriesCreateParams {
+  idempotencyKey: string;
+}
+
+export class DriveSandboxDirectoriesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+async create(sandboxId: string, body: CreateDriveSandboxDirectoryRequest, params: DriveSandboxDirectoriesCreateParams): Promise<DriveSandboxEntry> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.post<DriveSandboxEntry>(appApiPath(`/drive/sandboxes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/directories`), body, undefined, requestHeaders, 'application/json');
+  }
+}
+
+export interface DriveSandboxEntriesListParams {
+  parentPath?: string;
+  cursor?: string;
+  pageSize?: number;
+}
+
+export interface DriveSandboxEntriesUpdateParams {
+  ifMatch: string;
+  idempotencyKey: string;
+}
+
+export interface DriveSandboxEntriesPurgeParams {
+  ifMatch: string;
+  idempotencyKey: string;
+}
+
+export class DriveSandboxEntriesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+async list(sandboxId: string, params?: DriveSandboxEntriesListParams): Promise<DriveSandboxEntryListData> {
+    const query = buildQueryString([
+      { name: 'parent_path', value: params?.parentPath, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<DriveSandboxEntryListData>(appendQueryString(appApiPath(`/drive/sandboxes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/entries`), query));
+  }
+
+async update(sandboxId: string, entryId: string, body: UpdateDriveSandboxEntryRequest, params: DriveSandboxEntriesUpdateParams): Promise<DriveSandboxEntry> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'If-Match': { value: params.ifMatch, style: 'simple', explode: false },
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.patch<DriveSandboxEntry>(appApiPath(`/drive/sandboxes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/entries/${serializePathParameter(entryId, { name: 'entryId', style: 'simple', explode: false })}`), body, undefined, requestHeaders, 'application/json');
+  }
+
+async purge(sandboxId: string, entryId: string, body: PurgeDriveSandboxEntryRequest, params: DriveSandboxEntriesPurgeParams): Promise<DriveSandboxMutationCommandData> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'If-Match': { value: params.ifMatch, style: 'simple', explode: false },
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.post<DriveSandboxMutationCommandData>(appApiPath(`/drive/sandboxes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/entries/${serializePathParameter(entryId, { name: 'entryId', style: 'simple', explode: false })}/purge`), body, undefined, requestHeaders, 'application/json');
+  }
+}
+
+export interface DriveSandboxesListParams {
+  page?: number;
+  pageSize?: number;
+}
+
+export class DriveSandboxesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+async list(params?: DriveSandboxesListParams): Promise<DriveSandboxVolumeListData> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<DriveSandboxVolumeListData>(appendQueryString(appApiPath(`/drive/sandboxes`), query));
   }
 }
 
@@ -820,6 +982,11 @@ export class DriveApi {
   public readonly recent: DriveRecentApi;
   public readonly search: DriveSearchApi;
   public readonly sharedWithMe: DriveSharedWithMeApi;
+  public readonly sandboxes: DriveSandboxesApi;
+  public readonly sandboxEntries: DriveSandboxEntriesApi;
+  public readonly sandboxDirectories: DriveSandboxDirectoriesApi;
+  public readonly sandboxFiles: DriveSandboxFilesApi;
+  public readonly sandboxFileContents: DriveSandboxFileContentsApi;
   public readonly spaces: DriveSpacesApi;
   public readonly moveDestinations: DriveMoveDestinationsApi;
   public readonly uploadSessions: DriveUploadSessionsApi;
@@ -845,6 +1012,11 @@ export class DriveApi {
     this.recent = new DriveRecentApi(client);
     this.search = new DriveSearchApi(client);
     this.sharedWithMe = new DriveSharedWithMeApi(client);
+    this.sandboxes = new DriveSandboxesApi(client);
+    this.sandboxEntries = new DriveSandboxEntriesApi(client);
+    this.sandboxDirectories = new DriveSandboxDirectoriesApi(client);
+    this.sandboxFiles = new DriveSandboxFilesApi(client);
+    this.sandboxFileContents = new DriveSandboxFileContentsApi(client);
     this.spaces = new DriveSpacesApi(client);
     this.moveDestinations = new DriveMoveDestinationsApi(client);
     this.uploadSessions = new DriveUploadSessionsApi(client);
@@ -1089,4 +1261,79 @@ function encodeQueryValue(value: string, allowReserved: boolean): string {
     .replace(/%2C/gi, ',')
     .replace(/%3B/gi, ';')
     .replace(/%3D/gi, '=');
+}
+function buildRequestHeaders(
+  headers: Record<string, HeaderParameterSpec | undefined>,
+  cookies: Record<string, HeaderParameterSpec | undefined> = {},
+): Record<string, string> | undefined {
+  const requestHeaders: Record<string, string> = {};
+
+  for (const [name, parameter] of Object.entries(headers)) {
+    const serialized = serializeParameterValue(parameter);
+    if (serialized !== undefined) {
+      requestHeaders[name] = serialized;
+    }
+  }
+
+  const cookieHeader = buildCookieHeader(cookies);
+  if (cookieHeader) {
+    requestHeaders.Cookie = requestHeaders.Cookie
+      ? `${requestHeaders.Cookie}; ${cookieHeader}`
+      : cookieHeader;
+  }
+
+  return Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined;
+}
+
+interface HeaderParameterSpec {
+  value: unknown;
+  style: string;
+  explode: boolean;
+  contentType?: string;
+}
+
+function buildCookieHeader(cookies: Record<string, HeaderParameterSpec | undefined>): string | undefined {
+  const pairs: string[] = [];
+  for (const [name, parameter] of Object.entries(cookies)) {
+    const serialized = serializeParameterValue(parameter);
+    if (serialized !== undefined) {
+      pairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(serialized)}`);
+    }
+  }
+  return pairs.length > 0 ? pairs.join('; ') : undefined;
+}
+
+function serializeParameterValue(parameter: HeaderParameterSpec | undefined): string | undefined {
+  const value = parameter?.value;
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (parameter?.contentType) {
+    return JSON.stringify(value);
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => serializeHeaderPrimitive(item)).join(',');
+  }
+  if (typeof value === 'object' && value !== null) {
+    return serializeHeaderObject(value as Record<string, unknown>, parameter?.explode === true);
+  }
+  return serializeHeaderPrimitive(value);
+}
+
+function serializeHeaderObject(value: Record<string, unknown>, explode: boolean): string {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
+  if (explode) {
+    return entries.map(([key, entryValue]) => `${key}=${serializeHeaderPrimitive(entryValue)}`).join(',');
+  }
+  return entries.flatMap(([key, entryValue]) => [key, serializeHeaderPrimitive(entryValue)]).join(',');
+}
+
+function serializeHeaderPrimitive(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  return String(value);
 }

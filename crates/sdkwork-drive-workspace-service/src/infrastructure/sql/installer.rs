@@ -65,6 +65,7 @@ pub async fn install_any_schema(pool: &AnyPool, engine: DatabaseEngine) -> Resul
                 upgrade_sqlite_dr_drive_node_share_link_access_code_column(pool).await?;
             }
             sqlx::raw_sql(SQLITE_CORE_SQL).execute(pool).await?;
+            validate_sqlite_sandbox_provider_rows(pool).await?;
             upgrade_sqlite_dr_drive_node_head_columns(pool).await?;
             upgrade_sqlite_dr_drive_node_share_link_access_code_column(pool).await?;
             upgrade_sqlite_dr_drive_domain_outbox_pending_dispatch_index(pool).await?;
@@ -77,6 +78,28 @@ pub async fn install_any_schema(pool: &AnyPool, engine: DatabaseEngine) -> Resul
         }
     }
     register_installed_database_engine(engine);
+    Ok(())
+}
+
+async fn validate_sqlite_sandbox_provider_rows(pool: &AnyPool) -> Result<(), sqlx::Error> {
+    if !sqlite_table_exists(pool, "dr_drive_sandbox_volume").await? {
+        return Ok(());
+    }
+    let unavailable_provider_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1)
+         FROM dr_drive_sandbox_volume
+         WHERE provider_kind != 'local_filesystem'",
+    )
+    .fetch_one(pool)
+    .await?;
+    if unavailable_provider_count > 0 {
+        return Err(sqlx::Error::Configuration(
+            format!(
+                "sandbox provider migration blocked: {unavailable_provider_count} volume(s) use providers without runtime adapters"
+            )
+            .into(),
+        ));
+    }
     Ok(())
 }
 

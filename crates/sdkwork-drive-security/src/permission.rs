@@ -11,6 +11,7 @@ pub const DRIVE_QUOTA_ADMIN_PERMISSION: &str = "drive.quota.admin";
 pub const DRIVE_LABELS_ADMIN_PERMISSION: &str = "drive.labels.admin";
 pub const DRIVE_SPACES_ADMIN_PERMISSION: &str = "drive.spaces.admin";
 pub const DRIVE_DOWNLOAD_PACKAGES_ADMIN_PERMISSION: &str = "drive.download_packages.admin";
+pub const DRIVE_SANDBOXES_ADMIN_PERMISSION: &str = "drive.sandboxes.admin";
 
 const BACKEND_CAPABILITY_PERMISSIONS: &[&str] = &[
     DRIVE_AUDIT_ADMIN_PERMISSION,
@@ -19,6 +20,7 @@ const BACKEND_CAPABILITY_PERMISSIONS: &[&str] = &[
     DRIVE_LABELS_ADMIN_PERMISSION,
     DRIVE_SPACES_ADMIN_PERMISSION,
     DRIVE_DOWNLOAD_PACKAGES_ADMIN_PERMISSION,
+    DRIVE_SANDBOXES_ADMIN_PERMISSION,
 ];
 
 pub fn has_drive_admin_privilege(context: &DriveAppContext) -> bool {
@@ -51,6 +53,12 @@ pub fn drive_backend_operation_required_permission(operation_id: &str) -> Option
         }
         operation_id if operation_id.starts_with("quotas.") => Some(DRIVE_QUOTA_ADMIN_PERMISSION),
         operation_id if operation_id.starts_with("labels.") => Some(DRIVE_LABELS_ADMIN_PERMISSION),
+        operation_id
+            if operation_id.starts_with("sandboxVolumes.")
+                || operation_id.starts_with("sandboxGrants.") =>
+        {
+            Some(DRIVE_SANDBOXES_ADMIN_PERMISSION)
+        }
         _ => None,
     }
 }
@@ -177,5 +185,26 @@ mod tests {
             can_access_drive_admin_storage(&context),
             can_access_drive_storage_admin(&context),
         );
+    }
+
+    #[test]
+    fn sandbox_scope_is_limited_to_sandbox_admin_operations() {
+        let context = context_with_scopes(&[DRIVE_SANDBOXES_ADMIN_PERMISSION]);
+        assert!(can_invoke_drive_backend_operation(
+            &context,
+            "sandboxVolumes.create"
+        ));
+        assert!(can_invoke_drive_backend_operation(
+            &context,
+            "sandboxGrants.delete"
+        ));
+        assert!(!can_invoke_drive_backend_operation(
+            &context,
+            "quotas.update"
+        ));
+        assert!(!can_invoke_drive_storage_operation(
+            &context,
+            "storageProviders.list"
+        ));
     }
 }

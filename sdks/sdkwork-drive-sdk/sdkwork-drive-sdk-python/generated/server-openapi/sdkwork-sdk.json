@@ -6,7 +6,7 @@
   "sdkType": "custom",
   "packageName": "sdkwork-drive-sdk-generated-python",
   "transportPackageName": "sdkwork-drive-sdk-generated-python",
-  "consumerPackageName": "@sdkwork/drive-sdk",
+  "consumerPackageName": "sdkwork-drive-sdk-generated-python",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

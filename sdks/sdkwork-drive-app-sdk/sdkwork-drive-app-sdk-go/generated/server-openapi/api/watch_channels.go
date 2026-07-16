@@ -18,27 +18,27 @@ func NewWatchChannelsApi(client *sdkhttp.Client) *WatchChannelsApi {
 }
 
 // Create a push notification channel for Drive changes
-func (a *WatchChannelsApi) ChangesWatch(body sdktypes.CreateWatchChannelRequest) (sdktypes.ChangesWatchResponse, error) {
+func (a *WatchChannelsApi) ChangesWatch(body sdktypes.CreateWatchChannelRequest) (sdktypes.DriveWatchChannelHttpResponse, error) {
     raw, err := a.client.Post(AppApiPath("/drive/changes/watch"), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.ChangesWatchResponse
+        var zero sdktypes.DriveWatchChannelHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.ChangesWatchResponse](raw)
+    return decodeResult[sdktypes.DriveWatchChannelHttpResponse](raw)
 }
 
 // Create a push notification channel for a Drive node
-func (a *WatchChannelsApi) NodesWatch(nodeId string, body sdktypes.CreateWatchChannelRequest) (sdktypes.NodesWatchResponse, error) {
+func (a *WatchChannelsApi) NodesWatch(nodeId string, body sdktypes.CreateWatchChannelRequest) (sdktypes.DriveWatchChannelHttpResponse, error) {
     raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/drive/nodes/%s/watch", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.NodesWatchResponse
+        var zero sdktypes.DriveWatchChannelHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.NodesWatchResponse](raw)
+    return decodeResult[sdktypes.DriveWatchChannelHttpResponse](raw)
 }
 
 // List Drive watch channels
-func (a *WatchChannelsApi) List(resourceType *string, lifecycleStatus *string, pageSize *int, cursor *string) (sdktypes.WatchChannelsListResponse, error) {
+func (a *WatchChannelsApi) List(resourceType *string, lifecycleStatus *string, pageSize *int, cursor *string) (sdktypes.DriveWatchChannelListHttpResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "resourceType", Value: func() interface{} { if resourceType == nil { return nil }; return *resourceType }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "lifecycleStatus", Value: func() interface{} { if lifecycleStatus == nil { return nil }; return *lifecycleStatus }(), Style: "form", Explode: true, AllowReserved: false},
@@ -47,30 +47,30 @@ func (a *WatchChannelsApi) List(resourceType *string, lifecycleStatus *string, p
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath("/drive/watch_channels"), query), nil, nil)
     if err != nil {
-        var zero sdktypes.WatchChannelsListResponse
+        var zero sdktypes.DriveWatchChannelListHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.WatchChannelsListResponse](raw)
+    return decodeResult[sdktypes.DriveWatchChannelListHttpResponse](raw)
 }
 
 // Get a Drive watch channel
-func (a *WatchChannelsApi) Retrieve(channelId string) (sdktypes.WatchChannelsRetrieveResponse, error) {
+func (a *WatchChannelsApi) Retrieve(channelId string) (sdktypes.DriveWatchChannelHttpResponse, error) {
     raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/drive/watch_channels/%s", SerializePathParameter(channelId, PathParameterSpec{Name: "channelId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.WatchChannelsRetrieveResponse
+        var zero sdktypes.DriveWatchChannelHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.WatchChannelsRetrieveResponse](raw)
+    return decodeResult[sdktypes.DriveWatchChannelHttpResponse](raw)
 }
 
 // Stop a Drive watch channel
-func (a *WatchChannelsApi) Stop(channelId string, body sdktypes.StopWatchChannelRequest) (sdktypes.WatchChannelsStopResponse, error) {
+func (a *WatchChannelsApi) Stop(channelId string, body sdktypes.StopWatchChannelRequest) (sdktypes.StopWatchChannelHttpResponse, error) {
     raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/drive/watch_channels/%s/stop", SerializePathParameter(channelId, PathParameterSpec{Name: "channelId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.WatchChannelsStopResponse
+        var zero sdktypes.StopWatchChannelHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.WatchChannelsStopResponse](raw)
+    return decodeResult[sdktypes.StopWatchChannelHttpResponse](raw)
 }
 
 type PathParameterSpec struct {

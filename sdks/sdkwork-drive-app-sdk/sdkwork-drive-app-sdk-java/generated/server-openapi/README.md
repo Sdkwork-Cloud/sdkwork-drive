@@ -35,7 +35,7 @@ public class Main {
 client.setAccessToken("your-access-token");
 
         // Use the SDK
-        QuotasRetrieveResponse result = client.getDrive().quotasRetrieve();
+        QuotaSummaryHttpResponse result = client.getDrive().quotasRetrieve();
         System.out.println(result);
     }
 }
@@ -74,7 +74,7 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 
 ```java
 // GET /app/v3/api/drive/quotas/summary
-QuotasRetrieveResponse result = client.getDrive().quotasRetrieve();
+QuotaSummaryHttpResponse result = client.getDrive().quotasRetrieve();
 System.out.println(result);
 ```
 
@@ -87,7 +87,7 @@ Map<String, Object> params = new LinkedHashMap<>();
 params.put("labelKey", "labelkey");
 params.put("page_size", 2);
 params.put("cursor", "cursor");
-NodeLabelsListResponse result = client.getNodeLabels().list(nodeId, params);
+NodeLabelListHttpResponse result = client.getNodeLabels().list(nodeId, params);
 System.out.println(result);
 ```
 
@@ -100,7 +100,7 @@ Map<String, Object> params = new LinkedHashMap<>();
 params.put("visibility", "private");
 params.put("page_size", 2);
 params.put("cursor", "cursor");
-NodePropertiesListResponse result = client.getNodeProperties().list(nodeId, params);
+DriveNodePropertyListHttpResponse result = client.getNodeProperties().list(nodeId, params);
 System.out.println(result);
 ```
 
@@ -114,7 +114,7 @@ body.setSpaceId("1");
 body.setParentNodeId("1");
 body.setNodeName("name");
 body.setTargetNodeId("1");
-NodesShortcutsCreateResponse201 result = client.getNodes().shortcutsCreate(body);
+DriveNodeHttpResponse result = client.getNodes().shortcutsCreate(body);
 System.out.println(result);
 ```
 
@@ -127,7 +127,7 @@ params.put("resourceType", "changes");
 params.put("lifecycleStatus", "active");
 params.put("page_size", 3);
 params.put("cursor", "cursor");
-WatchChannelsListResponse result = client.getWatchChannels().list(params);
+DriveWatchChannelListHttpResponse result = client.getWatchChannels().list(params);
 System.out.println(result);
 ```
 
@@ -138,7 +138,7 @@ System.out.println(result);
 Map<String, Object> params = new LinkedHashMap<>();
 params.put("cursor", "cursor");
 params.put("page_size", 2);
-AssetCollectionsListResponse result = client.getAssets().assetCollectionsList(params);
+AssetCollectionListHttpResponse result = client.getAssets().assetCollectionsList(params);
 System.out.println(result);
 ```
 
@@ -146,7 +146,7 @@ System.out.println(result);
 
 ```java
 try {
-    QuotasRetrieveResponse result = client.getDrive().quotasRetrieve();
+    QuotaSummaryHttpResponse result = client.getDrive().quotasRetrieve();
     System.out.println(result);
 } catch (Exception e) {
     System.err.println("Error: " + e.getMessage());

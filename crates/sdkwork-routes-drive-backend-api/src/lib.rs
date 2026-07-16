@@ -14,6 +14,8 @@ mod mappers;
 mod rate_limit;
 mod response;
 mod routes;
+mod sandbox_admin_dto;
+mod sandbox_admin_handlers;
 mod space_quota_handlers;
 mod state;
 mod tenant_context;

@@ -9,6 +9,7 @@ use sdkwork_drive_workspace_service::infrastructure::sql::audit_store::SqlAuditS
 
 pub(crate) async fn record_label_audit(
     state: &BackendState,
+    tenant_id: &str,
     action: &str,
     label_id: &str,
     operator_id: &str,
@@ -16,6 +17,7 @@ pub(crate) async fn record_label_audit(
     let (request_id, trace_id) = current_audit_correlation();
     record_audit_event(
         state,
+        tenant_id,
         action,
         "label",
         label_id,
@@ -28,6 +30,7 @@ pub(crate) async fn record_label_audit(
 
 pub(crate) async fn record_maintenance_audit(
     state: &BackendState,
+    tenant_id: &str,
     action: &str,
     operator_id: &str,
     request_id: Option<String>,
@@ -35,6 +38,7 @@ pub(crate) async fn record_maintenance_audit(
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     record_audit_event(
         state,
+        tenant_id,
         action,
         "maintenance",
         "maintenance",
@@ -47,6 +51,7 @@ pub(crate) async fn record_maintenance_audit(
 
 pub(crate) async fn record_audit_event(
     state: &BackendState,
+    tenant_id: &str,
     action: &str,
     resource_type: &str,
     resource_id: &str,
@@ -61,7 +66,7 @@ pub(crate) async fn record_audit_event(
     let audit_service = DriveAuditService::new(SqlAuditStore::new(state.pool.clone()));
     audit_service
         .record_event(RecordAuditEventCommand {
-            tenant_id: "0".to_string(),
+            tenant_id: tenant_id.to_string(),
             action: action.to_string(),
             resource_type: resource_type.to_string(),
             resource_id: resource_id.to_string(),

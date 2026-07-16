@@ -10,8 +10,8 @@
     "sqlite"
   ],
   "defaultEngine": "postgres",
-  "tablePrefix": "drive_",
-  "contractVersion": "1.0.0",
+  "tablePrefix": "dr_",
+  "contractVersion": "1.1.0",
   "baselineStrategy": "baseline-plus-migrations",
   "modules": [],
   "lifecycle": {

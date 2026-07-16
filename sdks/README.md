@@ -24,7 +24,7 @@ under each SDK family directory; do not hand-edit generated files.
 
 ## Allowed Content
 
-- SDK family directories with `.sdkwork-assembly.json` manifests.
+- SDK family directories with `sdk-manifest.json` manifests.
 - Generated language workspaces (e.g., `sdkwork-drive-app-sdk-typescript/`).
 - Composed facade packages that wrap generated clients.
 - SDK generation manifests and derived OpenAPI inputs.

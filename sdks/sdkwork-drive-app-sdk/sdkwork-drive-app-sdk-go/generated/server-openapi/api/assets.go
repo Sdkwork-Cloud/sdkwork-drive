@@ -18,7 +18,7 @@ func NewAssetsApi(client *sdkhttp.Client) *AssetsApi {
 }
 
 // List global assets
-func (a *AssetsApi) List(cursor *string, pageSize *int, kind *string, sourceType *string, q *string) (sdktypes.AssetsListResponse, error) {
+func (a *AssetsApi) List(cursor *string, pageSize *int, kind *string, sourceType *string, q *string) (sdktypes.AssetListHttpResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
@@ -28,94 +28,94 @@ func (a *AssetsApi) List(cursor *string, pageSize *int, kind *string, sourceType
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath("/assets"), query), nil, nil)
     if err != nil {
-        var zero sdktypes.AssetsListResponse
+        var zero sdktypes.AssetListHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetsListResponse](raw)
+    return decodeResult[sdktypes.AssetListHttpResponse](raw)
 }
 
 // Create a global asset metadata record
-func (a *AssetsApi) Create(body sdktypes.CreateAssetRequest) (sdktypes.AssetsCreateResponse201, error) {
+func (a *AssetsApi) Create(body sdktypes.CreateAssetRequest) (sdktypes.AssetItemHttpResponse, error) {
     raw, err := a.client.Post(AppApiPath("/assets"), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetsCreateResponse201
+        var zero sdktypes.AssetItemHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetsCreateResponse201](raw)
+    return decodeResult[sdktypes.AssetItemHttpResponse](raw)
 }
 
 // Get a global asset
-func (a *AssetsApi) Retrieve(assetId string) (sdktypes.AssetsRetrieveResponse, error) {
+func (a *AssetsApi) Retrieve(assetId string) (sdktypes.AssetItemHttpResponse, error) {
     raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/assets/%s", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
-        var zero sdktypes.AssetsRetrieveResponse
+        var zero sdktypes.AssetItemHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetsRetrieveResponse](raw)
+    return decodeResult[sdktypes.AssetItemHttpResponse](raw)
 }
 
 // Update a global asset
-func (a *AssetsApi) Update(assetId string, body sdktypes.UpdateAssetRequest) (sdktypes.AssetsUpdateResponse, error) {
+func (a *AssetsApi) Update(assetId string, body sdktypes.UpdateAssetRequest) (sdktypes.AssetItemHttpResponse, error) {
     raw, err := a.client.Patch(AppApiPath(fmt.Sprintf("/assets/%s", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetsUpdateResponse
+        var zero sdktypes.AssetItemHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetsUpdateResponse](raw)
+    return decodeResult[sdktypes.AssetItemHttpResponse](raw)
 }
 
 // Archive a global asset
-func (a *AssetsApi) Archive(assetId string, body sdktypes.AssetActionRequest) (sdktypes.AssetsArchiveResponse, error) {
+func (a *AssetsApi) Archive(assetId string, body sdktypes.AssetActionRequest) (sdktypes.AssetItemHttpResponse, error) {
     raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/%s/archive", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetsArchiveResponse
+        var zero sdktypes.AssetItemHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetsArchiveResponse](raw)
+    return decodeResult[sdktypes.AssetItemHttpResponse](raw)
 }
 
 // Restore an archived global asset
-func (a *AssetsApi) Restore(assetId string, body sdktypes.AssetActionRequest) (sdktypes.AssetsRestoreResponse, error) {
+func (a *AssetsApi) Restore(assetId string, body sdktypes.AssetActionRequest) (sdktypes.AssetItemHttpResponse, error) {
     raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/%s/restore", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetsRestoreResponse
+        var zero sdktypes.AssetItemHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetsRestoreResponse](raw)
+    return decodeResult[sdktypes.AssetItemHttpResponse](raw)
 }
 
 // List asset collections
-func (a *AssetsApi) AssetCollectionsList(cursor *string, pageSize *int) (sdktypes.AssetCollectionsListResponse, error) {
+func (a *AssetsApi) AssetCollectionsList(cursor *string, pageSize *int) (sdktypes.AssetCollectionListHttpResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath("/assets/collections"), query), nil, nil)
     if err != nil {
-        var zero sdktypes.AssetCollectionsListResponse
+        var zero sdktypes.AssetCollectionListHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetCollectionsListResponse](raw)
+    return decodeResult[sdktypes.AssetCollectionListHttpResponse](raw)
 }
 
 // Create an asset collection
-func (a *AssetsApi) AssetCollectionsCreate(body sdktypes.CreateAssetCollectionRequest) (sdktypes.AssetCollectionsCreateResponse201, error) {
+func (a *AssetsApi) AssetCollectionsCreate(body sdktypes.CreateAssetCollectionRequest) (sdktypes.AssetCollectionHttpResponse, error) {
     raw, err := a.client.Post(AppApiPath("/assets/collections"), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetCollectionsCreateResponse201
+        var zero sdktypes.AssetCollectionHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetCollectionsCreateResponse201](raw)
+    return decodeResult[sdktypes.AssetCollectionHttpResponse](raw)
 }
 
 // Add an asset to a collection
-func (a *AssetsApi) AssetCollectionItemsCreate(collectionId string, body sdktypes.CreateAssetCollectionItemRequest) (sdktypes.AssetCollectionItemsCreateResponse201, error) {
+func (a *AssetsApi) AssetCollectionItemsCreate(collectionId string, body sdktypes.CreateAssetCollectionItemRequest) (sdktypes.AssetCollectionItemHttpResponse, error) {
     raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/collections/%s/items", SerializePathParameter(collectionId, PathParameterSpec{Name: "collectionId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetCollectionItemsCreateResponse201
+        var zero sdktypes.AssetCollectionItemHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetCollectionItemsCreateResponse201](raw)
+    return decodeResult[sdktypes.AssetCollectionItemHttpResponse](raw)
 }
 
 // Remove an asset from a collection
@@ -129,13 +129,13 @@ func (a *AssetsApi) AssetCollectionItemsDelete(collectionId string, itemId strin
 }
 
 // Create an asset relation
-func (a *AssetsApi) AssetRelationsCreate(assetId string, body sdktypes.CreateAssetRelationRequest) (sdktypes.AssetRelationsCreateResponse201, error) {
+func (a *AssetsApi) AssetRelationsCreate(assetId string, body sdktypes.CreateAssetRelationRequest) (sdktypes.AssetRelationHttpResponse, error) {
     raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/assets/%s/relations", SerializePathParameter(assetId, PathParameterSpec{Name: "assetId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.AssetRelationsCreateResponse201
+        var zero sdktypes.AssetRelationHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.AssetRelationsCreateResponse201](raw)
+    return decodeResult[sdktypes.AssetRelationHttpResponse](raw)
 }
 
 // Delete an asset relation

@@ -6,11 +6,14 @@ use crate::dto::{
 use crate::error::{map_service_error, service_error_kind, ProblemDetail};
 use crate::response::{success_offset_list_page, DriveListHttpResponse};
 use crate::state::BackendState;
+use crate::tenant_context::authenticated_tenant_id;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
+use axum::Extension;
 use axum::Json;
 use sdkwork_drive_contract::drive::domain_events::admin_audit;
 use sdkwork_drive_observability::{elapsed_ms, events, has_value, start_timer};
+use sdkwork_drive_security::DriveAppContext;
 use sdkwork_drive_workspace_service::application::maintenance_service::{
     DriveMaintenanceService, ListMaintenanceJobsCommand, SweepAbandonedUploadTasksCommand,
     SweepExpiredUploadContentCommand, SweepObjectStoreCommand, SweepUploadSessionsCommand,
@@ -21,8 +24,10 @@ use sdkwork_utils_rust::MAX_LIST_PAGE_SIZE;
 
 pub(crate) async fn sweep_object_store(
     State(state): State<BackendState>,
+    Extension(context): Extension<DriveAppContext>,
     Json(payload): Json<SweepObjectStoreRequest>,
 ) -> Result<Json<SweepResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = authenticated_tenant_id(&context);
     let started = start_timer();
     let service = DriveMaintenanceService::new(SqlMaintenanceStore::new(state.pool.clone()));
     let result = service
@@ -40,6 +45,7 @@ pub(crate) async fn sweep_object_store(
             let latency_ms = elapsed_ms(started);
             record_maintenance_audit(
                 &state,
+                &tenant_id,
                 admin_audit::maintenance::OBJECT_SWEEP_EXECUTED,
                 &payload.operator_id,
                 payload.request_id.clone(),
@@ -70,6 +76,7 @@ pub(crate) async fn sweep_object_store(
             let error_kind = service_error_kind(&error);
             let _ = record_maintenance_audit(
                 &state,
+                &tenant_id,
                 admin_audit::maintenance::OBJECT_SWEEP_FAILED,
                 &payload.operator_id,
                 payload.request_id.clone(),
@@ -94,8 +101,10 @@ pub(crate) async fn sweep_object_store(
 
 pub(crate) async fn sweep_upload_sessions(
     State(state): State<BackendState>,
+    Extension(context): Extension<DriveAppContext>,
     Json(payload): Json<SweepUploadSessionsRequest>,
 ) -> Result<Json<SweepResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = authenticated_tenant_id(&context);
     let started = start_timer();
     let service = DriveMaintenanceService::new(SqlMaintenanceStore::new(state.pool.clone()));
     let result = service
@@ -114,6 +123,7 @@ pub(crate) async fn sweep_upload_sessions(
             let latency_ms = elapsed_ms(started);
             record_maintenance_audit(
                 &state,
+                &tenant_id,
                 admin_audit::maintenance::UPLOAD_SESSION_SWEEP_EXECUTED,
                 &payload.operator_id,
                 payload.request_id.clone(),
@@ -145,6 +155,7 @@ pub(crate) async fn sweep_upload_sessions(
             let error_kind = service_error_kind(&error);
             let _ = record_maintenance_audit(
                 &state,
+                &tenant_id,
                 admin_audit::maintenance::UPLOAD_SESSION_SWEEP_FAILED,
                 &payload.operator_id,
                 payload.request_id.clone(),
@@ -170,8 +181,10 @@ pub(crate) async fn sweep_upload_sessions(
 
 pub(crate) async fn sweep_expired_upload_content(
     State(state): State<BackendState>,
+    Extension(context): Extension<DriveAppContext>,
     Json(payload): Json<SweepUploadSessionsRequest>,
 ) -> Result<Json<SweepResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = authenticated_tenant_id(&context);
     let started = start_timer();
     let service = DriveMaintenanceService::new(SqlMaintenanceStore::new(state.pool.clone()));
     let result = service
@@ -190,6 +203,7 @@ pub(crate) async fn sweep_expired_upload_content(
             let latency_ms = elapsed_ms(started);
             record_maintenance_audit(
                 &state,
+                &tenant_id,
                 admin_audit::maintenance::EXPIRED_UPLOAD_CONTENT_SWEEP_EXECUTED,
                 &payload.operator_id,
                 payload.request_id.clone(),
@@ -221,6 +235,7 @@ pub(crate) async fn sweep_expired_upload_content(
             let error_kind = service_error_kind(&error);
             let _ = record_maintenance_audit(
                 &state,
+                &tenant_id,
                 admin_audit::maintenance::EXPIRED_UPLOAD_CONTENT_SWEEP_FAILED,
                 &payload.operator_id,
                 payload.request_id.clone(),
@@ -246,8 +261,10 @@ pub(crate) async fn sweep_expired_upload_content(
 
 pub(crate) async fn sweep_abandoned_upload_tasks(
     State(state): State<BackendState>,
+    Extension(context): Extension<DriveAppContext>,
     Json(payload): Json<SweepUploadSessionsRequest>,
 ) -> Result<Json<SweepResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = authenticated_tenant_id(&context);
     let started = start_timer();
     let service = DriveMaintenanceService::new(SqlMaintenanceStore::new(state.pool.clone()));
     let result = service
@@ -266,6 +283,7 @@ pub(crate) async fn sweep_abandoned_upload_tasks(
             let latency_ms = elapsed_ms(started);
             record_maintenance_audit(
                 &state,
+                &tenant_id,
                 admin_audit::maintenance::ABANDONED_UPLOAD_TASK_SWEEP_EXECUTED,
                 &payload.operator_id,
                 payload.request_id.clone(),
@@ -297,6 +315,7 @@ pub(crate) async fn sweep_abandoned_upload_tasks(
             let error_kind = service_error_kind(&error);
             let _ = record_maintenance_audit(
                 &state,
+                &tenant_id,
                 admin_audit::maintenance::ABANDONED_UPLOAD_TASK_SWEEP_FAILED,
                 &payload.operator_id,
                 payload.request_id.clone(),

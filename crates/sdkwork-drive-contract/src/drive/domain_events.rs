@@ -167,6 +167,20 @@ pub mod admin_audit {
     pub mod quota {
         pub const UPDATED: &str = "drive.quota.updated";
     }
+
+    /// Server sandbox volume administration mutations (backend-api).
+    pub mod sandbox_volume {
+        pub const CREATED: &str = "drive.sandbox_volume.created";
+        pub const UPDATED: &str = "drive.sandbox_volume.updated";
+        pub const DELETED: &str = "drive.sandbox_volume.deleted";
+    }
+
+    /// Explicit server sandbox grant administration mutations (backend-api).
+    pub mod sandbox_grant {
+        pub const CREATED: &str = "drive.sandbox_grant.created";
+        pub const UPDATED: &str = "drive.sandbox_grant.updated";
+        pub const DELETED: &str = "drive.sandbox_grant.deleted";
+    }
 }
 
 #[cfg(test)]
@@ -249,6 +263,12 @@ mod tests {
         admin_audit::maintenance::ABANDONED_UPLOAD_TASK_SWEEP_EXECUTED,
         admin_audit::maintenance::ABANDONED_UPLOAD_TASK_SWEEP_FAILED,
         admin_audit::quota::UPDATED,
+        admin_audit::sandbox_volume::CREATED,
+        admin_audit::sandbox_volume::UPDATED,
+        admin_audit::sandbox_volume::DELETED,
+        admin_audit::sandbox_grant::CREATED,
+        admin_audit::sandbox_grant::UPDATED,
+        admin_audit::sandbox_grant::DELETED,
     ];
 
     #[test]

@@ -1240,6 +1240,12 @@ fn assert_dual_token_security_contract_for_prefix(openapi: &Value, label: &str, 
             continue;
         }
         for (method, operation) in path_item.as_object().expect("path item should be object") {
+            if !matches!(
+                method.as_str(),
+                "get" | "put" | "post" | "delete" | "options" | "head" | "patch" | "trace"
+            ) {
+                continue;
+            }
             let security = operation
                 .get("security")
                 .and_then(Value::as_array)

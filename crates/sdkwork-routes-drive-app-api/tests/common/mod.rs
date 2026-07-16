@@ -136,6 +136,28 @@ pub fn authed_post_json(
         .expect("authed post request should be built")
 }
 
+pub fn authed_idempotent_post_json(
+    uri: impl AsRef<str>,
+    tenant: &str,
+    user: &str,
+    app_id: &str,
+    idempotency_key: &str,
+    body: impl Into<Body>,
+) -> Request<Body> {
+    Request::builder()
+        .method(Method::POST)
+        .uri(uri.as_ref())
+        .header(
+            "authorization",
+            format!("Bearer {}", auth_token(tenant, user, app_id)),
+        )
+        .header("access-token", access_token(tenant, user, app_id))
+        .header("idempotency-key", idempotency_key)
+        .header("content-type", "application/json")
+        .body(body.into())
+        .expect("authed idempotent post request should be built")
+}
+
 pub fn envelope_item(payload: &serde_json::Value) -> &serde_json::Value {
     if let Some(item) = payload.pointer("/data/item") {
         return item;

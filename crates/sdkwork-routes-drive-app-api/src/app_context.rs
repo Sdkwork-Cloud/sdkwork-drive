@@ -14,6 +14,7 @@ pub(crate) struct DriveRequestContext {
     pub(crate) actor_id: String,
     pub(crate) subject_type: String,
     pub(crate) subject_id: String,
+    pub(crate) request_id: String,
     pub(crate) trace_id: String,
     from_token: bool,
 }
@@ -28,6 +29,7 @@ impl DriveRequestContext {
             actor_id: app_context.actor_id.clone(),
             subject_type: app_context.actor_kind.clone(),
             subject_id: app_context.user_id.clone(),
+            request_id: app_context.request_id.clone(),
             trace_id: app_context.trace_id.clone(),
             from_token: true,
         }
@@ -210,6 +212,7 @@ mod tests {
             actor_id: "user-001".to_string(),
             subject_type: "user".to_string(),
             subject_id: "user-001".to_string(),
+            request_id: "request-001".to_string(),
             trace_id: "trace-001".to_string(),
             from_token: true,
         };
@@ -227,6 +230,7 @@ mod tests {
             actor_id: "user-001".to_string(),
             subject_type: "user".to_string(),
             subject_id: "user-001".to_string(),
+            request_id: "request-001".to_string(),
             trace_id: "trace-001".to_string(),
             from_token: false,
         };
@@ -245,6 +249,7 @@ mod tests {
             actor_id: "user-001".to_string(),
             subject_type: "user".to_string(),
             subject_id: "user-001".to_string(),
+            request_id: "request-001".to_string(),
             trace_id: "trace-001".to_string(),
             from_token: true,
         };
@@ -264,6 +269,7 @@ mod tests {
             actor_id: "user-001".to_string(),
             subject_type: "user".to_string(),
             subject_id: "user-001".to_string(),
+            request_id: "request-001".to_string(),
             trace_id: "trace-001".to_string(),
             from_token: true,
         };
@@ -287,6 +293,7 @@ mod tests {
             actor_id: "user-001".to_string(),
             subject_type: "user".to_string(),
             subject_id: "user-001".to_string(),
+            request_id: "request-001".to_string(),
             trace_id: "trace-001".to_string(),
             from_token: false,
         };

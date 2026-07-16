@@ -6,7 +6,7 @@
   "sdkType": "backend",
   "packageName": "sdkwork-drive-backend-sdk-generated-python",
   "transportPackageName": "sdkwork-drive-backend-sdk-generated-python",
-  "consumerPackageName": "@sdkwork/drive-backend-sdk",
+  "consumerPackageName": "sdkwork-drive-backend-sdk-generated-python",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

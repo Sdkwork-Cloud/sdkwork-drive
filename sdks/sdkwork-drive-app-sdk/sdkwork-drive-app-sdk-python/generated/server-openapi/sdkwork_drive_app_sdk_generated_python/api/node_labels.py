@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import ApplyNodeLabelRequest, NodeLabelsListResponse, NodeLabelsUpdateResponse
+from ..models import ApplyNodeLabelRequest, NodeLabelHttpResponse, NodeLabelListHttpResponse
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -191,7 +191,7 @@ class NodeLabelsApi:
         self._client = client
 
 
-    def list(self, node_id: str, label_key: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> NodeLabelsListResponse:
+    def list(self, node_id: str, label_key: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> NodeLabelListHttpResponse:
         """List labels applied to a node"""
         query = build_query_string([
             {'name': 'labelKey', 'value': label_key, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -200,7 +200,7 @@ class NodeLabelsApi:
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/labels", query))
 
-    def update(self, node_id: str, label_id: str, body: ApplyNodeLabelRequest) -> NodeLabelsUpdateResponse:
+    def update(self, node_id: str, label_id: str, body: ApplyNodeLabelRequest) -> NodeLabelHttpResponse:
         """Apply a label to a node"""
         return self._client.put(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}", json=body)
 

@@ -1984,6 +1984,18 @@ assertSchemaPropertyEnum(
   ["completed", "failed"],
   "backend openapi",
 );
+assertSchemaPropertyExists(
+  backendOpenapi,
+  "SandboxVolume",
+  "providerRootRef",
+  "backend openapi",
+);
+assertSchemaPropertyAbsent(
+  appOpenapi,
+  "DriveSandboxVolume",
+  "providerRootRef",
+  "app openapi",
+);
 for (const schemaName of ["SweepObjectStoreRequest", "SweepUploadSessionsRequest"]) {
   if (!isSdkExportGate) {
     assertSchemaPropertyStringConstraints(
@@ -2152,6 +2164,7 @@ for (const [pathKey, label] of [
 }
 for (const pathKey of [
   "/backend/v3/api/drive/labels/{labelId}",
+  "/backend/v3/api/drive/sandbox_volumes/{sandboxId}/grants/{grantId}",
 ]) {
   assertNoContentResponse(backendOpenapi, pathKey, "delete", "backend openapi");
 }
@@ -2353,6 +2366,14 @@ assertOperationIdsInclude(
     "maintenance.abandonedUploadTaskSweep",
     "spaces.admin.list",
     "downloadPackages.list",
+    "sandboxVolumes.list",
+    "sandboxVolumes.create",
+    "sandboxVolumes.retrieve",
+    "sandboxVolumes.update",
+    "sandboxGrants.list",
+    "sandboxGrants.create",
+    "sandboxGrants.update",
+    "sandboxGrants.delete",
   ],
   "backend openapi",
 );

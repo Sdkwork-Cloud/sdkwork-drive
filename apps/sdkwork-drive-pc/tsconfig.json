@@ -28,6 +28,9 @@
       "sdkwork-drive-pc-file": [
         "./packages/sdkwork-drive-pc-file/src"
       ],
+      "sdkwork-drive-pc-sandbox-explorer": [
+        "./packages/sdkwork-drive-pc-sandbox-explorer/src"
+      ],
       "sdkwork-drive-pc-transfer": [
         "./packages/sdkwork-drive-pc-transfer/src"
       ],

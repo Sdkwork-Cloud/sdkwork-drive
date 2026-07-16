@@ -1,13 +1,14 @@
 use axum::Json;
 use sdkwork_utils_rust::{
     offset_list_page_data, OffsetListPageParams, PageInfo, PageMode, SdkWorkApiResponse,
-    SdkWorkPageData,
+    SdkWorkPageData, SdkWorkResourceData,
 };
 use serde::Serialize;
 
 use crate::dto::OffsetPage;
 
 pub(crate) type DriveListHttpResponse<T> = Json<SdkWorkApiResponse<SdkWorkPageData<T>>>;
+pub(crate) type DriveResourceHttpResponse<T> = Json<SdkWorkApiResponse<SdkWorkResourceData<T>>>;
 
 pub(crate) fn current_trace_id() -> String {
     sdkwork_drive_http::problem_correlation::current_problem_correlation().trace_id
@@ -15,6 +16,13 @@ pub(crate) fn current_trace_id() -> String {
 
 pub(crate) fn no_content() -> axum::http::StatusCode {
     axum::http::StatusCode::NO_CONTENT
+}
+
+pub(crate) fn success_resource<T: Serialize>(item: T) -> DriveResourceHttpResponse<T> {
+    Json(SdkWorkApiResponse::success(
+        SdkWorkResourceData { item },
+        current_trace_id(),
+    ))
 }
 
 pub(crate) fn page_info_from_offset_token(

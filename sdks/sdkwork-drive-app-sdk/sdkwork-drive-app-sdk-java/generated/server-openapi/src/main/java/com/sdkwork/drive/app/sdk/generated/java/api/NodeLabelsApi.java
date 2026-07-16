@@ -14,20 +14,20 @@ public class NodeLabelsApi {
     }
 
     /** List labels applied to a node */
-    public NodeLabelsListResponse list(String nodeId, String labelKey, Integer pageSize, String cursor) throws Exception {
+    public NodeLabelListHttpResponse list(String nodeId, String labelKey, Integer pageSize, String cursor) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("labelKey", labelKey, "form", true, false, null),
             new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
             new QueryParameterSpec("cursor", cursor, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/labels"), query));
-        return client.convertValue(raw, new TypeReference<NodeLabelsListResponse>() {});
+        return client.convertValue(raw, new TypeReference<NodeLabelListHttpResponse>() {});
     }
 
     /** Apply a label to a node */
-    public NodeLabelsUpdateResponse update(String nodeId, String labelId, ApplyNodeLabelRequest body) throws Exception {
+    public NodeLabelHttpResponse update(String nodeId, String labelId, ApplyNodeLabelRequest body) throws Exception {
         Object raw = client.put(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<NodeLabelsUpdateResponse>() {});
+        return client.convertValue(raw, new TypeReference<NodeLabelHttpResponse>() {});
     }
 
     /** Remove a label from a node */

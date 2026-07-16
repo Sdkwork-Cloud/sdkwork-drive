@@ -18,7 +18,7 @@ func NewNodeLabelsApi(client *sdkhttp.Client) *NodeLabelsApi {
 }
 
 // List labels applied to a node
-func (a *NodeLabelsApi) List(nodeId string, labelKey *string, pageSize *int, cursor *string) (sdktypes.NodeLabelsListResponse, error) {
+func (a *NodeLabelsApi) List(nodeId string, labelKey *string, pageSize *int, cursor *string) (sdktypes.NodeLabelListHttpResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "labelKey", Value: func() interface{} { if labelKey == nil { return nil }; return *labelKey }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
@@ -26,20 +26,20 @@ func (a *NodeLabelsApi) List(nodeId string, labelKey *string, pageSize *int, cur
     })
     raw, err := a.client.Get(AppendQueryString(AppApiPath(fmt.Sprintf("/drive/nodes/%s/labels", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}))), query), nil, nil)
     if err != nil {
-        var zero sdktypes.NodeLabelsListResponse
+        var zero sdktypes.NodeLabelListHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.NodeLabelsListResponse](raw)
+    return decodeResult[sdktypes.NodeLabelListHttpResponse](raw)
 }
 
 // Apply a label to a node
-func (a *NodeLabelsApi) Update(nodeId string, labelId string, body sdktypes.ApplyNodeLabelRequest) (sdktypes.NodeLabelsUpdateResponse, error) {
+func (a *NodeLabelsApi) Update(nodeId string, labelId string, body sdktypes.ApplyNodeLabelRequest) (sdktypes.NodeLabelHttpResponse, error) {
     raw, err := a.client.Put(AppApiPath(fmt.Sprintf("/drive/nodes/%s/labels/%s", SerializePathParameter(nodeId, PathParameterSpec{Name: "nodeId", Style: "simple", Explode: false}), SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.NodeLabelsUpdateResponse
+        var zero sdktypes.NodeLabelHttpResponse
         return zero, err
     }
-    return decodeResult[sdktypes.NodeLabelsUpdateResponse](raw)
+    return decodeResult[sdktypes.NodeLabelHttpResponse](raw)
 }
 
 // Remove a label from a node

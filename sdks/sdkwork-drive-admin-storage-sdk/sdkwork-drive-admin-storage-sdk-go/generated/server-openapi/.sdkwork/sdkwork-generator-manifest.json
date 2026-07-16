@@ -72,7 +72,7 @@
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "68132d9aafa13cad63edf46855c2cd7f8650bbf8990875888bce7cccf794b9a5"
+      "sha256": "cff27f57ddc3cbb861dc423f2078266b7147495fe5ead1d1cb3afedeb2658358"
     },
     {
       "path": "types/common.go",

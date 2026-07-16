@@ -12,6 +12,8 @@ class DriveNode:
     lifecycle_status: str
     version: int
     space_type: str
+    created_at: str
+    updated_at: str
     tenant_id: Optional[str] = None
     parent_node_id: Optional[str] = None
     shortcut_target_node_id: Optional[str] = None

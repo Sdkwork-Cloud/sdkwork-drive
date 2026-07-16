@@ -9,6 +9,7 @@ members = [
     "crates/sdkwork-drive-observability",
     "crates/sdkwork-drive-storage-contract",
     "crates/sdkwork-drive-storage-local",
+    "crates/sdkwork-drive-sandbox-local",
     "crates/sdkwork-drive-storage-opendal",
     "crates/sdkwork-drive-storage-s3",
     "crates/sdkwork-drive-test-support",
@@ -33,6 +34,7 @@ sdkwork-iam-database-host = { path = "../sdkwork-iam/crates/sdkwork-iam-database
 sdkwork-iam-embedded-application-bootstrap = { path = "../sdkwork-iam/crates/sdkwork-iam-embedded-application-bootstrap" }
 anyhow = "1.0"
 async-trait = "0.1"
+cap-std = "3.4"
 axum = { version = "0.8", features = ["macros"] }
 http = "1.4"
 opendal = { version = "0.57.0", default-features = false, features = ["services-s3", "reqwest-rustls-tls", "executors-tokio"] }
@@ -64,6 +66,7 @@ sdkwork-drive-observability = { path = "crates/sdkwork-drive-observability" }
 sdkwork-drive-security = { path = "crates/sdkwork-drive-security" }
 sdkwork-drive-storage-contract = { path = "crates/sdkwork-drive-storage-contract" }
 sdkwork-drive-storage-local = { path = "crates/sdkwork-drive-storage-local" }
+sdkwork-drive-sandbox-local = { path = "crates/sdkwork-drive-sandbox-local" }
 sdkwork-drive-storage-opendal = { path = "crates/sdkwork-drive-storage-opendal" }
 sdkwork-drive-storage-s3 = { path = "crates/sdkwork-drive-storage-s3" }
 sdkwork-drive-test-support = { path = "crates/sdkwork-drive-test-support" }

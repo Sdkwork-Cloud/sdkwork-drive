@@ -13,7 +13,7 @@
     "@sdkwork/app-topology": "workspace:*"
   },
   "scripts": {
-    "dev": "pnpm dev:browser",
+    "stop": "node ../sdkwork-specs/tools/stop-sdkwork-workspace-processes.mjs --workspace .",    "dev": "pnpm dev:browser",
     "dev:browser": "node scripts/sdkwork-command.mjs dev --runtime-target browser --database postgres --deployment-profile standalone",
     "dev:desktop": "node scripts/sdkwork-command.mjs dev --runtime-target desktop --database postgres --deployment-profile standalone",
     "dev:browser:postgres:cloud": "node scripts/sdkwork-command.mjs dev --runtime-target browser --database postgres --deployment-profile cloud",

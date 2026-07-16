@@ -77,6 +77,42 @@ fn schema_registry_matches_runtime_audit_event_shape() {
 }
 
 #[test]
+fn schema_registry_documents_sandbox_security_and_provider_boundaries() {
+    let doc = std::fs::read_to_string(
+        workspace_root().join("docs/schema-registry/tables/004-drive-security-audit.yaml"),
+    )
+    .expect("security audit schema file missing")
+    .replace("\r\n", "\n");
+    let volume = table_block(&doc, "dr_drive_sandbox_volume");
+    for required in [
+        "enum: [local_filesystem]",
+        "ix_dr_drive_sandbox_volume_tenant_organization_status",
+        "protected backend-admin value",
+        "access still requires an explicit grant",
+    ] {
+        assert!(
+            volume.contains(required),
+            "sandbox volume registry should document {required}"
+        );
+    }
+    assert!(!volume.contains("enum: [local_filesystem, s3"));
+
+    let operation = table_block(&doc, "dr_drive_sandbox_mutation_operation");
+    for forbidden in [
+        "provider_root_ref",
+        "physical_path",
+        "absolute_path",
+        "idempotency_key\n",
+    ] {
+        assert!(
+            !operation.contains(forbidden),
+            "sandbox mutation registry must not persist {forbidden}"
+        );
+    }
+    assert!(operation.contains("idempotency_key_hash"));
+}
+
+#[test]
 fn schema_registry_documents_runtime_dictionary_constraints() {
     let doc = [
         "docs/schema-registry/tables/001-drive-core.yaml",

@@ -20,6 +20,8 @@ public class DriveNode {
     private String contentTypeGroup;
     private Integer contentLength;
     private String folderColor;
+    private String createdAt;
+    private String updatedAt;
 
     public String getId() {
         return this.id;
@@ -163,5 +165,21 @@ public class DriveNode {
 
     public void setFolderColor(String folderColor) {
         this.folderColor = folderColor;
+    }
+
+    public String getCreatedAt() {
+        return this.createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getUpdatedAt() {
+        return this.updatedAt;
+    }
+
+    public void setUpdatedAt(String updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

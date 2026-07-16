@@ -14,20 +14,20 @@ public class NodePropertiesApi {
     }
 
     /** List node custom properties */
-    public NodePropertiesListResponse list(String nodeId, String visibility, Integer pageSize, String cursor) throws Exception {
+    public DriveNodePropertyListHttpResponse list(String nodeId, String visibility, Integer pageSize, String cursor) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("visibility", visibility, "form", true, false, null),
             new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
             new QueryParameterSpec("cursor", cursor, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/properties"), query));
-        return client.convertValue(raw, new TypeReference<NodePropertiesListResponse>() {});
+        return client.convertValue(raw, new TypeReference<DriveNodePropertyListHttpResponse>() {});
     }
 
     /** Create or update a node custom property */
-    public NodePropertiesUpdateResponse update(String nodeId, String propertyKey, SetNodePropertyRequest body) throws Exception {
+    public DriveNodePropertyHttpResponse update(String nodeId, String propertyKey, SetNodePropertyRequest body) throws Exception {
         Object raw = client.put(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/properties/" + serializePathParameter(propertyKey, new PathParameterSpec("propertyKey", "simple", false)) + ""), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<NodePropertiesUpdateResponse>() {});
+        return client.convertValue(raw, new TypeReference<DriveNodePropertyHttpResponse>() {});
     }
 
     /** Delete a node custom property */

@@ -128,7 +128,7 @@ Generated output is not hand-edited. Fix the OpenAPI contract, generator script,
 Generated `server-openapi` output must remain canonical `sdkgen` output:
 
 - `sdkwork-sdk.json`, generated package manifests, `.sdkwork/*` reports, and generated source files must not carry `sdkOwner`, `apiAuthority`, `sdkDependencies`, `standardProfile`, or other ownership standard overlay fields.
-- Drive family ownership and dependency metadata belongs in `.sdkwork-assembly.json` and family-root `sdk-manifest.json`.
+- Drive family ownership and dependency metadata belongs in `sdk-manifest.json` and family-root `sdk-manifest.json`.
 - Drive runtime operation maps belong in `composed/operations.ts` outside generated output.
 
 ## Storage Administration SDK Boundary

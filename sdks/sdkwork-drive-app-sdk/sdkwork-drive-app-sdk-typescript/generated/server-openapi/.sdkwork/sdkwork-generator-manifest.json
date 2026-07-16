@@ -60,7 +60,7 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "6ca2f32d517325657205a852fb0f171439eae19b143bc6ee6068530c7a11b74d"
+      "sha256": "e2880e9cfb4dc6f637a4c20109cdb6aa81e147bf032b967623fb42a7646d2d74"
     },
     {
       "path": "src/api/index.ts",
@@ -255,6 +255,14 @@
       "sha256": "4fa636f8b673dabf045145e30f0be0e7fc27e30a9d5595d822fb528084c58233"
     },
     {
+      "path": "src/types/create-drive-sandbox-directory-request.ts",
+      "sha256": "0c57113e7b52019c57d8439f3d1a9ad9fb2539328fbe3cad50fc72d3184f171e"
+    },
+    {
+      "path": "src/types/create-drive-sandbox-file-request.ts",
+      "sha256": "f96435b883d27c44159e8b53713ef7c29134f69ef828cfd9f269473d45a13cfb"
+    },
+    {
       "path": "src/types/create-file-http-response.ts",
       "sha256": "720835dfe7eb080c87168631a69bab386b5bb610f426d8fb121d4923f57f4ae0"
     },
@@ -383,6 +391,62 @@
       "sha256": "415dfe2350074a80bb192e041fd345d4b1d035bedd8965db83af4eb5dc68af53"
     },
     {
+      "path": "src/types/drive-sandbox-capabilities.ts",
+      "sha256": "d9817dd425fd22df0f840c3c491289e7a8fe31ec30e618c69ebea6596ad5d151"
+    },
+    {
+      "path": "src/types/drive-sandbox-entry-data.ts",
+      "sha256": "12f3b7362a7434b90a2151d3e4b9e060641aa7dcf2656c0e175d08bb7f8b73ef"
+    },
+    {
+      "path": "src/types/drive-sandbox-entry-http-response.ts",
+      "sha256": "f5ab65cc3dc50da8e577ad721136838d00c8ad4947b59fae58e8544b1978a005"
+    },
+    {
+      "path": "src/types/drive-sandbox-entry-list-data.ts",
+      "sha256": "062e8209dac21a47180b8fa8d8506cfc8e575fe145faeecb7e392c6a399ddfb7"
+    },
+    {
+      "path": "src/types/drive-sandbox-entry-list-http-response.ts",
+      "sha256": "268bcd16d76898fd82cef9a352cea4718a43f3efa3ebf45af7e78bbaceeb05f7"
+    },
+    {
+      "path": "src/types/drive-sandbox-entry.ts",
+      "sha256": "2bbae07d9aa1f56fb1da0f4792d1c241284d78f42535932d5e274396a20e50e1"
+    },
+    {
+      "path": "src/types/drive-sandbox-file-content-data.ts",
+      "sha256": "28462b5b239bd505b55394177a79e512ae0133f248e93f4bed7ed7e8c09a0ef1"
+    },
+    {
+      "path": "src/types/drive-sandbox-file-content-http-response.ts",
+      "sha256": "335c0e60a9e5278645cb2bcfa3097d8d32ed8d8b2b0c1f9be175bed1117ed7f7"
+    },
+    {
+      "path": "src/types/drive-sandbox-file-content.ts",
+      "sha256": "5b172dc0bab18c583891afda97f6813e1df72ca04138dda261fd3ba4dc741df0"
+    },
+    {
+      "path": "src/types/drive-sandbox-mutation-command-data.ts",
+      "sha256": "bcaefd0e26e5d7476c88e1ba3a7ea6eb0b1ad7850a0fd8c89405d0b0bc61afd8"
+    },
+    {
+      "path": "src/types/drive-sandbox-mutation-command-http-response.ts",
+      "sha256": "07d2853cd8b34cdd1ab6193034637cc0f3db856acea6b2aff200befdb9946a8b"
+    },
+    {
+      "path": "src/types/drive-sandbox-volume-list-data.ts",
+      "sha256": "d9078c8a85643fa11c391d80b6a99e20b9857b412bbd4fa194f7f11685ceb82c"
+    },
+    {
+      "path": "src/types/drive-sandbox-volume-list-http-response.ts",
+      "sha256": "3c78056333853fbad1f93ee99d78d151de66e8105ef20a7ff41ed800fe607e07"
+    },
+    {
+      "path": "src/types/drive-sandbox-volume.ts",
+      "sha256": "b432fd7beee7540ea9b110b9aea0a9406316a54509b3b7576d4009f716d41b94"
+    },
+    {
       "path": "src/types/drive-share-link.ts",
       "sha256": "41c99e7bbe9e4d6ace5eae9098f77bb18a68496cf94bc714fa65cbb5b07419e6"
     },
@@ -488,7 +552,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "845aa94ce6d316267fbb9316450b10a635efd9763466677d8bea5d613c8a5bb2"
+      "sha256": "0a88f2beb0611e13c21b9a0edb94410377bb5304fb9bde5118fe4cb96a300de4"
     },
     {
       "path": "src/types/mark-uploader-part-uploaded-request.ts",
@@ -565,6 +629,10 @@
     {
       "path": "src/types/problem-detail.ts",
       "sha256": "deca621176487754cbfa2012aa3eab046131ced5829ddf7cff64de692f8bcb0e"
+    },
+    {
+      "path": "src/types/purge-drive-sandbox-entry-request.ts",
+      "sha256": "a1a6d7aae435e22c99f04b7ef17cd337e07506c0b52a5813f983407e605206f9"
     },
     {
       "path": "src/types/quota-summary-http-response.ts",
@@ -645,6 +713,14 @@
     {
       "path": "src/types/update-comment-request.ts",
       "sha256": "5175f19668940d57b53d5b20bc2f4d5eafda84b8a6ce6abbcbfc060013325ffd"
+    },
+    {
+      "path": "src/types/update-drive-sandbox-entry-request.ts",
+      "sha256": "20171945aed55779d4a0810f60cfac6537177bb2d2e6492448844139651136df"
+    },
+    {
+      "path": "src/types/update-drive-sandbox-file-content-request.ts",
+      "sha256": "89243839e9fbc48bb42b4fe76b47f65f940f037264388d89aebbfc3700b76587"
     },
     {
       "path": "src/types/update-node-request.ts",

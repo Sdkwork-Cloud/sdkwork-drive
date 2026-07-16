@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import ArchiveEntriesExtractResponse, ArchiveEntriesListResponse, ChangesListResponse, ChangesStartPageTokenRetrieveResponse, CheckFavoriteNodesRequest, CommentRepliesCreateResponse201, CommentRepliesListResponse, CommentRepliesRetrieveResponse, CommentRepliesUpdateResponse, CommentsCreateResponse201, CommentsListResponse, CommentsRetrieveResponse, CommentsUpdateResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateFileRequest, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateSpaceRequest, CreateUploadSessionRequest, DownloadGrantsCreateResponse201, DownloadPackagesCreateResponse201, DownloadPackagesUrlsRetrieveResponse, DownloadTokensRetrieveResponse, DownloadUrlsCreateResponse201, EmptyTrashRequest, ExtractArchiveEntriesRequest, FavoriteNodeRequest, FavoritesListResponse, FavoritesUpdateResponse, MarkUploaderPartUploadedRequest, MoveDestinationsListResponse, MoveNodeRequest, NodeCommandRequest, NodesCapabilitiesListResponse, NodesCopyResponse, NodesDownloadUrlsRetrieveResponse, NodesFilesCreateResponse201, NodesFoldersCreateResponse201, NodesListResponse, NodesMoveResponse, NodesPathRetrieveResponse, NodesRetrieveResponse, NodesUpdateResponse, PermissionsCreateResponse201, PermissionsEffectiveListResponse, PermissionsListResponse, PermissionsRetrieveResponse, PermissionsUpdateResponse, PrepareUploaderUploadRequest, PresignUploadPartRequest, QuotasRetrieveResponse, RecentListResponse, SdkWorkApiResponse, SearchListResponse, SharedWithMeListResponse, ShareLinksClaimResponse, ShareLinksCreateResponse201, ShareLinksListResponse, ShareLinksRetrieveResponse, ShareLinksUpdateResponse, SpacesCreateResponse201, SpacesListResponse, SpacesRetrieveResponse, SpacesUpdateResponse, TrashCreateResponse201, TrashEmptyResponse, TrashListResponse, TrashRestoreResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadsCreateResponse201, UploaderUploadsPartsUpdateResponse, UploadSessionsAbortResponse, UploadSessionsCompleteResponse, UploadSessionsCreateResponse201, UploadSessionsPartsUpdateResponse, UploadSessionsRetrieveResponse, VersionsListResponse, VersionsRestoreResponse, VersionsRetrieveResponse
+from ..models import ArchiveEntryListHttpResponse, ChangeListHttpResponse, CheckFavoriteNodesRequest, ClaimShareLinkHttpResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlHttpResponse, CreateDownloadUrlRequest, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileHttpResponse, CreateFileRequest, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkHttpResponse, CreateShareLinkRequest, CreateSpaceRequest, CreateUploadSessionRequest, DownloadPackageHttpResponse, DriveCommentHttpResponse, DriveCommentListHttpResponse, DriveCommentReplyHttpResponse, DriveCommentReplyListHttpResponse, DriveNodeHttpResponse, DriveNodeListHttpResponse, DrivePermissionHttpResponse, DrivePermissionListHttpResponse, DriveSandboxEntryHttpResponse, DriveSandboxEntryListHttpResponse, DriveSandboxFileContentHttpResponse, DriveSandboxMutationCommandHttpResponse, DriveSandboxVolumeListHttpResponse, DriveSpaceHttpResponse, DriveSpaceListHttpResponse, DriveUploadSessionHttpResponse, EffectivePermissionListHttpResponse, EmptyTrashHttpResponse, EmptyTrashRequest, ExtractArchiveEntriesHttpResponse, ExtractArchiveEntriesRequest, FavoriteNodeHttpResponse, FavoriteNodeRequest, FileVersionHttpResponse, FileVersionListHttpResponse, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesHttpResponse, NodeCommandRequest, NodePathHttpResponse, PrepareUploaderUploadHttpResponse, PrepareUploaderUploadRequest, PresignedUploadPartHttpResponse, PresignUploadPartRequest, PurgeDriveSandboxEntryRequest, QuotaSummaryHttpResponse, SdkWorkApiResponse, ShareLinkHttpResponse, ShareLinkListHttpResponse, StartPageTokenHttpResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPartHttpResponse
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -182,6 +182,59 @@ def encode_query_value(value: str, allow_reserved: bool) -> str:
 
     return quote(value, safe=':/?#[]@!$&\'()*+,;=' if allow_reserved else '')
 
+def build_request_headers(headers: Dict[str, Dict[str, Any]], cookies: Optional[Dict[str, Dict[str, Any]]] = None) -> Optional[Dict[str, str]]:
+    request_headers: Dict[str, str] = {}
+    for name, parameter in headers.items():
+        serialized = serialize_parameter_value(parameter)
+        if serialized is not None:
+            request_headers[name] = serialized
+
+    cookie_header = build_cookie_header(cookies or {})
+    if cookie_header:
+        request_headers['Cookie'] = (
+            f"{request_headers['Cookie']}; {cookie_header}"
+            if 'Cookie' in request_headers
+            else cookie_header
+        )
+
+    return request_headers or None
+
+
+def build_cookie_header(cookies: Dict[str, Dict[str, Any]]) -> Optional[str]:
+    from urllib.parse import quote
+
+    pairs: List[str] = []
+    for name, parameter in cookies.items():
+        serialized = serialize_parameter_value(parameter)
+        if serialized is not None:
+            pairs.append(f"{quote(str(name), safe='')}={quote(serialized, safe='')}")
+    return '; '.join(pairs) if pairs else None
+
+
+def serialize_parameter_value(parameter: Optional[Dict[str, Any]]) -> Optional[str]:
+    value = None if parameter is None else parameter.get('value')
+    if value is None:
+        return None
+    if parameter and parameter.get('content_type'):
+        import json
+
+        return json.dumps(value, separators=(',', ':'))
+    if isinstance(value, (list, tuple)):
+        return ','.join(serialize_header_primitive(item) for item in value if item is not None)
+    if isinstance(value, dict):
+        return serialize_header_object(value, bool(parameter and parameter.get('explode')))
+    return serialize_header_primitive(value)
+
+
+def serialize_header_object(value: Dict[str, Any], explode: bool) -> str:
+    entries = [(key, entry_value) for key, entry_value in value.items() if entry_value is not None]
+    if explode:
+        return ','.join(f"{key}={serialize_header_primitive(entry_value)}" for key, entry_value in entries)
+    return ','.join(item for key, entry_value in entries for item in (str(key), serialize_header_primitive(entry_value)))
+
+
+def serialize_header_primitive(value: Any) -> str:
+    return str(value)
 
 
 class DriveApi:
@@ -205,6 +258,11 @@ class DriveApi:
         self.recent = DriveRecentApi(client)
         self.search = DriveSearchApi(client)
         self.shared_with_me = DriveSharedWithMeApi(client)
+        self.sandboxes = DriveSandboxesApi(client)
+        self.sandbox_entries = DriveSandboxEntriesApi(client)
+        self.sandbox_directories = DriveSandboxDirectoriesApi(client)
+        self.sandbox_files = DriveSandboxFilesApi(client)
+        self.sandbox_file_contents = DriveSandboxFileContentsApi(client)
         self.spaces = DriveSpacesApi(client)
         self.move_destinations = DriveMoveDestinationsApi(client)
         self.upload_sessions = DriveUploadSessionsApi(client)
@@ -221,7 +279,7 @@ class DriveChangesApi:
         self.start_page_token = DriveChangesStartPageTokenApi(client)
 
 
-    def list(self, space_id: str, cursor: Optional[int] = None, page_size: Optional[int] = None) -> ChangesListResponse:
+    def list(self, space_id: str, cursor: Optional[int] = None, page_size: Optional[int] = None) -> ChangeListHttpResponse:
         query = build_query_string([
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -236,7 +294,7 @@ class DriveChangesStartPageTokenApi:
         self._client = client
 
 
-    def retrieve(self, space_id: str) -> ChangesStartPageTokenRetrieveResponse:
+    def retrieve(self, space_id: str) -> StartPageTokenHttpResponse:
         query = build_query_string([
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
@@ -249,7 +307,7 @@ class DriveDownloadTokensApi:
         self._client = client
 
 
-    def retrieve(self, token: str) -> DownloadTokensRetrieveResponse:
+    def retrieve(self, token: str) -> CreateDownloadUrlHttpResponse:
         return self._client.get(f"/app/v3/api/drive/download_tokens/{serialize_path_parameter(token, {'name': 'token', 'style': 'simple', 'explode': False})}")
 
 class DriveDownloadUrlsApi:
@@ -259,7 +317,7 @@ class DriveDownloadUrlsApi:
         self._client = client
 
 
-    def create(self, body: CreateDownloadUrlRequest) -> DownloadUrlsCreateResponse201:
+    def create(self, body: CreateDownloadUrlRequest) -> CreateDownloadUrlHttpResponse:
         return self._client.post(f"/app/v3/api/drive/download_urls", json=body)
 
 class DriveFavoritesApi:
@@ -269,7 +327,7 @@ class DriveFavoritesApi:
         self._client = client
 
 
-    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None) -> FavoritesListResponse:
+    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None) -> DriveNodeListHttpResponse:
         query = build_query_string([
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -282,7 +340,7 @@ class DriveFavoritesApi:
     def check(self, body: CheckFavoriteNodesRequest) -> SdkWorkApiResponse:
         return self._client.post(f"/app/v3/api/drive/favorites/check", json=body)
 
-    def update(self, node_id: str, body: FavoriteNodeRequest) -> FavoritesUpdateResponse:
+    def update(self, node_id: str, body: FavoriteNodeRequest) -> FavoriteNodeHttpResponse:
         return self._client.put(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/favorite", json=body)
 
     def delete(self, node_id: str) -> None:
@@ -295,7 +353,7 @@ class DriveQuotasApi:
         self._client = client
 
 
-    def retrieve(self) -> QuotasRetrieveResponse:
+    def retrieve(self) -> QuotaSummaryHttpResponse:
         return self._client.get(f"/app/v3/api/drive/quotas/summary")
 
 class DriveNodesApi:
@@ -310,22 +368,22 @@ class DriveNodesApi:
         self.folders = DriveNodesFoldersApi(client)
 
 
-    def update(self, node_id: str, body: UpdateNodeRequest) -> NodesUpdateResponse:
+    def update(self, node_id: str, body: UpdateNodeRequest) -> DriveNodeHttpResponse:
         return self._client.patch(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def retrieve(self, node_id: str) -> NodesRetrieveResponse:
+    def retrieve(self, node_id: str) -> DriveNodeHttpResponse:
         return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}")
 
     def delete(self, node_id: str) -> None:
         return self._client.delete(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}")
 
-    def copy(self, node_id: str, body: CopyNodeRequest) -> NodesCopyResponse:
+    def copy(self, node_id: str, body: CopyNodeRequest) -> DriveNodeHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/copy", json=body)
 
-    def move(self, node_id: str, body: MoveNodeRequest) -> NodesMoveResponse:
+    def move(self, node_id: str, body: MoveNodeRequest) -> DriveNodeHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/move", json=body)
 
-    def list(self, space_id: str, parent_node_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None) -> NodesListResponse:
+    def list(self, space_id: str, parent_node_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None) -> DriveNodeListHttpResponse:
         query = build_query_string([
             {'name': 'parentNodeId', 'value': parent_node_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -342,7 +400,7 @@ class DriveNodesCapabilitiesApi:
         self._client = client
 
 
-    def list(self, node_id: str) -> NodesCapabilitiesListResponse:
+    def list(self, node_id: str) -> NodeCapabilitiesHttpResponse:
         return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/capabilities")
 
 class DriveNodesDownloadUrlsApi:
@@ -352,7 +410,7 @@ class DriveNodesDownloadUrlsApi:
         self._client = client
 
 
-    def retrieve(self, node_id: str, requested_ttl_seconds: Optional[int] = None) -> NodesDownloadUrlsRetrieveResponse:
+    def retrieve(self, node_id: str, requested_ttl_seconds: Optional[int] = None) -> CreateDownloadUrlHttpResponse:
         query = build_query_string([
             {'name': 'requestedTtlSeconds', 'value': requested_ttl_seconds, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
@@ -365,7 +423,7 @@ class DriveNodesPathApi:
         self._client = client
 
 
-    def retrieve(self, node_id: str) -> NodesPathRetrieveResponse:
+    def retrieve(self, node_id: str) -> NodePathHttpResponse:
         return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/path")
 
 class DriveNodesFilesApi:
@@ -375,7 +433,7 @@ class DriveNodesFilesApi:
         self._client = client
 
 
-    def create(self, body: CreateFileRequest) -> NodesFilesCreateResponse201:
+    def create(self, body: CreateFileRequest) -> CreateFileHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/files", json=body)
 
 class DriveNodesFoldersApi:
@@ -385,7 +443,7 @@ class DriveNodesFoldersApi:
         self._client = client
 
 
-    def create(self, body: CreateFolderRequest) -> NodesFoldersCreateResponse201:
+    def create(self, body: CreateFolderRequest) -> DriveNodeHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/folders", json=body)
 
 class DriveCommentsApi:
@@ -395,20 +453,20 @@ class DriveCommentsApi:
         self._client = client
 
 
-    def list(self, node_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> CommentsListResponse:
+    def list(self, node_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> DriveCommentListHttpResponse:
         query = build_query_string([
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments", query))
 
-    def create(self, node_id: str, body: CreateCommentRequest) -> CommentsCreateResponse201:
+    def create(self, node_id: str, body: CreateCommentRequest) -> DriveCommentHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments", json=body)
 
-    def retrieve(self, node_id: str, comment_id: str) -> CommentsRetrieveResponse:
+    def retrieve(self, node_id: str, comment_id: str) -> DriveCommentHttpResponse:
         return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, node_id: str, comment_id: str, body: UpdateCommentRequest) -> CommentsUpdateResponse:
+    def update(self, node_id: str, comment_id: str, body: UpdateCommentRequest) -> DriveCommentHttpResponse:
         return self._client.patch(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}", json=body)
 
     def delete(self, node_id: str, comment_id: str) -> None:
@@ -421,20 +479,20 @@ class DriveCommentRepliesApi:
         self._client = client
 
 
-    def list(self, node_id: str, comment_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> CommentRepliesListResponse:
+    def list(self, node_id: str, comment_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> DriveCommentReplyListHttpResponse:
         query = build_query_string([
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}/replies", query))
 
-    def create(self, node_id: str, comment_id: str, body: CreateCommentReplyRequest) -> CommentRepliesCreateResponse201:
+    def create(self, node_id: str, comment_id: str, body: CreateCommentReplyRequest) -> DriveCommentReplyHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}/replies", json=body)
 
-    def retrieve(self, node_id: str, comment_id: str, reply_id: str) -> CommentRepliesRetrieveResponse:
+    def retrieve(self, node_id: str, comment_id: str, reply_id: str) -> DriveCommentReplyHttpResponse:
         return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}/replies/{serialize_path_parameter(reply_id, {'name': 'replyId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, node_id: str, comment_id: str, reply_id: str, body: UpdateCommentReplyRequest) -> CommentRepliesUpdateResponse:
+    def update(self, node_id: str, comment_id: str, reply_id: str, body: UpdateCommentReplyRequest) -> DriveCommentReplyHttpResponse:
         return self._client.patch(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/comments/{serialize_path_parameter(comment_id, {'name': 'commentId', 'style': 'simple', 'explode': False})}/replies/{serialize_path_parameter(reply_id, {'name': 'replyId', 'style': 'simple', 'explode': False})}", json=body)
 
     def delete(self, node_id: str, comment_id: str, reply_id: str) -> None:
@@ -447,7 +505,7 @@ class DriveDownloadGrantsApi:
         self._client = client
 
 
-    def create(self, node_id: str, body: Optional[CreateDownloadGrantRequest] = None) -> DownloadGrantsCreateResponse201:
+    def create(self, node_id: str, body: Optional[CreateDownloadGrantRequest] = None) -> CreateDownloadUrlHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/download_grants", json=body)
 
 class DrivePermissionsApi:
@@ -458,23 +516,23 @@ class DrivePermissionsApi:
         self.effective = DrivePermissionsEffectiveApi(client)
 
 
-    def list(self, node_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> PermissionsListResponse:
+    def list(self, node_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> DrivePermissionListHttpResponse:
         query = build_query_string([
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/permissions", query))
 
-    def create(self, node_id: str, body: CreatePermissionRequest) -> PermissionsCreateResponse201:
+    def create(self, node_id: str, body: CreatePermissionRequest) -> DrivePermissionHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/permissions", json=body)
 
     def delete(self, node_id: str, permission_id: str) -> None:
         return self._client.delete(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/permissions/{serialize_path_parameter(permission_id, {'name': 'permissionId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, node_id: str, permission_id: str, body: UpdatePermissionRequest) -> PermissionsUpdateResponse:
+    def update(self, node_id: str, permission_id: str, body: UpdatePermissionRequest) -> DrivePermissionHttpResponse:
         return self._client.patch(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/permissions/{serialize_path_parameter(permission_id, {'name': 'permissionId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def retrieve(self, node_id: str, permission_id: str) -> PermissionsRetrieveResponse:
+    def retrieve(self, node_id: str, permission_id: str) -> DrivePermissionHttpResponse:
         return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/permissions/{serialize_path_parameter(permission_id, {'name': 'permissionId', 'style': 'simple', 'explode': False})}")
 
 class DrivePermissionsEffectiveApi:
@@ -484,7 +542,7 @@ class DrivePermissionsEffectiveApi:
         self._client = client
 
 
-    def list(self, node_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> PermissionsEffectiveListResponse:
+    def list(self, node_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> EffectivePermissionListHttpResponse:
         query = build_query_string([
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -498,26 +556,26 @@ class DriveShareLinksApi:
         self._client = client
 
 
-    def create(self, node_id: str, body: CreateShareLinkRequest) -> ShareLinksCreateResponse201:
+    def create(self, node_id: str, body: CreateShareLinkRequest) -> CreateShareLinkHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/share_links", json=body)
 
-    def list(self, node_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> ShareLinksListResponse:
+    def list(self, node_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> ShareLinkListHttpResponse:
         query = build_query_string([
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/share_links", query))
 
-    def claim(self, token: str) -> ShareLinksClaimResponse:
+    def claim(self, token: str) -> ClaimShareLinkHttpResponse:
         return self._client.post(f"/app/v3/api/drive/share_links/{serialize_path_parameter(token, {'name': 'token', 'style': 'simple', 'explode': False})}/claim")
 
     def delete(self, share_link_id: str) -> None:
         return self._client.delete(f"/app/v3/api/drive/share_links/{serialize_path_parameter(share_link_id, {'name': 'shareLinkId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, share_link_id: str, body: UpdateShareLinkRequest) -> ShareLinksUpdateResponse:
+    def update(self, share_link_id: str, body: UpdateShareLinkRequest) -> ShareLinkHttpResponse:
         return self._client.patch(f"/app/v3/api/drive/share_links/{serialize_path_parameter(share_link_id, {'name': 'shareLinkId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def retrieve(self, share_link_id: str) -> ShareLinksRetrieveResponse:
+    def retrieve(self, share_link_id: str) -> ShareLinkHttpResponse:
         return self._client.get(f"/app/v3/api/drive/share_links/{serialize_path_parameter(share_link_id, {'name': 'shareLinkId', 'style': 'simple', 'explode': False})}")
 
 class DriveTrashApi:
@@ -527,10 +585,10 @@ class DriveTrashApi:
         self._client = client
 
 
-    def create(self, node_id: str, body: NodeCommandRequest) -> TrashCreateResponse201:
+    def create(self, node_id: str, body: NodeCommandRequest) -> DriveNodeHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/trash", json=body)
 
-    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None, parent_node_id: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None) -> TrashListResponse:
+    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None, parent_node_id: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None) -> DriveNodeListHttpResponse:
         query = build_query_string([
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -541,10 +599,10 @@ class DriveTrashApi:
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/trash", query))
 
-    def restore(self, node_id: str, body: NodeCommandRequest) -> TrashRestoreResponse:
+    def restore(self, node_id: str, body: NodeCommandRequest) -> DriveNodeHttpResponse:
         return self._client.post(f"/app/v3/api/drive/trash/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/restore", json=body)
 
-    def empty(self, body: EmptyTrashRequest) -> TrashEmptyResponse:
+    def empty(self, body: EmptyTrashRequest) -> EmptyTrashHttpResponse:
         return self._client.post(f"/app/v3/api/drive/trash/empty", json=body)
 
 class DriveVersionsApi:
@@ -554,7 +612,7 @@ class DriveVersionsApi:
         self._client = client
 
 
-    def list(self, node_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> VersionsListResponse:
+    def list(self, node_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> FileVersionListHttpResponse:
         query = build_query_string([
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -564,10 +622,10 @@ class DriveVersionsApi:
     def delete(self, node_id: str, version_id: str) -> None:
         return self._client.delete(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/versions/{serialize_path_parameter(version_id, {'name': 'versionId', 'style': 'simple', 'explode': False})}")
 
-    def retrieve(self, node_id: str, version_id: str) -> VersionsRetrieveResponse:
+    def retrieve(self, node_id: str, version_id: str) -> FileVersionHttpResponse:
         return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/versions/{serialize_path_parameter(version_id, {'name': 'versionId', 'style': 'simple', 'explode': False})}")
 
-    def restore(self, node_id: str, version_id: str, body: NodeCommandRequest) -> VersionsRestoreResponse:
+    def restore(self, node_id: str, version_id: str, body: NodeCommandRequest) -> DriveNodeHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/versions/{serialize_path_parameter(version_id, {'name': 'versionId', 'style': 'simple', 'explode': False})}/restore", json=body)
 
 class DriveRecentApi:
@@ -577,7 +635,7 @@ class DriveRecentApi:
         self._client = client
 
 
-    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None) -> RecentListResponse:
+    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None) -> DriveNodeListHttpResponse:
         query = build_query_string([
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -594,7 +652,7 @@ class DriveSearchApi:
         self._client = client
 
 
-    def list(self, q: Optional[str] = None, space_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> SearchListResponse:
+    def list(self, q: Optional[str] = None, space_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> DriveNodeListHttpResponse:
         query = build_query_string([
             {'name': 'q', 'value': q, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -610,7 +668,7 @@ class DriveSharedWithMeApi:
         self._client = client
 
 
-    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None) -> SharedWithMeListResponse:
+    def list(self, space_id: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None) -> DriveNodeListHttpResponse:
         query = build_query_string([
             {'name': 'spaceId', 'value': space_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -620,6 +678,111 @@ class DriveSharedWithMeApi:
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/shared_with_me", query))
 
+class DriveSandboxesApi:
+    """drive drive.sandboxes API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def list(self, page: Optional[int] = None, page_size: Optional[int] = None) -> DriveSandboxVolumeListHttpResponse:
+        query = build_query_string([
+            {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+        ])
+        return self._client.get(_append_query_string(f"/app/v3/api/drive/sandboxes", query))
+
+class DriveSandboxEntriesApi:
+    """drive drive.sandbox_entries API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def list(self, sandbox_id: str, parent_path: Optional[str] = None, cursor: Optional[str] = None, page_size: Optional[int] = None) -> DriveSandboxEntryListHttpResponse:
+        query = build_query_string([
+            {'name': 'parent_path', 'value': parent_path, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+        ])
+        return self._client.get(_append_query_string(f"/app/v3/api/drive/sandboxes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/entries", query))
+
+    def update(self, sandbox_id: str, entry_id: str, body: UpdateDriveSandboxEntryRequest, if_match: str, idempotency_key: str) -> DriveSandboxEntryHttpResponse:
+        request_headers = build_request_headers(
+            {
+                'If-Match': {'value': if_match, 'style': 'simple', 'explode': False},
+                'Idempotency-Key': {'value': idempotency_key, 'style': 'simple', 'explode': False},
+            },
+            {}
+        )
+        return self._client.patch(f"/app/v3/api/drive/sandboxes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/entries/{serialize_path_parameter(entry_id, {'name': 'entryId', 'style': 'simple', 'explode': False})}", json=body, headers=request_headers)
+
+    def purge(self, sandbox_id: str, entry_id: str, body: PurgeDriveSandboxEntryRequest, if_match: str, idempotency_key: str) -> DriveSandboxMutationCommandHttpResponse:
+        request_headers = build_request_headers(
+            {
+                'If-Match': {'value': if_match, 'style': 'simple', 'explode': False},
+                'Idempotency-Key': {'value': idempotency_key, 'style': 'simple', 'explode': False},
+            },
+            {}
+        )
+        return self._client.post(f"/app/v3/api/drive/sandboxes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/entries/{serialize_path_parameter(entry_id, {'name': 'entryId', 'style': 'simple', 'explode': False})}/purge", json=body, headers=request_headers)
+
+class DriveSandboxDirectoriesApi:
+    """drive drive.sandbox_directories API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def create(self, sandbox_id: str, body: CreateDriveSandboxDirectoryRequest, idempotency_key: str) -> DriveSandboxEntryHttpResponse:
+        request_headers = build_request_headers(
+            {
+                'Idempotency-Key': {'value': idempotency_key, 'style': 'simple', 'explode': False},
+            },
+            {}
+        )
+        return self._client.post(f"/app/v3/api/drive/sandboxes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/directories", json=body, headers=request_headers)
+
+class DriveSandboxFilesApi:
+    """drive drive.sandbox_files API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def create(self, sandbox_id: str, body: CreateDriveSandboxFileRequest, idempotency_key: str) -> DriveSandboxEntryHttpResponse:
+        request_headers = build_request_headers(
+            {
+                'Idempotency-Key': {'value': idempotency_key, 'style': 'simple', 'explode': False},
+            },
+            {}
+        )
+        return self._client.post(f"/app/v3/api/drive/sandboxes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/files", json=body, headers=request_headers)
+
+class DriveSandboxFileContentsApi:
+    """drive drive.sandbox_file_contents API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def retrieve(self, sandbox_id: str, entry_id: str, logical_path: str, encoding: Optional[str] = None) -> DriveSandboxFileContentHttpResponse:
+        query = build_query_string([
+            {'name': 'logical_path', 'value': logical_path, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'encoding', 'value': encoding, 'style': 'form', 'explode': True, 'allow_reserved': False},
+        ])
+        return self._client.get(_append_query_string(f"/app/v3/api/drive/sandboxes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/files/{serialize_path_parameter(entry_id, {'name': 'entryId', 'style': 'simple', 'explode': False})}/content", query))
+
+    def update(self, sandbox_id: str, entry_id: str, body: UpdateDriveSandboxFileContentRequest, if_match: str, idempotency_key: str) -> DriveSandboxEntryHttpResponse:
+        request_headers = build_request_headers(
+            {
+                'If-Match': {'value': if_match, 'style': 'simple', 'explode': False},
+                'Idempotency-Key': {'value': idempotency_key, 'style': 'simple', 'explode': False},
+            },
+            {}
+        )
+        return self._client.put(f"/app/v3/api/drive/sandboxes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/files/{serialize_path_parameter(entry_id, {'name': 'entryId', 'style': 'simple', 'explode': False})}/content", json=body, headers=request_headers)
+
 class DriveSpacesApi:
     """drive drive.spaces API client."""
 
@@ -627,7 +790,7 @@ class DriveSpacesApi:
         self._client = client
 
 
-    def list(self, owner_subject_type: Optional[str] = None, owner_subject_id: Optional[str] = None, space_type: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> SpacesListResponse:
+    def list(self, owner_subject_type: Optional[str] = None, owner_subject_id: Optional[str] = None, space_type: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> DriveSpaceListHttpResponse:
         query = build_query_string([
             {'name': 'ownerSubjectType', 'value': owner_subject_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'ownerSubjectId', 'value': owner_subject_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -637,13 +800,13 @@ class DriveSpacesApi:
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/spaces", query))
 
-    def create(self, body: CreateSpaceRequest) -> SpacesCreateResponse201:
+    def create(self, body: CreateSpaceRequest) -> DriveSpaceHttpResponse:
         return self._client.post(f"/app/v3/api/drive/spaces", json=body)
 
-    def retrieve(self, space_id: str) -> SpacesRetrieveResponse:
+    def retrieve(self, space_id: str) -> DriveSpaceHttpResponse:
         return self._client.get(f"/app/v3/api/drive/spaces/{serialize_path_parameter(space_id, {'name': 'spaceId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, space_id: str, body: UpdateSpaceRequest) -> SpacesUpdateResponse:
+    def update(self, space_id: str, body: UpdateSpaceRequest) -> DriveSpaceHttpResponse:
         return self._client.patch(f"/app/v3/api/drive/spaces/{serialize_path_parameter(space_id, {'name': 'spaceId', 'style': 'simple', 'explode': False})}", json=body)
 
     def delete(self, space_id: str) -> None:
@@ -656,7 +819,7 @@ class DriveMoveDestinationsApi:
         self._client = client
 
 
-    def list(self, space_id: str, exclude_node_ids: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> MoveDestinationsListResponse:
+    def list(self, space_id: str, exclude_node_ids: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> DriveNodeListHttpResponse:
         query = build_query_string([
             {'name': 'excludeNodeIds', 'value': exclude_node_ids, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -672,16 +835,16 @@ class DriveUploadSessionsApi:
         self.parts = DriveUploadSessionsPartsApi(client)
 
 
-    def create(self, body: CreateUploadSessionRequest) -> UploadSessionsCreateResponse201:
+    def create(self, body: CreateUploadSessionRequest) -> DriveUploadSessionHttpResponse:
         return self._client.post(f"/app/v3/api/drive/upload_sessions", json=body)
 
-    def retrieve(self, upload_session_id: str) -> UploadSessionsRetrieveResponse:
+    def retrieve(self, upload_session_id: str) -> DriveUploadSessionHttpResponse:
         return self._client.get(f"/app/v3/api/drive/upload_sessions/{serialize_path_parameter(upload_session_id, {'name': 'uploadSessionId', 'style': 'simple', 'explode': False})}")
 
-    def abort(self, upload_session_id: str, body: NodeCommandRequest) -> UploadSessionsAbortResponse:
+    def abort(self, upload_session_id: str, body: NodeCommandRequest) -> DriveUploadSessionHttpResponse:
         return self._client.post(f"/app/v3/api/drive/upload_sessions/{serialize_path_parameter(upload_session_id, {'name': 'uploadSessionId', 'style': 'simple', 'explode': False})}/abort", json=body)
 
-    def complete(self, upload_session_id: str, body: CompleteUploadSessionRequest) -> UploadSessionsCompleteResponse:
+    def complete(self, upload_session_id: str, body: CompleteUploadSessionRequest) -> DriveUploadSessionHttpResponse:
         return self._client.post(f"/app/v3/api/drive/upload_sessions/{serialize_path_parameter(upload_session_id, {'name': 'uploadSessionId', 'style': 'simple', 'explode': False})}/complete", json=body)
 
 class DriveUploadSessionsPartsApi:
@@ -691,7 +854,7 @@ class DriveUploadSessionsPartsApi:
         self._client = client
 
 
-    def update(self, upload_session_id: str, part_no: int, body: PresignUploadPartRequest) -> UploadSessionsPartsUpdateResponse:
+    def update(self, upload_session_id: str, part_no: int, body: PresignUploadPartRequest) -> PresignedUploadPartHttpResponse:
         return self._client.put(f"/app/v3/api/drive/upload_sessions/{serialize_path_parameter(upload_session_id, {'name': 'uploadSessionId', 'style': 'simple', 'explode': False})}/parts/{serialize_path_parameter(part_no, {'name': 'partNo', 'style': 'simple', 'explode': False})}", json=body)
 
 class DriveDownloadPackagesApi:
@@ -702,7 +865,7 @@ class DriveDownloadPackagesApi:
         self.download_urls = DriveDownloadPackagesDownloadUrlsApi(client)
 
 
-    def create(self, body: CreateDownloadPackageRequest) -> DownloadPackagesCreateResponse201:
+    def create(self, body: CreateDownloadPackageRequest) -> DownloadPackageHttpResponse:
         return self._client.post(f"/app/v3/api/drive/download_packages", json=body)
 
 class DriveDownloadPackagesDownloadUrlsApi:
@@ -712,7 +875,7 @@ class DriveDownloadPackagesDownloadUrlsApi:
         self._client = client
 
 
-    def retrieve(self, package_id: str) -> DownloadPackagesUrlsRetrieveResponse:
+    def retrieve(self, package_id: str) -> DownloadPackageHttpResponse:
         return self._client.get(f"/app/v3/api/drive/download_packages/{serialize_path_parameter(package_id, {'name': 'packageId', 'style': 'simple', 'explode': False})}/download_url")
 
 class DriveArchiveEntriesApi:
@@ -722,10 +885,10 @@ class DriveArchiveEntriesApi:
         self._client = client
 
 
-    def list(self, node_id: str) -> ArchiveEntriesListResponse:
+    def list(self, node_id: str) -> ArchiveEntryListHttpResponse:
         return self._client.get(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/archive_entries")
 
-    def extract(self, node_id: str, body: ExtractArchiveEntriesRequest) -> ArchiveEntriesExtractResponse:
+    def extract(self, node_id: str, body: ExtractArchiveEntriesRequest) -> ExtractArchiveEntriesHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/archive_entries/extract", json=body)
 
 class DriveUploaderApi:
@@ -744,7 +907,7 @@ class DriveUploaderUploadsApi:
         self.parts = DriveUploaderUploadsPartsApi(client)
 
 
-    def create(self, body: PrepareUploaderUploadRequest) -> UploaderUploadsCreateResponse201:
+    def create(self, body: PrepareUploaderUploadRequest) -> PrepareUploaderUploadHttpResponse:
         return self._client.post(f"/app/v3/api/drive/uploader/uploads", json=body)
 
 class DriveUploaderUploadsPartsApi:
@@ -754,5 +917,5 @@ class DriveUploaderUploadsPartsApi:
         self._client = client
 
 
-    def update(self, upload_item_id: str, part_no: int, body: MarkUploaderPartUploadedRequest) -> UploaderUploadsPartsUpdateResponse:
+    def update(self, upload_item_id: str, part_no: int, body: MarkUploaderPartUploadedRequest) -> UploaderUploadPartHttpResponse:
         return self._client.put(f"/app/v3/api/drive/uploader/uploads/{serialize_path_parameter(upload_item_id, {'name': 'uploadItemId', 'style': 'simple', 'explode': False})}/parts/{serialize_path_parameter(part_no, {'name': 'partNo', 'style': 'simple', 'explode': False})}", json=body)

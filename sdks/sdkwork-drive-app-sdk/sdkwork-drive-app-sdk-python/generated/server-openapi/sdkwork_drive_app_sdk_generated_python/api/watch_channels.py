@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import ChangesWatchResponse, CreateWatchChannelRequest, NodesWatchResponse, StopWatchChannelRequest, WatchChannelsListResponse, WatchChannelsRetrieveResponse, WatchChannelsStopResponse
+from ..models import CreateWatchChannelRequest, DriveWatchChannelHttpResponse, DriveWatchChannelListHttpResponse, StopWatchChannelHttpResponse, StopWatchChannelRequest
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -193,7 +193,7 @@ class WatchChannelsApi:
         self.nodes = WatchChannelsNodesApi(client)
 
 
-    def list(self, resource_type: Optional[str] = None, lifecycle_status: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> WatchChannelsListResponse:
+    def list(self, resource_type: Optional[str] = None, lifecycle_status: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> DriveWatchChannelListHttpResponse:
         """List Drive watch channels"""
         query = build_query_string([
             {'name': 'resourceType', 'value': resource_type, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -203,11 +203,11 @@ class WatchChannelsApi:
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/drive/watch_channels", query))
 
-    def retrieve(self, channel_id: str) -> WatchChannelsRetrieveResponse:
+    def retrieve(self, channel_id: str) -> DriveWatchChannelHttpResponse:
         """Get a Drive watch channel"""
         return self._client.get(f"/app/v3/api/drive/watch_channels/{serialize_path_parameter(channel_id, {'name': 'channelId', 'style': 'simple', 'explode': False})}")
 
-    def create_stop(self, channel_id: str, body: StopWatchChannelRequest) -> WatchChannelsStopResponse:
+    def create_stop(self, channel_id: str, body: StopWatchChannelRequest) -> StopWatchChannelHttpResponse:
         """Stop a Drive watch channel"""
         return self._client.post(f"/app/v3/api/drive/watch_channels/{serialize_path_parameter(channel_id, {'name': 'channelId', 'style': 'simple', 'explode': False})}/stop", json=body)
 
@@ -218,7 +218,7 @@ class WatchChannelsChangesApi:
         self._client = client
 
 
-    def watch(self, body: CreateWatchChannelRequest) -> ChangesWatchResponse:
+    def watch(self, body: CreateWatchChannelRequest) -> DriveWatchChannelHttpResponse:
         """Create a push notification channel for Drive changes"""
         return self._client.post(f"/app/v3/api/drive/changes/watch", json=body)
 
@@ -229,6 +229,6 @@ class WatchChannelsNodesApi:
         self._client = client
 
 
-    def watch(self, node_id: str, body: CreateWatchChannelRequest) -> NodesWatchResponse:
+    def watch(self, node_id: str, body: CreateWatchChannelRequest) -> DriveWatchChannelHttpResponse:
         """Create a push notification channel for a Drive node"""
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/watch", json=body)

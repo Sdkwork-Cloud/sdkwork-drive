@@ -62,7 +62,7 @@ fn sdk_assemblies_use_canonical_drive_sdk_profiles() {
 }
 
 fn assert_sdk_assembly_declares_official_languages(sdk_name: &str) {
-    let assembly_path = workspace_root().join(format!("sdks/{sdk_name}/.sdkwork-assembly.json"));
+    let assembly_path = workspace_root().join(format!("sdks/{sdk_name}/sdk-manifest.json"));
     let assembly = std::fs::read_to_string(&assembly_path)
         .unwrap_or_else(|_| panic!("{sdk_name} assembly manifest missing"));
     let value: Value = serde_json::from_str(&assembly)

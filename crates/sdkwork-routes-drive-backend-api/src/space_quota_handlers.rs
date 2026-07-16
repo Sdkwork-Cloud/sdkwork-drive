@@ -113,6 +113,7 @@ pub(crate) async fn update_quota_policy(
 
     record_audit_event(
         &state,
+        &tenant_id,
         admin_audit::quota::UPDATED,
         "tenant_quota",
         &tenant_id,

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import AssetActionRequest, AssetCollectionItemsCreateResponse201, AssetCollectionsCreateResponse201, AssetCollectionsListResponse, AssetRelationsCreateResponse201, AssetsArchiveResponse, AssetsCreateResponse201, AssetsListResponse, AssetsRestoreResponse, AssetsRetrieveResponse, AssetsUpdateResponse, CreateAssetCollectionItemRequest, CreateAssetCollectionRequest, CreateAssetRelationRequest, CreateAssetRequest, UpdateAssetRequest
+from ..models import AssetActionRequest, AssetCollectionHttpResponse, AssetCollectionItemHttpResponse, AssetCollectionListHttpResponse, AssetItemHttpResponse, AssetListHttpResponse, AssetRelationHttpResponse, CreateAssetCollectionItemRequest, CreateAssetCollectionRequest, CreateAssetRelationRequest, CreateAssetRequest, UpdateAssetRequest
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -194,7 +194,7 @@ class AssetsApi:
         self.asset_relations = AssetsAssetRelationsApi(client)
 
 
-    def list(self, cursor: Optional[str] = None, page_size: Optional[int] = None, kind: Optional[str] = None, source_type: Optional[str] = None, q: Optional[str] = None) -> AssetsListResponse:
+    def list(self, cursor: Optional[str] = None, page_size: Optional[int] = None, kind: Optional[str] = None, source_type: Optional[str] = None, q: Optional[str] = None) -> AssetListHttpResponse:
         """List global assets"""
         query = build_query_string([
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -205,23 +205,23 @@ class AssetsApi:
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/assets", query))
 
-    def create(self, body: CreateAssetRequest) -> AssetsCreateResponse201:
+    def create(self, body: CreateAssetRequest) -> AssetItemHttpResponse:
         """Create a global asset metadata record"""
         return self._client.post(f"/app/v3/api/assets", json=body)
 
-    def retrieve(self, asset_id: str) -> AssetsRetrieveResponse:
+    def retrieve(self, asset_id: str) -> AssetItemHttpResponse:
         """Get a global asset"""
         return self._client.get(f"/app/v3/api/assets/{serialize_path_parameter(asset_id, {'name': 'assetId', 'style': 'simple', 'explode': False})}")
 
-    def update(self, asset_id: str, body: UpdateAssetRequest) -> AssetsUpdateResponse:
+    def update(self, asset_id: str, body: UpdateAssetRequest) -> AssetItemHttpResponse:
         """Update a global asset"""
         return self._client.patch(f"/app/v3/api/assets/{serialize_path_parameter(asset_id, {'name': 'assetId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def create_archive(self, asset_id: str, body: AssetActionRequest) -> AssetsArchiveResponse:
+    def create_archive(self, asset_id: str, body: AssetActionRequest) -> AssetItemHttpResponse:
         """Archive a global asset"""
         return self._client.post(f"/app/v3/api/assets/{serialize_path_parameter(asset_id, {'name': 'assetId', 'style': 'simple', 'explode': False})}/archive", json=body)
 
-    def create_restore(self, asset_id: str, body: AssetActionRequest) -> AssetsRestoreResponse:
+    def create_restore(self, asset_id: str, body: AssetActionRequest) -> AssetItemHttpResponse:
         """Restore an archived global asset"""
         return self._client.post(f"/app/v3/api/assets/{serialize_path_parameter(asset_id, {'name': 'assetId', 'style': 'simple', 'explode': False})}/restore", json=body)
 
@@ -232,7 +232,7 @@ class AssetsAssetCollectionsApi:
         self._client = client
 
 
-    def list(self, cursor: Optional[str] = None, page_size: Optional[int] = None) -> AssetCollectionsListResponse:
+    def list(self, cursor: Optional[str] = None, page_size: Optional[int] = None) -> AssetCollectionListHttpResponse:
         """List asset collections"""
         query = build_query_string([
             {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
@@ -240,7 +240,7 @@ class AssetsAssetCollectionsApi:
         ])
         return self._client.get(_append_query_string(f"/app/v3/api/assets/collections", query))
 
-    def create(self, body: CreateAssetCollectionRequest) -> AssetCollectionsCreateResponse201:
+    def create(self, body: CreateAssetCollectionRequest) -> AssetCollectionHttpResponse:
         """Create an asset collection"""
         return self._client.post(f"/app/v3/api/assets/collections", json=body)
 
@@ -251,7 +251,7 @@ class AssetsAssetCollectionItemsApi:
         self._client = client
 
 
-    def create(self, collection_id: str, body: CreateAssetCollectionItemRequest) -> AssetCollectionItemsCreateResponse201:
+    def create(self, collection_id: str, body: CreateAssetCollectionItemRequest) -> AssetCollectionItemHttpResponse:
         """Add an asset to a collection"""
         return self._client.post(f"/app/v3/api/assets/collections/{serialize_path_parameter(collection_id, {'name': 'collectionId', 'style': 'simple', 'explode': False})}/items", json=body)
 
@@ -266,7 +266,7 @@ class AssetsAssetRelationsApi:
         self._client = client
 
 
-    def create(self, asset_id: str, body: CreateAssetRelationRequest) -> AssetRelationsCreateResponse201:
+    def create(self, asset_id: str, body: CreateAssetRelationRequest) -> AssetRelationHttpResponse:
         """Create an asset relation"""
         return self._client.post(f"/app/v3/api/assets/{serialize_path_parameter(asset_id, {'name': 'assetId', 'style': 'simple', 'explode': False})}/relations", json=body)
 

@@ -20,4 +20,6 @@ type DriveNode struct {
 	ContentTypeGroup string `json:"contentTypeGroup"`
 	ContentLength int `json:"contentLength"`
 	FolderColor string `json:"folderColor"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
 }

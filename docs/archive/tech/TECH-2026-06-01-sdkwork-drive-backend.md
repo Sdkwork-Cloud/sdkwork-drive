@@ -235,8 +235,8 @@ git commit -m "spec: add drive app/backend openapi skeletons"
 ### Task 4: Add SDK Family Skeleton And Generator Entrypoints
 
 **Files:**
-- Create: `sdks/sdkwork-drive-app-sdk/.sdkwork-assembly.json`
-- Create: `sdks/sdkwork-drive-backend-sdk/.sdkwork-assembly.json`
+- Create: `sdks/sdkwork-drive-app-sdk/sdk-manifest.json`
+- Create: `sdks/sdkwork-drive-backend-sdk/sdk-manifest.json`
 - Create: `sdks/sdkwork-drive-app-sdk/bin/generate-sdk.mjs`
 - Create: `sdks/sdkwork-drive-backend-sdk/bin/generate-sdk.mjs`
 - Create: `sdks/sdkwork-drive-app-sdk/tests/sdk-family-smoke.test.mjs`

@@ -6,7 +6,7 @@
   "sdkType": "backend",
   "packageName": "sdkwork-drive-backend-sdk-generated-rust",
   "transportPackageName": "sdkwork-drive-backend-sdk-generated-rust",
-  "consumerPackageName": "@sdkwork/drive-backend-sdk",
+  "consumerPackageName": "sdkwork-drive-backend-sdk-generated-rust",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

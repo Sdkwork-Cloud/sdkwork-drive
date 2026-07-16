@@ -6,7 +6,7 @@
   "sdkType": "app",
   "packageName": "sdkwork-drive-app-sdk-generated-go",
   "transportPackageName": "sdkwork-drive-app-sdk-generated-go",
-  "consumerPackageName": "@sdkwork/drive-app-sdk",
+  "consumerPackageName": "sdkwork-drive-app-sdk-generated-go",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

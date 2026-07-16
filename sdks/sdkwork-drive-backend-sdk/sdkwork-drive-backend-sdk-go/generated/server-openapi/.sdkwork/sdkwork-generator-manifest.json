@@ -76,7 +76,7 @@
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "e182325e2175545672e4f845b55db750db8870663a12c318bf78338ee8b199de"
+      "sha256": "04bb503eee2a82030b22f360c2d37c7129678873df1bb2359dfd0eb921a19e81"
     },
     {
       "path": "types/audit_event_list_http_response.go",

@@ -6,7 +6,7 @@
   "sdkType": "custom",
   "packageName": "sdkwork-drive-sdk-generated-rust",
   "transportPackageName": "sdkwork-drive-sdk-generated-rust",
-  "consumerPackageName": "@sdkwork/drive-sdk",
+  "consumerPackageName": "sdkwork-drive-sdk-generated-rust",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

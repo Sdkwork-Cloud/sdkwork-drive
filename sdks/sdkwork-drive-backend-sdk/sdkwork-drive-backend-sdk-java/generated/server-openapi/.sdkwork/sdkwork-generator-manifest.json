@@ -40,7 +40,7 @@
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "82933ba2f15ab7ea2a14cc7e413741092f25f5512a3dcdf33e9caa52ac35641b"
+      "sha256": "0fb88644ce1b93619ee648a6cf2c3806658edcd845210995e00a1db098e7df05"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/ApiPaths.java",

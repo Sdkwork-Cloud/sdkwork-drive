@@ -14,19 +14,19 @@ public class WatchChannelsApi {
     }
 
     /** Create a push notification channel for Drive changes */
-    public ChangesWatchResponse changesWatch(CreateWatchChannelRequest body) throws Exception {
+    public DriveWatchChannelHttpResponse changesWatch(CreateWatchChannelRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/drive/changes/watch"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<ChangesWatchResponse>() {});
+        return client.convertValue(raw, new TypeReference<DriveWatchChannelHttpResponse>() {});
     }
 
     /** Create a push notification channel for a Drive node */
-    public NodesWatchResponse nodesWatch(String nodeId, CreateWatchChannelRequest body) throws Exception {
+    public DriveWatchChannelHttpResponse nodesWatch(String nodeId, CreateWatchChannelRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/watch"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<NodesWatchResponse>() {});
+        return client.convertValue(raw, new TypeReference<DriveWatchChannelHttpResponse>() {});
     }
 
     /** List Drive watch channels */
-    public WatchChannelsListResponse list(String resourceType, String lifecycleStatus, Integer pageSize, String cursor) throws Exception {
+    public DriveWatchChannelListHttpResponse list(String resourceType, String lifecycleStatus, Integer pageSize, String cursor) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("resourceType", resourceType, "form", true, false, null),
             new QueryParameterSpec("lifecycleStatus", lifecycleStatus, "form", true, false, null),
@@ -34,19 +34,19 @@ public class WatchChannelsApi {
             new QueryParameterSpec("cursor", cursor, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/watch_channels"), query));
-        return client.convertValue(raw, new TypeReference<WatchChannelsListResponse>() {});
+        return client.convertValue(raw, new TypeReference<DriveWatchChannelListHttpResponse>() {});
     }
 
     /** Get a Drive watch channel */
-    public WatchChannelsRetrieveResponse retrieve(String channelId) throws Exception {
+    public DriveWatchChannelHttpResponse retrieve(String channelId) throws Exception {
         Object raw = client.get(ApiPaths.appPath("/drive/watch_channels/" + serializePathParameter(channelId, new PathParameterSpec("channelId", "simple", false)) + ""));
-        return client.convertValue(raw, new TypeReference<WatchChannelsRetrieveResponse>() {});
+        return client.convertValue(raw, new TypeReference<DriveWatchChannelHttpResponse>() {});
     }
 
     /** Stop a Drive watch channel */
-    public WatchChannelsStopResponse stop(String channelId, StopWatchChannelRequest body) throws Exception {
+    public StopWatchChannelHttpResponse stop(String channelId, StopWatchChannelRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/drive/watch_channels/" + serializePathParameter(channelId, new PathParameterSpec("channelId", "simple", false)) + "/stop"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<WatchChannelsStopResponse>() {});
+        return client.convertValue(raw, new TypeReference<StopWatchChannelHttpResponse>() {});
     }
 
     private record PathParameterSpec(String name, String style, boolean explode) {}

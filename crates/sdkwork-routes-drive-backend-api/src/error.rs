@@ -1,3 +1,4 @@
+use axum::extract::rejection::{JsonRejection, QueryRejection};
 use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_http::api_problem::{
@@ -17,6 +18,26 @@ pub(crate) fn validation_problem(detail: impl Into<String>) -> (StatusCode, Json
         "validation failed",
         detail,
         SdkWorkResultCode::ValidationError,
+    )
+}
+
+pub(crate) fn invalid_json_problem(_rejection: JsonRejection) -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::BAD_REQUEST,
+        "invalid request body",
+        "request body must be valid JSON matching the operation schema",
+        SdkWorkResultCode::MalformedRequest,
+    )
+}
+
+pub(crate) fn invalid_query_problem(
+    _rejection: QueryRejection,
+) -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::BAD_REQUEST,
+        "invalid query parameters",
+        "query parameters do not match the operation schema",
+        SdkWorkResultCode::InvalidParameter,
     )
 }
 

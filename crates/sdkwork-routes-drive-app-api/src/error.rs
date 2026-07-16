@@ -193,6 +193,72 @@ pub(crate) fn validation_problem(detail: impl Into<String>) -> (StatusCode, Json
     )
 }
 
+pub(crate) fn invalid_parameter_problem(
+    detail: impl Into<String>,
+) -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::BAD_REQUEST,
+        "invalid parameter",
+        detail,
+        SdkWorkResultCode::InvalidParameter,
+    )
+}
+
+pub(crate) fn missing_required_field_problem(
+    detail: impl Into<String>,
+) -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::BAD_REQUEST,
+        "missing required field",
+        detail,
+        SdkWorkResultCode::MissingRequiredField,
+    )
+}
+
+pub(crate) fn malformed_request_problem(
+    detail: impl Into<String>,
+) -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::BAD_REQUEST,
+        "malformed request",
+        detail,
+        SdkWorkResultCode::MalformedRequest,
+    )
+}
+
+pub(crate) fn precondition_required_problem(
+    detail: impl Into<String>,
+) -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::PRECONDITION_REQUIRED,
+        "precondition required",
+        detail,
+        SdkWorkResultCode::PreconditionRequired,
+    )
+}
+
+pub(crate) fn precondition_failed_problem(
+    detail: impl Into<String>,
+) -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::PRECONDITION_FAILED,
+        "precondition failed",
+        detail,
+        SdkWorkResultCode::PreconditionFailed,
+    )
+}
+
+pub(crate) fn payload_too_large_problem(
+    detail: impl Into<String>,
+) -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::PAYLOAD_TOO_LARGE,
+        "payload too large",
+        detail,
+        SdkWorkResultCode::PayloadTooLarge,
+    )
+}
+
 pub(crate) fn service_error_kind(error: &DriveServiceError) -> &'static str {
     match error {
         DriveServiceError::Validation(_) => error_kinds::VALIDATION,

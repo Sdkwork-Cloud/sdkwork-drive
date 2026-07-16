@@ -96,16 +96,21 @@ function operationEntries(openapi) {
   return entries;
 }
 
-test("drive SDK family assemblies declare owner-only authority metadata", () => {
+test("drive SDK family manifests declare owner-only authority metadata", () => {
   for (const family of families) {
-    const assembly = readJson(path.join("sdks", family.root, ".sdkwork-assembly.json"));
+    const assembly = readJson(path.join("sdks", family.root, "sdk-manifest.json"));
 
     assert.equal(assembly.sdkOwner, family.owner, `${family.root} must declare sdkOwner`);
     assert.equal(assembly.apiAuthority, family.authority, `${family.root} must declare apiAuthority`);
-    assert.equal(
-      assembly.generationInputSpec,
-      `../../${family.input.replaceAll("\\", "/")}`,
-      `${family.root} must generate from its owner-only input`,
+    assert.equal(assembly.authoritySpec, `../../${family.input.replaceAll("\\", "/")}`);
+    const ownerOnlyDerivedInput = new RegExp(
+      `^\\.\\./\\.\\./target/drive-sdk-generator-input/${family.root}/`,
+      "u",
+    );
+    assert.ok(
+      assembly.generationInputSpec === assembly.authoritySpec
+        || ownerOnlyDerivedInput.test(assembly.generationInputSpec),
+      `${family.root} must generate from its owner-only authority or derived input`,
     );
 
     if (family.dependencyWorkspace) {

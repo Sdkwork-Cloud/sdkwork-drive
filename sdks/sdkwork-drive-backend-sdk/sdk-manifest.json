@@ -58,18 +58,7 @@
   "fixedSdkVersion": "0.1.0",
   "ownerOnlyOperationCount": 15,
   "managedBy": "tools/drive_sdk_generator_runner.mjs",
-  "packageName": "@sdkwork/drive-backend-sdk",
-  "transportPackageName": "sdkwork-drive-backend-sdk-generated-typescript",
-  "typescript": {
-    "composedRoot": "sdkwork-drive-backend-sdk-typescript",
-    "composedEntry": "sdkwork-drive-backend-sdk-typescript/src/index.ts",
-    "transportRoot": "sdkwork-drive-backend-sdk-typescript/generated/server-openapi",
-    "transportEntry": "sdkwork-drive-backend-sdk-typescript/generated/server-openapi/src/index.ts"
-  },
   "workspace": "sdkwork-drive-backend-sdk",
-  "title": "SDKWork Drive Backend API SDK",
-  "apiVersion": "0.1.0",
-  "openapiVersion": "3.1.2",
   "authoritySpec": "../../apis/backend-api/drive/drive-backend-api.openapi.json",
   "derivedSpecs": {
     "default": "../../apis/backend-api/drive/drive-backend-api.openapi.json"
@@ -77,7 +66,6 @@
   "discoverySurface": {
     "sdkTarget": "backend",
     "apiPrefix": "/backend/v3/api",
-    "schemaUrl": "/backend/v3/openapi.json",
     "generatedProtocols": [
       "http-openapi"
     ],
@@ -91,13 +79,9 @@
       "releaseState": "not_published",
       "generatedPath": "sdkwork-drive-backend-sdk-typescript/generated/server-openapi",
       "manifestPath": "sdkwork-drive-backend-sdk-typescript/generated/server-openapi/package.json",
-      "name": "@sdkwork-internal/drive-backend-sdk-generated",
+      "name": "@sdkwork-internal/sdkwork-drive-backend-sdk-generated",
       "version": "0.1.0",
-      "description": "Generator-owned TypeScript transport SDK for sdkwork-drive backend API.",
-      "consumerSurface": {
-        "primaryClient": "SdkworkDriveBackendClient",
-        "apiPrefix": "/backend/v3/api"
-      },
+      "description": "Generator-owned TypeScript transport SDK for sdkwork-drive-backend-sdk.",
       "consumerPackageName": "@sdkwork/drive-backend-sdk",
       "transportPackageName": "sdkwork-drive-backend-sdk-generated-typescript"
     },
@@ -110,7 +94,7 @@
       "manifestPath": "sdkwork-drive-backend-sdk-rust/generated/server-openapi/Cargo.toml",
       "name": "sdkwork-drive-backend-sdk-generated",
       "version": "0.1.0",
-      "description": "Generator-owned Rust transport SDK for sdkwork-drive backend API."
+      "description": "Generator-owned Rust transport SDK for sdkwork-drive-backend-sdk."
     },
     {
       "language": "java",
@@ -119,9 +103,9 @@
       "releaseState": "not_published",
       "generatedPath": "sdkwork-drive-backend-sdk-java/generated/server-openapi",
       "manifestPath": "sdkwork-drive-backend-sdk-java/generated/server-openapi/pom.xml",
-      "name": "com.sdkwork:drive-backend-sdk-generated",
+      "name": "com.sdkwork:sdkwork-drive-backend-sdk-generated",
       "version": "0.1.0",
-      "description": "Generator-owned Java transport SDK for sdkwork-drive backend API."
+      "description": "Generator-owned Java transport SDK for sdkwork-drive-backend-sdk."
     },
     {
       "language": "python",
@@ -132,7 +116,7 @@
       "manifestPath": "sdkwork-drive-backend-sdk-python/generated/server-openapi/pyproject.toml",
       "name": "sdkwork-drive-backend-sdk-generated",
       "version": "0.1.0",
-      "description": "Generator-owned Python transport SDK for sdkwork-drive backend API."
+      "description": "Generator-owned Python transport SDK for sdkwork-drive-backend-sdk."
     },
     {
       "language": "go",
@@ -141,9 +125,17 @@
       "releaseState": "not_published",
       "generatedPath": "sdkwork-drive-backend-sdk-go/generated/server-openapi",
       "manifestPath": "sdkwork-drive-backend-sdk-go/generated/server-openapi/go.mod",
-      "name": "github.com/sdkwork/drive-backend-sdk-generated",
+      "name": "github.com/sdkwork/sdkwork-drive-backend-sdk-generated",
       "version": "0.1.0",
-      "description": "Generator-owned Go transport SDK for sdkwork-drive backend API."
+      "description": "Generator-owned Go transport SDK for sdkwork-drive-backend-sdk."
     }
-  ]
+  ],
+  "packageName": "@sdkwork/drive-backend-sdk",
+  "transportPackageName": "sdkwork-drive-backend-sdk-generated-typescript",
+  "typescript": {
+    "composedRoot": "sdkwork-drive-backend-sdk-typescript",
+    "composedEntry": "sdkwork-drive-backend-sdk-typescript/src/index.ts",
+    "transportRoot": "sdkwork-drive-backend-sdk-typescript/generated/server-openapi",
+    "transportEntry": "sdkwork-drive-backend-sdk-typescript/generated/server-openapi/src/index.ts"
+  }
 }

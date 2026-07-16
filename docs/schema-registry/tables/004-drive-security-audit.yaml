@@ -651,6 +651,168 @@ tables:
         columns:
           - trace_id
           - created_at
+  - table: dr_drive_sandbox_volume
+    domain: drive
+    description: Organization-owned server filesystem sandbox configuration. provider_root_ref is protected backend-admin data and never enters app/open APIs, audit facts, logs, or telemetry.
+    columns:
+      - name: id
+        type: varchar(128)
+      - name: tenant_id
+        type: varchar(64)
+      - name: organization_id
+        type: varchar(64)
+        nullable: true
+      - name: display_name
+        type: varchar(255)
+      - name: root_entry_id
+        type: varchar(128)
+      - name: provider_kind
+        type: varchar(32)
+        constraints:
+          - "enum: [local_filesystem]"
+      - name: provider_root_ref
+        type: text
+        constraints:
+          - "protected backend-admin value; redact from logs, errors, audit facts, app API, and open API"
+      - name: lifecycle_status
+        type: varchar(32)
+        constraints:
+          - "enum: [active, read_only, disabled]"
+      - name: default_access
+        type: varchar(32)
+        constraints:
+          - "enum: [full, read_only]"
+          - "configuration default only; access still requires an explicit grant"
+      - name: version
+        type: bigint
+        constraints:
+          - "min: 1"
+      - name: created_by
+        type: varchar(128)
+      - name: updated_by
+        type: varchar(128)
+      - name: created_at
+        type: timestamptz
+      - name: updated_at
+        type: timestamptz
+    indexes:
+      - name: ix_dr_drive_sandbox_volume_tenant_status
+        columns:
+          - tenant_id
+          - lifecycle_status
+          - display_name
+      - name: ix_dr_drive_sandbox_volume_tenant_organization_status
+        columns:
+          - tenant_id
+          - organization_id
+          - lifecycle_status
+          - display_name
+          - id
+      - name: ux_dr_drive_sandbox_volume_root_entry
+        unique: true
+        columns:
+          - id
+          - root_entry_id
+  - table: dr_drive_sandbox_grant
+    domain: drive
+    description: Explicit principal authorization for one server sandbox. default_access on the volume never substitutes for these rows.
+    columns:
+      - name: id
+        type: varchar(128)
+      - name: sandbox_id
+        type: varchar(128)
+        references: dr_drive_sandbox_volume.id
+        on_delete: cascade
+      - name: subject_type
+        type: varchar(32)
+        constraints:
+          - "enum: [user, organization, workspace, role]"
+          - "public runtime resolves user and organization only until authoritative workspace and role membership adapters exist"
+      - name: subject_id
+        type: varchar(128)
+      - name: access_level
+        type: varchar(32)
+        constraints:
+          - "enum: [full, read_only]"
+      - name: granted_by
+        type: varchar(128)
+      - name: created_at
+        type: timestamptz
+    indexes:
+      - name: ix_dr_drive_sandbox_grant_subject
+        columns:
+          - subject_type
+          - subject_id
+          - sandbox_id
+  - table: dr_drive_sandbox_mutation_operation
+    domain: drive
+    description: Durable idempotency, lease, and replay result state for bounded sandbox filesystem mutations. Raw idempotency keys and physical paths are forbidden.
+    columns:
+      - name: id
+        type: bigint
+      - name: tenant_id
+        type: varchar(64)
+      - name: sandbox_id
+        type: varchar(128)
+        references: dr_drive_sandbox_volume.id
+        on_delete: cascade
+      - name: actor_id
+        type: varchar(128)
+      - name: idempotency_key_hash
+        type: varchar(64)
+        constraints:
+          - "SHA-256 of method-scoped mutation kind plus the raw idempotency key; raw key is never persisted"
+      - name: request_fingerprint
+        type: varchar(64)
+      - name: mutation_kind
+        type: varchar(32)
+        constraints:
+          - "enum: [create_directory, create_file, update_file, move_entry, delete_entry]"
+      - name: parent_logical_path
+        type: text
+      - name: entry_name
+        type: varchar(255)
+      - name: operation_status
+        type: varchar(32)
+        constraints:
+          - "enum: [pending, completed, failed_conflict]"
+      - name: lease_token
+        type: varchar(64)
+      - name: lease_expires_at_ms
+        type: bigint
+      - name: result_entry_id
+        type: varchar(128)
+        nullable: true
+      - name: result_parent_id
+        type: varchar(128)
+        nullable: true
+      - name: result_entry_kind
+        type: varchar(32)
+        nullable: true
+        constraints:
+          - "enum: [directory, file]"
+      - name: result_logical_path
+        type: text
+        nullable: true
+      - name: result_revision
+        type: varchar(128)
+        nullable: true
+      - name: result_deleted
+        type: boolean
+      - name: created_at
+        type: timestamptz
+      - name: updated_at
+        type: timestamptz
+    indexes:
+      - name: ix_dr_drive_sandbox_mutation_operation_pending
+        columns:
+          - operation_status
+          - lease_expires_at_ms
+      - name: ix_dr_drive_sandbox_mutation_operation_sandbox_created
+        columns:
+          - tenant_id
+          - sandbox_id
+          - created_at
   - table: dr_drive_maintenance_job
     domain: drive
     description: Operational maintenance job execution history for object sweeps, upload-session sweeps, and future repair tasks.

@@ -3,6 +3,126 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct ListSandboxesQuery {
+    pub(crate) page: Option<i64>,
+    #[serde(rename = "page_size")]
+    pub(crate) page_size: Option<i64>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SandboxCapabilitiesResponse {
+    pub(crate) browse: bool,
+    pub(crate) create_directory: bool,
+    pub(crate) select_directory: bool,
+    pub(crate) read_file: bool,
+    pub(crate) create_file: bool,
+    pub(crate) write_file: bool,
+    pub(crate) move_entry: bool,
+    pub(crate) delete_entry: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SandboxVolumeResponse {
+    pub(crate) id: String,
+    pub(crate) display_name: String,
+    pub(crate) root_entry_id: String,
+    pub(crate) effective_access: String,
+    pub(crate) lifecycle_status: String,
+    pub(crate) capabilities: SandboxCapabilitiesResponse,
+    pub(crate) revision: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct ListSandboxEntriesQuery {
+    #[serde(default, rename = "parent_path")]
+    pub(crate) parent_path: Option<String>,
+    pub(crate) cursor: Option<String>,
+    #[serde(rename = "page_size")]
+    pub(crate) page_size: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct CreateSandboxDirectoryRequest {
+    pub(crate) parent_path: String,
+    pub(crate) name: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct ReadSandboxFileQuery {
+    #[serde(rename = "logical_path")]
+    pub(crate) logical_path: String,
+    pub(crate) encoding: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct CreateSandboxFileRequest {
+    pub(crate) parent_path: String,
+    pub(crate) name: String,
+    pub(crate) content: String,
+    pub(crate) encoding: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct UpdateSandboxFileContentRequest {
+    pub(crate) logical_path: String,
+    pub(crate) content: String,
+    pub(crate) encoding: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct MoveSandboxEntryRequest {
+    pub(crate) logical_path: String,
+    pub(crate) destination_parent_path: String,
+    pub(crate) destination_name: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct PurgeSandboxEntryRequest {
+    pub(crate) logical_path: String,
+    pub(crate) recursive: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SandboxEntryResponse {
+    pub(crate) id: String,
+    pub(crate) sandbox_id: String,
+    pub(crate) parent_id: Option<String>,
+    pub(crate) name: String,
+    pub(crate) kind: String,
+    pub(crate) logical_path: String,
+    pub(crate) revision: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SandboxFileContentResponse {
+    pub(crate) entry: SandboxEntryResponse,
+    pub(crate) encoding: String,
+    pub(crate) content: String,
+    pub(crate) size_bytes: String,
+    pub(crate) checksum_sha256: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SandboxMutationCommandResponse {
+    pub(crate) accepted: bool,
+    pub(crate) resource_id: String,
+    pub(crate) status: String,
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CreateSpaceRequest {
     pub(crate) id: String,

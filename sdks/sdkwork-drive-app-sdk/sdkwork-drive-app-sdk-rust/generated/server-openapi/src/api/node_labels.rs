@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::app_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{ApplyNodeLabelRequest, NodeLabelsListResponse, NodeLabelsUpdateResponse};
+use crate::models::{ApplyNodeLabelRequest, NodeLabelHttpResponse, NodeLabelListHttpResponse};
 
 #[derive(Clone)]
 pub struct NodeLabelsApi {
@@ -16,7 +16,7 @@ impl NodeLabelsApi {
     }
 
     /// List labels applied to a node
-    pub async fn list(&self, node_id: &str, label_key: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<NodeLabelsListResponse, SdkworkError> {
+    pub async fn list(&self, node_id: &str, label_key: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<NodeLabelListHttpResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("labelKey", label_key, "form", true, false, None),
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
@@ -27,7 +27,7 @@ impl NodeLabelsApi {
     }
 
     /// Apply a label to a node
-    pub async fn update(&self, node_id: &str, label_id: &str, body: &ApplyNodeLabelRequest) -> Result<NodeLabelsUpdateResponse, SdkworkError> {
+    pub async fn update(&self, node_id: &str, label_id: &str, body: &ApplyNodeLabelRequest) -> Result<NodeLabelHttpResponse, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/labels/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(label_id, PathParameterSpec::new("labelId", "simple", false))));
         self.client.put(&path, Some(body), None, None, Some("application/json")).await
     }
