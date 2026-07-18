@@ -3732,6 +3732,7 @@ dependencies = [
  "sdkwork-routes-drive-app-api",
  "sdkwork-routes-drive-backend-api",
  "sdkwork-routes-drive-open-api",
+ "sdkwork-routes-storage-backend-api",
  "sqlx",
  "tokio",
 ]
@@ -4036,6 +4037,7 @@ dependencies = [
  "sdkwork-iam-context-service",
  "sdkwork-utils-rust",
  "sdkwork-web-axum",
+ "sdkwork-web-bootstrap",
  "sdkwork-web-core",
  "serde",
  "serde_json",

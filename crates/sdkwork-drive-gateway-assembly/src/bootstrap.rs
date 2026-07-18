@@ -25,8 +25,8 @@ pub async fn assemble_application_business_router(pool: sqlx::AnyPool) -> Applic
     ApplicationAssembly { router }
 }
 
-pub async fn assemble_application_business_router_from_env(
-) -> Result<ApplicationAssembly, String> {
+pub async fn assemble_application_business_router_from_env() -> Result<ApplicationAssembly, String>
+{
     sdkwork_drive_security::ensure_drive_auth_policy_refresh_task();
     ensure_production_download_token_signing_configured()
         .map_err(|error| format!("download token signing config invalid: {error}"))?;
@@ -36,7 +36,45 @@ pub async fn assemble_application_business_router_from_env(
         .await
         .map_err(|error| format!("create drive database pool failed: {error}"))?;
     ensure_domain_outbox_dispatcher(pool.clone());
-    Ok(assemble_application_business_router(pool).await)
+    let admin_storage_config =
+        sdkwork_routes_storage_backend_api::AdminStorageConfig::from_env()
+            .map_err(|error| format!("resolve admin storage config failed: {error}"))?;
+    let application = assemble_application_business_router(pool.clone()).await;
+    let admin_storage =
+        sdkwork_routes_storage_backend_api::build_gateway_business_router_with_pool_and_config(
+            pool,
+            admin_storage_config,
+        )
+        .await;
+    Ok(ApplicationAssembly {
+        router: application.router.merge(admin_storage),
+    })
+}
+
+pub async fn assemble_backend_business_router_from_env() -> Result<ApplicationAssembly, String> {
+    sdkwork_drive_security::ensure_drive_auth_policy_refresh_task();
+    ensure_production_download_token_signing_configured()
+        .map_err(|error| format!("download token signing config invalid: {error}"))?;
+    let database_config = DatabaseConfig::from_env()
+        .map_err(|error| format!("resolve drive database config failed: {error}"))?;
+    let pool = connect_any_database_and_install_schema(&database_config)
+        .await
+        .map_err(|error| format!("create drive database pool failed: {error}"))?;
+    ensure_domain_outbox_dispatcher(pool.clone());
+    let admin_storage_config =
+        sdkwork_routes_storage_backend_api::AdminStorageConfig::from_env()
+            .map_err(|error| format!("resolve admin storage config failed: {error}"))?;
+    let drive_backend =
+        sdkwork_routes_drive_backend_api::gateway_mount_business(pool.clone()).await;
+    let admin_storage =
+        sdkwork_routes_storage_backend_api::build_gateway_business_router_with_pool_and_config(
+            pool,
+            admin_storage_config,
+        )
+        .await;
+    Ok(ApplicationAssembly {
+        router: drive_backend.merge(admin_storage),
+    })
 }
 
 pub async fn assemble_application_router(pool: sqlx::AnyPool) -> ApplicationAssembly {
