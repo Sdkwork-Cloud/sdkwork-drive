@@ -4,18 +4,26 @@ import type { AuthTokenManager } from '@sdkwork/sdk-common';
 
 import { DriveApi, createDriveApi } from './api/drive';
 import { LabelsApi, createLabelsApi } from './api/labels';
+import { SandboxVolumesApi, createSandboxVolumesApi } from './api/sandbox-volumes';
+import { SandboxGrantsApi, createSandboxGrantsApi } from './api/sandbox-grants';
 
 export class SdkworkBackendClient {
   private httpClient: HttpClient;
 
   public readonly drive: DriveApi;
   public readonly labels: LabelsApi;
+  public readonly sandboxVolumes: SandboxVolumesApi;
+  public readonly sandboxGrants: SandboxGrantsApi;
 
   constructor(config: SdkworkBackendConfig) {
     this.httpClient = createHttpClient(config);
     this.drive = createDriveApi(this.httpClient);
 
     this.labels = createLabelsApi(this.httpClient);
+
+    this.sandboxVolumes = createSandboxVolumesApi(this.httpClient);
+
+    this.sandboxGrants = createSandboxGrantsApi(this.httpClient);
   }
   setAuthToken(token: string): this {
     this.httpClient.setAuthToken(token);

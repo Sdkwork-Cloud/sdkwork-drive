@@ -34,6 +34,7 @@ mod rate_limit;
 mod response;
 mod route_change;
 mod routes;
+mod runtime_sandbox_roots;
 mod sandbox_handlers;
 mod sandbox_principals;
 mod search_handlers;

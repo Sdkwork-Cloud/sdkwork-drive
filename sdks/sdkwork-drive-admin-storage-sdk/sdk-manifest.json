@@ -6,7 +6,7 @@
   "sdkFamily": "sdkwork-drive-admin-storage-sdk",
   "sdkType": "custom",
   "apiPrefix": "/backend/v3/api",
-  "generationInputSpec": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json",
+  "generationInputSpec": "../../target/drive-sdk-generator-input/sdkwork-drive-admin-storage-sdk/drive-admin-storage-api.openapi.json",
   "generatedPackages": {
     "typescript": {
       "language": "typescript",

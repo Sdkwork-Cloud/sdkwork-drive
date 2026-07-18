@@ -10,10 +10,6 @@ export interface LabelsListParams {
   cursor?: string;
 }
 
-export interface LabelsDeleteParams {
-  operatorId: string;
-}
-
 export class LabelsApi {
   private client: HttpClient;
 
@@ -48,11 +44,8 @@ export class LabelsApi {
   }
 
 /** Delete a Drive label definition */
-  async delete(labelId: string, params: LabelsDeleteParams): Promise<void> {
-    const query = buildQueryString([
-      { name: 'operatorId', value: params.operatorId, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.delete<void>(appendQueryString(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), query));
+  async delete(labelId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`));
   }
 }
 

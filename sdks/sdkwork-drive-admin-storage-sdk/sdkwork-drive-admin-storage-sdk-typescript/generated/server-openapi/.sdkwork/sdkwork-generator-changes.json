@@ -9,11 +9,13 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-typescript"
   },
-  "changeFingerprint": "8e88b4020cf4cce0e52d6617d8b15ce3f97cb1ff00e2d2b24909f7b2af928ab5",
+  "changeFingerprint": "a2f7445ba6d67341fb41cc8f95016aec386ab7877273c24388275e25067cbc50",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [
-      "package.json"
+      "src/api/drive.ts",
+      "src/types/copy-provider-object-request.ts",
+      "src/types/provider-object.ts"
     ],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -23,10 +25,10 @@
       "bin/sdk-gen.sh",
       "CHANGELOG.md",
       "LICENSE",
+      "package.json",
       "README.md",
       "sdkwork-sdk.json",
       "src/api/base.ts",
-      "src/api/drive.ts",
       "src/api/index.ts",
       "src/api/paths.ts",
       "src/auth/index.ts",
@@ -35,7 +37,6 @@
       "src/index.ts",
       "src/sdk.ts",
       "src/types/common.ts",
-      "src/types/copy-provider-object-request.ts",
       "src/types/create-storage-provider-request.ts",
       "src/types/field-error.ts",
       "src/types/index.ts",
@@ -46,7 +47,6 @@
       "src/types/provider-bucket-mutation.ts",
       "src/types/provider-bucket.ts",
       "src/types/provider-object-mutation.ts",
-      "src/types/provider-object.ts",
       "src/types/rotate-storage-provider-credential-request.ts",
       "src/types/sdk-work-api-response.ts",
       "src/types/sdk-work-command-data.ts",
@@ -88,36 +88,42 @@
       "custom/build-runtime.mjs",
       "custom/README.md"
     ],
-    "backedUpFiles": [
-      "package.json"
-    ]
+    "backedUpFiles": []
   },
   "impact": {
     "schemaVersion": 1,
     "areas": [
-      "build-metadata"
+      "api-surface",
+      "models"
     ],
     "details": [
       {
-        "area": "build-metadata",
+        "area": "api-surface",
         "paths": [
-          "package.json"
+          "src/api/drive.ts"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "src/types/copy-provider-object-request.ts",
+          "src/types/provider-object.ts"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: build-metadata. Verification is required."
+    "summary": "Detected impact areas: api-surface, models. Verification is required."
   },
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -135,7 +141,7 @@
         "id": "build",
         "title": "Unified package build",
         "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: build-metadata.",
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -153,14 +159,12 @@
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "high",
+    "riskLevel": "medium",
     "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
     "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
-      "backed-up-generated-files",
-      "manual-review-required",
       "verification-required"
     ]
   },

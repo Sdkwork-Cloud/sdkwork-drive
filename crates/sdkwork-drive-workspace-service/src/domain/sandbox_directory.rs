@@ -1,7 +1,7 @@
 use sdkwork_utils_rust::sha256_hash;
 use std::fmt;
 
-pub const MAX_SANDBOX_DIRECTORY_PAGE_SIZE: usize = 200;
+pub const MAX_SANDBOX_DIRECTORY_PAGE_SIZE: usize = 1_000;
 pub const MAX_SANDBOX_LOGICAL_PATH_BYTES: usize = 4096;
 pub const MAX_SANDBOX_ENTRY_NAME_BYTES: usize = 255;
 pub const MAX_SANDBOX_CURSOR_BYTES: usize = 2048;
@@ -187,7 +187,7 @@ impl fmt::Display for SandboxInputError {
         let message = match self {
             Self::InvalidLogicalPath => "sandbox logical path is invalid",
             Self::InvalidEntryName => "sandbox entry name is invalid",
-            Self::InvalidPageSize => "sandbox page size must be in range [1, 200]",
+            Self::InvalidPageSize => "sandbox page size must be in range [1, 1000]",
             Self::InvalidCursor => "sandbox cursor is invalid",
             Self::InvalidIdempotencyKey => "sandbox idempotency key is invalid",
         };
@@ -212,6 +212,15 @@ fn matches_reserved_numbered_name(value: &str, prefix: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn directory_pages_allow_the_documented_file_browser_limit() {
+        assert!(SandboxDirectoryPageRequest::new(1_000, None).is_ok());
+        assert_eq!(
+            SandboxDirectoryPageRequest::new(1_001, None),
+            Err(SandboxInputError::InvalidPageSize)
+        );
+    }
 
     #[test]
     fn logical_paths_use_canonical_forward_slash_segments() {

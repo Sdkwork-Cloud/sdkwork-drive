@@ -4,5 +4,4 @@ export interface CreateLabelRequest {
   displayName: string;
   color?: string;
   description?: string;
-  operatorId: string;
 }

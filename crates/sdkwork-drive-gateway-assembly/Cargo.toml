@@ -13,6 +13,9 @@ axum.workspace = true
 sqlx.workspace = true
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
 sdkwork-drive-http = { workspace = true, features = ["redis-rate-limit"] }
+sdkwork-drive-config.workspace = true
+sdkwork-drive-security.workspace = true
+sdkwork-drive-workspace-service.workspace = true
 sdkwork-routes-drive-app-api.workspace = true
 sdkwork-routes-drive-backend-api.workspace = true
 sdkwork-routes-drive-open-api.workspace = true

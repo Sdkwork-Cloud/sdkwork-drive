@@ -56,7 +56,7 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "28bc1bdef80535c5768d463ee2165e02d119a71c37db45039612110bdca45b31"
+      "sha256": "ce887aabcfba817f07bc75155eddd93dfcbbcad1b65ab573e15d02a6d44f0f46"
     },
     {
       "path": "src/api/index.ts",
@@ -92,7 +92,7 @@
     },
     {
       "path": "src/types/copy-provider-object-request.ts",
-      "sha256": "71a0c4328ef91ef5d10c408618001bf5868a3d2c1d9e0f35aaff46df196602f6"
+      "sha256": "27f8fd328981aba86f39206cc9c86705bec9cece7a3a6d2584a6346049d1163d"
     },
     {
       "path": "src/types/create-storage-provider-request.ts",
@@ -136,7 +136,7 @@
     },
     {
       "path": "src/types/provider-object.ts",
-      "sha256": "48349f696739871cb2d5cfe8cf1a1e038a854cdbc71428ea312bca942ad9f2a1"
+      "sha256": "cebb2aaa3d76c088fd6f3f5afa265a7fae0b3c79abe946d4ed6a9b401b8c4700"
     },
     {
       "path": "src/types/rotate-storage-provider-credential-request.ts",

@@ -16,7 +16,8 @@ use sdkwork_drive_workspace_service::{
     },
     application::sandbox_service::DriveSandboxService,
     domain::sandbox_directory::{
-        SandboxDirectoryEntry, SandboxEntryKind, MAX_SANDBOX_FILE_CONTENT_BYTES,
+        SandboxDirectoryEntry, SandboxEntryKind, MAX_SANDBOX_DIRECTORY_PAGE_SIZE,
+        MAX_SANDBOX_FILE_CONTENT_BYTES,
     },
     infrastructure::sql::sandbox_mutation_operation_store::SqlSandboxMutationOperationStore,
     infrastructure::sql::sandbox_store::SqlSandboxStore,
@@ -40,6 +41,7 @@ use crate::{
         success_created_resource, success_cursor_list_page, success_envelope,
         success_offset_list_page, success_resource, DriveListHttpResponse,
     },
+    runtime_sandbox_roots::ensure_runtime_sandbox_roots,
     sandbox_principals::token_bound_sandbox_principals,
     state::AppState,
     validators::validate_page_size_i64,
@@ -67,6 +69,15 @@ pub(crate) async fn list_sandboxes(
     let offset = (page - 1)
         .checked_mul(page_size)
         .ok_or_else(|| crate::error::validation_problem("page is too large"))?;
+    ensure_runtime_sandbox_roots(&state.pool, &ctx, &state.runtime_sandbox_roots)
+        .await
+        .map_err(|error| {
+            map_service_error(
+                sdkwork_drive_workspace_service::DriveServiceError::Internal(format!(
+                    "initialize runtime sandbox roots failed: {error}"
+                )),
+            )
+        })?;
     let principals = token_bound_sandbox_principals(&ctx);
     let service = DriveSandboxService::new(SqlSandboxStore::new(state.pool.clone()));
     let (volumes, total) = service
@@ -118,7 +129,13 @@ pub(crate) async fn list_sandbox_entries(
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
     let query = decode_query(query)?;
-    let page_size = validate_page_size_i64(query.page_size, 20, 1, 200, "page_size")?;
+    let page_size = validate_page_size_i64(
+        query.page_size,
+        20,
+        1,
+        MAX_SANDBOX_DIRECTORY_PAGE_SIZE as i64,
+        "page_size",
+    )?;
     let principals = token_bound_sandbox_principals(&ctx);
     let service = sandbox_directory_service(&state);
     let page = service

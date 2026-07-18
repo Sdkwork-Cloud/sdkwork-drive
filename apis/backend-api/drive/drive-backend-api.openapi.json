@@ -148,7 +148,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.audit.admin"
       }
     },
     "/backend/v3/api/drive/labels": {
@@ -282,7 +283,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.labels.admin"
       },
       "post": {
         "tags": [
@@ -404,7 +406,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.labels.admin"
       }
     },
     "/backend/v3/api/drive/labels/{labelId}": {
@@ -515,7 +518,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.labels.admin"
       },
       "patch": {
         "tags": [
@@ -634,7 +638,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.labels.admin"
       },
       "delete": {
         "tags": [
@@ -651,17 +656,6 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128,
               "pattern": "^[A-Za-z0-9._:@-]+$"
             }
           }
@@ -740,7 +734,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.labels.admin"
       }
     },
     "/backend/v3/api/drive/maintenance/jobs": {
@@ -774,16 +769,6 @@
                 "completed",
                 "failed"
               ]
-            }
-          },
-          {
-            "name": "operatorId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "maxLength": 128,
-              "pattern": "^[A-Za-z0-9._:@-]+$"
             }
           },
           {
@@ -865,7 +850,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.maintenance.admin"
       }
     },
     "/backend/v3/api/drive/maintenance/object_sweep": {
@@ -942,7 +928,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.maintenance.admin"
       }
     },
     "/backend/v3/api/drive/maintenance/upload_session_sweep": {
@@ -1019,7 +1006,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.maintenance.admin"
       }
     },
     "/backend/v3/api/drive/maintenance/expired_upload_content_sweep": {
@@ -1096,7 +1084,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.maintenance.admin"
       }
     },
     "/backend/v3/api/drive/maintenance/abandoned_upload_task_sweep": {
@@ -1173,7 +1162,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.maintenance.admin"
       }
     },
     "/backend/v3/api/drive/quotas": {
@@ -1241,7 +1231,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.quota.admin"
       },
       "put": {
         "tags": [
@@ -1317,7 +1308,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.quota.admin"
       }
     },
     "/backend/v3/api/drive/spaces": {
@@ -1421,7 +1413,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.spaces.admin"
       }
     },
     "/backend/v3/api/drive/download_packages": {
@@ -1569,7 +1562,8 @@
         "x-sdkwork-owner": "sdkwork-drive",
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api"
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-permission": "drive.download_packages.admin"
       }
     },
     "/backend/v3/api/drive/sandbox_volumes": {
@@ -1640,16 +1634,44 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/ValidationProblem"
+            "$ref": "#/components/responses/ValidationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
-            "$ref": "#/components/responses/AuthenticationProblem"
+            "$ref": "#/components/responses/AuthenticationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "403": {
-            "$ref": "#/components/responses/AuthorizationProblem"
+            "$ref": "#/components/responses/AuthorizationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "500": {
-            "$ref": "#/components/responses/InternalProblem"
+            "$ref": "#/components/responses/InternalProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1662,7 +1684,8 @@
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-auth-mode": "dual-token"
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-permission": "drive.sandboxes.admin"
       },
       "post": {
         "tags": [
@@ -1700,19 +1723,54 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/ValidationProblem"
+            "$ref": "#/components/responses/ValidationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
-            "$ref": "#/components/responses/AuthenticationProblem"
+            "$ref": "#/components/responses/AuthenticationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "403": {
-            "$ref": "#/components/responses/AuthorizationProblem"
+            "$ref": "#/components/responses/AuthorizationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "409": {
-            "$ref": "#/components/responses/ConflictProblem"
+            "$ref": "#/components/responses/ConflictProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "500": {
-            "$ref": "#/components/responses/InternalProblem"
+            "$ref": "#/components/responses/InternalProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1726,7 +1784,8 @@
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "backend-api",
         "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-rate-limit-tier": "auth-critical"
+        "x-sdkwork-rate-limit-tier": "auth-critical",
+        "x-sdkwork-permission": "drive.sandboxes.admin"
       }
     },
     "/backend/v3/api/drive/sandbox_volumes/{sandboxId}": {
@@ -1760,19 +1819,54 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/ValidationProblem"
+            "$ref": "#/components/responses/ValidationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
-            "$ref": "#/components/responses/AuthenticationProblem"
+            "$ref": "#/components/responses/AuthenticationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "403": {
-            "$ref": "#/components/responses/AuthorizationProblem"
+            "$ref": "#/components/responses/AuthorizationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "404": {
-            "$ref": "#/components/responses/NotFoundProblem"
+            "$ref": "#/components/responses/NotFoundProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "500": {
-            "$ref": "#/components/responses/InternalProblem"
+            "$ref": "#/components/responses/InternalProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1785,7 +1879,8 @@
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-auth-mode": "dual-token"
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-permission": "drive.sandboxes.admin"
       },
       "patch": {
         "tags": [
@@ -1823,22 +1918,64 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/ValidationProblem"
+            "$ref": "#/components/responses/ValidationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
-            "$ref": "#/components/responses/AuthenticationProblem"
+            "$ref": "#/components/responses/AuthenticationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "403": {
-            "$ref": "#/components/responses/AuthorizationProblem"
+            "$ref": "#/components/responses/AuthorizationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "404": {
-            "$ref": "#/components/responses/NotFoundProblem"
+            "$ref": "#/components/responses/NotFoundProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "409": {
-            "$ref": "#/components/responses/ConflictProblem"
+            "$ref": "#/components/responses/ConflictProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "500": {
-            "$ref": "#/components/responses/InternalProblem"
+            "$ref": "#/components/responses/InternalProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1852,7 +1989,8 @@
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "backend-api",
         "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-rate-limit-tier": "auth-critical"
+        "x-sdkwork-rate-limit-tier": "auth-critical",
+        "x-sdkwork-permission": "drive.sandboxes.admin"
       },
       "delete": {
         "tags": [
@@ -1866,19 +2004,54 @@
             "description": "Sandbox volume configuration deleted."
           },
           "400": {
-            "$ref": "#/components/responses/ValidationProblem"
+            "$ref": "#/components/responses/ValidationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
-            "$ref": "#/components/responses/AuthenticationProblem"
+            "$ref": "#/components/responses/AuthenticationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "403": {
-            "$ref": "#/components/responses/AuthorizationProblem"
+            "$ref": "#/components/responses/AuthorizationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "404": {
-            "$ref": "#/components/responses/NotFoundProblem"
+            "$ref": "#/components/responses/NotFoundProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "500": {
-            "$ref": "#/components/responses/InternalProblem"
+            "$ref": "#/components/responses/InternalProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1892,7 +2065,8 @@
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "backend-api",
         "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-rate-limit-tier": "auth-critical"
+        "x-sdkwork-rate-limit-tier": "auth-critical",
+        "x-sdkwork-permission": "drive.sandboxes.admin"
       }
     },
     "/backend/v3/api/drive/sandbox_volumes/{sandboxId}/grants": {
@@ -1951,19 +2125,54 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/ValidationProblem"
+            "$ref": "#/components/responses/ValidationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
-            "$ref": "#/components/responses/AuthenticationProblem"
+            "$ref": "#/components/responses/AuthenticationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "403": {
-            "$ref": "#/components/responses/AuthorizationProblem"
+            "$ref": "#/components/responses/AuthorizationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "404": {
-            "$ref": "#/components/responses/NotFoundProblem"
+            "$ref": "#/components/responses/NotFoundProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "500": {
-            "$ref": "#/components/responses/InternalProblem"
+            "$ref": "#/components/responses/InternalProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1976,7 +2185,8 @@
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-auth-mode": "dual-token"
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-permission": "drive.sandboxes.admin"
       },
       "post": {
         "tags": [
@@ -2014,22 +2224,64 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/ValidationProblem"
+            "$ref": "#/components/responses/ValidationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
-            "$ref": "#/components/responses/AuthenticationProblem"
+            "$ref": "#/components/responses/AuthenticationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "403": {
-            "$ref": "#/components/responses/AuthorizationProblem"
+            "$ref": "#/components/responses/AuthorizationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "404": {
-            "$ref": "#/components/responses/NotFoundProblem"
+            "$ref": "#/components/responses/NotFoundProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "409": {
-            "$ref": "#/components/responses/ConflictProblem"
+            "$ref": "#/components/responses/ConflictProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "500": {
-            "$ref": "#/components/responses/InternalProblem"
+            "$ref": "#/components/responses/InternalProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2043,7 +2295,8 @@
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "backend-api",
         "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-rate-limit-tier": "auth-critical"
+        "x-sdkwork-rate-limit-tier": "auth-critical",
+        "x-sdkwork-permission": "drive.sandboxes.admin"
       }
     },
     "/backend/v3/api/drive/sandbox_volumes/{sandboxId}/grants/{grantId}": {
@@ -2080,19 +2333,54 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/ValidationProblem"
+            "$ref": "#/components/responses/ValidationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
-            "$ref": "#/components/responses/AuthenticationProblem"
+            "$ref": "#/components/responses/AuthenticationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "403": {
-            "$ref": "#/components/responses/AuthorizationProblem"
+            "$ref": "#/components/responses/AuthorizationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "404": {
-            "$ref": "#/components/responses/NotFoundProblem"
+            "$ref": "#/components/responses/NotFoundProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "500": {
-            "$ref": "#/components/responses/InternalProblem"
+            "$ref": "#/components/responses/InternalProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2105,7 +2393,8 @@
         "x-sdkwork-api-authority": "sdkwork-drive.backend",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-auth-mode": "dual-token"
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-permission": "drive.sandboxes.admin"
       },
       "patch": {
         "tags": [
@@ -2142,19 +2431,54 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/ValidationProblem"
+            "$ref": "#/components/responses/ValidationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
-            "$ref": "#/components/responses/AuthenticationProblem"
+            "$ref": "#/components/responses/AuthenticationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "403": {
-            "$ref": "#/components/responses/AuthorizationProblem"
+            "$ref": "#/components/responses/AuthorizationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "404": {
-            "$ref": "#/components/responses/NotFoundProblem"
+            "$ref": "#/components/responses/NotFoundProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "500": {
-            "$ref": "#/components/responses/InternalProblem"
+            "$ref": "#/components/responses/InternalProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2168,7 +2492,8 @@
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "backend-api",
         "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-rate-limit-tier": "auth-critical"
+        "x-sdkwork-rate-limit-tier": "auth-critical",
+        "x-sdkwork-permission": "drive.sandboxes.admin"
       },
       "delete": {
         "tags": [
@@ -2181,19 +2506,54 @@
             "description": "Sandbox grant deleted."
           },
           "400": {
-            "$ref": "#/components/responses/ValidationProblem"
+            "$ref": "#/components/responses/ValidationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
-            "$ref": "#/components/responses/AuthenticationProblem"
+            "$ref": "#/components/responses/AuthenticationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "403": {
-            "$ref": "#/components/responses/AuthorizationProblem"
+            "$ref": "#/components/responses/AuthorizationProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "404": {
-            "$ref": "#/components/responses/NotFoundProblem"
+            "$ref": "#/components/responses/NotFoundProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "500": {
-            "$ref": "#/components/responses/InternalProblem"
+            "$ref": "#/components/responses/InternalProblem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2207,7 +2567,8 @@
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "backend-api",
         "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-rate-limit-tier": "auth-critical"
+        "x-sdkwork-rate-limit-tier": "auth-critical",
+        "x-sdkwork-permission": "drive.sandboxes.admin"
       }
     }
   },
@@ -2266,8 +2627,7 @@
         "required": [
           "id",
           "labelKey",
-          "displayName",
-          "operatorId"
+          "displayName"
         ],
         "properties": {
           "id": {
@@ -2293,12 +2653,6 @@
           },
           "description": {
             "type": "string"
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
         },
         "additionalProperties": false
@@ -2537,9 +2891,7 @@
       },
       "UpdateQuotaPolicyRequest": {
         "type": "object",
-        "required": [
-          "operatorId"
-        ],
+        "required": [],
         "properties": {
           "quotaBytes": {
             "type": "integer",
@@ -2548,11 +2900,6 @@
           },
           "clearTenantPolicy": {
             "type": "boolean"
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128
           }
         }
       },
@@ -2585,8 +2932,7 @@
       "SweepObjectStoreRequest": {
         "type": "object",
         "required": [
-          "dryRun",
-          "operatorId"
+          "dryRun"
         ],
         "properties": {
           "dryRun": {
@@ -2597,11 +2943,6 @@
             "format": "int64",
             "minimum": 1,
             "maximum": 1000
-          },
-          "operatorId": {
-            "type": "string",
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
           },
           "correlationId": {
             "type": "string",
@@ -2640,8 +2981,7 @@
         "type": "object",
         "required": [
           "nowEpochMs",
-          "dryRun",
-          "operatorId"
+          "dryRun"
         ],
         "properties": {
           "nowEpochMs": {
@@ -2657,11 +2997,6 @@
             "minimum": 1,
             "maximum": 1000
           },
-          "operatorId": {
-            "type": "string",
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
           "correlationId": {
             "type": "string",
             "maxLength": 64,
@@ -2676,9 +3011,7 @@
       },
       "UpdateLabelRequest": {
         "type": "object",
-        "required": [
-          "operatorId"
-        ],
+        "required": [],
         "properties": {
           "displayName": {
             "type": "string",
@@ -2691,12 +3024,6 @@
           },
           "description": {
             "type": "string"
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
         },
         "additionalProperties": false

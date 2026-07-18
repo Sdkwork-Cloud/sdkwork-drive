@@ -22,6 +22,7 @@
     "@sdkwork/drive-pc-sandbox-contracts": "workspace:*"
   },
   "devDependencies": {
+    "@testing-library/dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/react": "catalog:",
     "jsdom": "catalog:",

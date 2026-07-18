@@ -189,7 +189,7 @@ describe('createDriveSandboxExplorerSdkPort', () => {
     await expect(port.listChildren({
       sandboxId: 'sandbox-1',
       parentPath: 'projects/demo',
-      pageSize: 100,
+      pageSize: 1_000,
     })).resolves.toEqual({
       items: [{
         id: 'entry-src',
@@ -204,7 +204,7 @@ describe('createDriveSandboxExplorerSdkPort', () => {
     });
     expect(client.drive.sandboxEntries.list).toHaveBeenCalledWith('sandbox-1', {
       parentPath: 'projects/demo',
-      pageSize: 100,
+      pageSize: 1_000,
     });
   });
 
@@ -374,6 +374,12 @@ describe('createDriveSandboxExplorerSdkPort', () => {
     const client = createClient();
     const port = createDriveSandboxExplorerSdkPort({ client });
     await expect(port.listSandboxes({ page: 0, pageSize: 50 })).rejects.toThrow(/positive/);
+    await expect(port.listSandboxes({ page: 1, pageSize: 201 })).rejects.toThrow(/\[1, 200\]/);
+    await expect(port.listChildren({
+      sandboxId: 'sandbox-1',
+      parentPath: '',
+      pageSize: 1_001,
+    })).rejects.toThrow(/\[1, 1000\]/);
     client.drive.sandboxEntries.list.mockResolvedValueOnce({
       items: [],
       pageInfo: { mode: 'cursor', hasMore: true },
@@ -381,7 +387,7 @@ describe('createDriveSandboxExplorerSdkPort', () => {
     await expect(port.listChildren({
       sandboxId: 'sandbox-1',
       parentPath: '',
-      pageSize: 100,
+      pageSize: 1_000,
     })).rejects.toThrow(/next cursor/);
   });
 });

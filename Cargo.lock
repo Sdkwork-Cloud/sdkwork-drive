@@ -3725,7 +3725,10 @@ name = "sdkwork-drive-gateway-assembly"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "sdkwork-drive-config",
  "sdkwork-drive-http",
+ "sdkwork-drive-security",
+ "sdkwork-drive-workspace-service",
  "sdkwork-routes-drive-app-api",
  "sdkwork-routes-drive-backend-api",
  "sdkwork-routes-drive-open-api",

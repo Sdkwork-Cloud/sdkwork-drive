@@ -11,7 +11,8 @@ import type {
   SandboxRoot,
 } from '@sdkwork/drive-pc-sandbox-contracts';
 
-const MAX_PAGE_SIZE = 200;
+const MAX_SANDBOX_PAGE_SIZE = 200;
+const MAX_SANDBOX_DIRECTORY_PAGE_SIZE = 1_000;
 const MAX_LOGICAL_PATH_LENGTH = 4096;
 const MAX_ENTRY_NAME_LENGTH = 255;
 const WINDOWS_RESERVED_ENTRY_NAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/iu;
@@ -160,7 +161,9 @@ function assertLogicalPath(value: string, allowRoot: boolean): string {
   }
   const segments = value.split('/');
   if (segments.some((segment) => !segment || segment === '.' || segment === '..')) {
-    throw new TypeError('Sandbox logical path must not contain empty or dot segments.');
+    throw new TypeError(
+      'Sandbox logical path must be a canonical relative path without empty or dot segments.',
+    );
   }
   return value;
 }
@@ -189,12 +192,12 @@ function quoteStrongRevision(value: string): string {
   return `"${revision}"`;
 }
 
-function assertPageInput(page: number, pageSize: number): void {
+function assertPageInput(page: number, pageSize: number, maxPageSize: number): void {
   if (!Number.isSafeInteger(page) || page < 1) {
     throw new RangeError('Sandbox page must be a positive safe integer.');
   }
-  if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > MAX_PAGE_SIZE) {
-    throw new RangeError(`Sandbox page size must be in range [1, ${MAX_PAGE_SIZE}].`);
+  if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > maxPageSize) {
+    throw new RangeError(`Sandbox page size must be in range [1, ${maxPageSize}].`);
   }
 }
 
@@ -291,7 +294,7 @@ export function createDriveSandboxExplorerSdkPort(
   const idempotencyKeyFactory = options.idempotencyKeyFactory ?? uuid;
   return {
     async listSandboxes(input) {
-      assertPageInput(input.page, input.pageSize);
+      assertPageInput(input.page, input.pageSize, MAX_SANDBOX_PAGE_SIZE);
       const result = await client.drive.sandboxes.list({
         page: input.page,
         pageSize: input.pageSize,
@@ -299,7 +302,7 @@ export function createDriveSandboxExplorerSdkPort(
       return mapSandboxPage(input, result.items, result.pageInfo);
     },
     async listChildren(input) {
-      assertPageInput(1, input.pageSize);
+      assertPageInput(1, input.pageSize, MAX_SANDBOX_DIRECTORY_PAGE_SIZE);
       const result = await client.drive.sandboxEntries.list(input.sandboxId, {
         parentPath: input.parentPath,
         pageSize: input.pageSize,

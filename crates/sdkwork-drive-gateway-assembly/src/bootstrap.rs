@@ -5,7 +5,11 @@
 //! so `/healthz`, `/livez`, `/readyz`, and `/metrics` are not duplicated per surface.
 
 use axum::Router;
+use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_http::infra::{drive_service_router_config, mount_drive_infra_routes};
+use sdkwork_drive_workspace_service::application::download_service::ensure_production_download_token_signing_configured;
+use sdkwork_drive_workspace_service::infrastructure::outbox_dispatch::ensure_domain_outbox_dispatcher;
+use sdkwork_drive_workspace_service::infrastructure::sql::connect_any_database_and_install_schema;
 
 pub struct ApplicationAssembly {
     pub router: Router,
@@ -19,6 +23,20 @@ pub async fn assemble_application_business_router(pool: sqlx::AnyPool) -> Applic
     router =
         router.merge(sdkwork_routes_drive_open_api::gateway_mount_business(pool.clone()).await);
     ApplicationAssembly { router }
+}
+
+pub async fn assemble_application_business_router_from_env(
+) -> Result<ApplicationAssembly, String> {
+    sdkwork_drive_security::ensure_drive_auth_policy_refresh_task();
+    ensure_production_download_token_signing_configured()
+        .map_err(|error| format!("download token signing config invalid: {error}"))?;
+    let database_config = DatabaseConfig::from_env()
+        .map_err(|error| format!("resolve drive database config failed: {error}"))?;
+    let pool = connect_any_database_and_install_schema(&database_config)
+        .await
+        .map_err(|error| format!("create drive database pool failed: {error}"))?;
+    ensure_domain_outbox_dispatcher(pool.clone());
+    Ok(assemble_application_business_router(pool).await)
 }
 
 pub async fn assemble_application_router(pool: sqlx::AnyPool) -> ApplicationAssembly {

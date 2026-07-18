@@ -1,7 +1,17 @@
-import { X } from 'lucide-react';
-import { useEffect, useId, useRef } from 'react';
+import { Copy, Maximize2, Minimize2, Square, X } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { SandboxExplorerPort, SandboxSelection } from './contracts';
 import { SandboxExplorerView } from './SandboxExplorerView';
+
+type DesktopPlatform = 'windows' | 'macos' | 'linux';
+
+function resolveDesktopPlatform(): DesktopPlatform {
+  if (typeof navigator === 'undefined') return 'windows';
+  const platform = `${navigator.userAgent} ${navigator.platform}`.toLocaleLowerCase();
+  if (platform.includes('mac')) return 'macos';
+  if (platform.includes('linux')) return 'linux';
+  return 'windows';
+}
 
 export interface SandboxDirectoryPickerDialogProps {
   readonly open: boolean;
@@ -21,14 +31,22 @@ export function SandboxDirectoryPickerDialog({
   const titleId = useId();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
+  const onCancelRef = useRef(onCancel);
+  const [maximized, setMaximized] = useState(true);
+  const platform = resolveDesktopPlatform();
+
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
 
   useEffect(() => {
     if (!open) return undefined;
+    setMaximized(true);
     const previouslyFocused = document.activeElement instanceof HTMLElement
       ? document.activeElement
       : null;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCancel();
+      if (event.key === 'Escape') onCancelRef.current();
     };
     globalThis.addEventListener('keydown', handleKeyDown);
     closeButtonRef.current?.focus();
@@ -36,13 +54,13 @@ export function SandboxDirectoryPickerDialog({
       globalThis.removeEventListener('keydown', handleKeyDown);
       previouslyFocused?.focus();
     };
-  }, [onCancel, open]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[100] grid place-items-center bg-black/55 p-4"
+      className={`sdkwork-sandbox-dialog-backdrop${maximized ? ' is-maximized' : ''}`}
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onCancel();
@@ -53,7 +71,7 @@ export function SandboxDirectoryPickerDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex h-[min(44rem,calc(100vh-2rem))] w-[min(60rem,calc(100vw-2rem))] min-w-0 flex-col overflow-hidden rounded-lg border border-slate-300 bg-white text-slate-900 shadow-2xl"
+        className={`sdkwork-sandbox-dialog sdkwork-sandbox-dialog--${platform}${maximized ? ' is-maximized' : ''}`}
         onKeyDown={(event) => {
           if (event.key !== 'Tab') return;
           const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
@@ -74,23 +92,52 @@ export function SandboxDirectoryPickerDialog({
           }
         }}
       >
-        <header className="flex min-h-12 items-center gap-3 border-b border-slate-200 px-4">
-          <h2 id={titleId} className="min-w-0 flex-1 truncate text-base font-semibold">
-            {title}
-          </h2>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            title="Close"
-            aria-label="Close"
-            className="grid size-8 shrink-0 place-items-center hover:bg-slate-100"
-            onClick={onCancel}
-          >
-            <X size={17} />
-          </button>
+        <header
+          className="sdkwork-sandbox-dialog__header"
+          onDoubleClick={(event) => {
+            if ((event.target as HTMLElement).closest('button')) return;
+            setMaximized((current) => !current);
+          }}
+        >
+          <div className="sdkwork-sandbox-dialog__window-controls">
+            {platform !== 'macos' && (
+              <button
+                type="button"
+                title={maximized ? 'Restore' : 'Maximize'}
+                aria-label={maximized ? 'Restore' : 'Maximize'}
+                aria-pressed={maximized}
+                className="sdkwork-sandbox-dialog__window-button sdkwork-sandbox-dialog__maximize"
+                onClick={() => setMaximized((current) => !current)}
+              >
+                {maximized ? <Copy size={13} /> : <Square size={12} />}
+              </button>
+            )}
+            <button
+              ref={closeButtonRef}
+              type="button"
+              title="Close"
+              aria-label="Close"
+              className="sdkwork-sandbox-dialog__window-button sdkwork-sandbox-dialog__close"
+              onClick={onCancel}
+            >
+              <X size={17} />
+            </button>
+            {platform === 'macos' && (
+              <button
+                type="button"
+                title={maximized ? 'Restore' : 'Maximize'}
+                aria-label={maximized ? 'Restore' : 'Maximize'}
+                aria-pressed={maximized}
+                className="sdkwork-sandbox-dialog__window-button sdkwork-sandbox-dialog__maximize"
+                onClick={() => setMaximized((current) => !current)}
+              >
+                {maximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+              </button>
+            )}
+          </div>
+          <h2 id={titleId}>{title}</h2>
         </header>
         <SandboxExplorerView
-          className="flex min-h-0 flex-1 flex-col bg-white text-sm text-slate-900"
           mode="select-directory"
           port={port}
           onDirectorySelected={onDirectorySelected}

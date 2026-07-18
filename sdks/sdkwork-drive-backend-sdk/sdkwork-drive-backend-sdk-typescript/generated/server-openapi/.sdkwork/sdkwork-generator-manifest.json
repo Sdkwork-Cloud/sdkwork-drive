@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "cb2c3f9b179b895458f80c7953dc3fe4d24a38d5ce53f8755648d7d168120f48"
+      "sha256": "f6c738266e618fc3ab350722d3b82dcffb65561727d0ddff09525cceffdf6494"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -56,19 +56,27 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "7d046b1ee81927863438a90008a4e83703fe446495d69c75523d6144a900df40"
+      "sha256": "b0713eee61621c0a98d368f6cb5a69221855f75aedef8f607b6269c0361b4998"
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "0d7bff0bc65fc2c84f4e7bfa7073a54625d375655c2a9ec5473b6fd688babb43"
+      "sha256": "3922ee8e7aa75f8d0c965949faf2114b7099623f70b0cf2875de6c7bb02cf993"
     },
     {
       "path": "src/api/labels.ts",
-      "sha256": "6c65a5f34aa7783dcaaed3f6c72bf4be6183b351d6584f0708a8103a36e70721"
+      "sha256": "fa539164366bd66f1364e270c1c524e8eeaaef24cb07492fedf1fd58ca330ea4"
     },
     {
       "path": "src/api/paths.ts",
       "sha256": "fb06a3db13e96bb5b349ddc1831aa6d350c17b09d05ea92a36438131140f666e"
+    },
+    {
+      "path": "src/api/sandbox-grants.ts",
+      "sha256": "7d95744d61482cb41f9a2580104927aa38fce9b29b592c991463c6ba3d4544bc"
+    },
+    {
+      "path": "src/api/sandbox-volumes.ts",
+      "sha256": "2cba3b57fa12dfa7b9a44f195ccbe54658f9f6688ad70c025f9f84ef69a75a5c"
     },
     {
       "path": "src/auth/index.ts",
@@ -88,7 +96,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "c44bcd5e315aaf507358b49cc5bce8325ef973320c57c6767e4fd2288951428a"
+      "sha256": "ce7ed4c6f01398d28c2f30d558e4c095399252d39b64df5beed7a7986dc1cd22"
     },
     {
       "path": "src/types/audit-event-list-http-response.ts",
@@ -108,7 +116,15 @@
     },
     {
       "path": "src/types/create-label-request.ts",
-      "sha256": "8735c67233a3bfb1c6526dd87c56bfdcf921de7b2a702fcd0ecea05bb690509d"
+      "sha256": "925c09c7228c8d99370a4986adb6a3902a681eabd45d874117939ea2ff4e5061"
+    },
+    {
+      "path": "src/types/create-sandbox-grant-request.ts",
+      "sha256": "6e0e978034fb679cb4b94c5449d8848a2e4896dfcded555e0d1386245f1232ef"
+    },
+    {
+      "path": "src/types/create-sandbox-volume-request.ts",
+      "sha256": "6e69a069ce9a3a325af0cea0ce3be1ad3d97afb5e44f512312a68fed8937108d"
     },
     {
       "path": "src/types/download-package-list-http-response.ts",
@@ -144,7 +160,11 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "6a8041ebf7261692a40c628fbe9e7330b2bd4a38fbb3c1ee33f3d16fd82e47d0"
+      "sha256": "85186f69b20118e413f9a9ce9108763e45f51d82c4d42cbf11a7125329147f47"
+    },
+    {
+      "path": "src/types/initial-sandbox-user-grant-request.ts",
+      "sha256": "f5e7afdc0e878451a30438daf844156c16837e219a879e426e8a707b63bfdbca"
     },
     {
       "path": "src/types/labels-create-response201.ts",
@@ -211,6 +231,78 @@
       "sha256": "9ded6d8bfae48ee1baec067025a00f8c60c1fe74a64d4b40e588581bf7bb49aa"
     },
     {
+      "path": "src/types/sandbox-access-level.ts",
+      "sha256": "0b480af3a509bc62fbaa3a4a3ebd1af3aaf979e1f856581a7667ca393491f73b"
+    },
+    {
+      "path": "src/types/sandbox-grant-list-http-response.ts",
+      "sha256": "11dfc444160846781af9e47821bfe72e3cd7ffc646486981d2b1b978da605db4"
+    },
+    {
+      "path": "src/types/sandbox-grant-resource-http-response.ts",
+      "sha256": "5a3adff7af0e45ecbfc015494fb21b038f1217007073858b832c8d3ab4058cbe"
+    },
+    {
+      "path": "src/types/sandbox-grant-subject-type.ts",
+      "sha256": "bd16683ee0bb7f43e43965e2fd977e4b461c1daa498b8a4d0f0c472ae0ff7cfd"
+    },
+    {
+      "path": "src/types/sandbox-grant.ts",
+      "sha256": "b188619376bffb33b11320bad53de9f276f80e0d0984d6f1d37e21a3a1637b4c"
+    },
+    {
+      "path": "src/types/sandbox-grants-create-response201.ts",
+      "sha256": "f230d5ccd78540fefbf0ab51b5869e9e1857ef8f35ea7501c7f3cb65f53955fc"
+    },
+    {
+      "path": "src/types/sandbox-grants-list-response.ts",
+      "sha256": "b4101d55d755641d811c0b8a6708bab0b4943a4711a3455b99964215b2b0c6ed"
+    },
+    {
+      "path": "src/types/sandbox-grants-retrieve-response.ts",
+      "sha256": "c2bdb92b66d37e011d45e7f61c47d22a8d0ec1ce2cfd4f84642a524b45fe7eb7"
+    },
+    {
+      "path": "src/types/sandbox-grants-update-response.ts",
+      "sha256": "cbd1e636bcbd1ebcdf4bee6a65b33c878e16bc9caa8dbf1fb20415bf9ff498d9"
+    },
+    {
+      "path": "src/types/sandbox-lifecycle-status.ts",
+      "sha256": "335683efe60d0a1681252c6db329edd0df5793316cd1648574d51f6d5e21d9b0"
+    },
+    {
+      "path": "src/types/sandbox-provider-kind.ts",
+      "sha256": "13a7c840dabfc9400bef4a83a7a05519eb7871dd5cf7ff97cce90a61841a71ae"
+    },
+    {
+      "path": "src/types/sandbox-volume-list-http-response.ts",
+      "sha256": "eccfe847efcafda3b380945e6748535e439dc7d3dae37986a110e0cd8fe3c6cd"
+    },
+    {
+      "path": "src/types/sandbox-volume-resource-http-response.ts",
+      "sha256": "a297bb48e377bd18fd11c52030705b3228affcad316d2ddd45b78fa880c8d291"
+    },
+    {
+      "path": "src/types/sandbox-volume.ts",
+      "sha256": "3c863b1c9ae5ca46e929cb3d20799c9952e735a84dabb2107d390f1a5db2d535"
+    },
+    {
+      "path": "src/types/sandbox-volumes-create-response201.ts",
+      "sha256": "c96d79fe66685bc044e66e46fe7e60197f2bd95cece3333dcec039cc27b16373"
+    },
+    {
+      "path": "src/types/sandbox-volumes-list-response.ts",
+      "sha256": "a3a86905ecb82310bee325c259a2b055a7f508694d11c3ebffdd03533803ff38"
+    },
+    {
+      "path": "src/types/sandbox-volumes-retrieve-response.ts",
+      "sha256": "c495544a7e1024f7cec81cdc6ee5ffab6b49717dc1aba75738cf3f0d11205283"
+    },
+    {
+      "path": "src/types/sandbox-volumes-update-response.ts",
+      "sha256": "606781b27acbdbd2c9a28e39696fc58be5a6ec0d2531df24b8dccd5b57406583"
+    },
+    {
       "path": "src/types/sdk-work-api-response.ts",
       "sha256": "79cef2c8e584ba8b8e96c6c77ccf6bda087b0c68cbed63cb97d5fb1ff3e47e1a"
     },
@@ -244,7 +336,7 @@
     },
     {
       "path": "src/types/sweep-object-store-request.ts",
-      "sha256": "c369a4ad086adbf2297bdc0a2fc7c95da265544fa6d4c25543dfed662a4c474d"
+      "sha256": "990fd1e0ca6d09182ca8ad42e8e142955a0191b11985c00b18c0b1cac5984ae0"
     },
     {
       "path": "src/types/sweep-response.ts",
@@ -252,15 +344,23 @@
     },
     {
       "path": "src/types/sweep-upload-sessions-request.ts",
-      "sha256": "f226509f0f12907c927b831563fcc25ea5f3b909ad438ef6e5b40a01aacbf6eb"
+      "sha256": "bc481abbff89c12c3e22299ea80a6b7a376ecb736001f7b0b82201b72c020d81"
     },
     {
       "path": "src/types/update-label-request.ts",
-      "sha256": "28956c90d7ae897514056c260d6cfec1475c5c1a3596543e8bcbb6ff0471e536"
+      "sha256": "c6faf5483eaabea96d934517f57b460e78351964296e4d5c1a370b32bcb39be8"
     },
     {
       "path": "src/types/update-quota-policy-request.ts",
-      "sha256": "4b012da5940c852a9ecd181f724ec3154cc1e4ad261627f507769824e680393b"
+      "sha256": "99ddb25c34d634edbf3cbad9e4ddb97f6fc1cfdcbd4cac8fd8c6333fc50a12d6"
+    },
+    {
+      "path": "src/types/update-sandbox-grant-request.ts",
+      "sha256": "f9c9bd77c63380a10f51a43e64e16af7ba399adb182bde5540d4e4607837adb5"
+    },
+    {
+      "path": "src/types/update-sandbox-volume-request.ts",
+      "sha256": "daf76b351eb210f6db5f480877413bc139baeaed065fd54276f38152eee98329"
     },
     {
       "path": "tsconfig.json",

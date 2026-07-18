@@ -251,7 +251,7 @@ export function StorageProviderEditor({
         id: generatedId,
         providerKind: effectiveKind,
         name,
-        endpointUrl: endpointUrl || undefined,
+        endpointUrl,
         region: region || undefined,
         bucket,
         pathStyle,

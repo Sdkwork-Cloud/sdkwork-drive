@@ -993,6 +993,7 @@ fn map_delete_error(error: io::Error) -> DriveServiceError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::BTreeSet;
     use std::path::Path;
 
     fn list_input(
@@ -1051,6 +1052,51 @@ mod tests {
         );
         assert!(!second.has_more);
         assert!(second.next_cursor.is_none());
+    }
+
+    #[test]
+    fn lists_every_supported_entry_across_large_directory_pages() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let mut expected = BTreeSet::new();
+        for index in 0..225 {
+            let name = format!("entry-{index:03}");
+            if index % 2 == 0 {
+                std::fs::create_dir(temp.path().join(&name)).expect("directory");
+            } else {
+                std::fs::write(temp.path().join(&name), b"file").expect("file");
+            }
+            expected.insert(name);
+        }
+        for name in [
+            ".git",
+            "$Recycle.Bin",
+            "folder with spaces",
+            "\u{8d44}\u{6599}",
+        ] {
+            std::fs::create_dir(temp.path().join(name)).expect("special directory");
+            expected.insert(name.to_string());
+        }
+        for name in [".hidden", "LICENSE", "caf\u{e9}.txt"] {
+            std::fs::write(temp.path().join(name), b"file").expect("special file");
+            expected.insert(name.to_string());
+        }
+
+        let mut actual = BTreeSet::new();
+        let mut cursor = None;
+        loop {
+            let page = list_children_sync(list_input(temp.path(), "", 37, cursor))
+                .expect("directory page");
+            for entry in page.items {
+                assert!(actual.insert(entry.name), "entry must appear exactly once");
+            }
+            if !page.has_more {
+                assert!(page.next_cursor.is_none());
+                break;
+            }
+            cursor = Some(page.next_cursor.expect("next cursor"));
+        }
+
+        assert_eq!(actual, expected);
     }
 
     #[test]

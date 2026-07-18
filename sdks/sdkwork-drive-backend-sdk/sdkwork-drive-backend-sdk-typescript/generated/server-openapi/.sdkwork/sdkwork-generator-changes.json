@@ -9,10 +9,48 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-backend-sdk-generated-typescript"
   },
-  "changeFingerprint": "fd59995e5ab9eadc08776e0cde99fa272de2c29732e8aef501df499b60355a68",
+  "changeFingerprint": "7a6fb02861d4b8c92822611b3f5c65149958a1e7b98c34b1396d12e4764bc0ef",
   "changes": {
-    "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [],
+    "createdGeneratedFiles": [
+      "src/api/sandbox-grants.ts",
+      "src/api/sandbox-volumes.ts",
+      "src/types/create-sandbox-grant-request.ts",
+      "src/types/create-sandbox-volume-request.ts",
+      "src/types/initial-sandbox-user-grant-request.ts",
+      "src/types/sandbox-access-level.ts",
+      "src/types/sandbox-grant-list-http-response.ts",
+      "src/types/sandbox-grant-resource-http-response.ts",
+      "src/types/sandbox-grant-subject-type.ts",
+      "src/types/sandbox-grant.ts",
+      "src/types/sandbox-grants-create-response201.ts",
+      "src/types/sandbox-grants-list-response.ts",
+      "src/types/sandbox-grants-retrieve-response.ts",
+      "src/types/sandbox-grants-update-response.ts",
+      "src/types/sandbox-lifecycle-status.ts",
+      "src/types/sandbox-provider-kind.ts",
+      "src/types/sandbox-volume-list-http-response.ts",
+      "src/types/sandbox-volume-resource-http-response.ts",
+      "src/types/sandbox-volume.ts",
+      "src/types/sandbox-volumes-create-response201.ts",
+      "src/types/sandbox-volumes-list-response.ts",
+      "src/types/sandbox-volumes-retrieve-response.ts",
+      "src/types/sandbox-volumes-update-response.ts",
+      "src/types/update-sandbox-grant-request.ts",
+      "src/types/update-sandbox-volume-request.ts"
+    ],
+    "updatedGeneratedFiles": [
+      "README.md",
+      "src/api/drive.ts",
+      "src/api/index.ts",
+      "src/api/labels.ts",
+      "src/sdk.ts",
+      "src/types/create-label-request.ts",
+      "src/types/index.ts",
+      "src/types/sweep-object-store-request.ts",
+      "src/types/sweep-upload-sessions-request.ts",
+      "src/types/update-label-request.ts",
+      "src/types/update-quota-policy-request.ts"
+    ],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
@@ -22,23 +60,17 @@
       "CHANGELOG.md",
       "LICENSE",
       "package.json",
-      "README.md",
       "sdkwork-sdk.json",
       "src/api/base.ts",
-      "src/api/drive.ts",
-      "src/api/index.ts",
-      "src/api/labels.ts",
       "src/api/paths.ts",
       "src/auth/index.ts",
       "src/http/client.ts",
       "src/http/index.ts",
       "src/index.ts",
-      "src/sdk.ts",
       "src/types/audit-event-list-http-response.ts",
       "src/types/audit-event.ts",
       "src/types/audit-events-list-response.ts",
       "src/types/common.ts",
-      "src/types/create-label-request.ts",
       "src/types/download-package-list-http-response.ts",
       "src/types/download-package.ts",
       "src/types/download-packages-list-response.ts",
@@ -47,7 +79,6 @@
       "src/types/drive-space-list-http-response.ts",
       "src/types/drive-space.ts",
       "src/types/field-error.ts",
-      "src/types/index.ts",
       "src/types/labels-create-response201.ts",
       "src/types/labels-list-response.ts",
       "src/types/labels-retrieve-response.ts",
@@ -72,11 +103,7 @@
       "src/types/sdk-work-resource-data.ts",
       "src/types/sdk-work-resource-response.ts",
       "src/types/spaces-admin-list-response.ts",
-      "src/types/sweep-object-store-request.ts",
       "src/types/sweep-response.ts",
-      "src/types/sweep-upload-sessions-request.ts",
-      "src/types/update-label-request.ts",
-      "src/types/update-quota-policy-request.ts",
       "tsconfig.json"
     ],
     "deletedGeneratedFiles": [],
@@ -89,26 +116,119 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [],
-    "details": [],
-    "requiresVerification": false,
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+    "areas": [
+      "api-surface",
+      "models",
+      "documentation"
+    ],
+    "details": [
+      {
+        "area": "api-surface",
+        "paths": [
+          "src/api/drive.ts",
+          "src/api/index.ts",
+          "src/api/labels.ts",
+          "src/api/sandbox-grants.ts",
+          "src/api/sandbox-volumes.ts",
+          "src/sdk.ts"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "src/types/create-label-request.ts",
+          "src/types/create-sandbox-grant-request.ts",
+          "src/types/create-sandbox-volume-request.ts",
+          "src/types/index.ts",
+          "src/types/initial-sandbox-user-grant-request.ts",
+          "src/types/sandbox-access-level.ts",
+          "src/types/sandbox-grant-list-http-response.ts",
+          "src/types/sandbox-grant-resource-http-response.ts",
+          "src/types/sandbox-grant-subject-type.ts",
+          "src/types/sandbox-grant.ts",
+          "src/types/sandbox-grants-create-response201.ts",
+          "src/types/sandbox-grants-list-response.ts",
+          "src/types/sandbox-grants-retrieve-response.ts",
+          "src/types/sandbox-grants-update-response.ts",
+          "src/types/sandbox-lifecycle-status.ts",
+          "src/types/sandbox-provider-kind.ts",
+          "src/types/sandbox-volume-list-http-response.ts",
+          "src/types/sandbox-volume-resource-http-response.ts",
+          "src/types/sandbox-volume.ts",
+          "src/types/sandbox-volumes-create-response201.ts",
+          "src/types/sandbox-volumes-list-response.ts",
+          "src/types/sandbox-volumes-retrieve-response.ts",
+          "src/types/sandbox-volumes-update-response.ts",
+          "src/types/sweep-object-store-request.ts",
+          "src/types/sweep-upload-sessions-request.ts",
+          "src/types/update-label-request.ts",
+          "src/types/update-quota-policy-request.ts",
+          "src/types/update-sandbox-grant-request.ts",
+          "src/types/update-sandbox-volume-request.ts"
+        ]
+      },
+      {
+        "area": "documentation",
+        "paths": [
+          "README.md"
+        ]
+      }
+    ],
+    "requiresVerification": true,
+    "summary": "Detected impact areas: api-surface, models, documentation. Verification is required."
   },
   "verificationPlan": {
-    "shouldRun": false,
-    "runPhase": "skip",
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
-    "steps": []
+    "shouldRun": true,
+    "runPhase": "now",
+    "summary": "Detected impact areas: api-surface, models, documentation. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "steps": [
+      {
+        "id": "check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, documentation.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-typescript\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "typescript",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action check"
+      },
+      {
+        "id": "build",
+        "title": "Unified package build",
+        "required": true,
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, documentation.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-typescript\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "typescript",
+          "--project-dir",
+          ".",
+          "--action",
+          "build"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action build"
+      }
+    ]
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "low",
-    "nextAction": "skip",
+    "riskLevel": "medium",
+    "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
-      "no-actionable-changes"
+      "verification-required"
     ]
   },
   "preservedLegacyFiles": false

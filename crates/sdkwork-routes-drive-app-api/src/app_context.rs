@@ -16,7 +16,7 @@ pub(crate) struct DriveRequestContext {
     pub(crate) subject_id: String,
     pub(crate) request_id: String,
     pub(crate) trace_id: String,
-    from_token: bool,
+    pub(crate) from_token: bool,
 }
 
 impl DriveRequestContext {

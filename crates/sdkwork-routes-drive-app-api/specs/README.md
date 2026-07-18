@@ -9,3 +9,7 @@ This directory is the local SDKWork component contract for `sdkwork-routes-drive
 Read `specs/component.spec.json` before changing this component's public exports, runtime entrypoints, SDK clients, generated artifacts, config keys, or verification commands.
 
 Do not copy root standards into this directory. Link to files under `../../../sdkwork-specs/` instead.
+
+Task-scoped governance records:
+
+- `PAGINATION_EXCEPTIONS.md` records the bounded file-system directory-listing exception for `sandboxEntries.list`.

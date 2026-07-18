@@ -16,10 +16,7 @@ fn sandbox_file_openapi_inlines_problem_json_for_every_error_response() {
     ))
     .expect("drive app OpenAPI should be valid JSON");
     let operations = [
-        (
-            "/app/v3/api/drive/sandboxes/{sandboxId}/files",
-            "post",
-        ),
+        ("/app/v3/api/drive/sandboxes/{sandboxId}/files", "post"),
         (
             "/app/v3/api/drive/sandboxes/{sandboxId}/files/{entryId}/content",
             "get",
@@ -334,6 +331,30 @@ async fn sandbox_directory_routes_list_create_paginate_and_audit_without_path_le
         Some(1)
     );
     assert_eq!(second_payload["data"]["pageInfo"]["hasMore"], false);
+
+    let maximum_page_response = app
+        .clone()
+        .oneshot(common::authed_get(
+            "/app/v3/api/drive/sandboxes/sandbox-directory/entries?page_size=1000",
+            "tenant-001",
+            "user-001",
+            "appbase",
+        ))
+        .await
+        .expect("maximum directory page should be handled");
+    assert_eq!(maximum_page_response.status(), StatusCode::OK);
+
+    let oversized_page_response = app
+        .clone()
+        .oneshot(common::authed_get(
+            "/app/v3/api/drive/sandboxes/sandbox-directory/entries?page_size=1001",
+            "tenant-001",
+            "user-001",
+            "appbase",
+        ))
+        .await
+        .expect("oversized directory page should be handled");
+    assert_eq!(oversized_page_response.status(), StatusCode::BAD_REQUEST);
 
     let create_response = app
         .clone()

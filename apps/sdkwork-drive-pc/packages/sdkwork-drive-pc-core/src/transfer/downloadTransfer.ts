@@ -95,7 +95,7 @@ export async function createBrowserDownloadStreamAdapter(
     return {
       begin: async () => BROWSER_DOWNLOAD_SESSION_ID,
       writeChunk: async (_sessionId, chunk) => {
-        await writable.write(chunk);
+        await writable.write(new Uint8Array(chunk).buffer);
       },
       finish: async () => {
         await closeWritable('close');

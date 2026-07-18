@@ -5,7 +5,8 @@ mod bootstrap;
 mod generated;
 
 pub use bootstrap::{
-    assemble_application_business_router, assemble_application_router, ApplicationAssembly,
+    assemble_application_business_router, assemble_application_business_router_from_env,
+    assemble_application_router, ApplicationAssembly,
 };
 
 pub fn assembly_route_count() -> usize {

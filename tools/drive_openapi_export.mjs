@@ -84,6 +84,34 @@ const SDK_AUTHORITIES = {
   backend: "sdkwork-drive.backend",
   adminStorage: "sdkwork-drive.admin.storage",
 };
+const BACKEND_OPERATION_PERMISSIONS = new Map([
+  ["auditEvents.list", "drive.audit.admin"],
+  ["labels.list", "drive.labels.admin"],
+  ["labels.create", "drive.labels.admin"],
+  ["labels.retrieve", "drive.labels.admin"],
+  ["labels.update", "drive.labels.admin"],
+  ["labels.delete", "drive.labels.admin"],
+  ["maintenance.jobs.list", "drive.maintenance.admin"],
+  ["maintenance.objectSweep", "drive.maintenance.admin"],
+  ["maintenance.uploadSessionSweep", "drive.maintenance.admin"],
+  ["maintenance.expiredUploadContentSweep", "drive.maintenance.admin"],
+  ["maintenance.abandonedUploadTaskSweep", "drive.maintenance.admin"],
+  ["quotas.retrieve", "drive.quota.admin"],
+  ["quotas.update", "drive.quota.admin"],
+  ["spaces.admin.list", "drive.spaces.admin"],
+  ["downloadPackages.list", "drive.download_packages.admin"],
+  ["sandboxVolumes.list", "drive.sandboxes.admin"],
+  ["sandboxVolumes.create", "drive.sandboxes.admin"],
+  ["sandboxVolumes.retrieve", "drive.sandboxes.admin"],
+  ["sandboxVolumes.update", "drive.sandboxes.admin"],
+  ["sandboxVolumes.delete", "drive.sandboxes.admin"],
+  ["sandboxGrants.list", "drive.sandboxes.admin"],
+  ["sandboxGrants.create", "drive.sandboxes.admin"],
+  ["sandboxGrants.retrieve", "drive.sandboxes.admin"],
+  ["sandboxGrants.update", "drive.sandboxes.admin"],
+  ["sandboxGrants.delete", "drive.sandboxes.admin"],
+]);
+const ADMIN_STORAGE_OPERATION_PERMISSION = "drive.storage.admin";
 const APPBASE_APP_PATH_PREFIXES = [
   "/app/v3/api/auth/",
   "/app/v3/api/iam/",
@@ -573,6 +601,44 @@ function annotateOwnerOnlyOpenapi(document, { authority, dependencyExclusions = 
   }
 }
 
+function annotateBackendPermissions(document, authority) {
+  if (authority !== SDK_AUTHORITIES.backend && authority !== SDK_AUTHORITIES.adminStorage) {
+    return;
+  }
+
+  const observedOperationIds = new Set();
+  for (const pathItem of Object.values(document.paths || {})) {
+    if (!pathItem || typeof pathItem !== "object") {
+      continue;
+    }
+    for (const [methodName, operation] of Object.entries(pathItem)) {
+      if (!HTTP_METHODS.has(methodName.toLowerCase()) || !operation || typeof operation !== "object") {
+        continue;
+      }
+      const operationId = String(operation.operationId || "").trim();
+      if (!operationId) {
+        fail(`${authority} operation ${methodName.toUpperCase()} is missing operationId`);
+      }
+      const permission = authority === SDK_AUTHORITIES.adminStorage
+        ? ADMIN_STORAGE_OPERATION_PERMISSION
+        : BACKEND_OPERATION_PERMISSIONS.get(operationId);
+      if (!permission) {
+        fail(`${authority} operation ${operationId} is missing a Drive IAM permission mapping`);
+      }
+      operation["x-sdkwork-permission"] = permission;
+      observedOperationIds.add(operationId);
+    }
+  }
+
+  if (authority === SDK_AUTHORITIES.backend) {
+    for (const operationId of BACKEND_OPERATION_PERMISSIONS.keys()) {
+      if (!observedOperationIds.has(operationId)) {
+        fail(`${authority} permission mapping references missing operationId: ${operationId}`);
+      }
+    }
+  }
+}
+
 function ensureComponentContainer(document, componentName) {
   document.components = document.components || {};
   document.components[componentName] = document.components[componentName] || {};
@@ -830,6 +896,7 @@ function materializeOwnerOnlyOpenapi(document, {
     authority,
     dependencyExclusions: exclusionsByWorkspace,
   });
+  annotateBackendPermissions(normalized, authority);
   return normalized;
 }
 

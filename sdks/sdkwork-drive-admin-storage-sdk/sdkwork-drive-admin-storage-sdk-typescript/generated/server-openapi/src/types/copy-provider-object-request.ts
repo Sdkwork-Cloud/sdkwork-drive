@@ -6,5 +6,4 @@ export interface CopyProviderObjectRequest {
   /** S3-compatible bucket name. DNS-compatible 3-63 characters; lowercase letters, digits, dots, and hyphens only; must start and end with a letter or digit; no IPv4-looking names, adjacent dots, dot-hyphen adjacency, or reserved S3 affixes. */
   destinationBucket?: string;
   metadataDirective?: 'COPY' | 'REPLACE';
-  operatorId: string;
 }
