@@ -35,7 +35,6 @@ pub struct ResolvedGatewayConfig {
     pub service_name: String,
     pub environment: String,
     pub bind: String,
-    pub allow_any_origin: bool,
     pub allowed_origins: Vec<String>,
 }
 
@@ -80,7 +79,6 @@ pub fn resolve_gateway_config(
         environment: file_config.service.environment,
         bind: read_env_override("SDKWORK_DRIVE_STANDALONE_GATEWAY_BIND")
             .unwrap_or(file_config.server.bind),
-        allow_any_origin: file_config.cors.allow_any_origin,
         allowed_origins: file_config.cors.allowed_origins,
     })
 }
@@ -136,4 +134,33 @@ pub fn resolve_config_path(args: &[String]) -> Result<String, String> {
     Ok(format!(
         "configs/sdkwork-drive-standalone-gateway.{environment}.toml"
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{web_framework_env_projection, ResolvedGatewayConfig};
+
+    #[test]
+    fn projects_source_config_to_shared_web_framework_keys() {
+        let config = ResolvedGatewayConfig {
+            service_name: "sdkwork-drive-standalone-gateway".to_owned(),
+            environment: "production".to_owned(),
+            bind: "127.0.0.1:3900".to_owned(),
+            allowed_origins: vec![
+                "https://manager.sdkwork.com".to_owned(),
+                "https://apps.sdkwork.com".to_owned(),
+            ],
+        };
+
+        assert_eq!(
+            web_framework_env_projection(&config),
+            [
+                ("SDKWORK_ENVIRONMENT", "production".to_owned()),
+                (
+                    "SDKWORK_CORS_ALLOWED_ORIGINS",
+                    "https://manager.sdkwork.com,https://apps.sdkwork.com".to_owned(),
+                ),
+            ],
+        );
+    }
 }
