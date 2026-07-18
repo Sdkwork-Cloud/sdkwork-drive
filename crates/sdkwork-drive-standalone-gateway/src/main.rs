@@ -11,7 +11,8 @@ use axum::{
     Router,
 };
 use config::{
-    load_gateway_config, resolve_config_path, resolve_gateway_config, ResolvedGatewayConfig,
+    load_gateway_config, resolve_config_path, resolve_gateway_config,
+    web_framework_env_projection,
 };
 use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_workspace_service::application::download_service::ensure_production_download_token_signing_configured;
@@ -22,7 +23,6 @@ use sdkwork_routes_storage_backend_api::{
     AdminStorageConfig,
 };
 use tower::ServiceExt;
-use tower_http::cors::CorsLayer;
 
 /// Maximum request body size: 32 MB.
 /// Requests exceeding this limit receive a 413 Payload Too Large response.
@@ -37,9 +37,6 @@ struct EmbeddedServiceState {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     sdkwork_drive_observability::init_tracing("sdkwork-drive-standalone-gateway");
-    sdkwork_drive_security::ensure_drive_auth_policy_refresh_task();
-    ensure_production_download_token_signing_configured()
-        .map_err(|error| format!("download token signing config invalid: {error}"))?;
 
     let args: Vec<String> = std::env::args().collect();
     let config_path = resolve_config_path(&args)?;
@@ -47,6 +44,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .map_err(|error| -> Box<dyn std::error::Error + Send + Sync> { error.into() })?;
     let gateway_config = resolve_gateway_config(file_config)
         .map_err(|error| -> Box<dyn std::error::Error + Send + Sync> { error.into() })?;
+    for (key, value) in web_framework_env_projection(&gateway_config) {
+        std::env::set_var(key, value);
+    }
+
+    sdkwork_drive_security::ensure_drive_auth_policy_refresh_task();
+    ensure_production_download_token_signing_configured()
+        .map_err(|error| format!("download token signing config invalid: {error}"))?;
     let database_config = DatabaseConfig::from_env_and_cli_args(&args)
         .map_err(|error| format!("resolve drive database config failed: {error}"))?;
     let pool = connect_any_database_and_install_schema(&database_config)
@@ -94,8 +98,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             "/admin/v3/api",
             any(dispatch_embedded).with_state(admin_storage_router),
         )
-        .merge(iam_router)
-        .layer(build_cors_layer(&gateway_config));
+        .merge(iam_router);
 
     let bind_addr: std::net::SocketAddr = gateway_config
         .bind
@@ -114,23 +117,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .with_graceful_shutdown(shutdown_signal())
         .await?;
     Ok(())
-}
-
-fn build_cors_layer(config: &ResolvedGatewayConfig) -> CorsLayer {
-    let mut policy = if matches!(
-        config.environment.trim().to_ascii_lowercase().as_str(),
-        "dev" | "development" | "test" | "testing" | "local"
-    ) {
-        sdkwork_web_core::CorsPolicy::development_private_network()
-    } else {
-        sdkwork_web_core::CorsPolicy::default()
-    };
-    for origin in &config.allowed_origins {
-        if !policy.allowed_origins.contains(origin) {
-            policy.allowed_origins.push(origin.clone());
-        }
-    }
-    sdkwork_web_axum::cors_layer_from_policy(policy)
 }
 
 async fn shutdown_signal() {

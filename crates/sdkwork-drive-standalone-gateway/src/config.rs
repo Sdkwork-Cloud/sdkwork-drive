@@ -85,6 +85,18 @@ pub fn resolve_gateway_config(
     })
 }
 
+pub fn web_framework_env_projection(
+    config: &ResolvedGatewayConfig,
+) -> [(&'static str, String); 2] {
+    [
+        ("SDKWORK_ENVIRONMENT", config.environment.clone()),
+        (
+            "SDKWORK_CORS_ALLOWED_ORIGINS",
+            config.allowed_origins.join(","),
+        ),
+    ]
+}
+
 fn read_env_override(key: &str) -> Option<String> {
     std::env::var(key)
         .ok()
