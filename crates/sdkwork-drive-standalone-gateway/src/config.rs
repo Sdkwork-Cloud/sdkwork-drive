@@ -85,9 +85,7 @@ pub fn resolve_gateway_config(
     })
 }
 
-pub fn web_framework_env_projection(
-    config: &ResolvedGatewayConfig,
-) -> [(&'static str, String); 2] {
+pub fn web_framework_env_projection(config: &ResolvedGatewayConfig) -> [(&'static str, String); 2] {
     [
         ("SDKWORK_ENVIRONMENT", config.environment.clone()),
         (

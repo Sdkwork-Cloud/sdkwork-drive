@@ -11,8 +11,7 @@ use axum::{
     Router,
 };
 use config::{
-    load_gateway_config, resolve_config_path, resolve_gateway_config,
-    web_framework_env_projection,
+    load_gateway_config, resolve_config_path, resolve_gateway_config, web_framework_env_projection,
 };
 use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_workspace_service::application::download_service::ensure_production_download_token_signing_configured;
