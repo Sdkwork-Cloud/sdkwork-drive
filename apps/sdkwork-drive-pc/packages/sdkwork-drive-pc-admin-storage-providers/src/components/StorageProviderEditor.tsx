@@ -304,11 +304,11 @@ export function StorageProviderEditor({
 
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
           {!isEditing && (
-            <div className="w-full shrink-0 overflow-x-auto border-b border-neutral-100 bg-neutral-50 px-3 py-2.5 dark:border-neutral-800 dark:bg-neutral-950 sm:w-64 sm:overflow-y-auto sm:border-b-0 sm:border-r sm:py-3">
+            <div className="w-full shrink-0 overflow-x-auto border-b border-neutral-100 bg-neutral-50 px-3 py-2.5 dark:border-neutral-800 dark:bg-neutral-950 sm:!w-64 sm:overflow-y-auto sm:border-b-0 sm:border-r sm:py-3">
               <div className="mb-2 px-1 text-[10px] font-semibold text-neutral-400 dark:text-neutral-500">
                 {t('stepType')}
               </div>
-              <div className="flex gap-1 sm:block sm:space-y-1">
+              <div className="flex gap-1 sm:!block sm:space-y-1">
                 {allKinds.map((k) => {
                   const active = providerKind === k.value;
                   return (

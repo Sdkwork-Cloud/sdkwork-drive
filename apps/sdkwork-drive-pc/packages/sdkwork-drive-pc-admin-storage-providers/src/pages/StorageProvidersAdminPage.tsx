@@ -211,7 +211,7 @@ export function StorageProvidersAdminPage({
               <p className="mt-1 max-w-3xl text-sm leading-5 text-neutral-500 dark:text-neutral-400">{t('pageDescription')}</p>
             </div>
           </div>
-          <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto">
+          <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:!w-auto">
             <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => reload()}>
               <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
               {t('refresh')}
