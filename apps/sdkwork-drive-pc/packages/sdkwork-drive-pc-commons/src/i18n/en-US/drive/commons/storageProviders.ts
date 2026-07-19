@@ -3,6 +3,8 @@ export default {
   pageTitle: 'Storage providers',
   pageDescription: 'Configure and manage object storage backends for Drive file storage.',
   newProvider: 'New provider',
+  refresh: 'Refresh',
+  dismiss: 'Dismiss',
 
   // Table
   allStatus: 'All status',

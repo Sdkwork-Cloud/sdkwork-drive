@@ -1,4 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import {
+  CircleAlert,
+  LoaderCircle,
+  Network,
+  RefreshCw,
+  X,
+} from 'lucide-react';
 import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
 import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
 import {
@@ -8,7 +15,15 @@ import {
 import type { StorageProviderBindingView, StorageProviderView } from '../types/storageProviderAdminTypes';
 import { SPACE_TYPES, getSpaceTypeMeta, resolveSpaceTypeDescription, resolveSpaceTypeLabel } from '../utils/spaceTypeConfig';
 import { getProviderKindMeta } from '../utils/providerKindConfig';
-import { PRIMARY_BUTTON_CLASS, SELECT_CLASS, CARD_CLASS, BADGE_BASE_CLASS, INPUT_CLASS } from '../utils/uiPrimitives';
+import {
+  PRIMARY_BUTTON_CLASS,
+  SELECT_CLASS,
+  CARD_CLASS,
+  BADGE_BASE_CLASS,
+  ICON_BUTTON_CLASS,
+  INPUT_CLASS,
+  SECONDARY_BUTTON_CLASS,
+} from '../utils/uiPrimitives';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -230,21 +245,28 @@ export function StorageBindingsAdminPage({
 
   return (
     <main className="flex h-full flex-1 flex-col overflow-hidden bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <header className="border-b border-neutral-200 bg-white px-6 py-4 dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-semibold">{t('bindingsPageTitle')}</h1>
-            <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">{t('bindingsPageDescription')}</p>
+      <header className="border-b border-neutral-200 bg-white px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900 sm:px-6 sm:py-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
+              <Network aria-hidden="true" size={20} strokeWidth={1.8} />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-lg font-semibold text-neutral-950 dark:text-white">{t('bindingsPageTitle')}</h1>
+                <span className={`${BADGE_BASE_CLASS} bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300`}>{t('bindingsSummary', { bound: boundCount, total: SPACE_TYPES.length })}</span>
+              </div>
+              <p className="mt-1 max-w-3xl text-sm leading-5 text-neutral-500 dark:text-neutral-400">{t('bindingsPageDescription')}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-neutral-500">
-            <span className={`${BADGE_BASE_CLASS} bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300`}>
-              {t('bindingsSummary', { bound: boundCount, total: SPACE_TYPES.length })}
-            </span>
-          </div>
+          <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => load()}>
+            <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
+            {t('refresh')}
+          </button>
         </div>
       </header>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
         {notice && (
           <div className={`mb-4 flex items-center gap-3 rounded-lg border px-4 py-3 text-sm ${
             notice.type === 'success'
@@ -252,15 +274,14 @@ export function StorageBindingsAdminPage({
               : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200'
           }`}>
             <span className="flex-1">{t(notice.messageKey, notice.params)}</span>
-            <button type="button" className="text-current opacity-50 hover:opacity-100" onClick={() => setNotice(null)}>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <button type="button" className={ICON_BUTTON_CLASS} aria-label={t('dismiss')} title={t('dismiss')} onClick={() => setNotice(null)}><X aria-hidden="true" size={15} /></button>
           </div>
         )}
 
         {activeProviders.length === 0 && !loading && (
-          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-            {t('bindingsNoActiveProviders')}
+          <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+            <CircleAlert aria-hidden="true" className="mt-0.5 shrink-0" size={16} />
+            <span>{t('bindingsNoActiveProviders')}</span>
           </div>
         )}
 
@@ -327,7 +348,7 @@ export function StorageBindingsAdminPage({
         {loading ? (
           <div className="flex min-h-[360px] items-center justify-center rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
             <div className="flex items-center gap-3 text-sm text-neutral-500">
-              <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+              <LoaderCircle aria-hidden="true" className="animate-spin" size={19} />
               {t('bindingsLoading')}
             </div>
           </div>
@@ -357,9 +378,9 @@ export function StorageBindingsAdminPage({
                 </button>
               ))}
             </div>
-          <div className={CARD_CLASS}>
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-neutral-200 bg-neutral-50 text-xs uppercase text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
+          <div className={`${CARD_CLASS} overflow-x-auto`}>
+            <table className="w-full min-w-[1080px] text-left text-sm">
+              <thead className="border-b border-neutral-200 bg-neutral-50 text-xs font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
                 <tr>
                   <th className="px-5 py-3 font-semibold">{t('bindingsColSpaceType')}</th>
                   <th className="px-5 py-3 font-semibold">{t('bindingsColDescription')}</th>

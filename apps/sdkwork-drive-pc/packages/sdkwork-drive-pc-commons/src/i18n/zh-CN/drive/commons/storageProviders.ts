@@ -3,6 +3,8 @@ export default {
   pageTitle: '存储提供商',
   pageDescription: '配置和管理 Drive 文件存储的对象存储后端。',
   newProvider: '新建提供商',
+  refresh: '刷新',
+  dismiss: '关闭',
 
   // 表格
   searchLabel: '搜索',
