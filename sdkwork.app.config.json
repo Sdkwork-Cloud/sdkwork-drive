@@ -184,28 +184,6 @@
       }
     }
   },
-  "environments": {
-    "development": {
-      "accessUrl": "https://api-dev.sdkwork.com/apps/sdkwork-drive",
-      "deployUrl": "https://api-dev.sdkwork.com/apps/sdkwork-drive",
-      "deployEnv": "dev"
-    },
-    "test": {
-      "accessUrl": "https://api-test.sdkwork.com/apps/sdkwork-drive",
-      "deployUrl": "https://api-test.sdkwork.com/apps/sdkwork-drive",
-      "deployEnv": "test"
-    },
-    "production": {
-      "accessUrl": "https://api.sdkwork.com/apps/sdkwork-drive",
-      "deployUrl": "https://api.sdkwork.com/apps/sdkwork-drive",
-      "deployEnv": "production"
-    },
-    "staging": {
-      "accessUrl": "https://api-staging.sdkwork.com/apps/sdkwork-drive",
-      "deployUrl": "https://api-staging.sdkwork.com/apps/sdkwork-drive",
-      "deployEnv": "staging"
-    }
-  },
   "artifacts": {
     "installConfig": {
       "defaultPackageId": "web-universal-cloud-browser-zip",
@@ -229,8 +207,11 @@
           "checksumAlgorithm": "SHA-256",
           "checksum": "6ddc0056823e0968ddd377a094cc5cc509371e0711e21ba743f1a22e16272c1e",
           "architecture": "universal",
+          "profileBinding": "fixed",
           "deploymentProfile": "cloud",
-          "runtimeTarget": "browser"
+          "runtimeTarget": "browser",
+          "targetPlatform": "web",
+          "clientArchitecture": "pc-web"
         },
         {
           "id": "windows-x64-standalone-desktop-zip",
@@ -246,10 +227,13 @@
             "releaseBuildMaterializedAt": "2026-07-08T03:35:49.261Z"
           },
           "architecture": "x64",
+          "profileBinding": "fixed",
           "checksumAlgorithm": "SHA-256",
           "checksum": "6a05216f55569a73e1fcd1e8b04727b3781a75bf43656cff9ceee15d1167ad19",
           "deploymentProfile": "standalone",
-          "runtimeTarget": "desktop"
+          "runtimeTarget": "desktop",
+          "targetPlatform": "windows",
+          "clientArchitecture": "tauri"
         },
         {
           "id": "macos-universal-standalone-desktop-dmg",
@@ -258,13 +242,16 @@
           "packageFormat": "DMG",
           "platform": "DESKTOP_MACOS",
           "url": "https://cdn.sdkwork.com/apps/sdkwork-drive/STABLE/0.1.0/macos/universal/app.dmg",
-          "enabled": true,
+          "enabled": false,
           "metadata": {
             "releaseBuildDeferred": true
           },
           "architecture": "universal",
+          "profileBinding": "fixed",
           "deploymentProfile": "standalone",
-          "runtimeTarget": "desktop"
+          "runtimeTarget": "desktop",
+          "targetPlatform": "macos",
+          "clientArchitecture": "tauri"
         },
         {
           "id": "linux-x64-standalone-desktop-appimage",
@@ -273,7 +260,7 @@
           "packageFormat": "APPIMAGE",
           "platform": "DESKTOP_LINUX",
           "url": "https://cdn.sdkwork.com/apps/sdkwork-drive/STABLE/0.1.0/linux/generic/x64/app.AppImage",
-          "enabled": true,
+          "enabled": false,
           "metadata": {
             "linux": {
               "distro": "generic"
@@ -281,8 +268,11 @@
             "releaseBuildDeferred": true
           },
           "architecture": "x64",
+          "profileBinding": "fixed",
           "deploymentProfile": "standalone",
-          "runtimeTarget": "desktop"
+          "runtimeTarget": "desktop",
+          "targetPlatform": "linux",
+          "clientArchitecture": "tauri"
         }
       ],
       "metadata": {
@@ -338,6 +328,9 @@
   },
   "metadata": {
     "standardOwner": "sdkwork-platform",
-    "initializedAt": "2026-05-07T00:00:00Z"
+    "initializedAt": "2026-05-07T00:00:00Z",
+    "deploymentConfig": "etc/sdkwork.deployment.config.json",
+    "topologySpec": "specs/topology.spec.json",
+    "workflowManifest": "sdkwork.workflow.json"
   }
 }

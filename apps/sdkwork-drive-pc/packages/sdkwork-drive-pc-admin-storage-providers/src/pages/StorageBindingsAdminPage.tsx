@@ -372,6 +372,7 @@ export function StorageBindingsAdminPage({
               <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                 {filteredBindings.map((binding) => {
                   const stMeta = getSpaceTypeMeta(binding.spaceType);
+                  const SpaceTypeIcon = stMeta.icon;
                   const provider = providers.find((p) => p.id === binding.providerId);
                   const providerMeta = provider ? getProviderKindMeta(provider.providerKind) : null;
                   const isEditing = editingType === binding.spaceType;
@@ -382,8 +383,8 @@ export function StorageBindingsAdminPage({
                     <tr key={binding.spaceType} className={isEditing ? 'bg-blue-50/50 dark:bg-blue-950/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50'}>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2.5">
-                          <div className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm ${stMeta.bgClass}`}>
-                            {stMeta.icon}
+                          <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stMeta.bgClass} ${stMeta.textClass}`}>
+                            <SpaceTypeIcon aria-hidden="true" size={17} strokeWidth={1.8} />
                           </div>
                           <div>
                             <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{stLabel}</div>

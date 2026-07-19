@@ -3688,12 +3688,14 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
+ "url",
 ]
 
 [[package]]
 name = "sdkwork-drive-config"
 version = "0.1.0"
 dependencies = [
+ "sdkwork-database-config",
  "serde",
  "serde_json",
  "toml",

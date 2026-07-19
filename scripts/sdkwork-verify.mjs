@@ -8,7 +8,7 @@ function pnpmCommand() {
 }
 
 const steps = [
-  ['test', [pnpmCommand(), ['test']]],
+  ['test', [process.execPath, ['scripts/sdkwork-command.mjs', 'test']]],
   ['typecheck', [pnpmCommand(), ['typecheck']]],
   ['test:pc', [pnpmCommand(), ['test:pc']]],
   ['check', [pnpmCommand(), ['check']]],

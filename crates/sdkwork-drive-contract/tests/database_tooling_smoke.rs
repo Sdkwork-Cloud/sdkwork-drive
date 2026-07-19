@@ -11,7 +11,7 @@ fn workspace_root() -> PathBuf {
 }
 
 #[test]
-fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
+fn package_scripts_use_the_shared_lifecycle_and_keep_sqlite_explicit() {
     let root = workspace_root();
     let package_json_path = root.join("package.json");
     let package_json =
@@ -31,28 +31,32 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
         .get("dev:browser:sqlite")
         .and_then(serde_json::Value::as_str)
         .expect("pnpm dev:browser:sqlite script should exist");
+    let dev_standalone_script = scripts
+        .get("dev:standalone")
+        .and_then(serde_json::Value::as_str)
+        .expect("pnpm dev:standalone script should exist");
     let dev_desktop_script = scripts
         .get("dev:desktop")
         .and_then(serde_json::Value::as_str)
         .expect("pnpm dev:desktop script should exist");
     let dev_cloud_script = scripts
-        .get("dev:browser:postgres:cloud")
+        .get("dev:cloud")
         .and_then(serde_json::Value::as_str)
-        .expect("pnpm dev:browser:postgres:cloud script should exist");
+        .expect("pnpm dev:cloud script should exist");
 
     let dispatcher_path = root.join("scripts/sdkwork-command.mjs");
     let dispatcher = std::fs::read_to_string(&dispatcher_path)
         .expect("scripts/sdkwork-command.mjs should exist");
 
     assert!(
-        dev_script.contains("dev:browser"),
-        "pnpm dev must delegate to dev:browser, got: {dev_script}"
+        dev_script == "pnpm dev:standalone",
+        "pnpm dev must delegate exactly to dev:standalone, got: {dev_script}"
     );
     assert!(
-        dispatcher.contains("drive-dev.mjs")
-            && dispatcher.contains("'--database', 'postgres'")
-            && dispatcher.contains("'--deployment-profile', 'standalone'"),
-        "sdkwork-command.mjs must dispatch default dev to drive-dev.mjs with PostgreSQL and standalone profile"
+        dev_standalone_script.contains("sdkwork-app dev")
+            && dev_standalone_script.contains("--deployment-profile standalone")
+            && dev_standalone_script.contains("--environment development"),
+        "pnpm dev:standalone must use the shared sdkwork-app lifecycle, got: {dev_standalone_script}"
     );
 
     assert!(
@@ -66,11 +70,11 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
     );
 
     assert!(
-        dev_desktop_script.contains("sdkwork-command.mjs")
+        dev_desktop_script.contains("sdkwork-app dev")
             && dev_desktop_script.contains("--runtime-target desktop")
             && dev_desktop_script.contains("--database postgres")
             && dev_desktop_script.contains("--deployment-profile standalone"),
-        "pnpm dev:desktop must delegate through sdkwork-command.mjs with PostgreSQL and standalone profile, got: {dev_desktop_script}"
+        "pnpm dev:desktop must use sdkwork-app with PostgreSQL and standalone profile, got: {dev_desktop_script}"
     );
     let retired_desktop_script = [
         "dev",
@@ -85,11 +89,15 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
         "retired desktop dev script must not remain"
     );
     assert!(
-        dev_cloud_script.contains("sdkwork-command.mjs")
-            && dev_cloud_script.contains("--runtime-target browser")
-            && dev_cloud_script.contains("--database postgres")
-            && dev_cloud_script.contains("--deployment-profile cloud"),
-        "pnpm dev:browser:postgres:cloud must delegate through sdkwork-command.mjs with PostgreSQL and cloud profile, got: {dev_cloud_script}"
+        dev_cloud_script.contains("sdkwork-app dev")
+            && dev_cloud_script.contains("--deployment-profile cloud")
+            && dev_cloud_script.contains("--environment development")
+            && !dev_cloud_script.contains("--database"),
+        "pnpm dev:cloud must use sdkwork-app without a local database axis, got: {dev_cloud_script}"
+    );
+    assert!(
+        !scripts.contains_key("dev:browser:postgres:cloud"),
+        "cloud development must not retain a database-axis script"
     );
     assert!(
         dispatcher.contains("Object.hasOwn(flags, \"service-layout\")")
@@ -129,13 +137,19 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
         .and_then(serde_json::Value::as_str)
         .expect("pnpm build script should exist");
     assert!(
-        drive_build.contains("sdkwork-command.mjs"),
-        "pnpm build must delegate through sdkwork-command.mjs, got: {drive_build}"
+        drive_build.contains("sdkwork-app build")
+            && drive_build.contains("--deployment-profile cloud"),
+        "pnpm build must use sdkwork-app with the cloud profile, got: {drive_build}"
     );
+    let private_build = scripts
+        .get("_sdkwork:build")
+        .and_then(serde_json::Value::as_str)
+        .expect("private build implementation should exist");
     assert!(
-        dispatcher.contains("drive-build.mjs")
+        private_build.contains("sdkwork-command.mjs")
+            && dispatcher.contains("drive-build.mjs")
             && dispatcher.contains("'--deployment-profile', 'cloud'"),
-        "sdkwork-command.mjs must dispatch build to drive-build.mjs with cloud deployment profile"
+        "the private build hook must dispatch to drive-build.mjs with the cloud default"
     );
 
     let build_standalone = scripts
@@ -143,8 +157,8 @@ fn package_scripts_select_postgres_by_default_and_sqlite_explicitly() {
         .and_then(serde_json::Value::as_str)
         .expect("pnpm build:standalone script should exist");
     assert!(
-        build_standalone.contains("sdkwork-command.mjs"),
-        "pnpm build:standalone must delegate through sdkwork-command.mjs, got: {build_standalone}"
+        build_standalone.contains("sdkwork-app build"),
+        "pnpm build:standalone must use sdkwork-app, got: {build_standalone}"
     );
     assert!(
         build_standalone.contains("standalone"),
@@ -199,10 +213,10 @@ fn postgres_and_toml_examples_use_standard_drive_config_keys() {
         );
     }
 
-    let toml_example = std::fs::read_to_string(root.join("configs/drive.database.example.toml"))
-        .expect("configs/drive.database.example.toml should exist");
+    let toml_example = std::fs::read_to_string(root.join("etc/drive.database.example.toml"))
+        .expect("etc/drive.database.example.toml should exist");
     for required in [
-        "SDKWORK_DRIVE_CONFIG_FILE=./configs/drive.database.example.toml",
+        "SDKWORK_DRIVE_CONFIG_FILE=./etc/drive.database.example.toml",
         "[database]",
         "engine = \"postgresql\"",
         "ssl_mode = \"require\"",
@@ -404,7 +418,7 @@ fn database_architecture_doc_records_runtime_boundary() {
         "SQLite is the local/private lightweight mode",
         "pnpm dev",
         "pnpm dev:browser:sqlite",
-        "SDKWORK_DRIVE_CONFIG_FILE=./configs/drive.database.example.toml",
+        "SDKWORK_DRIVE_CONFIG_FILE=./etc/drive.database.example.toml",
         "SDKWORK_DRIVE_DATABASE_ENGINE=postgresql",
         "SDKWORK_DRIVE_DATABASE_SSL_MODE",
         "build_router_with_database_config",

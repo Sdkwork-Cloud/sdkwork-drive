@@ -300,6 +300,17 @@
               "minLength": 1,
               "maxLength": 64
             }
+          },
+          {
+            "name": "operatorId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
           }
         ],
         "responses": {
@@ -1633,6 +1644,17 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "operatorId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
           }
         ],
         "responses": {
@@ -1754,6 +1776,17 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "operatorId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
             }
           }
         ],
@@ -2163,6 +2196,17 @@
               "description": "Drive object key. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments."
             },
             "description": "Drive object key path tail. The runtime accepts slash-separated tail paths such as objects/file.bin and URL-encoded keys where / is encoded as %2F. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments."
+          },
+          {
+            "name": "operatorId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
           }
         ],
         "responses": {
@@ -3122,7 +3166,7 @@
             "minLength": 1,
             "maxLength": 1024,
             "description": "Drive object key. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments.",
-            "pattern": "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\u0000).*(?:[^/])$"
+            "pattern": "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\u0000).+$"
           },
           "contentLength": {
             "type": "integer",

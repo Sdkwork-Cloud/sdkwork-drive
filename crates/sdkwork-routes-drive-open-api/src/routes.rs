@@ -10,17 +10,7 @@ use axum::Router;
 use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_http::infra::{drive_service_router_config, mount_drive_infra_routes};
 use sdkwork_drive_workspace_service::infrastructure::sql::connect_any_database_and_install_schema;
-use sqlx::any::AnyPoolOptions;
 use sqlx::AnyPool;
-
-pub fn build_router() -> Router {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect_lazy("sqlite::memory:")
-        .expect("create in-memory sqlite any pool for open api");
-    build_router_with_pool(pool)
-}
 
 pub fn build_router_with_pool(pool: AnyPool) -> Router {
     let router = build_router_with_state(OpenState::new(pool));

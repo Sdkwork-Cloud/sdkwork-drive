@@ -772,6 +772,17 @@
             }
           },
           {
+            "name": "operatorId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -2932,7 +2943,8 @@
       "SweepObjectStoreRequest": {
         "type": "object",
         "required": [
-          "dryRun"
+          "dryRun",
+          "operatorId"
         ],
         "properties": {
           "dryRun": {
@@ -2943,6 +2955,12 @@
             "format": "int64",
             "minimum": 1,
             "maximum": 1000
+          },
+          "operatorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
           },
           "correlationId": {
             "type": "string",
@@ -2981,7 +2999,8 @@
         "type": "object",
         "required": [
           "nowEpochMs",
-          "dryRun"
+          "dryRun",
+          "operatorId"
         ],
         "properties": {
           "nowEpochMs": {
@@ -2996,6 +3015,12 @@
             "format": "int64",
             "minimum": 1,
             "maximum": 1000
+          },
+          "operatorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
           },
           "correlationId": {
             "type": "string",

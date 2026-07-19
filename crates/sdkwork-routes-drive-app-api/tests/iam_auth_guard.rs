@@ -1,6 +1,6 @@
 use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
-use sdkwork_routes_drive_app_api::{build_router, build_router_with_pool_and_iam};
+use sdkwork_routes_drive_app_api::build_router_with_pool_and_iam;
 use sdkwork_web_core::{access_token_jwt, auth_token_jwt};
 use serde_json::Value;
 use sqlx::any::AnyPoolOptions;
@@ -8,6 +8,16 @@ use tower::util::ServiceExt;
 
 const DEFAULT_SESSION_ID: &str = "session-1";
 const DEFAULT_APP_ID: &str = "appbase";
+
+fn build_router() -> axum::Router {
+    sqlx::any::install_default_drivers();
+    build_router_with_pool_and_iam(
+        AnyPoolOptions::new()
+            .max_connections(1)
+            .connect_lazy("sqlite::memory:")
+            .expect("create app API test pool"),
+    )
+}
 
 fn auth_token(tenant: &str, user: &str) -> String {
     auth_token_jwt(tenant, user, DEFAULT_SESSION_ID, DEFAULT_APP_ID)

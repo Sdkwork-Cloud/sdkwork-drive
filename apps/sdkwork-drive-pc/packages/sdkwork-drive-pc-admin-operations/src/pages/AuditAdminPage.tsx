@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { RefreshCw, RotateCcw, Search, ScrollText, SlidersHorizontal } from 'lucide-react';
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
 import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
+import { EmptyState, LoadingState, NoticeBanner, OperationsPageHeader, PaginationBar } from '../components/OperationsAdminPrimitives';
 import { createDriveOperationsAdminService } from '../services/driveOperationsAdminService';
 import type { AuditEventView } from '../types/driveOperationsAdminTypes';
 import {
-  CARD_BODY_CLASS,
   CARD_CLASS,
   CARD_HEADER_CLASS,
   INPUT_CLASS,
@@ -21,6 +22,14 @@ interface AuditAdminPageProps {
   getSession: () => SessionSnapshot;
 }
 
+type AuditFilters = {
+  action: string;
+  resourceId: string;
+  resourceType: string;
+};
+
+const EMPTY_FILTERS: AuditFilters = { action: '', resourceId: '', resourceType: '' };
+
 function isAbortError(value: unknown): boolean {
   if (value instanceof DOMException && value.name === 'AbortError') return true;
   return value instanceof Error && (value.name === 'AbortError' || /\babort(?:ed)?\b/i.test(value.message));
@@ -28,10 +37,7 @@ function isAbortError(value: unknown): boolean {
 
 function formatTimestamp(value: string): string {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
 export function AuditAdminPage({ backendSdkClient, getSession }: AuditAdminPageProps) {
@@ -46,166 +52,144 @@ export function AuditAdminPage({ backendSdkClient, getSession }: AuditAdminPageP
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
-  const [actionFilter, setActionFilter] = useState('');
-  const [resourceTypeFilter, setResourceTypeFilter] = useState('');
-  const [resourceIdFilter, setResourceIdFilter] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [draftFilters, setDraftFilters] = useState<AuditFilters>(EMPTY_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState<AuditFilters>(EMPTY_FILTERS);
 
-  const load = (signal?: AbortSignal) => {
+  useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
     setError(undefined);
     service.listAuditEvents({
-      action: actionFilter.trim() || undefined,
-      resourceType: resourceTypeFilter.trim() || undefined,
-      resourceId: resourceIdFilter.trim() || undefined,
+      action: appliedFilters.action.trim() || undefined,
+      resourceType: appliedFilters.resourceType.trim() || undefined,
+      resourceId: appliedFilters.resourceId.trim() || undefined,
       page,
       pageSize,
-      signal,
+      signal: controller.signal,
     })
       .then((result) => {
         setItems(result.items);
         setTotal(result.total);
       })
       .catch((err) => {
-        if (!isAbortError(err)) {
-          setError(t('noticeLoadFailed'));
-        }
+        if (!isAbortError(err)) setError(t('noticeLoadFailed'));
       })
       .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, [appliedFilters, page, pageSize, refreshKey, service, t]);
+
+  const applyFilters = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPage(1);
+    setAppliedFilters({ ...draftFilters });
   };
 
-  useEffect(() => {
-    const controller = new AbortController();
-    load(controller.signal);
-    return () => controller.abort();
-  }, [service, page, pageSize]);
+  const resetFilters = () => {
+    setDraftFilters(EMPTY_FILTERS);
+    setAppliedFilters(EMPTY_FILTERS);
+    setPage(1);
+  };
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const filtersActive = Object.values(appliedFilters).some((value) => value.trim() !== '');
 
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-[#fafafa] dark:bg-[#111]">
-      <div className="border-b border-neutral-200 bg-white px-6 py-4 dark:border-neutral-800 dark:bg-[#161616]">
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{t('auditPageTitle')}</h1>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{t('auditPageDescription')}</p>
-      </div>
+    <main className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+      <OperationsPageHeader
+        icon={ScrollText}
+        title={t('auditPageTitle')}
+        description={t('auditPageDescription')}
+        actions={(
+          <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => setRefreshKey((current) => current + 1)}>
+            <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
+            {t('refresh')}
+          </button>
+        )}
+      />
 
-      <div className="flex-1 overflow-auto p-6">
-        <div className={`${CARD_CLASS} mb-4`}>
-          <div className={CARD_HEADER_CLASS}>
-            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">{t('filtersTitle')}</span>
+      <div className="flex-1 space-y-4 overflow-auto p-4 sm:p-6">
+        {error ? <NoticeBanner type="error" message={error} dismissLabel={t('dismiss')} onDismiss={() => setError(undefined)} /> : null}
+
+        <section className={`${CARD_CLASS} overflow-hidden`} aria-labelledby="audit-filters-title">
+          <div className={`${CARD_HEADER_CLASS} flex items-center gap-2`}>
+            <SlidersHorizontal aria-hidden="true" className="text-blue-600 dark:text-blue-400" size={16} />
+            <h2 id="audit-filters-title" className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">{t('filtersTitle')}</h2>
           </div>
-          <div className={`${CARD_BODY_CLASS} flex flex-wrap items-end gap-3`}>
-            <label className="flex min-w-[180px] flex-1 flex-col gap-1 text-xs text-neutral-500">
+          <form className="grid gap-4 p-5 lg:grid-cols-[1fr_1fr_1.2fr_auto] lg:items-end" onSubmit={applyFilters}>
+            <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400">
               {t('filterAction')}
-              <input
-                className={INPUT_CLASS}
-                value={actionFilter}
-                onChange={(event) => setActionFilter(event.target.value)}
-                placeholder={t('filterActionPlaceholder')}
-              />
+              <input className={INPUT_CLASS} value={draftFilters.action} onChange={(event) => setDraftFilters((current) => ({ ...current, action: event.target.value }))} placeholder={t('filterActionPlaceholder')} />
             </label>
-            <label className="flex min-w-[180px] flex-1 flex-col gap-1 text-xs text-neutral-500">
+            <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400">
               {t('filterResourceType')}
-              <input
-                className={INPUT_CLASS}
-                value={resourceTypeFilter}
-                onChange={(event) => setResourceTypeFilter(event.target.value)}
-                placeholder={t('filterResourceTypePlaceholder')}
-              />
+              <input className={INPUT_CLASS} value={draftFilters.resourceType} onChange={(event) => setDraftFilters((current) => ({ ...current, resourceType: event.target.value }))} placeholder={t('filterResourceTypePlaceholder')} />
             </label>
-            <label className="flex min-w-[180px] flex-1 flex-col gap-1 text-xs text-neutral-500">
+            <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400">
               {t('filterResourceId')}
-              <input
-                className={INPUT_CLASS}
-                value={resourceIdFilter}
-                onChange={(event) => setResourceIdFilter(event.target.value)}
-                placeholder={t('filterResourceIdPlaceholder')}
-              />
+              <input className={`${INPUT_CLASS} font-mono text-xs`} value={draftFilters.resourceId} onChange={(event) => setDraftFilters((current) => ({ ...current, resourceId: event.target.value }))} placeholder={t('filterResourceIdPlaceholder')} />
             </label>
-            <button
-              type="button"
-              className={PRIMARY_BUTTON_CLASS}
-              onClick={() => {
-                setPage(1);
-                load();
-              }}
-            >
-              {t('applyFilters')}
-            </button>
-          </div>
-        </div>
+            <div className="flex items-center gap-2">
+              <button type="submit" className={PRIMARY_BUTTON_CLASS}>
+                <Search aria-hidden="true" size={15} />
+                {t('applyFilters')}
+              </button>
+              <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={!filtersActive && Object.values(draftFilters).every((value) => value === '')} onClick={resetFilters}>
+                <RotateCcw aria-hidden="true" size={15} />
+                {t('resetFilters')}
+              </button>
+            </div>
+          </form>
+        </section>
 
-        {error ? (
-          <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
-            {error}
+        <section className={`${CARD_CLASS} overflow-hidden`} aria-labelledby="audit-events-title">
+          <div className={`${CARD_HEADER_CLASS} flex flex-wrap items-center justify-between gap-3`}>
+            <div>
+              <h2 id="audit-events-title" className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">{t('auditEventsTitle')}</h2>
+              <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{t('countOf', { filtered: items.length, total })}</p>
+            </div>
+            <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{t('pageOf', { page, totalPages })}</span>
           </div>
-        ) : null}
-
-        <div className={CARD_CLASS}>
-          <div className={`${CARD_HEADER_CLASS} flex items-center justify-between`}>
-            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
-              {t('auditEventsTitle')}
-            </span>
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-              {t('countOf', { filtered: items.length, total })}
-            </span>
-          </div>
-          <div className={`${CARD_BODY_CLASS} overflow-x-auto`}>
-            {loading ? (
-              <div className="py-10 text-center text-sm text-neutral-500">{t('loading')}</div>
-            ) : items.length === 0 ? (
-              <div className="py-10 text-center text-sm text-neutral-500">{t('auditEmpty')}</div>
-            ) : (
-              <table className={TABLE_CLASS}>
-                <thead>
-                  <tr className={TABLE_HEAD_CLASS}>
-                    <th className="px-3 py-2">{t('colTime')}</th>
-                    <th className="px-3 py-2">{t('colAction')}</th>
-                    <th className="px-3 py-2">{t('colResourceType')}</th>
-                    <th className="px-3 py-2">{t('colResourceId')}</th>
-                    <th className="px-3 py-2">{t('colOperator')}</th>
-                    <th className="px-3 py-2">{t('colTrace')}</th>
-                  </tr>
-                </thead>
+          {loading ? <LoadingState label={t('loading')} /> : items.length === 0 ? (
+            <EmptyState title={t('auditEmpty')} description={t('auditPageDescription')} icon={ScrollText} />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className={`${TABLE_CLASS} min-w-[1080px]`}>
+                <thead><tr className={TABLE_HEAD_CLASS}>
+                  <th className="px-5 py-3">{t('colTime')}</th>
+                  <th className="px-5 py-3">{t('colAction')}</th>
+                  <th className="px-5 py-3">{t('colResourceType')}</th>
+                  <th className="px-5 py-3">{t('colResourceId')}</th>
+                  <th className="px-5 py-3">{t('colOperator')}</th>
+                  <th className="px-5 py-3">{t('colTrace')}</th>
+                </tr></thead>
                 <tbody>
                   {items.map((item) => (
                     <tr key={item.id} className={TABLE_ROW_CLASS}>
-                      <td className="px-3 py-2 whitespace-nowrap text-neutral-600 dark:text-neutral-300">
-                        {formatTimestamp(item.createdAt)}
-                      </td>
-                      <td className="px-3 py-2 font-medium text-neutral-900 dark:text-neutral-100">{item.action}</td>
-                      <td className="px-3 py-2 text-neutral-600 dark:text-neutral-300">{item.resourceType}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-neutral-600 dark:text-neutral-300">{item.resourceId}</td>
-                      <td className="px-3 py-2 text-neutral-600 dark:text-neutral-300">{item.operatorId}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-neutral-500">{item.traceId || item.correlationId || '--'}</td>
+                      <td className="whitespace-nowrap px-5 py-3 text-xs text-neutral-600 dark:text-neutral-300">{formatTimestamp(item.createdAt)}</td>
+                      <td className="px-5 py-3"><code className="rounded bg-blue-50 px-1.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">{item.action}</code></td>
+                      <td className="px-5 py-3 text-xs font-medium text-neutral-700 dark:text-neutral-200">{item.resourceType}</td>
+                      <td className="max-w-64 truncate px-5 py-3 font-mono text-xs text-neutral-600 dark:text-neutral-300" title={item.resourceId}>{item.resourceId}</td>
+                      <td className="px-5 py-3 font-mono text-xs text-neutral-600 dark:text-neutral-300">{item.operatorId}</td>
+                      <td className="max-w-64 truncate px-5 py-3 font-mono text-xs text-neutral-500" title={item.traceId || item.correlationId}>{item.traceId || item.correlationId || '--'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            )}
-          </div>
-          <div className="flex items-center justify-between border-t border-neutral-100 px-5 py-3 dark:border-neutral-800">
-            <button
-              type="button"
-              className={SECONDARY_BUTTON_CLASS}
-              disabled={page <= 1 || loading}
-              onClick={() => setPage((current) => Math.max(1, current - 1))}
-            >
-              {t('previousPage')}
-            </button>
-            <span className="text-xs text-neutral-500">
-              {t('pageOf', { page, totalPages })}
-            </span>
-            <button
-              type="button"
-              className={SECONDARY_BUTTON_CLASS}
-              disabled={page >= totalPages || loading}
-              onClick={() => setPage((current) => current + 1)}
-            >
-              {t('nextPage')}
-            </button>
-          </div>
-        </div>
+            </div>
+          )}
+          <PaginationBar
+            loading={loading}
+            previousDisabled={page <= 1}
+            nextDisabled={page >= totalPages}
+            previousLabel={t('previousPage')}
+            nextLabel={t('nextPage')}
+            pageLabel={t('pageOf', { page, totalPages })}
+            onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+            onNext={() => setPage((current) => current + 1)}
+          />
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

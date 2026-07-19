@@ -6,6 +6,9 @@ use sqlx::AnyPool;
 use sqlx::Executor;
 
 use sdkwork_database_config::claw_database::postgres_url_with_search_path;
+use sdkwork_database_config::{
+    DatabaseConfig as StandardDatabaseConfig, DatabaseEngine as StandardDatabaseEngine,
+};
 use sdkwork_drive_config::{DatabaseConfig, DatabaseEngine};
 
 const SQLITE_CORE_SQL: &str = include_str!("sqlite_core.sql");
@@ -241,6 +244,21 @@ pub async fn connect_any_database(config: &DatabaseConfig) -> Result<AnyPool, sq
 
     sqlx::any::install_default_drivers();
     let config = drive_database_config_with_unified_postgres_search_path(config)?;
+    if sdkwork_database_sqlx::process_shared_database_pool_enabled() {
+        let standard = StandardDatabaseConfig {
+            engine: match config.engine() {
+                DatabaseEngine::Postgresql => StandardDatabaseEngine::Postgres,
+                DatabaseEngine::Sqlite => StandardDatabaseEngine::Sqlite,
+            },
+            url: config.url().to_owned(),
+            max_connections: config.max_connections(),
+            min_connections: 0,
+            ..StandardDatabaseConfig::default()
+        };
+        return sdkwork_database_sqlx::create_any_pool_from_config(standard)
+            .await
+            .map_err(|error| sqlx::Error::Configuration(error.to_string().into()));
+    }
     let pool = AnyPoolOptions::new()
         .max_connections(config.max_connections())
         .acquire_timeout(Duration::from_secs(30))
@@ -259,16 +277,12 @@ pub async fn connect_any_database_and_install_schema(
     }
 
     let config = drive_database_config_with_unified_postgres_search_path(config)?;
+    crate::bootstrap::bootstrap_drive_database_for_config(&config)
+        .await
+        .map_err(|error| sqlx::Error::Configuration(error.into()))?;
     let pool = connect_any_database(&config).await?;
-    match config.engine() {
-        DatabaseEngine::Postgresql => {
-            crate::bootstrap::bootstrap_drive_database_for_config(&config)
-                .await
-                .map_err(|error| sqlx::Error::Configuration(error.into()))?;
-        }
-        DatabaseEngine::Sqlite => {
-            install_any_schema(&pool, config.engine()).await?;
-        }
+    if config.engine() == DatabaseEngine::Sqlite {
+        install_any_schema(&pool, config.engine()).await?;
     }
     install_drive_runtime(pool.clone(), config.engine())?;
     Ok(pool)

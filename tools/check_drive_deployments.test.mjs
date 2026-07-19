@@ -291,7 +291,7 @@ async function createTempWorkspace(imageRefs, options = {}) {
   await mkdir(path.join(tempRoot, 'docs/runbooks'), { recursive: true });
   await mkdir(path.join(tempRoot, 'docs/guides/operator'), { recursive: true });
   await mkdir(path.join(tempRoot, `apps/${appId}-pc`), { recursive: true });
-  await mkdir(path.join(tempRoot, 'configs/topology'), { recursive: true });
+  await mkdir(path.join(tempRoot, 'etc/topology'), { recursive: true });
   await mkdir(path.join(tempRoot, 'specs'), { recursive: true });
   await mkdir(path.join(tempRoot, 'node_modules/yaml'), { recursive: true });
 
@@ -320,7 +320,7 @@ async function createTempWorkspace(imageRefs, options = {}) {
               topology: {
                 spec: 'specs/topology.spec.json',
                 profile: 'cloud.production',
-                env: 'configs/topology/cloud.production.env',
+                env: 'etc/topology/cloud.production.env',
               },
               proxy: {
                 upstreams: {
@@ -334,7 +334,7 @@ async function createTempWorkspace(imageRefs, options = {}) {
     'utf8',
   );
   await writeFile(
-    path.join(tempRoot, 'configs/topology/cloud.production.env'),
+    path.join(tempRoot, 'etc/topology/cloud.production.env'),
     'SDKWORK_DRIVE_PROFILE_ID=cloud.production\n',
     'utf8',
   );
@@ -354,7 +354,7 @@ async function createTempWorkspace(imageRefs, options = {}) {
       appId,
       database: { appPrefix: 'SDKWORK_DRIVE' },
       profileFiles: {
-        'cloud.production': 'configs/topology/cloud.production.env',
+        'cloud.production': 'etc/topology/cloud.production.env',
       },
       surfaces: {
         'application.public-ingress': {
@@ -479,7 +479,7 @@ function runDeployValidate(tempRoot, env = {}) {
             topology: {
               spec: 'specs/topology.spec.json',
               profile: 'cloud.split-services.production',
-              env: 'configs/topology/cloud.split-services.production.env',
+              env: 'etc/topology/cloud.split-services.production.env',
             },
             proxy: {
               upstreams: {
@@ -494,7 +494,7 @@ function runDeployValidate(tempRoot, env = {}) {
   const result = runDeployValidate(tempRoot);
   assert.notEqual(result.status, 0, result.stdout);
   assert.match(result.stderr, /profile "cloud\.split-services\.production" is not listed in topology\.profileFiles/);
-  assert.match(result.stderr, /configs\/topology\/cloud\.split-services\.production\.env does not exist/);
+  assert.match(result.stderr, /etc\/topology\/cloud\.split-services\.production\.env does not exist/);
 }
 
 console.log('check_drive_deployments.test.mjs passed');

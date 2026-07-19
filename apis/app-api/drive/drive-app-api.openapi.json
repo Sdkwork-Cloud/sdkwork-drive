@@ -6608,13 +6608,76 @@
               }
             }
           },
-          "400": { "description": "Request validation failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Authentication failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Sandbox access is denied.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "404": { "description": "Sandbox or logical entry was not found.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "409": { "description": "Sandbox entry state or idempotency conflict.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "413": { "description": "File content exceeds the bounded content limit.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal sandbox file-system failure.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } }
+          "400": {
+            "description": "Request validation failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sandbox access is denied.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sandbox or logical entry was not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Sandbox entry state or idempotency conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "File content exceeds the bounded content limit.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal sandbox file-system failure.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
         },
         "security": [
           {
@@ -6696,12 +6759,66 @@
               }
             }
           },
-          "400": { "description": "Request validation failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Authentication failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Sandbox access is denied.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "404": { "description": "Sandbox or logical entry was not found.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "413": { "description": "File content exceeds the bounded content limit.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal sandbox file-system failure.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } }
+          "400": {
+            "description": "Request validation failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sandbox access is denied.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sandbox or logical entry was not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "File content exceeds the bounded content limit.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal sandbox file-system failure.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
         },
         "security": [
           {
@@ -6789,15 +6906,96 @@
               }
             }
           },
-          "400": { "description": "Request validation failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Authentication failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Sandbox access is denied.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "404": { "description": "Sandbox or logical entry was not found.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "409": { "description": "Sandbox entry state or idempotency conflict.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "412": { "description": "The supplied revision no longer matches the entry.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "413": { "description": "File content exceeds the bounded content limit.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "428": { "description": "A strong If-Match revision is required.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal sandbox file-system failure.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } }
+          "400": {
+            "description": "Request validation failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sandbox access is denied.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sandbox or logical entry was not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Sandbox entry state or idempotency conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "The supplied revision no longer matches the entry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "File content exceeds the bounded content limit.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "A strong If-Match revision is required.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal sandbox file-system failure.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
         },
         "security": [
           {
@@ -6887,14 +7085,86 @@
               }
             }
           },
-          "400": { "description": "Request validation failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Authentication failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Sandbox access is denied.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "404": { "description": "Sandbox or logical entry was not found.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "409": { "description": "Sandbox entry state or idempotency conflict.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "412": { "description": "The supplied revision no longer matches the entry.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "428": { "description": "A strong If-Match revision is required.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal sandbox file-system failure.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } }
+          "400": {
+            "description": "Request validation failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sandbox access is denied.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sandbox or logical entry was not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Sandbox entry state or idempotency conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "The supplied revision no longer matches the entry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "A strong If-Match revision is required.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal sandbox file-system failure.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
         },
         "security": [
           {
@@ -6984,14 +7254,86 @@
               }
             }
           },
-          "400": { "description": "Request validation failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Authentication failed.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Sandbox access is denied.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "404": { "description": "Sandbox or logical entry was not found.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "409": { "description": "Sandbox entry state or idempotency conflict.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "412": { "description": "The supplied revision no longer matches the entry.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "428": { "description": "A strong If-Match revision is required.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal sandbox file-system failure.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } }
+          "400": {
+            "description": "Request validation failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sandbox access is denied.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sandbox or logical entry was not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Sandbox entry state or idempotency conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "The supplied revision no longer matches the entry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "A strong If-Match revision is required.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal sandbox file-system failure.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
         },
         "security": [
           {

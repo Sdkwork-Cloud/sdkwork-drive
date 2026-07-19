@@ -59,7 +59,7 @@ Defaults:
   deploymentProfile cloud       Release desktop builds target the cloud production profile.
   deploymentProfile standalone  Standalone desktop builds target local application ingress URLs.
 
-Profiles load from configs/topology according to deployment profile and production environment.
+Profiles load from etc/topology according to deployment profile and production environment.
 
 Options:
   --deployment-profile <cloud|standalone>  Deployment profile (default: cloud)

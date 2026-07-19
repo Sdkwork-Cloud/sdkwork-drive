@@ -16,7 +16,7 @@ SDKWork Drive. It is the deployment boundary governed by
 
 ## Forbidden Content
 
-- Runtime config templates (those live in `configs/`).
+- Runtime config templates (those live in `etc/`).
 - Secrets, credentials, or environment-specific overrides.
 - Runtime state, databases, logs, or caches.
 

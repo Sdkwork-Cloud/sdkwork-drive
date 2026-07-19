@@ -2,7 +2,7 @@ use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
 use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-use sdkwork_routes_drive_backend_api::{build_router, build_router_with_pool_and_iam};
+use sdkwork_routes_drive_backend_api::build_router_with_pool_and_iam;
 use sdkwork_web_core::encode_unsigned_test_jwt;
 use serde_json::{json, Value};
 use sqlx::any::AnyPoolOptions;
@@ -10,6 +10,16 @@ use tower::util::ServiceExt;
 
 const TEST_SESSION: &str = "session-1";
 const TEST_APP: &str = "appbase";
+
+fn build_router() -> axum::Router {
+    sqlx::any::install_default_drivers();
+    build_router_with_pool_and_iam(
+        AnyPoolOptions::new()
+            .max_connections(1)
+            .connect_lazy("sqlite::memory:")
+            .expect("create backend API test pool"),
+    )
+}
 
 fn auth_token(tenant: &str, user: &str) -> String {
     encode_unsigned_test_jwt(json!({

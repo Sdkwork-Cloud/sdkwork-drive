@@ -5,6 +5,7 @@ use sdkwork_routes_drive_open_api::build_router_with_database_config;
 
 #[tokio::main]
 async fn main() {
+    sdkwork_drive_workspace_service::enable_process_shared_database_pool();
     sdkwork_drive_observability::init_tracing("sdkwork-routes-drive-open-api");
     ensure_production_download_token_signing_configured()
         .expect("download token signing config invalid");

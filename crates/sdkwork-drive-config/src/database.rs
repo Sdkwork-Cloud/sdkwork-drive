@@ -116,7 +116,14 @@ impl DatabaseConfig {
     }
 
     pub fn from_env() -> Result<Self, DatabaseConfigError> {
-        Self::from_env_pairs(std::env::vars())
+        let env = std::env::vars().collect::<Vec<_>>();
+        if has_drive_database_authority(&env) {
+            return Self::from_env_pairs(env);
+        }
+
+        let unified = sdkwork_database_config::DatabaseConfig::from_env("DRIVE")
+            .map_err(|error| DatabaseConfigError::new(error.to_string()))?;
+        Self::from_url_with_max_connections(&unified.url, unified.max_connections)
     }
 
     pub fn from_env_and_cli_args(args: &[String]) -> Result<Self, DatabaseConfigError> {
@@ -278,6 +285,24 @@ impl DatabaseConfig {
             runtime_config_max_connections(content, default_max_connections_for_engine(engine))?;
         Self::from_url_with_max_connections(&database_url, max_connections)
     }
+}
+
+fn has_drive_database_authority(env: &[(String, String)]) -> bool {
+    const AUTHORITY_KEYS: &[&str] = &[
+        "SDKWORK_DRIVE_DATABASE_URL",
+        "SDKWORK_DRIVE_CONFIG_FILE",
+        "SDKWORK_DRIVE_DATABASE_ENGINE",
+        "SDKWORK_DRIVE_DATABASE_HOST",
+        "SDKWORK_DRIVE_DATABASE_PORT",
+        "SDKWORK_DRIVE_DATABASE_NAME",
+        "SDKWORK_DRIVE_DATABASE_USERNAME",
+        "SDKWORK_DRIVE_DATABASE_PASSWORD",
+        "SDKWORK_DRIVE_DATABASE_PASSWORD_FILE",
+        "SDKWORK_DRIVE_DATABASE_SQLITE_URL",
+    ];
+
+    env.iter()
+        .any(|(key, value)| AUTHORITY_KEYS.contains(&key.as_str()) && !value.trim().is_empty())
 }
 
 fn parse_database_url_from_cli_args(args: &[String]) -> Option<String> {

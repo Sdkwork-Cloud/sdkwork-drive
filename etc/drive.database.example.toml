@@ -1,5 +1,5 @@
 # SDKWork Drive database configuration example.
-# Use with: SDKWORK_DRIVE_CONFIG_FILE=./configs/drive.database.example.toml
+# Use with: SDKWORK_DRIVE_CONFIG_FILE=./etc/drive.database.example.toml
 # Prefer PostgreSQL for server, Docker, and Kubernetes deployments.
 # SQLite is reserved for local/private lightweight mode and fast test coverage.
 # Prefer password_file for production. Use password only when the TOML file is

@@ -22,7 +22,7 @@ Both PostgreSQL and SQLite modes start the same API service set: app API on `127
 The Rust configuration boundary is `sdkwork-drive-config::DatabaseConfig`. It accepts:
 
 - Explicit override: `SDKWORK_DRIVE_DATABASE_URL`.
-- Runtime TOML file: `SDKWORK_DRIVE_CONFIG_FILE=./configs/drive.database.example.toml`, reading the `[database]` section.
+- Runtime TOML file: `SDKWORK_DRIVE_CONFIG_FILE=./etc/drive.database.example.toml`, reading the `[database]` section.
 - PostgreSQL structured fields: `SDKWORK_DRIVE_DATABASE_ENGINE=postgresql`, host, port, database name, username, password, `SDKWORK_DRIVE_DATABASE_SSL_MODE`, and max connections.
 - SQLite structured fields: `SDKWORK_DRIVE_DATABASE_ENGINE=sqlite` and `SDKWORK_DRIVE_DATABASE_SQLITE_URL`.
 

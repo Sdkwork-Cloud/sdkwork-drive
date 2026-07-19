@@ -90,7 +90,7 @@ const requiredDirectories = [
   'crates',
   'sdks',
   'deployments',
-  'configs',
+  'etc',
   'scripts',
   'docs',
   'tests',
@@ -119,12 +119,12 @@ assert(
   'package.json must declare api:schema:check for OpenAPI ProblemDetail and schema contracts',
 );
 assert(
-  packageJson.scripts?.check?.includes('api:envelope:check'),
-  'pnpm check must include api:envelope:check',
+  packageJson.scripts?.['_sdkwork:check']?.includes('api:envelope:check'),
+  'private check implementation must include api:envelope:check',
 );
 assert(
-  packageJson.scripts?.check?.includes('api:schema:check'),
-  'pnpm check must include api:schema:check',
+  packageJson.scripts?.['_sdkwork:check']?.includes('api:schema:check'),
+  'private check implementation must include api:schema:check',
 );
 
 assert(fs.existsSync(path.join(repoRoot, 'deployments/deploy.yaml')), 'deployments/deploy.yaml must exist per SDKWORK_DEPLOY_SPEC.md');
@@ -457,8 +457,8 @@ assert(
   'specs/topology.spec.json must exist per APP_RUNTIME_TOPOLOGY_ADOPTION.md',
 );
 assert(
-  fs.existsSync(path.join(repoRoot, 'configs/topology/README.md')),
-  'configs/topology/README.md must exist per APP_RUNTIME_TOPOLOGY_ADOPTION.md',
+  fs.existsSync(path.join(repoRoot, 'etc/topology/README.md')),
+  'etc/topology/README.md must exist per APP_RUNTIME_TOPOLOGY_ADOPTION.md',
 );
 
 assert(
@@ -637,7 +637,7 @@ assert(
 const retiredEnvPrefixes = ['SDKWORK_CLAW_DATABASE_'];
 for (const relativePath of [
   '.env.postgres.example',
-  'configs/topology/standalone.production.env',
+  'etc/topology/standalone.production.env',
 ]) {
   const text = readText(relativePath);
   for (const prefix of retiredEnvPrefixes) {

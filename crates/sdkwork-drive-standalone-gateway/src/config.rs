@@ -132,7 +132,7 @@ pub fn resolve_config_path(args: &[String]) -> Result<String, String> {
         .unwrap_or_else(|| "development".to_string());
 
     Ok(format!(
-        "configs/sdkwork-drive-standalone-gateway.{environment}.toml"
+        "etc/sdkwork-drive-standalone-gateway.{environment}.toml"
     ))
 }
 

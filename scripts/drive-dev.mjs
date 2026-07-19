@@ -368,6 +368,7 @@ function parseArgs(argv) {
     database: undefined,
     devEnvFile: null,
     deploymentProfile: 'standalone',
+    clientOnly: false,
     dryRun: false,
     help: false,
   };
@@ -387,6 +388,10 @@ function parseArgs(argv) {
     }
     if (arg === '--dry-run') {
       settings.dryRun = true;
+      continue;
+    }
+    if (arg === '--client-only') {
+      settings.clientOnly = true;
       continue;
     }
     if (arg === '--target') {
@@ -483,44 +488,13 @@ function resolveStandaloneGatewayConfigPath(env) {
   const environment = normalizeText(env.SDKWORK_DRIVE_STANDALONE_GATEWAY_ENVIRONMENT) || 'development';
   return path.resolve(
     repoRoot,
-    `configs/sdkwork-drive-standalone-gateway.${environment}.toml`,
+    `etc/sdkwork-drive-standalone-gateway.${environment}.toml`,
   );
-}
-
-function createCloudGatewayProcess({ env, gatewayWillStart }) {
-  if (!gatewayWillStart) {
-    return undefined;
-  }
-
-  const gatewayWorkspace = path.resolve(repoRoot, '..', 'sdkwork-api-cloud-gateway');
-  const gatewayConfig = path.join(
-    repoRoot,
-    'configs',
-    'sdkwork-api-cloud-gateway.drive.development.toml',
-  );
-
-  return {
-    args: [
-      'run',
-      '-p',
-      'sdkwork-api-cloud-gateway',
-      '--bin',
-      'sdkwork-api-cloud-gateway',
-      '--',
-      '--config',
-      gatewayConfig,
-    ],
-    command: cargoCommand(),
-    cwd: gatewayWorkspace,
-    env: resolveIamDevEnv(env, repoRoot),
-    label: 'sdkwork-api-cloud-gateway',
-    shell: false,
-  };
 }
 
 function createManagedGatewayProcess({ env, gatewayWillStart, deploymentProfile }) {
   if (deploymentProfile === 'cloud') {
-    return createCloudGatewayProcess({ env, gatewayWillStart });
+    return undefined;
   }
 
   return createStandaloneGatewayProcess({ env, gatewayWillStart });
@@ -683,12 +657,13 @@ Options:
   --deployment-profile <standalone|cloud> Deployment profile (default: standalone)
   --dev-env-file <path>            Path to env file
   --dry-run                        Print plan without executing
+  --client-only                    Start only the selected local client
   --help, -h                       Show this help
 
 Deployment policy (standalone default for dev):
-  Profiles load from configs/topology according to deployment profile and environment.
-  Dev autostarts the gateway on ${DEFAULT_SDKWORK_API_CLOUD_GATEWAY_BIND} when it is not already listening.
-  Use --deployment-profile cloud to route through sdkwork-api-cloud-gateway instead.
+  Profiles load from etc/topology according to deployment profile and environment.
+  Standalone dev uses the local Drive standalone gateway on ${DEFAULT_SDKWORK_API_CLOUD_GATEWAY_BIND}.
+  Cloud dev consumes the deployed sdkwork-api-cloud-gateway and never starts it locally.
   IAM login requires PostgreSQL (copy .env.postgres.example to .env.postgres and start PostgreSQL).
   Vite/desktop starts only after the gateway health check passes.
   Set SDKWORK_DRIVE_GATEWAY_AUTOSTART=false to skip gateway autostart.
@@ -732,15 +707,19 @@ async function main() {
       await ensureDrivePcDevPortAvailable(baseEnv, settings.target);
     }
 
-    const gatewayWillStart = await resolveGatewayAutostart(baseEnv);
+    const gatewayWillStart = settings.clientOnly
+      ? false
+      : await resolveGatewayAutostart(baseEnv);
     const { appApiBaseUrl, apiGatewayBaseUrl, adminStorageApiBaseUrl } =
       await resolveDevApiBaseUrls(baseEnv, gatewayWillStart);
 
-    const gatewayProcess = createManagedGatewayProcess({
-      env: baseEnv,
-      gatewayWillStart,
-      deploymentProfile: settings.deploymentProfile,
-    });
+    const gatewayProcess = settings.clientOnly
+      ? undefined
+      : createManagedGatewayProcess({
+        env: baseEnv,
+        gatewayWillStart,
+        deploymentProfile: settings.deploymentProfile,
+      });
     const iamDevEnv = resolveIamDevEnv(baseEnv, repoRoot);
     const iamDatabaseTarget = describeIamDatabaseTarget(iamDevEnv);
     const devServerProcess = createDevServerProcess({
@@ -818,6 +797,16 @@ async function main() {
           process.exitCode = 1;
         }
       });
+    }
+
+    if (settings.clientOnly) {
+      const child = spawnProcessEntry(devServerProcess);
+      children.push(child);
+      attachProcessLifecycle(devServerProcess, child);
+      const stop = () => shutdown();
+      process.once('SIGINT', stop);
+      process.once('SIGTERM', stop);
+      return;
     }
 
     const needsGateway = shouldAutostartSdkworkApiGateway(baseEnv)

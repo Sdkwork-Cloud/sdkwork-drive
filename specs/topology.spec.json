@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "kind": "sdkwork.app.topology",
   "appId": "sdkwork-drive",
   "archetype": "application-http-gateway",
-  "profileRoot": "configs/topology",
+  "profileRoot": "etc/topology",
   "profilePattern": "{deploymentProfile}.{environment}.env",
   "vocabulary": {
     "deploymentProfile": {
@@ -19,6 +19,10 @@
       ]
     }
   },
+  "cloudIngress": {
+    "strategy": "platform-collapsed",
+    "platformGateway": "sdkwork-api-cloud-gateway"
+  },
   "defaults": {
     "developmentProfileId": "standalone.development",
     "productionProfileId": "cloud.production",
@@ -26,10 +30,10 @@
     "gatewayBind": "127.0.0.1:3900"
   },
   "profileFiles": {
-    "standalone.development": "configs/topology/standalone.development.env",
-    "standalone.production": "configs/topology/standalone.production.env",
-    "cloud.development": "configs/topology/cloud.development.env",
-    "cloud.production": "configs/topology/cloud.production.env"
+    "standalone.development": "etc/topology/standalone.development.env",
+    "standalone.production": "etc/topology/standalone.production.env",
+    "cloud.development": "etc/topology/cloud.development.env",
+    "cloud.production": "etc/topology/cloud.production.env"
   },
   "envKeys": {
     "deploymentProfile": "SDKWORK_DRIVE_DEPLOYMENT_PROFILE",
@@ -82,13 +86,13 @@
     "standaloneGateway": {
       "crate": "sdkwork-drive-standalone-gateway",
       "binary": "sdkwork-drive-standalone-gateway",
-      "configGlob": "configs/sdkwork-drive-standalone-gateway.{profile}.toml"
+      "configGlob": "etc/sdkwork-drive-standalone-gateway.{profile}.toml"
     },
     "cloudGateway": {
       "crate": "sdkwork-api-cloud-gateway",
       "binary": "sdkwork-api-cloud-gateway",
       "repository": "sdkwork-api-cloud-gateway",
-      "configGlob": "configs/sdkwork-api-cloud-gateway.drive.{profile}.toml"
+      "configGlob": "etc/sdkwork-api-cloud-gateway.drive.{profile}.toml"
     }
   },
   "orchestration": {
@@ -96,14 +100,27 @@
       "standalone.development": {
         "processes": [
           {
-            "id": "application.public-ingress",
-            "binary": "sdkwork-drive-standalone-gateway",
+            "id": "standalone-gateway",
+            "role": "standalone-gateway",
+            "script": "_sdkwork:gateway:standalone",
             "required": true
           },
           {
-            "id": "pc-renderer",
-            "package": "apps/sdkwork-drive-pc",
-            "script": "dev",
+            "id": "drive-browser",
+            "role": "client",
+            "script": "_sdkwork:client:browser:standalone",
+            "runtimeTargets": [
+              "browser"
+            ],
+            "required": true
+          },
+          {
+            "id": "drive-desktop",
+            "role": "client",
+            "script": "_sdkwork:client:desktop:standalone",
+            "runtimeTargets": [
+              "desktop"
+            ],
             "required": true
           }
         ],
@@ -114,40 +131,21 @@
       "cloud.development": {
         "processes": [
           {
-            "id": "platform.api-gateway",
-            "binary": "sdkwork-api-cloud-gateway",
-            "repository": "sdkwork-api-cloud-gateway",
+            "id": "drive-browser",
+            "role": "client",
+            "script": "_sdkwork:client:browser:cloud",
+            "runtimeTargets": [
+              "browser"
+            ],
             "required": true
           },
           {
-            "id": "pc-renderer",
-            "package": "apps/sdkwork-drive-pc",
-            "script": "dev",
-            "required": true
-          }
-        ],
-        "healthSurfaces": [
-          "platform.api-gateway"
-        ]
-      },
-      "cloud.production": {
-        "processes": [
-          {
-            "id": "platform.api-gateway",
-            "crate": "sdkwork-api-cloud-gateway",
-            "binary": "sdkwork-api-cloud-gateway",
-            "repository": "sdkwork-api-cloud-gateway",
-            "required": false
-          },
-          {
-            "id": "application.public-ingress",
-            "binary": "sdkwork-drive-standalone-gateway",
-            "required": true
-          },
-          {
-            "id": "pc-renderer",
-            "package": "apps/sdkwork-drive-pc",
-            "script": "dev",
+            "id": "drive-desktop",
+            "role": "client",
+            "script": "_sdkwork:client:desktop:cloud",
+            "runtimeTargets": [
+              "desktop"
+            ],
             "required": true
           }
         ],
@@ -156,23 +154,13 @@
           "platform.api-gateway"
         ]
       },
+      "cloud.production": {
+        "processes": [],
+        "healthSurfaces": []
+      },
       "standalone.production": {
-        "processes": [
-          {
-            "id": "application.public-ingress",
-            "binary": "sdkwork-drive-standalone-gateway",
-            "required": true
-          },
-          {
-            "id": "pc-renderer",
-            "package": "apps/sdkwork-drive-pc",
-            "script": "dev",
-            "required": true
-          }
-        ],
-        "healthSurfaces": [
-          "application.public-ingress"
-        ]
+        "processes": [],
+        "healthSurfaces": []
       }
     }
   },

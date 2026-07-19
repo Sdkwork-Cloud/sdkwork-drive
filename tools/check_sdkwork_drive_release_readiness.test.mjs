@@ -49,6 +49,11 @@ function baseManifest(packagePatch, manifestPatch = {}) {
 async function createTempWorkspace(manifest) {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'sdkwork-drive-release-readiness-'));
   await mkdir(path.join(tempRoot, 'tools'), { recursive: true });
+  if (manifest.metadata?.deploymentConfig) {
+    const deploymentConfigPath = path.join(tempRoot, manifest.metadata.deploymentConfig);
+    await mkdir(path.dirname(deploymentConfigPath), { recursive: true });
+    await writeFile(deploymentConfigPath, '{}\n', 'utf8');
+  }
   await writeFile(path.join(tempRoot, 'sdkwork.workflow.json'), '{}\n', 'utf8');
   await writeFile(path.join(tempRoot, 'tools/generate_release_sbom.mjs'), '#!/usr/bin/env node\n', 'utf8');
   await writeFile(
@@ -68,6 +73,27 @@ function runReadiness(tempRoot, env = {}) {
     },
     encoding: 'utf8',
   });
+}
+
+{
+  const manifest = baseManifest({});
+  delete manifest.environments;
+  manifest.metadata = {
+    deploymentConfig: 'etc/sdkwork.deployment.config.json',
+  };
+  const tempRoot = await createTempWorkspace(manifest);
+  const result = runReadiness(tempRoot);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /passed \(development mode/);
+}
+
+{
+  const manifest = baseManifest({});
+  delete manifest.environments;
+  const tempRoot = await createTempWorkspace(manifest);
+  const result = runReadiness(tempRoot);
+  assert.notEqual(result.status, 0, result.stdout);
+  assert.match(result.stderr, /must include environments or metadata\.deploymentConfig/);
 }
 
 {

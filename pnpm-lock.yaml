@@ -645,6 +645,9 @@ importers:
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.546.0(react@19.2.4)
       sdkwork-drive-pc-admin-core:
         specifier: workspace:*
         version: link:../sdkwork-drive-pc-admin-core
@@ -663,6 +666,9 @@ importers:
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.546.0(react@19.2.4)
       sdkwork-drive-pc-admin-core:
         specifier: workspace:*
         version: link:../sdkwork-drive-pc-admin-core

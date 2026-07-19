@@ -58,7 +58,7 @@
 | 数据库 seed i18n 契约 | `database/seeds/seed.manifest.json` 补齐 `i18nVersion`、`fallbackLocale`、`localeSets`；当前无必需参考数据，common bootstrap seed 明确为 no-op 生命周期脚本 |
 | PC authored i18n 目录 | `sdkwork-drive-pc-commons/src/i18n/{en-US,zh-CN}/drive/commons/*` 对齐 `I18N_SPEC.md` `<locale>/<domain>/<capability>/<fragment>`；运行时语言状态升级为 `en-US`/`zh-CN`，兼容迁移旧 `en`/`zh` 偏好值 |
 | 409 冲突 | `isDriveConflictError` 识别 40901；上传队列专用 toast |
-| Runtime topology v4 profile id | `specs/topology.spec.json` 升级为两段式 `<deploymentProfile>.<environment>`；`configs/topology/{standalone,cloud}.{development,production}.env` 为活动 profile；`deployments/deploy.yaml` 已切换到四个 canonical profile；`sdkwork-command.mjs` 拒绝公共 `--service-layout` 且不再向 `drive-dev.mjs` 传递旧轴 |
+| Runtime topology v5 profile id | `specs/topology.spec.json` uses two-segment `<deploymentProfile>.<environment>` ids; `etc/topology/{standalone,cloud}.{development,production}.env` owns active profiles; `sdkwork-app` owns public lifecycle selection. |
 | Drive API opaque cursor | `sdkwork-drive-contract::api::pagination_cursor` 统一编码 offset/change-sequence 游标；app-api、backend-api、storage-backend-api、permission store 拒绝裸数字 cursor，并按 cursor 类型隔离 offset 与 change sequence |
 | Drive PC Admin cursor 消费 | Spaces Admin、Storage Providers Admin 不再构造数字 cursor；只消费服务端 `pageInfo.nextCursor` / `nextPageToken` |
 | Drive Uploader Blob 读取 | composed uploader 新增 Blob 读取兼容层：标准运行时使用 `Blob.arrayBuffer()`，缺失时使用 `FileReader.readAsArrayBuffer()`；测试环境不再因 jsdom `File.slice()` 缺少 `arrayBuffer()` 中断真实上传流程 |
@@ -89,7 +89,7 @@ sdks/                          → OpenAPI 权威 → composed SDK facade
 | Outbox 双引擎 claim + 幂等 fan-out | ✅ |
 | Cloud 多实例 outbox | ✅ K8s `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` |
 | PostgreSQL 集成测试（CI） | ✅ |
-| Deploy profile/env 对齐 | ✅ `deployments/deploy.yaml` 活动 profiles 与 `specs/topology.spec.json#profileFiles`、`configs/topology/*.env` 一致；负向测试拒绝旧 profile |
+| Deploy profile/env 对齐 | `deployments/deploy.yaml` production profiles align with `specs/topology.spec.json#profileFiles` and `etc/topology/*.env`; development profiles remain source/runtime concerns. |
 | 本地 release package / validate | ✅ `pnpm release:package` + `pnpm release:validate` 已生成并校验本地 web、Windows、standalone gateway、Catalog staging、release evidence、SBOM |
 | 严格 K8s digest 门禁 | ⏳ `SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate` 当前因 `REPLACE_WITH_RELEASE_DIGEST` 阻塞 |
 | 严格 release-readiness 门禁 | ⏳ `SDKWORK_RELEASE_VALIDATION=strict pnpm check:release-readiness` 当前因签名、macOS/Linux checksum、Catalog CDN 媒体证据阻塞 |

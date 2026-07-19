@@ -1,10 +1,25 @@
+import {
+  BookOpen,
+  Bot,
+  CircleHelp,
+  GitBranch,
+  MessageCircle,
+  Package,
+  Rocket,
+  Stamp,
+  UserRound,
+  UsersRound,
+  Video,
+  type LucideIcon,
+} from 'lucide-react';
+
 export interface SpaceTypeMeta {
   value: string;
   label: string;
   shortLabel: string;
   labelKey: string;
   descriptionKey: string;
-  icon: string;
+  icon: LucideIcon;
   bgClass: string;
   textClass: string;
   description: string;
@@ -18,7 +33,7 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     shortLabel: 'Personal',
     labelKey: 'spaceTypePersonalLabel',
     descriptionKey: 'spaceTypePersonalDesc',
-    icon: '👤',
+    icon: UserRound,
     bgClass: 'bg-blue-50 dark:bg-blue-950/30',
     textClass: 'text-blue-700 dark:text-blue-300',
     description: 'User personal files and documents',
@@ -30,7 +45,7 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     shortLabel: 'Team',
     labelKey: 'spaceTypeTeamLabel',
     descriptionKey: 'spaceTypeTeamDesc',
-    icon: '👥',
+    icon: UsersRound,
     bgClass: 'bg-purple-50 dark:bg-purple-950/30',
     textClass: 'text-purple-700 dark:text-purple-300',
     description: 'Team shared workspace for collaboration',
@@ -42,7 +57,7 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     shortLabel: 'KB',
     labelKey: 'spaceTypeKnowledgeBaseLabel',
     descriptionKey: 'spaceTypeKnowledgeBaseDesc',
-    icon: '📚',
+    icon: BookOpen,
     bgClass: 'bg-emerald-50 dark:bg-emerald-950/30',
     textClass: 'text-emerald-700 dark:text-emerald-300',
     description: 'Knowledge base articles and resources',
@@ -54,7 +69,7 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     shortLabel: 'AI',
     labelKey: 'spaceTypeAiGeneratedLabel',
     descriptionKey: 'spaceTypeAiGeneratedDesc',
-    icon: '🤖',
+    icon: Bot,
     bgClass: 'bg-cyan-50 dark:bg-cyan-950/30',
     textClass: 'text-cyan-700 dark:text-cyan-300',
     description: 'AI-generated content and outputs',
@@ -66,7 +81,7 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     shortLabel: 'Git',
     labelKey: 'spaceTypeGitRepositoryLabel',
     descriptionKey: 'spaceTypeGitRepositoryDesc',
-    icon: '🔀',
+    icon: GitBranch,
     bgClass: 'bg-orange-50 dark:bg-orange-950/30',
     textClass: 'text-orange-700 dark:text-orange-300',
     description: 'Git repository storage for version control',
@@ -78,7 +93,7 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     shortLabel: 'Deploy',
     labelKey: 'spaceTypeDeploymentLabel',
     descriptionKey: 'spaceTypeDeploymentDesc',
-    icon: '🚀',
+    icon: Rocket,
     bgClass: 'bg-indigo-50 dark:bg-indigo-950/30',
     textClass: 'text-indigo-700 dark:text-indigo-300',
     description: 'Deployment artifacts and releases',
@@ -90,7 +105,7 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     shortLabel: 'App',
     labelKey: 'spaceTypeAppUploadLabel',
     descriptionKey: 'spaceTypeAppUploadDesc',
-    icon: '📦',
+    icon: Package,
     bgClass: 'bg-pink-50 dark:bg-pink-950/30',
     textClass: 'text-pink-700 dark:text-pink-300',
     description: 'Application upload storage for SDKWork apps',
@@ -102,7 +117,7 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     shortLabel: 'IM',
     labelKey: 'spaceTypeImLabel',
     descriptionKey: 'spaceTypeImDesc',
-    icon: '💬',
+    icon: MessageCircle,
     bgClass: 'bg-teal-50 dark:bg-teal-950/30',
     textClass: 'text-teal-700 dark:text-teal-300',
     description: 'Instant messaging attachments and media',
@@ -114,7 +129,7 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     shortLabel: 'RTC',
     labelKey: 'spaceTypeRtcLabel',
     descriptionKey: 'spaceTypeRtcDesc',
-    icon: '📹',
+    icon: Video,
     bgClass: 'bg-red-50 dark:bg-red-950/30',
     textClass: 'text-red-700 dark:text-red-300',
     description: 'Real-time communication recordings and files',
@@ -126,7 +141,7 @@ export const SPACE_TYPES: SpaceTypeMeta[] = [
     shortLabel: 'Notary',
     labelKey: 'spaceTypeNotaryLabel',
     descriptionKey: 'spaceTypeNotaryDesc',
-    icon: '📋',
+    icon: Stamp,
     bgClass: 'bg-amber-50 dark:bg-amber-950/30',
     textClass: 'text-amber-700 dark:text-amber-300',
     description: 'Notary documents and attestations',
@@ -141,7 +156,7 @@ export function getSpaceTypeMeta(type: string): SpaceTypeMeta {
     shortLabel: type.slice(0, 6),
     labelKey: '',
     descriptionKey: '',
-    icon: '❓',
+    icon: CircleHelp,
     bgClass: 'bg-neutral-50 dark:bg-neutral-800',
     textClass: 'text-neutral-700 dark:text-neutral-300',
     description: '',

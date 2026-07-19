@@ -146,7 +146,7 @@ These TOML files configure sdkwork-api-cloud-gateway for Drive cloud topology.
 Build and deploy the gateway binary from the sdkwork-api-cloud-gateway repository.
 
 Included configs:
-${DRIVE_CLOUD_GATEWAY_CONFIGS.map((name) => `- configs/${name}`).join('\n')}
+${DRIVE_CLOUD_GATEWAY_CONFIGS.map((name) => `- etc/${name}`).join('\n')}
 `;
   await writeFile(path.join(context.stageRoot, context.stageName, 'README.md'), readme, 'utf8');
 

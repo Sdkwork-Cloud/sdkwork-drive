@@ -15,6 +15,11 @@ pub mod uploader {
 
 use sdkwork_utils_rust::sha256_hash;
 
+/// Enable the canonical process-local database pool before any Drive bootstrap.
+pub fn enable_process_shared_database_pool() {
+    sdkwork_database_sqlx::enable_process_shared_database_pool();
+}
+
 pub fn drive_share_token_hash(token: &str) -> String {
     format!("sha256:{}", sha256_hash(token.trim().as_bytes()))
 }

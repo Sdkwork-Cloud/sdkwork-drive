@@ -10,7 +10,7 @@ Use this guide after `pnpm check` passes on the release commit. Pilot validates 
 | Database | PostgreSQL provisioned; `pnpm db:migrate` applied against pilot schema |
 | IAM | Tenant org-scoped admin credentials; IAM DB session resolver reachable |
 | Secrets | `SDKWORK_DRIVE_DATABASE_*`, JWT/HMAC secrets, download token HMAC, and `sdkwork-drive-rate-limit` Redis URL for cloud production |
-| Topology | Profile selected from `configs/topology/` (pilot: `standalone.development` or staging production profile) |
+| Topology | Profile selected from `etc/topology/` (pilot: `standalone.development` or a production profile) |
 
 ## Phase 1 — Local / staging smoke
 
@@ -50,7 +50,7 @@ Validate:
 ## Phase 2 — Deploy to pilot environment
 
 1. Select profile in `deployments/deploy.yaml` (e.g. `standalone.production` or `cloud.production`).
-2. Apply topology env from `configs/topology/<profile>.env`.
+2. Apply topology env from `etc/topology/<profile>.env`.
 3. Run database lifecycle:
 
 ```bash

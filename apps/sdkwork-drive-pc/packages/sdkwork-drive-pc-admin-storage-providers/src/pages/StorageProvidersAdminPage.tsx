@@ -1,4 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  HardDrive,
+  LoaderCircle,
+  Plus,
+  RefreshCw,
+  X,
+} from 'lucide-react';
 import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
 import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
 import { StorageProviderTable } from '../components/StorageProviderTable';
@@ -13,7 +24,7 @@ import type {
   StorageProviderView,
   UpdateStorageProviderInput,
 } from '../types/storageProviderAdminTypes';
-import { PRIMARY_BUTTON_CLASS, BADGE_BASE_CLASS, SECONDARY_BUTTON_CLASS } from '../utils/uiPrimitives';
+import { PRIMARY_BUTTON_CLASS, BADGE_BASE_CLASS, ICON_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from '../utils/uiPrimitives';
 import { useTranslation } from '../hooks/useTranslation';
 
 interface StorageProvidersAdminPageProps {
@@ -81,6 +92,7 @@ export function StorageProvidersAdminPage({
 
   const reload = (signal?: AbortSignal) => {
     setLoading(true);
+    setNotice(undefined);
     refreshProviders(signal)
       .catch((err) => {
         if (!isAbortError(err)) setNotice({ type: 'error', messageKey: 'noticeLoadFailed' });
@@ -184,35 +196,31 @@ export function StorageProvidersAdminPage({
 
   return (
     <main className="flex h-full flex-1 flex-col overflow-hidden bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <header className="border-b border-neutral-200 bg-white px-6 py-4 dark:border-neutral-800 dark:bg-neutral-900">
+      <header className="border-b border-neutral-200 bg-white px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900 sm:px-6 sm:py-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-lg font-semibold">{t('pageTitle')}</h1>
-              {!loading && (
-                <span className={`${BADGE_BASE_CLASS} bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300`}>
-                  {t('headerProviderCount', { count: providers.length })}
-                </span>
-              )}
-              {issueCount > 0 && (
-                <span className={`${BADGE_BASE_CLASS} bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200`}>
-                  {t('issuesSummary', { count: issueCount })}
-                </span>
-              )}
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+              <HardDrive aria-hidden="true" size={20} strokeWidth={1.8} />
             </div>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{t('pageDescription')}</p>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-lg font-semibold text-neutral-950 dark:text-white">{t('pageTitle')}</h1>
+                {!loading && <span className={`${BADGE_BASE_CLASS} bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300`}>{t('headerProviderCount', { count: providers.length })}</span>}
+                {issueCount > 0 && <span className={`${BADGE_BASE_CLASS} bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200`}>{t('issuesSummary', { count: issueCount })}</span>}
+              </div>
+              <p className="mt-1 max-w-3xl text-sm leading-5 text-neutral-500 dark:text-neutral-400">{t('pageDescription')}</p>
+            </div>
           </div>
-          <button
-            type="button"
-            className={PRIMARY_BUTTON_CLASS}
-            onClick={() => {
-              setEditingProvider(undefined);
-              setEditorOpen(true);
-            }}
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            {t('newProvider')}
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => reload()}>
+              <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
+              {t('refresh')}
+            </button>
+            <button type="button" className={PRIMARY_BUTTON_CLASS} onClick={() => { setEditingProvider(undefined); setEditorOpen(true); }}>
+              <Plus aria-hidden="true" size={16} />
+              {t('newProvider')}
+            </button>
+          </div>
         </div>
 
         {notice && !editorOpen && (
@@ -221,24 +229,18 @@ export function StorageProvidersAdminPage({
               ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200'
               : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200'
           }`}>
-            {notice.type === 'success' ? (
-              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            ) : (
-              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            )}
+            {notice.type === 'success' ? <CheckCircle2 aria-hidden="true" className="shrink-0" size={16} /> : <CircleAlert aria-hidden="true" className="shrink-0" size={16} />}
             <span className="flex-1">{t(notice.messageKey, notice.params)}</span>
-            <button type="button" className="text-current opacity-50 hover:opacity-100" onClick={() => setNotice(undefined)}>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <button type="button" className={ICON_BUTTON_CLASS} aria-label={t('dismiss')} title={t('dismiss')} onClick={() => setNotice(undefined)}><X aria-hidden="true" size={15} /></button>
           </div>
         )}
       </header>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
         {loading ? (
           <div className="flex min-h-[360px] items-center justify-center rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
             <div className="flex items-center gap-3 text-sm text-neutral-500">
-              <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+              <LoaderCircle aria-hidden="true" className="animate-spin" size={19} />
               {t('loading')}
             </div>
           </div>
@@ -265,7 +267,8 @@ export function StorageProvidersAdminPage({
                   disabled={page <= 1 || loading}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
                 >
-                  {t('previousPage')}
+                  <ChevronLeft aria-hidden="true" size={16} />
+                  <span className="hidden sm:inline">{t('previousPage')}</span>
                 </button>
                 <button
                   type="button"
@@ -273,7 +276,8 @@ export function StorageProvidersAdminPage({
                   disabled={!hasMore || !nextPageToken || loading}
                   onClick={() => setPage((current) => current + 1)}
                 >
-                  {t('nextPage')}
+                  <span className="hidden sm:inline">{t('nextPage')}</span>
+                  <ChevronRight aria-hidden="true" size={16} />
                 </button>
               </div>
             </div>

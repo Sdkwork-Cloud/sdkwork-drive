@@ -47,6 +47,11 @@
       "file": "RUST_CODE_SPEC.md",
       "path": "../../../sdkwork-specs/RUST_CODE_SPEC.md",
       "purpose": "Rust crate and module rules."
+    },
+    {
+      "file": "DATABASE_SPEC_PROCESS_SHARED_POOL.md",
+      "path": "../../../sdkwork-specs/DATABASE_SPEC_PROCESS_SHARED_POOL.md",
+      "purpose": "Canonical process database identity and configuration authority."
     }
   ],
   "contracts": {
@@ -57,7 +62,11 @@
     "routeManifest": null,
     "sdkClients": [],
     "events": [],
-    "configKeys": [],
+    "configKeys": [
+      "SDKWORK_DRIVE_DATABASE_URL",
+      "SDKWORK_CLAW_DATABASE_*",
+      "SDKWORK_DATABASE_URL"
+    ],
     "sdkDependencies": [],
     "dependencyApiExports": [],
     "dependencyApiSurfaces": []

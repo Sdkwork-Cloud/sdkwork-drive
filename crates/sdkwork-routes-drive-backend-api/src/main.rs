@@ -5,6 +5,7 @@ use sdkwork_routes_drive_backend_api::build_router_with_database_config;
 
 #[tokio::main]
 async fn main() {
+    sdkwork_drive_workspace_service::enable_process_shared_database_pool();
     sdkwork_drive_observability::init_tracing("sdkwork-routes-drive-backend-api");
     sdkwork_drive_security::ensure_drive_auth_policy_refresh_task();
     ensure_production_download_token_signing_configured()

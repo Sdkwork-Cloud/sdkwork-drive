@@ -47,8 +47,8 @@ fn repository_root_declares_sdkwork_standard_directory_dictionary() {
         "apis/open-api/drive",
         "apis/app-api/drive",
         "apis/backend-api/drive",
-        "configs/README.md",
-        "configs/drive.database.example.toml",
+        "etc/README.md",
+        "etc/drive.database.example.toml",
         "deployments/README.md",
         "deployments/docker-compose.minio-test.yml",
         "jobs/README.md",
@@ -76,7 +76,7 @@ fn repository_root_declares_sdkwork_standard_directory_dictionary() {
         "`apis/` contains Drive-owned API contract sources and materialized OpenAPI inputs",
         "`crates/` contains Rust service crates, route crates, workers, host/server crates, and reusable Rust libraries",
         "`sdks/` contains SDK family workspaces and generated SDK output",
-        "`configs/` contains safe checked-in config templates",
+        "`etc/` contains safe checked-in source config templates",
         "`deployments/` contains deployment descriptors",
     ] {
         assert!(
@@ -89,7 +89,7 @@ fn repository_root_declares_sdkwork_standard_directory_dictionary() {
     for required in [
         "`apis/`: Drive-owned API contract sources and materialized OpenAPI inputs.",
         "`crates/`: reusable Rust crates.",
-        "`configs/`: safe checked-in runtime config templates.",
+        "`etc/`: safe checked-in source configuration, topology profiles, and runtime templates.",
         "`deployments/`: deployment descriptors and topology examples.",
     ] {
         assert!(
@@ -482,7 +482,7 @@ fn production_gateway_template_declares_all_drive_split_services() {
     root.pop();
 
     let config = std::fs::read_to_string(
-        root.join("configs/sdkwork-api-cloud-gateway.drive.production.toml"),
+        root.join("etc/sdkwork-api-cloud-gateway.drive.production.toml"),
     )
     .expect("production gateway template should exist");
 

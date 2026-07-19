@@ -4,6 +4,7 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
+import { LanguageProvider } from 'sdkwork-drive-pc-commons';
 import { SpacesAdminPage } from '../src/pages/SpacesAdminPage';
 
 describe('SpacesAdminPage', () => {
@@ -57,15 +58,22 @@ describe('SpacesAdminPage', () => {
     const backendSdkClient = { request } as unknown as DriveBackendSdkClient;
 
     render(
-      <SpacesAdminPage
-        backendSdkClient={backendSdkClient}
-        getSession={() => ({})}
-      />,
+      <LanguageProvider defaultLanguage="en-US" resolveHostLanguage={() => 'en-US'}>
+        <SpacesAdminPage
+          backendSdkClient={backendSdkClient}
+          getSession={() => ({})}
+        />
+      </LanguageProvider>,
     );
 
     await screen.findByText('Primary');
+    expect(screen.getByText('space-001')).toBeTruthy();
+    expect(screen.getByText('Personal')).toBeTruthy();
+    expect(screen.getByText('User')).toBeTruthy();
+    expect(screen.getByText('user-001')).toBeTruthy();
+    expect(screen.getByText('Active')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'nextPage' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
     expect(request.mock.calls[1]?.[0]).toMatchObject({

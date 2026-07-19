@@ -6,7 +6,7 @@
     "displayName": "SDKWork drive Gateway Assembly",
     "version": "0.1.0",
     "type": "rust-crate",
-    "root": "sdkwork-drive/crates/sdkwork-drive-gateway-assembly",
+    "root": ".",
     "domain": "application",
     "capability": "drive-gateway-assembly",
     "surface": "assembly",

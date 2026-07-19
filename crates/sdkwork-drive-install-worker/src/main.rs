@@ -6,6 +6,7 @@ use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
+    sdkwork_drive_workspace_service::enable_process_shared_database_pool();
     sdkwork_drive_observability::init_tracing("sdkwork-drive-install-worker");
 
     let args: Vec<String> = std::env::args().collect();

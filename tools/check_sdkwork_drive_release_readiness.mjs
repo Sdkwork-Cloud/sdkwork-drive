@@ -46,6 +46,31 @@ function strictFail(message) {
   }
 }
 
+function validateEnvironmentAuthority(manifest) {
+  if (manifest.environments !== undefined) {
+    if (!manifest.environments || typeof manifest.environments !== 'object' || Array.isArray(manifest.environments)) {
+      fail('sdkwork.app.config.json environments must be an object when present');
+    }
+    return;
+  }
+
+  const deploymentConfig = manifest.metadata?.deploymentConfig;
+  if (typeof deploymentConfig !== 'string' || deploymentConfig.trim() === '') {
+    fail('sdkwork.app.config.json must include environments or metadata.deploymentConfig');
+    return;
+  }
+
+  const absoluteConfigPath = path.resolve(workspaceRoot, deploymentConfig);
+  const relativeConfigPath = path.relative(workspaceRoot, absoluteConfigPath);
+  if (path.isAbsolute(deploymentConfig) || relativeConfigPath.startsWith('..') || path.isAbsolute(relativeConfigPath)) {
+    fail('metadata.deploymentConfig must be a safe application-relative path');
+    return;
+  }
+  if (!fs.existsSync(absoluteConfigPath)) {
+    fail(`metadata.deploymentConfig must reference an existing file: ${deploymentConfig}`);
+  }
+}
+
 function isPlaceholderChecksum(checksum) {
   if (typeof checksum !== 'string' || checksum.length < 16) {
     return true;
@@ -110,11 +135,12 @@ function main() {
     fail('sdkwork.app.config.json must use schemaVersion 3 and kind sdkwork.app');
   }
 
-  for (const section of ['app', 'backend', 'runtime', 'media', 'publish', 'environments', 'artifacts', 'release', 'security']) {
+  for (const section of ['app', 'backend', 'runtime', 'media', 'publish', 'artifacts', 'release', 'security']) {
     if (!manifest[section] || typeof manifest[section] !== 'object') {
       fail(`sdkwork.app.config.json must include required section ${section}`);
     }
   }
+  validateEnvironmentAuthority(manifest);
 
   if (!fs.existsSync(path.join(workspaceRoot, 'sdkwork.workflow.json'))) {
     fail('sdkwork.workflow.json must exist for release governance');

@@ -16,6 +16,7 @@
   "dependencies": {
     "@sdkwork/drive-backend-sdk": "workspace:*",
     "@sdkwork/utils": "workspace:*",
+    "lucide-react": "catalog:",
     "sdkwork-drive-pc-admin-core": "workspace:*",
     "sdkwork-drive-pc-commons": "workspace:*",
     "sdkwork-drive-pc-core": "workspace:*"

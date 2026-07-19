@@ -27,7 +27,7 @@ This repository is a SDKWork standard project root governed by
 - `tools/` contains deterministic developer, validation, and generation tools.
 - `plugins/` is reserved for Drive application/runtime plugin source.
 - `examples/` is reserved for runnable examples and SDK/API usage samples.
-- `configs/` contains safe checked-in config templates and topology profiles.
+- `etc/` contains safe checked-in source config templates and topology profiles.
 - `deployments/` contains deployment descriptors.
 - `scripts/` contains thin command entrypoints.
 - `docs/` contains architecture notes, runbooks, and standards docs.
@@ -58,7 +58,7 @@ The local backend launch plan starts the four runtime API services together:
 - Storage backend route crate: `sdkwork-routes-storage-backend-api` on `127.0.0.1:18083`.
 
 Runtime services also accept `SDKWORK_DRIVE_CONFIG_FILE` pointing at a TOML file
-with a `[database]` section, for example `configs/drive.database.example.toml`.
+with a `[database]` section, for example `etc/drive.database.example.toml`.
 `SDKWORK_DRIVE_DATABASE_URL` remains the highest-priority override.
 
 ## IAM Login Integration

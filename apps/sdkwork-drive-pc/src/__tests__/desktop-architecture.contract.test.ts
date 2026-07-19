@@ -1359,24 +1359,31 @@ describe('desktop architecture contract', () => {
       ),
     );
 
-    expect(rootPackageJson.scripts.dev).toBe('pnpm dev:browser');
+    expect(rootPackageJson.scripts.dev).toBe('pnpm dev:standalone');
+    expect(rootPackageJson.scripts['dev:standalone']).toBe(
+      'pnpm exec sdkwork-app dev --deployment-profile standalone --environment development',
+    );
+    expect(rootPackageJson.scripts['dev:cloud']).toBe(
+      'pnpm exec sdkwork-app dev --deployment-profile cloud --environment development',
+    );
     expect(rootPackageJson.scripts['dev:browser']).toBe(
-      'node scripts/sdkwork-command.mjs dev --runtime-target browser --database postgres --deployment-profile standalone',
+      'pnpm exec sdkwork-app dev --runtime-target browser --database postgres --deployment-profile standalone',
     );
     expect(rootPackageJson.scripts['dev:pc']).toBeUndefined();
     expect(rootPackageJson.scripts['dev:desktop']).toBe(
-      'node scripts/sdkwork-command.mjs dev --runtime-target desktop --database postgres --deployment-profile standalone',
+      'pnpm exec sdkwork-app dev --runtime-target desktop --database postgres --deployment-profile standalone',
     );
     const retiredDesktopScript = ['dev', 'desktop', 'postgres', 'unified-process', 'standalone'].join(':');
     expect(rootPackageJson.scripts[retiredDesktopScript]).toBeUndefined();
-    expect(rootPackageJson.scripts['dev:browser:postgres:cloud']).toBe(
-      'node scripts/sdkwork-command.mjs dev --runtime-target browser --database postgres --deployment-profile cloud',
+    expect(rootPackageJson.scripts['dev:browser:cloud']).toBe(
+      'pnpm exec sdkwork-app dev --runtime-target browser --deployment-profile cloud',
     );
+    expect(rootPackageJson.scripts['dev:browser:postgres:cloud']).toBeUndefined();
     expect(rootPackageJson.scripts['dev:desktop:sqlite']).toBe(
       'node scripts/sdkwork-command.mjs dev --runtime-target desktop --database sqlite --deployment-profile standalone',
     );
     expect(rootPackageJson.scripts.build).toBe(
-      'node scripts/sdkwork-command.mjs build --deployment-profile cloud',
+      'pnpm exec sdkwork-app build --deployment-profile cloud',
     );
     expect(rootPackageJson.scripts['dev:server']).toBeUndefined();
     expect(appPackageJson.scripts.dev).toBe('vite');

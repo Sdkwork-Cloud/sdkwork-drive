@@ -35,6 +35,7 @@ struct EmbeddedServiceState {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    sdkwork_drive_workspace_service::enable_process_shared_database_pool();
     sdkwork_drive_observability::init_tracing("sdkwork-drive-standalone-gateway");
 
     let args: Vec<String> = std::env::args().collect();

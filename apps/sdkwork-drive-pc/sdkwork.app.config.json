@@ -166,28 +166,6 @@
       "managedBy": "sdkwork-drive"
     }
   },
-  "environments": {
-    "development": {
-      "accessUrl": "http://127.0.0.1:5183",
-      "deployUrl": "http://127.0.0.1:5183",
-      "deployEnv": "development"
-    },
-    "test": {
-      "accessUrl": "https://api-test.sdkwork.com/apps/sdkwork-drive-pc",
-      "deployUrl": "https://api-test.sdkwork.com/apps/sdkwork-drive-pc",
-      "deployEnv": "test"
-    },
-    "staging": {
-      "accessUrl": "https://api-staging.sdkwork.com/apps/sdkwork-drive-pc",
-      "deployUrl": "https://api-staging.sdkwork.com/apps/sdkwork-drive-pc",
-      "deployEnv": "staging"
-    },
-    "production": {
-      "accessUrl": "https://drive.sdkwork.com",
-      "deployUrl": "https://drive.sdkwork.com",
-      "deployEnv": "production"
-    }
-  },
   "artifacts": {
     "installConfig": {
       "defaultPackageId": "web-universal-cloud-browser-other",
@@ -202,6 +180,7 @@
           "packageFormat": "OTHER",
           "platform": "WEB",
           "architecture": "universal",
+          "profileBinding": "fixed",
           "url": "https://drive.sdkwork.com",
           "enabled": true,
           "metadata": {
@@ -209,7 +188,24 @@
             "releaseArtifact": "web-url"
           },
           "deploymentProfile": "cloud",
-          "runtimeTarget": "browser"
+          "runtimeTarget": "browser",
+          "targetPlatform": "web",
+          "clientArchitecture": "pc-web"
+        },
+        {
+          "id": "windows-x64-standalone-desktop-zip",
+          "name": "SDKWork Drive PC Windows",
+          "sourceType": "BINARY_URL",
+          "packageFormat": "ZIP",
+          "platform": "DESKTOP_WINDOWS",
+          "architecture": "x64",
+          "profileBinding": "fixed",
+          "deploymentProfile": "standalone",
+          "runtimeTarget": "desktop",
+          "targetPlatform": "windows",
+          "clientArchitecture": "tauri",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-drive/STABLE/0.1.0/windows/x64/app.zip",
+          "enabled": true
         }
       ],
       "metadata": {
@@ -295,6 +291,7 @@
     "standardOwner": "sdkwork-platform",
     "component": "sdkwork-drive-pc",
     "surface": "pc",
-    "initializedAt": "2026-06-06T00:00:00Z"
+    "initializedAt": "2026-06-06T00:00:00Z",
+    "deploymentConfig": "etc/sdkwork.deployment.config.json"
   }
 }

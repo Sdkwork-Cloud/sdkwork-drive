@@ -1,13 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import {
+  Check,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  Tags,
+  Trash2,
+  X,
+} from 'lucide-react';
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
 import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
+import { OperationsConfirmDialog } from '../components/OperationsConfirmDialog';
+import { EmptyState, LoadingState, NoticeBanner, OperationsPageHeader } from '../components/OperationsAdminPrimitives';
 import { createDriveOperationsAdminService } from '../services/driveOperationsAdminService';
 import type { LabelView } from '../types/driveOperationsAdminTypes';
 import {
-  CARD_BODY_CLASS,
   CARD_CLASS,
   CARD_HEADER_CLASS,
-  DANGER_BUTTON_CLASS,
+  GHOST_BUTTON_CLASS,
   INPUT_CLASS,
   PRIMARY_BUTTON_CLASS,
   SECONDARY_BUTTON_CLASS,
@@ -38,14 +49,19 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | undefined>();
+  const [notice, setNotice] = useState<{ type: 'error' | 'success'; message: string } | undefined>();
+  const [search, setSearch] = useState('');
   const [id, setId] = useState('');
   const [labelKey, setLabelKey] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [color, setColor] = useState('#3366FF');
+  const [description, setDescription] = useState('');
   const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
   const [editDisplayName, setEditDisplayName] = useState('');
   const [editColor, setEditColor] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<LabelView | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const loadPage = useCallback(async ({
     append = false,
@@ -56,23 +72,13 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
     pageToken?: string;
     signal?: AbortSignal;
   } = {}) => {
-    if (append) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-    }
-    setError(undefined);
+    append ? setLoadingMore(true) : setLoading(true);
     try {
-      const result = await service.listLabels({
-        lifecycleStatus: 'active',
-        pageSize: 50,
-        pageToken,
-        signal,
-      });
+      const result = await service.listLabels({ lifecycleStatus: 'active', pageSize: 50, pageToken, signal });
       setLabels((current) => (append ? [...current, ...result.items] : result.items));
       setNextPageToken(result.pageInfo?.nextCursor ?? result.nextPageToken ?? null);
     } catch (err) {
-      if (!isAbortError(err)) setError(t('noticeLoadFailed'));
+      if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeLoadFailed') });
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -83,23 +89,29 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
     const controller = new AbortController();
     void loadPage({ signal: controller.signal });
     return () => controller.abort();
-  }, [loadPage]);
+  }, [loadPage, refreshKey]);
 
-  const createLabel = async () => {
+  const createLabel = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setPending(true);
-    setError(undefined);
+    setNotice(undefined);
     try {
       await service.createLabel({
         id: id.trim(),
         labelKey: labelKey.trim(),
         displayName: displayName.trim(),
+        color: color.trim() || undefined,
+        description: description.trim() || undefined,
       });
       setId('');
       setLabelKey('');
       setDisplayName('');
+      setColor('#3366FF');
+      setDescription('');
       await loadPage();
+      setNotice({ type: 'success', message: t('labelCreated') });
     } catch (err) {
-      if (!isAbortError(err)) setError(t('noticeOperationFailed'));
+      if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
     } finally {
       setPending(false);
     }
@@ -122,7 +134,7 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
   const saveEdit = async () => {
     if (!editingLabelId) return;
     setPending(true);
-    setError(undefined);
+    setNotice(undefined);
     try {
       await service.updateLabel(editingLabelId, {
         displayName: editDisplayName.trim() || undefined,
@@ -131,122 +143,156 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
       });
       cancelEdit();
       await loadPage();
+      setNotice({ type: 'success', message: t('labelUpdated') });
     } catch (err) {
-      if (!isAbortError(err)) setError(t('noticeOperationFailed'));
+      if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
     } finally {
       setPending(false);
     }
   };
 
-  const deleteLabel = async (labelId: string) => {
+  const deleteLabel = async () => {
+    if (!deleteTarget) return;
+    const labelId = deleteTarget.id;
+    setDeleteTarget(null);
     setPending(true);
-    setError(undefined);
+    setNotice(undefined);
     try {
       await service.deleteLabel(labelId);
-      if (editingLabelId === labelId) {
-        cancelEdit();
-      }
+      if (editingLabelId === labelId) cancelEdit();
       await loadPage();
+      setNotice({ type: 'success', message: t('labelDeleted') });
     } catch (err) {
-      if (!isAbortError(err)) setError(t('noticeOperationFailed'));
+      if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
     } finally {
       setPending(false);
     }
   };
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredLabels = normalizedSearch
+    ? labels.filter((label) => [label.id, label.labelKey, label.displayName, label.description ?? ''].some((value) => value.toLowerCase().includes(normalizedSearch)))
+    : labels;
+
   return (
-    <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#fafafa] dark:bg-[#111]">
-      <div className="border-b border-neutral-200 bg-white px-6 py-4 dark:border-neutral-800 dark:bg-[#161616]">
-        <h1 className="text-lg font-semibold">{t('labelsPageTitle')}</h1>
-        <p className="mt-1 text-sm text-neutral-500">{t('labelsPageDescription')}</p>
-      </div>
-      <div className="flex-1 overflow-auto p-6 space-y-4">
-        {error ? <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
-        <div className={CARD_CLASS}>
-          <div className={CARD_HEADER_CLASS}>{t('createLabelTitle')}</div>
-          <div className={`${CARD_BODY_CLASS} grid gap-3 md:grid-cols-4`}>
-            <input className={INPUT_CLASS} value={id} onChange={(e) => setId(e.target.value)} placeholder={t('labelIdPlaceholder')} />
-            <input className={INPUT_CLASS} value={labelKey} onChange={(e) => setLabelKey(e.target.value)} placeholder={t('labelKeyPlaceholder')} />
-            <input className={INPUT_CLASS} value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t('labelNamePlaceholder')} />
-            <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={pending || !id.trim() || !labelKey.trim() || !displayName.trim()} onClick={() => void createLabel()}>
+    <main className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+      <OperationsPageHeader
+        icon={Tags}
+        title={t('labelsPageTitle')}
+        description={t('labelsPageDescription')}
+        toneClassName="bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"
+        actions={(
+          <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => setRefreshKey((current) => current + 1)}>
+            <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
+            {t('refresh')}
+          </button>
+        )}
+      />
+
+      <div className="flex-1 space-y-4 overflow-auto p-4 sm:p-6">
+        {notice ? <NoticeBanner type={notice.type} message={notice.message} dismissLabel={t('dismiss')} onDismiss={() => setNotice(undefined)} /> : null}
+
+        <section className={`${CARD_CLASS} overflow-hidden`} aria-labelledby="labels-create-title">
+          <div className={`${CARD_HEADER_CLASS} flex items-center gap-2`}>
+            <Plus aria-hidden="true" className="text-violet-600 dark:text-violet-400" size={16} />
+            <h2 id="labels-create-title" className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">{t('createLabelTitle')}</h2>
+          </div>
+          <form className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-6 xl:items-end" onSubmit={createLabel}>
+            <LabelField label={t('labelIdLabel')}><input className={`${INPUT_CLASS} font-mono text-xs`} value={id} onChange={(event) => setId(event.target.value)} placeholder={t('labelIdPlaceholder')} /></LabelField>
+            <LabelField label={t('labelKeyLabel')}><input className={`${INPUT_CLASS} font-mono text-xs`} value={labelKey} onChange={(event) => setLabelKey(event.target.value)} placeholder={t('labelKeyPlaceholder')} /></LabelField>
+            <LabelField label={t('labelNameLabel')}><input className={INPUT_CLASS} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder={t('labelNamePlaceholder')} /></LabelField>
+            <LabelField label={t('labelColorLabel')}>
+              <div className="flex items-center gap-2">
+                <input type="color" value={color} onChange={(event) => setColor(event.target.value)} className="h-9 w-11 shrink-0 cursor-pointer rounded-md border border-neutral-300 bg-white p-1 dark:border-neutral-600 dark:bg-neutral-900" />
+                <input className={`${INPUT_CLASS} font-mono text-xs`} value={color} onChange={(event) => setColor(event.target.value)} placeholder={t('labelColorPlaceholder')} />
+              </div>
+            </LabelField>
+            <LabelField label={t('labelDescriptionLabel')}><input className={INPUT_CLASS} value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t('labelDescriptionPlaceholder')} /></LabelField>
+            <button type="submit" className={PRIMARY_BUTTON_CLASS} disabled={pending || !id.trim() || !labelKey.trim() || !displayName.trim()}>
+              <Plus aria-hidden="true" size={15} />
               {t('createLabelAction')}
             </button>
+          </form>
+        </section>
+
+        <section className={`${CARD_CLASS} overflow-hidden`} aria-labelledby="labels-list-title">
+          <div className={`${CARD_HEADER_CLASS} flex flex-wrap items-center justify-between gap-3`}>
+            <div>
+              <h2 id="labels-list-title" className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">{t('labelsListTitle')}</h2>
+              <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{t('countOf', { filtered: filteredLabels.length, total: labels.length })}</p>
+            </div>
+            <label className="relative min-w-[220px] max-w-sm flex-1 sm:flex-none">
+              <span className="sr-only">{t('searchLabel')}</span>
+              <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={15} />
+              <input className={`${INPUT_CLASS} pl-9`} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('labelsSearchPlaceholder')} />
+            </label>
           </div>
-        </div>
-        <div className={CARD_CLASS}>
-          <div className={CARD_HEADER_CLASS}>{t('labelsListTitle')}</div>
-          <div className={`${CARD_BODY_CLASS} overflow-x-auto`}>
-            {loading ? <div className="py-8 text-center text-sm text-neutral-500">{t('loading')}</div> : labels.length === 0 ? (
-              <div className="py-8 text-center text-sm text-neutral-500">{t('labelsEmpty')}</div>
-            ) : (
-              <table className={TABLE_CLASS}>
+          {loading ? <LoadingState label={t('loading')} /> : filteredLabels.length === 0 ? (
+            <EmptyState title={t('labelsEmpty')} description={t('labelsPageDescription')} icon={Tags} />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className={`${TABLE_CLASS} min-w-[960px]`}>
                 <thead><tr className={TABLE_HEAD_CLASS}>
-                  <th className="px-3 py-2">{t('colLabelKey')}</th>
-                  <th className="px-3 py-2">{t('colDisplayName')}</th>
-                  <th className="px-3 py-2">{t('colColor')}</th>
-                  <th className="px-3 py-2">{t('colDescription')}</th>
-                  <th className="px-3 py-2">{t('colActions')}</th>
+                  <th className="px-5 py-3">{t('colLabelKey')}</th>
+                  <th className="px-5 py-3">{t('colDisplayName')}</th>
+                  <th className="px-5 py-3">{t('colColor')}</th>
+                  <th className="px-5 py-3">{t('colDescription')}</th>
+                  <th className="px-5 py-3 text-right">{t('colActions')}</th>
                 </tr></thead>
                 <tbody>
-                  {labels.map((label) => (
-                    <tr key={label.id} className={TABLE_ROW_CLASS}>
-                      <td className="px-3 py-2 font-mono text-xs">{label.labelKey}</td>
-                      <td className="px-3 py-2">
-                        {editingLabelId === label.id ? (
-                          <input className={INPUT_CLASS} value={editDisplayName} onChange={(e) => setEditDisplayName(e.target.value)} />
-                        ) : label.displayName}
-                      </td>
-                      <td className="px-3 py-2">
-                        {editingLabelId === label.id ? (
-                          <input className={INPUT_CLASS} value={editColor} onChange={(e) => setEditColor(e.target.value)} placeholder={t('labelColorPlaceholder')} />
-                        ) : (label.color || '--')}
-                      </td>
-                      <td className="px-3 py-2">
-                        {editingLabelId === label.id ? (
-                          <input className={INPUT_CLASS} value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder={t('labelDescriptionPlaceholder')} />
-                        ) : (label.description || '--')}
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex flex-wrap gap-2">
-                          {editingLabelId === label.id ? (
-                            <>
-                              <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={pending || !editDisplayName.trim()} onClick={() => void saveEdit()}>
-                                {t('saveLabelAction')}
-                              </button>
-                              <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={pending} onClick={cancelEdit}>
-                                {t('cancelLabelAction')}
-                              </button>
-                            </>
-                          ) : (
-                            <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={pending} onClick={() => beginEdit(label)}>
-                              {t('editLabelAction')}
-                            </button>
-                          )}
-                          <button type="button" className={DANGER_BUTTON_CLASS} disabled={pending} onClick={() => void deleteLabel(label.id)}>
-                            {t('deleteLabelAction')}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredLabels.map((label) => {
+                    const editing = editingLabelId === label.id;
+                    return (
+                      <tr key={label.id} className={`${TABLE_ROW_CLASS} ${editing ? 'bg-blue-50/40 dark:bg-blue-950/10' : ''}`}>
+                        <td className="px-5 py-3"><div className="font-mono text-xs font-medium text-neutral-800 dark:text-neutral-100">{label.labelKey}</div><div className="mt-0.5 font-mono text-[10px] text-neutral-400">{label.id}</div></td>
+                        <td className="px-5 py-3">{editing ? <input className={INPUT_CLASS} value={editDisplayName} onChange={(event) => setEditDisplayName(event.target.value)} /> : <span className="text-sm font-medium text-neutral-800 dark:text-neutral-100">{label.displayName}</span>}</td>
+                        <td className="px-5 py-3">{editing ? <input className={`${INPUT_CLASS} font-mono text-xs`} value={editColor} onChange={(event) => setEditColor(event.target.value)} placeholder={t('labelColorPlaceholder')} /> : <span className="inline-flex items-center gap-2 font-mono text-xs text-neutral-600 dark:text-neutral-300"><span className="h-4 w-4 rounded border border-black/10 shadow-sm" style={{ backgroundColor: label.color || 'transparent' }} /><span>{label.color || '--'}</span></span>}</td>
+                        <td className="max-w-sm px-5 py-3">{editing ? <input className={INPUT_CLASS} value={editDescription} onChange={(event) => setEditDescription(event.target.value)} placeholder={t('labelDescriptionPlaceholder')} /> : <span className="line-clamp-2 text-xs leading-5 text-neutral-600 dark:text-neutral-400">{label.description || '--'}</span>}</td>
+                        <td className="px-5 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {editing ? (
+                              <>
+                                <button type="button" className={GHOST_BUTTON_CLASS} aria-label={t('saveLabelAction')} title={t('saveLabelAction')} disabled={pending || !editDisplayName.trim()} onClick={() => void saveEdit()}><Check aria-hidden="true" size={15} />{t('saveLabelAction')}</button>
+                                <button type="button" className={GHOST_BUTTON_CLASS} aria-label={t('cancelLabelAction')} title={t('cancelLabelAction')} disabled={pending} onClick={cancelEdit}><X aria-hidden="true" size={15} /></button>
+                              </>
+                            ) : (
+                              <button type="button" className={GHOST_BUTTON_CLASS} aria-label={t('editLabelAction')} title={t('editLabelAction')} disabled={pending} onClick={() => beginEdit(label)}><Pencil aria-hidden="true" size={15} />{t('editLabelAction')}</button>
+                            )}
+                            <button type="button" className={`${GHOST_BUTTON_CLASS} text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30`} aria-label={t('deleteLabelAction')} title={t('deleteLabelAction')} disabled={pending} onClick={() => setDeleteTarget(label)}><Trash2 aria-hidden="true" size={15} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-            )}
-          </div>
+            </div>
+          )}
           {nextPageToken ? (
-            <div className="border-t border-neutral-100 px-5 py-3 dark:border-neutral-800">
-              <button
-                type="button"
-                className={SECONDARY_BUTTON_CLASS}
-                disabled={loadingMore || pending}
-                onClick={() => void loadPage({ append: true, pageToken: nextPageToken })}
-              >
-                {loadingMore ? t('loading') : t('loadMoreLabels')}
+            <div className="flex justify-center border-t border-neutral-200 px-5 py-3 dark:border-neutral-800">
+              <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loadingMore || pending} onClick={() => void loadPage({ append: true, pageToken: nextPageToken })}>
+                {loadingMore ? <RefreshCw aria-hidden="true" className="animate-spin" size={15} /> : null}
+                {t('loadMoreLabels')}
               </button>
             </div>
           ) : null}
-        </div>
+        </section>
       </div>
-    </div>
+
+      <OperationsConfirmDialog
+        open={deleteTarget !== null}
+        title={t('confirmDeleteLabelTitle')}
+        message={t('confirmDeleteLabelMessage', { name: deleteTarget?.displayName ?? '' })}
+        confirmLabel={t('confirmDeleteLabelAction')}
+        cancelLabel={t('cancel')}
+        variant="danger"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void deleteLabel()}
+      />
+    </main>
   );
+}
+
+function LabelField({ children, label }: { children: React.ReactNode; label: string }) {
+  return <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400">{label}{children}</label>;
 }

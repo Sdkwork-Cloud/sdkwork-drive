@@ -19,8 +19,6 @@ const __dirname = path.dirname(__filename);
 const repoRoot = REPO_ROOT;
 
 const DEFAULT_ENVIRONMENT = 'development';
-const DEFAULT_CONFIG = `configs/sdkwork-drive-standalone-gateway.${DEFAULT_ENVIRONMENT}.toml`;
-
 function cargoCommand() {
   return process.platform === 'win32' ? 'cargo.exe' : 'cargo';
 }
@@ -157,7 +155,15 @@ function main() {
     shell: false,
   });
 
+  const stop = () => {
+    if (!child.killed) child.kill('SIGTERM');
+  };
+  process.once('SIGINT', stop);
+  process.once('SIGTERM', stop);
+
   child.on('exit', (code) => {
+    process.removeListener('SIGINT', stop);
+    process.removeListener('SIGTERM', stop);
     process.exitCode = code ?? 1;
   });
 }
