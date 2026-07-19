@@ -69,6 +69,8 @@ export default {
   save: 'Save changes',
   create: 'Create provider',
   saving: 'Saving...',
+  showCredential: 'Show credential',
+  hideCredential: 'Hide credential',
   endpointUrl: 'Endpoint URL',
   region: 'Region',
   bucket: 'Bucket',

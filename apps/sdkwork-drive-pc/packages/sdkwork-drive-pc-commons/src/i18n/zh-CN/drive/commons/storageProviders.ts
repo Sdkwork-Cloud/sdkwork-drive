@@ -74,6 +74,8 @@ export default {
   save: '保存更改',
   create: '创建提供商',
   saving: '保存中...',
+  showCredential: '显示凭证',
+  hideCredential: '隐藏凭证',
   endpointUrl: '端点 URL',
   region: '区域',
   bucket: '存储桶',

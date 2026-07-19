@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Eye, EyeOff, X } from 'lucide-react';
 import type { CreateStorageProviderInput, StorageProviderKind, StorageProviderView, UpdateStorageProviderInput } from '../types/storageProviderAdminTypes';
 import {
   buildProviderEndpointUrl,
@@ -8,7 +9,7 @@ import {
 } from '../utils/providerKindConfig';
 import { isCredentialRefMasked } from '../utils/credentialRefUtils';
 import { buildProviderIdWithUuid, createProviderUuidSuffix, resolveProviderKindSlug } from '../utils/providerIdUtils';
-import { INPUT_CLASS, SELECT_CLASS, CHECKBOX_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from '../utils/uiPrimitives';
+import { CHECKBOX_CLASS, ICON_BUTTON_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from '../utils/uiPrimitives';
 import { StorageProviderCredentialFields } from './StorageProviderCredentialFields';
 import { FormNoticeBanner } from './FormNoticeBanner';
 import { formatMutationError } from '../utils/mutationError';
@@ -286,23 +287,28 @@ export function StorageProviderEditor({
   const allKinds = getAllProviderKindMeta();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex h-[90vh] w-full max-w-6xl flex-col rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-neutral-900">
-        <div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4 dark:border-neutral-800">
-          <h2 className="text-base font-semibold">{provider ? t('editorEditTitle') : t('editorNewTitle')}</h2>
-          <button type="button" className="text-neutral-400 hover:text-neutral-600" onClick={onClose}>
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+    <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4">
+      <button type="button" className="fixed inset-0 bg-black/45" aria-label={t('cancel')} onClick={onClose} />
+      <div
+        className="relative z-10 flex h-[100dvh] w-full max-w-6xl flex-col border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-neutral-900 sm:h-[min(90vh,900px)] sm:rounded-lg"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="storage-provider-editor-title"
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-neutral-100 px-4 py-3 dark:border-neutral-800 sm:px-6 sm:py-4">
+          <h2 id="storage-provider-editor-title" className="text-base font-semibold text-neutral-950 dark:text-white">{provider ? t('editorEditTitle') : t('editorNewTitle')}</h2>
+          <button type="button" className={ICON_BUTTON_CLASS} aria-label={t('cancel')} title={t('cancel')} onClick={onClose}>
+            <X aria-hidden="true" size={18} />
           </button>
         </div>
 
-        <form onSubmit={submit} className="flex flex-1 overflow-hidden">
+        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
           {!isEditing && (
-            <div className="w-64 flex-shrink-0 overflow-y-auto border-r border-neutral-100 bg-neutral-50 px-3 py-3 dark:border-neutral-800 dark:bg-neutral-950">
-              <div className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+            <div className="w-full shrink-0 overflow-x-auto border-b border-neutral-100 bg-neutral-50 px-3 py-2.5 dark:border-neutral-800 dark:bg-neutral-950 sm:w-64 sm:overflow-y-auto sm:border-b-0 sm:border-r sm:py-3">
+              <div className="mb-2 px-1 text-[10px] font-semibold text-neutral-400 dark:text-neutral-500">
                 {t('stepType')}
               </div>
-              <div className="space-y-1">
+              <div className="flex gap-1 sm:block sm:space-y-1">
                 {allKinds.map((k) => {
                   const active = providerKind === k.value;
                   return (
@@ -310,7 +316,7 @@ export function StorageProviderEditor({
                       key={k.value}
                       type="button"
                       onClick={() => handleKindChange(k.value)}
-                      className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors ${
+                      className={`flex min-w-[156px] flex-none items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors sm:w-full sm:min-w-0 ${
                         active
                           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
                           : 'text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
@@ -333,7 +339,7 @@ export function StorageProviderEditor({
           )}
 
           <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
               {modalNotice && (
                 <FormNoticeBanner
                   type={modalNotice.type}
@@ -388,7 +394,7 @@ export function StorageProviderEditor({
                             value={endpointUrl}
                             onChange={(e) => setEndpointUrl(e.target.value)}
                             readOnly={endpointLocked && hasRegions}
-                            className={`${INPUT_CLASS} min-w-0 flex-1 font-mono text-xs leading-relaxed ${endpointLocked && hasRegions ? 'bg-neutral-50 dark:bg-neutral-800' : ''}`}
+                            className={`${INPUT_CLASS} min-w-0 flex-1 font-mono text-xs ${endpointLocked && hasRegions ? 'bg-neutral-50 dark:bg-neutral-800' : ''}`}
                             placeholder={meta.endpointHint}
                             spellCheck={false}
                           />
@@ -445,8 +451,8 @@ export function StorageProviderEditor({
                           className={`${INPUT_CLASS} pr-9 font-mono text-xs`}
                           placeholder={meta.credentialHint}
                         />
-                        <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600" onClick={() => setShowCredential(!showCredential)}>
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={showCredential ? 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242' : 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'} /></svg>
+                        <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600" aria-label={showCredential ? t('hideCredential') : t('showCredential')} title={showCredential ? t('hideCredential') : t('showCredential')} onClick={() => setShowCredential(!showCredential)}>
+                          {showCredential ? <EyeOff aria-hidden="true" size={16} /> : <Eye aria-hidden="true" size={16} />}
                         </button>
                       </div>
                       <span className="mt-0.5 text-[10px] text-neutral-400">{t('credentialFormats')}</span>
@@ -472,7 +478,7 @@ export function StorageProviderEditor({
 
               {(sseModes.length > 0 || storageClasses.length > 0) && (
                 <FormSection title={t('stepAdvanced')}>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {sseModes.length > 0 && <Field label={t('sseMode')}><select value={sseMode} onChange={(e) => setSseMode(e.target.value)} className={SELECT_CLASS}><option value="">{t('none')}</option>{sseModes.map((m) => <option key={m} value={m}>{m}</option>)}</select></Field>}
                     {storageClasses.length > 0 && <Field label={t('defaultStorageClass')}><select value={storageClass} onChange={(e) => setStorageClass(e.target.value)} className={SELECT_CLASS}><option value="">{t('providerDefault')}</option>{storageClasses.map((c) => <option key={c} value={c}>{c}</option>)}</select></Field>}
                   </div>
@@ -491,12 +497,12 @@ export function StorageProviderEditor({
               )}
             </div>
 
-            <div className="flex items-center justify-between border-t border-neutral-100 px-6 py-3 dark:border-neutral-800">
-              <div className="flex items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-neutral-100 px-4 py-3 dark:border-neutral-800 sm:px-6">
+              <div className="flex min-w-0 items-center gap-2">
                 <div className={`flex h-6 w-6 items-center justify-center rounded text-[9px] font-bold ${meta.bgClass} ${meta.textClass}`}>{meta.icon}</div>
-                <span className="text-xs text-neutral-500">{meta.label}</span>
+                <span className="truncate text-xs text-neutral-500">{meta.label}</span>
               </div>
-              <div className="flex gap-2">
+              <div className="ml-auto flex shrink-0 gap-2">
                 <button type="button" className={SECONDARY_BUTTON_CLASS} onClick={onClose}>{t('cancel')}</button>
                 <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={submitting} onClick={doSubmit}>
                   {submitting ? t('saving') : provider ? t('save') : t('create')}
@@ -514,7 +520,7 @@ function FormSection({ title, children }: { title: string; children: React.React
   return (
     <div className="mb-5">
       <div className="mb-3 border-b border-neutral-100 pb-1.5 dark:border-neutral-800">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{title}</h3>
+        <h3 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">{title}</h3>
       </div>
       {children}
     </div>

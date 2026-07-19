@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ExternalLink } from 'lucide-react';
 import type { ProviderCredentialFieldMeta } from '../utils/providerKindConfig';
 import {
   buildCredentialRef,
@@ -115,7 +116,10 @@ export function StorageProviderCredentialFields({
             rel="noreferrer"
             className="text-[11px] font-medium text-blue-600 hover:underline dark:text-blue-400"
           >
-            {t('openCloudConsole')} ↗
+            <span className="inline-flex items-center gap-1">
+              {t('openCloudConsole')}
+              <ExternalLink aria-hidden="true" size={12} />
+            </span>
           </a>
         )}
       </div>
@@ -151,7 +155,7 @@ export function StorageProviderCredentialFields({
           </div>
 
           {mode === 'direct' && (
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <CredentialField
                 label={credentialFields.accessKeyLabel}
                 value={accessKey}
@@ -172,7 +176,7 @@ export function StorageProviderCredentialFields({
 
           {mode === 'env' && (
             <div className="mt-3 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <CredentialField
                   label={t('credentialEnvAccessKey')}
                   value={accessKeyEnv}
@@ -226,6 +230,7 @@ function CredentialField({
   showSecret?: boolean;
   onToggleSecret?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <label className="flex flex-col gap-1">
       <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">{label}</span>
@@ -242,6 +247,8 @@ function CredentialField({
           <button
             type="button"
             className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+            aria-label={showSecret ? t('hideCredential') : t('showCredential')}
+            title={showSecret ? t('hideCredential') : t('showCredential')}
             onClick={onToggleSecret}
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
