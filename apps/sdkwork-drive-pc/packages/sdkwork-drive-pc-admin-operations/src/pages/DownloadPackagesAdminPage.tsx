@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Archive, Filter, RefreshCw } from 'lucide-react';
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
-import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
+import { isDriveRequestCancellationError, type SessionSnapshot } from 'sdkwork-drive-pc-core';
 import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
 import { EmptyState, LoadingState, NoticeBanner, OperationsPageHeader, PaginationBar } from '../components/OperationsAdminPrimitives';
 import { createDriveOperationsAdminService } from '../services/driveOperationsAdminService';
@@ -31,11 +31,6 @@ const STATE_TONES: Record<DownloadPackageView['state'], string> = {
   failed: 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300',
   expired: 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300',
 };
-
-function isAbortError(value: unknown): boolean {
-  if (value instanceof DOMException && value.name === 'AbortError') return true;
-  return value instanceof Error && (value.name === 'AbortError' || /\babort(?:ed)?\b/i.test(value.message));
-}
 
 function formatTimestamp(value: string | number): string {
   const date = new Date(value);
@@ -67,7 +62,7 @@ export function DownloadPackagesAdminPage({ backendSdkClient, getSession }: Down
         setTotal(result.total);
       })
       .catch((err) => {
-        if (!isAbortError(err)) setError(t('noticeLoadFailed'));
+        if (!isDriveRequestCancellationError(err)) setError(t('noticeLoadFailed'));
       })
       .finally(() => setLoading(false));
     return () => controller.abort();

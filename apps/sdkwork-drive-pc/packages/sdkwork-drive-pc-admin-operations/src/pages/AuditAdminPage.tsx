@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { RefreshCw, RotateCcw, Search, ScrollText, SlidersHorizontal } from 'lucide-react';
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
-import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
+import { isDriveRequestCancellationError, type SessionSnapshot } from 'sdkwork-drive-pc-core';
 import { EmptyState, LoadingState, NoticeBanner, OperationsPageHeader, PaginationBar } from '../components/OperationsAdminPrimitives';
 import { createDriveOperationsAdminService } from '../services/driveOperationsAdminService';
 import type { AuditEventView } from '../types/driveOperationsAdminTypes';
@@ -29,11 +29,6 @@ type AuditFilters = {
 };
 
 const EMPTY_FILTERS: AuditFilters = { action: '', resourceId: '', resourceType: '' };
-
-function isAbortError(value: unknown): boolean {
-  if (value instanceof DOMException && value.name === 'AbortError') return true;
-  return value instanceof Error && (value.name === 'AbortError' || /\babort(?:ed)?\b/i.test(value.message));
-}
 
 function formatTimestamp(value: string): string {
   const date = new Date(value);
@@ -73,7 +68,7 @@ export function AuditAdminPage({ backendSdkClient, getSession }: AuditAdminPageP
         setTotal(result.total);
       })
       .catch((err) => {
-        if (!isAbortError(err)) setError(t('noticeLoadFailed'));
+        if (!isDriveRequestCancellationError(err)) setError(t('noticeLoadFailed'));
       })
       .finally(() => setLoading(false));
     return () => controller.abort();

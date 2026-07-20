@@ -102,4 +102,27 @@ describe('drive backend sdk client', () => {
       traceId: 'trace-001',
     });
   });
+
+  it('preserves generated SDK cancellation errors for effect cleanup', async () => {
+    const tokenManager = createDriveSessionTokenManager(createSessionStore());
+    const cancellation = Object.assign(new Error('Request was cancelled'), {
+      code: 'CANCELLED',
+      name: 'CancelledError',
+    });
+    const sdkClient = {
+      http: {
+        request: vi.fn(async () => {
+          throw cancellation;
+        }),
+      },
+      setTokenManager: vi.fn(),
+    };
+    const client = createDriveBackendSdkClient({
+      config,
+      sdkClient: sdkClient as never,
+      tokenManager,
+    });
+
+    await expect(client.request({ operationId: 'quotas.retrieve' })).rejects.toBe(cancellation);
+  });
 });

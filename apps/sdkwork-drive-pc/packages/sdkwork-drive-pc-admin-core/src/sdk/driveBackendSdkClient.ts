@@ -8,6 +8,7 @@ import {
   assertStandardSdkWorkPaginationQuery,
   buildGeneratedSdkPath,
   compactQuery,
+  isDriveRequestCancellationError,
   normalizeGeneratedSdkBaseUrl,
   normalizeGeneratedSdkError,
   omitAuthProjectionBody,
@@ -128,6 +129,9 @@ export function createDriveBackendSdkClient({
           },
         );
       } catch (error) {
+        if (isDriveRequestCancellationError(error)) {
+          throw error;
+        }
         throw buildSdkError(operationId, error);
       }
     },

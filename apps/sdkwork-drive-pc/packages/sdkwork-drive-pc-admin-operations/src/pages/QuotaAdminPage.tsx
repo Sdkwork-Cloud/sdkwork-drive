@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Database, Files, Gauge, HardDrive, RefreshCw, Save, Trash2 } from 'lucide-react';
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
-import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
+import { isDriveRequestCancellationError, type SessionSnapshot } from 'sdkwork-drive-pc-core';
 import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
 import { OperationsConfirmDialog } from '../components/OperationsConfirmDialog';
 import { EmptyState, LoadingState, NoticeBanner, OperationsPageHeader } from '../components/OperationsAdminPrimitives';
@@ -18,11 +18,6 @@ import { useTranslation } from '../hooks/useTranslation';
 interface QuotaAdminPageProps {
   backendSdkClient: DriveBackendSdkClient;
   getSession: () => SessionSnapshot;
-}
-
-function isAbortError(value: unknown): boolean {
-  if (value instanceof DOMException && value.name === 'AbortError') return true;
-  return value instanceof Error && (value.name === 'AbortError' || /\babort(?:ed)?\b/i.test(value.message));
 }
 
 function usagePercent(used: number, cap?: number | null): number | undefined {
@@ -60,7 +55,7 @@ export function QuotaAdminPage({ backendSdkClient, getSession }: QuotaAdminPageP
         setQuotaInput(result.quotaBytes ? String(result.quotaBytes) : '');
       })
       .catch((err) => {
-        if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeLoadFailed') });
+        if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', message: t('noticeLoadFailed') });
       })
       .finally(() => setLoading(false));
     return () => controller.abort();
@@ -80,7 +75,7 @@ export function QuotaAdminPage({ backendSdkClient, getSession }: QuotaAdminPageP
       setQuotaInput(String(updated.quotaBytes ?? quotaBytes));
       setNotice({ type: 'success', message: t('quotaPolicySaved') });
     } catch (err) {
-      if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
+      if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
     } finally {
       setPending(false);
     }
@@ -96,7 +91,7 @@ export function QuotaAdminPage({ backendSdkClient, getSession }: QuotaAdminPageP
       setQuotaInput('');
       setNotice({ type: 'success', message: t('quotaPolicyCleared') });
     } catch (err) {
-      if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
+      if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
     } finally {
       setPending(false);
     }

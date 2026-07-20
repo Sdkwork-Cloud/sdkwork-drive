@@ -1,4 +1,7 @@
-import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
+import {
+  DriveAdminStorageSdkError,
+  type DriveAdminStorageSdkClient,
+} from 'sdkwork-drive-pc-admin-core';
 import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
 import type {
   CreateStorageProviderInput,
@@ -51,7 +54,7 @@ export interface StorageProviderAdminService {
   getDefaultBinding(
     spaceId?: string,
     options?: StorageProviderMutationOptions,
-  ): Promise<StorageProviderBindingView>;
+  ): Promise<StorageProviderBindingView | undefined>;
   setDefaultBinding(input: SetDefaultStorageProviderBindingInput): Promise<StorageProviderBindingView>;
   deleteDefaultBinding(
     spaceIdOrSpaceType?: string,
@@ -224,15 +227,25 @@ export function createStorageProviderAdminService({
       };
     },
     async getDefaultBinding(spaceId, options) {
-      const identity = resolveAdminIdentity(getSession);
-      const response = await adminStorageSdkClient.request<unknown>({
-        operationId: 'storageProviderBindings.default.retrieve',
-        signal: options?.signal,
-        query: {
-          spaceId,
-        },
-      });
-      return responseToBinding(response);
+      try {
+        const response = await adminStorageSdkClient.request<unknown>({
+          operationId: 'storageProviderBindings.default.retrieve',
+          signal: options?.signal,
+          query: {
+            spaceId,
+          },
+        });
+        return responseToBinding(response);
+      } catch (error) {
+        if (
+          error instanceof DriveAdminStorageSdkError
+          && error.operationId === 'storageProviderBindings.default.retrieve'
+          && error.status === 404
+        ) {
+          return undefined;
+        }
+        throw error;
+      }
     },
     async setDefaultBinding(input) {
       const identity = resolveAdminIdentity(getSession);
@@ -275,7 +288,6 @@ export function createStorageProviderAdminService({
       return service.deleteDefaultBinding(spaceType, { ...options, spaceType: true });
     },
     async listBindings(input = {}) {
-      const identity = resolveAdminIdentity(getSession);
       const response = await adminStorageSdkClient.request<unknown>({
         operationId: 'storageProviderBindings.list',
         signal: input.signal,

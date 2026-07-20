@@ -116,6 +116,17 @@ export function normalizeGeneratedSdkError(error: unknown): GeneratedSdkErrorDet
   };
 }
 
+export function isDriveRequestCancellationError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const record = error as Record<string, unknown>;
+  return record.name === 'AbortError'
+    || record.name === 'CancelledError'
+    || record.code === 'CANCELLED';
+}
+
 function stringValue(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() !== '' ? value : undefined;
 }

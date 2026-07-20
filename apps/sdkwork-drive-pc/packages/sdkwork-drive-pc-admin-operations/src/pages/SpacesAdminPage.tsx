@@ -9,7 +9,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
-import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
+import { isDriveRequestCancellationError, type SessionSnapshot } from 'sdkwork-drive-pc-core';
 import { createDriveOperationsAdminService } from '../services/driveOperationsAdminService';
 import type { DriveSpaceAdminView } from '../types/driveOperationsAdminTypes';
 import {
@@ -27,11 +27,6 @@ import { useTranslation } from '../hooks/useTranslation';
 interface SpacesAdminPageProps {
   backendSdkClient: DriveBackendSdkClient;
   getSession: () => SessionSnapshot;
-}
-
-function isAbortError(value: unknown): boolean {
-  if (value instanceof DOMException && value.name === 'AbortError') return true;
-  return value instanceof Error && (value.name === 'AbortError' || /\babort(?:ed)?\b/i.test(value.message));
 }
 
 const SPACE_TYPE_TONE: Record<string, string> = {
@@ -107,7 +102,7 @@ export function SpacesAdminPage({ backendSdkClient, getSession }: SpacesAdminPag
         });
       })
       .catch((err) => {
-        if (!isAbortError(err)) setError(t('noticeLoadFailed'));
+        if (!isDriveRequestCancellationError(err)) setError(t('noticeLoadFailed'));
       })
       .finally(() => setLoading(false));
     return () => controller.abort();

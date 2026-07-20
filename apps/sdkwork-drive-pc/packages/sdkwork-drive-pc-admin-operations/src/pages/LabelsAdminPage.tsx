@@ -10,7 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
-import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
+import { isDriveRequestCancellationError, type SessionSnapshot } from 'sdkwork-drive-pc-core';
 import { OperationsConfirmDialog } from '../components/OperationsConfirmDialog';
 import { EmptyState, LoadingState, NoticeBanner, OperationsPageHeader } from '../components/OperationsAdminPrimitives';
 import { createDriveOperationsAdminService } from '../services/driveOperationsAdminService';
@@ -31,11 +31,6 @@ import { useTranslation } from '../hooks/useTranslation';
 interface LabelsAdminPageProps {
   backendSdkClient: DriveBackendSdkClient;
   getSession: () => SessionSnapshot;
-}
-
-function isAbortError(value: unknown): boolean {
-  if (value instanceof DOMException && value.name === 'AbortError') return true;
-  return value instanceof Error && (value.name === 'AbortError' || /\babort(?:ed)?\b/i.test(value.message));
 }
 
 export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPageProps) {
@@ -78,7 +73,7 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
       setLabels((current) => (append ? [...current, ...result.items] : result.items));
       setNextPageToken(result.pageInfo?.nextCursor ?? result.nextPageToken ?? null);
     } catch (err) {
-      if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeLoadFailed') });
+      if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', message: t('noticeLoadFailed') });
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -111,7 +106,7 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
       await loadPage();
       setNotice({ type: 'success', message: t('labelCreated') });
     } catch (err) {
-      if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
+      if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
     } finally {
       setPending(false);
     }
@@ -145,7 +140,7 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
       await loadPage();
       setNotice({ type: 'success', message: t('labelUpdated') });
     } catch (err) {
-      if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
+      if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
     } finally {
       setPending(false);
     }
@@ -163,7 +158,7 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
       await loadPage();
       setNotice({ type: 'success', message: t('labelDeleted') });
     } catch (err) {
-      if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
+      if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
     } finally {
       setPending(false);
     }

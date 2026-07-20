@@ -17,6 +17,7 @@ import {
   assertStandardSdkWorkPaginationQuery,
   buildGeneratedSdkPath,
   compactQuery,
+  isDriveRequestCancellationError,
   normalizeGeneratedSdkBaseUrl,
   normalizeGeneratedSdkError,
   type TokenManagerAwareGeneratedSdkClient,
@@ -208,6 +209,9 @@ export function createDriveAppSdkClient({
           },
         );
       } catch (error) {
+        if (isDriveRequestCancellationError(error)) {
+          throw error;
+        }
         throw buildSdkError(operationId, error);
       }
     },

@@ -108,6 +108,32 @@ describe('drive app sdk client', () => {
     });
   });
 
+  it('preserves generated SDK cancellation errors for effect cleanup', async () => {
+    const tokenManager = createDriveSessionTokenManager(createSessionStore());
+    const cancellation = Object.assign(new Error('Request was cancelled'), {
+      code: 'CANCELLED',
+      name: 'CancelledError',
+    });
+    const sdkClient = {
+      http: {
+        request: vi.fn(async () => {
+          throw cancellation;
+        }),
+      },
+      setTokenManager: vi.fn(),
+    };
+    const client = createDriveAppSdkClient({
+      config,
+      sdkClient: sdkClient as never,
+      tokenManager,
+    });
+
+    await expect(client.request({
+      operationId: 'nodes.list',
+      pathParams: { spaceId: 'space-001' },
+    })).rejects.toBe(cancellation);
+  });
+
   it('rejects legacy pagination query aliases at the SDK facade boundary', async () => {
     const tokenManager = createDriveSessionTokenManager(createSessionStore());
     const request = vi.fn(async <T>(): Promise<T> => ({ items: [] }) as T);

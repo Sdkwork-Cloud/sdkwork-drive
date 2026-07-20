@@ -3,6 +3,7 @@ import type {
   DriveAdminStorageSdkClient,
   DriveAdminStorageSdkRequest,
 } from 'sdkwork-drive-pc-admin-core';
+import { DriveAdminStorageSdkError } from 'sdkwork-drive-pc-admin-core';
 import {
   createStorageProviderAdminService,
   type StorageProviderAdminService,
@@ -302,5 +303,31 @@ describe('storage provider admin service', () => {
       endpointUrl: 'https://s3.us-east-1.amazonaws.com',
       bucket: 'drive-prod',
     })).rejects.toThrow('Drive admin session context is missing tenantId or operatorId.');
+  });
+
+  it('treats a missing default binding as an unconfigured empty state', async () => {
+    const client = {
+      metadata: {},
+      operations: {},
+      setTokenManager: () => undefined,
+      request: async (request: DriveAdminStorageSdkRequest) => {
+        throw new DriveAdminStorageSdkError({
+          operationId: request.operationId,
+          status: 404,
+          detail: 'default storage provider binding not found',
+        });
+      },
+    } as unknown as DriveAdminStorageSdkClient;
+    const service = createStorageProviderAdminService({
+      adminStorageSdkClient: client,
+      getSession: () => ({
+        context: {
+          tenantId: 'tenant-100',
+          userId: 'user-100',
+        },
+      }),
+    });
+
+    await expect(service.getDefaultBinding()).resolves.toBeUndefined();
   });
 });

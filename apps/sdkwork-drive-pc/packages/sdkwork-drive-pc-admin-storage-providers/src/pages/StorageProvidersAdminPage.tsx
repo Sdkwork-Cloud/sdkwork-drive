@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
-import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
+import { isDriveRequestCancellationError, type SessionSnapshot } from 'sdkwork-drive-pc-core';
 import { StorageProviderTable } from '../components/StorageProviderTable';
 import { StorageProviderEditor } from '../components/StorageProviderEditor';
 import { StorageProviderDetailDrawer } from '../components/StorageProviderDetailDrawer';
@@ -33,11 +33,6 @@ interface StorageProvidersAdminPageProps {
 }
 
 type PageNotice = { type: 'success' | 'error'; messageKey: string; params?: Record<string, string> } | undefined;
-
-function isAbortError(value: unknown): boolean {
-  if (value instanceof DOMException && value.name === 'AbortError') return true;
-  return value instanceof Error && (value.name === 'AbortError' || /\babort(?:ed)?\b/i.test(value.message));
-}
 
 export function StorageProvidersAdminPage({
   adminStorageSdkClient,
@@ -95,7 +90,7 @@ export function StorageProvidersAdminPage({
     setNotice(undefined);
     refreshProviders(signal)
       .catch((err) => {
-        if (!isAbortError(err)) setNotice({ type: 'error', messageKey: 'noticeLoadFailed' });
+        if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', messageKey: 'noticeLoadFailed' });
       })
       .finally(() => setLoading(false));
   };
@@ -127,7 +122,7 @@ export function StorageProvidersAdminPage({
         setNotice({ type: 'success', messageKey: noticeKey });
       })
       .catch((err) => {
-        if (!isAbortError(err)) setNotice({ type: 'error', messageKey: 'noticeOperationFailed' });
+        if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', messageKey: 'noticeOperationFailed' });
       })
       .finally(() => setPending(false));
   };
@@ -179,7 +174,7 @@ export function StorageProvidersAdminPage({
       });
       return { passed, total: providerIds.length };
     } catch (err) {
-      if (!isAbortError(err)) setNotice({ type: 'error', messageKey: 'noticeOperationFailed' });
+      if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', messageKey: 'noticeOperationFailed' });
       return { passed, total: providerIds.length };
     } finally {
       setPending(false);

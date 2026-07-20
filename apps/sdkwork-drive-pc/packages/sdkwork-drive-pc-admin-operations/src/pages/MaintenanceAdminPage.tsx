@@ -9,7 +9,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
-import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
+import { isDriveRequestCancellationError, type SessionSnapshot } from 'sdkwork-drive-pc-core';
 import { OperationsConfirmDialog } from '../components/OperationsConfirmDialog';
 import { EmptyState, LoadingState, NoticeBanner, OperationsPageHeader, PaginationBar } from '../components/OperationsAdminPrimitives';
 import { createDriveOperationsAdminService } from '../services/driveOperationsAdminService';
@@ -37,11 +37,6 @@ const SWEEP_JOB_TYPES: MaintenanceJobType[] = [
   'expired_upload_content_sweep',
   'abandoned_upload_task_sweep',
 ];
-
-function isAbortError(value: unknown): boolean {
-  if (value instanceof DOMException && value.name === 'AbortError') return true;
-  return value instanceof Error && (value.name === 'AbortError' || /\babort(?:ed)?\b/i.test(value.message));
-}
 
 function formatTimestamp(value: string): string {
   const date = new Date(value);
@@ -80,7 +75,7 @@ export function MaintenanceAdminPage({ backendSdkClient, getSession }: Maintenan
         setTotal(result.total);
       })
       .catch((err) => {
-        if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeLoadFailed') });
+        if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', message: t('noticeLoadFailed') });
       })
       .finally(() => setLoading(false));
     return () => controller.abort();
@@ -102,7 +97,7 @@ export function MaintenanceAdminPage({ backendSdkClient, getSession }: Maintenan
       });
       setRefreshKey((current) => current + 1);
     } catch (err) {
-      if (!isAbortError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
+      if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
     } finally {
       setPendingJobType(null);
     }

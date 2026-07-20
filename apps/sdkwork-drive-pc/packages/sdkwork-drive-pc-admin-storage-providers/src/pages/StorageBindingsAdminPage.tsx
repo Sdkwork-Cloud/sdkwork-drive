@@ -7,7 +7,7 @@ import {
   X,
 } from 'lucide-react';
 import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
-import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
+import { isDriveRequestCancellationError, type SessionSnapshot } from 'sdkwork-drive-pc-core';
 import {
   createStorageProviderAdminService,
   type StorageProviderAdminService,
@@ -88,7 +88,7 @@ export function StorageBindingsAdminPage({
         setTenantProviderId(tenantDefault?.providerId ?? '');
       })
       .catch((err) => {
-        if (!(err instanceof DOMException && err.name === 'AbortError')) {
+        if (!isDriveRequestCancellationError(err)) {
           setNotice({ type: 'error', messageKey: 'bindingsNoticeLoadFailed' });
         }
       })
