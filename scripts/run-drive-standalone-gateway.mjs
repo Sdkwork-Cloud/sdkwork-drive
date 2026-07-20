@@ -2,167 +2,13 @@
 
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-const require = createRequire(import.meta.url);
-const http = require('http');
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const WORKSPACE_ROOT = path.resolve(__dirname, '..');
-
-// Gateway configuration
-const GATEWAY_WORKSPACE = path.resolve(WORKSPACE_ROOT, '..', 'sdkwork-api-cloud-gateway');
-const GATEWAY_DEFAULT_URL = 'http://127.0.0.1:3900';
-const GATEWAY_HEALTH_PATH = '/healthz';
-const GATEWAY_CHECK_TIMEOUT_MS = 2000;
-const GATEWAY_STARTUP_WAIT_MS = 3000;
-const GATEWAY_MAX_STARTUP_ATTEMPTS = 30;
-
-/**
- * Check if sdkwork-api-cloud-gateway is already running by hitting the health endpoint.
- * @param {string} gatewayUrl - The gateway base URL
- * @param {number} timeoutMs - Timeout for the health check request
- * @returns {Promise<boolean>} - True if gateway is healthy, false otherwise
- */
-function checkGatewayHealth(gatewayUrl, timeoutMs) {
-  return new Promise((resolve) => {
-    const url = new URL(GATEWAY_HEALTH_PATH, gatewayUrl);
-    const request = http.request(
-      {
-        hostname: url.hostname,
-        port: url.port || 80,
-        path: url.pathname,
-        method: 'GET',
-        timeout: timeoutMs,
-      },
-      (response) => {
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      },
-    );
-
-    request.on('error', () => {
-      resolve(false);
-    });
-
-    request.on('timeout', () => {
-      request.destroy();
-      resolve(false);
-    });
-
-    request.end();
-  });
-}
-
-/**
- * Start sdkwork-api-cloud-gateway as a background process.
- * @param {object} env - Environment variables to pass to the gateway
- * @returns {Promise<object>} - The spawned child process
- */
-function startGatewayProcess(env) {
-  const gatewayPackageJsonPath = path.join(GATEWAY_WORKSPACE, 'package.json');
-  if (!existsSync(gatewayPackageJsonPath)) {
-    throw new Error(`sdkwork-api-cloud-gateway workspace not found at ${GATEWAY_WORKSPACE}`);
-  }
-
-  const gatewayConfigExample = path.join(
-    WORKSPACE_ROOT,
-    'configs',
-    'sdkwork-api-cloud-gateway.drive.development.toml',
-  );
-
-  const args = [
-    'run',
-    '-p',
-    'sdkwork-api-cloud-gateway',
-    '--bin',
-    'sdkwork-api-cloud-gateway',
-    '--',
-    '--config',
-    gatewayConfigExample,
-  ];
-
-  console.log('[sdkwork-drive] starting sdkwork-api-cloud-gateway...');
-
-  const child = spawn(cargoCommand(), args, {
-    cwd: GATEWAY_WORKSPACE,
-    env: { ...process.env, ...env },
-    stdio: 'inherit',
-    windowsHide: process.platform === 'win32',
-  });
-
-  return child;
-}
-
-/**
- * Wait for gateway to become healthy.
- * @param {string} gatewayUrl - The gateway base URL
- * @param {number} maxAttempts - Maximum number of health check attempts
- * @param {number} waitMs - Milliseconds to wait between attempts
- * @returns {Promise<boolean>} - True if gateway became healthy, false otherwise
- */
-async function waitForGatewayHealthy(gatewayUrl, maxAttempts, waitMs) {
-  console.log(`[sdkwork-drive] waiting for sdkwork-api-cloud-gateway at ${gatewayUrl}...`);
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const healthy = await checkGatewayHealth(gatewayUrl, GATEWAY_CHECK_TIMEOUT_MS);
-    if (healthy) {
-      console.log(`[sdkwork-drive] sdkwork-api-cloud-gateway is healthy (attempt ${attempt})`);
-      return true;
-    }
-
-    if (attempt < maxAttempts) {
-      await new Promise((resolve) => {
-        setTimeout(resolve, waitMs);
-      });
-    }
-  }
-
-  console.error(`[sdkwork-drive] sdkwork-api-cloud-gateway did not become healthy after ${maxAttempts} attempts`);
-  return false;
-}
-
-/**
- * Ensure sdkwork-api-cloud-gateway is running before starting Drive API processes.
- * @param {object} env - Environment variables
- * @returns {Promise<object|null>} - The gateway child process if started, null if already running
- */
-async function ensureGatewayRunning(env) {
-  const gatewayUrl = env.SDKWORK_API_CLOUD_GATEWAY_URL || GATEWAY_DEFAULT_URL;
-
-  // Check if gateway is already running
-  const alreadyRunning = await checkGatewayHealth(gatewayUrl, GATEWAY_CHECK_TIMEOUT_MS);
-  if (alreadyRunning) {
-    console.log(`[sdkwork-drive] sdkwork-api-cloud-gateway already running at ${gatewayUrl}`);
-    return null;
-  }
-
-  // Start gateway process
-  const gatewayProcess = startGatewayProcess(env);
-
-  // Wait for gateway to become healthy
-  const healthy = await waitForGatewayHealthy(
-    gatewayUrl,
-    GATEWAY_MAX_STARTUP_ATTEMPTS,
-    GATEWAY_STARTUP_WAIT_MS,
-  );
-
-  if (!healthy) {
-    gatewayProcess.kill();
-    throw new Error('sdkwork-api-cloud-gateway failed to start');
-  }
-
-  return gatewayProcess;
-}
-
-let gatewayProcess = null;
 
 function parseArgs(argv) {
   const settings = {
@@ -404,28 +250,8 @@ function createPlan({ mode, env }) {
   return [
     {
       ...common,
-      label: 'drive app-api router',
-      args: ['run', '-p', 'sdkwork-routes-drive-app-api'],
-    },
-    {
-      ...common,
-      label: 'drive backend-api router',
-      args: ['run', '-p', 'sdkwork-routes-drive-backend-api'],
-    },
-    {
-      ...common,
-      label: 'drive open-api router',
-      args: ['run', '-p', 'sdkwork-routes-drive-open-api'],
-    },
-    {
-      ...common,
-      label: 'drive storage backend router',
-      args: ['run', '-p', 'sdkwork-routes-storage-backend-api'],
-    },
-    {
-      ...common,
-      label: 'drive install worker',
-      args: ['run', '-p', 'sdkwork-drive-install-worker'],
+      label: 'drive standalone gateway',
+      args: ['run', '-p', 'sdkwork-api-drive-standalone-gateway'],
     },
   ];
 }
@@ -455,10 +281,6 @@ function spawnPlan(plan) {
       return;
     }
     shuttingDown = true;
-    // Stop gateway if we started it
-    if (gatewayProcess && !gatewayProcess.killed) {
-      gatewayProcess.kill();
-    }
     for (const child of children) {
       if (!child.killed) {
         child.kill();
@@ -492,10 +314,9 @@ Database policy:
   pnpm dev          uses PostgreSQL via .env.postgres
   pnpm dev:browser:sqlite uses sqlite://target/dev/sdkwork-drive.sqlite
 
-Gateway policy:
-  The script checks if sdkwork-api-cloud-gateway is already running at http://127.0.0.1:3900.
-  If not, it starts the gateway automatically before starting Drive API processes.
-  Set SDKWORK_API_CLOUD_GATEWAY_URL to override the gateway URL.
+Runtime policy:
+  The script starts only sdkwork-api-drive-standalone-gateway.
+  App, backend, open, and storage routes are composed by sdkwork-api-drive-assembly.
 `);
 }
 
@@ -508,19 +329,6 @@ async function main() {
     }
     const fileEnv = loadEnvFile(settings.devEnvFile);
     const env = resolveDatabaseEnv({ ...process.env, ...fileEnv }, settings.extraArgs);
-
-    // Ensure gateway is running before starting drive services
-    if (settings.mode === 'server') {
-      gatewayProcess = await ensureGatewayRunning(env);
-      if (gatewayProcess) {
-        // Handle gateway process exit
-        gatewayProcess.on('exit', (code) => {
-          if (code !== 0 && code !== null) {
-            console.error(`[sdkwork-drive] sdkwork-api-cloud-gateway exited with code ${code}`);
-          }
-        });
-      }
-    }
 
     const plan = createPlan({ mode: settings.mode, env });
     printPlan(plan, env);

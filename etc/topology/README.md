@@ -13,7 +13,7 @@ Platform standard: `../../sdkwork-specs/APP_RUNTIME_TOPOLOGY_SPEC.md`.
 | `cloud.production` | `pnpm build` |
 
 `cloud.development` declares only local browser/desktop clients. Both public
-surfaces resolve to the deployed `sdkwork-api-cloud-gateway`, and gateway
+surfaces resolve to the deployed `platform.api-gateway` surface, and local gateway
 autostart is disabled.
 
 Loader: `../../scripts/lib/drive-topology.mjs` delegates to

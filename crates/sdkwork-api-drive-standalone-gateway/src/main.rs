@@ -72,8 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .map_err(|error| format!("failed to build embedded IAM router: {error}"))?;
     let admin_storage_config = AdminStorageConfig::from_env()
         .map_err(|error| format!("resolve admin storage config failed: {error}"))?;
-    let application =
-        sdkwork_api_drive_assembly::assemble_api_router(pool.clone()).await;
+    let application = sdkwork_api_drive_assembly::assemble_api_router(pool.clone()).await;
     let admin_storage_router = Arc::new(EmbeddedServiceState {
         service: build_admin_storage_router_with_pool(pool, admin_storage_config).await,
         service_label: "sdkwork-drive-admin-storage-api".to_string(),

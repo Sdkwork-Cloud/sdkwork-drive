@@ -9,15 +9,13 @@ Supported source profiles are `standalone.development`,
 `standalone.production`, `cloud.development`, and `cloud.production`.
 Standalone development owns the local Drive standalone gateway. Cloud
 development starts clients only and consumes the deployed
-`sdkwork-api-cloud-gateway` URL.
+`platform.api-gateway` surface URL.
 
 Additional safe templates:
 
 - `drive.database.example.toml`: server/runtime database TOML example.
 - `sdkwork-api-drive-standalone-gateway.development.toml.example`: standalone gateway development profile.
 - `sdkwork-api-drive-standalone-gateway.production.toml.example`: standalone gateway production profile.
-- `sdkwork-api-cloud-gateway.drive.development.toml`: cloud gateway composition handoff.
-- `sdkwork-api-cloud-gateway.drive.production.toml`: cloud gateway production composition handoff.
 
 Host-local overrides such as `.env.postgres`, `.env.local`, and
 `etc/*.local.toml` must stay out of source control. Secrets are injected by the

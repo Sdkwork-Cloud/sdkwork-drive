@@ -3569,11 +3569,41 @@ name = "sdkwork-api-drive-assembly"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "sdkwork-drive-config",
+ "sdkwork-drive-http",
+ "sdkwork-drive-security",
+ "sdkwork-drive-workspace-service",
  "sdkwork-routes-drive-app-api",
  "sdkwork-routes-drive-backend-api",
  "sdkwork-routes-drive-open-api",
  "sdkwork-routes-storage-backend-api",
+ "sqlx",
  "tokio",
+]
+
+[[package]]
+name = "sdkwork-api-drive-standalone-gateway"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "http 1.4.1",
+ "sdkwork-api-drive-assembly",
+ "sdkwork-drive-config",
+ "sdkwork-drive-http",
+ "sdkwork-drive-observability",
+ "sdkwork-drive-security",
+ "sdkwork-drive-workspace-service",
+ "sdkwork-iam-database-host",
+ "sdkwork-iam-embedded-application-bootstrap",
+ "sdkwork-routes-iam-app-api",
+ "sdkwork-routes-storage-backend-api",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "toml",
+ "tower",
+ "tracing",
 ]
 
 [[package]]
@@ -3735,23 +3765,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sdkwork-drive-gateway-assembly"
-version = "0.1.0"
-dependencies = [
- "axum",
- "sdkwork-drive-config",
- "sdkwork-drive-http",
- "sdkwork-drive-security",
- "sdkwork-drive-workspace-service",
- "sdkwork-routes-drive-app-api",
- "sdkwork-routes-drive-backend-api",
- "sdkwork-routes-drive-open-api",
- "sdkwork-routes-storage-backend-api",
- "sqlx",
- "tokio",
-]
-
-[[package]]
 name = "sdkwork-drive-http"
 version = "0.1.0"
 dependencies = [
@@ -3829,31 +3842,6 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
- "tracing",
-]
-
-[[package]]
-name = "sdkwork-drive-standalone-gateway"
-version = "0.1.0"
-dependencies = [
- "axum",
- "http 1.4.1",
- "sdkwork-drive-config",
- "sdkwork-drive-gateway-assembly",
- "sdkwork-drive-http",
- "sdkwork-drive-observability",
- "sdkwork-drive-security",
- "sdkwork-drive-workspace-service",
- "sdkwork-iam-database-host",
- "sdkwork-iam-embedded-application-bootstrap",
- "sdkwork-routes-iam-app-api",
- "sdkwork-routes-storage-backend-api",
- "serde",
- "serde_json",
- "sqlx",
- "tokio",
- "toml",
- "tower",
  "tracing",
 ]
 

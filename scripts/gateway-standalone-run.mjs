@@ -90,8 +90,8 @@ function resolveConfigPath(settings) {
 function printHelp() {
   console.log(`Usage: node scripts/gateway-standalone-run.mjs [options]
 
-Drive standalone gateway embeds appbase IAM and proxies Drive API upstreams.
-Use this for local/standalone deployment. Cloud unified routing uses sdkwork-api-cloud-gateway.
+Drive standalone gateway embeds appbase IAM and the Drive application assembly.
+Use this for local/standalone deployment. Cloud composition is platform-owned.
 
 Options:
   --environment <development|production>  Config profile (default: development)

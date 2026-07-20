@@ -663,7 +663,7 @@ Options:
 Deployment policy (standalone default for dev):
   Profiles load from etc/topology according to deployment profile and environment.
   Standalone dev uses the local Drive standalone gateway on ${DEFAULT_SDKWORK_API_CLOUD_GATEWAY_BIND}.
-  Cloud dev consumes the deployed sdkwork-api-cloud-gateway and never starts it locally.
+  Cloud dev consumes the deployed platform.api-gateway surface and starts no local API process.
   IAM login requires PostgreSQL (copy .env.postgres.example to .env.postgres and start PostgreSQL).
   Vite/desktop starts only after the gateway health check passes.
   Set SDKWORK_DRIVE_GATEWAY_AUTOSTART=false to skip gateway autostart.

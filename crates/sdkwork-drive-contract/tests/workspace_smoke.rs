@@ -87,10 +87,10 @@ fn repository_root_declares_sdkwork_standard_directory_dictionary() {
 
     let agents = read("AGENTS.md");
     for required in [
-        "`apis/`: Drive-owned API contract sources and materialized OpenAPI inputs.",
-        "`crates/`: reusable Rust crates.",
-        "`etc/`: safe checked-in source configuration, topology profiles, and runtime templates.",
-        "`deployments/`: deployment descriptors and topology examples.",
+        "`apis/`: Drive-owned API authorities and OpenAPI inputs.",
+        "`crates/`: Rust libraries and process hosts.",
+        "`etc/`: safe source configuration and profile instances.",
+        "`deployments/`: deployment and infrastructure descriptors.",
     ] {
         assert!(
             agents.contains(required),
@@ -472,35 +472,5 @@ fn collect_forbidden_auth_route_refs(
                 offenders.push(format!("{} contains {forbidden_ref}", path.display()));
             }
         }
-    }
-}
-
-#[test]
-fn production_gateway_template_declares_all_drive_split_services() {
-    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    root.pop();
-    root.pop();
-
-    let config = std::fs::read_to_string(
-        root.join("etc/sdkwork-api-cloud-gateway.drive.production.toml"),
-    )
-    .expect("production gateway template should exist");
-
-    for required in [
-        "serviceId = \"sdkwork-drive-app-api\"",
-        "serviceId = \"sdkwork-drive-backend-api\"",
-        "serviceId = \"sdkwork-drive-open-api\"",
-        "serviceId = \"sdkwork-drive-admin-storage-api\"",
-        "baseUrl = \"http://sdkwork-drive-app-api:18080\"",
-        "baseUrl = \"http://sdkwork-drive-backend-api:18081\"",
-        "baseUrl = \"http://sdkwork-drive-open-api:18082\"",
-        "baseUrl = \"http://sdkwork-drive-admin-storage-api:18083\"",
-        "csrfGuardEnabled = true",
-        "rateLimitEnabled = true",
-    ] {
-        assert!(
-            config.contains(required),
-            "production gateway template must include {required}"
-        );
     }
 }

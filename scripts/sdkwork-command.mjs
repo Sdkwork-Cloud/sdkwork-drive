@@ -196,11 +196,6 @@ function dispatch(args) {
       runNodeScript("scripts/gateway-standalone-pack.mjs", []);
       break;
     }
-    case "gateway:package:cloud": {
-      // Dispatch to gateway-cloud-bundle.mjs for cloud server packaging.
-      runNodeScript("scripts/gateway-cloud-bundle.mjs", []);
-      break;
-    }
     case "topology:plan":
     case "topology:validate": {
       console.log(`[sdkwork-drive] topology ${command} for ${deploymentProfile}/development/${database}`);

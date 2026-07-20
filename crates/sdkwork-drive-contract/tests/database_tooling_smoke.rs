@@ -54,8 +54,7 @@ fn package_scripts_use_the_shared_lifecycle_and_keep_sqlite_explicit() {
     );
     assert!(
         dev_standalone_script.contains("sdkwork-app dev")
-            && dev_standalone_script.contains("--deployment-profile standalone")
-            && dev_standalone_script.contains("--environment development"),
+            && dev_standalone_script.contains("--deployment-profile standalone"),
         "pnpm dev:standalone must use the shared sdkwork-app lifecycle, got: {dev_standalone_script}"
     );
 
@@ -70,11 +69,18 @@ fn package_scripts_use_the_shared_lifecycle_and_keep_sqlite_explicit() {
     );
 
     assert!(
-        dev_desktop_script.contains("sdkwork-app dev")
-            && dev_desktop_script.contains("--runtime-target desktop")
-            && dev_desktop_script.contains("--database postgres")
-            && dev_desktop_script.contains("--deployment-profile standalone"),
-        "pnpm dev:desktop must use sdkwork-app with PostgreSQL and standalone profile, got: {dev_desktop_script}"
+        dev_desktop_script == "pnpm dev:desktop:postgres:standalone",
+        "pnpm dev:desktop must delegate to the canonical PostgreSQL standalone command, got: {dev_desktop_script}"
+    );
+    let dev_desktop_standalone = scripts
+        .get("dev:desktop:postgres:standalone")
+        .and_then(serde_json::Value::as_str)
+        .expect("pnpm dev:desktop:postgres:standalone script should exist");
+    assert!(
+        dev_desktop_standalone.contains("sdkwork-app dev")
+            && dev_desktop_standalone.contains("--runtime-target desktop")
+            && dev_desktop_standalone.contains("--deployment-profile standalone"),
+        "canonical desktop standalone command must use sdkwork-app, got: {dev_desktop_standalone}"
     );
     let retired_desktop_script = [
         "dev",
@@ -91,7 +97,6 @@ fn package_scripts_use_the_shared_lifecycle_and_keep_sqlite_explicit() {
     assert!(
         dev_cloud_script.contains("sdkwork-app dev")
             && dev_cloud_script.contains("--deployment-profile cloud")
-            && dev_cloud_script.contains("--environment development")
             && !dev_cloud_script.contains("--database"),
         "pnpm dev:cloud must use sdkwork-app without a local database axis, got: {dev_cloud_script}"
     );
@@ -119,27 +124,19 @@ fn package_scripts_use_the_shared_lifecycle_and_keep_sqlite_explicit() {
         "sdkwork-command.mjs must dispatch gateway:package:standalone to gateway-standalone-pack.mjs"
     );
 
-    let cloud_bundle_script = scripts
-        .get("gateway:package:cloud")
-        .and_then(serde_json::Value::as_str)
-        .expect("pnpm gateway:package:cloud script should exist");
     assert!(
-        cloud_bundle_script.contains("sdkwork-command.mjs"),
-        "pnpm gateway:package:cloud must delegate through sdkwork-command.mjs, got: {cloud_bundle_script}"
-    );
-    assert!(
-        dispatcher.contains("gateway-cloud-bundle.mjs"),
-        "sdkwork-command.mjs must dispatch gateway:package:cloud to gateway-cloud-bundle.mjs"
+        scripts.get("gateway:package:cloud").is_none(),
+        "application repositories must not package the platform API gateway"
     );
 
     let drive_build = scripts
         .get("build")
         .and_then(serde_json::Value::as_str)
         .expect("pnpm build script should exist");
-    assert!(
-        drive_build.contains("sdkwork-app build")
-            && drive_build.contains("--deployment-profile cloud"),
-        "pnpm build must use sdkwork-app with the cloud profile, got: {drive_build}"
+    assert_eq!(
+        drive_build,
+        "pnpm exec sdkwork-app build",
+        "pnpm build must delegate to the manifest-driven sdkwork-app lifecycle"
     );
     let private_build = scripts
         .get("_sdkwork:build")
@@ -260,11 +257,8 @@ fn drive_launch_plan_reports_database_engine_without_leaking_secrets() {
     );
 
     for required_service in [
-        "drive app-api router: cargo",
-        "drive backend-api router: cargo",
-        "drive open-api router: cargo",
-        "drive storage backend router: cargo",
-        "sdkwork-routes-storage-backend-api",
+        "drive standalone gateway: cargo",
+        "sdkwork-api-drive-standalone-gateway",
     ] {
         assert!(
             stdout.contains(required_service),
