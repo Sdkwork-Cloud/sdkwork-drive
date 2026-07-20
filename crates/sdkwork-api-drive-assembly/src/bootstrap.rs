@@ -25,8 +25,7 @@ pub async fn assemble_business_routes(pool: sqlx::AnyPool) -> ApiAssembly {
     ApiAssembly { router }
 }
 
-pub async fn assemble_api_router_from_env() -> Result<ApiAssembly, String>
-{
+pub async fn assemble_business_routes_from_env() -> Result<ApiAssembly, String> {
     sdkwork_drive_security::ensure_drive_auth_policy_refresh_task();
     ensure_production_download_token_signing_configured()
         .map_err(|error| format!("download token signing config invalid: {error}"))?;
@@ -78,7 +77,7 @@ pub async fn assemble_backend_business_router_from_env() -> Result<ApiAssembly, 
 }
 
 pub async fn assemble_api_router(pool: sqlx::AnyPool) -> ApiAssembly {
-    let business = assemble_api_router(pool.clone()).await;
+    let business = assemble_business_routes(pool.clone()).await;
     let router = mount_drive_infra_routes(
         business.router,
         drive_service_router_config(&pool),
