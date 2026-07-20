@@ -1,0 +1,54 @@
+{
+  "kind": "sdkwork.api.assembly",
+  "schemaVersion": 1,
+  "applicationCode": "drive",
+  "apiMode": "served",
+  "packageName": "sdkwork-api-drive-assembly",
+  "crateDir": "crates/sdkwork-api-drive-assembly",
+  "routeCrates": [
+    {
+      "packageName": "sdkwork-routes-drive-app-api",
+      "memberDir": "crates/sdkwork-routes-drive-app-api",
+      "libName": "sdkwork_routes_drive_app_api",
+      "surface": "app-api",
+      "pathPrefix": null,
+      "mountOrder": 0,
+      "componentRef": "crates/sdkwork-routes-drive-app-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-drive-app-api/specs/component.spec.json#contracts.routeManifest",
+      "sourceRef": "crates/sdkwork-routes-drive-app-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-drive-backend-api",
+      "memberDir": "crates/sdkwork-routes-drive-backend-api",
+      "libName": "sdkwork_routes_drive_backend_api",
+      "surface": "backend-api",
+      "pathPrefix": null,
+      "mountOrder": 1,
+      "componentRef": "crates/sdkwork-routes-drive-backend-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-drive-backend-api/specs/component.spec.json#contracts.routeManifest",
+      "sourceRef": "crates/sdkwork-routes-drive-backend-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-drive-open-api",
+      "memberDir": "crates/sdkwork-routes-drive-open-api",
+      "libName": "sdkwork_routes_drive_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 2,
+      "componentRef": "crates/sdkwork-routes-drive-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-drive-open-api/sdkwork_routes_drive_open_api::open_route_manifest",
+      "sourceRef": "crates/sdkwork-routes-drive-open-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-storage-backend-api",
+      "memberDir": "crates/sdkwork-routes-storage-backend-api",
+      "libName": "sdkwork_routes_storage_backend_api",
+      "surface": "backend-api",
+      "pathPrefix": null,
+      "mountOrder": 3,
+      "componentRef": "crates/sdkwork-routes-storage-backend-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-storage-backend-api/specs/component.spec.json#contracts.routeManifest",
+      "sourceRef": "crates/sdkwork-routes-storage-backend-api/Cargo.toml"
+    }
+  ]
+}

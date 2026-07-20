@@ -31,3 +31,13 @@ pub use web_bootstrap::{
     wrap_router_with_iam_web_framework, wrap_router_with_web_framework,
     wrap_router_with_web_framework_from_env,
 };
+
+use sdkwork_web_core::HttpRouteManifest;
+
+pub fn gateway_route_manifest() -> HttpRouteManifest {
+    storage_route_manifest()
+}
+
+pub fn gateway_mount(pool: AnyPool) -> axum::Router {
+    build_router_with_pool(pool)
+}
