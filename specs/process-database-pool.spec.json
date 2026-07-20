@@ -8,8 +8,8 @@
   },
   "processes": [
     {
-      "id": "sdkwork-drive-standalone-gateway",
-      "entrypoint": "crates/sdkwork-drive-standalone-gateway/src/main.rs",
+      "id": "sdkwork-api-drive-standalone-gateway",
+      "entrypoint": "crates/sdkwork-api-drive-standalone-gateway/src/main.rs",
       "poolOwner": "crates/sdkwork-drive-workspace-service/src/bootstrap.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
@@ -17,8 +17,8 @@
       "schemaEnv": "SDKWORK_DRIVE_DATABASE_SCHEMA or SDKWORK_CLAW_DATABASE_SCHEMA",
       "maxConnectionsEnv": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
       "productionSourceRoots": [
-        "crates/sdkwork-drive-standalone-gateway/src",
-        "crates/sdkwork-drive-gateway-assembly/src",
+        "crates/sdkwork-api-drive-standalone-gateway/src",
+        "crates/sdkwork-api-drive-assembly/src",
         "crates/sdkwork-drive-workspace-service/src"
       ],
       "consumers": [
@@ -33,7 +33,7 @@
           "module": "sdkwork-iam",
           "poolMode": "installed-process-pool",
           "evidence": [
-            "crates/sdkwork-drive-standalone-gateway/src/main.rs"
+            "crates/sdkwork-api-drive-standalone-gateway/src/main.rs"
           ]
         }
       ],
@@ -229,6 +229,6 @@
   "verification": [
     "pnpm db:pool:validate",
     "node ../sdkwork-specs/tools/check-process-shared-database-pool.mjs --root .",
-    "cargo check -p sdkwork-drive-standalone-gateway -p sdkwork-drive-install-worker"
+    "cargo check -p sdkwork-api-drive-standalone-gateway -p sdkwork-drive-install-worker"
   ]
 }

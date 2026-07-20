@@ -436,7 +436,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sdkwork-drive-standalone-gateway
+  name: sdkwork-api-drive-standalone-gateway
   labels:
     app.kubernetes.io/name: sdkwork-drive
     app.kubernetes.io/component: standalone-gateway
@@ -463,7 +463,7 @@ spec:
             - name: SDKWORK_DRIVE_STANDALONE_GATEWAY_ENVIRONMENT
               value: production
             - name: SDKWORK_DRIVE_STANDALONE_GATEWAY_CONFIG
-              value: /etc/sdkwork-drive/sdkwork-drive-standalone-gateway.production.toml
+              value: /etc/sdkwork-drive/sdkwork-api-drive-standalone-gateway.production.toml
             - name: SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH
               value: "false"
             - name: SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY
@@ -496,7 +496,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sdkwork-drive-standalone-gateway
+  name: sdkwork-api-drive-standalone-gateway
   labels:
     app.kubernetes.io/name: sdkwork-drive
     app.kubernetes.io/component: standalone-gateway

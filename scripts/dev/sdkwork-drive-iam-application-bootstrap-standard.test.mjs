@@ -12,10 +12,10 @@ function read(relativePath, root = repoRoot) {
 }
 
 const bootstrapSource = read(
-  'crates/sdkwork-drive-standalone-gateway/src/iam_application_bootstrap.rs',
+  'crates/sdkwork-api-drive-standalone-gateway/src/iam_application_bootstrap.rs',
 );
-const gatewayMain = read('crates/sdkwork-drive-standalone-gateway/src/main.rs');
-const gatewayCargo = read('crates/sdkwork-drive-standalone-gateway/Cargo.toml');
+const gatewayMain = read('crates/sdkwork-api-drive-standalone-gateway/src/main.rs');
+const gatewayCargo = read('crates/sdkwork-api-drive-standalone-gateway/Cargo.toml');
 const workspaceCargo = read('Cargo.toml');
 const topologySource = read('scripts/lib/drive-topology.mjs');
 const sharedBootstrapSource = read(

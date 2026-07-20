@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "kind": "sdkwork.component.spec",
   "component": {
-    "name": "sdkwork-drive-standalone-gateway",
+    "name": "sdkwork-api-drive-standalone-gateway",
     "displayName": "Sdkwork Drive Standalone Gateway",
     "version": "0.1.0",
-    "type": "rust-crate",
-    "root": ".",
+    "type": "rust-api-standalone-gateway",
+    "root": "crates/sdkwork-api-drive-standalone-gateway",
     "domain": "drive",
-    "capability": "standalone-gateway",
-    "surface": "backend",
+    "capability": "api-gateway",
+    "surface": "gateway-api",
     "languages": [
       "rust"
     ],
@@ -172,11 +172,12 @@
         "cargoDependency": "sdkwork-routes-iam-app-api",
         "coverageEvidence": "../sdkwork-iam/crates/sdkwork-routes-iam-app-api/src/routes.rs"
       }
-    ]
+    ],
+    "layerRole": "runtime-gateway"
   },
   "verification": {
     "commands": [
-      "cargo build -p sdkwork-drive-standalone-gateway"
+      "cargo build -p sdkwork-api-drive-standalone-gateway"
     ]
   }
 }

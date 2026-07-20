@@ -1,8 +1,8 @@
 # Component Specs
 
-This directory is the local SDKWork component contract for `sdkwork-drive-standalone-gateway`.
+This directory is the local SDKWork component contract for `sdkwork-api-drive-standalone-gateway`.
 
-- Component root: `sdkwork-drive/crates/sdkwork-drive-standalone-gateway`
+- Component root: `sdkwork-drive/crates/sdkwork-api-drive-standalone-gateway`
 - Canonical standards: `../../../sdkwork-specs/README.md`
 - Machine-readable contract: `specs/component.spec.json`
 

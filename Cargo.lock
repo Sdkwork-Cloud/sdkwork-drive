@@ -3565,6 +3565,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-api-drive-assembly"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "sdkwork-routes-drive-app-api",
+ "sdkwork-routes-drive-backend-api",
+ "sdkwork-routes-drive-open-api",
+ "sdkwork-routes-storage-backend-api",
+ "tokio",
+]
+
+[[package]]
 name = "sdkwork-database-config"
 version = "0.1.0"
 dependencies = [

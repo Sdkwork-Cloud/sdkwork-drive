@@ -1,10 +1,10 @@
 [package]
-name = "sdkwork-drive-standalone-gateway"
+name = "sdkwork-api-drive-standalone-gateway"
 version.workspace = true
 edition.workspace = true
 
 [[bin]]
-name = "sdkwork-drive-standalone-gateway"
+name = "sdkwork-api-drive-standalone-gateway"
 path = "src/main.rs"
 
 [dependencies]
@@ -22,7 +22,7 @@ sdkwork-drive-observability = { workspace = true, features = ["otlp"] }
 sqlx.workspace = true
 sdkwork-drive-security.workspace = true
 sdkwork-drive-workspace-service.workspace = true
-sdkwork-drive-gateway-assembly.workspace = true
+sdkwork-api-drive-assembly.workspace = true
 sdkwork-routes-storage-backend-api.workspace = true
 sdkwork_routes_iam_app_api = { workspace = true }
 sdkwork-iam-embedded-application-bootstrap = { workspace = true }

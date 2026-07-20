@@ -36,7 +36,7 @@ struct EmbeddedServiceState {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     sdkwork_drive_workspace_service::enable_process_shared_database_pool();
-    sdkwork_drive_observability::init_tracing("sdkwork-drive-standalone-gateway");
+    sdkwork_drive_observability::init_tracing("sdkwork-api-drive-standalone-gateway");
 
     let args: Vec<String> = std::env::args().collect();
     let config_path = resolve_config_path(&args)?;
@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let admin_storage_config = AdminStorageConfig::from_env()
         .map_err(|error| format!("resolve admin storage config failed: {error}"))?;
     let application =
-        sdkwork_drive_gateway_assembly::assemble_application_router(pool.clone()).await;
+        sdkwork_api_drive_assembly::assemble_api_router(pool.clone()).await;
     let admin_storage_router = Arc::new(EmbeddedServiceState {
         service: build_admin_storage_router_with_pool(pool, admin_storage_config).await,
         service_label: "sdkwork-drive-admin-storage-api".to_string(),

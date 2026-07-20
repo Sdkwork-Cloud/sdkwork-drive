@@ -1,6 +1,7 @@
 [workspace]
 members = [
-    "crates/sdkwork-drive-gateway-assembly",
+    "crates/sdkwork-api-drive-assembly",
+    "crates/sdkwork-api-drive-assembly",
     "crates/sdkwork-drive-contract",
     "crates/sdkwork-drive-config",
     "crates/sdkwork-drive-database-host",
@@ -20,7 +21,7 @@ members = [
     "crates/sdkwork-routes-storage-backend-api",
     "crates/sdkwork-routes-drive-backend-api",
     "crates/sdkwork-drive-install-worker",
-    "crates/sdkwork-drive-standalone-gateway",
+    "crates/sdkwork-api-drive-standalone-gateway",
 ]
 resolver = "2"
 
@@ -73,8 +74,8 @@ sdkwork-drive-test-support = { path = "crates/sdkwork-drive-test-support" }
 sdkwork-drive-workspace-service = { path = "crates/sdkwork-drive-workspace-service" }
 sdkwork-drive-uploader-service = { path = "crates/sdkwork-drive-uploader-service" }
 sdkwork-drive-install-worker = { path = "crates/sdkwork-drive-install-worker" }
-sdkwork-drive-gateway-assembly = { path = "crates/sdkwork-drive-gateway-assembly" }
-sdkwork-drive-standalone-gateway = { path = "crates/sdkwork-drive-standalone-gateway" }
+sdkwork-api-drive-assembly = { path = "crates/sdkwork-api-drive-assembly" }
+sdkwork-api-drive-standalone-gateway = { path = "crates/sdkwork-api-drive-standalone-gateway" }
 sdkwork-routes-drive-open-api = { path = "crates/sdkwork-routes-drive-open-api" }
 sdkwork-routes-drive-app-api = { path = "crates/sdkwork-routes-drive-app-api" }
 sdkwork-routes-drive-backend-api = { path = "crates/sdkwork-routes-drive-backend-api" }

@@ -33,6 +33,7 @@ pub use web_bootstrap::{
 };
 
 use sdkwork_web_core::HttpRouteManifest;
+use sqlx::AnyPool;
 
 pub fn gateway_route_manifest() -> HttpRouteManifest {
     storage_route_manifest()

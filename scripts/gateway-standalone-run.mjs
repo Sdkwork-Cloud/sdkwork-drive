@@ -132,9 +132,9 @@ function main() {
   const cargoArgs = [
     'run',
     '-p',
-    'sdkwork-drive-standalone-gateway',
+    'sdkwork-api-drive-standalone-gateway',
     '--bin',
-    'sdkwork-drive-standalone-gateway',
+    'sdkwork-api-drive-standalone-gateway',
     '--',
     '--config',
     configPath,
@@ -144,7 +144,7 @@ function main() {
   }
 
   if (settings.dryRun) {
-    console.log(`[sdkwork-drive-standalone-gateway] ${cargoCommand()} ${cargoArgs.join(' ')}`);
+    console.log(`[sdkwork-api-drive-standalone-gateway] ${cargoCommand()} ${cargoArgs.join(' ')}`);
     process.exit(0);
   }
 

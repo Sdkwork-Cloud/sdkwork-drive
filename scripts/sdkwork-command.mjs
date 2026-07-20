@@ -188,7 +188,7 @@ function dispatch(args) {
     case "gateway:validate":
     case "gateway:matrix": {
       const profileFlag = deploymentProfile ? ` --${deploymentProfile}` : "";
-      runShell(`cargo run -p sdkwork-drive-standalone-gateway -- ${command.replace("gateway:", "--gateway-")}${profileFlag}`);
+      runShell(`cargo run -p sdkwork-api-drive-standalone-gateway -- ${command.replace("gateway:", "--gateway-")}${profileFlag}`);
       break;
     }
     case "gateway:package:standalone": {
@@ -212,7 +212,7 @@ function dispatch(args) {
     }
     case "release:build": {
       runNodeScript("scripts/drive-build.mjs");
-      runShell("cargo build --release -p sdkwork-drive-standalone-gateway");
+      runShell("cargo build --release -p sdkwork-api-drive-standalone-gateway");
       break;
     }
     case "release:package": {

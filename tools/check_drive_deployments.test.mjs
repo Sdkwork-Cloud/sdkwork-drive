@@ -122,13 +122,13 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sdkwork-drive-standalone-gateway
+  name: sdkwork-api-drive-standalone-gateway
 spec:
   template:
     spec:
       containers:
         - name: standalone-gateway
-          image: ${imageByName['sdkwork-drive-standalone-gateway']}
+          image: ${imageByName['sdkwork-api-drive-standalone-gateway']}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -238,13 +238,13 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sdkwork-drive-standalone-gateway
+  name: sdkwork-api-drive-standalone-gateway
 spec:
   template:
     spec:
       containers:
         - name: standalone-gateway
-          image: ${imageByName['sdkwork-drive-standalone-gateway']}
+          image: ${imageByName['sdkwork-api-drive-standalone-gateway']}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -263,7 +263,7 @@ function placeholderImages() {
     'sdkwork-drive-open-api',
     'sdkwork-drive-admin-storage-api',
     'sdkwork-drive-install-worker',
-    'sdkwork-drive-standalone-gateway',
+    'sdkwork-api-drive-standalone-gateway',
   ].map((name) => ({
     name,
     image: `registry.sdkwork.com/apps/sdkwork-drive/${name.replace(/^sdkwork-drive-/, '')}@sha256:REPLACE_WITH_RELEASE_DIGEST`,
@@ -394,7 +394,7 @@ async function createTempWorkspace(imageRefs, options = {}) {
     'sdkwork-drive-open-api.service',
     'sdkwork-drive-admin-storage-api.service',
     'sdkwork-drive-install-worker.service',
-    'sdkwork-drive-standalone-gateway.service',
+    'sdkwork-api-drive-standalone-gateway.service',
   ]) {
     await writeFile(
       path.join(tempRoot, 'deployments/systemd', service),

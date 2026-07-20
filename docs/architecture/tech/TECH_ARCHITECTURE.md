@@ -66,7 +66,7 @@ Deployment profiles:
 | `sdkwork-drive-sandbox-*` | Authorized server sandbox contracts, policy, provider containment, and audit |
 | `@sdkwork/drive-pc-sandbox-explorer` | Reusable browser/Tauri renderer capability for logical sandbox navigation |
 | `sdkwork-drive-install-worker` | Maintenance leader, outbox dispatch loop |
-| `sdkwork-drive-standalone-gateway` | Dev/all-in-one HTTP gateway |
+| `sdkwork-api-drive-standalone-gateway` | Dev/all-in-one HTTP gateway |
 | `apps/sdkwork-drive-pc` | Browser and desktop application shell |
 
 PC application Canon: `apps/sdkwork-drive-pc/docs/product/prd/PRD.md` and `apps/sdkwork-drive-pc/docs/architecture/tech/TECH_ARCHITECTURE.md`.

@@ -44,10 +44,10 @@
       "formats": ["tar.gz"],
       "runner": "ubuntu-latest",
       "outputGlobs": [
-        "dist/standalone-gateway/sdkwork-drive-standalone-gateway-0.1.0-linux-x64-standalone-gateway.tar.gz",
+        "dist/standalone-gateway/sdkwork-api-drive-standalone-gateway-0.1.0-linux-x64-standalone-gateway.tar.gz",
         ".sdkwork/evidence/linux-x64-standalone-server-tar-gz.sbom.json"
       ],
-      "artifactPath": "dist/standalone-gateway/sdkwork-drive-standalone-gateway-0.1.0-linux-x64-standalone-gateway.tar.gz"
+      "artifactPath": "dist/standalone-gateway/sdkwork-api-drive-standalone-gateway-0.1.0-linux-x64-standalone-gateway.tar.gz"
     },
     {
       "id": "windows-x64-standalone-desktop-zip",

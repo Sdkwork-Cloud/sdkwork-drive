@@ -332,7 +332,7 @@ for (const service of [
   'sdkwork-drive-open-api.service',
   'sdkwork-drive-admin-storage-api.service',
   'sdkwork-drive-install-worker.service',
-  'sdkwork-drive-standalone-gateway.service',
+  'sdkwork-api-drive-standalone-gateway.service',
 ]) {
   requirePath(`deployments/systemd/${service}`, 'systemd deployment');
   const unitPath = path.join(repoRoot, `deployments/systemd/${service}`);

@@ -488,7 +488,7 @@ function resolveStandaloneGatewayConfigPath(env) {
   const environment = normalizeText(env.SDKWORK_DRIVE_STANDALONE_GATEWAY_ENVIRONMENT) || 'development';
   return path.resolve(
     repoRoot,
-    `etc/sdkwork-drive-standalone-gateway.${environment}.toml`,
+    `etc/sdkwork-api-drive-standalone-gateway.${environment}.toml`,
   );
 }
 
@@ -518,9 +518,9 @@ function createStandaloneGatewayProcess({ env, gatewayWillStart }) {
     args: [
       'run',
       '-p',
-      'sdkwork-drive-standalone-gateway',
+      'sdkwork-api-drive-standalone-gateway',
       '--bin',
-      'sdkwork-drive-standalone-gateway',
+      'sdkwork-api-drive-standalone-gateway',
       '--',
       '--config',
       configPath,
@@ -528,7 +528,7 @@ function createStandaloneGatewayProcess({ env, gatewayWillStart }) {
     command: cargoCommand(),
     cwd: repoRoot,
     env: gatewayEnv,
-    label: 'sdkwork-drive-standalone-gateway',
+    label: 'sdkwork-api-drive-standalone-gateway',
     shell: false,
   };
 }
@@ -599,7 +599,7 @@ async function ensureDevGatewayHealthy({
   }
 
   console.log(
-    `[sdkwork-drive] starting sdkwork-drive-standalone-gateway (IAM database: ${iamDatabaseTarget})...`,
+    `[sdkwork-drive] starting sdkwork-api-drive-standalone-gateway (IAM database: ${iamDatabaseTarget})...`,
   );
   const child = spawnProcessEntry(gatewayEntry);
   let exitCode = null;

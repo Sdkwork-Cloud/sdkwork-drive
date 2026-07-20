@@ -20,7 +20,7 @@ Rust backend workspace and the PC application root under `apps/sdkwork-drive-pc/
 
 ## Runtime Entrypoints
 
-- `crates/sdkwork-drive-standalone-gateway/src/main.rs`: standalone gateway binary
+- `crates/sdkwork-api-drive-standalone-gateway/src/main.rs`: standalone gateway binary
 - `crates/sdkwork-routes-drive-app-api/src/main.rs`: app-api server binary
 - `crates/sdkwork-routes-drive-backend-api/src/main.rs`: backend-api server binary
 - `crates/sdkwork-routes-drive-open-api/src/main.rs`: open-api server binary

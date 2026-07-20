@@ -14,8 +14,8 @@ development starts clients only and consumes the deployed
 Additional safe templates:
 
 - `drive.database.example.toml`: server/runtime database TOML example.
-- `sdkwork-drive-standalone-gateway.development.toml.example`: standalone gateway development profile.
-- `sdkwork-drive-standalone-gateway.production.toml.example`: standalone gateway production profile.
+- `sdkwork-api-drive-standalone-gateway.development.toml.example`: standalone gateway development profile.
+- `sdkwork-api-drive-standalone-gateway.production.toml.example`: standalone gateway production profile.
 - `sdkwork-api-cloud-gateway.drive.development.toml`: cloud gateway composition handoff.
 - `sdkwork-api-cloud-gateway.drive.production.toml`: cloud gateway production composition handoff.
 

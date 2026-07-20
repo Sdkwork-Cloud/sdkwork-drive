@@ -74,9 +74,9 @@
   },
   "components": {
     "standaloneGateway": {
-      "crate": "sdkwork-drive-standalone-gateway",
-      "binary": "sdkwork-drive-standalone-gateway",
-      "configGlob": "etc/sdkwork-drive-standalone-gateway.{profile}.toml"
+      "crate": "sdkwork-api-drive-standalone-gateway",
+      "binary": "sdkwork-api-drive-standalone-gateway",
+      "configGlob": "etc/sdkwork-api-drive-standalone-gateway.{profile}.toml"
     }
   },
   "orchestration": {
@@ -161,7 +161,7 @@
         ],
         "runner": "ubuntu-24.04",
         "rustTarget": "x86_64-unknown-linux-gnu",
-        "outputGlob": "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-linux-x64-standalone-gateway.tar.gz"
+        "outputGlob": "dist/standalone-gateway/sdkwork-api-drive-standalone-gateway-*-linux-x64-standalone-gateway.tar.gz"
       },
       {
         "id": "linux-arm64-application-public-ingress-tar-gz",
@@ -173,7 +173,7 @@
         ],
         "runner": "ubuntu-24.04",
         "rustTarget": "aarch64-unknown-linux-gnu",
-        "outputGlob": "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-linux-arm64-standalone-gateway.tar.gz"
+        "outputGlob": "dist/standalone-gateway/sdkwork-api-drive-standalone-gateway-*-linux-arm64-standalone-gateway.tar.gz"
       },
       {
         "id": "windows-x64-application-public-ingress-tar-gz",
@@ -185,7 +185,7 @@
         ],
         "runner": "windows-latest",
         "rustTarget": "x86_64-pc-windows-msvc",
-        "outputGlob": "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-windows-x64-standalone-gateway.tar.gz"
+        "outputGlob": "dist/standalone-gateway/sdkwork-api-drive-standalone-gateway-*-windows-x64-standalone-gateway.tar.gz"
       },
       {
         "id": "windows-arm64-application-public-ingress-tar-gz",
@@ -197,7 +197,7 @@
         ],
         "runner": "windows-latest",
         "rustTarget": "aarch64-pc-windows-msvc",
-        "outputGlob": "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-windows-arm64-standalone-gateway.tar.gz"
+        "outputGlob": "dist/standalone-gateway/sdkwork-api-drive-standalone-gateway-*-windows-arm64-standalone-gateway.tar.gz"
       },
       {
         "id": "macos-x64-application-public-ingress-tar-gz",
@@ -209,7 +209,7 @@
         ],
         "runner": "macos-14",
         "rustTarget": "x86_64-apple-darwin",
-        "outputGlob": "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-macos-x64-standalone-gateway.tar.gz"
+        "outputGlob": "dist/standalone-gateway/sdkwork-api-drive-standalone-gateway-*-macos-x64-standalone-gateway.tar.gz"
       },
       {
         "id": "macos-arm64-application-public-ingress-tar-gz",
@@ -221,7 +221,7 @@
         ],
         "runner": "macos-14",
         "rustTarget": "aarch64-apple-darwin",
-        "outputGlob": "dist/standalone-gateway/sdkwork-drive-standalone-gateway-*-macos-arm64-standalone-gateway.tar.gz"
+        "outputGlob": "dist/standalone-gateway/sdkwork-api-drive-standalone-gateway-*-macos-arm64-standalone-gateway.tar.gz"
       },
       {
         "id": "platform-config-bundle-tar-gz",

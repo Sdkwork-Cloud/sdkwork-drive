@@ -132,7 +132,7 @@ pub fn resolve_config_path(args: &[String]) -> Result<String, String> {
         .unwrap_or_else(|| "development".to_string());
 
     Ok(format!(
-        "etc/sdkwork-drive-standalone-gateway.{environment}.toml"
+        "etc/sdkwork-api-drive-standalone-gateway.{environment}.toml"
     ))
 }
 
@@ -143,7 +143,7 @@ mod tests {
     #[test]
     fn projects_source_config_to_shared_web_framework_keys() {
         let config = ResolvedGatewayConfig {
-            service_name: "sdkwork-drive-standalone-gateway".to_owned(),
+            service_name: "sdkwork-api-drive-standalone-gateway".to_owned(),
             environment: "production".to_owned(),
             bind: "127.0.0.1:3900".to_owned(),
             allowed_origins: vec![

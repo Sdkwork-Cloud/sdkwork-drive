@@ -17,7 +17,7 @@ function runCommand(args) {
       ...process.env,
       SDKWORK_DRIVE_PLATFORM_API_GATEWAY_AUTOSTART: 'false',
       SDKWORK_DRIVE_STANDALONE_GATEWAY_CONFIG:
-        'etc/sdkwork-drive-standalone-gateway.development.toml.example',
+        'etc/sdkwork-api-drive-standalone-gateway.development.toml.example',
     },
   });
 }

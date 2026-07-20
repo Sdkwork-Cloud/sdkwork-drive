@@ -8,12 +8,12 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-const APP_ID = 'sdkwork-drive-standalone-gateway';
-const BINARY_NAME = 'sdkwork-drive-standalone-gateway';
-const CARGO_PACKAGE = 'sdkwork-drive-standalone-gateway';
+const APP_ID = 'sdkwork-api-drive-standalone-gateway';
+const BINARY_NAME = 'sdkwork-api-drive-standalone-gateway';
+const CARGO_PACKAGE = 'sdkwork-api-drive-standalone-gateway';
 const SERVER_PROFILE = 'standalone';
 const SUPPORTED_FORMAT = 'tar.gz';
-const CONFIG_PREFIX = 'sdkwork-drive-standalone-gateway';
+const CONFIG_PREFIX = 'sdkwork-api-drive-standalone-gateway';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(scriptPath), '..');
@@ -40,7 +40,7 @@ async function main() {
 function printHelp() {
   console.log(`Usage: node scripts/gateway-standalone-pack.mjs <package|validate> [options]
 
-Package sdkwork-drive-standalone-gateway as a release tar.gz archive for standalone deployment.
+Package sdkwork-api-drive-standalone-gateway as a release tar.gz archive for standalone deployment.
 
 Options:
   --version <value>       Package version. Defaults to SDKWORK_PACKAGE_VERSION or app manifest.
@@ -248,8 +248,8 @@ async function packageServer(context) {
   await copyFile(context.binaryPath, path.join(context.stageRoot, 'bin', context.binaryName));
   await copyConfigExamples(context.stageRoot);
   await copyIfExists(
-    path.join('deployments', 'systemd', 'sdkwork-drive-standalone-gateway.service'),
-    path.join(context.stageRoot, 'deploy', 'systemd', 'sdkwork-drive-standalone-gateway.service'),
+    path.join('deployments', 'systemd', 'sdkwork-api-drive-standalone-gateway.service'),
+    path.join(context.stageRoot, 'deploy', 'systemd', 'sdkwork-api-drive-standalone-gateway.service'),
   );
   await copyIfExists('README.md', path.join(context.stageRoot, 'README.md'));
   await writeFile(path.join(context.stageRoot, 'INSTALL.md'), renderInstallGuide(context), 'utf8');
@@ -328,7 +328,7 @@ curl http://127.0.0.1:3900/healthz
 
 ## systemd
 
-See \`deploy/systemd/sdkwork-drive-standalone-gateway.service\`.
+See \`deploy/systemd/sdkwork-api-drive-standalone-gateway.service\`.
 `;
 }
 
@@ -347,7 +347,7 @@ function createInstallManifest(context) {
       `config/${CONFIG_PREFIX}.development.toml.example`,
       `config/${CONFIG_PREFIX}.production.toml.example`,
     ],
-    systemdUnit: 'deploy/systemd/sdkwork-drive-standalone-gateway.service',
+    systemdUnit: 'deploy/systemd/sdkwork-api-drive-standalone-gateway.service',
     healthPath: '/healthz',
     deploymentMode: 'standalone',
   };
@@ -400,7 +400,7 @@ async function validateArchive(context) {
     `${context.stageName}/config/${CONFIG_PREFIX}.production.toml.example`,
     `${context.stageName}/install-manifest.json`,
     `${context.stageName}/checksums.sha256`,
-    `${context.stageName}/deploy/systemd/sdkwork-drive-standalone-gateway.service`,
+    `${context.stageName}/deploy/systemd/sdkwork-api-drive-standalone-gateway.service`,
   ];
 
   for (const entry of requiredEntries) {

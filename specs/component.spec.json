@@ -115,7 +115,7 @@
       "crates/sdkwork-drive-workspace-service"
     ],
     "runtimeEntrypoints": [
-      "crates/sdkwork-drive-standalone-gateway/src/main.rs",
+      "crates/sdkwork-api-drive-standalone-gateway/src/main.rs",
       "crates/sdkwork-routes-drive-app-api/src/main.rs",
       "crates/sdkwork-routes-drive-backend-api/src/main.rs",
       "crates/sdkwork-routes-drive-open-api/src/main.rs",
