@@ -139,28 +139,12 @@ export function SpacesAdminPage({ backendSdkClient, getSession }: SpacesAdminPag
 
   return (
     <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <header className="shrink-0 border-b border-neutral-200 bg-white px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900 sm:px-6 sm:py-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
-              <HardDrive aria-hidden="true" size={20} strokeWidth={1.8} />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-lg font-semibold text-neutral-950 dark:text-white">{t('spacesPageTitle')}</h1>
-              <p className="mt-1 max-w-2xl text-sm leading-5 text-neutral-500 dark:text-neutral-400">{t('spacesPageDescription')}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            className={SECONDARY_BUTTON_CLASS}
-            disabled={loading}
-            onClick={refresh}
-          >
-            <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
-            {t('refresh')}
-          </button>
-        </div>
-      </header>
+      <div aria-label={t('spacesPageTitle')} className="flex shrink-0 justify-end px-4 pt-4 sm:px-6 sm:pt-6">
+        <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={refresh}>
+          <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
+          {t('refresh')}
+        </button>
+      </div>
       <div className="flex-1 space-y-4 overflow-auto p-4 sm:p-6">
         {error ? (
           <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300" role="alert">

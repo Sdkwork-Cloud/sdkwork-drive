@@ -51,7 +51,7 @@ Drive is **Beta / DRAFT** for catalog publication. Code alignment is complete fo
 - `pnpm api:envelope:check`
 - `pnpm api:schema:check`
 - `pnpm deploy:validate`
-- `pnpm gateway:assembly:validate`
+- `pnpm api:assembly:validate`
 - `pnpm check:docs-standard`
 
 Legacy root-level filenames under `docs/` redirect to the TECH shards above. Do not add new content outside the canon paths.

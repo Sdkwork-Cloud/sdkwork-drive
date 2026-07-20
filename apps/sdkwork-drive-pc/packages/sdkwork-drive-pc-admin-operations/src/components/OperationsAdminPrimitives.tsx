@@ -29,29 +29,15 @@ interface OperationsPageHeaderProps {
 export function OperationsPageHeader({
   actions,
   description,
-  icon: Icon,
   meta,
   title,
-  toneClassName = 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300',
 }: OperationsPageHeaderProps) {
   return (
-    <header className="shrink-0 border-b border-neutral-200 bg-white px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900 sm:px-6 sm:py-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${toneClassName}`}>
-            <Icon aria-hidden="true" size={20} strokeWidth={1.8} />
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-lg font-semibold text-neutral-950 dark:text-white">{title}</h1>
-              {meta}
-            </div>
-            <p className="mt-1 max-w-3xl text-sm leading-5 text-neutral-500 dark:text-neutral-400">{description}</p>
-          </div>
-        </div>
-        {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
-      </div>
-    </header>
+    <div aria-label={title} className={actions || meta ? 'flex shrink-0 flex-wrap items-center justify-between gap-3 px-4 pt-4 sm:px-6 sm:pt-6' : 'sr-only'}>
+      <span className="sr-only">{description}</span>
+      {meta ? <div className="flex items-center gap-2">{meta}</div> : <span />}
+      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+    </div>
   );
 }
 

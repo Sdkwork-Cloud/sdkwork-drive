@@ -22,6 +22,7 @@ export default defineConfig({
       'react/jsx-runtime': path.resolve(__dirname, 'node_modules/react/jsx-runtime'),
       'react/jsx-dev-runtime': path.resolve(__dirname, 'node_modules/react/jsx-dev-runtime'),
       'lucide-react': path.resolve(__dirname, 'node_modules/lucide-react'),
+      'react-remove-scroll': path.resolve(__dirname, 'node_modules/react-remove-scroll'),
       '@': path.resolve(__dirname, '.'),
       'sdkwork-drive-pc-types': path.resolve(__dirname, 'packages/sdkwork-drive-pc-types/src'),
       'sdkwork-drive-pc-commons': path.resolve(__dirname, 'packages/sdkwork-drive-pc-commons/src'),
@@ -95,6 +96,20 @@ export default defineConfig({
       '@sdkwork/sdk-common': path.resolve(sdkCommonsRoot, 'sdkwork-sdk-common-typescript/src/index.ts'),
       '@sdkwork/utils': path.resolve(utilsRoot, 'packages/sdkwork-utils-typescript/dist/index.js'),
       '@sdkwork/ui-pc-react': path.resolve(uiRoot, 'src/index.ts'),
+    },
+  },
+  test: {
+    server: {
+      deps: {
+        inline: [
+          /@radix-ui\/.*/,
+          /@sdkwork\/ui-pc-react/,
+          /react-remove-scroll.*/,
+          /react-style-singleton/,
+          /use-callback-ref/,
+          /use-sidecar/,
+        ],
+      },
     },
   },
 });

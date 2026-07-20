@@ -4,6 +4,7 @@ import type { StorageProviderObjectView, StorageProviderView } from '../types/st
 import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
 import { formatMutationError } from '../utils/mutationError';
 import { useTranslation } from '../hooks/useTranslation';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface StorageObjectBrowserProps {
   provider: StorageProviderView;
@@ -18,6 +19,7 @@ export function StorageObjectBrowser({ provider, service }: StorageObjectBrowser
   const [currentPrefix, setCurrentPrefix] = useState('');
   const [pageToken, setPageToken] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const formatSize = formatDriveBytes;
 
@@ -56,7 +58,7 @@ export function StorageObjectBrowser({ provider, service }: StorageObjectBrowser
   };
 
   const deleteObject = useCallback(async (key: string) => {
-    if (!confirm(t('deleteObjectConfirm', { key }))) return;
+    setDeleteTarget(null);
     setLoading(true);
     setError(null);
     try {
@@ -70,6 +72,7 @@ export function StorageObjectBrowser({ provider, service }: StorageObjectBrowser
   }, [provider.id, currentPrefix, service, loadObjects, t]);
 
   return (
+    <>
     <div className="border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-[#171717]">
       <div className="mb-3 flex items-center gap-2">
         <button type="button" onClick={() => loadObjects('')} disabled={loading} className="rounded border px-2 py-1 text-xs">
@@ -114,7 +117,7 @@ export function StorageObjectBrowser({ provider, service }: StorageObjectBrowser
                   <td className="py-2 pr-4 text-neutral-400">{obj.lastModified ?? '-'}</td>
                   <td className="py-2">
                     {!obj.isFolder && (
-                      <button type="button" onClick={() => deleteObject(obj.key)} disabled={loading} className="text-red-600 hover:underline">
+                      <button type="button" onClick={() => setDeleteTarget(obj.key)} disabled={loading} className="text-red-600 hover:underline">
                         {t('del')}
                       </button>
                     )}
@@ -132,5 +135,16 @@ export function StorageObjectBrowser({ provider, service }: StorageObjectBrowser
         </button>
       )}
     </div>
+    <ConfirmDialog
+      busy={loading}
+      confirmLabel={t('del')}
+      message={t('deleteObjectConfirm', { key: deleteTarget ?? '' })}
+      onCancel={() => setDeleteTarget(null)}
+      onConfirm={() => { if (deleteTarget) void deleteObject(deleteTarget); }}
+      open={deleteTarget !== null}
+      title={t('del')}
+      variant="danger"
+    />
+    </>
   );
 }

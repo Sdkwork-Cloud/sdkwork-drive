@@ -2,10 +2,18 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   CircleAlert,
   LoaderCircle,
-  Network,
   RefreshCw,
   X,
 } from 'lucide-react';
+import {
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@sdkwork/ui-pc-react';
 import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
 import { isDriveRequestCancellationError, type SessionSnapshot } from 'sdkwork-drive-pc-core';
 import {
@@ -245,26 +253,13 @@ export function StorageBindingsAdminPage({
 
   return (
     <main className="flex h-full flex-1 flex-col overflow-hidden bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <header className="border-b border-neutral-200 bg-white px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900 sm:px-6 sm:py-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
-              <Network aria-hidden="true" size={20} strokeWidth={1.8} />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-lg font-semibold text-neutral-950 dark:text-white">{t('bindingsPageTitle')}</h1>
-                <span className={`${BADGE_BASE_CLASS} bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300`}>{t('bindingsSummary', { bound: boundCount, total: SPACE_TYPES.length })}</span>
-              </div>
-              <p className="mt-1 max-w-3xl text-sm leading-5 text-neutral-500 dark:text-neutral-400">{t('bindingsPageDescription')}</p>
-            </div>
-          </div>
-          <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => load()}>
-            <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
-            {t('refresh')}
-          </button>
-        </div>
-      </header>
+      <div aria-label={t('bindingsPageTitle')} className="flex shrink-0 items-center justify-between gap-3 px-4 pt-4 sm:px-6 sm:pt-6">
+        <span className={`${BADGE_BASE_CLASS} bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300`}>{t('bindingsSummary', { bound: boundCount, total: SPACE_TYPES.length })}</span>
+        <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => load()}>
+          <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
+          {t('refresh')}
+        </button>
+      </div>
 
       <div className="flex-1 overflow-auto p-4 sm:p-6">
         {notice && (
@@ -292,28 +287,7 @@ export function StorageBindingsAdminPage({
               <p className="mt-0.5 text-[11px] text-neutral-500">{t('bindingsTenantDefaultDesc')}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3 px-5 py-4">
-              {editingTenantDefault ? (
-                <>
-                  <select
-                    value={tenantProviderId}
-                    onChange={(e) => setTenantProviderId(e.target.value)}
-                    className={`${SELECT_CLASS} h-8 max-w-xs text-xs`}
-                  >
-                    {activeProviders.map((p) => {
-                      const meta = getProviderKindMeta(p.providerKind);
-                      return (
-                        <option key={p.id} value={p.id}>[{meta.shortLabel}] {p.displayName}</option>
-                      );
-                    })}
-                  </select>
-                  <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={pending || !tenantProviderId} onClick={handleSaveTenantDefault}>
-                    {pending ? t('saving') : t('save')}
-                  </button>
-                  <button type="button" className="text-xs text-neutral-500" onClick={() => setEditingTenantDefault(false)} disabled={pending}>
-                    {t('cancel')}
-                  </button>
-                </>
-              ) : tenantBinding?.providerId && tenantDefaultProvider ? (
+              {tenantBinding?.providerId && tenantDefaultProvider ? (
                 <>
                   <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${getProviderKindMeta(tenantDefaultProvider.providerKind).bgClass} ${getProviderKindMeta(tenantDefaultProvider.providerKind).textClass}`}>
                     {getProviderKindMeta(tenantDefaultProvider.providerKind).icon} {tenantDefaultProvider.displayName}
@@ -396,12 +370,11 @@ export function StorageBindingsAdminPage({
                   const SpaceTypeIcon = stMeta.icon;
                   const provider = providers.find((p) => p.id === binding.providerId);
                   const providerMeta = provider ? getProviderKindMeta(provider.providerKind) : null;
-                  const isEditing = editingType === binding.spaceType;
                   const stLabel = spaceTypeLabel(binding.spaceType);
                   const stDesc = spaceTypeDescription(binding.spaceType);
 
                   return (
-                    <tr key={binding.spaceType} className={isEditing ? 'bg-blue-50/50 dark:bg-blue-950/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50'}>
+                    <tr key={binding.spaceType} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2.5">
                           <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stMeta.bgClass} ${stMeta.textClass}`}>
@@ -424,37 +397,7 @@ export function StorageBindingsAdminPage({
                       </td>
 
                       <td className="px-5 py-3">
-                        {isEditing ? (
-                          <div className="space-y-2">
-                            <select
-                              value={editProviderId}
-                              onChange={(e) => setEditProviderId(e.target.value)}
-                              className={`${SELECT_CLASS} h-8 max-w-[240px] text-xs`}
-                            >
-                              {activeProviders.length === 0 && <option value="">{t('bindingsSelectProvider')}</option>}
-                              {activeProviders.map((p) => {
-                                const meta = getProviderKindMeta(p.providerKind);
-                                return (
-                                  <option key={p.id} value={p.id}>
-                                    [{meta.shortLabel}] {p.displayName}
-                                  </option>
-                                );
-                              })}
-                            </select>
-                            {selectedProvider && (
-                              <div className="max-w-lg rounded-md border border-neutral-200 bg-white p-2 text-[10px] text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900">
-                                <div className="font-mono leading-relaxed break-all">{selectedProvider.endpointUrl}</div>
-                                <div className="mt-0.5">
-                                  {selectedProvider.region && <span>{selectedProvider.region} · </span>}
-                                  <span>{selectedProvider.credentialConfigured ? t('configured') : t('credentialMissing')}</span>
-                                </div>
-                                {!selectedProvider.credentialConfigured && (
-                                  <div className="mt-1 text-amber-600 dark:text-amber-400">{t('bindingsCredentialWarning')}</div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ) : binding.configured && provider && providerMeta ? (
+                        {binding.configured && provider && providerMeta ? (
                           <div className="flex items-center gap-1.5">
                             <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${providerMeta.bgClass} ${providerMeta.textClass}`}>
                               {providerMeta.icon}
@@ -467,34 +410,7 @@ export function StorageBindingsAdminPage({
                       </td>
 
                       <td className="px-5 py-3">
-                        {isEditing ? (
-                          <div className="space-y-2">
-                            <div className="font-mono text-xs text-neutral-700 dark:text-neutral-300">
-                              {selectedProvider?.bucket ?? '--'}
-                            </div>
-                            <label className="flex items-center gap-2 text-[10px] text-neutral-500">
-                              <input
-                                type="checkbox"
-                                checked={useCustomPrefix}
-                                onChange={(e) => {
-                                  setUseCustomPrefix(e.target.checked);
-                                  if (!e.target.checked) {
-                                    setEditRootPrefix(defaultSpaceTypeRootPrefix(tenantId, binding.spaceType));
-                                  }
-                                }}
-                              />
-                              {t('bindingsCustomPrefix')}
-                            </label>
-                            {useCustomPrefix && (
-                              <input
-                                value={editRootPrefix}
-                                onChange={(e) => setEditRootPrefix(e.target.value)}
-                                className={`${INPUT_CLASS} h-8 font-mono text-[10px]`}
-                                placeholder={defaultSpaceTypeRootPrefix(tenantId, binding.spaceType)}
-                              />
-                            )}
-                          </div>
-                        ) : binding.configured ? (
+                        {binding.configured ? (
                           <div>
                             <span className="font-mono text-xs text-neutral-700 dark:text-neutral-300">{binding.bucket || provider?.bucket || '--'}</span>
                             {binding.storageRootPrefix && (
@@ -523,27 +439,7 @@ export function StorageBindingsAdminPage({
                       </td>
 
                       <td className="px-5 py-3 text-right">
-                        {isEditing ? (
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              className="rounded-md px-2.5 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                              onClick={() => setEditingType(null)}
-                              disabled={pending}
-                            >
-                              {t('cancel')}
-                            </button>
-                            <button
-                              type="button"
-                              className={PRIMARY_BUTTON_CLASS}
-                              onClick={handleSave}
-                              disabled={pending || !editProviderId}
-                            >
-                              {pending ? t('saving') : t('save')}
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1">
                             <button
                               type="button"
                               className="rounded-md px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
@@ -562,8 +458,7 @@ export function StorageBindingsAdminPage({
                                 {t('clear')}
                               </button>
                             )}
-                          </div>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -574,6 +469,71 @@ export function StorageBindingsAdminPage({
           </>
         )}
       </div>
+
+      <Drawer open={editingTenantDefault} onOpenChange={(open) => { if (!pending) setEditingTenantDefault(open); }}>
+        <DrawerContent size="sm">
+          <DrawerHeader>
+            <DrawerTitle>{t('bindingsTenantDefaultTitle')}</DrawerTitle>
+            <DrawerDescription>{t('bindingsTenantDefaultDesc')}</DrawerDescription>
+          </DrawerHeader>
+          <DrawerBody>
+            <label className="grid gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+              {t('bindingsSelectProvider')}
+              <select value={tenantProviderId} onChange={(event) => setTenantProviderId(event.target.value)} className={SELECT_CLASS}>
+                {activeProviders.map((provider) => {
+                  const meta = getProviderKindMeta(provider.providerKind);
+                  return <option key={provider.id} value={provider.id}>[{meta.shortLabel}] {provider.displayName}</option>;
+                })}
+              </select>
+            </label>
+          </DrawerBody>
+          <DrawerFooter>
+            <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={pending} onClick={() => setEditingTenantDefault(false)}>{t('cancel')}</button>
+            <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={pending || !tenantProviderId} onClick={() => void handleSaveTenantDefault()}>{pending ? t('saving') : t('save')}</button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={editingType !== null} onOpenChange={(open) => { if (!open && !pending) setEditingType(null); }}>
+        <DrawerContent size="md">
+          <DrawerHeader>
+            <DrawerTitle>{editingType ? spaceTypeLabel(editingType) : t('bindingsAssign')}</DrawerTitle>
+            <DrawerDescription>{t('bindingsPageDescription')}</DrawerDescription>
+          </DrawerHeader>
+          <DrawerBody className="grid content-start gap-5">
+            <label className="grid gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+              {t('bindingsSelectProvider')}
+              <select value={editProviderId} onChange={(event) => setEditProviderId(event.target.value)} className={SELECT_CLASS}>
+                {activeProviders.map((provider) => {
+                  const meta = getProviderKindMeta(provider.providerKind);
+                  return <option key={provider.id} value={provider.id}>[{meta.shortLabel}] {provider.displayName}</option>;
+                })}
+              </select>
+            </label>
+            {selectedProvider ? (
+              <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800">
+                <div className="break-all font-mono">{selectedProvider.endpointUrl}</div>
+                <div className="mt-1">{selectedProvider.region ? `${selectedProvider.region} · ` : ''}{selectedProvider.credentialConfigured ? t('configured') : t('credentialMissing')}</div>
+                {!selectedProvider.credentialConfigured ? <div className="mt-2 text-amber-600 dark:text-amber-400">{t('bindingsCredentialWarning')}</div> : null}
+              </div>
+            ) : null}
+            <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-300">
+              <input type="checkbox" checked={useCustomPrefix} onChange={(event) => { setUseCustomPrefix(event.target.checked); if (!event.target.checked && editingType) setEditRootPrefix(defaultSpaceTypeRootPrefix(tenantId, editingType)); }} />
+              {t('bindingsCustomPrefix')}
+            </label>
+            {useCustomPrefix ? (
+              <label className="grid gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                {t('bindingsCustomPrefix')}
+                <input value={editRootPrefix} onChange={(event) => setEditRootPrefix(event.target.value)} className={`${INPUT_CLASS} font-mono text-xs`} placeholder={editingType ? defaultSpaceTypeRootPrefix(tenantId, editingType) : ''} />
+              </label>
+            ) : null}
+          </DrawerBody>
+          <DrawerFooter>
+            <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={pending} onClick={() => setEditingType(null)}>{t('cancel')}</button>
+            <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={pending || !editProviderId} onClick={() => void handleSave()}>{pending ? t('saving') : t('save')}</button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       <ConfirmDialog
         open={!!clearTarget}

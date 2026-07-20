@@ -20,7 +20,7 @@ From repository root:
 pnpm check
 pnpm deploy:validate
 pnpm topology:validate
-pnpm gateway:assembly:validate
+pnpm api:assembly:validate
 pnpm db:validate
 pnpm api:envelope:check
 pnpm api:schema:check

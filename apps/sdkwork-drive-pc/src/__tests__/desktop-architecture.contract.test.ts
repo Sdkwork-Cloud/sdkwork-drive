@@ -1369,7 +1369,7 @@ describe('desktop architecture contract', () => {
     expect(rootPackageJson.scripts['dev:browser']).toBe(
       'pnpm exec sdkwork-app dev --runtime-target browser --database postgres --deployment-profile standalone',
     );
-    expect(rootPackageJson.scripts['dev:pc']).toBeUndefined();
+    expect(rootPackageJson.scripts['dev:desktop']).toBeUndefined();
     expect(rootPackageJson.scripts['dev:desktop']).toBe(
       'pnpm exec sdkwork-app dev --runtime-target desktop --database postgres --deployment-profile standalone',
     );
@@ -1378,7 +1378,7 @@ describe('desktop architecture contract', () => {
     expect(rootPackageJson.scripts['dev:browser:cloud']).toBe(
       'pnpm exec sdkwork-app dev --runtime-target browser --deployment-profile cloud',
     );
-    expect(rootPackageJson.scripts['dev:browser:postgres:cloud']).toBeUndefined();
+    expect(rootPackageJson.scripts['dev:browser:cloud']).toBeUndefined();
     expect(rootPackageJson.scripts['dev:desktop:sqlite']).toBe(
       'node scripts/sdkwork-command.mjs dev --runtime-target desktop --database sqlite --deployment-profile standalone',
     );

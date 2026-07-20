@@ -3,6 +3,7 @@ import type { StorageProviderAdminService } from '../services/storageProviderAdm
 import type { StorageProviderView } from '../types/storageProviderAdminTypes';
 import { formatMutationError } from '../utils/mutationError';
 import { useTranslation } from '../hooks/useTranslation';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface BucketInfo {
   bucket: string;
@@ -22,6 +23,7 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bucketExists, setBucketExists] = useState<boolean | null>(null);
+  const [pendingAction, setPendingAction] = useState<'create' | 'delete' | null>(null);
 
   const loadBuckets = useCallback(async () => {
     setLoading(true);
@@ -55,7 +57,7 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
   }, [provider.id, service, t]);
 
   const createBucket = useCallback(async () => {
-    if (!confirm(t('confirmCreateBucket'))) return;
+    setPendingAction(null);
     setLoading(true);
     setError(null);
     try {
@@ -70,7 +72,7 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
   }, [provider.id, service, loadBuckets, t]);
 
   const deleteBucket = useCallback(async () => {
-    if (!confirm(t('deleteBucketConfirm', { bucket: provider.bucket }))) return;
+    setPendingAction(null);
     setLoading(true);
     setError(null);
     try {
@@ -85,6 +87,7 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
   }, [provider.id, provider.bucket, service, t]);
 
   return (
+    <>
     <div className="border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-[#171717]">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold">{t('buckets')}</h3>
@@ -109,10 +112,10 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
         <button type="button" onClick={checkBucket} disabled={loading} className="rounded border px-3 py-1.5 text-xs">
           {t('checkExists')}
         </button>
-        <button type="button" onClick={createBucket} disabled={loading} className="rounded bg-emerald-600 px-3 py-1.5 text-xs text-white">
+        <button type="button" onClick={() => setPendingAction('create')} disabled={loading} className="rounded bg-emerald-600 px-3 py-1.5 text-xs text-white">
           {t('createBucket')}
         </button>
-        <button type="button" onClick={deleteBucket} disabled={loading} className="rounded bg-red-600 px-3 py-1.5 text-xs text-white">
+        <button type="button" onClick={() => setPendingAction('delete')} disabled={loading} className="rounded bg-red-600 px-3 py-1.5 text-xs text-white">
           {t('deleteBucket')}
         </button>
       </div>
@@ -128,5 +131,19 @@ export function StorageBucketPanel({ provider, service }: StorageBucketPanelProp
         </div>
       )}
     </div>
+    <ConfirmDialog
+      busy={loading}
+      confirmLabel={pendingAction === 'create' ? t('createBucket') : t('deleteBucket')}
+      message={pendingAction === 'create' ? t('confirmCreateBucket') : t('deleteBucketConfirm', { bucket: provider.bucket })}
+      onCancel={() => setPendingAction(null)}
+      onConfirm={() => {
+        if (pendingAction === 'create') void createBucket();
+        if (pendingAction === 'delete') void deleteBucket();
+      }}
+      open={pendingAction !== null}
+      title={pendingAction === 'create' ? t('createBucket') : t('deleteBucket')}
+      variant={pendingAction === 'delete' ? 'danger' : 'default'}
+    />
+    </>
   );
 }

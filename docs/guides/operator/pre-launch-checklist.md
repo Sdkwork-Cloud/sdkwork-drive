@@ -39,7 +39,7 @@ pnpm api:envelope:check
 pnpm api:schema:check
 pnpm deploy:validate
 SDKWORK_DEPLOY_VALIDATION=strict pnpm deploy:validate
-pnpm gateway:assembly:validate
+pnpm api:assembly:validate
 pnpm check:architecture-alignment
 node ../sdkwork-specs/tools/check-deploy-standard.mjs
 ```

@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Check, File, Folder, X } from 'lucide-react';
+import { ConfirmDialog, OperationDrawer } from '@sdkwork/ui-pc-react';
 import type { DriveAdminStorageSdkClient } from 'sdkwork-drive-pc-admin-core';
 import type { StorageProviderAdminService } from '../services/storageProviderAdminService';
 import type { StorageProviderBindingView, StorageProviderBucketListItemView, StorageProviderBucketView, StorageProviderCapabilitiesView, StorageProviderView } from '../types/storageProviderAdminTypes';
@@ -35,6 +37,7 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
   const [currentPrefix, setCurrentPrefix] = useState('');
   const [pageToken, setPageToken] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ kind: 'bucket' } | { key: string; kind: 'object' } | null>(null);
 
   useEffect(() => { service.getDefaultBinding(undefined).then(setBinding).catch(() => {}); }, [service]);
 
@@ -94,9 +97,9 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
 
   const loadBuckets = useCallback(async () => { setLoading(true); try { setBuckets(await service.listBuckets(provider.id)); } catch (e) { setError(formatMutationError(e, t('errorLoadBuckets'))); } finally { setLoading(false); } }, [provider.id, service, t]);
   const createBucket = useCallback(async () => { setLoading(true); try { await service.createBucket(provider.id); setBucketExists(true); await loadBuckets(); } catch (e) { setError(formatMutationError(e, t('errorCreateBucket'))); } finally { setLoading(false); } }, [provider.id, service, loadBuckets, t]);
-  const deleteBucket = useCallback(async () => { if (!window.confirm(t('deleteBucketConfirm', { bucket: provider.bucket }))) return; setLoading(true); try { await service.deleteBucket(provider.id); setBucketExists(false); setBuckets([]); } catch (e) { setError(formatMutationError(e, t('errorDeleteBucket'))); } finally { setLoading(false); } }, [provider.id, provider.bucket, service, loadBuckets, t]);
+  const deleteBucket = useCallback(async () => { setDeleteTarget(null); setLoading(true); try { await service.deleteBucket(provider.id); setBucketExists(false); setBuckets([]); } catch (e) { setError(formatMutationError(e, t('errorDeleteBucket'))); } finally { setLoading(false); } }, [provider.id, service, t]);
   const loadObjects = useCallback(async (prefix: string, token?: string) => { setLoading(true); try { const result = await service.listObjects(provider.id, { prefix, pageToken: token }); if (token) setObjects((prev) => [...prev, ...result.items]); else setObjects(result.items); setPageToken(result.nextPageToken || null); setHasMore(result.hasMore); setCurrentPrefix(prefix); } catch (e) { setError(formatMutationError(e, t('errorLoadObjects'))); } finally { setLoading(false); } }, [provider.id, service, t]);
-  const deleteObject = useCallback(async (key: string) => { if (!window.confirm(t('deleteObjectConfirm', { key }))) return; setLoading(true); try { await service.deleteObject(provider.id, key); await loadObjects(currentPrefix); } catch (e) { setError(formatMutationError(e, t('errorDeleteObject'))); } finally { setLoading(false); } }, [provider.id, currentPrefix, service, loadObjects, t]);
+  const deleteObject = useCallback(async (key: string) => { setDeleteTarget(null); setLoading(true); try { await service.deleteObject(provider.id, key); await loadObjects(currentPrefix); } catch (e) { setError(formatMutationError(e, t('errorDeleteObject'))); } finally { setLoading(false); } }, [provider.id, currentPrefix, service, loadObjects, t]);
 
   const tabClass = (d: DrawerTab) => `px-3 py-2 text-xs font-medium border-b-2 transition-colors ${tab === d ? 'border-blue-600 text-blue-600' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`;
 
@@ -119,37 +122,33 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex h-full w-full max-w-xl flex-col bg-white shadow-2xl dark:bg-neutral-900">
-        <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4 dark:border-neutral-800">
-          <div className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold ${meta.bgClass} ${meta.textClass}`}>{meta.icon}</div>
-            <div>
-              <h2 className="text-sm font-semibold">{provider.displayName}</h2>
-              <div className="flex items-center gap-2 text-xs text-neutral-500">
-                <span className="font-mono">{provider.id}</span>
-                <span className={`${BADGE_BASE_CLASS} ${health.bgClass} ${health.textClass}`}><span className={`h-1.5 w-1.5 rounded-full ${health.dotClass}`} />{t(`health${provider.healthStatus ? provider.healthStatus.charAt(0).toUpperCase() + provider.healthStatus.slice(1) : 'Unknown'}`)}</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+    <>
+      <OperationDrawer
+        actions={(
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={pending} onClick={() => onTestProvider(provider.id)}>{t('test')}</button>
             {provider.status === 'active' ? <button type="button" className="rounded-md border border-amber-300 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50" disabled={pending} onClick={() => onDeactivateProvider(provider.id)}>{t('disable')}</button>
               : <button type="button" className="rounded-md border border-emerald-300 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50" disabled={pending} onClick={() => onActivateProvider(provider.id)}>{t('enable')}</button>}
-            <button type="button" className="text-neutral-400 hover:text-neutral-600" onClick={onClose}><svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
           </div>
+        )}
+        badge={<span className={`${BADGE_BASE_CLASS} ${health.bgClass} ${health.textClass}`}><span className={`h-1.5 w-1.5 rounded-full ${health.dotClass}`} />{t(`health${provider.healthStatus ? provider.healthStatus.charAt(0).toUpperCase() + provider.healthStatus.slice(1) : 'Unknown'}`)}</span>}
+        description={<span className="font-mono text-xs">{provider.id}</span>}
+        onOpenChange={(open) => { if (!open && !loading) onClose(); }}
+        open
+        size="lg"
+        slotProps={{ body: { className: 'p-0 xl:p-0' } }}
+        title={provider.displayName}
+      >
+
+        <div className="sticky top-0 z-10 flex border-b border-neutral-200 bg-white px-5 dark:border-neutral-800 dark:bg-neutral-900" role="tablist">
+          <button aria-selected={tab === 'overview'} className={tabClass('overview')} onClick={() => setTab('overview')} role="tab" type="button">{t('overview')}</button>
+          <button aria-selected={tab === 'buckets'} className={tabClass('buckets')} onClick={() => { setTab('buckets'); void loadBuckets(); }} role="tab" type="button">{t('buckets')}</button>
+          <button aria-selected={tab === 'files'} className={tabClass('files')} onClick={() => { setTab('files'); void loadObjects(''); }} role="tab" type="button">{t('files')}</button>
         </div>
 
-        <div className="flex border-b border-neutral-200 px-5 dark:border-neutral-800">
-          <button className={tabClass('overview')} onClick={() => setTab('overview')}>{t('overview')}</button>
-          <button className={tabClass('buckets')} onClick={() => { setTab('buckets'); loadBuckets(); }}>{t('buckets')}</button>
-          <button className={tabClass('files')} onClick={() => { setTab('files'); loadObjects(''); }}>{t('files')}</button>
-        </div>
+        {error && <div className="mx-5 mt-3 flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300" role="alert">{error}<button aria-label={t('cancel')} className="ml-auto rounded p-1 hover:bg-red-100 dark:hover:bg-red-900/40" onClick={() => setError(null)} title={t('cancel')} type="button"><X aria-hidden="true" size={14} /></button></div>}
 
-        {error && <div className="mx-5 mt-3 flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300">{error}<button className="ml-auto" onClick={() => setError(null)}>✕</button></div>}
-
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="p-5">
           {tab === 'overview' && (
             <div className="space-y-4">
               <div className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">
@@ -176,14 +175,14 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
                     <div key={check.label} className="flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2 text-xs dark:bg-neutral-800/60">
                       <span className="font-medium text-neutral-700 dark:text-neutral-200">{check.label}</span>
                       <span className={`flex items-center gap-1.5 ${check.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                        {check.ok ? '✓' : '!'} {check.detail}
+                        {check.ok ? <Check aria-hidden="true" size={14} /> : '!'} {check.detail}
                       </span>
                     </div>
                   ))}
                 </div>
                 {diagnosticsLoaded && bucket && (
                   <div className={`mt-3 flex items-center gap-2 rounded p-2 text-xs ${bucket.exists ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300' : 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300'}`}>
-                    {bucket.exists ? `✓ ${t('bucketReachable')}` : `✕ ${t('bucketUnreachable')}`}
+                    {bucket.exists ? <Check aria-hidden="true" size={14} /> : <X aria-hidden="true" size={14} />}{bucket.exists ? t('bucketReachable') : t('bucketUnreachable')}
                   </div>
                 )}
               </div>
@@ -236,7 +235,7 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
               <div className="flex flex-wrap gap-2">
                 <button onClick={headBucket} disabled={loading} className={SECONDARY_BUTTON_CLASS}>{t('checkExists')}</button>
                 <button onClick={createBucket} disabled={loading} className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50">{t('createBucket')}</button>
-                <button onClick={deleteBucket} disabled={loading} className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50">{t('deleteBucket')}</button>
+                <button onClick={() => setDeleteTarget({ kind: 'bucket' })} disabled={loading} className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50">{t('deleteBucket')}</button>
                 <button onClick={loadBuckets} disabled={loading} className={SECONDARY_BUTTON_CLASS}>{t('listAll')}</button>
               </div>
               {buckets.length > 0 && <div className="rounded-md border dark:border-neutral-700">{buckets.map((b) => <div key={b.bucket} className={`flex items-center justify-between border-b px-3 py-2 text-xs dark:border-neutral-800 ${b.configured ? 'bg-blue-50 dark:bg-blue-950/20' : ''}`}><span>{b.bucket}{b.configured && <span className="ml-2 text-blue-600">({t('configured')})</span>}</span>{b.creationDate && <span className="text-neutral-400">{b.creationDate}</span>}</div>)}</div>}
@@ -255,10 +254,10 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
                 {objects.length === 0 && !loading && <div className="px-3 py-6 text-center text-xs text-neutral-400">{t('empty')}</div>}
                 {objects.map((obj) => (
                   <div key={obj.key} className="grid grid-cols-[1fr_80px_120px_60px] gap-2 border-t px-3 py-1.5 text-xs hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800">
-                    <span className="truncate">{obj.isFolder ? <button onClick={() => loadObjects(obj.key)} className="text-blue-600 hover:underline">📁 {obj.key.split('/').filter(Boolean).pop()}/</button> : <span>📄 {obj.key.split('/').pop()}</span>}</span>
+                    <span className="truncate">{obj.isFolder ? <button onClick={() => loadObjects(obj.key)} className="inline-flex items-center gap-1 text-blue-600 hover:underline" type="button"><Folder aria-hidden="true" size={14} />{obj.key.split('/').filter(Boolean).pop()}/</button> : <span className="inline-flex items-center gap-1"><File aria-hidden="true" size={14} />{obj.key.split('/').pop()}</span>}</span>
                     <span className="text-right text-neutral-500">{obj.isFolder ? '-' : formatDriveBytes(obj.sizeBytes)}</span>
                     <span className="text-right text-neutral-400">{obj.lastModified || '-'}</span>
-                    <span className="text-right">{!obj.isFolder && <button onClick={() => deleteObject(obj.key)} className="text-red-600 hover:text-red-800">{t('del')}</button>}</span>
+                    <span className="text-right">{!obj.isFolder && <button onClick={() => setDeleteTarget({ key: obj.key, kind: 'object' })} className="text-red-600 hover:text-red-800">{t('del')}</button>}</span>
                   </div>
                 ))}
                 {hasMore && <div className="border-t px-3 py-2 dark:border-neutral-800"><button onClick={() => loadObjects(currentPrefix, pageToken || undefined)} disabled={loading} className="text-xs text-blue-600 hover:underline">{t('loadMore')}</button></div>}
@@ -266,8 +265,27 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </OperationDrawer>
+    <ConfirmDialog
+      cancelLabel={t('cancel')}
+      closeOnConfirm={false}
+      confirmLabel={deleteTarget?.kind === 'bucket' ? t('deleteBucket') : t('del')}
+      confirmLoading={loading}
+      description={deleteTarget?.kind === 'bucket'
+        ? t('deleteBucketConfirm', { bucket: provider.bucket })
+        : deleteTarget?.kind === 'object'
+          ? t('deleteObjectConfirm', { key: deleteTarget.key })
+          : undefined}
+      onConfirm={() => {
+        if (deleteTarget?.kind === 'bucket') void deleteBucket();
+        if (deleteTarget?.kind === 'object') void deleteObject(deleteTarget.key);
+      }}
+      onOpenChange={(open) => { if (!open && !loading) setDeleteTarget(null); }}
+      open={Boolean(deleteTarget)}
+      title={deleteTarget?.kind === 'bucket' ? t('deleteBucket') : t('del')}
+      tone="danger"
+    />
+    </>
   );
 }
 
@@ -284,8 +302,8 @@ function CapCard({ label, ok, desc }: { label: string; ok: boolean; desc?: strin
   return (
     <div className={`rounded border p-2 text-xs ${ok ? 'border-emerald-200 bg-emerald-50/50' : 'border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900/50'}`}>
       <div className="flex items-center gap-1">
-        {ok ? <svg className="h-3 w-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-          : <svg className="h-3 w-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>}
+        {ok ? <Check aria-hidden="true" className="text-emerald-500" size={12} />
+          : <X aria-hidden="true" className="text-neutral-400" size={12} />}
         <span className="font-medium">{label}</span>
       </div>
       {desc && <p className="mt-0.5 text-[10px] text-neutral-500">{desc}</p>}

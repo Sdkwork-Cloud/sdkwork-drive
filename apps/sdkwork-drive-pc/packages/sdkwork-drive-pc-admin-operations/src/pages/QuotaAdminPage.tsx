@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Database, Files, Gauge, HardDrive, RefreshCw, Save, Trash2 } from 'lucide-react';
+import {
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@sdkwork/ui-pc-react';
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
 import { isDriveRequestCancellationError, type SessionSnapshot } from 'sdkwork-drive-pc-core';
 import { formatDriveBytes } from 'sdkwork-drive-pc-commons';
@@ -43,6 +52,7 @@ export function QuotaAdminPage({ backendSdkClient, getSession }: QuotaAdminPageP
   const [notice, setNotice] = useState<{ type: 'error' | 'success'; message: string } | undefined>();
   const [quotaInput, setQuotaInput] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [policyEditorOpen, setPolicyEditorOpen] = useState(false);
   const [clearConfirmationOpen, setClearConfirmationOpen] = useState(false);
 
   useEffect(() => {
@@ -73,6 +83,7 @@ export function QuotaAdminPage({ backendSdkClient, getSession }: QuotaAdminPageP
       const updated = await service.updateQuotaPolicy({ quotaBytes });
       setSummary(updated);
       setQuotaInput(String(updated.quotaBytes ?? quotaBytes));
+      setPolicyEditorOpen(false);
       setNotice({ type: 'success', message: t('quotaPolicySaved') });
     } catch (err) {
       if (!isDriveRequestCancellationError(err)) setNotice({ type: 'error', message: t('noticeOperationFailed') });
@@ -111,10 +122,16 @@ export function QuotaAdminPage({ backendSdkClient, getSession }: QuotaAdminPageP
         description={t('quotaPageDescription')}
         toneClassName="bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300"
         actions={(
-          <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => setRefreshKey((current) => current + 1)}>
-            <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
-            {t('refresh')}
-          </button>
+          <>
+            <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={loading || !summary} onClick={() => setPolicyEditorOpen(true)}>
+              <Save aria-hidden="true" size={15} />
+              {t('saveQuotaPolicy')}
+            </button>
+            <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => setRefreshKey((current) => current + 1)}>
+              <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
+              {t('refresh')}
+            </button>
+          </>
         )}
       />
 
@@ -151,22 +168,9 @@ export function QuotaAdminPage({ backendSdkClient, getSession }: QuotaAdminPageP
                 <h2 id="quota-policy-title" className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">{t('quotaPolicyTitle')}</h2>
                 <p className="mt-1 text-xs leading-5 text-neutral-500 dark:text-neutral-400">{t('quotaPolicyHint')}</p>
               </div>
-              <div className="grid gap-4 p-5 lg:grid-cols-[minmax(260px,420px)_1fr] lg:items-end">
-                <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                  {t('quotaCapLabel')}
-                  <input type="number" min="1" inputMode="numeric" className={`${INPUT_CLASS} font-mono`} value={quotaInput} onChange={(event) => setQuotaInput(event.target.value)} placeholder={t('quotaBytesPlaceholder')} />
-                  <span className="text-[11px] font-normal text-neutral-500 dark:text-neutral-400">{t('quotaInputPreview', { value: quotaPreview })}</span>
-                </label>
-                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                  <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={pending} onClick={() => void savePolicy()}>
-                    <Save aria-hidden="true" size={15} />
-                    {t('saveQuotaPolicy')}
-                  </button>
-                  <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={pending || !summary.quotaBytes} onClick={() => setClearConfirmationOpen(true)}>
-                    <Trash2 aria-hidden="true" size={15} />
-                    {t('clearQuotaPolicy')}
-                  </button>
-                </div>
+              <div className="flex flex-wrap items-center justify-between gap-4 p-5">
+                <div><span className="text-xs text-neutral-500 dark:text-neutral-400">{t('quotaCapLabel')}</span><strong className="mt-1 block text-sm text-neutral-900 dark:text-white">{summary.quotaBytes ? formatDriveBytes(summary.quotaBytes) : t('quotaUnlimited')}</strong></div>
+                <div className="flex items-center gap-2"><button type="button" className={PRIMARY_BUTTON_CLASS} disabled={pending} onClick={() => setPolicyEditorOpen(true)}><Save aria-hidden="true" size={15} />{t('saveQuotaPolicy')}</button><button type="button" className={SECONDARY_BUTTON_CLASS} disabled={pending || !summary.quotaBytes} onClick={() => setClearConfirmationOpen(true)}><Trash2 aria-hidden="true" size={15} />{t('clearQuotaPolicy')}</button></div>
               </div>
             </section>
           </>
@@ -174,6 +178,20 @@ export function QuotaAdminPage({ backendSdkClient, getSession }: QuotaAdminPageP
           <div className={CARD_CLASS}><EmptyState title={t('quotaEmpty')} description={t('quotaPageDescription')} icon={Gauge} /></div>
         )}
       </div>
+
+      <Drawer open={policyEditorOpen} onOpenChange={(open) => { if (!pending) setPolicyEditorOpen(open); }}>
+        <DrawerContent size="sm">
+          <DrawerHeader><DrawerTitle>{t('quotaPolicyTitle')}</DrawerTitle><DrawerDescription>{t('quotaPolicyHint')}</DrawerDescription></DrawerHeader>
+          <DrawerBody>
+            <label className="flex min-w-0 flex-col gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+              {t('quotaCapLabel')}
+              <input autoFocus type="number" min="1" inputMode="numeric" className={`${INPUT_CLASS} font-mono`} value={quotaInput} onChange={(event) => setQuotaInput(event.target.value)} placeholder={t('quotaBytesPlaceholder')} />
+              <span className="text-[11px] font-normal text-neutral-500 dark:text-neutral-400">{t('quotaInputPreview', { value: quotaPreview })}</span>
+            </label>
+          </DrawerBody>
+          <DrawerFooter><button type="button" className={SECONDARY_BUTTON_CLASS} disabled={pending} onClick={() => setPolicyEditorOpen(false)}>{t('cancel')}</button><button type="button" className={PRIMARY_BUTTON_CLASS} disabled={pending} onClick={() => void savePolicy()}>{pending ? t('saving') : t('saveQuotaPolicy')}</button></DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       <OperationsConfirmDialog
         open={clearConfirmationOpen}

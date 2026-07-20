@@ -64,6 +64,7 @@
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
     "jsdom": "^26.1.0",
+    "react-remove-scroll": "^2.7.2",
     "typescript": "~5.8.2",
     "vite": "^6.2.3",
     "vitest": "^3.2.6"

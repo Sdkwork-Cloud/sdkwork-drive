@@ -1,14 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
-  Check,
   Pencil,
   Plus,
   RefreshCw,
   Search,
   Tags,
   Trash2,
-  X,
 } from 'lucide-react';
+import {
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@sdkwork/ui-pc-react';
 import type { DriveBackendSdkClient } from 'sdkwork-drive-pc-admin-core';
 import { isDriveRequestCancellationError, type SessionSnapshot } from 'sdkwork-drive-pc-core';
 import { OperationsConfirmDialog } from '../components/OperationsConfirmDialog';
@@ -51,6 +58,7 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
   const [displayName, setDisplayName] = useState('');
   const [color, setColor] = useState('#3366FF');
   const [description, setDescription] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
   const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
   const [editDisplayName, setEditDisplayName] = useState('');
   const [editColor, setEditColor] = useState('');
@@ -103,6 +111,7 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
       setDisplayName('');
       setColor('#3366FF');
       setDescription('');
+      setCreateOpen(false);
       await loadPage();
       setNotice({ type: 'success', message: t('labelCreated') });
     } catch (err) {
@@ -177,38 +186,21 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
         description={t('labelsPageDescription')}
         toneClassName="bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"
         actions={(
-          <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => setRefreshKey((current) => current + 1)}>
-            <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
-            {t('refresh')}
-          </button>
+          <>
+            <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={pending} onClick={() => setCreateOpen(true)}>
+              <Plus aria-hidden="true" size={15} />
+              {t('createLabelAction')}
+            </button>
+            <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => setRefreshKey((current) => current + 1)}>
+              <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
+              {t('refresh')}
+            </button>
+          </>
         )}
       />
 
       <div className="flex-1 space-y-4 overflow-auto p-4 sm:p-6">
         {notice ? <NoticeBanner type={notice.type} message={notice.message} dismissLabel={t('dismiss')} onDismiss={() => setNotice(undefined)} /> : null}
-
-        <section className={`${CARD_CLASS} overflow-hidden`} aria-labelledby="labels-create-title">
-          <div className={`${CARD_HEADER_CLASS} flex items-center gap-2`}>
-            <Plus aria-hidden="true" className="text-violet-600 dark:text-violet-400" size={16} />
-            <h2 id="labels-create-title" className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">{t('createLabelTitle')}</h2>
-          </div>
-          <form className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-6 xl:items-end" onSubmit={createLabel}>
-            <LabelField label={t('labelIdLabel')}><input className={`${INPUT_CLASS} font-mono text-xs`} value={id} onChange={(event) => setId(event.target.value)} placeholder={t('labelIdPlaceholder')} /></LabelField>
-            <LabelField label={t('labelKeyLabel')}><input className={`${INPUT_CLASS} font-mono text-xs`} value={labelKey} onChange={(event) => setLabelKey(event.target.value)} placeholder={t('labelKeyPlaceholder')} /></LabelField>
-            <LabelField label={t('labelNameLabel')}><input className={INPUT_CLASS} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder={t('labelNamePlaceholder')} /></LabelField>
-            <LabelField label={t('labelColorLabel')}>
-              <div className="flex items-center gap-2">
-                <input type="color" value={color} onChange={(event) => setColor(event.target.value)} className="h-9 w-11 shrink-0 cursor-pointer rounded-md border border-neutral-300 bg-white p-1 dark:border-neutral-600 dark:bg-neutral-900" />
-                <input className={`${INPUT_CLASS} font-mono text-xs`} value={color} onChange={(event) => setColor(event.target.value)} placeholder={t('labelColorPlaceholder')} />
-              </div>
-            </LabelField>
-            <LabelField label={t('labelDescriptionLabel')}><input className={INPUT_CLASS} value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t('labelDescriptionPlaceholder')} /></LabelField>
-            <button type="submit" className={PRIMARY_BUTTON_CLASS} disabled={pending || !id.trim() || !labelKey.trim() || !displayName.trim()}>
-              <Plus aria-hidden="true" size={15} />
-              {t('createLabelAction')}
-            </button>
-          </form>
-        </section>
 
         <section className={`${CARD_CLASS} overflow-hidden`} aria-labelledby="labels-list-title">
           <div className={`${CARD_HEADER_CLASS} flex flex-wrap items-center justify-between gap-3`}>
@@ -236,23 +228,15 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
                 </tr></thead>
                 <tbody>
                   {filteredLabels.map((label) => {
-                    const editing = editingLabelId === label.id;
                     return (
-                      <tr key={label.id} className={`${TABLE_ROW_CLASS} ${editing ? 'bg-blue-50/40 dark:bg-blue-950/10' : ''}`}>
+                      <tr key={label.id} className={TABLE_ROW_CLASS}>
                         <td className="px-5 py-3"><div className="font-mono text-xs font-medium text-neutral-800 dark:text-neutral-100">{label.labelKey}</div><div className="mt-0.5 font-mono text-[10px] text-neutral-400">{label.id}</div></td>
-                        <td className="px-5 py-3">{editing ? <input className={INPUT_CLASS} value={editDisplayName} onChange={(event) => setEditDisplayName(event.target.value)} /> : <span className="text-sm font-medium text-neutral-800 dark:text-neutral-100">{label.displayName}</span>}</td>
-                        <td className="px-5 py-3">{editing ? <input className={`${INPUT_CLASS} font-mono text-xs`} value={editColor} onChange={(event) => setEditColor(event.target.value)} placeholder={t('labelColorPlaceholder')} /> : <span className="inline-flex items-center gap-2 font-mono text-xs text-neutral-600 dark:text-neutral-300"><span className="h-4 w-4 rounded border border-black/10 shadow-sm" style={{ backgroundColor: label.color || 'transparent' }} /><span>{label.color || '--'}</span></span>}</td>
-                        <td className="max-w-sm px-5 py-3">{editing ? <input className={INPUT_CLASS} value={editDescription} onChange={(event) => setEditDescription(event.target.value)} placeholder={t('labelDescriptionPlaceholder')} /> : <span className="line-clamp-2 text-xs leading-5 text-neutral-600 dark:text-neutral-400">{label.description || '--'}</span>}</td>
+                        <td className="px-5 py-3"><span className="text-sm font-medium text-neutral-800 dark:text-neutral-100">{label.displayName}</span></td>
+                        <td className="px-5 py-3"><span className="inline-flex items-center gap-2 font-mono text-xs text-neutral-600 dark:text-neutral-300"><span className="h-4 w-4 rounded border border-black/10 shadow-sm" style={{ backgroundColor: label.color || 'transparent' }} /><span>{label.color || '--'}</span></span></td>
+                        <td className="max-w-sm px-5 py-3"><span className="line-clamp-2 text-xs leading-5 text-neutral-600 dark:text-neutral-400">{label.description || '--'}</span></td>
                         <td className="px-5 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            {editing ? (
-                              <>
-                                <button type="button" className={GHOST_BUTTON_CLASS} aria-label={t('saveLabelAction')} title={t('saveLabelAction')} disabled={pending || !editDisplayName.trim()} onClick={() => void saveEdit()}><Check aria-hidden="true" size={15} />{t('saveLabelAction')}</button>
-                                <button type="button" className={GHOST_BUTTON_CLASS} aria-label={t('cancelLabelAction')} title={t('cancelLabelAction')} disabled={pending} onClick={cancelEdit}><X aria-hidden="true" size={15} /></button>
-                              </>
-                            ) : (
-                              <button type="button" className={GHOST_BUTTON_CLASS} aria-label={t('editLabelAction')} title={t('editLabelAction')} disabled={pending} onClick={() => beginEdit(label)}><Pencil aria-hidden="true" size={15} />{t('editLabelAction')}</button>
-                            )}
+                            <button type="button" className={GHOST_BUTTON_CLASS} aria-label={t('editLabelAction')} title={t('editLabelAction')} disabled={pending} onClick={() => beginEdit(label)}><Pencil aria-hidden="true" size={15} />{t('editLabelAction')}</button>
                             <button type="button" className={`${GHOST_BUTTON_CLASS} text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30`} aria-label={t('deleteLabelAction')} title={t('deleteLabelAction')} disabled={pending} onClick={() => setDeleteTarget(label)}><Trash2 aria-hidden="true" size={15} /></button>
                           </div>
                         </td>
@@ -273,6 +257,38 @@ export function LabelsAdminPage({ backendSdkClient, getSession }: LabelsAdminPag
           ) : null}
         </section>
       </div>
+
+      <Drawer open={createOpen || editingLabelId !== null} onOpenChange={(open) => { if (!open && !pending) { setCreateOpen(false); cancelEdit(); } }}>
+        <DrawerContent size="md">
+          <form className="flex min-h-0 flex-1 flex-col" onSubmit={(event) => { if (editingLabelId) { event.preventDefault(); void saveEdit(); } else { void createLabel(event); } }}>
+            <DrawerHeader>
+              <DrawerTitle>{editingLabelId ? t('editLabelAction') : t('createLabelTitle')}</DrawerTitle>
+              <DrawerDescription>{t('labelsPageDescription')}</DrawerDescription>
+            </DrawerHeader>
+            <DrawerBody className="grid content-start gap-4">
+              {editingLabelId ? (
+                <>
+                  <LabelField label={t('labelNameLabel')}><input autoFocus className={INPUT_CLASS} value={editDisplayName} onChange={(event) => setEditDisplayName(event.target.value)} /></LabelField>
+                  <LabelField label={t('labelColorLabel')}><div className="flex items-center gap-2"><input type="color" value={editColor || '#3366FF'} onChange={(event) => setEditColor(event.target.value)} className="h-9 w-11 shrink-0 cursor-pointer rounded-md border border-neutral-300 bg-white p-1 dark:border-neutral-600 dark:bg-neutral-900" /><input className={`${INPUT_CLASS} font-mono text-xs`} value={editColor} onChange={(event) => setEditColor(event.target.value)} placeholder={t('labelColorPlaceholder')} /></div></LabelField>
+                  <LabelField label={t('labelDescriptionLabel')}><input className={INPUT_CLASS} value={editDescription} onChange={(event) => setEditDescription(event.target.value)} placeholder={t('labelDescriptionPlaceholder')} /></LabelField>
+                </>
+              ) : (
+                <>
+                  <LabelField label={t('labelIdLabel')}><input autoFocus className={`${INPUT_CLASS} font-mono text-xs`} value={id} onChange={(event) => setId(event.target.value)} placeholder={t('labelIdPlaceholder')} /></LabelField>
+                  <LabelField label={t('labelKeyLabel')}><input className={`${INPUT_CLASS} font-mono text-xs`} value={labelKey} onChange={(event) => setLabelKey(event.target.value)} placeholder={t('labelKeyPlaceholder')} /></LabelField>
+                  <LabelField label={t('labelNameLabel')}><input className={INPUT_CLASS} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder={t('labelNamePlaceholder')} /></LabelField>
+                  <LabelField label={t('labelColorLabel')}><div className="flex items-center gap-2"><input type="color" value={color} onChange={(event) => setColor(event.target.value)} className="h-9 w-11 shrink-0 cursor-pointer rounded-md border border-neutral-300 bg-white p-1 dark:border-neutral-600 dark:bg-neutral-900" /><input className={`${INPUT_CLASS} font-mono text-xs`} value={color} onChange={(event) => setColor(event.target.value)} placeholder={t('labelColorPlaceholder')} /></div></LabelField>
+                  <LabelField label={t('labelDescriptionLabel')}><input className={INPUT_CLASS} value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t('labelDescriptionPlaceholder')} /></LabelField>
+                </>
+              )}
+            </DrawerBody>
+            <DrawerFooter>
+              <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={pending} onClick={() => { setCreateOpen(false); cancelEdit(); }}>{t('cancel')}</button>
+              <button type="submit" className={PRIMARY_BUTTON_CLASS} disabled={pending || (editingLabelId ? !editDisplayName.trim() : !id.trim() || !labelKey.trim() || !displayName.trim())}>{pending ? t('saving') : editingLabelId ? t('saveLabelAction') : t('createLabelAction')}</button>
+            </DrawerFooter>
+          </form>
+        </DrawerContent>
+      </Drawer>
 
       <OperationsConfirmDialog
         open={deleteTarget !== null}

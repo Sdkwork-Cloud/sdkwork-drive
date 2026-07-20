@@ -178,9 +178,6 @@ importers:
       '@sdkwork/iam-app-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript
-      '@sdkwork/runtime-bootstrap':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-appbase/packages/common/foundation/sdkwork-runtime-bootstrap
       '@sdkwork/sdk-common':
         specifier: ^1.0.2
         version: link:../../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
@@ -611,6 +608,9 @@ importers:
       jsdom:
         specifier: ^26.1.0
         version: 26.1.0
+      react-remove-scroll:
+        specifier: ^2.7.2
+        version: 2.7.2(@types/react@19.2.14)(react@19.2.4)
       typescript:
         specifier: ~5.8.2
         version: 5.8.3
@@ -642,6 +642,9 @@ importers:
       '@sdkwork/drive-backend-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript
+      '@sdkwork/ui-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
@@ -663,6 +666,9 @@ importers:
       '@sdkwork/drive-admin-storage-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-drive-admin-storage-sdk/sdkwork-drive-admin-storage-sdk-typescript
+      '@sdkwork/ui-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript

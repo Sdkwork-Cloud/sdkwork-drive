@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Eye, EyeOff, X } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
+import { OperationDrawer } from '@sdkwork/ui-pc-react';
 import type { CreateStorageProviderInput, StorageProviderKind, StorageProviderView, UpdateStorageProviderInput } from '../types/storageProviderAdminTypes';
 import {
   buildProviderEndpointUrl,
@@ -9,7 +10,7 @@ import {
 } from '../utils/providerKindConfig';
 import { isCredentialRefMasked } from '../utils/credentialRefUtils';
 import { buildProviderIdWithUuid, createProviderUuidSuffix, resolveProviderKindSlug } from '../utils/providerIdUtils';
-import { CHECKBOX_CLASS, ICON_BUTTON_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from '../utils/uiPrimitives';
+import { CHECKBOX_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from '../utils/uiPrimitives';
 import { StorageProviderCredentialFields } from './StorageProviderCredentialFields';
 import { FormNoticeBanner } from './FormNoticeBanner';
 import { formatMutationError } from '../utils/mutationError';
@@ -287,22 +288,29 @@ export function StorageProviderEditor({
   const allKinds = getAllProviderKindMeta();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4">
-      <button type="button" className="fixed inset-0 bg-black/45" aria-label={t('cancel')} onClick={onClose} />
-      <div
-        className="relative z-10 flex h-[100dvh] w-full max-w-6xl flex-col border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-neutral-900 sm:h-[min(90vh,900px)] sm:rounded-lg"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="storage-provider-editor-title"
-      >
-        <div className="flex shrink-0 items-center justify-between border-b border-neutral-100 px-4 py-3 dark:border-neutral-800 sm:px-6 sm:py-4">
-          <h2 id="storage-provider-editor-title" className="text-base font-semibold text-neutral-950 dark:text-white">{provider ? t('editorEditTitle') : t('editorNewTitle')}</h2>
-          <button type="button" className={ICON_BUTTON_CLASS} aria-label={t('cancel')} title={t('cancel')} onClick={onClose}>
-            <X aria-hidden="true" size={18} />
-          </button>
+    <OperationDrawer
+      description={isEditing ? `${meta.label} / ${provider?.id ?? ''}` : t('stepType')}
+      footer={(
+        <div className="flex w-full flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className={`flex h-6 w-6 items-center justify-center rounded text-[9px] font-bold ${meta.bgClass} ${meta.textClass}`}>{meta.icon}</div>
+            <span className="truncate text-xs text-neutral-500">{meta.label}</span>
+          </div>
+          <div className="ml-auto flex shrink-0 gap-2">
+            <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={submitting} onClick={onClose}>{t('cancel')}</button>
+            <button type="submit" className={PRIMARY_BUTTON_CLASS} disabled={submitting} form="storage-provider-editor-form">
+              {submitting ? t('saving') : provider ? t('save') : t('create')}
+            </button>
+          </div>
         </div>
-
-        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
+      )}
+      onOpenChange={(open) => { if (!open && !submitting) onClose(); }}
+      open
+      size="full"
+      slotProps={{ body: { className: 'overflow-hidden p-0 xl:p-0' } }}
+      title={provider ? t('editorEditTitle') : t('editorNewTitle')}
+    >
+        <form id="storage-provider-editor-form" onSubmit={submit} className="flex h-full min-h-0 flex-col overflow-hidden sm:flex-row">
           {!isEditing && (
             <div className="w-full shrink-0 overflow-x-auto border-b border-neutral-100 bg-neutral-50 px-3 py-2.5 dark:border-neutral-800 dark:bg-neutral-950 sm:!w-64 sm:overflow-y-auto sm:border-b-0 sm:border-r sm:py-3">
               <div className="mb-2 px-1 text-[10px] font-semibold text-neutral-400 dark:text-neutral-500">
@@ -497,22 +505,9 @@ export function StorageProviderEditor({
               )}
             </div>
 
-            <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-neutral-100 px-4 py-3 dark:border-neutral-800 sm:px-6">
-              <div className="flex min-w-0 items-center gap-2">
-                <div className={`flex h-6 w-6 items-center justify-center rounded text-[9px] font-bold ${meta.bgClass} ${meta.textClass}`}>{meta.icon}</div>
-                <span className="truncate text-xs text-neutral-500">{meta.label}</span>
-              </div>
-              <div className="ml-auto flex shrink-0 gap-2">
-                <button type="button" className={SECONDARY_BUTTON_CLASS} onClick={onClose}>{t('cancel')}</button>
-                <button type="button" className={PRIMARY_BUTTON_CLASS} disabled={submitting} onClick={doSubmit}>
-                  {submitting ? t('saving') : provider ? t('save') : t('create')}
-                </button>
-              </div>
-            </div>
           </div>
         </form>
-      </div>
-    </div>
+    </OperationDrawer>
   );
 }
 

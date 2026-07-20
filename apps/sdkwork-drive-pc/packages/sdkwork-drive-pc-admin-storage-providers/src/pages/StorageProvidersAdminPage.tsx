@@ -191,20 +191,11 @@ export function StorageProvidersAdminPage({
 
   return (
     <main className="flex h-full flex-1 flex-col overflow-hidden bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <header className="border-b border-neutral-200 bg-white px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900 sm:px-6 sm:py-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex w-full min-w-0 items-start gap-3 sm:flex-1">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
-              <HardDrive aria-hidden="true" size={20} strokeWidth={1.8} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-lg font-semibold text-neutral-950 dark:text-white">{t('pageTitle')}</h1>
-                {!loading && <span className={`${BADGE_BASE_CLASS} bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300`}>{t('headerProviderCount', { count: providers.length })}</span>}
-                {issueCount > 0 && <span className={`${BADGE_BASE_CLASS} bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200`}>{t('issuesSummary', { count: issueCount })}</span>}
-              </div>
-              <p className="mt-1 max-w-3xl text-sm leading-5 text-neutral-500 dark:text-neutral-400">{t('pageDescription')}</p>
-            </div>
+      <div aria-label={t('pageTitle')} className="px-4 pt-4 sm:px-6 sm:pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {!loading && <span className={`${BADGE_BASE_CLASS} bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300`}>{t('headerProviderCount', { count: providers.length })}</span>}
+            {issueCount > 0 && <span className={`${BADGE_BASE_CLASS} bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200`}>{t('issuesSummary', { count: issueCount })}</span>}
           </div>
           <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:!w-auto">
             <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => reload()}>
@@ -229,7 +220,7 @@ export function StorageProvidersAdminPage({
             <button type="button" className={ICON_BUTTON_CLASS} aria-label={t('dismiss')} title={t('dismiss')} onClick={() => setNotice(undefined)}><X aria-hidden="true" size={15} /></button>
           </div>
         )}
-      </header>
+      </div>
 
       <div className="flex-1 overflow-auto p-4 sm:p-6">
         {loading ? (
