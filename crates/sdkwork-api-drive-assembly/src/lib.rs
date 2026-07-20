@@ -6,7 +6,7 @@ mod bootstrap;
 mod generated;
 
 pub use bootstrap::{
-    assemble_business_router, assemble_business_router_from_env,
+    assemble_api_router, assemble_api_router_from_env,
     assemble_api_router, assemble_backend_business_router_from_env, ApiAssembly,
 };
 

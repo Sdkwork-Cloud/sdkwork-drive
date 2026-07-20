@@ -41,7 +41,7 @@
       "."
     ],
     "runtimeEntrypoints": [
-      "sdkwork_api_drive_assembly::assemble_business_router_from_env",
+      "sdkwork_api_drive_assembly::assemble_api_router_from_env",
       "sdkwork_api_drive_assembly::assemble_backend_business_router_from_env"
     ],
     "routeManifest": "assembly-manifest.json",

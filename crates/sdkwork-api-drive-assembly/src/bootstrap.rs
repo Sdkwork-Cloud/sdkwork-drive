@@ -15,7 +15,7 @@ pub struct ApiAssembly {
     pub router: Router,
 }
 
-pub async fn assemble_business_router(pool: sqlx::AnyPool) -> ApiAssembly {
+pub async fn assemble_business_routes(pool: sqlx::AnyPool) -> ApiAssembly {
     let mut router = Router::new();
     router = router.merge(sdkwork_routes_drive_app_api::gateway_mount_business(pool.clone()).await);
     router =
@@ -25,7 +25,7 @@ pub async fn assemble_business_router(pool: sqlx::AnyPool) -> ApiAssembly {
     ApiAssembly { router }
 }
 
-pub async fn assemble_business_router_from_env() -> Result<ApiAssembly, String>
+pub async fn assemble_api_router_from_env() -> Result<ApiAssembly, String>
 {
     sdkwork_drive_security::ensure_drive_auth_policy_refresh_task();
     ensure_production_download_token_signing_configured()
@@ -39,7 +39,7 @@ pub async fn assemble_business_router_from_env() -> Result<ApiAssembly, String>
     let admin_storage_config =
         sdkwork_routes_storage_backend_api::AdminStorageConfig::from_env()
             .map_err(|error| format!("resolve admin storage config failed: {error}"))?;
-    let application = assemble_business_router(pool.clone()).await;
+    let application = assemble_business_routes(pool.clone()).await;
     let admin_storage =
         sdkwork_routes_storage_backend_api::build_gateway_business_router_with_pool_and_config(
             pool,
@@ -78,7 +78,7 @@ pub async fn assemble_backend_business_router_from_env() -> Result<ApiAssembly, 
 }
 
 pub async fn assemble_api_router(pool: sqlx::AnyPool) -> ApiAssembly {
-    let business = assemble_business_router(pool.clone()).await;
+    let business = assemble_api_router(pool.clone()).await;
     let router = mount_drive_infra_routes(
         business.router,
         drive_service_router_config(&pool),
