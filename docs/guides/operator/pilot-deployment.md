@@ -9,7 +9,7 @@ Use this guide after `pnpm check` passes on the release commit. Pilot validates 
 | Code gates | `pnpm check` and `pnpm verify` pass on the target commit |
 | Database | PostgreSQL provisioned; `pnpm db:migrate` applied against pilot schema |
 | IAM | Tenant org-scoped admin credentials; IAM DB session resolver reachable |
-| Secrets | `SDKWORK_DRIVE_DATABASE_*`, JWT/HMAC secrets, download token HMAC, and `sdkwork-drive-rate-limit` Redis URL for cloud production |
+| Secrets | `SDKWORK_CLAW_DATABASE_*`, JWT/HMAC secrets, download token HMAC, and `sdkwork-drive-rate-limit` Redis URL for cloud production |
 | Topology | Profile selected from `etc/topology/` (pilot: `standalone.development` or a production profile) |
 
 ## Phase 1 — Local / staging smoke

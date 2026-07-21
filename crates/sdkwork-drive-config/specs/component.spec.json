@@ -63,7 +63,6 @@
     "sdkClients": [],
     "events": [],
     "configKeys": [
-      "SDKWORK_DRIVE_DATABASE_URL",
       "SDKWORK_CLAW_DATABASE_*",
       "SDKWORK_DATABASE_URL"
     ],

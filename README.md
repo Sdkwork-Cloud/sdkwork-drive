@@ -59,7 +59,7 @@ The local backend launch plan starts the four runtime API services together:
 
 Runtime services also accept `SDKWORK_DRIVE_CONFIG_FILE` pointing at a TOML file
 with a `[database]` section, for example `etc/drive.database.example.toml`.
-`SDKWORK_DRIVE_DATABASE_URL` remains the highest-priority override.
+`SDKWORK_CLAW_DATABASE_URL` remains the highest-priority override.
 
 ## IAM Login Integration
 

@@ -116,21 +116,14 @@ impl DatabaseConfig {
     }
 
     pub fn from_env() -> Result<Self, DatabaseConfigError> {
-        let env = std::env::vars().collect::<Vec<_>>();
-        if has_drive_database_authority(&env) {
-            return Self::from_env_pairs(env);
-        }
-
-        let unified = sdkwork_database_config::DatabaseConfig::from_env("DRIVE")
-            .map_err(|error| DatabaseConfigError::new(error.to_string()))?;
-        Self::from_url_with_max_connections(&unified.url, unified.max_connections)
+        Self::from_env_pairs(std::env::vars())
     }
 
     pub fn from_env_and_cli_args(args: &[String]) -> Result<Self, DatabaseConfigError> {
         if let Some(database_url) = parse_database_url_from_cli_args(args) {
             let engine = parse_database_engine_from_url(&database_url)?;
             let max_connections = parse_max_connections(
-                std::env::var("SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS")
+                std::env::var("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS")
                     .ok()
                     .as_ref(),
                 default_max_connections_for_engine(engine),
@@ -151,13 +144,13 @@ impl DatabaseConfig {
             .map(|(key, value)| (key.as_ref().to_string(), value.as_ref().to_string()))
             .collect();
         if let Some(url) = env
-            .get("SDKWORK_DRIVE_DATABASE_URL")
+            .get("SDKWORK_CLAW_DATABASE_URL")
             .map(String::as_str)
             .filter(|value| !value.trim().is_empty())
         {
             let engine = parse_database_engine_from_url(url.trim())?;
             let max_connections = parse_max_connections(
-                env.get("SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS"),
+                env.get("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS"),
                 default_max_connections_for_engine(engine),
             )?;
             return Self::from_url_with_max_connections(url, max_connections);
@@ -174,27 +167,27 @@ impl DatabaseConfig {
         reject_removed_database_env_aliases(&env)?;
 
         let engine = env
-            .get("SDKWORK_DRIVE_DATABASE_ENGINE")
+            .get("SDKWORK_CLAW_DATABASE_ENGINE")
             .map(|value| value.trim().to_ascii_lowercase())
             .unwrap_or_else(|| "postgresql".to_string());
 
         match engine.as_str() {
             "postgresql" | "postgres" => {
                 let max_connections = parse_max_connections(
-                    env.get("SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS"),
+                    env.get("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS"),
                     Self::DEFAULT_POSTGRES_MAX_CONNECTIONS,
                 )?;
-                let host = required_env_value(&env, "SDKWORK_DRIVE_DATABASE_HOST")?;
+                let host = required_env_value(&env, "SDKWORK_CLAW_DATABASE_HOST")?;
                 let port = env
-                    .get("SDKWORK_DRIVE_DATABASE_PORT")
+                    .get("SDKWORK_CLAW_DATABASE_PORT")
                     .map(|value| value.trim())
                     .filter(|value| !value.is_empty())
                     .unwrap_or("5432");
-                let database = required_env_value(&env, "SDKWORK_DRIVE_DATABASE_NAME")?;
-                let username = required_env_value(&env, "SDKWORK_DRIVE_DATABASE_USERNAME")?;
-                let password = required_env_value(&env, "SDKWORK_DRIVE_DATABASE_PASSWORD")?;
+                let database = required_env_value(&env, "SDKWORK_CLAW_DATABASE_NAME")?;
+                let username = required_env_value(&env, "SDKWORK_CLAW_DATABASE_USERNAME")?;
+                let password = required_env_value(&env, "SDKWORK_CLAW_DATABASE_PASSWORD")?;
                 let ssl_mode = env
-                    .get("SDKWORK_DRIVE_DATABASE_SSL_MODE")
+                    .get("SDKWORK_CLAW_DATABASE_SSL_MODE")
                     .map(|value| value.trim())
                     .filter(|value| !value.is_empty());
                 let mut url = format!(
@@ -211,10 +204,10 @@ impl DatabaseConfig {
             }
             "sqlite" => {
                 let max_connections = parse_max_connections(
-                    env.get("SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS"),
+                    env.get("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS"),
                     Self::DEFAULT_SQLITE_MAX_CONNECTIONS,
                 )?;
-                let url = required_env_value(&env, "SDKWORK_DRIVE_DATABASE_SQLITE_URL")?;
+                let url = required_env_value(&env, "SDKWORK_CLAW_DATABASE_SQLITE_URL")?;
                 Self::from_url_with_max_connections(url, max_connections)
             }
             other => Err(DatabaseConfigError::new(format!(
@@ -287,24 +280,6 @@ impl DatabaseConfig {
     }
 }
 
-fn has_drive_database_authority(env: &[(String, String)]) -> bool {
-    const AUTHORITY_KEYS: &[&str] = &[
-        "SDKWORK_DRIVE_DATABASE_URL",
-        "SDKWORK_DRIVE_CONFIG_FILE",
-        "SDKWORK_DRIVE_DATABASE_ENGINE",
-        "SDKWORK_DRIVE_DATABASE_HOST",
-        "SDKWORK_DRIVE_DATABASE_PORT",
-        "SDKWORK_DRIVE_DATABASE_NAME",
-        "SDKWORK_DRIVE_DATABASE_USERNAME",
-        "SDKWORK_DRIVE_DATABASE_PASSWORD",
-        "SDKWORK_DRIVE_DATABASE_PASSWORD_FILE",
-        "SDKWORK_DRIVE_DATABASE_SQLITE_URL",
-    ];
-
-    env.iter()
-        .any(|(key, value)| AUTHORITY_KEYS.contains(&key.as_str()) && !value.trim().is_empty())
-}
-
 fn parse_database_url_from_cli_args(args: &[String]) -> Option<String> {
     let mut iter = args.iter();
     while let Some(arg) = iter.next() {
@@ -341,12 +316,12 @@ fn reject_removed_database_env_aliases(
 ) -> Result<(), DatabaseConfigError> {
     let removed = [
         (
-            "SDKWORK_DRIVE_DATABASE_PROVIDER",
-            "SDKWORK_DRIVE_DATABASE_ENGINE",
+            "SDKWORK_CLAW_DATABASE_PROVIDER",
+            "SDKWORK_CLAW_DATABASE_ENGINE",
         ),
         (
-            "SDKWORK_DRIVE_DATABASE_SSLMODE",
-            "SDKWORK_DRIVE_DATABASE_SSL_MODE",
+            "SDKWORK_CLAW_DATABASE_SSLMODE",
+            "SDKWORK_CLAW_DATABASE_SSL_MODE",
         ),
     ]
     .into_iter()
@@ -543,12 +518,12 @@ fn parse_max_connections(
         Some(raw) => {
             let parsed = raw.parse::<u32>().map_err(|_| {
                 DatabaseConfigError::new(
-                    "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS must be a positive integer",
+                    "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS must be a positive integer",
                 )
             })?;
             if parsed == 0 {
                 return Err(DatabaseConfigError::new(
-                    "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS must be a positive integer",
+                    "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS must be a positive integer",
                 ));
             }
             Ok(parsed)

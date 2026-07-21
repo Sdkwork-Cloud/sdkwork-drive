@@ -13,9 +13,9 @@
       "poolOwner": "crates/sdkwork-drive-workspace-service/src/bootstrap.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
-      "databaseUrlEnv": "SDKWORK_DRIVE_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
-      "schemaEnv": "SDKWORK_DRIVE_DATABASE_SCHEMA or SDKWORK_CLAW_DATABASE_SCHEMA",
-      "maxConnectionsEnv": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL",
+      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
+      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
       "productionSourceRoots": [
         "crates/sdkwork-api-drive-standalone-gateway/src",
         "crates/sdkwork-api-drive-assembly/src",
@@ -42,7 +42,7 @@
           "driver": "sqlx::AnyPool",
           "owner": "sdkwork-drive maintainers",
           "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+          "combinedConnectionBudget": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
           "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
           "evidence": [
             "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"
@@ -56,9 +56,9 @@
       "poolOwner": "crates/sdkwork-drive-workspace-service/src/bootstrap.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
-      "databaseUrlEnv": "SDKWORK_DRIVE_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
-      "schemaEnv": "SDKWORK_DRIVE_DATABASE_SCHEMA or SDKWORK_CLAW_DATABASE_SCHEMA",
-      "maxConnectionsEnv": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL",
+      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
+      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
       "productionSourceRoots": [
         "crates/sdkwork-routes-drive-app-api/src",
         "crates/sdkwork-drive-workspace-service/src"
@@ -77,7 +77,7 @@
           "driver": "sqlx::AnyPool",
           "owner": "sdkwork-drive maintainers",
           "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+          "combinedConnectionBudget": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
           "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
           "evidence": [
             "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"
@@ -91,9 +91,9 @@
       "poolOwner": "crates/sdkwork-drive-workspace-service/src/bootstrap.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
-      "databaseUrlEnv": "SDKWORK_DRIVE_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
-      "schemaEnv": "SDKWORK_DRIVE_DATABASE_SCHEMA or SDKWORK_CLAW_DATABASE_SCHEMA",
-      "maxConnectionsEnv": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL",
+      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
+      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
       "productionSourceRoots": [
         "crates/sdkwork-routes-drive-backend-api/src",
         "crates/sdkwork-drive-workspace-service/src"
@@ -112,7 +112,7 @@
           "driver": "sqlx::AnyPool",
           "owner": "sdkwork-drive maintainers",
           "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+          "combinedConnectionBudget": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
           "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
           "evidence": [
             "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"
@@ -126,9 +126,9 @@
       "poolOwner": "crates/sdkwork-drive-workspace-service/src/bootstrap.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
-      "databaseUrlEnv": "SDKWORK_DRIVE_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
-      "schemaEnv": "SDKWORK_DRIVE_DATABASE_SCHEMA or SDKWORK_CLAW_DATABASE_SCHEMA",
-      "maxConnectionsEnv": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL",
+      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
+      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
       "productionSourceRoots": [
         "crates/sdkwork-routes-drive-open-api/src",
         "crates/sdkwork-drive-workspace-service/src"
@@ -147,7 +147,7 @@
           "driver": "sqlx::AnyPool",
           "owner": "sdkwork-drive maintainers",
           "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+          "combinedConnectionBudget": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
           "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
           "evidence": [
             "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"
@@ -161,9 +161,9 @@
       "poolOwner": "crates/sdkwork-drive-workspace-service/src/bootstrap.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
-      "databaseUrlEnv": "SDKWORK_DRIVE_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
-      "schemaEnv": "SDKWORK_DRIVE_DATABASE_SCHEMA or SDKWORK_CLAW_DATABASE_SCHEMA",
-      "maxConnectionsEnv": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL",
+      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
+      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
       "productionSourceRoots": [
         "crates/sdkwork-routes-storage-backend-api/src",
         "crates/sdkwork-drive-workspace-service/src"
@@ -182,7 +182,7 @@
           "driver": "sqlx::AnyPool",
           "owner": "sdkwork-drive maintainers",
           "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+          "combinedConnectionBudget": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
           "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
           "evidence": [
             "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"
@@ -196,9 +196,9 @@
       "poolOwner": "crates/sdkwork-drive-workspace-service/src/bootstrap.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
-      "databaseUrlEnv": "SDKWORK_DRIVE_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
-      "schemaEnv": "SDKWORK_DRIVE_DATABASE_SCHEMA or SDKWORK_CLAW_DATABASE_SCHEMA",
-      "maxConnectionsEnv": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL",
+      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
+      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
       "productionSourceRoots": [
         "crates/sdkwork-drive-install-worker/src",
         "crates/sdkwork-drive-workspace-service/src"
@@ -217,7 +217,7 @@
           "driver": "sqlx::AnyPool",
           "owner": "sdkwork-drive maintainers",
           "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+          "combinedConnectionBudget": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
           "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
           "evidence": [
             "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"

@@ -46,8 +46,21 @@ pub async fn bootstrap_drive_database_from_env() -> Result<DriveDatabaseHost, St
     }
 
     let _ = dotenvy::dotenv();
-    let config = sdkwork_database_config::DatabaseConfig::from_env("DRIVE")
+    let drive_config = sdkwork_drive_config::DatabaseConfig::from_env()
         .map_err(|error| format!("read drive database config failed: {error}"))?;
+    let config = sdkwork_database_config::DatabaseConfig {
+        engine: match drive_config.engine() {
+            sdkwork_drive_config::DatabaseEngine::Postgresql => {
+                sdkwork_database_config::DatabaseEngine::Postgres
+            }
+            sdkwork_drive_config::DatabaseEngine::Sqlite => {
+                sdkwork_database_config::DatabaseEngine::Sqlite
+            }
+        },
+        url: drive_config.url().to_string(),
+        max_connections: drive_config.max_connections(),
+        ..Default::default()
+    };
     let pool = create_pool_from_config(config)
         .await
         .map_err(|error| format!("create drive database pool failed: {error}"))?;

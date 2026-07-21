@@ -52,8 +52,8 @@
     "events": [],
     "configKeys": [
       "SDKWORK_DATABASE_URL",
-      "SDKWORK_DRIVE_DATABASE_URL",
-      "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS",
+      "SDKWORK_CLAW_DATABASE_URL",
+      "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
       "SDKWORK_DRIVE_CONFIG_FILE"
     ],
     "layerRole": "runtime-composition"

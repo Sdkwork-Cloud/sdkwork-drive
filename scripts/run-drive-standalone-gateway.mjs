@@ -107,7 +107,7 @@ function parseForwardedDatabaseUrl(extraArgs) {
 function normalizeMaxConnections(value, defaultValue) {
   const raw = String(value ?? defaultValue).trim();
   if (!/^[1-9]\d*$/u.test(raw)) {
-    throw new Error('SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS must be a positive integer');
+    throw new Error('SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS must be a positive integer');
   }
   return raw;
 }
@@ -141,8 +141,8 @@ function buildPostgresDatabaseUrl({
 
 function rejectRemovedDatabaseAliases(env) {
   const removedAliases = [
-    ['SDKWORK_DRIVE_DATABASE_PROVIDER', 'SDKWORK_DRIVE_DATABASE_ENGINE'],
-    ['SDKWORK_DRIVE_DATABASE_SSLMODE', 'SDKWORK_DRIVE_DATABASE_SSL_MODE'],
+    ['SDKWORK_CLAW_DATABASE_PROVIDER', 'SDKWORK_CLAW_DATABASE_ENGINE'],
+    ['SDKWORK_CLAW_DATABASE_SSLMODE', 'SDKWORK_CLAW_DATABASE_SSL_MODE'],
   ].filter(([key]) => String(env[key] ?? '').trim());
   if (removedAliases.length > 0) {
     throw new Error(
@@ -161,65 +161,65 @@ function resolveDatabaseEnv(baseEnv, extraArgs) {
   }
   const forwardedUrl = parseForwardedDatabaseUrl(extraArgs);
   if (forwardedUrl) {
-    env.SDKWORK_DRIVE_DATABASE_URL = forwardedUrl;
+    env.SDKWORK_CLAW_DATABASE_URL = forwardedUrl;
   }
   rejectRemovedDatabaseAliases(env);
-  const explicitUrl = String(env.SDKWORK_DRIVE_DATABASE_URL ?? '').trim();
-  const engine = String(env.SDKWORK_DRIVE_DATABASE_ENGINE ?? 'postgresql')
+  const explicitUrl = String(env.SDKWORK_CLAW_DATABASE_URL ?? '').trim();
+  const engine = String(env.SDKWORK_CLAW_DATABASE_ENGINE ?? 'postgresql')
     .trim()
     .toLowerCase();
 
   if (explicitUrl) {
-    env.SDKWORK_DRIVE_DATABASE_ENGINE = databaseEngineFromUrl(explicitUrl);
-    const defaultConnections = env.SDKWORK_DRIVE_DATABASE_ENGINE === 'sqlite' ? '1' : '32';
-    env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS = normalizeMaxConnections(
-      env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS,
+    env.SDKWORK_CLAW_DATABASE_ENGINE = databaseEngineFromUrl(explicitUrl);
+    const defaultConnections = env.SDKWORK_CLAW_DATABASE_ENGINE === 'sqlite' ? '1' : '32';
+    env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS = normalizeMaxConnections(
+      env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS,
       defaultConnections,
     );
     return env;
   }
   if (engine === 'sqlite') {
-    env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS = normalizeMaxConnections(
-      env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS,
+    env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS = normalizeMaxConnections(
+      env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS,
       '1',
     );
-    const sqliteUrl = String(env.SDKWORK_DRIVE_DATABASE_SQLITE_URL ?? '').trim();
+    const sqliteUrl = String(env.SDKWORK_CLAW_DATABASE_SQLITE_URL ?? '').trim();
     if (!sqliteUrl) {
-      throw new Error('SDKWORK_DRIVE_DATABASE_SQLITE_URL must be set for sqlite engine');
+      throw new Error('SDKWORK_CLAW_DATABASE_SQLITE_URL must be set for sqlite engine');
     }
-    env.SDKWORK_DRIVE_DATABASE_URL = sqliteUrl;
-    env.SDKWORK_DRIVE_DATABASE_ENGINE = 'sqlite';
+    env.SDKWORK_CLAW_DATABASE_URL = sqliteUrl;
+    env.SDKWORK_CLAW_DATABASE_ENGINE = 'sqlite';
     return env;
   }
   if (engine !== 'postgresql' && engine !== 'postgres') {
-    throw new Error('SDKWORK_DRIVE_DATABASE_ENGINE must be postgresql or sqlite');
+    throw new Error('SDKWORK_CLAW_DATABASE_ENGINE must be postgresql or sqlite');
   }
-  env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS = normalizeMaxConnections(
-    env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS,
+  env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS = normalizeMaxConnections(
+    env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS,
     '32',
   );
   for (const key of [
-    'SDKWORK_DRIVE_DATABASE_HOST',
-    'SDKWORK_DRIVE_DATABASE_NAME',
-    'SDKWORK_DRIVE_DATABASE_USERNAME',
-    'SDKWORK_DRIVE_DATABASE_PASSWORD',
+    'SDKWORK_CLAW_DATABASE_HOST',
+    'SDKWORK_CLAW_DATABASE_NAME',
+    'SDKWORK_CLAW_DATABASE_USERNAME',
+    'SDKWORK_CLAW_DATABASE_PASSWORD',
   ]) {
     if (!String(env[key] ?? '').trim()) {
       throw new Error(`${key} must be set for PostgreSQL provider`);
     }
   }
-  const port = String(env.SDKWORK_DRIVE_DATABASE_PORT ?? '5432').trim();
-  const sslMode = String(env.SDKWORK_DRIVE_DATABASE_SSL_MODE ?? '').trim();
+  const port = String(env.SDKWORK_CLAW_DATABASE_PORT ?? '5432').trim();
+  const sslMode = String(env.SDKWORK_CLAW_DATABASE_SSL_MODE ?? '').trim();
   const url = buildPostgresDatabaseUrl({
-    host: String(env.SDKWORK_DRIVE_DATABASE_HOST).trim(),
+    host: String(env.SDKWORK_CLAW_DATABASE_HOST).trim(),
     port,
-    database: String(env.SDKWORK_DRIVE_DATABASE_NAME).trim(),
-    username: String(env.SDKWORK_DRIVE_DATABASE_USERNAME).trim(),
-    password: String(env.SDKWORK_DRIVE_DATABASE_PASSWORD).trim(),
+    database: String(env.SDKWORK_CLAW_DATABASE_NAME).trim(),
+    username: String(env.SDKWORK_CLAW_DATABASE_USERNAME).trim(),
+    password: String(env.SDKWORK_CLAW_DATABASE_PASSWORD).trim(),
     sslMode,
   });
-  env.SDKWORK_DRIVE_DATABASE_URL = url;
-  env.SDKWORK_DRIVE_DATABASE_ENGINE = 'postgresql';
+  env.SDKWORK_CLAW_DATABASE_URL = url;
+  env.SDKWORK_CLAW_DATABASE_ENGINE = 'postgresql';
   return env;
 }
 
@@ -258,7 +258,7 @@ function createPlan({ mode, env }) {
 
 function printPlan(plan, env) {
   console.log(
-    `[sdkwork-drive] databaseEngine=${env.SDKWORK_DRIVE_DATABASE_ENGINE} maxConnections=${env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS}`,
+    `[sdkwork-drive] databaseEngine=${env.SDKWORK_CLAW_DATABASE_ENGINE} maxConnections=${env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS}`,
   );
   if (plan.length === 0) {
     console.log('[sdkwork-drive] no processes scheduled for plan mode');

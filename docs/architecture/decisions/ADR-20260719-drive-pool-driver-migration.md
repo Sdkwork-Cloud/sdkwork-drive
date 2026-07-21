@@ -17,7 +17,7 @@ migrates to `sqlx::PgPool`, the framework owns one identity-checked compatibilit
 process. `SDKWORK_DATABASE_TEMPORARY_ANY_POOL_EXCEPTION=true` must be present before the canonical
 pool is created.
 
-The configured `SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS` value is the combined process budget. The
+The configured `SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS` value is the combined process budget. The
 database framework divides it between the canonical pool and compatibility pool; an odd connection
 is assigned to the canonical pool. Modules cannot expand the compatibility allocation.
 

@@ -6,7 +6,6 @@ edition.workspace = true
 [dependencies]
 serde.workspace = true
 toml.workspace = true
-sdkwork-database-config.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

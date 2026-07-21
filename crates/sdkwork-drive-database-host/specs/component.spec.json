@@ -72,10 +72,10 @@
     "events": [],
     "configKeys": [
       "SDKWORK_DRIVE_APP_ROOT",
-      "SDKWORK_DRIVE_DATABASE_URL",
+      "SDKWORK_CLAW_DATABASE_URL",
       "SDKWORK_DRIVE_CONFIG_FILE",
-      "SDKWORK_DRIVE_DATABASE_ENGINE",
-      "SDKWORK_DRIVE_DATABASE_SQLITE_URL"
+      "SDKWORK_CLAW_DATABASE_ENGINE",
+      "SDKWORK_CLAW_DATABASE_SQLITE_URL"
     ],
     "sdkDependencies": [],
     "dependencyApiExports": [],

@@ -183,17 +183,17 @@ fn postgres_and_toml_examples_use_standard_drive_config_keys() {
         .expect(".env.postgres.example should exist");
 
     for required in [
-        "SDKWORK_DRIVE_DATABASE_ENGINE=postgresql",
-        "SDKWORK_DRIVE_DATABASE_HOST=127.0.0.1",
-        "SDKWORK_DRIVE_DATABASE_PORT=5432",
-        "SDKWORK_DRIVE_DATABASE_NAME=sdkwork_ai_dev",
-        "SDKWORK_DRIVE_DATABASE_SCHEMA=sdkwork_ai_dev",
-        "SDKWORK_DRIVE_DATABASE_USERNAME=sdkwork_ai_dev",
-        "SDKWORK_DRIVE_DATABASE_PASSWORD=sdkworkdev123",
-        "SDKWORK_DRIVE_DATABASE_SSL_MODE=disable",
-        "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS=32",
-        "SDKWORK_DRIVE_DATABASE_ADMIN_HOST=127.0.0.1",
-        "SDKWORK_DRIVE_DATABASE_ADMIN_SSL_MODE=disable",
+        "SDKWORK_CLAW_DATABASE_ENGINE=postgresql",
+        "SDKWORK_CLAW_DATABASE_HOST=127.0.0.1",
+        "SDKWORK_CLAW_DATABASE_PORT=5432",
+        "SDKWORK_CLAW_DATABASE_NAME=sdkwork_ai_dev",
+        "SDKWORK_CLAW_DATABASE_SCHEMA=sdkwork_ai_dev",
+        "SDKWORK_CLAW_DATABASE_USERNAME=sdkwork_ai_dev",
+        "SDKWORK_CLAW_DATABASE_PASSWORD=sdkworkdev123",
+        "SDKWORK_CLAW_DATABASE_SSL_MODE=disable",
+        "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS=10",
+        "SDKWORK_CLAW_DATABASE_ADMIN_HOST=127.0.0.1",
+        "SDKWORK_CLAW_DATABASE_ADMIN_SSL_MODE=disable",
     ] {
         assert!(
             postgres_example.contains(required),
@@ -201,8 +201,8 @@ fn postgres_and_toml_examples_use_standard_drive_config_keys() {
         );
     }
     for forbidden in [
-        "SDKWORK_DRIVE_DATABASE_PROVIDER",
-        "SDKWORK_DRIVE_DATABASE_SSLMODE",
+        "SDKWORK_CLAW_DATABASE_PROVIDER",
+        "SDKWORK_CLAW_DATABASE_SSLMODE",
     ] {
         assert!(
             !postgres_example.contains(forbidden),
@@ -276,15 +276,15 @@ fn drive_launch_plan_url_encodes_structured_postgres_fields() {
     std::fs::write(
         &env_file,
         [
-            "SDKWORK_DRIVE_DATABASE_ENGINE=postgresql",
-            "SDKWORK_DRIVE_DATABASE_HOST=db.internal",
-            "SDKWORK_DRIVE_DATABASE_PORT=5432",
-            "SDKWORK_DRIVE_DATABASE_NAME=sdkwork drive/dev",
-            "SDKWORK_DRIVE_DATABASE_SCHEMA=sdkwork_ai_dev",
-            "SDKWORK_DRIVE_DATABASE_USERNAME=sdkworkprod@2026++",
-            "SDKWORK_DRIVE_DATABASE_PASSWORD=pa@ss+word/with space",
-            "SDKWORK_DRIVE_DATABASE_SSL_MODE=require",
-            "SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS=32",
+            "SDKWORK_CLAW_DATABASE_ENGINE=postgresql",
+            "SDKWORK_CLAW_DATABASE_HOST=db.internal",
+            "SDKWORK_CLAW_DATABASE_PORT=5432",
+            "SDKWORK_CLAW_DATABASE_NAME=sdkwork drive/dev",
+            "SDKWORK_CLAW_DATABASE_SCHEMA=sdkwork_ai_dev",
+            "SDKWORK_CLAW_DATABASE_USERNAME=sdkworkprod@2026++",
+            "SDKWORK_CLAW_DATABASE_PASSWORD=pa@ss+word/with space",
+            "SDKWORK_CLAW_DATABASE_SSL_MODE=require",
+            "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS=32",
         ]
         .join("\n"),
     )
@@ -329,13 +329,13 @@ fn drive_launch_plan_rejects_legacy_database_aliases() {
     std::fs::write(
         &env_file,
         [
-            "SDKWORK_DRIVE_DATABASE_PROVIDER=postgresql",
-            "SDKWORK_DRIVE_DATABASE_HOST=127.0.0.1",
-            "SDKWORK_DRIVE_DATABASE_PORT=5432",
-            "SDKWORK_DRIVE_DATABASE_NAME=sdkwork_ai_dev",
-            "SDKWORK_DRIVE_DATABASE_USERNAME=sdkwork_ai_dev",
-            "SDKWORK_DRIVE_DATABASE_PASSWORD=sdkworkdev123",
-            "SDKWORK_DRIVE_DATABASE_SSLMODE=disable",
+            "SDKWORK_CLAW_DATABASE_PROVIDER=postgresql",
+            "SDKWORK_CLAW_DATABASE_HOST=127.0.0.1",
+            "SDKWORK_CLAW_DATABASE_PORT=5432",
+            "SDKWORK_CLAW_DATABASE_NAME=sdkwork_ai_dev",
+            "SDKWORK_CLAW_DATABASE_USERNAME=sdkwork_ai_dev",
+            "SDKWORK_CLAW_DATABASE_PASSWORD=sdkworkdev123",
+            "SDKWORK_CLAW_DATABASE_SSLMODE=disable",
         ]
         .join("\n"),
     )
@@ -360,8 +360,8 @@ fn drive_launch_plan_rejects_legacy_database_aliases() {
     );
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stderr.contains("SDKWORK_DRIVE_DATABASE_PROVIDER")
-            && stderr.contains("SDKWORK_DRIVE_DATABASE_SSLMODE"),
+        stderr.contains("SDKWORK_CLAW_DATABASE_PROVIDER")
+            && stderr.contains("SDKWORK_CLAW_DATABASE_SSLMODE"),
         "error should name rejected legacy aliases, stderr:\n{stderr}"
     );
 }
@@ -413,8 +413,8 @@ fn database_architecture_doc_records_runtime_boundary() {
         "pnpm dev",
         "pnpm dev:browser:sqlite",
         "SDKWORK_DRIVE_CONFIG_FILE=./etc/drive.database.example.toml",
-        "SDKWORK_DRIVE_DATABASE_ENGINE=postgresql",
-        "SDKWORK_DRIVE_DATABASE_SSL_MODE",
+        "SDKWORK_CLAW_DATABASE_ENGINE=postgresql",
+        "SDKWORK_CLAW_DATABASE_SSL_MODE",
         "build_router_with_database_config",
         "sqlx::AnyPool",
         "Runtime SQL must use PostgreSQL-compatible `$1`, `$2`, ... bind placeholders",

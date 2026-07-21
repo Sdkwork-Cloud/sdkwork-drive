@@ -455,7 +455,7 @@ function normalizeSqliteDatabaseUrl(url) {
 }
 
 function resolveDefaultSqliteDatabaseUrl(env) {
-  const configured = normalizeText(env.SDKWORK_DRIVE_DATABASE_SQLITE_URL);
+  const configured = normalizeText(env.SDKWORK_CLAW_DATABASE_SQLITE_URL);
   if (configured) {
     return normalizeSqliteDatabaseUrl(configured);
   }
@@ -470,11 +470,11 @@ function resolveDatabaseEnv(baseEnv, databaseProfile) {
   if (databaseProfile === 'sqlite') {
     fs.mkdirSync(path.join(repoRoot, 'target', 'dev'), { recursive: true });
     const sqliteUrl = resolveDefaultSqliteDatabaseUrl(env);
-    env.SDKWORK_DRIVE_DATABASE_ENGINE = 'sqlite';
-    env.SDKWORK_DRIVE_DATABASE_SQLITE_URL = sqliteUrl;
-    env.SDKWORK_DRIVE_DATABASE_URL = sqliteUrl;
-    env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS =
-      normalizeText(env.SDKWORK_DRIVE_DATABASE_MAX_CONNECTIONS) || '1';
+    env.SDKWORK_CLAW_DATABASE_ENGINE = 'sqlite';
+    env.SDKWORK_CLAW_DATABASE_SQLITE_URL = sqliteUrl;
+    env.SDKWORK_CLAW_DATABASE_URL = sqliteUrl;
+    env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS =
+      normalizeText(env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS) || '1';
   }
   return env;
 }

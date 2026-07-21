@@ -85,7 +85,7 @@ Kubernetes deployment secret mounts:
 
 | Secret | Consumers | Required keys |
 | --- | --- | --- |
-| `sdkwork-drive-database` | all API/worker Deployments | `SDKWORK_DRIVE_DATABASE_URL` or PostgreSQL field set |
+| `sdkwork-drive-database` | all API/worker Deployments | `SDKWORK_CLAW_DATABASE_URL` or PostgreSQL field set |
 | `sdkwork-drive-iam` | `app-api`, `backend-api`, `standalone-gateway` | `SDKWORK_DRIVE_JWT_HMAC_SECRET` and/or `SDKWORK_DRIVE_JWT_JWKS_URL` |
 | `sdkwork-drive-rate-limit` | `app-api`, `backend-api`, `open-api`, `admin-storage-api` | `SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL` |
 

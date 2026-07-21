@@ -293,7 +293,7 @@ for (const routerCrate of routerCrates) {
     `${crateName} must resolve IAM sessions through iam_web_request_context_resolver_from_env per IAM_LOGIN_INTEGRATION_SPEC.md`,
   );
   assert(
-    !webBootstrap.includes('SDKWORK_DRIVE_DATABASE_URL')
+    !webBootstrap.includes('SDKWORK_CLAW_DATABASE_URL')
       || !webBootstrap.includes('wrap_router_with_web_framework_from_env'),
     `${crateName} must not gate IAM resolver wiring on Drive database env presence`,
   );

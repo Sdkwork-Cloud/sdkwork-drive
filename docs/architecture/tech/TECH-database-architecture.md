@@ -21,12 +21,12 @@ Both PostgreSQL and SQLite modes start the same API service set: app API on `127
 
 The Rust configuration boundary is `sdkwork-drive-config::DatabaseConfig`. It accepts:
 
-- Explicit override: `SDKWORK_DRIVE_DATABASE_URL`.
+- Explicit override: `SDKWORK_CLAW_DATABASE_URL`.
 - Runtime TOML file: `SDKWORK_DRIVE_CONFIG_FILE=./etc/drive.database.example.toml`, reading the `[database]` section.
-- PostgreSQL structured fields: `SDKWORK_DRIVE_DATABASE_ENGINE=postgresql`, host, port, database name, username, password, `SDKWORK_DRIVE_DATABASE_SSL_MODE`, and max connections.
-- SQLite structured fields: `SDKWORK_DRIVE_DATABASE_ENGINE=sqlite` and `SDKWORK_DRIVE_DATABASE_SQLITE_URL`.
+- PostgreSQL structured fields: `SDKWORK_CLAW_DATABASE_ENGINE=postgresql`, host, port, database name, username, password, `SDKWORK_CLAW_DATABASE_SSL_MODE`, and max connections.
+- SQLite structured fields: `SDKWORK_CLAW_DATABASE_ENGINE=sqlite` and `SDKWORK_CLAW_DATABASE_SQLITE_URL`.
 
-Configuration precedence is explicit URL, runtime TOML, then structured environment fields. `SDKWORK_DRIVE_DATABASE_URL` remains an explicit operator override and wins over TOML and structured fields.
+Configuration precedence is explicit URL, runtime TOML, then structured environment fields. `SDKWORK_CLAW_DATABASE_URL` remains an explicit operator override and wins over TOML and structured fields.
 
 PostgreSQL TOML supports either `url` or structured fields. Structured PostgreSQL config must provide `host`, `database`, `username`, and one of `password` or `password_file`; `password_file` is resolved relative to the TOML file location. Structured values are percent-encoded before building the PostgreSQL URL so service accounts such as `sdkwork` and secret values containing `/`, `+`, spaces, or `@` remain valid connection strings.
 
