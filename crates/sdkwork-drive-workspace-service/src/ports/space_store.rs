@@ -26,6 +26,11 @@ pub trait DriveSpaceStore: Send + Sync {
         new_space: &NewDriveSpace,
     ) -> Result<DriveSpace, DriveServiceError>;
 
+    async fn insert_website_space(
+        &self,
+        new_space: &NewDriveSpace,
+    ) -> Result<DriveSpace, DriveServiceError>;
+
     async fn list_spaces(
         &self,
         tenant_id: &str,

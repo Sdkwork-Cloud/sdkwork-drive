@@ -106,6 +106,7 @@ fn schema_registry_mentions_every_installed_table_and_index() {
         "docs/schema-registry/tables/002-drive-special-spaces.yaml",
         "docs/schema-registry/tables/003-drive-storage.yaml",
         "docs/schema-registry/tables/004-drive-security-audit.yaml",
+        "docs/schema-registry/tables/005-drive-website-publishing.yaml",
     ]
     .into_iter()
     .map(read_workspace_file)

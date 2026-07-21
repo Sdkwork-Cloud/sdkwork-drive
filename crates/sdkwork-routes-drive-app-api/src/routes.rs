@@ -96,6 +96,14 @@ fn build_business_router_layers(state: AppState) -> Router {
             get(get_space).patch(update_space).delete(delete_space),
         )
         .route(
+            "/app/v3/api/drive/spaces/{space_id}/website_roots",
+            get(list_website_roots).post(create_website_root),
+        )
+        .route(
+            "/app/v3/api/drive/website_roots/{root_uuid}",
+            get(get_website_root),
+        )
+        .route(
             "/app/v3/api/drive/upload_sessions",
             post(create_upload_session),
         )

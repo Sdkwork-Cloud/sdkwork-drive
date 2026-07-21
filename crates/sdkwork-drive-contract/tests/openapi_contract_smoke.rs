@@ -35,6 +35,8 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(open.contains("\"DriveOpenShareLink\""));
     assert!(app.contains("/app/v3/api/drive/spaces"));
     assert!(app.contains("/app/v3/api/drive/spaces/{spaceId}"));
+    assert!(app.contains("/app/v3/api/drive/spaces/{spaceId}/website_roots"));
+    assert!(app.contains("/app/v3/api/drive/website_roots/{rootUuid}"));
     assert!(app.contains("\"title\": \"SDKWork Drive App API\""));
     assert!(app.contains("/app/v3/api/drive/spaces/{spaceId}/nodes"));
     assert!(app.contains("/app/v3/api/drive/nodes/folders"));
@@ -87,6 +89,9 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert!(app.contains("\"operationId\": \"spaces.retrieve\""));
     assert!(app.contains("\"operationId\": \"spaces.update\""));
     assert!(app.contains("\"operationId\": \"spaces.delete\""));
+    assert!(app.contains("\"operationId\": \"websiteRoots.list\""));
+    assert!(app.contains("\"operationId\": \"websiteRoots.create\""));
+    assert!(app.contains("\"operationId\": \"websiteRoots.retrieve\""));
     assert!(app.contains("\"operationId\": \"nodes.list\""));
     assert!(app.contains("\"operationId\": \"nodes.folders.create\""));
     assert!(app.contains("\"operationId\": \"nodes.files.create\""));
@@ -320,6 +325,63 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_drive_space_type_enum(&app_json, "CreateSpaceRequest", "spaceType");
     assert_drive_space_type_enum(&app_json, "DriveSpace", "spaceType");
     assert_drive_space_type_enum(&app_json, "DriveNode", "spaceType");
+    assert_schema_property_exists(&app_json, "CreateWebsiteRootRequest", "rootKey");
+    assert_schema_property_exists(&app_json, "CreateWebsiteRootRequest", "sourceRoot");
+    assert_schema_property_exists(&app_json, "CreateWebsiteRootRequest", "contentMode");
+    assert_schema_property_absent(&app_json, "CreateWebsiteRootRequest", "operatorId");
+    assert_schema_required(&app_json, "CreateWebsiteRootRequest", "rootKey");
+    assert_schema_required(&app_json, "CreateWebsiteRootRequest", "sourceRoot");
+    assert_schema_required(&app_json, "CreateWebsiteRootRequest", "contentMode");
+    assert_schema_array_items_ref(
+        &app_json,
+        "WebsiteRootPageData",
+        "items",
+        "#/components/schemas/WebsiteRoot",
+    );
+    assert_schema_property_ref(
+        &app_json,
+        "WebsiteRootPageData",
+        "pageInfo",
+        "#/components/schemas/PageInfo",
+    );
+    assert_envelope_data_schema_ref(
+        &app_json,
+        "WebsiteRootListHttpResponse",
+        "#/components/schemas/WebsiteRootPageData",
+    );
+    assert_envelope_data_schema_ref(
+        &app_json,
+        "WebsiteRootHttpResponse",
+        "#/components/schemas/WebsiteRootResourceData",
+    );
+    assert_operation_response_schema_ref(
+        &app_json,
+        "/app/v3/api/drive/spaces/{spaceId}/website_roots",
+        "get",
+        "200",
+        "#/components/schemas/WebsiteRootListHttpResponse",
+    );
+    assert_operation_response_schema_ref(
+        &app_json,
+        "/app/v3/api/drive/spaces/{spaceId}/website_roots",
+        "post",
+        "200",
+        "#/components/schemas/WebsiteRootHttpResponse",
+    );
+    assert_operation_response_schema_ref(
+        &app_json,
+        "/app/v3/api/drive/spaces/{spaceId}/website_roots",
+        "post",
+        "201",
+        "#/components/schemas/WebsiteRootHttpResponse",
+    );
+    assert_operation_response_schema_ref(
+        &app_json,
+        "/app/v3/api/drive/website_roots/{rootUuid}",
+        "get",
+        "200",
+        "#/components/schemas/WebsiteRootHttpResponse",
+    );
     assert_schema_property_deprecated(&app_json, "CreateUploadSessionRequest", "objectKey");
     assert_schema_required_absent(&app_json, "CreateUploadSessionRequest", "objectKey");
     assert_schema_property_exists(&app_json, "CreateFileResponse", "uploadSession");
@@ -1843,6 +1905,7 @@ fn assert_drive_space_type_enum(openapi: &Value, schema_name: &str, field_name: 
             "im",
             "rtc",
             "notary",
+            "website",
         ],
     );
 }

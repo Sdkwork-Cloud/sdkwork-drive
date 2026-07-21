@@ -37,7 +37,7 @@ use sdkwork_drive_workspace_service::infrastructure::sql::upload_session_store::
 use crate::response::{
     success_created_command_data, success_created_resource, success_envelope, success_resource,
 };
-use crate::route_change::{record_change, record_change_on_connection};
+use crate::route_change::record_change;
 use crate::upload_support::*;
 use sdkwork_drive_workspace_service::infrastructure::outbox_dispatch::trigger_immediate_outbox_dispatch;
 use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
@@ -425,7 +425,7 @@ pub(crate) async fn complete_upload_session(
         .await
         .map_err(internal_sql_error("insert dr_drive_storage_object failed"))?;
 
-        insert_node_version_for_storage_object(
+        let node_version_id = insert_node_version_for_storage_object(
             &mut *connection,
             NodeVersionStorageMetadata {
                 tenant_id: &tenant_id,
@@ -480,19 +480,29 @@ pub(crate) async fn complete_upload_session(
         .await
         .map_err(map_service_error)?;
 
-        record_change_on_connection(
+        sdkwork_drive_workspace_service::infrastructure::change_recorder::record_drive_node_version_committed_on_connection(
             &mut *connection,
-            &tenant_id,
-            &node.space_id,
-            Some(&upload_session.node_id),
-            if uploader_upload_item.is_some() {
-                drive_events::uploader::UPLOAD_COMPLETED
-            } else {
-                drive_events::upload_session::COMPLETED
+            sdkwork_drive_workspace_service::infrastructure::change_recorder::RecordDriveNodeVersionCommittedCommand {
+                tenant_id: &tenant_id,
+                organization_id: uploader_upload_item
+                    .as_ref()
+                    .and_then(|item| item.organization_id.as_deref()),
+                space_id: &node.space_id,
+                node_id: &upload_session.node_id,
+                node_version_id: &node_version_id,
+                version_no: completed_object_plan.version_no,
+                operation_id: uploader_upload_item
+                    .as_ref()
+                    .map(|item| item.id.as_str())
+                    .unwrap_or(upload_session_id.as_str()),
+                content_type,
+                content_length,
+                checksum_sha256_hex,
+                actor_id: &operator_id,
             },
-            &operator_id,
         )
-        .await?;
+        .await
+        .map_err(map_service_error)?;
 
         Ok(())
     }

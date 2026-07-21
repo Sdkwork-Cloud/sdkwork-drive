@@ -79,7 +79,7 @@
       "."
     ],
     "runtimeEntrypoints": [],
-    "routeManifest": "sdkwork_routes_drive_open_api::open_route_manifest",
+    "routeManifest": "../../apis/open-api/drive/drive-open-api.openapi.json",
     "sdkClients": [],
     "events": [],
     "configKeys": [],

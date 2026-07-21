@@ -24,7 +24,7 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "5ab8f39690e0b22fa0dbcbfad287a37d6c75bfe53112cb646aa029eb7cec8881"
+      "sha256": "b787a54d13cb7bccfff5b12d17128e293addf9603b0ef38612bba631a4d4f153"
     },
     {
       "path": "api/node_labels.go",
@@ -297,6 +297,10 @@
     {
       "path": "types/create_watch_channel_request.go",
       "sha256": "18b5bc21b40f6a4cb9bf4c42d92ce152092397720f51881e04f390d6213c21ae"
+    },
+    {
+      "path": "types/create_website_root_request.go",
+      "sha256": "4d7cedab61040a64452dcb335710f7b00136c95a7b8b778bb1518cf40befa66d"
     },
     {
       "path": "types/doc.go",
@@ -745,6 +749,38 @@
     {
       "path": "types/uploader_upload_part.go",
       "sha256": "a77ec6154759d11582eaa4a82a359bf755377a13d37754597ff2241215709262"
+    },
+    {
+      "path": "types/website_root_folder_selector.go",
+      "sha256": "b58e7e85179b756b27e02562d0126e3a6106adcf159652b89b2138d052c3443a"
+    },
+    {
+      "path": "types/website_root_http_response.go",
+      "sha256": "ee5853510893b622c95699935eb5e344b5bafb6a91d79d82fd5d0b31a5fadfb5"
+    },
+    {
+      "path": "types/website_root_list_http_response.go",
+      "sha256": "500c83e6fff67c40b409901df940fdaa464d6d6ed69841a1f7b4ffc4ba6b50da"
+    },
+    {
+      "path": "types/website_root_page_data.go",
+      "sha256": "e14ed07a364b369a5d260a84ab7328f6ecece53154ac8244d8bc94e49a269396"
+    },
+    {
+      "path": "types/website_root_resource_data.go",
+      "sha256": "dbb6f4ca440c7b0b3708d182540ddaf2945578da838801ca9a789b3923ad7fa4"
+    },
+    {
+      "path": "types/website_root_selector.go",
+      "sha256": "70393ce57d2bd6c8d5325cf386e14c144921c9df40f4e21946df60457e0cb97f"
+    },
+    {
+      "path": "types/website_root_space_selector.go",
+      "sha256": "605f99510cfa70daadb74668c600db5527dafe3930d8cf87afa88b97ddfe3f7b"
+    },
+    {
+      "path": "types/website_root.go",
+      "sha256": "fb986da8f160e87c2d98da050aaa0fb446b4418d511371a902f3a96598001370"
     }
   ],
   "scaffoldFiles": [

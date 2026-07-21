@@ -25,7 +25,7 @@ Dynamic: license-file
 
 # sdkwork-drive-app-sdk (Python)
 
-Professional Python SDK for SDKWork API.
+Generated SDKWork v3 dual-token transport SDK.
 
 ## Installation
 
@@ -43,41 +43,20 @@ config = SdkConfig(
 )
 
 client = SdkworkAppClient(config)
-client.set_api_key("your-api-key")
-
-# Use the SDK
-params = {
-    'tenantId': 'tenantId',
-}
-result = client.drive.quotas.summary(params)
-```
-
-## Authentication Modes (Mutually Exclusive)
-
-Choose exactly one mode for the same client instance.
-
-### Mode A: API Key
-
-```python
-config = SdkConfig(base_url="http://127.0.0.1:18080")
-client = SdkworkAppClient(config)
-client.set_api_key("your-api-key")
-# Sends: Access-Token: <apiKey>
-```
-
-### Mode B: Dual Token
-
-```python
-config = SdkConfig(base_url="http://127.0.0.1:18080")
-client = SdkworkAppClient(config)
 client.set_auth_token("your-auth-token")
 client.set_access_token("your-access-token")
-# Sends:
-# Authorization: Bearer <authToken>
-# Access-Token: <accessToken>
+
+# Use the SDK
+result = client.drive.quotas.retrieve()
 ```
 
-> Do not call `set_api_key(...)` together with `set_auth_token(...)` + `set_access_token(...)` on the same client.
+## Authentication
+
+```text
+Authorization: Bearer <authToken>
+Access-Token: <accessToken>
+```
+
 
 ## Configuration (Non-Auth)
 
@@ -99,6 +78,7 @@ client.set_header('X-Custom-Header', 'value')
 - `client.node_properties` - node_properties API
 - `client.nodes` - nodes API
 - `client.watch_channels` - watch_channels API
+- `client.assets` - assets API
 
 ## Usage Examples
 
@@ -106,10 +86,7 @@ client.set_header('X-Custom-Header', 'value')
 
 ```python
 # GET /app/v3/api/drive/quotas/summary
-params = {
-    'tenantId': 'tenantId',
-}
-result = client.drive.quotas.summary(params)
+result = client.drive.quotas.retrieve()
 print(result)
 ```
 
@@ -119,10 +96,9 @@ print(result)
 # List labels applied to a node
 node_id = '1'
 params = {
-    'tenantId': 'tenantId',
     'labelKey': 'labelKey',
-    'pageSize': 3,
-    'pageToken': 'pageToken',
+    'page_size': 2,
+    'cursor': 'cursor',
 }
 result = client.node_labels.list(node_id, params)
 print(result)
@@ -134,10 +110,9 @@ print(result)
 # List node custom properties
 node_id = '1'
 params = {
-    'tenantId': 'tenantId',
     'visibility': 'private',
-    'pageSize': 3,
-    'pageToken': 'pageToken',
+    'page_size': 2,
+    'cursor': 'cursor',
 }
 result = client.node_properties.list(node_id, params)
 print(result)
@@ -149,12 +124,10 @@ print(result)
 # Create a shortcut node
 body = {
     'id': 'id',
-    'tenantId': 'tenantId',
     'spaceId': 'spaceId',
     'parentNodeId': 'parentNodeId',
     'nodeName': 'nodeName',
     'targetNodeId': 'targetNodeId',
-    'operatorId': 'operatorId',
 }
 result = client.nodes.shortcuts.create(body)
 print(result)
@@ -165,13 +138,24 @@ print(result)
 ```python
 # List Drive watch channels
 params = {
-    'tenantId': 'tenantId',
     'resourceType': 'changes',
     'lifecycleStatus': 'active',
-    'pageSize': 4,
-    'pageToken': 'pageToken',
+    'page_size': 3,
+    'cursor': 'cursor',
 }
 result = client.watch_channels.list(params)
+print(result)
+```
+
+### assets
+
+```python
+# List asset collections
+params = {
+    'cursor': 'cursor',
+    'page_size': 2,
+}
+result = client.assets.asset_collections.list(params)
 print(result)
 ```
 
@@ -179,10 +163,7 @@ print(result)
 
 ```python
 try:
-    params = {
-        'tenantId': 'tenantId',
-    }
-    client.drive.quotas.summary(params)
+    client.drive.quotas.retrieve()
 except Exception as error:
     print(f"Error: {error}")
 ```
@@ -210,7 +191,7 @@ This SDK includes cross-platform publish scripts in `bin/`:
 .\bin\publish.ps1 --action publish --channel test --dry-run
 ```
 
-> Set `PYPI_TOKEN` for release (or `TEST_PYPI_TOKEN` for test channel).
+> Configure Python package registry credentials before release publish.
 
 ## License
 
@@ -218,10 +199,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

@@ -74,7 +74,7 @@
       "."
     ],
     "runtimeEntrypoints": [],
-    "routeManifest": null,
+    "routeManifest": "../../apis/backend-api/drive/drive-backend-api.openapi.json",
     "sdkClients": [],
     "events": [],
     "configKeys": [],

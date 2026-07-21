@@ -198,14 +198,10 @@ fn rejects_removed_database_environment_aliases() {
     let error = DatabaseConfig::from_env_pairs(env).unwrap_err();
 
     assert!(
-        error
-            .to_string()
-            .contains("SDKWORK_CLAW_DATABASE_PROVIDER")
+        error.to_string().contains("SDKWORK_CLAW_DATABASE_PROVIDER")
             && error.to_string().contains("SDKWORK_CLAW_DATABASE_SSLMODE")
             && error.to_string().contains("SDKWORK_CLAW_DATABASE_ENGINE")
-            && error
-                .to_string()
-                .contains("SDKWORK_CLAW_DATABASE_SSL_MODE"),
+            && error.to_string().contains("SDKWORK_CLAW_DATABASE_SSL_MODE"),
         "removed aliases should be rejected with standard replacements, got: {error}"
     );
 }

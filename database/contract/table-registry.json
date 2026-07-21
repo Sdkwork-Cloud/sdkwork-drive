@@ -39,6 +39,36 @@
       "lifecycle_status": "active"
     },
     {
+      "table_name": "dr_drive_space_website_profile",
+      "owner": "drive-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "dr_drive_website_root",
+      "owner": "drive-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "dr_drive_website_root_generation",
+      "owner": "drive-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "dr_drive_website_sync",
+      "owner": "drive-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "dr_drive_root_scope_subscription",
+      "owner": "drive-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
       "table_name": "dr_drive_node_permission",
       "owner": "drive-platform",
       "compliance_level": "L2",

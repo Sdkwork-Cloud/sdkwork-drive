@@ -9,6 +9,8 @@ pub mod node_store;
 pub mod node_version_store;
 pub mod permission_store;
 pub mod quota_store;
+pub mod resource_resolution_store;
+pub mod root_scope_subscription_store;
 mod runtime_id;
 pub mod sandbox_admin_store;
 pub mod sandbox_mutation_operation_store;
@@ -22,6 +24,8 @@ pub mod transaction;
 pub mod upload_query_columns;
 pub mod upload_session_store;
 pub mod uploader_store;
+pub mod website_root_store;
+mod website_space_store;
 pub mod workspace_store;
 
 pub use installer::{

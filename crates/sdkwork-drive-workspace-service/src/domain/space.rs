@@ -10,6 +10,7 @@ pub enum DriveSpaceType {
     Im,
     Rtc,
     Notary,
+    Website,
 }
 
 impl DriveSpaceType {
@@ -25,6 +26,7 @@ impl DriveSpaceType {
             Self::Im => "im",
             Self::Rtc => "rtc",
             Self::Notary => "notary",
+            Self::Website => "website",
         }
     }
 
@@ -52,6 +54,7 @@ impl DriveSpaceType {
             Self::Im => "IM space",
             Self::Rtc => "rtc space",
             Self::Notary => "notary space",
+            Self::Website => "website space",
         }
     }
 
@@ -67,6 +70,7 @@ impl DriveSpaceType {
             "im" => Some(Self::Im),
             "rtc" => Some(Self::Rtc),
             "notary" => Some(Self::Notary),
+            "website" => Some(Self::Website),
             _ => None,
         }
     }

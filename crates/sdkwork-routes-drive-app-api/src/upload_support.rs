@@ -211,7 +211,7 @@ pub(crate) async fn insert_node_version_for_storage_object<'e, E>(
     storage: NodeVersionStorageMetadata<'_>,
     upload_item: Option<&DriveUploadItem>,
     operator_id: &str,
-) -> Result<(), (StatusCode, Json<ProblemDetail>)>
+) -> Result<String, (StatusCode, Json<ProblemDetail>)>
 where
     E: sqlx::Executor<'e, Database = sqlx::Any>,
 {
@@ -241,7 +241,7 @@ pub(crate) async fn insert_node_version_metadata<'e, E>(
     metadata: NodeVersionStorageMetadata<'_>,
     attribution: NodeVersionAttribution<'_>,
     operator_id: &str,
-) -> Result<(), (StatusCode, Json<ProblemDetail>)>
+) -> Result<String, (StatusCode, Json<ProblemDetail>)>
 where
     E: sqlx::Executor<'e, Database = sqlx::Any>,
 {
@@ -259,7 +259,7 @@ where
             'active', $18, $18
          )",
     )
-    .bind(version_id)
+    .bind(&version_id)
     .bind(metadata.tenant_id)
     .bind(metadata.space_id)
     .bind(metadata.node_id)
@@ -280,7 +280,7 @@ where
     .execute(executor)
     .await
     .map_err(internal_sql_error("insert dr_drive_node_version failed"))?;
-    Ok(())
+    Ok(version_id)
 }
 pub(crate) async fn ensure_upload_session_id_available(
     pool: &AnyPool,

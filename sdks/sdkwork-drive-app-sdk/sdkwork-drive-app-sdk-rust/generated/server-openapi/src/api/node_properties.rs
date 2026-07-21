@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::app_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{DriveNodePropertyHttpResponse, DriveNodePropertyListHttpResponse, SetNodePropertyRequest};
+use crate::models::{DriveNodeProperty, SetNodePropertyRequest};
 
 #[derive(Clone)]
 pub struct NodePropertiesApi {
@@ -16,7 +16,7 @@ impl NodePropertiesApi {
     }
 
     /// List node custom properties
-    pub async fn list(&self, node_id: &str, visibility: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveNodePropertyListHttpResponse, SdkworkError> {
+    pub async fn list(&self, node_id: &str, visibility: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<serde_json::Value, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("visibility", visibility, "form", true, false, None),
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
@@ -27,7 +27,7 @@ impl NodePropertiesApi {
     }
 
     /// Create or update a node custom property
-    pub async fn update(&self, node_id: &str, property_key: &str, body: &SetNodePropertyRequest) -> Result<DriveNodePropertyHttpResponse, SdkworkError> {
+    pub async fn update(&self, node_id: &str, property_key: &str, body: &SetNodePropertyRequest) -> Result<DriveNodeProperty, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/properties/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(property_key, PathParameterSpec::new("propertyKey", "simple", false))));
         self.client.put(&path, Some(body), None, None, Some("application/json")).await
     }

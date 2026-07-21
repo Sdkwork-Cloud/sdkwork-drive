@@ -144,7 +144,11 @@ where
             created_by: operator_id.clone(),
             updated_by: operator_id,
         };
-        self.store.insert_space(&new_space).await
+        if command.space_type == DriveSpaceType::Website {
+            self.store.insert_website_space(&new_space).await
+        } else {
+            self.store.insert_space(&new_space).await
+        }
     }
 
     pub async fn list_spaces(

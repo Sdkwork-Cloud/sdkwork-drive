@@ -9,10 +9,30 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-rust"
   },
-  "changeFingerprint": "bc90bae35955006052a331d91af24fab515b49b2744787163cd2efc705eb3c49",
+  "changeFingerprint": "dd53f085201c4c20250644d9853bb10c72200702d93544afa4a18be858507810",
   "changes": {
-    "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [],
+    "createdGeneratedFiles": [
+      "src/models/create_website_root_request.rs",
+      "src/models/website_root_folder_selector.rs",
+      "src/models/website_root_http_response.rs",
+      "src/models/website_root_list_http_response.rs",
+      "src/models/website_root_page_data.rs",
+      "src/models/website_root_resource_data.rs",
+      "src/models/website_root_selector.rs",
+      "src/models/website_root_space_selector.rs",
+      "src/models/website_root.rs"
+    ],
+    "updatedGeneratedFiles": [
+      "src/api/assets.rs",
+      "src/api/drive.rs",
+      "src/api/node_labels.rs",
+      "src/api/node_properties.rs",
+      "src/api/nodes.rs",
+      "src/api/watch_channels.rs",
+      "src/client.rs",
+      "src/http/client.rs",
+      "src/models/mod.rs"
+    ],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
@@ -22,17 +42,9 @@
       "LICENSE",
       "README.md",
       "sdkwork-sdk.json",
-      "src/api/assets.rs",
       "src/api/base.rs",
-      "src/api/drive.rs",
       "src/api/mod.rs",
-      "src/api/node_labels.rs",
-      "src/api/node_properties.rs",
-      "src/api/nodes.rs",
       "src/api/paths.rs",
-      "src/api/watch_channels.rs",
-      "src/client.rs",
-      "src/http/client.rs",
       "src/http/mod.rs",
       "src/lib.rs",
       "src/models/apply_node_label_request.rs",
@@ -148,7 +160,6 @@
       "src/models/file_version.rs",
       "src/models/mark_uploader_part_uploaded_request.rs",
       "src/models/media_resource.rs",
-      "src/models/mod.rs",
       "src/models/move_node_request.rs",
       "src/models/node_capabilities_http_response.rs",
       "src/models/node_capabilities_response.rs",
@@ -207,26 +218,109 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [],
-    "details": [],
-    "requiresVerification": false,
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+    "areas": [
+      "api-surface",
+      "models",
+      "runtime",
+      "unknown"
+    ],
+    "details": [
+      {
+        "area": "api-surface",
+        "paths": [
+          "src/api/assets.rs",
+          "src/api/drive.rs",
+          "src/api/node_labels.rs",
+          "src/api/node_properties.rs",
+          "src/api/nodes.rs",
+          "src/api/watch_channels.rs"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "src/models/create_website_root_request.rs",
+          "src/models/mod.rs",
+          "src/models/website_root_folder_selector.rs",
+          "src/models/website_root_http_response.rs",
+          "src/models/website_root_list_http_response.rs",
+          "src/models/website_root_page_data.rs",
+          "src/models/website_root_resource_data.rs",
+          "src/models/website_root_selector.rs",
+          "src/models/website_root_space_selector.rs",
+          "src/models/website_root.rs"
+        ]
+      },
+      {
+        "area": "runtime",
+        "paths": [
+          "src/http/client.rs"
+        ]
+      },
+      {
+        "area": "unknown",
+        "paths": [
+          "src/client.rs"
+        ]
+      }
+    ],
+    "requiresVerification": true,
+    "summary": "Detected impact areas: api-surface, models, runtime, unknown. Verification is required."
   },
   "verificationPlan": {
-    "shouldRun": false,
-    "runPhase": "skip",
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
-    "steps": []
+    "shouldRun": true,
+    "runPhase": "now",
+    "summary": "Detected impact areas: api-surface, models, runtime, unknown. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "steps": [
+      {
+        "id": "check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, unknown.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "rust",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action check"
+      },
+      {
+        "id": "build",
+        "title": "Unified package build",
+        "required": true,
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, unknown.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "rust",
+          "--project-dir",
+          ".",
+          "--action",
+          "build"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action build"
+      }
+    ]
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "low",
-    "nextAction": "skip",
+    "riskLevel": "high",
+    "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
-      "no-actionable-changes"
+      "manual-review-required",
+      "unknown-impact",
+      "verification-required"
     ]
   },
   "preservedLegacyFiles": false

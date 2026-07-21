@@ -134,8 +134,7 @@ fn package_scripts_use_the_shared_lifecycle_and_keep_sqlite_explicit() {
         .and_then(serde_json::Value::as_str)
         .expect("pnpm build script should exist");
     assert_eq!(
-        drive_build,
-        "pnpm exec sdkwork-app build",
+        drive_build, "pnpm exec sdkwork-app build",
         "pnpm build must delegate to the manifest-driven sdkwork-app lifecycle"
     );
     let private_build = scripts

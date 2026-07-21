@@ -3,11 +3,11 @@ use sqlx::any::AnyRow;
 use sqlx::{AnyConnection, AnyPool, Row};
 
 use crate::domain::uploader::{DriveUploadItem, DriveUploadPart};
-use crate::infrastructure::sql::begin_transaction_sql;
 use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::infrastructure::sql::upload_query_columns::{
     DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS, DRIVE_UPLOAD_PART_SELECT_COLUMNS,
 };
+use crate::infrastructure::sql::{begin_transaction_sql, next_drive_runtime_id};
 use crate::ports::permission_store::DrivePermissionStore;
 use crate::ports::uploader_store::{
     CompleteDriveStoredUpload, DriveUploaderNodeRecord, DriveUploaderSpaceRecord,
@@ -550,6 +550,10 @@ impl DriveUploaderStore for SqlUploaderStore {
                             "commit uploader completion transaction failed: {error}"
                         ))
                     })?;
+                sdkwork_drive_observability::metrics::record_outbox_pending();
+                crate::infrastructure::outbox_dispatch::trigger_immediate_outbox_dispatch(
+                    self.pool.clone(),
+                );
                 Ok(item)
             }
             Err(error) => {
@@ -927,19 +931,72 @@ async fn complete_stored_upload_in_transaction(
         object_key,
     )
     .await?;
-    crate::infrastructure::change_recorder::record_drive_change_on_connection(
+    let node_version_id =
+        insert_stored_upload_node_version(connection, &target, &storage_object, completion).await?;
+    crate::infrastructure::change_recorder::record_drive_node_version_committed_on_connection(
         connection,
-        crate::infrastructure::change_recorder::RecordDriveChangeCommand {
+        crate::infrastructure::change_recorder::RecordDriveNodeVersionCommittedCommand {
             tenant_id: &completion.tenant_id,
+            organization_id: target.item.organization_id.as_deref(),
             space_id: &target.item.space_id,
-            node_id: Some(&target.item.node_id),
-            event_type: sdkwork_drive_contract::drive::domain_events::uploader::UPLOAD_COMPLETED,
+            node_id: &target.item.node_id,
+            node_version_id: &node_version_id,
+            version_no: storage_object.version_no,
+            operation_id: &target.item.id,
+            content_type: &storage_object.content_type,
+            content_length: storage_object.content_length,
+            checksum_sha256_hex: &storage_object.checksum_sha256_hex,
             actor_id: &completion.operator_id,
         },
     )
     .await?;
 
     read_upload_item_by_id(connection, &completion.tenant_id, &target.item.id).await
+}
+
+async fn insert_stored_upload_node_version(
+    connection: &mut AnyConnection,
+    target: &StoredUploadCompletionTarget,
+    storage_object: &StoredUploadObject,
+    completion: &CompleteDriveStoredUpload,
+) -> Result<String, DriveServiceError> {
+    let node_version_id = next_drive_runtime_id("Drive node version")?.to_string();
+    sqlx::query(
+        "INSERT INTO dr_drive_node_version (
+            id, tenant_id, space_id, node_id, version_no, storage_object_id,
+            content_type, content_length, checksum_sha256_hex, version_kind,
+            version_label, change_source, change_summary, restored_from_version_id,
+            app_id, app_resource_type, app_resource_id, scene, source,
+            lifecycle_status, created_by, updated_by
+         ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, 'auto',
+            NULL, 'uploader', NULL, NULL, $10, $11, $12, $13, $14,
+            'active', $15, $15
+         )",
+    )
+    .bind(&node_version_id)
+    .bind(&completion.tenant_id)
+    .bind(&target.item.space_id)
+    .bind(&target.item.node_id)
+    .bind(storage_object.version_no)
+    .bind(&storage_object.id)
+    .bind(&storage_object.content_type)
+    .bind(storage_object.content_length)
+    .bind(&storage_object.checksum_sha256_hex)
+    .bind(&target.item.app_id)
+    .bind(&target.item.app_resource_type)
+    .bind(&target.item.app_resource_id)
+    .bind(target.item.scene.as_deref())
+    .bind(target.item.source.as_deref())
+    .bind(&completion.operator_id)
+    .execute(&mut *connection)
+    .await
+    .map_err(|error| {
+        DriveServiceError::Internal(format!(
+            "insert uploaded dr_drive_node_version failed: {error}"
+        ))
+    })?;
+    Ok(node_version_id)
 }
 
 async fn find_stored_upload_completion_target(

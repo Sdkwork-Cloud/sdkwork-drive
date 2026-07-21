@@ -599,6 +599,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/app/v3/api/drive/spaces/{spaceId}/website_roots",
+        "drive-app-api",
+        "websiteRoots.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/drive/spaces/{spaceId}/website_roots",
+        "drive-app-api",
+        "websiteRoots.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/app/v3/api/drive/trash",
         "drive-app-api",
         "trash.list",
@@ -674,6 +686,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/drive/watch_channels/{channelId}/stop",
         "drive-app-api",
         "watchChannels.stop",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/drive/website_roots/{rootUuid}",
+        "drive-app-api",
+        "websiteRoots.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,

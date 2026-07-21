@@ -15,6 +15,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -41,6 +42,11 @@ const API_INPUTS = {
     sdkFamily: "sdkwork-drive-admin-storage-sdk",
     generator: "sdks/sdkwork-drive-admin-storage-sdk/bin/generate-sdk.mjs",
   },
+  "internal-api": {
+    path: "apis/internal-api/drive/sdkwork-drive-internal-api.openapi.yaml",
+    sdkFamily: "sdkwork-drive-internal-sdk",
+    generator: "sdks/sdkwork-drive-internal-sdk/bin/generate-sdk.mjs",
+  },
 };
 
 function parseArgs(argv) {
@@ -61,6 +67,8 @@ function parseArgs(argv) {
       args.inputs["admin-storage-api"] = argv[++i];
     } else if (arg === "--open-input") {
       args.inputs["open-api"] = argv[++i];
+    } else if (arg === "--internal-input") {
+      args.inputs["internal-api"] = argv[++i];
     }
   }
   return args;
@@ -73,7 +81,8 @@ function validateOpenApiContract(surface, inputPath) {
     return false;
   }
   try {
-    const content = JSON.parse(readFileSync(fullPath, "utf8"));
+    const source = readFileSync(fullPath, "utf8");
+    const content = /\.ya?ml$/iu.test(fullPath) ? parseYaml(source) : JSON.parse(source);
     if (!content.openapi) {
       console.error(`[sdkwork-drive] ${inputPath} is not a valid OpenAPI document (missing 'openapi' field)`);
       return false;

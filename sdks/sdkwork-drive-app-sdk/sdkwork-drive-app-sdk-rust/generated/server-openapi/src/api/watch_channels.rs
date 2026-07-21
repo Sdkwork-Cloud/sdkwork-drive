@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::app_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{CreateWatchChannelRequest, DriveWatchChannelHttpResponse, DriveWatchChannelListHttpResponse, StopWatchChannelHttpResponse, StopWatchChannelRequest};
+use crate::models::{CreateWatchChannelRequest, DriveWatchChannel, DriveWatchChannelListData, StopWatchChannelRequest, StopWatchChannelResponse};
 
 #[derive(Clone)]
 pub struct WatchChannelsApi {
@@ -16,19 +16,19 @@ impl WatchChannelsApi {
     }
 
     /// Create a push notification channel for Drive changes
-    pub async fn changes_watch(&self, body: &CreateWatchChannelRequest) -> Result<DriveWatchChannelHttpResponse, SdkworkError> {
+    pub async fn changes_watch(&self, body: &CreateWatchChannelRequest) -> Result<DriveWatchChannel, SdkworkError> {
         let path = app_path(&"/drive/changes/watch".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Create a push notification channel for a Drive node
-    pub async fn nodes_watch(&self, node_id: &str, body: &CreateWatchChannelRequest) -> Result<DriveWatchChannelHttpResponse, SdkworkError> {
+    pub async fn nodes_watch(&self, node_id: &str, body: &CreateWatchChannelRequest) -> Result<DriveWatchChannel, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/watch", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// List Drive watch channels
-    pub async fn list(&self, resource_type: Option<&str>, lifecycle_status: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveWatchChannelListHttpResponse, SdkworkError> {
+    pub async fn list(&self, resource_type: Option<&str>, lifecycle_status: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveWatchChannelListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("resourceType", resource_type, "form", true, false, None),
             QueryParameterSpec::new("lifecycleStatus", lifecycle_status, "form", true, false, None),
@@ -40,13 +40,13 @@ impl WatchChannelsApi {
     }
 
     /// Get a Drive watch channel
-    pub async fn retrieve(&self, channel_id: &str) -> Result<DriveWatchChannelHttpResponse, SdkworkError> {
+    pub async fn retrieve(&self, channel_id: &str) -> Result<DriveWatchChannel, SdkworkError> {
         let path = app_path(&format!("/drive/watch_channels/{}", serialize_path_parameter(channel_id, PathParameterSpec::new("channelId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
     /// Stop a Drive watch channel
-    pub async fn stop(&self, channel_id: &str, body: &StopWatchChannelRequest) -> Result<StopWatchChannelHttpResponse, SdkworkError> {
+    pub async fn stop(&self, channel_id: &str, body: &StopWatchChannelRequest) -> Result<StopWatchChannelResponse, SdkworkError> {
         let path = app_path(&format!("/drive/watch_channels/{}/stop", serialize_path_parameter(channel_id, PathParameterSpec::new("channelId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }

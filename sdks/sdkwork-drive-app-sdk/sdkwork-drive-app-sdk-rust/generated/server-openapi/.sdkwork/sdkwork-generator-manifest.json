@@ -44,7 +44,7 @@
     },
     {
       "path": "src/api/assets.rs",
-      "sha256": "ae433e0010a7a788854611043c148cf8b54f73283fae99664802edb7583d189a"
+      "sha256": "4cf40ad377ca3dcc72c980c526df61675da0df44b2b657d741fcfbc84501d58d"
     },
     {
       "path": "src/api/base.rs",
@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "2eb16bc45b3bf3b9984ca2552ed023c4bd3917a45d5b8b04fc5576dd4415624d"
+      "sha256": "2acb88bce8c383d877196e274353909edd1cdc9638162909df65f00da26ccc63"
     },
     {
       "path": "src/api/mod.rs",
@@ -60,15 +60,15 @@
     },
     {
       "path": "src/api/node_labels.rs",
-      "sha256": "1efeb04c8e6762d57120b9cd5a723a6e1f89842ba5b853b09a47d834afed6487"
+      "sha256": "16cc35d5044fe738181dcbd9a58897b39c7ed217dfcd3c9be9127eae93ea53b0"
     },
     {
       "path": "src/api/node_properties.rs",
-      "sha256": "519dfc650d414bf31488bfb6b68b3727c95120e5e4f052f77a449d2ed87317ce"
+      "sha256": "326e59a7417428aee96c0cd80926785b8de2a614eb5d73dcb2c5bcb30a813f5a"
     },
     {
       "path": "src/api/nodes.rs",
-      "sha256": "2557e00c0fcad8f86fbd85b4c2993eb4b5297ee9a4ef83af2dcaa3faaafe0940"
+      "sha256": "4c71c89b970be8a737abedbb6049376ff9885cbdef832005738909b781e4bd77"
     },
     {
       "path": "src/api/paths.rs",
@@ -76,15 +76,15 @@
     },
     {
       "path": "src/api/watch_channels.rs",
-      "sha256": "d96275b45d1dab1d3386e071db84f77c0eb315a5cb1c3b076793521f35a09ec7"
+      "sha256": "362fb82dfebebda1df2fb724bc6fcb150407c1e639028ec3877a0586a5eb6c79"
     },
     {
       "path": "src/client.rs",
-      "sha256": "b1ebf8a24b7e7767029c811870507fe371e4a158e90a71722886d285df2c1bf1"
+      "sha256": "81549af2e1c463f308f19bdd60f4f5e38c720b95db39ce44bb155156a0c3b9ed"
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "ffd88587750661cd174b1d0bae02a876d24f8537acdccaa67e297a549d0a927e"
+      "sha256": "d88bea3a6cd9b0065c1b891cde726716c74fa6b7400520e22b0080811eee5951"
     },
     {
       "path": "src/http/mod.rs",
@@ -297,6 +297,10 @@
     {
       "path": "src/models/create_watch_channel_request.rs",
       "sha256": "648047f8c288ca114712c6ef0a0c6412e1618de3a760f2f4f6207ba65ce9bd54"
+    },
+    {
+      "path": "src/models/create_website_root_request.rs",
+      "sha256": "948a9586344dbee8e4a3aa11830eb36c507dd209d4f6b32152d91090ffd7c640"
     },
     {
       "path": "src/models/download_package_http_response.rs",
@@ -548,7 +552,7 @@
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "18c1d6875b5b5a8b991b8dc03c8a70e57d359c181eea466fbc41bf2a927b4089"
+      "sha256": "77ccb538e1818fee33195ad80085cc23a3ae2654df59fa74108bb459f59761b9"
     },
     {
       "path": "src/models/move_node_request.rs",
@@ -741,6 +745,38 @@
     {
       "path": "src/models/uploader_upload_part.rs",
       "sha256": "c528f4250a8b53c0cc57fee6623d9436c1ebef7b0380a937f3ba477024ac7eef"
+    },
+    {
+      "path": "src/models/website_root_folder_selector.rs",
+      "sha256": "8e58a58d5381f59a407f787351b76f7a0e5256d8a4a5399e090224f42c900636"
+    },
+    {
+      "path": "src/models/website_root_http_response.rs",
+      "sha256": "cae986ba3135c7f854caab49ea968c30e9785290676d313367b4e3c734861c91"
+    },
+    {
+      "path": "src/models/website_root_list_http_response.rs",
+      "sha256": "835bf5563008b1c7673504e6630371c45d0ed0d0558335415a8cce277f20e49d"
+    },
+    {
+      "path": "src/models/website_root_page_data.rs",
+      "sha256": "e3572bbe000645ed0063ecf74fb0c19cf97267fed09e46254cbbb3d2cb356792"
+    },
+    {
+      "path": "src/models/website_root_resource_data.rs",
+      "sha256": "6911c52c58b4f15103181d82f22671385ae5f777561f2e67c698c92ff0b8ea0a"
+    },
+    {
+      "path": "src/models/website_root_selector.rs",
+      "sha256": "aadb969de8ea07fafc6dc1bda5c19e9851572ce296a919153eb233f7e7d0c7bb"
+    },
+    {
+      "path": "src/models/website_root_space_selector.rs",
+      "sha256": "0fc497c87718c416ae6cf5ff6d699430ded5b3219a43d58f66f1ceb4f9fe19ef"
+    },
+    {
+      "path": "src/models/website_root.rs",
+      "sha256": "310e9400e03870f9842f22e75b0603a8f40d35e8d1f45539925c8b4b1bd95e10"
     }
   ],
   "scaffoldFiles": [

@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 const HTTP_METHODS = new Set([
   "get",
@@ -19,6 +20,21 @@ const OFFICIAL_LANGUAGE_ORDER = ["typescript", "rust", "java", "python", "go"];
 const DEFAULT_LANGUAGE = "typescript";
 const FIXED_SDK_VERSION = "0.1.0";
 const STANDARD_PROFILE = "sdkwork-v3";
+
+function readOpenApiDocument(filePath) {
+  const source = readFileSync(filePath, "utf8");
+  if (/\.ya?ml$/iu.test(filePath)) {
+    return parseYaml(source);
+  }
+  return JSON.parse(source);
+}
+
+function writeOpenApiDocument(filePath, document) {
+  const source = /\.ya?ml$/iu.test(filePath)
+    ? stringifyYaml(document, { lineWidth: 0 })
+    : `${JSON.stringify(document, null, 2)}\n`;
+  writeFileSync(filePath, source.endsWith("\n") ? source : `${source}\n`, "utf8");
+}
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(scriptDir, "..");
@@ -366,18 +382,29 @@ export function toOwnerOnlyOpenApi(openapiDocument) {
   return ownerOnlyDocument;
 }
 
-function writeOwnerOnlyOpenApiInput({ sourceOpenapiPath, sdkName }) {
-  const openapiDocument = JSON.parse(readFileSync(sourceOpenapiPath, "utf8"));
+function writeOwnerOnlyOpenApiInput({ sourceOpenapiPath, sdkName, family }) {
+  const openapiDocument = readOpenApiDocument(sourceOpenapiPath);
   const ownerOnlyDocument = toOwnerOnlyOpenApi(openapiDocument);
-  const outputDir = path.join(
-    workspaceRoot,
-    "target",
-    "drive-sdk-generator-input",
-    sdkName,
-  );
+  const outputDir = family.generationInputFile
+    ? path.join(family.sdkRoot, "openapi")
+    : path.join(workspaceRoot, "target", "drive-sdk-generator-input", sdkName);
   mkdirSync(outputDir, { recursive: true });
-  const outputPath = path.join(outputDir, path.basename(sourceOpenapiPath));
-  writeFileSync(outputPath, `${JSON.stringify(ownerOnlyDocument, null, 2)}\n`, "utf8");
+  const outputPath = path.join(
+    outputDir,
+    family.generationInputFile || path.basename(sourceOpenapiPath),
+  );
+  writeOpenApiDocument(outputPath, ownerOnlyDocument);
+  return outputPath;
+}
+
+function syncAuthorityMirror(family, sourceOpenapiPath) {
+  if (!family.authorityMirrorFile) {
+    return sourceOpenapiPath;
+  }
+  const outputDir = path.join(family.sdkRoot, "openapi");
+  const outputPath = path.join(outputDir, family.authorityMirrorFile);
+  mkdirSync(outputDir, { recursive: true });
+  writeOpenApiDocument(outputPath, readOpenApiDocument(sourceOpenapiPath));
   return outputPath;
 }
 
@@ -423,7 +450,7 @@ function writeDriveFamilyMetadata({
   generatorName,
   baseUrl,
 }) {
-  const openapiDocument = JSON.parse(readFileSync(openapiPath, "utf8"));
+  const openapiDocument = readOpenApiDocument(openapiPath);
   const operations = collectOperations(openapiDocument);
   const relativeOpenapiPath = toPosixPath(path.relative(family.sdkRoot, openapiPath));
   const generatedPackages = Object.fromEntries(OFFICIAL_LANGUAGE_ORDER.map((language) => [
@@ -446,6 +473,7 @@ function writeDriveFamilyMetadata({
     apiAuthority: family.apiAuthority,
     sdkFamily: family.sdkName,
     sdkType: family.sdkType,
+    ...(family.sdkSurface ? { sdkSurface: family.sdkSurface } : {}),
     apiPrefix: family.apiPrefix,
     generationInputSpec: relativeOpenapiPath,
     generatedPackages,
@@ -478,7 +506,7 @@ function removeStaleGeneratedTrackingFiles(outputPath) {
 }
 
 function writeGeneratedSourceOpenApi({ openapiPath, outputPath }) {
-  const openapiDocument = JSON.parse(readFileSync(openapiPath, "utf8"));
+  const openapiDocument = readOpenApiDocument(openapiPath);
   writeFileSync(
     path.join(outputPath, "source-openapi.json"),
     `${JSON.stringify(openapiDocument, null, 2)}\n`,
@@ -552,29 +580,37 @@ function syncLanguageManifestEntries(family, existingLanguages) {
   }));
 }
 
-function syncDriveFamilyManifest(family, openapiPath) {
+function syncDriveFamilyManifest(family, authorityOpenapiPath, generationInputPath) {
   const manifestPath = path.join(family.sdkRoot, "sdk-manifest.json");
   let manifest = {};
   if (existsSync(manifestPath)) {
     manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   }
 
-  const relativeOpenapiPath = toPosixPath(path.relative(family.sdkRoot, openapiPath));
+  const relativeAuthorityPath = toPosixPath(
+    path.relative(family.sdkRoot, authorityOpenapiPath),
+  );
+  const relativeGenerationPath = toPosixPath(
+    path.relative(family.sdkRoot, generationInputPath),
+  );
   manifest.schemaVersion = manifest.schemaVersion || 1;
   manifest.workspace = manifest.workspace || family.sdkName;
   manifest.sdkFamily = manifest.sdkFamily || family.sdkName;
   manifest.sdkName = manifest.sdkName || family.sdkName;
   manifest.sdkOwner = family.sdkOwner;
   manifest.apiAuthority = family.apiAuthority;
-  manifest.authoritySpec = relativeOpenapiPath;
-  manifest.generationInputSpec = relativeOpenapiPath;
+  if (family.sdkSurface) {
+    manifest.sdkSurface = family.sdkSurface;
+  }
+  manifest.authoritySpec = relativeAuthorityPath;
+  manifest.generationInputSpec = relativeGenerationPath;
   manifest.derivedSpecs = {
     ...(manifest.derivedSpecs || {}),
-    default: relativeOpenapiPath,
+    default: relativeGenerationPath,
   };
   manifest.discoverySurface = {
     ...(manifest.discoverySurface || {}),
-    sdkTarget: family.sdkType,
+    sdkTarget: family.sdkSurface || family.sdkType,
     apiPrefix: family.apiPrefix,
     generatedProtocols: ["http-openapi"],
     manualTransports: [],
@@ -612,11 +648,13 @@ export function runDriveSdkGenerator(family, argv) {
   if (!existsSync(openapiPath)) {
     fail(sdkName, `openapi file not found: ${openapiPath}`);
   }
-  syncDriveFamilyManifest(family, openapiPath);
+  const authorityOpenapiPath = syncAuthorityMirror(family, openapiPath);
   const ownerOnlyOpenapiPath = writeOwnerOnlyOpenApiInput({
-    sourceOpenapiPath: openapiPath,
+    sourceOpenapiPath: authorityOpenapiPath,
     sdkName,
+    family,
   });
+  syncDriveFamilyManifest(family, authorityOpenapiPath, ownerOnlyOpenapiPath);
 
   const languages = args.allLanguages
     ? OFFICIAL_LANGUAGE_ORDER

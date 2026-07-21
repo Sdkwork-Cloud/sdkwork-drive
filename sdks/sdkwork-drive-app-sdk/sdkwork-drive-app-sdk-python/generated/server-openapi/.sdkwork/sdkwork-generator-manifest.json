@@ -60,7 +60,7 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/api/drive.py",
-      "sha256": "4854685e584caeda433e03e75f7514ae359a76f171c4e5afa00100e9b81e4052"
+      "sha256": "78ba8237eecd74ac1722be7898dd5791809543ba816f2dffad71e4f8dd2840ac"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/api/node_labels.py",
@@ -88,7 +88,7 @@
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
-      "sha256": "d4a0457b44c21fd3c60459dfab8a0b00f516dfe1bc49eba344005b6571d9f2c4"
+      "sha256": "660297ea4a756aff6c52bd8fb3ea5aeccb2c64cb845dc52fa12c80976705725e"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/apply_node_label_request.py",
@@ -289,6 +289,10 @@
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/create_watch_channel_request.py",
       "sha256": "8164ceba0e41f3ab608082f29136c31a070823fe06e7e927d6558866179337ec"
+    },
+    {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/create_website_root_request.py",
+      "sha256": "1ffeb1cfc1ba6941b6e72e94675c7bf190d711cec44da817348943d096bc32b9"
     },
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/download_package_http_response.py",
@@ -729,6 +733,38 @@
     {
       "path": "sdkwork_drive_app_sdk_generated_python/models/uploader_upload_part.py",
       "sha256": "98e8cad7e1e97bed65b70c2cd80ea4a6a7edecece98d0f1b93bd68984a69ffa8"
+    },
+    {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/website_root_folder_selector.py",
+      "sha256": "0c7a1108b690c9cfd38d220fbe28e209d7f4d5dc9eb50c8f59175361b4172a19"
+    },
+    {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/website_root_http_response.py",
+      "sha256": "f5ecf021e188a2036da20415cbcd6c038a3497efc8a4d6c6d503f91f6c38e43a"
+    },
+    {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/website_root_list_http_response.py",
+      "sha256": "6ae38ec38a48208f6fc1b05ab69275d33f17c0c65fd8764d5f9d3d805e4bf8c3"
+    },
+    {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/website_root_page_data.py",
+      "sha256": "6689412d51a71a6d6620a52cad0ff2921ce6df06df7ea7d52eb57458db7b2cdb"
+    },
+    {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/website_root_resource_data.py",
+      "sha256": "9c894c47df13b6e96fc2184ba1dd2e4c060837b166d06ead9d304ee9fd10e153"
+    },
+    {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/website_root_selector.py",
+      "sha256": "4fccc459adf4650b19781a4346481cd79c0870bd6f729cc1b4de0ca30ba3eeec"
+    },
+    {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/website_root_space_selector.py",
+      "sha256": "5d74565e379cc921e13b6367870253aadc37ee3583a6a55e71cf4036e8909081"
+    },
+    {
+      "path": "sdkwork_drive_app_sdk_generated_python/models/website_root.py",
+      "sha256": "b2b26476fe7b410cd88ea30a235deb36ed911e0d734190042d5e532038b0b72e"
     },
     {
       "path": "sdkwork-sdk.json",

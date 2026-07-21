@@ -1,0 +1,214 @@
+{
+  "asyncapi": "3.0.0",
+  "id": "urn:sdkwork:drive:events",
+  "info": {
+    "title": "SDKWork Drive Events",
+    "version": "1.0.0",
+    "description": "Versioned Drive cross-service events. Consumers must process only rootScopes addressed to their registered scope."
+  },
+  "defaultContentType": "application/json",
+  "channels": {
+    "nodeVersionCommitted": {
+      "address": "drive.node.version.committed.v1",
+      "messages": {
+        "DriveNodeVersionCommittedV1": {
+          "$ref": "#/components/messages/DriveNodeVersionCommittedV1"
+        }
+      }
+    }
+  },
+  "operations": {
+    "publishNodeVersionCommitted": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/nodeVersionCommitted"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/nodeVersionCommitted/messages/DriveNodeVersionCommittedV1"
+        }
+      ]
+    }
+  },
+  "components": {
+    "messages": {
+      "DriveNodeVersionCommittedV1": {
+        "name": "DriveNodeVersionCommittedV1",
+        "title": "Drive node version committed",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "#/components/schemas/DriveNodeVersionCommittedV1Envelope"
+        }
+      }
+    },
+    "schemas": {
+      "DriveNodeVersionCommittedV1Envelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "source",
+          "specversion",
+          "time",
+          "tenantId",
+          "subject",
+          "actorId",
+          "sequenceNo",
+          "data"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "type": {
+            "const": "drive.node.version.committed.v1"
+          },
+          "source": {
+            "const": "sdkwork-drive"
+          },
+          "specversion": {
+            "const": "1.0"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tenantId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "organizationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "subject": {
+            "type": "string",
+            "pattern": "^drive://spaces/[^/]+/nodes/[^/]+$"
+          },
+          "actorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "sequenceNo": {
+            "type": "string",
+            "format": "int64",
+            "pattern": "^[1-9][0-9]*$",
+            "x-sdkwork-int64-string": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/DriveNodeVersionCommittedV1Data"
+          }
+        }
+      },
+      "DriveNodeVersionCommittedV1Data": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "spaceId",
+          "nodeId",
+          "driveUri",
+          "driveVersionId",
+          "versionNo",
+          "spaceRelativePath",
+          "contentType",
+          "contentLength",
+          "checksumSha256Hex",
+          "rootScopes"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "spaceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "nodeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "driveUri": {
+            "type": "string",
+            "pattern": "^drive://spaces/[^/]+/nodes/[^/]+$"
+          },
+          "driveVersionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "versionNo": {
+            "type": "string",
+            "format": "int64",
+            "pattern": "^[1-9][0-9]*$",
+            "x-sdkwork-int64-string": true
+          },
+          "spaceRelativePath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "contentType": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 255
+          },
+          "contentLength": {
+            "type": "string",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "x-sdkwork-int64-string": true
+          },
+          "checksumSha256Hex": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "rootScopes": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/DriveRootScopeEffect"
+            }
+          }
+        }
+      },
+      "DriveRootScopeEffect": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scopeId", "scopeKind", "relativePath"],
+        "properties": {
+          "scopeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "scopeKind": {
+            "type": "string",
+            "enum": ["WEBSITE_ROOT", "KNOWLEDGEBASE_RAW"]
+          },
+          "relativePath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "rootGeneration": {
+            "type": "string",
+            "format": "int64",
+            "pattern": "^[1-9][0-9]*$",
+            "x-sdkwork-int64-string": true
+          }
+        }
+      }
+    }
+  }
+}

@@ -129,7 +129,7 @@ fn schema_registry_documents_runtime_dictionary_constraints() {
     .join("\n");
 
     for required in [
-        "enum: [personal, team, knowledge_base, ai_generated, git_repository, deployment, app_upload, im, rtc, notary]",
+        "enum: [personal, team, knowledge_base, ai_generated, git_repository, deployment, app_upload, im, rtc, notary, website]",
         "enum: [user, group, domain, app]",
         "enum: [reader, commenter, writer, owner]",
         "enum: [reader, commenter, writer]",

@@ -24,6 +24,8 @@ pub enum DriveSpaceType {
     Rtc,
     /// Notary/verification files.
     Notary,
+    /// Directory-faithful static website projects.
+    Website,
 }
 
 impl DriveSpaceType {
@@ -39,6 +41,7 @@ impl DriveSpaceType {
             Self::Im => "im",
             Self::Rtc => "rtc",
             Self::Notary => "notary",
+            Self::Website => "website",
         }
     }
 
@@ -54,6 +57,7 @@ impl DriveSpaceType {
             "im" => Some(Self::Im),
             "rtc" => Some(Self::Rtc),
             "notary" => Some(Self::Notary),
+            "website" => Some(Self::Website),
             _ => None,
         }
     }

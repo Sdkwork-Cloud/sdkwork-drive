@@ -5286,7 +5286,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .map(|item| item["eventType"].as_str().unwrap_or_default().to_string())
         .collect::<Vec<_>>();
     for expected_event in [
-        "drive.upload_session.completed",
+        "drive.node.version.committed.v1",
         "drive.node.moved",
         "drive.node.copied",
         "drive.node.deleted",

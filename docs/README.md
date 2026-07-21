@@ -8,6 +8,8 @@ Documentation for SDKWork Drive follows `../sdkwork-specs/DOCUMENTATION_SPEC.md`
 | --- | --- |
 | Product PRD | [product/prd/PRD.md](product/prd/PRD.md) |
 | Technical architecture | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) |
+| Website Space PRD | [product/prd/PRD-website-space-publishing.md](product/prd/PRD-website-space-publishing.md) |
+| Website directory provider | [architecture/tech/TECH-website-directory-resource-provider.md](architecture/tech/TECH-website-directory-resource-provider.md) |
 | Production operations | [runbooks/drive-production-operations.md](runbooks/drive-production-operations.md) |
 | Backup and DR | [runbooks/drive-backup-disaster-recovery.md](runbooks/drive-backup-disaster-recovery.md) |
 
@@ -21,12 +23,14 @@ Documentation for SDKWork Drive follows `../sdkwork-specs/DOCUMENTATION_SPEC.md`
 - [TECH-drive-observability-event-dictionary.md](architecture/tech/TECH-drive-observability-event-dictionary.md)
 - [TECH-database-architecture.md](architecture/tech/TECH-database-architecture.md)
 - [TECH-storage-s3-architecture.md](architecture/tech/TECH-storage-s3-architecture.md)
+- [TECH-website-directory-resource-provider.md](architecture/tech/TECH-website-directory-resource-provider.md)
 
 ## Requirements
 
 - [REQ-2026-0001-production-readiness.md](product/requirements/REQ-2026-0001-production-readiness.md)
 - [REQ-2026-0002-production-security-alignment.md](product/requirements/REQ-2026-0002-production-security-alignment.md)
 - [REQ-2026-0003-pre-launch-debt-cleanup.md](product/requirements/REQ-2026-0003-pre-launch-debt-cleanup.md)
+- [REQ-2026-0004-website-space-directory-publishing.md](product/requirements/REQ-2026-0004-website-space-directory-publishing.md)
 
 ## Evidence and operator guides
 

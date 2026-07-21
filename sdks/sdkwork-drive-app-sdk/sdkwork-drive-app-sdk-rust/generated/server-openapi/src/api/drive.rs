@@ -4,7 +4,7 @@ use crate::api::base::{RequestHeaders};
 use crate::api::paths::app_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{ArchiveEntryListHttpResponse, ChangeListHttpResponse, CheckFavoriteNodesRequest, ClaimShareLinkHttpResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlHttpResponse, CreateDownloadUrlRequest, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileHttpResponse, CreateFileRequest, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkHttpResponse, CreateShareLinkRequest, CreateSpaceRequest, CreateUploadSessionRequest, DownloadPackageHttpResponse, DriveCommentHttpResponse, DriveCommentListHttpResponse, DriveCommentReplyHttpResponse, DriveCommentReplyListHttpResponse, DriveNodeHttpResponse, DriveNodeListHttpResponse, DrivePermissionHttpResponse, DrivePermissionListHttpResponse, DriveSandboxEntryHttpResponse, DriveSandboxEntryListHttpResponse, DriveSandboxFileContentHttpResponse, DriveSandboxMutationCommandHttpResponse, DriveSandboxVolumeListHttpResponse, DriveSpaceHttpResponse, DriveSpaceListHttpResponse, DriveUploadSessionHttpResponse, EffectivePermissionListHttpResponse, EmptyTrashHttpResponse, EmptyTrashRequest, ExtractArchiveEntriesHttpResponse, ExtractArchiveEntriesRequest, FavoriteNodeHttpResponse, FavoriteNodeRequest, FileVersionHttpResponse, FileVersionListHttpResponse, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesHttpResponse, NodeCommandRequest, NodePathHttpResponse, PrepareUploaderUploadHttpResponse, PrepareUploaderUploadRequest, PresignUploadPartRequest, PresignedUploadPartHttpResponse, PurgeDriveSandboxEntryRequest, QuotaSummaryHttpResponse, SdkWorkApiResponse, ShareLinkHttpResponse, ShareLinkListHttpResponse, StartPageTokenHttpResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPartHttpResponse};
+use crate::models::{ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, CreateWebsiteRootRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DrivePermission, DriveSandboxEntry, DriveSandboxEntryListData, DriveSandboxFileContent, DriveSandboxMutationCommandData, DriveSandboxVolumeListData, DriveShareLink, DriveSpace, DriveUploadSession, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodePathResponse, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignUploadPartRequest, PresignedUploadPart, PurgeDriveSandboxEntryRequest, QuotaSummary, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, WebsiteRoot, WebsiteRootPageData};
 
 #[derive(Clone)]
 pub struct DriveApi {
@@ -16,7 +16,7 @@ impl DriveApi {
         Self { client }
     }
 
-    pub async fn changes_list(&self, space_id: &str, cursor: Option<i64>, page_size: Option<i64>) -> Result<ChangeListHttpResponse, SdkworkError> {
+    pub async fn changes_list(&self, space_id: &str, cursor: Option<i64>, page_size: Option<i64>) -> Result<ChangeListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
@@ -26,7 +26,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn changes_start_page_token_retrieve(&self, space_id: &str) -> Result<StartPageTokenHttpResponse, SdkworkError> {
+    pub async fn changes_start_page_token_retrieve(&self, space_id: &str) -> Result<StartPageTokenResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
         ]);
@@ -34,17 +34,17 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn download_tokens_retrieve(&self, token: &str) -> Result<CreateDownloadUrlHttpResponse, SdkworkError> {
+    pub async fn download_tokens_retrieve(&self, token: &str) -> Result<CreateDownloadUrlResponse, SdkworkError> {
         let path = app_path(&format!("/drive/download_tokens/{}", serialize_path_parameter(token, PathParameterSpec::new("token", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn download_urls_create(&self, body: &CreateDownloadUrlRequest) -> Result<CreateDownloadUrlHttpResponse, SdkworkError> {
+    pub async fn download_urls_create(&self, body: &CreateDownloadUrlRequest) -> Result<CreateDownloadUrlResponse, SdkworkError> {
         let path = app_path(&"/drive/download_urls".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn favorites_list(&self, space_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<DriveNodeListHttpResponse, SdkworkError> {
+    pub async fn favorites_list(&self, space_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<DriveNodeListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
@@ -56,22 +56,22 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn favorites_check(&self, body: &CheckFavoriteNodesRequest) -> Result<SdkWorkApiResponse, SdkworkError> {
+    pub async fn favorites_check(&self, body: &CheckFavoriteNodesRequest) -> Result<serde_json::Value, SdkworkError> {
         let path = app_path(&"/drive/favorites/check".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn quotas_retrieve(&self) -> Result<QuotaSummaryHttpResponse, SdkworkError> {
+    pub async fn quotas_retrieve(&self) -> Result<QuotaSummary, SdkworkError> {
         let path = app_path(&"/drive/quotas/summary".to_string());
         self.client.get(&path, None, None).await
     }
 
-    pub async fn nodes_update(&self, node_id: &str, body: &UpdateNodeRequest) -> Result<DriveNodeHttpResponse, SdkworkError> {
+    pub async fn nodes_update(&self, node_id: &str, body: &UpdateNodeRequest) -> Result<DriveNode, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.patch(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn nodes_retrieve(&self, node_id: &str) -> Result<DriveNodeHttpResponse, SdkworkError> {
+    pub async fn nodes_retrieve(&self, node_id: &str) -> Result<DriveNode, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.get(&path, None, None).await
     }
@@ -81,12 +81,12 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn nodes_capabilities_list(&self, node_id: &str) -> Result<NodeCapabilitiesHttpResponse, SdkworkError> {
+    pub async fn nodes_capabilities_list(&self, node_id: &str) -> Result<NodeCapabilitiesResponse, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/capabilities", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn comments_list(&self, node_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveCommentListHttpResponse, SdkworkError> {
+    pub async fn comments_list(&self, node_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<serde_json::Value, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
@@ -95,17 +95,17 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn comments_create(&self, node_id: &str, body: &CreateCommentRequest) -> Result<DriveCommentHttpResponse, SdkworkError> {
+    pub async fn comments_create(&self, node_id: &str, body: &CreateCommentRequest) -> Result<DriveComment, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/comments", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn comments_retrieve(&self, node_id: &str, comment_id: &str) -> Result<DriveCommentHttpResponse, SdkworkError> {
+    pub async fn comments_retrieve(&self, node_id: &str, comment_id: &str) -> Result<DriveComment, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/comments/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(comment_id, PathParameterSpec::new("commentId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn comments_update(&self, node_id: &str, comment_id: &str, body: &UpdateCommentRequest) -> Result<DriveCommentHttpResponse, SdkworkError> {
+    pub async fn comments_update(&self, node_id: &str, comment_id: &str, body: &UpdateCommentRequest) -> Result<DriveComment, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/comments/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(comment_id, PathParameterSpec::new("commentId", "simple", false))));
         self.client.patch(&path, Some(body), None, None, Some("application/json")).await
     }
@@ -115,7 +115,7 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn comment_replies_list(&self, node_id: &str, comment_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveCommentReplyListHttpResponse, SdkworkError> {
+    pub async fn comment_replies_list(&self, node_id: &str, comment_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<serde_json::Value, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
@@ -124,17 +124,17 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn comment_replies_create(&self, node_id: &str, comment_id: &str, body: &CreateCommentReplyRequest) -> Result<DriveCommentReplyHttpResponse, SdkworkError> {
+    pub async fn comment_replies_create(&self, node_id: &str, comment_id: &str, body: &CreateCommentReplyRequest) -> Result<DriveCommentReply, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/comments/{}/replies", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(comment_id, PathParameterSpec::new("commentId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn comment_replies_retrieve(&self, node_id: &str, comment_id: &str, reply_id: &str) -> Result<DriveCommentReplyHttpResponse, SdkworkError> {
+    pub async fn comment_replies_retrieve(&self, node_id: &str, comment_id: &str, reply_id: &str) -> Result<DriveCommentReply, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/comments/{}/replies/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(comment_id, PathParameterSpec::new("commentId", "simple", false)), serialize_path_parameter(reply_id, PathParameterSpec::new("replyId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn comment_replies_update(&self, node_id: &str, comment_id: &str, reply_id: &str, body: &UpdateCommentReplyRequest) -> Result<DriveCommentReplyHttpResponse, SdkworkError> {
+    pub async fn comment_replies_update(&self, node_id: &str, comment_id: &str, reply_id: &str, body: &UpdateCommentReplyRequest) -> Result<DriveCommentReply, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/comments/{}/replies/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(comment_id, PathParameterSpec::new("commentId", "simple", false)), serialize_path_parameter(reply_id, PathParameterSpec::new("replyId", "simple", false))));
         self.client.patch(&path, Some(body), None, None, Some("application/json")).await
     }
@@ -144,12 +144,12 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn nodes_copy(&self, node_id: &str, body: &CopyNodeRequest) -> Result<DriveNodeHttpResponse, SdkworkError> {
+    pub async fn nodes_copy(&self, node_id: &str, body: &CopyNodeRequest) -> Result<DriveNode, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/copy", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn nodes_download_urls_retrieve(&self, node_id: &str, requested_ttl_seconds: Option<i64>) -> Result<CreateDownloadUrlHttpResponse, SdkworkError> {
+    pub async fn nodes_download_urls_retrieve(&self, node_id: &str, requested_ttl_seconds: Option<i64>) -> Result<CreateDownloadUrlResponse, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("requestedTtlSeconds", requested_ttl_seconds, "form", true, false, None),
         ]);
@@ -157,12 +157,12 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn download_grants_create(&self, node_id: &str, body: &CreateDownloadGrantRequest) -> Result<CreateDownloadUrlHttpResponse, SdkworkError> {
+    pub async fn download_grants_create(&self, node_id: &str, body: &CreateDownloadGrantRequest) -> Result<CreateDownloadUrlResponse, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/download_grants", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn favorites_update(&self, node_id: &str, body: &FavoriteNodeRequest) -> Result<FavoriteNodeHttpResponse, SdkworkError> {
+    pub async fn favorites_update(&self, node_id: &str, body: &FavoriteNodeRequest) -> Result<FavoriteNodeResponse, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/favorite", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.put(&path, Some(body), None, None, Some("application/json")).await
     }
@@ -172,17 +172,17 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn nodes_move(&self, node_id: &str, body: &MoveNodeRequest) -> Result<DriveNodeHttpResponse, SdkworkError> {
+    pub async fn nodes_move(&self, node_id: &str, body: &MoveNodeRequest) -> Result<DriveNode, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/move", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn nodes_path_retrieve(&self, node_id: &str) -> Result<NodePathHttpResponse, SdkworkError> {
+    pub async fn nodes_path_retrieve(&self, node_id: &str) -> Result<NodePathResponse, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/path", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn permissions_list(&self, node_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<DrivePermissionListHttpResponse, SdkworkError> {
+    pub async fn permissions_list(&self, node_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<serde_json::Value, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
@@ -191,7 +191,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn permissions_create(&self, node_id: &str, body: &CreatePermissionRequest) -> Result<DrivePermissionHttpResponse, SdkworkError> {
+    pub async fn permissions_create(&self, node_id: &str, body: &CreatePermissionRequest) -> Result<DrivePermission, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/permissions", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
@@ -201,17 +201,17 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn permissions_update(&self, node_id: &str, permission_id: &str, body: &UpdatePermissionRequest) -> Result<DrivePermissionHttpResponse, SdkworkError> {
+    pub async fn permissions_update(&self, node_id: &str, permission_id: &str, body: &UpdatePermissionRequest) -> Result<DrivePermission, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/permissions/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(permission_id, PathParameterSpec::new("permissionId", "simple", false))));
         self.client.patch(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn permissions_retrieve(&self, node_id: &str, permission_id: &str) -> Result<DrivePermissionHttpResponse, SdkworkError> {
+    pub async fn permissions_retrieve(&self, node_id: &str, permission_id: &str) -> Result<DrivePermission, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/permissions/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(permission_id, PathParameterSpec::new("permissionId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn permissions_effective_list(&self, node_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<EffectivePermissionListHttpResponse, SdkworkError> {
+    pub async fn permissions_effective_list(&self, node_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<serde_json::Value, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
@@ -220,12 +220,12 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn share_links_create(&self, node_id: &str, body: &CreateShareLinkRequest) -> Result<CreateShareLinkHttpResponse, SdkworkError> {
+    pub async fn share_links_create(&self, node_id: &str, body: &CreateShareLinkRequest) -> Result<CreateShareLinkResponse, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/share_links", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn share_links_list(&self, node_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<ShareLinkListHttpResponse, SdkworkError> {
+    pub async fn share_links_list(&self, node_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<serde_json::Value, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
@@ -234,12 +234,12 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn trash_create(&self, node_id: &str, body: &NodeCommandRequest) -> Result<DriveNodeHttpResponse, SdkworkError> {
+    pub async fn trash_create(&self, node_id: &str, body: &NodeCommandRequest) -> Result<DriveNode, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/trash", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn versions_list(&self, node_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<FileVersionListHttpResponse, SdkworkError> {
+    pub async fn versions_list(&self, node_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<FileVersionListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
@@ -253,27 +253,27 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn versions_retrieve(&self, node_id: &str, version_id: &str) -> Result<FileVersionHttpResponse, SdkworkError> {
+    pub async fn versions_retrieve(&self, node_id: &str, version_id: &str) -> Result<FileVersion, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/versions/{}", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(version_id, PathParameterSpec::new("versionId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn versions_restore(&self, node_id: &str, version_id: &str, body: &NodeCommandRequest) -> Result<DriveNodeHttpResponse, SdkworkError> {
+    pub async fn versions_restore(&self, node_id: &str, version_id: &str, body: &NodeCommandRequest) -> Result<DriveNode, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/versions/{}/restore", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false)), serialize_path_parameter(version_id, PathParameterSpec::new("versionId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn nodes_files_create(&self, body: &CreateFileRequest) -> Result<CreateFileHttpResponse, SdkworkError> {
+    pub async fn nodes_files_create(&self, body: &CreateFileRequest) -> Result<CreateFileResponse, SdkworkError> {
         let path = app_path(&"/drive/nodes/files".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn nodes_folders_create(&self, body: &CreateFolderRequest) -> Result<DriveNodeHttpResponse, SdkworkError> {
+    pub async fn nodes_folders_create(&self, body: &CreateFolderRequest) -> Result<DriveNode, SdkworkError> {
         let path = app_path(&"/drive/nodes/folders".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn recent_list(&self, space_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<DriveNodeListHttpResponse, SdkworkError> {
+    pub async fn recent_list(&self, space_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<DriveNodeListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
@@ -285,7 +285,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn search_list(&self, q: Option<&str>, space_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveNodeListHttpResponse, SdkworkError> {
+    pub async fn search_list(&self, q: Option<&str>, space_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveNodeListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("q", q, "form", true, false, None),
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
@@ -296,7 +296,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn share_links_claim(&self, token: &str) -> Result<ClaimShareLinkHttpResponse, SdkworkError> {
+    pub async fn share_links_claim(&self, token: &str) -> Result<ClaimShareLinkResponse, SdkworkError> {
         let path = app_path(&format!("/drive/share_links/{}/claim", serialize_path_parameter(token, PathParameterSpec::new("token", "simple", false))));
         self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
@@ -306,17 +306,17 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn share_links_update(&self, share_link_id: &str, body: &UpdateShareLinkRequest) -> Result<ShareLinkHttpResponse, SdkworkError> {
+    pub async fn share_links_update(&self, share_link_id: &str, body: &UpdateShareLinkRequest) -> Result<DriveShareLink, SdkworkError> {
         let path = app_path(&format!("/drive/share_links/{}", serialize_path_parameter(share_link_id, PathParameterSpec::new("shareLinkId", "simple", false))));
         self.client.patch(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn share_links_retrieve(&self, share_link_id: &str) -> Result<ShareLinkHttpResponse, SdkworkError> {
+    pub async fn share_links_retrieve(&self, share_link_id: &str) -> Result<DriveShareLink, SdkworkError> {
         let path = app_path(&format!("/drive/share_links/{}", serialize_path_parameter(share_link_id, PathParameterSpec::new("shareLinkId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn shared_with_me_list(&self, space_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<DriveNodeListHttpResponse, SdkworkError> {
+    pub async fn shared_with_me_list(&self, space_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<DriveNodeListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
@@ -328,7 +328,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn sandboxes_list(&self, page: Option<i64>, page_size: Option<i64>) -> Result<DriveSandboxVolumeListHttpResponse, SdkworkError> {
+    pub async fn sandboxes_list(&self, page: Option<i64>, page_size: Option<i64>) -> Result<DriveSandboxVolumeListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("page", page, "form", true, false, None),
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
@@ -337,7 +337,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn sandbox_entries_list(&self, sandbox_id: &str, parent_path: Option<&str>, cursor: Option<&str>, page_size: Option<i64>) -> Result<DriveSandboxEntryListHttpResponse, SdkworkError> {
+    pub async fn sandbox_entries_list(&self, sandbox_id: &str, parent_path: Option<&str>, cursor: Option<&str>, page_size: Option<i64>) -> Result<DriveSandboxEntryListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("parent_path", parent_path, "form", true, false, None),
             QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
@@ -347,7 +347,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn sandbox_directories_create(&self, sandbox_id: &str, body: &CreateDriveSandboxDirectoryRequest, idempotency_key: &str) -> Result<DriveSandboxEntryHttpResponse, SdkworkError> {
+    pub async fn sandbox_directories_create(&self, sandbox_id: &str, body: &CreateDriveSandboxDirectoryRequest, idempotency_key: &str) -> Result<DriveSandboxEntry, SdkworkError> {
         let path = app_path(&format!("/drive/sandboxes/{}/directories", serialize_path_parameter(sandbox_id, PathParameterSpec::new("sandboxId", "simple", false))));
         let headers = build_request_headers(
             &[
@@ -358,7 +358,7 @@ impl DriveApi {
         self.client.post(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
     }
 
-    pub async fn sandbox_files_create(&self, sandbox_id: &str, body: &CreateDriveSandboxFileRequest, idempotency_key: &str) -> Result<DriveSandboxEntryHttpResponse, SdkworkError> {
+    pub async fn sandbox_files_create(&self, sandbox_id: &str, body: &CreateDriveSandboxFileRequest, idempotency_key: &str) -> Result<DriveSandboxEntry, SdkworkError> {
         let path = app_path(&format!("/drive/sandboxes/{}/files", serialize_path_parameter(sandbox_id, PathParameterSpec::new("sandboxId", "simple", false))));
         let headers = build_request_headers(
             &[
@@ -369,7 +369,7 @@ impl DriveApi {
         self.client.post(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
     }
 
-    pub async fn sandbox_file_contents_retrieve(&self, sandbox_id: &str, entry_id: &str, logical_path: &str, encoding: Option<&str>) -> Result<DriveSandboxFileContentHttpResponse, SdkworkError> {
+    pub async fn sandbox_file_contents_retrieve(&self, sandbox_id: &str, entry_id: &str, logical_path: &str, encoding: Option<&str>) -> Result<DriveSandboxFileContent, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("logical_path", logical_path, "form", true, false, None),
             QueryParameterSpec::new("encoding", encoding, "form", true, false, None),
@@ -378,7 +378,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn sandbox_file_contents_update(&self, sandbox_id: &str, entry_id: &str, body: &UpdateDriveSandboxFileContentRequest, if_match: &str, idempotency_key: &str) -> Result<DriveSandboxEntryHttpResponse, SdkworkError> {
+    pub async fn sandbox_file_contents_update(&self, sandbox_id: &str, entry_id: &str, body: &UpdateDriveSandboxFileContentRequest, if_match: &str, idempotency_key: &str) -> Result<DriveSandboxEntry, SdkworkError> {
         let path = app_path(&format!("/drive/sandboxes/{}/files/{}/content", serialize_path_parameter(sandbox_id, PathParameterSpec::new("sandboxId", "simple", false)), serialize_path_parameter(entry_id, PathParameterSpec::new("entryId", "simple", false))));
         let headers = build_request_headers(
             &[
@@ -390,7 +390,7 @@ impl DriveApi {
         self.client.put(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
     }
 
-    pub async fn sandbox_entries_update(&self, sandbox_id: &str, entry_id: &str, body: &UpdateDriveSandboxEntryRequest, if_match: &str, idempotency_key: &str) -> Result<DriveSandboxEntryHttpResponse, SdkworkError> {
+    pub async fn sandbox_entries_update(&self, sandbox_id: &str, entry_id: &str, body: &UpdateDriveSandboxEntryRequest, if_match: &str, idempotency_key: &str) -> Result<DriveSandboxEntry, SdkworkError> {
         let path = app_path(&format!("/drive/sandboxes/{}/entries/{}", serialize_path_parameter(sandbox_id, PathParameterSpec::new("sandboxId", "simple", false)), serialize_path_parameter(entry_id, PathParameterSpec::new("entryId", "simple", false))));
         let headers = build_request_headers(
             &[
@@ -402,7 +402,7 @@ impl DriveApi {
         self.client.patch(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
     }
 
-    pub async fn sandbox_entries_purge(&self, sandbox_id: &str, entry_id: &str, body: &PurgeDriveSandboxEntryRequest, if_match: &str, idempotency_key: &str) -> Result<DriveSandboxMutationCommandHttpResponse, SdkworkError> {
+    pub async fn sandbox_entries_purge(&self, sandbox_id: &str, entry_id: &str, body: &PurgeDriveSandboxEntryRequest, if_match: &str, idempotency_key: &str) -> Result<DriveSandboxMutationCommandData, SdkworkError> {
         let path = app_path(&format!("/drive/sandboxes/{}/entries/{}/purge", serialize_path_parameter(sandbox_id, PathParameterSpec::new("sandboxId", "simple", false)), serialize_path_parameter(entry_id, PathParameterSpec::new("entryId", "simple", false))));
         let headers = build_request_headers(
             &[
@@ -414,7 +414,7 @@ impl DriveApi {
         self.client.post(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
     }
 
-    pub async fn spaces_list(&self, owner_subject_type: Option<&str>, owner_subject_id: Option<&str>, space_type: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveSpaceListHttpResponse, SdkworkError> {
+    pub async fn spaces_list(&self, owner_subject_type: Option<&str>, owner_subject_id: Option<&str>, space_type: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<serde_json::Value, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("ownerSubjectType", owner_subject_type, "form", true, false, None),
             QueryParameterSpec::new("ownerSubjectId", owner_subject_id, "form", true, false, None),
@@ -426,12 +426,31 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn spaces_create(&self, body: &CreateSpaceRequest) -> Result<DriveSpaceHttpResponse, SdkworkError> {
+    pub async fn spaces_create(&self, body: &CreateSpaceRequest) -> Result<DriveSpace, SdkworkError> {
         let path = app_path(&"/drive/spaces".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn move_destinations_list(&self, space_id: &str, exclude_node_ids: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveNodeListHttpResponse, SdkworkError> {
+    pub async fn website_roots_list(&self, space_id: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<WebsiteRootPageData, SdkworkError> {
+        let query = build_query_string(&[
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
+            QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
+        ]);
+        let path = append_query_string(app_path(&format!("/drive/spaces/{}/website_roots", serialize_path_parameter(space_id, PathParameterSpec::new("spaceId", "simple", false)))), &query);
+        self.client.get(&path, None, None).await
+    }
+
+    pub async fn website_roots_create(&self, space_id: &str, body: &CreateWebsiteRootRequest) -> Result<WebsiteRoot, SdkworkError> {
+        let path = app_path(&format!("/drive/spaces/{}/website_roots", serialize_path_parameter(space_id, PathParameterSpec::new("spaceId", "simple", false))));
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    pub async fn website_roots_retrieve(&self, root_uuid: &str) -> Result<WebsiteRoot, SdkworkError> {
+        let path = app_path(&format!("/drive/website_roots/{}", serialize_path_parameter(root_uuid, PathParameterSpec::new("rootUuid", "simple", false))));
+        self.client.get(&path, None, None).await
+    }
+
+    pub async fn move_destinations_list(&self, space_id: &str, exclude_node_ids: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveNodeListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("excludeNodeIds", exclude_node_ids, "form", true, false, None),
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
@@ -441,12 +460,12 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn spaces_retrieve(&self, space_id: &str) -> Result<DriveSpaceHttpResponse, SdkworkError> {
+    pub async fn spaces_retrieve(&self, space_id: &str) -> Result<DriveSpace, SdkworkError> {
         let path = app_path(&format!("/drive/spaces/{}", serialize_path_parameter(space_id, PathParameterSpec::new("spaceId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn spaces_update(&self, space_id: &str, body: &UpdateSpaceRequest) -> Result<DriveSpaceHttpResponse, SdkworkError> {
+    pub async fn spaces_update(&self, space_id: &str, body: &UpdateSpaceRequest) -> Result<DriveSpace, SdkworkError> {
         let path = app_path(&format!("/drive/spaces/{}", serialize_path_parameter(space_id, PathParameterSpec::new("spaceId", "simple", false))));
         self.client.patch(&path, Some(body), None, None, Some("application/json")).await
     }
@@ -456,7 +475,7 @@ impl DriveApi {
         self.client.delete(&path, None, None).await
     }
 
-    pub async fn nodes_list(&self, space_id: &str, parent_node_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<DriveNodeListHttpResponse, SdkworkError> {
+    pub async fn nodes_list(&self, space_id: &str, parent_node_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<DriveNodeListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("parentNodeId", parent_node_id, "form", true, false, None),
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
@@ -468,7 +487,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn trash_list(&self, space_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>, parent_node_id: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<DriveNodeListHttpResponse, SdkworkError> {
+    pub async fn trash_list(&self, space_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>, parent_node_id: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<DriveNodeListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),
             QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
@@ -481,67 +500,67 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn trash_restore(&self, node_id: &str, body: &NodeCommandRequest) -> Result<DriveNodeHttpResponse, SdkworkError> {
+    pub async fn trash_restore(&self, node_id: &str, body: &NodeCommandRequest) -> Result<DriveNode, SdkworkError> {
         let path = app_path(&format!("/drive/trash/{}/restore", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn trash_empty(&self, body: &EmptyTrashRequest) -> Result<EmptyTrashHttpResponse, SdkworkError> {
+    pub async fn trash_empty(&self, body: &EmptyTrashRequest) -> Result<EmptyTrashResponse, SdkworkError> {
         let path = app_path(&"/drive/trash/empty".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn upload_sessions_create(&self, body: &CreateUploadSessionRequest) -> Result<DriveUploadSessionHttpResponse, SdkworkError> {
+    pub async fn upload_sessions_create(&self, body: &CreateUploadSessionRequest) -> Result<DriveUploadSession, SdkworkError> {
         let path = app_path(&"/drive/upload_sessions".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn upload_sessions_retrieve(&self, upload_session_id: &str) -> Result<DriveUploadSessionHttpResponse, SdkworkError> {
+    pub async fn upload_sessions_retrieve(&self, upload_session_id: &str) -> Result<DriveUploadSession, SdkworkError> {
         let path = app_path(&format!("/drive/upload_sessions/{}", serialize_path_parameter(upload_session_id, PathParameterSpec::new("uploadSessionId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn upload_sessions_abort(&self, upload_session_id: &str, body: &NodeCommandRequest) -> Result<DriveUploadSessionHttpResponse, SdkworkError> {
+    pub async fn upload_sessions_abort(&self, upload_session_id: &str, body: &NodeCommandRequest) -> Result<DriveUploadSession, SdkworkError> {
         let path = app_path(&format!("/drive/upload_sessions/{}/abort", serialize_path_parameter(upload_session_id, PathParameterSpec::new("uploadSessionId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn upload_sessions_complete(&self, upload_session_id: &str, body: &CompleteUploadSessionRequest) -> Result<DriveUploadSessionHttpResponse, SdkworkError> {
+    pub async fn upload_sessions_complete(&self, upload_session_id: &str, body: &CompleteUploadSessionRequest) -> Result<DriveUploadSession, SdkworkError> {
         let path = app_path(&format!("/drive/upload_sessions/{}/complete", serialize_path_parameter(upload_session_id, PathParameterSpec::new("uploadSessionId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn upload_sessions_parts_update(&self, upload_session_id: &str, part_no: i64, body: &PresignUploadPartRequest) -> Result<PresignedUploadPartHttpResponse, SdkworkError> {
+    pub async fn upload_sessions_parts_update(&self, upload_session_id: &str, part_no: i64, body: &PresignUploadPartRequest) -> Result<PresignedUploadPart, SdkworkError> {
         let path = app_path(&format!("/drive/upload_sessions/{}/parts/{}", serialize_path_parameter(upload_session_id, PathParameterSpec::new("uploadSessionId", "simple", false)), serialize_path_parameter(part_no, PathParameterSpec::new("partNo", "simple", false))));
         self.client.put(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn download_packages_create(&self, body: &CreateDownloadPackageRequest) -> Result<DownloadPackageHttpResponse, SdkworkError> {
+    pub async fn download_packages_create(&self, body: &CreateDownloadPackageRequest) -> Result<DownloadPackageResponse, SdkworkError> {
         let path = app_path(&"/drive/download_packages".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn download_packages_urls_retrieve(&self, package_id: &str) -> Result<DownloadPackageHttpResponse, SdkworkError> {
+    pub async fn download_packages_urls_retrieve(&self, package_id: &str) -> Result<DownloadPackageResponse, SdkworkError> {
         let path = app_path(&format!("/drive/download_packages/{}/download_url", serialize_path_parameter(package_id, PathParameterSpec::new("packageId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn archive_entries_list(&self, node_id: &str) -> Result<ArchiveEntryListHttpResponse, SdkworkError> {
+    pub async fn archive_entries_list(&self, node_id: &str) -> Result<serde_json::Value, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/archive_entries", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
-    pub async fn archive_entries_extract(&self, node_id: &str, body: &ExtractArchiveEntriesRequest) -> Result<ExtractArchiveEntriesHttpResponse, SdkworkError> {
+    pub async fn archive_entries_extract(&self, node_id: &str, body: &ExtractArchiveEntriesRequest) -> Result<ExtractArchiveEntriesResponse, SdkworkError> {
         let path = app_path(&format!("/drive/nodes/{}/archive_entries/extract", serialize_path_parameter(node_id, PathParameterSpec::new("nodeId", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn uploader_uploads_create(&self, body: &PrepareUploaderUploadRequest) -> Result<PrepareUploaderUploadHttpResponse, SdkworkError> {
+    pub async fn uploader_uploads_create(&self, body: &PrepareUploaderUploadRequest) -> Result<PrepareUploaderUploadResponse, SdkworkError> {
         let path = app_path(&"/drive/uploader/uploads".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn uploader_uploads_parts_update(&self, upload_item_id: &str, part_no: i64, body: &MarkUploaderPartUploadedRequest) -> Result<UploaderUploadPartHttpResponse, SdkworkError> {
+    pub async fn uploader_uploads_parts_update(&self, upload_item_id: &str, part_no: i64, body: &MarkUploaderPartUploadedRequest) -> Result<UploaderUploadPart, SdkworkError> {
         let path = app_path(&format!("/drive/uploader/uploads/{}/parts/{}", serialize_path_parameter(upload_item_id, PathParameterSpec::new("uploadItemId", "simple", false)), serialize_path_parameter(part_no, PathParameterSpec::new("partNo", "simple", false))));
         self.client.put(&path, Some(body), None, None, Some("application/json")).await
     }

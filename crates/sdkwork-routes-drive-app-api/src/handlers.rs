@@ -15,3 +15,4 @@ pub(crate) use crate::trash_handlers::*;
 pub(crate) use crate::upload_handlers::*;
 pub(crate) use crate::version_handlers::*;
 pub(crate) use crate::watch_handlers::*;
+pub(crate) use crate::website_root_handlers::*;

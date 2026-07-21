@@ -14,6 +14,10 @@ entries:
   - id: REQ-2026-0003
     path: docs/product/requirements/REQ-2026-0003-pre-launch-debt-cleanup.md
     kind: requirement
+  - id: REQ-2026-0004
+    path: docs/product/requirements/REQ-2026-0004-website-space-directory-publishing.md
+    kind: requirement
+    status: ready
   - id: pre-launch-checklist
     path: docs/guides/operator/pre-launch-checklist.md
     kind: guide
@@ -44,6 +48,10 @@ entries:
   - id: adr-app-api-route-modularization
     path: docs/architecture/decisions/ADR-20260625-app-api-route-modularization.md
     kind: adr
+  - id: ADR-20260721-website-space-directory-resource
+    path: docs/architecture/decisions/ADR-20260721-website-space-directory-resource.md
+    kind: adr
+    status: proposed
   - id: plan-commercial-ga
     path: docs/engineering/plans/PLAN-2026-0625-commercial-ga.md
     kind: plan

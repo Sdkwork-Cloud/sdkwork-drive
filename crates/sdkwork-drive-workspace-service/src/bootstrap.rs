@@ -25,8 +25,8 @@ pub async fn bootstrap_drive_database_for_config(
 pub async fn connect_drive_database_pool_from_env() -> Result<DatabasePool, PoolError> {
     let config = DriveDatabaseConfig::from_env()
         .map_err(|error| PoolError::DatabaseConfig(error.to_string()))?;
-    let sdk_config = drive_database_config_to_sdkwork(&config)
-        .map_err(PoolError::DatabaseConfig)?;
+    let sdk_config =
+        drive_database_config_to_sdkwork(&config).map_err(PoolError::DatabaseConfig)?;
     create_pool_from_config(sdk_config).await
 }
 

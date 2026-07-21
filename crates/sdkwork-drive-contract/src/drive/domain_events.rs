@@ -16,6 +16,10 @@ pub mod node {
     pub const DELETED: &str = "drive.node.deleted";
     pub const TRASHED: &str = "drive.node.trashed";
     pub const RESTORED: &str = "drive.node.restored";
+    pub const VERSION_COMMITTED_V1: &str = "drive.node.version.committed.v1";
+    pub const PATH_CHANGED_V1: &str = "drive.node.path.changed.v1";
+    pub const ELIGIBILITY_CHANGED_V1: &str = "drive.node.eligibility.changed.v1";
+    pub const DELETED_V1: &str = "drive.node.deleted.v1";
 }
 
 /// Node property mutation events.
@@ -198,6 +202,10 @@ mod tests {
         node::DELETED,
         node::TRASHED,
         node::RESTORED,
+        node::VERSION_COMMITTED_V1,
+        node::PATH_CHANGED_V1,
+        node::ELIGIBILITY_CHANGED_V1,
+        node::DELETED_V1,
         node_property::SET,
         node_property::DELETED,
         node_label::APPLIED,

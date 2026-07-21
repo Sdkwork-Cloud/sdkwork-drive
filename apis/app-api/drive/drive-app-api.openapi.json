@@ -7383,9 +7383,14 @@
                 "personal",
                 "team",
                 "knowledge_base",
+                "ai_generated",
                 "git_repository",
+                "deployment",
                 "app_upload",
-                "rtc"
+                "im",
+                "rtc",
+                "notary",
+                "website"
               ]
             }
           },
@@ -7545,6 +7550,294 @@
         "x-sdkwork-api-authority": "sdkwork-drive.app",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
+      }
+    },
+    "/app/v3/api/drive/spaces/{spaceId}/website_roots": {
+      "get": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "websiteRoots.list",
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Website roots visible to the authenticated subject.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteRootListHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination input.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated subject cannot read the Space.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The Space does not exist in the request tenant.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token"
+      },
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "websiteRoots.create",
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebsiteRootRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The WebsiteRoot for this source selector already exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteRootHttpResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "WebsiteRoot created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteRootHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid selector, non-website Space, or reserved source namespace.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only the Space owner can create WebsiteRoots.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The Space or selected folder does not exist in the request tenant.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The root key conflicts with another WebsiteRoot.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-idempotent": true,
+        "x-sdkwork-audit-event": "drive.website_root.created"
+      }
+    },
+    "/app/v3/api/drive/website_roots/{rootUuid}": {
+      "get": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "websiteRoots.retrieve",
+        "parameters": [
+          {
+            "name": "rootUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "WebsiteRoot retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteRootHttpResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated subject cannot read the owning Space.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "WebsiteRoot not found in the request tenant.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token"
       }
     },
     "/app/v3/api/drive/spaces/{spaceId}/move_destinations": {
@@ -14075,7 +14368,8 @@
               "app_upload",
               "im",
               "rtc",
-              "notary"
+              "notary",
+              "website"
             ]
           },
           "presentationIcon": {
@@ -14623,7 +14917,8 @@
               "app_upload",
               "im",
               "rtc",
-              "notary"
+              "notary",
+              "website"
             ]
           },
           "contentState": {
@@ -15614,6 +15909,248 @@
           }
         ]
       },
+      "WebsiteRootSpaceSelector": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "SPACE_ROOT"
+            ]
+          }
+        }
+      },
+      "WebsiteRootFolderSelector": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode",
+          "folderNodeId"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "FOLDER"
+            ]
+          },
+          "folderNodeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
+          }
+        }
+      },
+      "WebsiteRootSelector": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WebsiteRootSpaceSelector"
+          },
+          {
+            "$ref": "#/components/schemas/WebsiteRootFolderSelector"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "mode",
+          "mapping": {
+            "SPACE_ROOT": "#/components/schemas/WebsiteRootSpaceSelector",
+            "FOLDER": "#/components/schemas/WebsiteRootFolderSelector"
+          }
+        }
+      },
+      "CreateWebsiteRootRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rootKey",
+          "displayName",
+          "sourceRoot",
+          "contentMode"
+        ],
+        "properties": {
+          "rootKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._-]+$"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "sourceRoot": {
+            "$ref": "#/components/schemas/WebsiteRootSelector"
+          },
+          "contentMode": {
+            "type": "string",
+            "enum": [
+              "LIVE_TREE",
+              "ATOMIC_GENERATION"
+            ]
+          }
+        }
+      },
+      "WebsiteRoot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "uuid",
+          "spaceId",
+          "rootKey",
+          "displayName",
+          "sourceRootMode",
+          "selectedFolderNodeId",
+          "contentMode",
+          "activeNodeId",
+          "activeGeneration",
+          "rootStatus",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "spaceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "rootKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._-]+$"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "sourceRootMode": {
+            "type": "string",
+            "enum": [
+              "SPACE_ROOT",
+              "FOLDER"
+            ]
+          },
+          "selectedFolderNodeId": {
+            "type": "string",
+            "maxLength": 64,
+            "nullable": true
+          },
+          "contentMode": {
+            "type": "string",
+            "enum": [
+              "LIVE_TREE",
+              "ATOMIC_GENERATION"
+            ]
+          },
+          "activeNodeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "activeGeneration": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "rootStatus": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED",
+              "INVALID",
+              "ARCHIVED"
+            ]
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "WebsiteRootResourceData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item"
+        ],
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/WebsiteRoot"
+          }
+        }
+      },
+      "WebsiteRootPageData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebsiteRoot"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "WebsiteRootHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/WebsiteRootResourceData"
+              }
+            }
+          }
+        ]
+      },
+      "WebsiteRootListHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/WebsiteRootPageData"
+              }
+            }
+          }
+        ]
+      },
       "DriveSpace": {
         "type": "object",
         "required": [
@@ -15653,7 +16190,8 @@
               "app_upload",
               "im",
               "rtc",
-              "notary"
+              "notary",
+              "website"
             ]
           },
           "presentationIcon": {

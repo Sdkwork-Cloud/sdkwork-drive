@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS dr_drive_space (
     CONSTRAINT ck_dr_drive_space_owner_subject_type
         CHECK (owner_subject_type IN ('user', 'group', 'organization', 'app')),
     CONSTRAINT ck_dr_drive_space_space_type
-        CHECK (space_type IN ('personal', 'team', 'knowledge_base', 'ai_generated', 'git_repository', 'deployment', 'app_upload', 'im', 'rtc', 'notary')),
+        CHECK (space_type IN ('personal', 'team', 'knowledge_base', 'ai_generated', 'git_repository', 'deployment', 'app_upload', 'im', 'rtc', 'notary', 'website')),
     CONSTRAINT ck_dr_drive_space_git_repository_owner_user
         CHECK (space_type != 'git_repository' OR owner_subject_type = 'user'),
     CONSTRAINT ck_dr_drive_space_rtc_owner_user
@@ -33,8 +33,10 @@ CREATE TABLE IF NOT EXISTS dr_drive_space (
         CHECK (version >= 1)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_space_tenant_owner_type
-    ON dr_drive_space (tenant_id, owner_subject_type, owner_subject_id, space_type);
+DROP INDEX IF EXISTS ux_dr_drive_space_tenant_owner_type;
+CREATE UNIQUE INDEX ux_dr_drive_space_tenant_owner_type
+    ON dr_drive_space (tenant_id, owner_subject_type, owner_subject_id, space_type)
+    WHERE space_type != 'website' AND lifecycle_status = 'active';
 CREATE INDEX IF NOT EXISTS ix_dr_drive_space_tenant_status
     ON dr_drive_space (tenant_id, lifecycle_status, updated_at DESC);
 
@@ -135,7 +137,7 @@ CREATE TABLE IF NOT EXISTS dr_drive_node (
     CONSTRAINT ck_dr_drive_node_node_type
         CHECK (node_type IN ('file', 'folder', 'shortcut', 'virtual_reference')),
     CONSTRAINT ck_dr_drive_node_space_type
-        CHECK (space_type IN ('personal', 'team', 'knowledge_base', 'ai_generated', 'git_repository', 'deployment', 'app_upload', 'im', 'rtc', 'notary')),
+        CHECK (space_type IN ('personal', 'team', 'knowledge_base', 'ai_generated', 'git_repository', 'deployment', 'app_upload', 'im', 'rtc', 'notary', 'website')),
     CONSTRAINT ck_dr_drive_node_scene
         CHECK (scene IS NULL OR (
             scene = btrim(scene)
@@ -292,6 +294,225 @@ CREATE TRIGGER tr_dr_drive_node_space_type_sync_update
 BEFORE UPDATE OF tenant_id, space_id, space_type ON dr_drive_node
 FOR EACH ROW
 EXECUTE FUNCTION dr_drive_sync_node_space_type();
+
+CREATE TABLE IF NOT EXISTS dr_drive_website_root (
+    id VARCHAR(64) PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id VARCHAR(64) NOT NULL,
+    space_id VARCHAR(64) NOT NULL,
+    root_key VARCHAR(128) NOT NULL,
+    display_name VARCHAR(255) NOT NULL,
+    source_root_mode VARCHAR(32) NOT NULL,
+    selected_folder_node_id VARCHAR(64),
+    selector_key VARCHAR(160) NOT NULL,
+    content_mode VARCHAR(32) NOT NULL,
+    active_node_id VARCHAR(64) NOT NULL,
+    active_generation BIGINT NOT NULL DEFAULT 1,
+    root_status VARCHAR(32) NOT NULL DEFAULT 'active',
+    last_switch_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_switch_by VARCHAR(128) NOT NULL,
+    version BIGINT NOT NULL DEFAULT 1,
+    created_by VARCHAR(128) NOT NULL,
+    updated_by VARCHAR(128) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_dr_drive_website_root_space_id
+        FOREIGN KEY (space_id) REFERENCES dr_drive_space(id) ON DELETE CASCADE,
+    CONSTRAINT fk_dr_drive_website_root_selected_folder_node_id
+        FOREIGN KEY (selected_folder_node_id) REFERENCES dr_drive_node(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_dr_drive_website_root_active_node_id
+        FOREIGN KEY (active_node_id) REFERENCES dr_drive_node(id) ON DELETE RESTRICT,
+    CONSTRAINT ck_dr_drive_website_root_source_root_mode
+        CHECK (source_root_mode IN ('space_root', 'folder')),
+    CONSTRAINT ck_dr_drive_website_root_selector
+        CHECK (
+            (source_root_mode = 'space_root' AND selected_folder_node_id IS NULL AND selector_key = 'space_root')
+            OR
+            (source_root_mode = 'folder' AND selected_folder_node_id IS NOT NULL AND selector_key = 'folder:' || selected_folder_node_id)
+        ),
+    CONSTRAINT ck_dr_drive_website_root_content_mode
+        CHECK (content_mode IN ('live_tree', 'atomic_generation')),
+    CONSTRAINT ck_dr_drive_website_root_active_generation
+        CHECK (active_generation >= 1),
+    CONSTRAINT ck_dr_drive_website_root_status
+        CHECK (root_status IN ('active', 'suspended', 'archived', 'invalid')),
+    CONSTRAINT ck_dr_drive_website_root_version
+        CHECK (version >= 1)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_website_root_uuid
+    ON dr_drive_website_root (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_website_root_space_key
+    ON dr_drive_website_root (tenant_id, space_id, root_key);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_website_root_selector_active
+    ON dr_drive_website_root (tenant_id, space_id, selector_key)
+    WHERE root_status IN ('active', 'suspended', 'invalid');
+CREATE INDEX IF NOT EXISTS ix_dr_drive_website_root_active_node
+    ON dr_drive_website_root (tenant_id, space_id, active_node_id, root_status);
+
+CREATE TABLE IF NOT EXISTS dr_drive_website_root_generation (
+    id VARCHAR(64) PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL,
+    website_root_id VARCHAR(64) NOT NULL,
+    generation_no BIGINT NOT NULL,
+    root_node_id VARCHAR(64) NOT NULL,
+    source_sync_id VARCHAR(64),
+    manifest_sha256 VARCHAR(71),
+    file_count BIGINT NOT NULL DEFAULT 0,
+    total_bytes BIGINT NOT NULL DEFAULT 0,
+    generation_status VARCHAR(32) NOT NULL,
+    activated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    activated_by VARCHAR(128) NOT NULL,
+    retention_until TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_dr_drive_website_root_generation_root_id
+        FOREIGN KEY (website_root_id) REFERENCES dr_drive_website_root(id) ON DELETE CASCADE,
+    CONSTRAINT fk_dr_drive_website_root_generation_node_id
+        FOREIGN KEY (root_node_id) REFERENCES dr_drive_node(id) ON DELETE RESTRICT,
+    CONSTRAINT ck_dr_drive_website_root_generation_no
+        CHECK (generation_no >= 1),
+    CONSTRAINT ck_dr_drive_website_root_generation_counts
+        CHECK (file_count >= 0 AND total_bytes >= 0),
+    CONSTRAINT ck_dr_drive_website_root_generation_manifest
+        CHECK (manifest_sha256 IS NULL OR manifest_sha256 ~ '^sha256:[0-9a-f]{64}$'),
+    CONSTRAINT ck_dr_drive_website_root_generation_status
+        CHECK (generation_status IN ('current', 'retained', 'expired', 'deleting', 'deleted', 'invalid'))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_website_root_generation_no
+    ON dr_drive_website_root_generation (website_root_id, generation_no);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_website_root_generation_current
+    ON dr_drive_website_root_generation (website_root_id)
+    WHERE generation_status = 'current';
+CREATE INDEX IF NOT EXISTS ix_dr_drive_website_root_generation_retention
+    ON dr_drive_website_root_generation (generation_status, retention_until);
+
+CREATE TABLE IF NOT EXISTS dr_drive_space_website_profile (
+    space_id VARCHAR(64) PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL,
+    project_key VARCHAR(128) NOT NULL,
+    default_root_id VARCHAR(64) NOT NULL,
+    case_collision_policy VARCHAR(32) NOT NULL DEFAULT 'reject',
+    retained_generation_count INT NOT NULL DEFAULT 3,
+    sync_policy VARCHAR(32) NOT NULL DEFAULT 'ordinary',
+    profile_status VARCHAR(32) NOT NULL DEFAULT 'active',
+    version BIGINT NOT NULL DEFAULT 1,
+    created_by VARCHAR(128) NOT NULL,
+    updated_by VARCHAR(128) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_dr_drive_space_website_profile_space_id
+        FOREIGN KEY (space_id) REFERENCES dr_drive_space(id) ON DELETE CASCADE,
+    CONSTRAINT fk_dr_drive_space_website_profile_default_root_id
+        FOREIGN KEY (default_root_id) REFERENCES dr_drive_website_root(id) ON DELETE RESTRICT,
+    CONSTRAINT ck_dr_drive_space_website_profile_case_policy
+        CHECK (case_collision_policy IN ('reject')),
+    CONSTRAINT ck_dr_drive_space_website_profile_retained_count
+        CHECK (retained_generation_count BETWEEN 1 AND 100),
+    CONSTRAINT ck_dr_drive_space_website_profile_sync_policy
+        CHECK (sync_policy IN ('ordinary', 'atomic_recommended', 'atomic_required')),
+    CONSTRAINT ck_dr_drive_space_website_profile_status
+        CHECK (profile_status IN ('active', 'suspended', 'archived')),
+    CONSTRAINT ck_dr_drive_space_website_profile_version
+        CHECK (version >= 1)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_space_website_profile_project
+    ON dr_drive_space_website_profile (tenant_id, project_key);
+
+CREATE TABLE IF NOT EXISTS dr_drive_website_sync (
+    id VARCHAR(64) PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL,
+    website_root_id VARCHAR(64) NOT NULL,
+    space_id VARCHAR(64) NOT NULL,
+    idempotency_key VARCHAR(128) NOT NULL,
+    expected_root_version BIGINT NOT NULL,
+    expected_generation BIGINT NOT NULL,
+    staging_node_id VARCHAR(64) NOT NULL,
+    manifest_sha256 VARCHAR(71) NOT NULL,
+    manifest_file_count BIGINT NOT NULL,
+    manifest_total_bytes BIGINT NOT NULL,
+    uploaded_file_count BIGINT NOT NULL DEFAULT 0,
+    uploaded_total_bytes BIGINT NOT NULL DEFAULT 0,
+    sync_status VARCHAR(32) NOT NULL,
+    lease_owner VARCHAR(128),
+    lease_token VARCHAR(128),
+    lease_expires_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ NOT NULL,
+    validated_at TIMESTAMPTZ,
+    activated_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    error_code VARCHAR(64),
+    error_summary VARCHAR(1024),
+    version BIGINT NOT NULL DEFAULT 1,
+    created_by VARCHAR(128) NOT NULL,
+    updated_by VARCHAR(128) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_dr_drive_website_sync_root_id
+        FOREIGN KEY (website_root_id) REFERENCES dr_drive_website_root(id) ON DELETE CASCADE,
+    CONSTRAINT fk_dr_drive_website_sync_space_id
+        FOREIGN KEY (space_id) REFERENCES dr_drive_space(id) ON DELETE CASCADE,
+    CONSTRAINT fk_dr_drive_website_sync_staging_node_id
+        FOREIGN KEY (staging_node_id) REFERENCES dr_drive_node(id) ON DELETE RESTRICT,
+    CONSTRAINT ck_dr_drive_website_sync_expected
+        CHECK (expected_root_version >= 1 AND expected_generation >= 1),
+    CONSTRAINT ck_dr_drive_website_sync_manifest
+        CHECK (manifest_sha256 ~ '^sha256:[0-9a-f]{64}$'),
+    CONSTRAINT ck_dr_drive_website_sync_counts
+        CHECK (
+            manifest_file_count >= 0 AND manifest_total_bytes >= 0
+            AND uploaded_file_count >= 0 AND uploaded_total_bytes >= 0
+        ),
+    CONSTRAINT ck_dr_drive_website_sync_status
+        CHECK (sync_status IN ('created', 'uploading', 'ready', 'validating', 'active', 'completed', 'failed', 'aborted', 'expired')),
+    CONSTRAINT ck_dr_drive_website_sync_lease
+        CHECK ((lease_owner IS NULL AND lease_token IS NULL AND lease_expires_at IS NULL) OR (lease_owner IS NOT NULL AND lease_token IS NOT NULL AND lease_expires_at IS NOT NULL)),
+    CONSTRAINT ck_dr_drive_website_sync_version
+        CHECK (version >= 1)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_website_sync_idempotency
+    ON dr_drive_website_sync (tenant_id, idempotency_key);
+CREATE INDEX IF NOT EXISTS ix_dr_drive_website_sync_worker
+    ON dr_drive_website_sync (sync_status, lease_expires_at, updated_at);
+CREATE INDEX IF NOT EXISTS ix_dr_drive_website_sync_root_status
+    ON dr_drive_website_sync (tenant_id, website_root_id, sync_status, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS dr_drive_root_scope_subscription (
+    id VARCHAR(64) PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id VARCHAR(64) NOT NULL,
+    space_id VARCHAR(64) NOT NULL,
+    consumer_kind VARCHAR(32) NOT NULL,
+    consumer_resource_id VARCHAR(128) NOT NULL,
+    root_node_id VARCHAR(64) NOT NULL,
+    scope_status VARCHAR(32) NOT NULL DEFAULT 'active',
+    version BIGINT NOT NULL DEFAULT 1,
+    created_by VARCHAR(128) NOT NULL,
+    updated_by VARCHAR(128) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_dr_drive_root_scope_subscription_space_id
+        FOREIGN KEY (space_id) REFERENCES dr_drive_space(id) ON DELETE CASCADE,
+    CONSTRAINT fk_dr_drive_root_scope_subscription_node_id
+        FOREIGN KEY (root_node_id) REFERENCES dr_drive_node(id) ON DELETE RESTRICT,
+    CONSTRAINT ck_dr_drive_root_scope_subscription_kind
+        CHECK (consumer_kind IN ('knowledgebase_raw')),
+    CONSTRAINT ck_dr_drive_root_scope_subscription_status
+        CHECK (scope_status IN ('active', 'suspended', 'revoked')),
+    CONSTRAINT ck_dr_drive_root_scope_subscription_version
+        CHECK (version >= 1)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_root_scope_subscription_uuid
+    ON dr_drive_root_scope_subscription (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_root_scope_subscription_consumer
+    ON dr_drive_root_scope_subscription (tenant_id, consumer_kind, consumer_resource_id)
+    WHERE scope_status IN ('active', 'suspended');
+CREATE INDEX IF NOT EXISTS ix_dr_drive_root_scope_subscription_root
+    ON dr_drive_root_scope_subscription (tenant_id, space_id, root_node_id, scope_status);
+
 
 CREATE TABLE IF NOT EXISTS dr_drive_node_permission (
     id VARCHAR(64) PRIMARY KEY,

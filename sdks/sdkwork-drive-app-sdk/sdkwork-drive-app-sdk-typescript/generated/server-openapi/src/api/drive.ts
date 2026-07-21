@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ArchiveEntry, ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DrivePermission, DriveSandboxEntry, DriveSandboxEntryListData, DriveSandboxFileContent, DriveSandboxMutationCommandData, DriveSandboxVolumeListData, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermission, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodePathResponse, PageInfo, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, PurgeDriveSandboxEntryRequest, QuotaSummary, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart } from '../types';
+import type { ArchiveEntry, ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, CreateWebsiteRootRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DrivePermission, DriveSandboxEntry, DriveSandboxEntryListData, DriveSandboxFileContent, DriveSandboxMutationCommandData, DriveSandboxVolumeListData, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermission, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodePathResponse, PageInfo, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, PurgeDriveSandboxEntryRequest, QuotaSummary, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, WebsiteRoot, WebsiteRootPageData } from '../types';
 
 
 export class DriveUploaderUploadsPartsApi {
@@ -152,10 +152,40 @@ async list(spaceId: string, params?: DriveMoveDestinationsListParams): Promise<D
   }
 }
 
+export interface DriveWebsiteRootsListParams {
+  pageSize?: number;
+  cursor?: string;
+}
+
+export class DriveWebsiteRootsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+async list(spaceId: string, params?: DriveWebsiteRootsListParams): Promise<WebsiteRootPageData> {
+    const query = buildQueryString([
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<WebsiteRootPageData>(appendQueryString(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/website_roots`), query));
+  }
+
+async create(spaceId: string, body: CreateWebsiteRootRequest): Promise<WebsiteRoot> {
+    return this.client.post<WebsiteRoot>(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/website_roots`), body, undefined, undefined, 'application/json');
+  }
+
+async retrieve(rootUuid: string): Promise<WebsiteRoot> {
+    return this.client.get<WebsiteRoot>(appApiPath(`/drive/website_roots/${serializePathParameter(rootUuid, { name: 'rootUuid', style: 'simple', explode: false })}`));
+  }
+}
+
 export interface DriveSpacesListParams {
   ownerSubjectType?: string;
   ownerSubjectId?: string;
-  spaceType?: 'personal' | 'team' | 'knowledge_base' | 'git_repository' | 'app_upload' | 'rtc';
+  spaceType?: 'personal' | 'team' | 'knowledge_base' | 'ai_generated' | 'git_repository' | 'deployment' | 'app_upload' | 'im' | 'rtc' | 'notary' | 'website';
   pageSize?: number;
   cursor?: string;
 }
@@ -988,6 +1018,7 @@ export class DriveApi {
   public readonly sandboxFiles: DriveSandboxFilesApi;
   public readonly sandboxFileContents: DriveSandboxFileContentsApi;
   public readonly spaces: DriveSpacesApi;
+  public readonly websiteRoots: DriveWebsiteRootsApi;
   public readonly moveDestinations: DriveMoveDestinationsApi;
   public readonly uploadSessions: DriveUploadSessionsApi;
   public readonly downloadPackages: DriveDownloadPackagesApi;
@@ -1018,6 +1049,7 @@ export class DriveApi {
     this.sandboxFiles = new DriveSandboxFilesApi(client);
     this.sandboxFileContents = new DriveSandboxFileContentsApi(client);
     this.spaces = new DriveSpacesApi(client);
+    this.websiteRoots = new DriveWebsiteRootsApi(client);
     this.moveDestinations = new DriveMoveDestinationsApi(client);
     this.uploadSessions = new DriveUploadSessionsApi(client);
     this.downloadPackages = new DriveDownloadPackagesApi(client);

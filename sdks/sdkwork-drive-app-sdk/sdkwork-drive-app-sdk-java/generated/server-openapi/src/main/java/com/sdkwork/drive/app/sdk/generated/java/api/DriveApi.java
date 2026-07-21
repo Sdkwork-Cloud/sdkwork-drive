@@ -415,6 +415,25 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<DriveSpaceHttpResponse>() {});
     }
 
+    public WebsiteRootListHttpResponse websiteRootsList(String spaceId, Integer pageSize, String cursor) throws Exception {
+        String query = buildQueryString(List.of(
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("cursor", cursor, "form", true, false, null)
+        ));
+        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/spaces/" + serializePathParameter(spaceId, new PathParameterSpec("spaceId", "simple", false)) + "/website_roots"), query));
+        return client.convertValue(raw, new TypeReference<WebsiteRootListHttpResponse>() {});
+    }
+
+    public WebsiteRootHttpResponse websiteRootsCreate(String spaceId, CreateWebsiteRootRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/drive/spaces/" + serializePathParameter(spaceId, new PathParameterSpec("spaceId", "simple", false)) + "/website_roots"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<WebsiteRootHttpResponse>() {});
+    }
+
+    public WebsiteRootHttpResponse websiteRootsRetrieve(String rootUuid) throws Exception {
+        Object raw = client.get(ApiPaths.appPath("/drive/website_roots/" + serializePathParameter(rootUuid, new PathParameterSpec("rootUuid", "simple", false)) + ""));
+        return client.convertValue(raw, new TypeReference<WebsiteRootHttpResponse>() {});
+    }
+
     public DriveNodeListHttpResponse moveDestinationsList(String spaceId, String excludeNodeIds, Integer pageSize, String cursor) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("excludeNodeIds", excludeNodeIds, "form", true, false, null),

@@ -668,6 +668,37 @@ func (a *DriveApi) SpacesCreate(body sdktypes.CreateSpaceRequest) (sdktypes.Driv
     return decodeResult[sdktypes.DriveSpaceHttpResponse](raw)
 }
 
+func (a *DriveApi) WebsiteRootsList(spaceId string, pageSize *int, cursor *string) (sdktypes.WebsiteRootListHttpResponse, error) {
+    query := BuildQueryString([]QueryParameterSpec{
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
+    })
+    raw, err := a.client.Get(AppendQueryString(AppApiPath(fmt.Sprintf("/drive/spaces/%s/website_roots", SerializePathParameter(spaceId, PathParameterSpec{Name: "spaceId", Style: "simple", Explode: false}))), query), nil, nil)
+    if err != nil {
+        var zero sdktypes.WebsiteRootListHttpResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.WebsiteRootListHttpResponse](raw)
+}
+
+func (a *DriveApi) WebsiteRootsCreate(spaceId string, body sdktypes.CreateWebsiteRootRequest) (sdktypes.WebsiteRootHttpResponse, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/drive/spaces/%s/website_roots", SerializePathParameter(spaceId, PathParameterSpec{Name: "spaceId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.WebsiteRootHttpResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.WebsiteRootHttpResponse](raw)
+}
+
+func (a *DriveApi) WebsiteRootsRetrieve(rootUuid string) (sdktypes.WebsiteRootHttpResponse, error) {
+    raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/drive/website_roots/%s", SerializePathParameter(rootUuid, PathParameterSpec{Name: "rootUuid", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero sdktypes.WebsiteRootHttpResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.WebsiteRootHttpResponse](raw)
+}
+
 func (a *DriveApi) MoveDestinationsList(spaceId string, excludeNodeIds *string, pageSize *int, cursor *string) (sdktypes.DriveNodeListHttpResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "excludeNodeIds", Value: func() interface{} { if excludeNodeIds == nil { return nil }; return *excludeNodeIds }(), Style: "form", Explode: true, AllowReserved: false},

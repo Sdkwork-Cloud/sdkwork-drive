@@ -76,7 +76,9 @@
     "runtimeEntrypoints": [],
     "routeManifest": null,
     "sdkClients": [],
-    "events": [],
+    "events": [
+      "drive.node.version.committed.v1"
+    ],
     "configKeys": [],
     "sdkDependencies": [],
     "dependencyApiExports": [],

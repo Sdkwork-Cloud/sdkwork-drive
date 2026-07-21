@@ -1087,6 +1087,41 @@ async fn complete_stored_upload_marks_generated_object_ready_and_is_idempotent()
         )
     );
 
+    let node_versions: Vec<(String, i64, String)> = sqlx::query_as(
+        "SELECT id, version_no, storage_object_id
+         FROM dr_drive_node_version
+         WHERE tenant_id=?1 AND node_id=?2",
+    )
+    .bind("tenant-ai-complete")
+    .bind(&prepared.node_id)
+    .fetch_all(&pool)
+    .await
+    .expect("logical node versions should be queryable");
+    assert_eq!(node_versions.len(), 1);
+    assert_eq!(node_versions[0].1, 1);
+    assert_eq!(node_versions[0].2, "session-upload-item-ai-complete-v1");
+
+    let event_payload: String = sqlx::query_scalar(
+        "SELECT payload_json
+         FROM dr_drive_domain_outbox
+         WHERE tenant_id=?1 AND node_id=?2 AND event_type=?3",
+    )
+    .bind("tenant-ai-complete")
+    .bind(&prepared.node_id)
+    .bind(sdkwork_drive_contract::drive::domain_events::node::VERSION_COMMITTED_V1)
+    .fetch_one(&pool)
+    .await
+    .expect("version committed event should be queryable");
+    let event: serde_json::Value =
+        serde_json::from_str(&event_payload).expect("event payload should be valid JSON");
+    assert_eq!(event["type"], "drive.node.version.committed.v1");
+    assert_eq!(event["specversion"], "1.0");
+    assert_eq!(event["data"]["driveVersionId"], node_versions[0].0);
+    assert_eq!(event["data"]["versionNo"], "1");
+    assert_eq!(event["data"]["contentLength"], "13");
+    assert_eq!(event["data"]["rootScopes"], serde_json::json!([]));
+    assert!(event["data"].get("objectKey").is_none());
+
     let sensitive_operations: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
          FROM dr_drive_file_sensitive_operation

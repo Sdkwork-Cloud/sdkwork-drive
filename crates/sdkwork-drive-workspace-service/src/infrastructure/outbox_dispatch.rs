@@ -1,6 +1,6 @@
 use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_observability::metrics;
-use serde_json::json;
+use serde_json::Value;
 use sqlx::{AnyPool, Row};
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -133,10 +133,7 @@ pub async fn dispatch_pending_outbox_events(
             &OutboxChangeEvent {
                 tenant_id: &claimed.tenant_id,
                 space_id: &claimed.space_id,
-                node_id: claimed.node_id.as_deref(),
-                event_type: &claimed.event_type,
-                sequence_no: claimed.sequence_no,
-                actor_id: &claimed.actor_id,
+                payload_json: &claimed.payload_json,
             },
         )
         .await
@@ -174,11 +171,8 @@ struct ClaimedOutboxEvent {
     outbox_id: String,
     tenant_id: String,
     space_id: String,
-    node_id: Option<String>,
-    event_type: String,
-    actor_id: String,
-    sequence_no: i64,
     attempt_count: i32,
+    payload_json: String,
 }
 
 async fn claim_next_pending_outbox_event(
@@ -200,15 +194,13 @@ async fn claim_next_pending_outbox_event(
                    LIMIT 1
                    FOR UPDATE SKIP LOCKED
                  )
-                 RETURNING id, tenant_id, space_id, node_id, event_type, actor_id, sequence_no, attempt_count",
+                 RETURNING id, tenant_id, space_id, attempt_count, payload_json",
             ))
             .bind(MAX_OUTBOX_ATTEMPTS)
             .fetch_optional(pool)
             .await
         }
-        DatabaseEngine::Sqlite => {
-            claim_sqlite_outbox_event(pool, &exclude_clause).await
-        }
+        DatabaseEngine::Sqlite => claim_sqlite_outbox_event(pool, &exclude_clause).await,
     }
     .map_err(|error| format!("claim pending domain outbox event failed: {error}"))?;
 
@@ -220,11 +212,8 @@ async fn claim_next_pending_outbox_event(
         outbox_id: row.get("id"),
         tenant_id: row.get("tenant_id"),
         space_id: row.get("space_id"),
-        node_id: row.get("node_id"),
-        event_type: row.get("event_type"),
-        actor_id: row.get("actor_id"),
-        sequence_no: row.get("sequence_no"),
         attempt_count: row.get("attempt_count"),
+        payload_json: row.get("payload_json"),
     }))
 }
 
@@ -246,7 +235,7 @@ async fn claim_sqlite_outbox_event(
            ORDER BY created_at ASC
            LIMIT 1
          )
-         RETURNING id, tenant_id, space_id, node_id, event_type, actor_id, sequence_no, attempt_count",
+         RETURNING id, tenant_id, space_id, attempt_count, payload_json",
     ))
     .bind(MAX_OUTBOX_ATTEMPTS)
     .fetch_optional(&mut *connection)
@@ -312,10 +301,7 @@ async fn mark_outbox_event_failed(
 struct OutboxChangeEvent<'a> {
     tenant_id: &'a str,
     space_id: &'a str,
-    node_id: Option<&'a str>,
-    event_type: &'a str,
-    sequence_no: i64,
-    actor_id: &'a str,
+    payload_json: &'a str,
 }
 
 async fn dispatch_outbox_event(
@@ -348,16 +334,8 @@ async fn dispatch_outbox_event(
         return Err(NO_ACTIVE_WATCH_CHANNELS_ERROR.to_string());
     }
 
-    let payload = json!({
-        "tenantId": event.tenant_id,
-        "spaceId": event.space_id,
-        "nodeId": event.node_id,
-        "eventType": event.event_type,
-        "sequenceNo": event.sequence_no,
-        "actorId": event.actor_id,
-        "resourceType": "changes",
-        "deliverySource": "domain_outbox",
-    });
+    let payload: Value = serde_json::from_str(event.payload_json)
+        .map_err(|error| format!("domain outbox payload is invalid JSON: {error}"))?;
 
     for row in rows {
         let channel_id: String = row.get("id");

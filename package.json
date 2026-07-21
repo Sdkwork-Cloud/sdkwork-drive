@@ -1,4 +1,5 @@
-{
+﻿{
+  "license": "AGPL-3.0-or-later",
   "name": "sdkwork-drive",
   "private": true,
   "version": "0.1.0",
@@ -48,6 +49,7 @@
     "test:open-sdk-smoke": "node --test sdks/sdkwork-drive-sdk/tests/sdk-family-smoke.test.mjs",
     "test:backend-sdk-smoke": "node --test sdks/sdkwork-drive-backend-sdk/tests/sdk-family-smoke.test.mjs",
     "test:admin-storage-sdk-smoke": "node --test sdks/sdkwork-drive-admin-storage-sdk/tests/sdk-family-smoke.test.mjs",
+    "test:internal-sdk-smoke": "node --test sdks/sdkwork-drive-internal-sdk/tests/sdk-family-smoke.test.mjs",
     "test:sdk-ownership-boundaries": "node --test sdks/test/verify-sdk-ownership-boundaries.test.mjs",
     "test:database-framework-contract": "node --test tests/contract/database-framework.contract.test.mjs",
     "test:sdkwork-command-dev-topology": "node --test tests/contract/sdkwork-command-dev-topology.contract.test.mjs",

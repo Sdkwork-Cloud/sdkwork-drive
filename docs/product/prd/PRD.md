@@ -3,14 +3,17 @@
 Status: active
 Owner: SDKWork maintainers
 Application: sdkwork-drive
-Updated: 2026-07-07
+Updated: 2026-07-21
 Specs: REQUIREMENTS_SPEC.md, DOCUMENTATION_SPEC.md, DRIVE_SPEC.md, DEPLOYMENT_SPEC.md, SECURITY_SPEC.md
 
 ## Document Map
 
+- [PRD-website-space-publishing.md](PRD-website-space-publishing.md) - proposed Website Space,
+  WebsiteRoot, live directory provider, atomic sync, user/admin views, quotas, and acceptance gates.
 - [REQ-2026-0001-production-readiness.md](../requirements/REQ-2026-0001-production-readiness.md)
 - [REQ-2026-0002-production-security-alignment.md](../requirements/REQ-2026-0002-production-security-alignment.md)
 - [REQ-2026-0003-pre-launch-debt-cleanup.md](../requirements/REQ-2026-0003-pre-launch-debt-cleanup.md)
+- [REQ-2026-0004-website-space-directory-publishing.md](../requirements/REQ-2026-0004-website-space-directory-publishing.md)
 
 ## 1. Background And Problem
 
@@ -34,6 +37,8 @@ SDKWork Drive must provide a professional file workspace with metadata/object se
 - Support PostgreSQL production and SQLite development with governed database lifecycle assets.
 - Ship browser and desktop clients that consume generated SDKs only.
 - Publish release artifacts with checksums, SBOM, and deployment descriptors suitable for commercial distribution.
+- Provide explicit `website` Spaces whose default Space-root or selected-folder WebsiteRoots can be
+  served through Deploy/Web Server without exposing ordinary Spaces.
 
 ### Non-Goals (current release)
 
@@ -41,6 +46,7 @@ SDKWork Drive must provide a professional file workspace with metadata/object se
 - Online collaborative document editing.
 - Full DLP/eDiscovery product workflows.
 - Azure Blob storage adapter until a concrete provider exists.
+- Public domains, TLS, Variants, Mounts, or HTTP delivery policy; these belong to Deploy/Web Server.
 
 ## 4. Scope
 
@@ -51,6 +57,7 @@ SDKWork Drive must provide a professional file workspace with metadata/object se
 | SDK families | sdkwork-drive-app-sdk, backend SDK, open SDK |
 | Storage backends | local filesystem, S3-compatible, OpenDAL providers |
 | Deployment | standalone unified gateway; cloud split services on Kubernetes |
+| Website source provider | proposed Website Space with `SPACE_ROOT`/`FOLDER` WebsiteRoots and live/atomic content modes |
 
 Legacy `/app/v3/api/assets/upload*` routes remain unavailable; global assets must use Drive uploader APIs per DRIVE_SPEC.
 
@@ -62,6 +69,9 @@ Legacy `/app/v3/api/assets/upload*` routes remain unavailable; global assets mus
 4. **Admin operations**: Tenant admin reviews audit logs, runs maintenance sweeps, sets tenant quota caps, and inspects labels, spaces, and download packages through backend APIs and the PC admin UI.
 5. **Cloud operations**: Operator deploys split services with `/readyz` probes, install-worker maintenance, Redis-backed global rate limits, ingress edge limits, and immutable release digests.
 6. **Desktop secure session**: Desktop client persists auth/session tokens in OS secure storage via Tauri keychain commands.
+7. **Website directory publication**: User creates a Website Space -> uses the default whole-Space
+   root or selects a descendant folder -> uploads or atomically synchronizes a tree -> connects the
+   stable WebsiteRoot to a Deploy Site -> opens the bound domain without changing Drive hierarchy.
 
 ## 6. Success Metrics
 
@@ -73,6 +83,7 @@ Legacy `/app/v3/api/assets/upload*` routes remain unavailable; global assets mus
 | Staging smoke | weekly open-api + optional PC share-claim smoke against staging secrets |
 | Upload/download success | integration and e2e suites pass for share-link and uploader flows |
 | Production startup | production profile rejects missing download-token signing secrets |
+| Website root confinement | Space-root/folder-root, reserved namespace, and cross-tenant suites pass |
 
 ## 7. Phases
 
@@ -81,14 +92,15 @@ Legacy `/app/v3/api/assets/upload*` routes remain unavailable; global assets mus
 | P0 Core backend | Spaces, nodes, upload/download, permissions, storage abstraction | Done |
 | P1 PC client | AuthGate, SDK-backed file browser, transfer center, desktop host | Done |
 | P2 Production hardening | Outbox singleton, readyz, K8s spec alignment, secure desktop storage, CSP, IAM DB resolver wiring | Done |
-| P3 Release & ops | Signed multi-platform artifacts, catalog media, staging smoke schedule, ACTIVE publish | In progress — **代码对齐已完成**（原子空间删除、版本历史分页、分任务维护 leader、PostgreSQL CI）；阻塞项仅剩制品签名、Catalog CDN 与 staging 运营验证 |
-| P4 Differentiation | Delta/changes API, knowledge/AI space profiles, and storage-provider expansion | Planned |
+| P3 Release & ops | Signed multi-platform artifacts, catalog media, staging smoke schedule, ACTIVE publish | In progress - code alignment complete; remaining gates are artifact signing, Catalog CDN, and staging operations evidence |
+| P4 Differentiation | Delta/changes API, Website Space directory publishing, knowledge/AI profiles, and storage-provider expansion | Planned |
 
 ## 8. Linked Requirements
 
 - [REQ-2026-0001-production-readiness.md](../requirements/REQ-2026-0001-production-readiness.md)
 - [REQ-2026-0002-production-security-alignment.md](../requirements/REQ-2026-0002-production-security-alignment.md)
 - [REQ-2026-0003-pre-launch-debt-cleanup.md](../requirements/REQ-2026-0003-pre-launch-debt-cleanup.md)
+- [REQ-2026-0004-website-space-directory-publishing.md](../requirements/REQ-2026-0004-website-space-directory-publishing.md)
 
 ## 9. Open Questions
 

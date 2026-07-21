@@ -5,6 +5,7 @@ use sqlx::AnyPool;
 use sqlx::Row;
 
 use crate::domain::space::{DriveSpace, DriveSpaceType};
+use crate::infrastructure::sql::begin_transaction_sql;
 use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::ports::space_store::{DriveSpaceStore, NewDriveSpace};
 use crate::DriveServiceError;
@@ -67,53 +68,56 @@ impl DriveSpaceStore for SqlSpaceStore {
         &self,
         new_space: &NewDriveSpace,
     ) -> Result<DriveSpace, DriveServiceError> {
-        let result = sqlx::query(
-            "INSERT INTO dr_drive_space (
-                id, tenant_id, owner_subject_type, owner_subject_id,
-                space_type, display_name, presentation_icon, presentation_color, description,
-                lifecycle_status, version, created_by, updated_by
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11, $12)",
-        )
-        .bind(&new_space.id)
-        .bind(&new_space.tenant_id)
-        .bind(&new_space.owner_subject_type)
-        .bind(&new_space.owner_subject_id)
-        .bind(&new_space.space_type)
-        .bind(&new_space.display_name)
-        .bind(&new_space.presentation_icon)
-        .bind(&new_space.presentation_color)
-        .bind(&new_space.description)
-        .bind(&new_space.lifecycle_status)
-        .bind(&new_space.created_by)
-        .bind(&new_space.updated_by)
-        .execute(&self.pool)
+        insert_space_on_executor(&self.pool, new_space).await?;
+        read_inserted_space(&self.pool, &new_space.id).await
+    }
+
+    async fn insert_website_space(
+        &self,
+        new_space: &NewDriveSpace,
+    ) -> Result<DriveSpace, DriveServiceError> {
+        let mut connection = self.pool.acquire().await.map_err(|error| {
+            DriveServiceError::Internal(format!(
+                "acquire website space transaction connection failed: {error}"
+            ))
+        })?;
+        sqlx::query(begin_transaction_sql())
+            .execute(&mut *connection)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "begin website space transaction failed: {error}"
+                ))
+            })?;
+
+        let result: Result<(), DriveServiceError> = async {
+            insert_space_on_executor(&mut *connection, new_space).await?;
+            super::website_space_store::provision_default_website_root_on_connection(
+                &mut connection,
+                new_space,
+            )
+            .await
+        }
         .await;
 
-        if let Err(error) = result {
-            let message = error.to_string();
-            if is_unique_constraint_violation(&message) {
-                return Err(DriveServiceError::Conflict(
-                    "space already exists for tenant/owner/type".to_string(),
-                ));
+        match result {
+            Ok(()) => {
+                sqlx::query("COMMIT")
+                    .execute(&mut *connection)
+                    .await
+                    .map_err(|error| {
+                        DriveServiceError::Internal(format!(
+                            "commit website space transaction failed: {error}"
+                        ))
+                    })?;
+                drop(connection);
+                read_inserted_space(&self.pool, &new_space.id).await
             }
-            return Err(DriveServiceError::Internal(format!(
-                "insert dr_drive_space failed: {message}"
-            )));
+            Err(error) => {
+                let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+                Err(error)
+            }
         }
-
-        let row = sqlx::query(&format!(
-            "SELECT {SPACE_SELECT_COLUMNS}
-            FROM dr_drive_space
-            WHERE id=$1",
-        ))
-        .bind(&new_space.id)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|error| {
-            DriveServiceError::Internal(format!("read inserted dr_drive_space failed: {error}"))
-        })?;
-
-        map_row_to_space(&row)
     }
 
     async fn list_spaces(
@@ -349,6 +353,7 @@ impl DriveSpaceStore for SqlSpaceStore {
         map_row_to_space(&row)
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn update_space(
         &self,
         tenant_id: &str,
@@ -412,6 +417,71 @@ impl DriveSpaceStore for SqlSpaceStore {
         })?;
         Self::delete_space_on_connection(&mut connection, tenant_id, space_id, operator_id).await
     }
+}
+
+async fn insert_space_on_executor<'e, E>(
+    executor: E,
+    new_space: &NewDriveSpace,
+) -> Result<(), DriveServiceError>
+where
+    E: sqlx::Executor<'e, Database = sqlx::Any>,
+{
+    let result = sqlx::query(
+        "INSERT INTO dr_drive_space (
+                id, tenant_id, owner_subject_type, owner_subject_id,
+                space_type, display_name, presentation_icon, presentation_color, description,
+                lifecycle_status, version, created_by, updated_by
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11, $12)",
+    )
+    .bind(&new_space.id)
+    .bind(&new_space.tenant_id)
+    .bind(&new_space.owner_subject_type)
+    .bind(&new_space.owner_subject_id)
+    .bind(&new_space.space_type)
+    .bind(&new_space.display_name)
+    .bind(&new_space.presentation_icon)
+    .bind(&new_space.presentation_color)
+    .bind(&new_space.description)
+    .bind(&new_space.lifecycle_status)
+    .bind(&new_space.created_by)
+    .bind(&new_space.updated_by)
+    .execute(executor)
+    .await;
+
+    if let Err(error) = result {
+        let message = error.to_string();
+        if is_unique_constraint_violation(&message) {
+            return Err(DriveServiceError::Conflict(
+                "space already exists for tenant/owner/type".to_string(),
+            ));
+        }
+        return Err(DriveServiceError::Internal(format!(
+            "insert dr_drive_space failed: {message}"
+        )));
+    }
+
+    Ok(())
+}
+
+async fn read_inserted_space<'e, E>(
+    executor: E,
+    space_id: &str,
+) -> Result<DriveSpace, DriveServiceError>
+where
+    E: sqlx::Executor<'e, Database = sqlx::Any>,
+{
+    let row = sqlx::query(&format!(
+        "SELECT {SPACE_SELECT_COLUMNS}
+         FROM dr_drive_space
+         WHERE id=$1",
+    ))
+    .bind(space_id)
+    .fetch_one(executor)
+    .await
+    .map_err(|error| {
+        DriveServiceError::Internal(format!("read inserted dr_drive_space failed: {error}"))
+    })?;
+    map_row_to_space(&row)
 }
 
 fn map_row_to_space(row: &AnyRow) -> Result<DriveSpace, DriveServiceError> {

@@ -50,7 +50,8 @@
                 "app_upload",
                 "im",
                 "rtc",
-                "notary"
+                "notary",
+                "website"
               ]
             }
           }
@@ -2810,7 +2811,8 @@
               "app_upload",
               "im",
               "rtc",
-              "notary"
+              "notary",
+              "website"
             ]
           },
           "providerId": {
@@ -3228,7 +3230,8 @@
         "type": "object",
         "required": [
           "sourceObjectKey",
-          "destinationObjectKey"
+          "destinationObjectKey",
+          "operatorId"
         ],
         "properties": {
           "sourceObjectKey": {
@@ -3258,6 +3261,12 @@
               "COPY",
               "REPLACE"
             ]
+          },
+          "operatorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
         },
         "additionalProperties": false

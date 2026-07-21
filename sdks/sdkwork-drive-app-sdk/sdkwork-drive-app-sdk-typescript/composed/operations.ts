@@ -117,4 +117,7 @@ export const operations = {
   "watchChannels.list": { method: "GET", path: "/app/v3/api/drive/watch_channels" },
   "watchChannels.retrieve": { method: "GET", path: "/app/v3/api/drive/watch_channels/{channelId}" },
   "watchChannels.stop": { method: "POST", path: "/app/v3/api/drive/watch_channels/{channelId}/stop" },
+  "websiteRoots.create": { method: "POST", path: "/app/v3/api/drive/spaces/{spaceId}/website_roots" },
+  "websiteRoots.list": { method: "GET", path: "/app/v3/api/drive/spaces/{spaceId}/website_roots" },
+  "websiteRoots.retrieve": { method: "GET", path: "/app/v3/api/drive/website_roots/{rootUuid}" },
 } as const;

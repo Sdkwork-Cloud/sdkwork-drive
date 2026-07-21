@@ -79,7 +79,7 @@
       "."
     ],
     "runtimeEntrypoints": [],
-    "routeManifest": null,
+    "routeManifest": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json",
     "sdkClients": [],
     "events": [],
     "configKeys": [],

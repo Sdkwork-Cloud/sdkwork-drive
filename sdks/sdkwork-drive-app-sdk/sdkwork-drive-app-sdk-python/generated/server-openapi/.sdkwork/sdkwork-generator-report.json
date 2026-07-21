@@ -10,37 +10,101 @@
   },
   "status": "ok",
   "mode": "apply",
-  "hasChanges": false,
+  "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "1fe55bad495861afd0d11b31e6b115f75b62f236bea23c2a8e09b97bc659a5e5",
+  "changeFingerprint": "b80ff935321e640722329930eb4cbef417c9e2c45ca3f455bf053e4c427a051e",
   "changeImpact": {
     "schemaVersion": 1,
-    "areas": [],
-    "details": [],
-    "requiresVerification": false,
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+    "areas": [
+      "api-surface",
+      "models"
+    ],
+    "details": [
+      {
+        "area": "api-surface",
+        "paths": [
+          "sdkwork_drive_app_sdk_generated_python/api/drive.py",
+          "sdkwork_drive_app_sdk_generated_python/models/__init__.py"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
+          "sdkwork_drive_app_sdk_generated_python/models/create_website_root_request.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_root_folder_selector.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_root_http_response.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_root_list_http_response.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_root_page_data.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_root_resource_data.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_root_selector.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_root_space_selector.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_root.py"
+        ]
+      }
+    ],
+    "requiresVerification": true,
+    "summary": "Detected impact areas: api-surface, models. Verification is required."
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "low",
-    "nextAction": "skip",
+    "riskLevel": "medium",
+    "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
-      "no-actionable-changes"
+      "verification-required"
     ]
   },
   "executionHandoff": {
     "schemaVersion": 1,
-    "summary": "No further commands are required.",
-    "steps": []
+    "summary": "Run the required verification commands now.",
+    "steps": [
+      {
+        "id": "verify-check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-python\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "python",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language python --project-dir . --action check"
+      }
+    ]
   },
   "verificationPlan": {
-    "shouldRun": false,
-    "runPhase": "skip",
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
-    "steps": []
+    "shouldRun": true,
+    "runPhase": "now",
+    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "steps": [
+      {
+        "id": "check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-python\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "python",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language python --project-dir . --action check"
+      }
+    ]
   },
   "sdk": {
     "name": "sdkwork-drive-app-sdk",
@@ -56,24 +120,37 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 183,
-    "models": 160,
+    "totalFiles": 192,
+    "models": 169,
     "apis": 6,
-    "types": 161
+    "types": 170
   },
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 0,
+    "writtenFiles": 11,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 182,
+    "skippedUnchangedGeneratedFiles": 180,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "1fe55bad495861afd0d11b31e6b115f75b62f236bea23c2a8e09b97bc659a5e5",
+    "changeFingerprint": "b80ff935321e640722329930eb4cbef417c9e2c45ca3f455bf053e4c427a051e",
     "changes": {
-      "createdGeneratedFiles": [],
-      "updatedGeneratedFiles": [],
+      "createdGeneratedFiles": [
+        "sdkwork_drive_app_sdk_generated_python/models/create_website_root_request.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_folder_selector.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_http_response.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_list_http_response.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_page_data.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_resource_data.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_selector.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_space_selector.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root.py"
+      ],
+      "updatedGeneratedFiles": [
+        "sdkwork_drive_app_sdk_generated_python/api/drive.py",
+        "sdkwork_drive_app_sdk_generated_python/models/__init__.py"
+      ],
       "unchangedGeneratedFiles": [
         "bin/publish-core.mjs",
         "bin/publish.ps1",
@@ -87,14 +164,12 @@
         "sdkwork_drive_app_sdk_generated_python/__init__.py",
         "sdkwork_drive_app_sdk_generated_python/api/__init__.py",
         "sdkwork_drive_app_sdk_generated_python/api/assets.py",
-        "sdkwork_drive_app_sdk_generated_python/api/drive.py",
         "sdkwork_drive_app_sdk_generated_python/api/node_labels.py",
         "sdkwork_drive_app_sdk_generated_python/api/node_properties.py",
         "sdkwork_drive_app_sdk_generated_python/api/nodes.py",
         "sdkwork_drive_app_sdk_generated_python/api/watch_channels.py",
         "sdkwork_drive_app_sdk_generated_python/client.py",
         "sdkwork_drive_app_sdk_generated_python/http_client.py",
-        "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
         "sdkwork_drive_app_sdk_generated_python/models/apply_node_label_request.py",
         "sdkwork_drive_app_sdk_generated_python/models/archive_entry_list_http_response.py",
         "sdkwork_drive_app_sdk_generated_python/models/archive_entry.py",
@@ -267,26 +342,71 @@
     },
     "impact": {
       "schemaVersion": 1,
-      "areas": [],
-      "details": [],
-      "requiresVerification": false,
-      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+      "areas": [
+        "api-surface",
+        "models"
+      ],
+      "details": [
+        {
+          "area": "api-surface",
+          "paths": [
+            "sdkwork_drive_app_sdk_generated_python/api/drive.py",
+            "sdkwork_drive_app_sdk_generated_python/models/__init__.py"
+          ]
+        },
+        {
+          "area": "models",
+          "paths": [
+            "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
+            "sdkwork_drive_app_sdk_generated_python/models/create_website_root_request.py",
+            "sdkwork_drive_app_sdk_generated_python/models/website_root_folder_selector.py",
+            "sdkwork_drive_app_sdk_generated_python/models/website_root_http_response.py",
+            "sdkwork_drive_app_sdk_generated_python/models/website_root_list_http_response.py",
+            "sdkwork_drive_app_sdk_generated_python/models/website_root_page_data.py",
+            "sdkwork_drive_app_sdk_generated_python/models/website_root_resource_data.py",
+            "sdkwork_drive_app_sdk_generated_python/models/website_root_selector.py",
+            "sdkwork_drive_app_sdk_generated_python/models/website_root_space_selector.py",
+            "sdkwork_drive_app_sdk_generated_python/models/website_root.py"
+          ]
+        }
+      ],
+      "requiresVerification": true,
+      "summary": "Detected impact areas: api-surface, models. Verification is required."
     },
     "verificationPlan": {
-      "shouldRun": false,
-      "runPhase": "skip",
-      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
-      "steps": []
+      "shouldRun": true,
+      "runPhase": "now",
+      "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "steps": [
+        {
+          "id": "check",
+          "title": "Unified package check",
+          "required": true,
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+          "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-python\\generated\\server-openapi",
+          "command": "node",
+          "args": [
+            "./bin/publish-core.mjs",
+            "--language",
+            "python",
+            "--project-dir",
+            ".",
+            "--action",
+            "check"
+          ],
+          "displayCommand": "node ./bin/publish-core.mjs --language python --project-dir . --action check"
+        }
+      ]
     },
     "executionDecision": {
       "schemaVersion": 1,
-      "riskLevel": "low",
-      "nextAction": "skip",
+      "riskLevel": "medium",
+      "nextAction": "verify",
       "requiresManualReview": false,
       "applyRequiresExpectedFingerprint": false,
-      "summary": "No actionable changes were detected. No apply or verification step is required.",
+      "summary": "Changes have been applied. Run the required verification plan now.",
       "reasons": [
-        "no-actionable-changes"
+        "verification-required"
       ]
     },
     "backedUpFiles": [],

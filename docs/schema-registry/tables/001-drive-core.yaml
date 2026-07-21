@@ -18,7 +18,7 @@ tables:
       - name: space_type
         type: varchar(32)
         constraints:
-          - "enum: [personal, team, knowledge_base, ai_generated, git_repository, deployment, app_upload, im, rtc, notary]"
+          - "enum: [personal, team, knowledge_base, ai_generated, git_repository, deployment, app_upload, im, rtc, notary, website]"
       - name: display_name
         type: varchar(255)
       - name: presentation_icon
@@ -61,6 +61,7 @@ tables:
           - owner_subject_type
           - owner_subject_id
           - space_type
+        predicate: "space_type != 'website' AND lifecycle_status = 'active'"
       - name: ix_dr_drive_space_tenant_status
         columns:
           - tenant_id
@@ -82,7 +83,7 @@ tables:
         type: varchar(32)
         description: Denormalized from dr_drive_space.space_type for high-frequency node and file list queries that must avoid joining dr_drive_space.
         constraints:
-          - "enum: [personal, team, knowledge_base, ai_generated, git_repository, deployment, app_upload, im, rtc, notary]"
+          - "enum: [personal, team, knowledge_base, ai_generated, git_repository, deployment, app_upload, im, rtc, notary, website]"
       - name: parent_node_id
         type: varchar(64)
         nullable: true

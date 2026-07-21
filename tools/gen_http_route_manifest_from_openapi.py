@@ -22,7 +22,7 @@ AUTH_MAP = {
     "api-key": "api_key",
     "oauth": "oauth",
     "open-api-flexible": "open_api_flexible",
-    "internal": "public",
+    "ingress-token": "ingress_token",
 }
 
 RATE_LIMIT_TIER_MAP = {
@@ -36,8 +36,25 @@ RATE_LIMIT_TIER_MAP = {
 }
 
 
+def load_openapi(openapi_path: Path) -> dict:
+    source = openapi_path.read_text(encoding="utf-8")
+    if openapi_path.suffix.lower() in {".yaml", ".yml"}:
+        try:
+            import yaml
+        except ImportError as error:
+            raise RuntimeError(
+                "PyYAML is required to generate a route manifest from YAML OpenAPI"
+            ) from error
+        document = yaml.safe_load(source)
+    else:
+        document = json.loads(source)
+    if not isinstance(document, dict):
+        raise ValueError(f"OpenAPI root must be an object: {openapi_path}")
+    return document
+
+
 def load_routes(openapi_path: Path) -> list[tuple[str, str, str, str, str | None]]:
-    document = json.loads(openapi_path.read_text(encoding="utf-8"))
+    document = load_openapi(openapi_path)
     routes: list[tuple[str, str, str, str, str | None]] = []
     for path, methods in document.get("paths", {}).items():
         for method, operation in methods.items():
@@ -113,7 +130,7 @@ def main() -> int:
     if len(sys.argv) != 5:
         print(
             "usage: gen_http_route_manifest_from_openapi.py "
-            "<openapi.json> <output.rs> <fn_name> <tag>",
+            "<openapi.(json|yaml)> <output.rs> <fn_name> <tag>",
             file=sys.stderr,
         )
         return 1

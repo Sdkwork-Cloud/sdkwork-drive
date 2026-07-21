@@ -9,10 +9,22 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-java"
   },
-  "changeFingerprint": "082e273a3fe683f48fd2cb020706f101ae83592bd766a6d32623a58643d2c1cf",
+  "changeFingerprint": "c0a9c1c75e207e73310d0acc866a90ba55dd28bc8b8d5a197a5448c736de2532",
   "changes": {
-    "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [],
+    "createdGeneratedFiles": [
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateWebsiteRootRequest.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRoot.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootFolderSelector.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootHttpResponse.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootListHttpResponse.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootPageData.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootResourceData.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootSelector.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootSpaceSelector.java"
+    ],
+    "updatedGeneratedFiles": [
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java"
+    ],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
@@ -24,7 +36,6 @@
       "sdkwork-sdk.json",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/ApiPaths.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/AssetsApi.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodeLabelsApi.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodePropertiesApi.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodesApi.java",
@@ -202,26 +213,69 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [],
-    "details": [],
-    "requiresVerification": false,
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
+    "areas": [
+      "api-surface",
+      "models"
+    ],
+    "details": [
+      {
+        "area": "api-surface",
+        "paths": [
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateWebsiteRootRequest.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRoot.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootFolderSelector.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootHttpResponse.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootListHttpResponse.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootPageData.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootResourceData.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootSelector.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootSpaceSelector.java"
+        ]
+      }
+    ],
+    "requiresVerification": true,
+    "summary": "Detected impact areas: api-surface, models. Verification is required."
   },
   "verificationPlan": {
-    "shouldRun": false,
-    "runPhase": "skip",
-    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
-    "steps": []
+    "shouldRun": true,
+    "runPhase": "now",
+    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "steps": [
+      {
+        "id": "check",
+        "title": "Unified package check",
+        "required": true,
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-java\\generated\\server-openapi",
+        "command": "node",
+        "args": [
+          "./bin/publish-core.mjs",
+          "--language",
+          "java",
+          "--project-dir",
+          ".",
+          "--action",
+          "check"
+        ],
+        "displayCommand": "node ./bin/publish-core.mjs --language java --project-dir . --action check"
+      }
+    ]
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "low",
-    "nextAction": "skip",
+    "riskLevel": "medium",
+    "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "No actionable changes were detected. No apply or verification step is required.",
+    "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
-      "no-actionable-changes"
+      "verification-required"
     ]
   },
   "preservedLegacyFiles": false

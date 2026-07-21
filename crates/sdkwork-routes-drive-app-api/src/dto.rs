@@ -461,6 +461,51 @@ pub(crate) struct ListSpacesQuery {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct CreateWebsiteRootRequest {
+    pub(crate) root_key: String,
+    pub(crate) display_name: String,
+    pub(crate) source_root: WebsiteRootSelectorRequest,
+    pub(crate) content_mode: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "mode", rename_all = "SCREAMING_SNAKE_CASE")]
+pub(crate) enum WebsiteRootSelectorRequest {
+    SpaceRoot,
+    Folder {
+        #[serde(rename = "folderNodeId")]
+        folder_node_id: String,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct ListWebsiteRootsQuery {
+    #[serde(rename = "page_size")]
+    pub(crate) page_size: Option<i64>,
+    pub(crate) cursor: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct WebsiteRootResponse {
+    pub(crate) uuid: String,
+    pub(crate) space_id: String,
+    pub(crate) root_key: String,
+    pub(crate) display_name: String,
+    pub(crate) source_root_mode: String,
+    pub(crate) selected_folder_node_id: Option<String>,
+    pub(crate) content_mode: String,
+    pub(crate) active_node_id: String,
+    pub(crate) active_generation: String,
+    pub(crate) root_status: String,
+    pub(crate) version: String,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: String,
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListNodesQuery {
     pub(crate) parent_node_id: Option<String>,

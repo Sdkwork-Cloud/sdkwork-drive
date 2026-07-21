@@ -2763,7 +2763,8 @@
               "app_upload",
               "im",
               "rtc",
-              "notary"
+              "notary",
+              "website"
             ]
           },
           "lifecycleStatus": {
@@ -3036,7 +3037,9 @@
       },
       "UpdateLabelRequest": {
         "type": "object",
-        "required": [],
+        "required": [
+          "operatorId"
+        ],
         "properties": {
           "displayName": {
             "type": "string",
@@ -3049,6 +3052,12 @@
           },
           "description": {
             "type": "string"
+          },
+          "operatorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
         },
         "additionalProperties": false

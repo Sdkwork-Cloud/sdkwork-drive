@@ -1,7 +1,7 @@
 schema_version: 1
 kind: sdkwork.database.schema
 module_id: drive
-contract_version: 1.1.0
+contract_version: 1.2.0
 owner_team: drive-platform
 compliance_level: L2
 engines:
@@ -25,6 +25,21 @@ tables:
     lifecycle_status: active
     owner: drive-platform
   - name: dr_drive_node
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_space_website_profile
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_website_root
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_website_root_generation
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_website_sync
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_root_scope_subscription
     lifecycle_status: active
     owner: drive-platform
   - name: dr_drive_node_permission

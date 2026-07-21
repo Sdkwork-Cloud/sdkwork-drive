@@ -2,8 +2,9 @@
 
 Status: active
 Owner: SDKWork maintainers
-Updated: 2026-06-29
-Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md
+Updated: 2026-07-21
+Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md, DATABASE_SPEC.md, DRIVE_SPEC.md,
+SECURITY_SPEC.md
 
 ## Document Map
 
@@ -22,6 +23,8 @@ Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md
 
 ### Feature-specific shards
 
+- [TECH-website-directory-resource-provider.md](TECH-website-directory-resource-provider.md) -
+  proposed Website Space/root/sync database and provider architecture for cloud Sites.
 - [TECH-2026-06-06-drive-uploader.md](TECH-2026-06-06-drive-uploader.md)
 - [TECH-2026-06-08-drive-node-version-policy-design.md](TECH-2026-06-08-drive-node-version-policy-design.md)
 - [TECH-2026-06-08-drive-node-version-policy.md](TECH-2026-06-08-drive-node-version-policy.md)
@@ -105,6 +108,8 @@ Cloud operators must set `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` o
 Cloud API Deployments must set `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`, source `SDKWORK_DRIVE_RATE_LIMIT_REDIS_URL` from the `sdkwork-drive-rate-limit` secret, and set `SDKWORK_DRIVE_RATE_LIMIT_FAIL_CLOSED=true`; ingress limits remain an edge protection layer.
 
 ## 8. Architecture Decision Index
+
+- [ADR-20260721 Website Space Directory Resource](../decisions/ADR-20260721-website-space-directory-resource.md) - proposed multi-project Website Space and atomic root design.
 
 | Topic | Shard / ADR |
 | --- | --- |
