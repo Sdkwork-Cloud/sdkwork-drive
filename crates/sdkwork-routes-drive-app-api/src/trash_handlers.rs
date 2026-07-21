@@ -4,13 +4,18 @@ use crate::app_context::DriveRequestContext;
 use crate::dto::{
     DriveNodeResponse, EmptyTrashRequest, EmptyTrashResponse, NodeCommandRequest, NodeViewQuery,
 };
-use crate::error::{internal_sql_error, problem, ProblemDetail, SdkWorkResultCode};
+use crate::error::{
+    internal_problem, internal_sql_error, problem, ProblemDetail, SdkWorkResultCode,
+};
 use crate::mappers::map_node_row;
 use crate::metadata_repository::present_node_list;
 use crate::node_lifecycle::set_node_lifecycle;
 use crate::node_repository::find_node;
 use crate::response::{success_envelope, DriveNodeListHttpResponse};
-use crate::route_change::record_change;
+use crate::route_change::{
+    notify_committed, record_change, record_node_deleted_on_connection,
+    resolve_node_location_on_connection,
+};
 use crate::space_repository::validate_space_exists;
 use crate::state::AppState;
 use crate::validators::{normalize_optional_text, parse_page_request, resolve_node_list_order_by};
@@ -18,7 +23,9 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
-use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
+use sdkwork_drive_workspace_service::infrastructure::sql::{
+    begin_transaction_sql, NODE_API_SELECT_COLUMNS,
+};
 use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use sqlx::Row;
 
@@ -387,9 +394,8 @@ pub(crate) async fn empty_trash(
     }
     .map_err(internal_sql_error("list trashed dr_drive_node failed"))?;
 
-    let mut deleted_count = 0_i64;
     let mut skipped_count = 0_i64;
-    let mut changed_spaces = Vec::<String>::new();
+    let mut authorized_rows = Vec::<(String, String)>::new();
     for row in &trashed_rows {
         let node_id: String = row.get("id");
         let space_id_value: String = row.get("space_id");
@@ -400,35 +406,108 @@ pub(crate) async fn empty_trash(
             skipped_count += 1;
             continue;
         }
-        sqlx::query(
-            "UPDATE dr_drive_node
-             SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
-             WHERE tenant_id=$2 AND id=$3 AND lifecycle_status='trashed'",
-        )
-        .bind(&operator_id)
-        .bind(&tenant_id)
-        .bind(&node_id)
-        .execute(&state.pool)
-        .await
-        .map_err(internal_sql_error("empty trash dr_drive_node failed"))?;
+        authorized_rows.push((node_id, space_id_value));
+    }
 
-        sqlx::query(
-            "UPDATE dr_drive_storage_object
-             SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP
-             WHERE tenant_id=$2 AND node_id=$3 AND lifecycle_status != 'deleted'",
-        )
-        .bind(&operator_id)
-        .bind(&tenant_id)
-        .bind(&node_id)
-        .execute(&state.pool)
-        .await
-        .map_err(internal_sql_error(
-            "empty trash dr_drive_storage_object metadata failed",
-        ))?;
-        deleted_count += 1;
-        if !changed_spaces.contains(&space_id_value) {
-            changed_spaces.push(space_id_value);
+    let mut deleted_count = 0_i64;
+    let mut changed_spaces = Vec::<String>::new();
+    if !authorized_rows.is_empty() {
+        let mut connection = state.pool.acquire().await.map_err(|error| {
+            internal_problem(format!(
+                "acquire empty trash transaction connection failed: {error}"
+            ))
+        })?;
+        sqlx::query(begin_transaction_sql())
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error("begin empty trash transaction failed"))?;
+        let tx_result: Result<(i64, Vec<String>), (StatusCode, Json<ProblemDetail>)> = async {
+            let mut locations = Vec::with_capacity(authorized_rows.len());
+            for (node_id, space_id_value) in &authorized_rows {
+                locations.push(
+                    resolve_node_location_on_connection(
+                        &mut connection,
+                        &tenant_id,
+                        space_id_value,
+                        node_id,
+                    )
+                    .await?,
+                );
+            }
+
+            let mut deleted_count = 0_i64;
+            let mut changed_spaces = Vec::<String>::new();
+            for ((node_id, space_id_value), last_location) in
+                authorized_rows.iter().zip(&locations)
+            {
+                let affected = sqlx::query(
+                    "UPDATE dr_drive_node
+                     SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
+                     WHERE tenant_id=$2 AND id=$3 AND lifecycle_status='trashed'",
+                )
+                .bind(&operator_id)
+                .bind(&tenant_id)
+                .bind(node_id)
+                .execute(&mut *connection)
+                .await
+                .map_err(internal_sql_error("empty trash dr_drive_node failed"))?
+                .rows_affected();
+                if affected == 0 {
+                    continue;
+                }
+
+                sqlx::query(
+                    "UPDATE dr_drive_storage_object
+                     SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP
+                     WHERE tenant_id=$2 AND node_id=$3 AND lifecycle_status != 'deleted'",
+                )
+                .bind(&operator_id)
+                .bind(&tenant_id)
+                .bind(node_id)
+                .execute(&mut *connection)
+                .await
+                .map_err(internal_sql_error(
+                    "empty trash dr_drive_storage_object metadata failed",
+                ))?;
+                record_node_deleted_on_connection(
+                    &mut connection,
+                    &tenant_id,
+                    ctx.organization_id.as_deref(),
+                    space_id_value,
+                    node_id,
+                    &ctx.request_id,
+                    &operator_id,
+                    "TRASH_PURGE",
+                    last_location,
+                )
+                .await?;
+                deleted_count += 1;
+                if !changed_spaces.contains(space_id_value) {
+                    changed_spaces.push(space_id_value.clone());
+                }
+            }
+            Ok((deleted_count, changed_spaces))
         }
+        .await;
+
+        match tx_result {
+            Ok(result) => {
+                sqlx::query("COMMIT")
+                    .execute(&mut *connection)
+                    .await
+                    .map_err(internal_sql_error("commit empty trash transaction failed"))?;
+                deleted_count = result.0;
+                changed_spaces = result.1;
+                if deleted_count > 0 {
+                    notify_committed(state.pool.clone());
+                }
+            }
+            Err(error) => {
+                let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+                return Err(error);
+            }
+        }
+        drop(connection);
     }
     for space_id_value in changed_spaces {
         record_change(

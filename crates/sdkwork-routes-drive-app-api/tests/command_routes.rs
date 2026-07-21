@@ -5287,9 +5287,9 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
         .collect::<Vec<_>>();
     for expected_event in [
         "drive.node.version.committed.v1",
-        "drive.node.moved",
+        "drive.node.path.changed.v1",
         "drive.node.copied",
-        "drive.node.deleted",
+        "drive.node.deleted.v1",
     ] {
         assert!(
             events.contains(&expected_event.to_string()),

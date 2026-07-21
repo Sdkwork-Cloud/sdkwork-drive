@@ -6,11 +6,16 @@ use crate::error::{
 };
 use crate::node_repository::{collect_node_subtree, find_node};
 use crate::response::success_resource;
-use crate::route_change::record_change;
+use crate::route_change::{
+    notify_committed, record_node_eligibility_changed_on_connection,
+    resolve_node_location_on_connection,
+};
 use crate::space_repository::ensure_git_repository_space_root_accepts_node_type;
 use crate::state::AppState;
 use axum::http::StatusCode;
 use axum::Json;
+use sdkwork_drive_contract::drive::events::DriveNodeEligibility;
+use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
 use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use sqlx::AnyPool;
 use sqlx::Row;
@@ -60,37 +65,109 @@ pub(crate) async fn set_node_lifecycle(
             }
         }
     }
-    let mut updated_count = 0_u64;
-    for node_to_update in &nodes_to_update {
-        let affected = sqlx::query(
-            "UPDATE dr_drive_node
-             SET lifecycle_status=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
-             WHERE tenant_id=$3 AND id=$4 AND lifecycle_status != 'deleted'",
-        )
-        .bind(lifecycle_status)
-        .bind(&operator_id)
-        .bind(&tenant_id)
-        .bind(&node_to_update.id)
-        .execute(&state.pool)
+    let (old_eligibility, new_eligibility, reason) = match lifecycle_status {
+        "active" => (
+            DriveNodeEligibility::Ineligible,
+            DriveNodeEligibility::Eligible,
+            "NODE_RESTORED",
+        ),
+        "trashed" => (
+            DriveNodeEligibility::Eligible,
+            DriveNodeEligibility::Ineligible,
+            "NODE_TRASHED",
+        ),
+        _ => {
+            return Err(problem(
+                StatusCode::BAD_REQUEST,
+                "validation failed",
+                format!("unsupported node lifecycle transition event {event_type}"),
+                SdkWorkResultCode::ValidationError,
+            ));
+        }
+    };
+
+    let mut connection = state.pool.acquire().await.map_err(|error| {
+        crate::error::internal_problem(format!(
+            "acquire node lifecycle transaction connection failed: {error}"
+        ))
+    })?;
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
         .await
-        .map_err(internal_sql_error("update dr_drive_node lifecycle failed"))?
-        .rows_affected();
-        updated_count += affected;
-        if affected > 0 {
-            record_change(
-                &state.pool,
-                &tenant_id,
-                &node_to_update.space_id,
-                Some(&node_to_update.id),
-                event_type,
-                &operator_id,
+        .map_err(internal_sql_error(
+            "begin node lifecycle transaction failed",
+        ))?;
+    let tx_result: Result<u64, (StatusCode, Json<ProblemDetail>)> = async {
+        let mut locations = Vec::with_capacity(nodes_to_update.len());
+        for node_to_update in &nodes_to_update {
+            locations.push(
+                resolve_node_location_on_connection(
+                    &mut connection,
+                    &tenant_id,
+                    &node_to_update.space_id,
+                    &node_to_update.id,
+                )
+                .await?,
+            );
+        }
+
+        let mut updated_count = 0_u64;
+        for (node_to_update, location) in nodes_to_update.iter().zip(&locations) {
+            let affected = sqlx::query(
+                "UPDATE dr_drive_node
+                 SET lifecycle_status=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
+                 WHERE tenant_id=$3 AND id=$4 AND lifecycle_status != 'deleted'",
             )
-            .await?;
+            .bind(lifecycle_status)
+            .bind(&operator_id)
+            .bind(&tenant_id)
+            .bind(&node_to_update.id)
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error("update dr_drive_node lifecycle failed"))?
+            .rows_affected();
+            updated_count += affected;
+            if affected > 0 {
+                record_node_eligibility_changed_on_connection(
+                    &mut connection,
+                    &tenant_id,
+                    ctx.organization_id.as_deref(),
+                    &node_to_update.space_id,
+                    &node_to_update.id,
+                    &ctx.request_id,
+                    &operator_id,
+                    old_eligibility,
+                    new_eligibility,
+                    reason,
+                    location,
+                )
+                .await?;
+            }
+        }
+        Ok(updated_count)
+    }
+    .await;
+
+    match tx_result {
+        Ok(0) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(not_found_problem("node not found"));
+        }
+        Ok(_) => {
+            sqlx::query("COMMIT")
+                .execute(&mut *connection)
+                .await
+                .map_err(internal_sql_error(
+                    "commit node lifecycle transaction failed",
+                ))?;
+            notify_committed(state.pool.clone());
+        }
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(error);
         }
     }
-    if updated_count == 0 {
-        return Err(not_found_problem("node not found"));
-    }
+    drop(connection);
     Ok(success_resource(
         crate::metadata_repository::present_drive_node(
             &state.pool,

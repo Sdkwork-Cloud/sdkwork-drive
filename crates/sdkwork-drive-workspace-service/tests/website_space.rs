@@ -1,4 +1,5 @@
 use sdkwork_drive_config::DatabaseEngine;
+use sdkwork_drive_contract::drive::events::DriveNodeEligibility;
 use sdkwork_drive_workspace_service::application::space_service::{
     CreateSpaceCommand, DriveSpaceService,
 };
@@ -10,7 +11,12 @@ use sdkwork_drive_workspace_service::domain::website_root::{
     DriveWebsiteContentMode, DriveWebsiteSourceRootMode,
 };
 use sdkwork_drive_workspace_service::infrastructure::change_recorder::{
-    record_drive_node_version_committed_on_connection, RecordDriveNodeVersionCommittedCommand,
+    record_drive_node_deleted_on_connection, record_drive_node_eligibility_changed_on_connection,
+    record_drive_node_path_changed_on_connection,
+    record_drive_node_version_committed_on_connection,
+    resolve_drive_node_location_snapshot_on_connection, RecordDriveNodeDeletedCommand,
+    RecordDriveNodeEligibilityChangedCommand, RecordDriveNodePathChangedCommand,
+    RecordDriveNodeVersionCommittedCommand,
 };
 use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
@@ -164,6 +170,135 @@ async fn website_spaces_are_multi_instance_and_provision_complete_default_roots_
         "index.html"
     );
     assert_eq!(payload["data"]["rootScopes"][0]["rootGeneration"], "1");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, space_type, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+         ) VALUES (
+            'website-docs-node', 'tenant-website', 'website-project-pc', 'website', $1,
+            'folder', 'docs', 'ready', 'active', 1,
+            'user-website-admin', 'user-website-admin'
+         )",
+    )
+    .bind(&root_node_id)
+    .execute(&pool)
+    .await
+    .expect("website docs folder should be inserted");
+
+    let mut connection = pool.acquire().await.expect("connection should be acquired");
+    let old_location = resolve_drive_node_location_snapshot_on_connection(
+        &mut connection,
+        "tenant-website",
+        "website-project-pc",
+        "website-index-node",
+    )
+    .await
+    .expect("old node location should resolve");
+    sqlx::query(
+        "UPDATE dr_drive_node
+         SET parent_node_id='website-docs-node', updated_at=CURRENT_TIMESTAMP, version=version + 1
+         WHERE id='website-index-node'",
+    )
+    .execute(&mut *connection)
+    .await
+    .expect("website index node should move");
+    let new_location = resolve_drive_node_location_snapshot_on_connection(
+        &mut connection,
+        "tenant-website",
+        "website-project-pc",
+        "website-index-node",
+    )
+    .await
+    .expect("new node location should resolve");
+
+    record_drive_node_path_changed_on_connection(
+        &mut connection,
+        RecordDriveNodePathChangedCommand {
+            tenant_id: "tenant-website",
+            organization_id: Some("organization-website"),
+            space_id: "website-project-pc",
+            node_id: "website-index-node",
+            operation_id: "request-move-1",
+            actor_id: "user-website-admin",
+            old_location: &old_location,
+            new_location: &new_location,
+        },
+    )
+    .await
+    .expect("path event should be recorded");
+    record_drive_node_eligibility_changed_on_connection(
+        &mut connection,
+        RecordDriveNodeEligibilityChangedCommand {
+            tenant_id: "tenant-website",
+            organization_id: Some("organization-website"),
+            space_id: "website-project-pc",
+            node_id: "website-index-node",
+            operation_id: "request-trash-1",
+            actor_id: "user-website-admin",
+            old_eligibility: DriveNodeEligibility::Eligible,
+            new_eligibility: DriveNodeEligibility::Ineligible,
+            reason: "NODE_TRASHED",
+            location: &new_location,
+        },
+    )
+    .await
+    .expect("eligibility event should be recorded");
+    record_drive_node_deleted_on_connection(
+        &mut connection,
+        RecordDriveNodeDeletedCommand {
+            tenant_id: "tenant-website",
+            organization_id: Some("organization-website"),
+            space_id: "website-project-pc",
+            node_id: "website-index-node",
+            operation_id: "request-delete-1",
+            actor_id: "user-website-admin",
+            deletion_reason: "PERMANENT_DELETE",
+            last_location: &new_location,
+        },
+    )
+    .await
+    .expect("delete event should be recorded");
+    drop(connection);
+
+    let lifecycle_payloads: Vec<(String, String)> = sqlx::query_as(
+        "SELECT event_type, payload_json
+         FROM dr_drive_domain_outbox
+         WHERE node_id='website-index-node'
+           AND event_type IN (
+             'drive.node.path.changed.v1',
+             'drive.node.eligibility.changed.v1',
+             'drive.node.deleted.v1'
+           )
+         ORDER BY sequence_no",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("lifecycle payloads should be queryable");
+    assert_eq!(lifecycle_payloads.len(), 3);
+    let path_payload: serde_json::Value =
+        serde_json::from_str(&lifecycle_payloads[0].1).expect("path event payload should be JSON");
+    assert_eq!(
+        path_payload["data"]["oldRootScopes"][0]["relativePath"],
+        "index.html"
+    );
+    assert_eq!(
+        path_payload["data"]["newRootScopes"][0]["relativePath"],
+        "docs/index.html"
+    );
+    let eligibility_payload: serde_json::Value = serde_json::from_str(&lifecycle_payloads[1].1)
+        .expect("eligibility event payload should be JSON");
+    assert_eq!(eligibility_payload["data"]["newEligibility"], "INELIGIBLE");
+    assert_eq!(
+        eligibility_payload["data"]["driveVersionId"],
+        serde_json::Value::Null
+    );
+    let deleted_payload: serde_json::Value = serde_json::from_str(&lifecycle_payloads[2].1)
+        .expect("delete event payload should be JSON");
+    assert_eq!(
+        deleted_payload["data"]["lastSpaceRelativePath"],
+        "Storefront PC/docs/index.html"
+    );
 }
 
 #[tokio::test]

@@ -93,6 +93,66 @@ pub struct DriveNodeVersionCommittedV1Data {
     pub root_scopes: Vec<DriveRootScopeEffect>,
 }
 
+/// Payload for `drive.node.path.changed.v1`.
+///
+/// Both root-scope sets are authoritative. Consumers must not reconstruct
+/// membership by walking an unqualified node path.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DriveNodePathChangedV1Data {
+    pub operation_id: String,
+    pub space_id: String,
+    pub node_id: String,
+    pub drive_uri: String,
+    pub old_space_relative_path: String,
+    pub new_space_relative_path: String,
+    pub old_root_scopes: Vec<DriveRootScopeEffect>,
+    pub new_root_scopes: Vec<DriveRootScopeEffect>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum DriveNodeEligibility {
+    Eligible,
+    Ineligible,
+}
+
+/// Payload for `drive.node.eligibility.changed.v1`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DriveNodeEligibilityChangedV1Data {
+    pub operation_id: String,
+    pub space_id: String,
+    pub node_id: String,
+    pub drive_uri: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drive_version_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version_no: Option<String>,
+    pub space_relative_path: String,
+    pub old_eligibility: DriveNodeEligibility,
+    pub new_eligibility: DriveNodeEligibility,
+    pub reason: String,
+    pub root_scopes: Vec<DriveRootScopeEffect>,
+}
+
+/// Payload for `drive.node.deleted.v1`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DriveNodeDeletedV1Data {
+    pub operation_id: String,
+    pub space_id: String,
+    pub node_id: String,
+    pub drive_uri: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drive_version_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version_no: Option<String>,
+    pub last_space_relative_path: String,
+    pub deletion_reason: String,
+    pub root_scopes: Vec<DriveRootScopeEffect>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,5 +190,86 @@ mod tests {
         assert_eq!(value["data"]["versionNo"], "7");
         assert_eq!(value["data"]["contentLength"], "1024");
         assert!(value["data"].get("objectKey").is_none());
+    }
+
+    #[test]
+    fn path_change_event_keeps_old_and_new_root_qualified_paths() {
+        let envelope = DriveEventEnvelope::new(
+            "event-2",
+            "drive.node.path.changed.v1",
+            "2026-07-21T00:00:00.000Z",
+            "tenant-1",
+            None,
+            "drive://spaces/space-1/nodes/node-1",
+            "user-1",
+            43,
+            DriveNodePathChangedV1Data {
+                operation_id: "request-1".to_string(),
+                space_id: "space-1".to_string(),
+                node_id: "node-1".to_string(),
+                drive_uri: "drive://spaces/space-1/nodes/node-1".to_string(),
+                old_space_relative_path: "draft/index.md".to_string(),
+                new_space_relative_path: "docs/index.md".to_string(),
+                old_root_scopes: vec![DriveRootScopeEffect {
+                    scope_id: "scope-1".to_string(),
+                    scope_kind: DriveRootScopeKind::KnowledgebaseRaw,
+                    relative_path: "draft/index.md".to_string(),
+                    root_generation: None,
+                }],
+                new_root_scopes: vec![DriveRootScopeEffect {
+                    scope_id: "scope-1".to_string(),
+                    scope_kind: DriveRootScopeKind::KnowledgebaseRaw,
+                    relative_path: "docs/index.md".to_string(),
+                    root_generation: None,
+                }],
+            },
+        );
+
+        let value = serde_json::to_value(envelope).expect("event should serialize");
+        assert_eq!(value["type"], "drive.node.path.changed.v1");
+        assert_eq!(
+            value["data"]["oldRootScopes"][0]["relativePath"],
+            "draft/index.md"
+        );
+        assert_eq!(
+            value["data"]["newRootScopes"][0]["relativePath"],
+            "docs/index.md"
+        );
+    }
+
+    #[test]
+    fn eligibility_and_delete_events_do_not_expose_storage_locators() {
+        let eligibility = DriveNodeEligibilityChangedV1Data {
+            operation_id: "request-2".to_string(),
+            space_id: "space-1".to_string(),
+            node_id: "node-1".to_string(),
+            drive_uri: "drive://spaces/space-1/nodes/node-1".to_string(),
+            drive_version_id: Some("version-1".to_string()),
+            version_no: Some("8".to_string()),
+            space_relative_path: "docs/index.md".to_string(),
+            old_eligibility: DriveNodeEligibility::Eligible,
+            new_eligibility: DriveNodeEligibility::Ineligible,
+            reason: "NODE_TRASHED".to_string(),
+            root_scopes: Vec::new(),
+        };
+        let deleted = DriveNodeDeletedV1Data {
+            operation_id: "request-3".to_string(),
+            space_id: "space-1".to_string(),
+            node_id: "node-1".to_string(),
+            drive_uri: "drive://spaces/space-1/nodes/node-1".to_string(),
+            drive_version_id: Some("version-1".to_string()),
+            version_no: Some("8".to_string()),
+            last_space_relative_path: "docs/index.md".to_string(),
+            deletion_reason: "PERMANENT_DELETE".to_string(),
+            root_scopes: Vec::new(),
+        };
+
+        let serialized = serde_json::to_string(&(eligibility, deleted))
+            .expect("lifecycle events should serialize");
+        assert!(serialized.contains("INELIGIBLE"));
+        assert!(serialized.contains("lastSpaceRelativePath"));
+        for forbidden in ["objectKey", "bucketName", "presignedUrl", "credential"] {
+            assert!(!serialized.contains(forbidden));
+        }
     }
 }

@@ -32,7 +32,9 @@ use sdkwork_drive_workspace_service::application::upload_service::{
     CreateUploadSessionCommand, DriveUploadService,
 };
 use sdkwork_drive_workspace_service::infrastructure::sql::upload_session_store::SqlUploadSessionStore;
-use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
+use sdkwork_drive_workspace_service::infrastructure::sql::{
+    begin_transaction_sql, NODE_API_SELECT_COLUMNS,
+};
 use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use sqlx::Row;
 
@@ -40,7 +42,10 @@ use std::collections::{BTreeSet, VecDeque};
 
 use crate::node_repository::resolve_node_path;
 use crate::node_support::*;
-use crate::route_change::record_change;
+use crate::route_change::{
+    notify_committed, record_change, record_node_deleted_on_connection,
+    record_node_path_changed_on_connection, resolve_node_location_on_connection,
+};
 use crate::space_repository::ensure_git_repository_space_root_accepts_node_type;
 use crate::upload_support::*;
 
@@ -902,43 +907,95 @@ pub(crate) async fn update_node(
     )
     .await?;
 
-    let affected = sqlx::query(
-        "UPDATE dr_drive_node
-         SET node_name=$1, parent_node_id=$2, updated_by=$3, updated_at=CURRENT_TIMESTAMP, version=version + 1
-         WHERE tenant_id=$4 AND id=$5 AND lifecycle_status='active'",
-    )
-    .bind(next_name)
-    .bind(next_parent)
-    .bind(&operator_id)
-    .bind(&tenant_id)
-    .bind(&node_id)
-    .execute(&state.pool)
-    .await
-    .map_err(|error| {
-        if is_unique_constraint_error(&error) {
-            return problem(
-                StatusCode::CONFLICT,
-                "conflict",
-                "node name already exists in parent",
-                SdkWorkResultCode::Conflict,
-            );
-        }
-        internal_sql_error("update dr_drive_node failed")(error)
-    })?
-    .rows_affected();
-    if affected == 0 {
-        return Err(not_found_problem("node not found"));
+    if next_name == current.node_name && next_parent == current.parent_node_id {
+        return Ok(success_resource(
+            present_drive_node(&state.pool, &tenant_id, current).await?,
+        ));
     }
 
-    record_change(
-        &state.pool,
-        &tenant_id,
-        &current.space_id,
-        Some(&node_id),
-        drive_events::node::UPDATED,
-        &operator_id,
-    )
-    .await?;
+    let mut connection = state.pool.acquire().await.map_err(|error| {
+        internal_problem(format!(
+            "acquire node update transaction connection failed: {error}"
+        ))
+    })?;
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
+        .await
+        .map_err(internal_sql_error("begin node update transaction failed"))?;
+
+    let tx_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+        let old_location = resolve_node_location_on_connection(
+            &mut connection,
+            &tenant_id,
+            &current.space_id,
+            &node_id,
+        )
+        .await?;
+
+        let affected = sqlx::query(
+            "UPDATE dr_drive_node
+             SET node_name=$1, parent_node_id=$2, updated_by=$3, updated_at=CURRENT_TIMESTAMP, version=version + 1
+             WHERE tenant_id=$4 AND id=$5 AND lifecycle_status='active'",
+        )
+        .bind(&next_name)
+        .bind(next_parent.as_deref())
+        .bind(&operator_id)
+        .bind(&tenant_id)
+        .bind(&node_id)
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| {
+            if is_unique_constraint_error(&error) {
+                return problem(
+                    StatusCode::CONFLICT,
+                    "conflict",
+                    "node name already exists in parent",
+                    SdkWorkResultCode::Conflict,
+                );
+            }
+            internal_sql_error("update dr_drive_node failed")(error)
+        })?
+        .rows_affected();
+        if affected == 0 {
+            return Err(not_found_problem("node not found"));
+        }
+
+        let new_location = resolve_node_location_on_connection(
+            &mut connection,
+            &tenant_id,
+            &current.space_id,
+            &node_id,
+        )
+        .await?;
+        record_node_path_changed_on_connection(
+            &mut connection,
+            &tenant_id,
+            ctx.organization_id.as_deref(),
+            &current.space_id,
+            &node_id,
+            &ctx.request_id,
+            &operator_id,
+            &old_location,
+            &new_location,
+        )
+        .await
+    }
+    .await;
+
+    match tx_result {
+        Ok(()) => {
+            sqlx::query("COMMIT")
+                .execute(&mut *connection)
+                .await
+                .map_err(internal_sql_error("commit node update transaction failed"))?;
+            notify_committed(state.pool.clone());
+        }
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(error);
+        }
+    }
+    drop(connection);
 
     Ok(success_resource(
         present_drive_node(
@@ -1012,42 +1069,90 @@ pub(crate) async fn move_node(
     )
     .await?;
 
-    let affected = sqlx::query(
-        "UPDATE dr_drive_node
-         SET parent_node_id=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
-         WHERE tenant_id=$3 AND id=$4 AND lifecycle_status='active'",
-    )
-    .bind(target_parent.as_deref())
-    .bind(&operator_id)
-    .bind(&tenant_id)
-    .bind(&node_id)
-    .execute(&state.pool)
-    .await
-    .map_err(|error| {
-        if is_unique_constraint_error(&error) {
-            return problem(
-                StatusCode::CONFLICT,
-                "conflict",
-                "node name already exists in parent",
-                SdkWorkResultCode::Conflict,
-            );
-        }
-        internal_sql_error("move dr_drive_node failed")(error)
-    })?
-    .rows_affected();
-    if affected == 0 {
-        return Err(not_found_problem("node not found"));
+    if target_parent == current.parent_node_id {
+        return Ok(success_resource(
+            present_drive_node(&state.pool, &tenant_id, current).await?,
+        ));
     }
 
-    record_change(
-        &state.pool,
-        &tenant_id,
-        &current.space_id,
-        Some(&node_id),
-        drive_events::node::MOVED,
-        &operator_id,
-    )
-    .await?;
+    let mut connection = state.pool.acquire().await.map_err(|error| {
+        internal_problem(format!(
+            "acquire node move transaction connection failed: {error}"
+        ))
+    })?;
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
+        .await
+        .map_err(internal_sql_error("begin node move transaction failed"))?;
+    let tx_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+        let old_location = resolve_node_location_on_connection(
+            &mut connection,
+            &tenant_id,
+            &current.space_id,
+            &node_id,
+        )
+        .await?;
+        let affected = sqlx::query(
+            "UPDATE dr_drive_node
+             SET parent_node_id=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
+             WHERE tenant_id=$3 AND id=$4 AND lifecycle_status='active'",
+        )
+        .bind(target_parent.as_deref())
+        .bind(&operator_id)
+        .bind(&tenant_id)
+        .bind(&node_id)
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| {
+            if is_unique_constraint_error(&error) {
+                return problem(
+                    StatusCode::CONFLICT,
+                    "conflict",
+                    "node name already exists in parent",
+                    SdkWorkResultCode::Conflict,
+                );
+            }
+            internal_sql_error("move dr_drive_node failed")(error)
+        })?
+        .rows_affected();
+        if affected == 0 {
+            return Err(not_found_problem("node not found"));
+        }
+        let new_location = resolve_node_location_on_connection(
+            &mut connection,
+            &tenant_id,
+            &current.space_id,
+            &node_id,
+        )
+        .await?;
+        record_node_path_changed_on_connection(
+            &mut connection,
+            &tenant_id,
+            ctx.organization_id.as_deref(),
+            &current.space_id,
+            &node_id,
+            &ctx.request_id,
+            &operator_id,
+            &old_location,
+            &new_location,
+        )
+        .await
+    }
+    .await;
+    match tx_result {
+        Ok(()) => {
+            sqlx::query("COMMIT")
+                .execute(&mut *connection)
+                .await
+                .map_err(internal_sql_error("commit node move transaction failed"))?;
+            notify_committed(state.pool.clone());
+        }
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(error);
+        }
+    }
+    drop(connection);
     Ok(success_resource(
         present_drive_node(
             &state.pool,
@@ -1226,50 +1331,95 @@ pub(crate) async fn delete_node(
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let nodes_to_delete = collect_node_subtree(&state.pool, &tenant_id, &node).await?;
-    let mut deleted_count = 0_u64;
-
-    for node_to_delete in &nodes_to_delete {
-        let affected = sqlx::query(
-            "UPDATE dr_drive_node
-             SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
-             WHERE tenant_id=$2 AND id=$3 AND lifecycle_status != 'deleted'",
-        )
-        .bind(&operator_id)
-        .bind(&tenant_id)
-        .bind(&node_to_delete.id)
-        .execute(&state.pool)
+    let mut connection = state.pool.acquire().await.map_err(|error| {
+        internal_problem(format!(
+            "acquire node delete transaction connection failed: {error}"
+        ))
+    })?;
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
         .await
-        .map_err(internal_sql_error("delete dr_drive_node failed"))?
-        .rows_affected();
-        deleted_count += affected;
+        .map_err(internal_sql_error("begin node delete transaction failed"))?;
 
-        sqlx::query(
-            "UPDATE dr_drive_storage_object
-             SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP
-             WHERE tenant_id=$2 AND node_id=$3 AND lifecycle_status != 'deleted'",
-        )
-        .bind(&operator_id)
-        .bind(&tenant_id)
-        .bind(&node_to_delete.id)
-        .execute(&state.pool)
-        .await
-        .map_err(internal_sql_error(
-            "delete dr_drive_storage_object metadata failed",
-        ))?;
+    let tx_result: Result<u64, (StatusCode, Json<ProblemDetail>)> = async {
+        let mut locations = Vec::with_capacity(nodes_to_delete.len());
+        for node_to_delete in &nodes_to_delete {
+            locations.push(
+                resolve_node_location_on_connection(
+                    &mut connection,
+                    &tenant_id,
+                    &node_to_delete.space_id,
+                    &node_to_delete.id,
+                )
+                .await?,
+            );
+        }
 
-        if affected > 0 {
-            record_change(
-                &state.pool,
-                &tenant_id,
-                &node_to_delete.space_id,
-                Some(&node_to_delete.id),
-                drive_events::node::DELETED,
-                &operator_id,
+        let mut deleted_count = 0_u64;
+        for (node_to_delete, last_location) in nodes_to_delete.iter().zip(&locations) {
+            let affected = sqlx::query(
+                "UPDATE dr_drive_node
+                 SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP, version=version + 1
+                 WHERE tenant_id=$2 AND id=$3 AND lifecycle_status != 'deleted'",
             )
-            .await?;
+            .bind(&operator_id)
+            .bind(&tenant_id)
+            .bind(&node_to_delete.id)
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error("delete dr_drive_node failed"))?
+            .rows_affected();
+            deleted_count += affected;
+
+            sqlx::query(
+                "UPDATE dr_drive_storage_object
+                 SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP
+                 WHERE tenant_id=$2 AND node_id=$3 AND lifecycle_status != 'deleted'",
+            )
+            .bind(&operator_id)
+            .bind(&tenant_id)
+            .bind(&node_to_delete.id)
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error(
+                "delete dr_drive_storage_object metadata failed",
+            ))?;
+
+            if affected > 0 {
+                record_node_deleted_on_connection(
+                    &mut connection,
+                    &tenant_id,
+                    ctx.organization_id.as_deref(),
+                    &node_to_delete.space_id,
+                    &node_to_delete.id,
+                    &ctx.request_id,
+                    &operator_id,
+                    "PERMANENT_DELETE",
+                    last_location,
+                )
+                .await?;
+            }
+        }
+        Ok(deleted_count)
+    }
+    .await;
+
+    match tx_result {
+        Ok(deleted_count) => {
+            sqlx::query("COMMIT")
+                .execute(&mut *connection)
+                .await
+                .map_err(internal_sql_error("commit node delete transaction failed"))?;
+            if deleted_count > 0 {
+                notify_committed(state.pool.clone());
+            }
+        }
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(error);
         }
     }
-    let _deleted = deleted_count > 0;
+    drop(connection);
     Ok(no_content())
 }
 
