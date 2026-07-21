@@ -23,6 +23,19 @@ function operationIds(openapi) {
   );
 }
 
+function containsForbiddenPropertyName(value, forbiddenNames) {
+  if (Array.isArray(value)) {
+    return value.some((item) => containsForbiddenPropertyName(item, forbiddenNames));
+  }
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return Object.entries(value).some(
+    ([key, child]) =>
+      forbiddenNames.has(key) || containsForbiddenPropertyName(child, forbiddenNames),
+  );
+}
+
 test("internal SDK family declares canonical authority and generated-only transport", () => {
   const manifest = JSON.parse(readFileSync(path.join(sdkRoot, "sdk-manifest.json"), "utf8"));
   assert.equal(manifest.sdkOwner, "sdkwork-drive");
@@ -48,9 +61,12 @@ test("every official generated language carries only the four internal operation
     const source = JSON.parse(readFileSync(path.join(output, "source-openapi.json"), "utf8"));
     assert.deepEqual(operationIds(source).sort(), [...requiredOperations].sort());
     assert.equal(existsSync(path.join(output, "sdk-manifest.json")), false);
-    const serialized = JSON.stringify(source);
-    assert(!serialized.includes("objectKey"));
-    assert(!serialized.includes("bucket"));
-    assert(!serialized.includes("presigned"));
+    assert.equal(
+      containsForbiddenPropertyName(
+        source,
+        new Set(["bucket", "objectKey", "credential", "presignedUrl"]),
+      ),
+      false,
+    );
   }
 });

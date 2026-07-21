@@ -83,5 +83,33 @@
       "version": "0.1.0",
       "description": "Generator-owned Go transport SDK for sdkwork-drive-internal-sdk."
     }
-  ]
+  ],
+  "generatedPackages": {
+    "typescript": {
+      "language": "typescript",
+      "packageName": "sdkwork-drive-internal-sdk-generated-typescript",
+      "generatedOutput": "sdkwork-drive-internal-sdk-typescript/generated/server-openapi"
+    },
+    "rust": {
+      "language": "rust",
+      "packageName": "sdkwork-drive-internal-sdk-generated-rust",
+      "generatedOutput": "sdkwork-drive-internal-sdk-rust/generated/server-openapi"
+    },
+    "java": {
+      "language": "java",
+      "packageName": "sdkwork-drive-internal-sdk-generated-java",
+      "generatedOutput": "sdkwork-drive-internal-sdk-java/generated/server-openapi"
+    },
+    "python": {
+      "language": "python",
+      "packageName": "sdkwork-drive-internal-sdk-generated-python",
+      "generatedOutput": "sdkwork-drive-internal-sdk-python/generated/server-openapi"
+    },
+    "go": {
+      "language": "go",
+      "packageName": "sdkwork-drive-internal-sdk-generated-go",
+      "generatedOutput": "sdkwork-drive-internal-sdk-go/generated/server-openapi"
+    }
+  },
+  "ownerOnlyOperationCount": 4
 }
