@@ -1,13 +1,26 @@
+use crate::ports::domain_outbox_embedded_relay::{
+    DeliverDriveDomainOutboxEmbeddedEventRequest, DriveDomainOutboxEmbeddedRelay,
+    DriveDomainOutboxEmbeddedTarget, ResolveDriveDomainOutboxEmbeddedTargetsRequest,
+    MAX_EMBEDDED_OUTBOX_TARGETS_PER_EVENT,
+};
 use sdkwork_drive_config::DatabaseEngine;
+use sdkwork_drive_contract::drive::events::{
+    sign_webhook, WEBHOOK_CHANNEL_ID_HEADER, WEBHOOK_EVENT_ID_HEADER,
+    WEBHOOK_EVENT_RETRY_COUNT_HEADER, WEBHOOK_EVENT_SIGNATURE_HEADER,
+    WEBHOOK_EVENT_TIMESTAMP_HEADER, WEBHOOK_IDEMPOTENCY_KEY_HEADER,
+};
 use sdkwork_drive_observability::metrics;
 use serde_json::Value;
 use sqlx::{AnyPool, Row};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 const MAX_OUTBOX_ATTEMPTS: i32 = 10;
 const OUTBOX_BATCH_SIZE: i64 = 100;
 const NO_ACTIVE_WATCH_CHANNELS_ERROR: &str = "no_active_watch_channels";
+const KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE_ENV: &str =
+    "SDKWORK_DRIVE_KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE";
+const KNOWLEDGEBASE_EVENT_CALLBACK_URL_ENV: &str = "SDKWORK_DRIVE_KNOWLEDGEBASE_EVENT_CALLBACK_URL";
 /// Bound webhook fan-out per outbox event to keep dispatch memory O(channels cap).
 const MAX_WATCH_CHANNELS_PER_OUTBOX_EVENT: i64 = 200;
 
@@ -75,6 +88,9 @@ pub fn spawn_pending_outbox_dispatch(pool: AnyPool) {
 
 /// Attempt one immediate outbox delivery pass without starting another periodic loop.
 pub fn trigger_immediate_outbox_dispatch(pool: AnyPool) {
+    if embedded_outbox_dispatch_disabled() {
+        return;
+    }
     if IMMEDIATE_OUTBOX_DISPATCH_IN_FLIGHT
         .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
         .is_err()
@@ -98,6 +114,20 @@ pub fn trigger_immediate_outbox_dispatch(pool: AnyPool) {
 
 pub async fn dispatch_pending_outbox_events(
     pool: &AnyPool,
+) -> Result<DomainOutboxDispatchResult, String> {
+    dispatch_pending_outbox_events_with_optional_relay(pool, None).await
+}
+
+pub async fn dispatch_pending_outbox_events_with_relay(
+    pool: &AnyPool,
+    relay: &dyn DriveDomainOutboxEmbeddedRelay,
+) -> Result<DomainOutboxDispatchResult, String> {
+    dispatch_pending_outbox_events_with_optional_relay(pool, Some(relay)).await
+}
+
+async fn dispatch_pending_outbox_events_with_optional_relay(
+    pool: &AnyPool,
+    relay: Option<&dyn DriveDomainOutboxEmbeddedRelay>,
 ) -> Result<DomainOutboxDispatchResult, String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
@@ -129,10 +159,12 @@ pub async fn dispatch_pending_outbox_events(
         match dispatch_outbox_event(
             pool,
             &client,
+            relay,
             &claimed.outbox_id,
             &OutboxChangeEvent {
                 tenant_id: &claimed.tenant_id,
                 space_id: &claimed.space_id,
+                attempt_count: claimed.attempt_count,
                 payload_json: &claimed.payload_json,
             },
         )
@@ -301,18 +333,20 @@ async fn mark_outbox_event_failed(
 struct OutboxChangeEvent<'a> {
     tenant_id: &'a str,
     space_id: &'a str,
+    attempt_count: i32,
     payload_json: &'a str,
 }
 
 async fn dispatch_outbox_event(
     pool: &AnyPool,
     client: &reqwest::Client,
+    relay: Option<&dyn DriveDomainOutboxEmbeddedRelay>,
     outbox_id: &str,
     event: &OutboxChangeEvent<'_>,
 ) -> Result<(), String> {
     let now_epoch_ms = chrono::Utc::now().timestamp_millis();
     let rows = sqlx::query(
-        "SELECT id, address
+        "SELECT id, address, token_hash
          FROM dr_drive_watch_channel
          WHERE tenant_id=$1
            AND lifecycle_status='active'
@@ -330,16 +364,54 @@ async fn dispatch_outbox_event(
     .await
     .map_err(|error| format!("list watch channels for outbox failed: {error}"))?;
 
-    if rows.is_empty() {
+    let payload: Value = serde_json::from_str(event.payload_json)
+        .map_err(|error| format!("domain outbox payload is invalid JSON: {error}"))?;
+    let event_id = payload
+        .get("id")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty() && value.len() <= 128)
+        .ok_or_else(|| "domain outbox payload has no valid event id".to_string())?;
+    let timestamp = chrono::Utc::now().timestamp().to_string();
+    let retry_count = event.attempt_count.saturating_sub(1).to_string();
+    let embedded_targets = resolve_embedded_targets(relay, event).await?;
+
+    if rows.is_empty() && embedded_targets.is_empty() {
         return Err(NO_ACTIVE_WATCH_CHANNELS_ERROR.to_string());
     }
 
-    let payload: Value = serde_json::from_str(event.payload_json)
-        .map_err(|error| format!("domain outbox payload is invalid JSON: {error}"))?;
+    if let Some(relay) = relay {
+        for target in embedded_targets {
+            if outbox_channel_already_delivered(pool, outbox_id, &target.channel_id).await? {
+                continue;
+            }
+            relay
+                .deliver(DeliverDriveDomainOutboxEmbeddedEventRequest {
+                    outbox_id,
+                    tenant_id: event.tenant_id,
+                    space_id: event.space_id,
+                    attempt_count: event.attempt_count,
+                    channel_id: &target.channel_id,
+                    source_scope_uuid: &target.source_scope_uuid,
+                    payload_json: event.payload_json,
+                })
+                .await
+                .map_err(|error| {
+                    format!(
+                        "dispatch outbox event to embedded channel {} failed: {error}",
+                        target.channel_id
+                    )
+                })?;
+            record_outbox_channel_delivery(pool, outbox_id, &target.channel_id).await?;
+        }
+    }
 
     for row in rows {
         let channel_id: String = row.get("id");
         let address: String = row.get("address");
+        let signing_key: Option<String> = row.get("token_hash");
+        let signing_key = signing_key
+            .filter(|value| is_sha256_hex(value))
+            .ok_or_else(|| format!("outbox webhook channel {channel_id} has no signing key"))?;
 
         if outbox_channel_already_delivered(pool, outbox_id, &channel_id).await? {
             continue;
@@ -351,16 +423,32 @@ async fn dispatch_outbox_event(
                 format!("outbox webhook channel {channel_id} has invalid address: {detail}")
             })?;
         let idempotency_key = format!("{outbox_id}:{channel_id}");
-        let response = client
-            .post(&address)
-            .json(&payload)
-            .header("x-sdkwork-drive-channel-id", &channel_id)
-            .header("x-sdkwork-idempotency-key", &idempotency_key)
-            .send()
-            .await
-            .map_err(|error| {
-                format!("dispatch outbox event to channel {channel_id} failed: {error}")
-            })?;
+        let signature = sign_webhook(
+            &timestamp,
+            event.payload_json.as_bytes(),
+            signing_key.as_bytes(),
+        );
+        let knowledgebase_ingress_token = if channel_id.starts_with("kbraw:") {
+            require_configured_knowledgebase_callback(&address)?;
+            Some(read_knowledgebase_event_ingress_token()?)
+        } else {
+            None
+        };
+        let request = build_webhook_request(
+            client,
+            &address,
+            event_id,
+            &timestamp,
+            &signature,
+            &retry_count,
+            &channel_id,
+            &idempotency_key,
+            event.payload_json.as_bytes(),
+            knowledgebase_ingress_token.as_deref(),
+        )?;
+        let response = client.execute(request).await.map_err(|error| {
+            format!("dispatch outbox event to channel {channel_id} failed: {error}")
+        })?;
         if !response.status().is_success() {
             return Err(format!(
                 "outbox webhook channel {channel_id} returned status {}",
@@ -372,6 +460,153 @@ async fn dispatch_outbox_event(
     }
 
     Ok(())
+}
+
+async fn resolve_embedded_targets(
+    relay: Option<&dyn DriveDomainOutboxEmbeddedRelay>,
+    event: &OutboxChangeEvent<'_>,
+) -> Result<Vec<DriveDomainOutboxEmbeddedTarget>, String> {
+    let Some(relay) = relay else {
+        return Ok(Vec::new());
+    };
+    let targets = relay
+        .resolve_targets(ResolveDriveDomainOutboxEmbeddedTargetsRequest {
+            tenant_id: event.tenant_id,
+            space_id: event.space_id,
+            payload_json: event.payload_json,
+        })
+        .await
+        .map_err(|error| format!("resolve embedded outbox targets failed: {error}"))?;
+    validate_embedded_targets(targets)
+}
+
+fn validate_embedded_targets(
+    targets: Vec<DriveDomainOutboxEmbeddedTarget>,
+) -> Result<Vec<DriveDomainOutboxEmbeddedTarget>, String> {
+    if targets.len() > MAX_EMBEDDED_OUTBOX_TARGETS_PER_EVENT {
+        return Err("embedded outbox target count exceeds the bounded fan-out limit".to_string());
+    }
+    let mut unique = HashMap::with_capacity(targets.len());
+    for target in targets {
+        if target.channel_id.is_empty()
+            || target.channel_id.len() > 200
+            || target.channel_id.chars().any(char::is_whitespace)
+            || target.source_scope_uuid.is_empty()
+            || target.source_scope_uuid.len() > 160
+            || target.source_scope_uuid.trim() != target.source_scope_uuid
+        {
+            return Err("embedded outbox target is outside bounded limits".to_string());
+        }
+        match unique.get(&target.channel_id) {
+            Some(source_scope_uuid) if source_scope_uuid != &target.source_scope_uuid => {
+                return Err("embedded outbox channel maps to multiple source scopes".to_string());
+            }
+            Some(_) => {}
+            None => {
+                unique.insert(target.channel_id.clone(), target.source_scope_uuid.clone());
+            }
+        }
+    }
+    Ok(unique
+        .into_iter()
+        .map(
+            |(channel_id, source_scope_uuid)| DriveDomainOutboxEmbeddedTarget {
+                channel_id,
+                source_scope_uuid,
+            },
+        )
+        .collect())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn build_webhook_request(
+    client: &reqwest::Client,
+    address: &str,
+    event_id: &str,
+    timestamp: &str,
+    signature: &str,
+    retry_count: &str,
+    channel_id: &str,
+    idempotency_key: &str,
+    body: &[u8],
+    knowledgebase_ingress_token: Option<&str>,
+) -> Result<reqwest::Request, String> {
+    let mut request = client
+        .post(address)
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .header(WEBHOOK_EVENT_ID_HEADER, event_id)
+        .header(WEBHOOK_EVENT_TIMESTAMP_HEADER, timestamp)
+        .header(WEBHOOK_EVENT_SIGNATURE_HEADER, signature)
+        .header(WEBHOOK_EVENT_RETRY_COUNT_HEADER, retry_count)
+        .header(WEBHOOK_CHANNEL_ID_HEADER, channel_id)
+        .header(WEBHOOK_IDEMPOTENCY_KEY_HEADER, idempotency_key)
+        .body(body.to_vec());
+    if let Some(token) = knowledgebase_ingress_token {
+        request = request.header(reqwest::header::HeaderName::from_static("x-api-key"), token);
+    }
+    request
+        .build()
+        .map_err(|error| format!("build outbox webhook request failed: {error}"))
+}
+
+fn require_configured_knowledgebase_callback(address: &str) -> Result<(), String> {
+    let configured = std::env::var(KNOWLEDGEBASE_EVENT_CALLBACK_URL_ENV).map_err(|_| {
+        format!("{KNOWLEDGEBASE_EVENT_CALLBACK_URL_ENV} is required for kbraw delivery")
+    })?;
+    validate_configured_knowledgebase_callback(address, &configured)
+}
+
+fn validate_configured_knowledgebase_callback(
+    address: &str,
+    configured: &str,
+) -> Result<(), String> {
+    if configured.is_empty()
+        || configured.trim() != configured
+        || !configured.starts_with("https://")
+        || configured != address
+    {
+        return Err(format!(
+            "kbraw delivery address does not match {KNOWLEDGEBASE_EVENT_CALLBACK_URL_ENV}"
+        ));
+    }
+    Ok(())
+}
+
+fn read_knowledgebase_event_ingress_token() -> Result<String, String> {
+    let path = std::env::var(KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE_ENV).map_err(|_| {
+        format!("{KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE_ENV} is required for kbraw delivery")
+    })?;
+    if path.trim().is_empty() {
+        return Err(format!(
+            "{KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE_ENV} must not be blank"
+        ));
+    }
+    let metadata = std::fs::metadata(path.trim()).map_err(|_| {
+        format!(
+            "{KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE_ENV} must reference a readable secret file"
+        )
+    })?;
+    if !metadata.is_file() || metadata.len() == 0 || metadata.len() > 16 * 1024 {
+        return Err(format!(
+            "{KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE_ENV} must reference a bounded secret file"
+        ));
+    }
+    let token = std::fs::read_to_string(path.trim()).map_err(|_| {
+        format!("{KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE_ENV} must reference a UTF-8 secret file")
+    })?;
+    if token.len() < 16 || token.len() > 4_096 || token.chars().any(char::is_whitespace) {
+        return Err(format!(
+            "{KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE_ENV} contains an invalid ingress token"
+        ));
+    }
+    Ok(token)
+}
+
+fn is_sha256_hex(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 async fn outbox_channel_already_delivered(
@@ -463,5 +698,77 @@ mod tests {
             build_outbox_claim_exclude_clause(&exclude),
             " AND id NOT IN ('outbox-''quoted')"
         );
+    }
+
+    #[test]
+    fn kbraw_request_carries_ingress_token_and_exact_signed_body() {
+        let client = reqwest::Client::new();
+        let body = br#"{"specversion":"1.0","id":"event-1"}"#;
+        let request = build_webhook_request(
+            &client,
+            "https://knowledgebase.example.com/internal/v3/api/knowledgebase/drive_events",
+            "event-1",
+            "1784600000",
+            "v1=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "2",
+            "kbraw:11111111-1111-4111-8111-111111111111",
+            "outbox-1:kbraw:11111111-1111-4111-8111-111111111111",
+            body,
+            Some("api_key_id=drive-events;tenant_id=100001;app_id=sdkwork-drive"),
+        )
+        .expect("kbraw request should build");
+
+        assert_eq!(request.method(), reqwest::Method::POST);
+        assert_eq!(
+            request.url().as_str(),
+            "https://knowledgebase.example.com/internal/v3/api/knowledgebase/drive_events"
+        );
+        assert_eq!(request.headers()["x-sdkwork-event-id"], "event-1");
+        assert_eq!(request.headers()["x-sdkwork-event-retry-count"], "2");
+        assert_eq!(
+            request.headers()["x-sdkwork-drive-channel-id"],
+            "kbraw:11111111-1111-4111-8111-111111111111"
+        );
+        assert_eq!(
+            request.headers()["x-api-key"],
+            "api_key_id=drive-events;tenant_id=100001;app_id=sdkwork-drive"
+        );
+        assert_eq!(
+            request.body().and_then(reqwest::Body::as_bytes),
+            Some(body.as_slice())
+        );
+    }
+
+    #[test]
+    fn ordinary_webhook_request_does_not_carry_internal_ingress_token() {
+        let request = build_webhook_request(
+            &reqwest::Client::new(),
+            "https://hooks.example.com/drive/events",
+            "event-1",
+            "1784600000",
+            "v1=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "0",
+            "user-channel-1",
+            "outbox-1:user-channel-1",
+            br#"{"id":"event-1"}"#,
+            None,
+        )
+        .expect("ordinary webhook request should build");
+
+        assert!(!request.headers().contains_key("x-api-key"));
+    }
+
+    #[test]
+    fn kbraw_callback_must_equal_the_configured_application_ingress_url() {
+        assert!(validate_configured_knowledgebase_callback(
+            "https://knowledgebase.example.com/internal/v3/api/knowledgebase/drive_events",
+            "https://knowledgebase.example.com/internal/v3/api/knowledgebase/drive_events",
+        )
+        .is_ok());
+        assert!(validate_configured_knowledgebase_callback(
+            "https://attacker.example.com/events",
+            "https://knowledgebase.example.com/internal/v3/api/knowledgebase/drive_events",
+        )
+        .is_err());
     }
 }

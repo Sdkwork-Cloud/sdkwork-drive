@@ -8,6 +8,5 @@ class CreateLabelRequest:
     id: str
     label_key: str
     display_name: str
-    operator_id: str
     color: Optional[str] = None
     description: Optional[str] = None

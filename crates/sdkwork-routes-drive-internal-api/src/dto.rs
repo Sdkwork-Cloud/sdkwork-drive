@@ -5,7 +5,14 @@ use serde::{Deserialize, Serialize};
 pub struct CreateRootScopeSubscriptionRequest {
     pub space_id: String,
     pub knowledge_base_id: String,
-    pub raw_folder_node_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct EnsureRootScopeEventDeliveryRequest {
+    pub address: String,
+    pub verification_token: String,
+    pub expiration_epoch_ms: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -36,6 +43,33 @@ pub struct RootScopeSubscriptionResponse {
     pub consumer_resource_id: String,
     pub root_node_id: String,
     pub scope_status: String,
+    pub version: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebsiteRootResponse {
+    pub uuid: String,
+    pub space_id: String,
+    pub source_root_mode: String,
+    pub content_mode: String,
+    pub active_generation: String,
+    pub root_status: String,
+    pub capabilities: Vec<String>,
+    pub version: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RootScopeEventDeliveryResponse {
+    pub channel_id: String,
+    pub subscription_uuid: String,
+    pub address: String,
+    pub expiration_epoch_ms: String,
+    pub lifecycle_status: String,
     pub version: String,
     pub created_at: String,
     pub updated_at: String,

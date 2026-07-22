@@ -1,6 +1,6 @@
 use crate::domain::space::{DriveSpace, DriveSpaceType};
 use crate::infrastructure::sql::space_store::SqlSpaceStore;
-use crate::ports::space_store::{DriveSpaceStore, NewDriveSpace};
+use crate::ports::space_store::{DriveSpaceStore, ListAccessibleSpacesQuery, NewDriveSpace};
 use crate::DriveServiceError;
 use sqlx::AnyPool;
 
@@ -204,16 +204,16 @@ where
         let space_type = validate_optional_space_type(command.space_type.as_deref())?;
 
         self.store
-            .list_accessible_spaces(
-                &tenant_id,
-                &viewer_subject_type,
-                &viewer_subject_id,
-                owner_type,
-                owner_id,
-                space_type.as_deref(),
-                command.offset,
-                command.limit,
-            )
+            .list_accessible_spaces(ListAccessibleSpacesQuery {
+                tenant_id: &tenant_id,
+                viewer_subject_type: &viewer_subject_type,
+                viewer_subject_id: &viewer_subject_id,
+                owner_subject_type: owner_type,
+                owner_subject_id: owner_id,
+                space_type: space_type.as_deref(),
+                offset: command.offset,
+                limit: command.limit,
+            })
             .await
     }
 

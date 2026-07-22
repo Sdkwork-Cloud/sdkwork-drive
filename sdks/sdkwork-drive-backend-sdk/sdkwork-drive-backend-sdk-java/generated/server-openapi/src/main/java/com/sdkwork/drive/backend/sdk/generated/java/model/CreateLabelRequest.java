@@ -7,7 +7,6 @@ public class CreateLabelRequest {
     private String displayName;
     private String color;
     private String description;
-    private String operatorId;
 
     public String getId() {
         return this.id;
@@ -47,13 +46,5 @@ public class CreateLabelRequest {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getOperatorId() {
-        return this.operatorId;
-    }
-
-    public void setOperatorId(String operatorId) {
-        this.operatorId = operatorId;
     }
 }

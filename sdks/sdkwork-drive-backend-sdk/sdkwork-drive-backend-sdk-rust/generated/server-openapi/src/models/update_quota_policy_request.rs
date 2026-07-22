@@ -9,7 +9,4 @@ pub struct UpdateQuotaPolicyRequest {
     #[serde(rename = "clearTenantPolicy")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub clear_tenant_policy: Option<bool>,
-
-    #[serde(rename = "operatorId")]
-    pub operator_id: String,
 }

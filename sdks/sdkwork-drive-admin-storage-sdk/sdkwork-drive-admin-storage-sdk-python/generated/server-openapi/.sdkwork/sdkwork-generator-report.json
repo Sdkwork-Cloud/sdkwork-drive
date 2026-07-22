@@ -12,22 +12,22 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "76dd2212cb8f5a5173aa41f1ee6fe33484f49091060e6204134b9dae6db29da1",
+  "changeFingerprint": "d8a39f31a8b02a3a768c7b5269a93ed44893ef357e77cb3c5d12dbb8220bfa0c",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
-      "build-metadata"
+      "runtime"
     ],
     "details": [
       {
-        "area": "build-metadata",
+        "area": "runtime",
         "paths": [
-          "sdkwork-sdk.json"
+          "sdkwork_drive_admin_storage_sdk_generated_python/http_client.py"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: build-metadata. Verification is required."
+    "summary": "Detected impact areas: runtime. Verification is required."
   },
   "executionDecision": {
     "schemaVersion": 1,
@@ -48,7 +48,7 @@
         "id": "verify-check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-python\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -67,13 +67,13 @@
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-python\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -117,11 +117,11 @@
     "skippedUnchangedGeneratedFiles": 59,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "76dd2212cb8f5a5173aa41f1ee6fe33484f49091060e6204134b9dae6db29da1",
+    "changeFingerprint": "d8a39f31a8b02a3a768c7b5269a93ed44893ef357e77cb3c5d12dbb8220bfa0c",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [
-        "sdkwork-sdk.json"
+        "sdkwork_drive_admin_storage_sdk_generated_python/http_client.py"
       ],
       "unchangedGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -137,7 +137,6 @@
         "sdkwork_drive_admin_storage_sdk_generated_python/api/__init__.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/api/drive.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/client.py",
-        "sdkwork_drive_admin_storage_sdk_generated_python/http_client.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/__init__.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/copy_provider_object_request.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/create_storage_provider_request.py",
@@ -182,6 +181,7 @@
         "sdkwork_drive_admin_storage_sdk_generated_python/models/test_storage_provider_request.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/test_storage_provider_response.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/update_storage_provider_request.py",
+        "sdkwork-sdk.json",
         "setup.py"
       ],
       "deletedGeneratedFiles": [],
@@ -194,29 +194,29 @@
     "impact": {
       "schemaVersion": 1,
       "areas": [
-        "build-metadata"
+        "runtime"
       ],
       "details": [
         {
-          "area": "build-metadata",
+          "area": "runtime",
           "paths": [
-            "sdkwork-sdk.json"
+            "sdkwork_drive_admin_storage_sdk_generated_python/http_client.py"
           ]
         }
       ],
       "requiresVerification": true,
-      "summary": "Detected impact areas: build-metadata. Verification is required."
+      "summary": "Detected impact areas: runtime. Verification is required."
     },
     "verificationPlan": {
       "shouldRun": true,
       "runPhase": "now",
-      "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
       "steps": [
         {
           "id": "check",
           "title": "Unified package check",
           "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
           "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-python\\generated\\server-openapi",
           "command": "node",
           "args": [

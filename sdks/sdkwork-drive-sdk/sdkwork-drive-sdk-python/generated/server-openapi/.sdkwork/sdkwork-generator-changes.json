@@ -9,11 +9,11 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-sdk-generated-python"
   },
-  "changeFingerprint": "89aabfb7dec8c519168922bc3d8c52d1b66f72364f37a9c4b03699bb5483cc65",
+  "changeFingerprint": "39af404d45df86f22ad62833bb4ab837969614fd97eeac2473607e1e0292c655",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [
-      "sdkwork-sdk.json"
+      "sdkwork_drive_sdk_generated_python/http_client.py"
     ],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -29,7 +29,6 @@
       "sdkwork_drive_sdk_generated_python/api/__init__.py",
       "sdkwork_drive_sdk_generated_python/api/drive.py",
       "sdkwork_drive_sdk_generated_python/client.py",
-      "sdkwork_drive_sdk_generated_python/http_client.py",
       "sdkwork_drive_sdk_generated_python/models/__init__.py",
       "sdkwork_drive_sdk_generated_python/models/create_open_download_url_request.py",
       "sdkwork_drive_sdk_generated_python/models/drive_open_share_link.py",
@@ -44,6 +43,7 @@
       "sdkwork_drive_sdk_generated_python/models/sdk_work_api_response.py",
       "sdkwork_drive_sdk_generated_python/models/sdk_work_resource_data.py",
       "sdkwork_drive_sdk_generated_python/models/sdk_work_resource_response.py",
+      "sdkwork-sdk.json",
       "setup.py"
     ],
     "deletedGeneratedFiles": [],
@@ -56,29 +56,29 @@
   "impact": {
     "schemaVersion": 1,
     "areas": [
-      "build-metadata"
+      "runtime"
     ],
     "details": [
       {
-        "area": "build-metadata",
+        "area": "runtime",
         "paths": [
-          "sdkwork-sdk.json"
+          "sdkwork_drive_sdk_generated_python/http_client.py"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: build-metadata. Verification is required."
+    "summary": "Detected impact areas: runtime. Verification is required."
   },
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-python\\generated\\server-openapi",
         "command": "node",
         "args": [

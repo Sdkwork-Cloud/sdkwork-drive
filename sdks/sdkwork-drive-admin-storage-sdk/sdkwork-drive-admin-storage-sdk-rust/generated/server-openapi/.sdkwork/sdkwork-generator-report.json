@@ -12,31 +12,47 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "bf931474b5c4b6d953e9e53d367dd4bde3c1974d9786c0be727aa890f2f24427",
+  "changeFingerprint": "94baa6ae1ff62232d340006851553dee6580a3548bc655eb19e83b87a273de48",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
-      "build-metadata"
+      "models",
+      "runtime",
+      "unknown"
     ],
     "details": [
       {
-        "area": "build-metadata",
+        "area": "models",
         "paths": [
-          "sdkwork-sdk.json"
+          "src/models/provider_object.rs"
+        ]
+      },
+      {
+        "area": "runtime",
+        "paths": [
+          "src/http/client.rs"
+        ]
+      },
+      {
+        "area": "unknown",
+        "paths": [
+          "src/client.rs"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: build-metadata. Verification is required."
+    "summary": "Detected impact areas: models, runtime, unknown. Verification is required."
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
+    "riskLevel": "high",
     "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
     "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
+      "manual-review-required",
+      "unknown-impact",
       "verification-required"
     ]
   },
@@ -48,7 +64,7 @@
         "id": "verify-check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: models, runtime, unknown.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -66,7 +82,7 @@
         "id": "verify-build",
         "title": "Unified package build",
         "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: build-metadata.",
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: models, runtime, unknown.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -85,13 +101,13 @@
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: models, runtime, unknown. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: models, runtime, unknown.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -109,7 +125,7 @@
         "id": "build",
         "title": "Unified package build",
         "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: build-metadata.",
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: models, runtime, unknown.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -148,16 +164,18 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 1,
+    "writtenFiles": 3,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 60,
+    "skippedUnchangedGeneratedFiles": 58,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "bf931474b5c4b6d953e9e53d367dd4bde3c1974d9786c0be727aa890f2f24427",
+    "changeFingerprint": "94baa6ae1ff62232d340006851553dee6580a3548bc655eb19e83b87a273de48",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [
-        "sdkwork-sdk.json"
+        "src/client.rs",
+        "src/http/client.rs",
+        "src/models/provider_object.rs"
       ],
       "unchangedGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -167,12 +185,11 @@
         "CHANGELOG.md",
         "LICENSE",
         "README.md",
+        "sdkwork-sdk.json",
         "src/api/base.rs",
         "src/api/drive.rs",
         "src/api/mod.rs",
         "src/api/paths.rs",
-        "src/client.rs",
-        "src/http/client.rs",
         "src/http/mod.rs",
         "src/lib.rs",
         "src/models/common.rs",
@@ -187,7 +204,6 @@
         "src/models/provider_bucket_mutation.rs",
         "src/models/provider_bucket.rs",
         "src/models/provider_object_mutation.rs",
-        "src/models/provider_object.rs",
         "src/models/rotate_storage_provider_credential_request.rs",
         "src/models/sdk_work_api_response.rs",
         "src/models/sdk_work_command_data.rs",
@@ -231,29 +247,43 @@
     "impact": {
       "schemaVersion": 1,
       "areas": [
-        "build-metadata"
+        "models",
+        "runtime",
+        "unknown"
       ],
       "details": [
         {
-          "area": "build-metadata",
+          "area": "models",
           "paths": [
-            "sdkwork-sdk.json"
+            "src/models/provider_object.rs"
+          ]
+        },
+        {
+          "area": "runtime",
+          "paths": [
+            "src/http/client.rs"
+          ]
+        },
+        {
+          "area": "unknown",
+          "paths": [
+            "src/client.rs"
           ]
         }
       ],
       "requiresVerification": true,
-      "summary": "Detected impact areas: build-metadata. Verification is required."
+      "summary": "Detected impact areas: models, runtime, unknown. Verification is required."
     },
     "verificationPlan": {
       "shouldRun": true,
       "runPhase": "now",
-      "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "summary": "Detected impact areas: models, runtime, unknown. Verification is required. Run the required verification commands now against the generated SDK output.",
       "steps": [
         {
           "id": "check",
           "title": "Unified package check",
           "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: models, runtime, unknown.",
           "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-rust\\generated\\server-openapi",
           "command": "node",
           "args": [
@@ -271,7 +301,7 @@
           "id": "build",
           "title": "Unified package build",
           "required": true,
-          "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: build-metadata.",
+          "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: models, runtime, unknown.",
           "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-rust\\generated\\server-openapi",
           "command": "node",
           "args": [
@@ -289,12 +319,14 @@
     },
     "executionDecision": {
       "schemaVersion": 1,
-      "riskLevel": "medium",
+      "riskLevel": "high",
       "nextAction": "verify",
       "requiresManualReview": false,
       "applyRequiresExpectedFingerprint": false,
       "summary": "Changes have been applied. Run the required verification plan now.",
       "reasons": [
+        "manual-review-required",
+        "unknown-impact",
         "verification-required"
       ]
     },

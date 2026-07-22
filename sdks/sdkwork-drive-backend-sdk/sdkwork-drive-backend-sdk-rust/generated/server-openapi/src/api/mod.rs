@@ -4,3 +4,7 @@ pub mod drive;
 pub use drive::DriveApi;
 pub mod labels;
 pub use labels::LabelsApi;
+pub mod sandbox_volumes;
+pub use sandbox_volumes::SandboxVolumesApi;
+pub mod sandbox_grants;
+pub use sandbox_grants::SandboxGrantsApi;

@@ -7,7 +7,7 @@ use sqlx::Row;
 use crate::domain::space::{DriveSpace, DriveSpaceType};
 use crate::infrastructure::sql::begin_transaction_sql;
 use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
-use crate::ports::space_store::{DriveSpaceStore, NewDriveSpace};
+use crate::ports::space_store::{DriveSpaceStore, ListAccessibleSpacesQuery, NewDriveSpace};
 use crate::DriveServiceError;
 
 const SPACE_SELECT_COLUMNS: &str = "id, tenant_id, owner_subject_type, owner_subject_id, display_name, presentation_icon, presentation_color, description, space_type, lifecycle_status, version, created_by";
@@ -215,20 +215,17 @@ impl DriveSpaceStore for SqlSpaceStore {
 
     async fn list_accessible_spaces(
         &self,
-        tenant_id: &str,
-        viewer_subject_type: &str,
-        viewer_subject_id: &str,
-        owner_subject_type: Option<&str>,
-        owner_subject_id: Option<&str>,
-        space_type: Option<&str>,
-        offset: i64,
-        limit: i64,
+        query: ListAccessibleSpacesQuery<'_>,
     ) -> Result<Vec<DriveSpace>, DriveServiceError> {
         use crate::infrastructure::sql::acl_predicate::space_accessible_to_subject_sql;
 
         let space_accessible_predicate =
             space_accessible_to_subject_sql("dr_drive_space", "$2", "$3");
-        let rows = match (owner_subject_type, owner_subject_id, space_type) {
+        let rows = match (
+            query.owner_subject_type,
+            query.owner_subject_id,
+            query.space_type,
+        ) {
             (Some(owner_type), Some(owner_id), Some(space_type)) => sqlx::query(&format!(
                 "SELECT {SPACE_SELECT_COLUMNS}
                  FROM dr_drive_space
@@ -241,14 +238,14 @@ impl DriveSpaceStore for SqlSpaceStore {
                  ORDER BY id ASC
                  LIMIT $7 OFFSET $8",
             ))
-            .bind(tenant_id)
-            .bind(viewer_subject_type)
-            .bind(viewer_subject_id)
+            .bind(query.tenant_id)
+            .bind(query.viewer_subject_type)
+            .bind(query.viewer_subject_id)
             .bind(owner_type)
             .bind(owner_id)
             .bind(space_type)
-            .bind(limit)
-            .bind(offset)
+            .bind(query.limit)
+            .bind(query.offset)
             .fetch_all(&self.pool)
             .await
             .map_err(|error| {
@@ -267,13 +264,13 @@ impl DriveSpaceStore for SqlSpaceStore {
                  ORDER BY id ASC
                  LIMIT $6 OFFSET $7",
             ))
-            .bind(tenant_id)
-            .bind(viewer_subject_type)
-            .bind(viewer_subject_id)
+            .bind(query.tenant_id)
+            .bind(query.viewer_subject_type)
+            .bind(query.viewer_subject_id)
             .bind(owner_type)
             .bind(owner_id)
-            .bind(limit)
-            .bind(offset)
+            .bind(query.limit)
+            .bind(query.offset)
             .fetch_all(&self.pool)
             .await
             .map_err(|error| {
@@ -291,12 +288,12 @@ impl DriveSpaceStore for SqlSpaceStore {
                  ORDER BY id ASC
                  LIMIT $5 OFFSET $6",
             ))
-            .bind(tenant_id)
-            .bind(viewer_subject_type)
-            .bind(viewer_subject_id)
+            .bind(query.tenant_id)
+            .bind(query.viewer_subject_type)
+            .bind(query.viewer_subject_id)
             .bind(space_type)
-            .bind(limit)
-            .bind(offset)
+            .bind(query.limit)
+            .bind(query.offset)
             .fetch_all(&self.pool)
             .await
             .map_err(|error| {
@@ -313,11 +310,11 @@ impl DriveSpaceStore for SqlSpaceStore {
                  ORDER BY id ASC
                  LIMIT $4 OFFSET $5",
             ))
-            .bind(tenant_id)
-            .bind(viewer_subject_type)
-            .bind(viewer_subject_id)
-            .bind(limit)
-            .bind(offset)
+            .bind(query.tenant_id)
+            .bind(query.viewer_subject_type)
+            .bind(query.viewer_subject_id)
+            .bind(query.limit)
+            .bind(query.offset)
             .fetch_all(&self.pool)
             .await
             .map_err(|error| {

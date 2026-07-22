@@ -365,7 +365,7 @@ impl DriveMaintenanceStore for SqlMaintenanceStore {
                 if node_rows > 0 {
                     let space_id: String = row.get("space_id");
                     record_drive_change_on_connection(
-                        &mut *connection,
+                        &mut connection,
                         RecordDriveChangeCommand {
                             tenant_id: &tenant_id,
                             space_id: &space_id,

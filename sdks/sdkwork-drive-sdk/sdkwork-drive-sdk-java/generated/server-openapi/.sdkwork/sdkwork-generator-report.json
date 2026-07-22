@@ -12,22 +12,22 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "018cba1df1e2a4d9877e2fd05cfb49dd01de7a48ecdb37f129041107c3ad7229",
+  "changeFingerprint": "464afe307f0067bfdce9ad0ba86f24be133c27bccd29c4abce13e4e45b308b1c",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
-      "build-metadata"
+      "runtime"
     ],
     "details": [
       {
-        "area": "build-metadata",
+        "area": "runtime",
         "paths": [
-          "sdkwork-sdk.json"
+          "src/main/java/com/sdkwork/drive/sdk/generated/java/http/HttpClient.java"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: build-metadata. Verification is required."
+    "summary": "Detected impact areas: runtime. Verification is required."
   },
   "executionDecision": {
     "schemaVersion": 1,
@@ -48,7 +48,7 @@
         "id": "verify-check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-java\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -67,13 +67,13 @@
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-java\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -117,11 +117,11 @@
     "skippedUnchangedGeneratedFiles": 25,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "018cba1df1e2a4d9877e2fd05cfb49dd01de7a48ecdb37f129041107c3ad7229",
+    "changeFingerprint": "464afe307f0067bfdce9ad0ba86f24be133c27bccd29c4abce13e4e45b308b1c",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [
-        "sdkwork-sdk.json"
+        "src/main/java/com/sdkwork/drive/sdk/generated/java/http/HttpClient.java"
       ],
       "unchangedGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -131,10 +131,10 @@
         "LICENSE",
         "pom.xml",
         "README.md",
+        "sdkwork-sdk.json",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/api/ApiPaths.java",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/api/DriveApi.java",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/api/package-info.java",
-        "src/main/java/com/sdkwork/drive/sdk/generated/java/http/HttpClient.java",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/model/CreateOpenDownloadUrlRequest.java",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/model/DriveOpenShareLink.java",
         "src/main/java/com/sdkwork/drive/sdk/generated/java/model/FieldError.java",
@@ -160,29 +160,29 @@
     "impact": {
       "schemaVersion": 1,
       "areas": [
-        "build-metadata"
+        "runtime"
       ],
       "details": [
         {
-          "area": "build-metadata",
+          "area": "runtime",
           "paths": [
-            "sdkwork-sdk.json"
+            "src/main/java/com/sdkwork/drive/sdk/generated/java/http/HttpClient.java"
           ]
         }
       ],
       "requiresVerification": true,
-      "summary": "Detected impact areas: build-metadata. Verification is required."
+      "summary": "Detected impact areas: runtime. Verification is required."
     },
     "verificationPlan": {
       "shouldRun": true,
       "runPhase": "now",
-      "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
       "steps": [
         {
           "id": "check",
           "title": "Unified package check",
           "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
           "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-java\\generated\\server-openapi",
           "command": "node",
           "args": [

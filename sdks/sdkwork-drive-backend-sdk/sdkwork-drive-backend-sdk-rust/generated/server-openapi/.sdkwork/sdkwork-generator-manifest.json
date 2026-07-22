@@ -36,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "c3ea893472105880c5ed01a528fa053f779acf1e7d615c060f076f9ca78c4a73"
+      "sha256": "da5cf478041db7d1e2903ec90581352d7a53f40b9f19acaaf7a828d77d23cd54"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -48,27 +48,35 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "e71148c8d5272c8be47540479c74d5f9de7b9e686c212ad12940202de8cac64a"
+      "sha256": "74ba82a588f4b2810b7ad2a72016ba6b319ec21db5a1e0c0c699a8288b3c6f33"
     },
     {
       "path": "src/api/labels.rs",
-      "sha256": "49b9804700cf668b8038f0238a87197b6df9ab3cd3e545fa842e159a3d71e2b1"
+      "sha256": "fc72292c8c109c373eeebe97d5b4600380b4e3b5ba86b06b4758bdace711f703"
     },
     {
       "path": "src/api/mod.rs",
-      "sha256": "225054c6e06155ca28556bbec0b792f13f277464228a2d1a0adfcbe90d8d5523"
+      "sha256": "934734ffc2627fe472bd54b8ba0887384aead8eadbe2bdabb299d5cd6eff5ade"
     },
     {
       "path": "src/api/paths.rs",
       "sha256": "571bc21d9e8c1458979a5bb00adb6ba50a7645837196a4b82a2bcfb87f1ef046"
     },
     {
+      "path": "src/api/sandbox_grants.rs",
+      "sha256": "1051e028f4641cb886a104f1c44ab3964caffff6f2e291ea5681d1d3c80be241"
+    },
+    {
+      "path": "src/api/sandbox_volumes.rs",
+      "sha256": "00c454b85732ac71cfb0d6458292d9e62f38f789e99f4bccc6c7f3462048ef8c"
+    },
+    {
       "path": "src/client.rs",
-      "sha256": "9b837fa05cc424e94f8f354934bb12de65c74ef065e2e51a54186752d70ddb36"
+      "sha256": "7ae4472e1855ea84a6fab24da0fc7189fff522eff2903481d64e999ffc560967"
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "ffd88587750661cd174b1d0bae02a876d24f8537acdccaa67e297a549d0a927e"
+      "sha256": "2e5bd0ae2159fce3ffbfa4950a0df83a6df97399be5c15196b284d3671da9b0a"
     },
     {
       "path": "src/http/mod.rs",
@@ -96,7 +104,15 @@
     },
     {
       "path": "src/models/create_label_request.rs",
-      "sha256": "f7fd94a66c98897227659a66e893d5f9586398ab2999e038a53766e009460bfe"
+      "sha256": "ba547c414cb67a8b05b039e828d5533fa95ca03dbd89ea7f25d8d45060c7dffe"
+    },
+    {
+      "path": "src/models/create_sandbox_grant_request.rs",
+      "sha256": "db5c3aa6b177741fcde2078eb8a9a7adb5739ecb4d90269f298e0ea32d83d233"
+    },
+    {
+      "path": "src/models/create_sandbox_volume_request.rs",
+      "sha256": "0d1a368da3aad900334c14406c5c39d0519d676db18aec595573e6864087ddb9"
     },
     {
       "path": "src/models/download_package_list_http_response.rs",
@@ -129,6 +145,10 @@
     {
       "path": "src/models/field_error.rs",
       "sha256": "c8b58fd0553f605102e3af28a94ab4618ff32cb9622ef8d427288aa766fa61d5"
+    },
+    {
+      "path": "src/models/initial_sandbox_user_grant_request.rs",
+      "sha256": "bdfdcbaa210c404fe387ae21b88b615c6624ebc3d0558c2d7860d9b56ad603a1"
     },
     {
       "path": "src/models/labels_create_response201.rs",
@@ -176,7 +196,7 @@
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "6aecb901c0941df43121d2518edbfe73247fbdd574134ff5c3d66153998cee83"
+      "sha256": "ca19d4c9e3e57e61942bf252715ab45365b7fb71b60ce8d162f347608131ff0a"
     },
     {
       "path": "src/models/page_info.rs",
@@ -197,6 +217,62 @@
     {
       "path": "src/models/quotas_update_response.rs",
       "sha256": "c999ab612d1e65a7762e2a6351984e9bae05efa3caf25b86aeeb843f3197f680"
+    },
+    {
+      "path": "src/models/sandbox_grant_list_http_response.rs",
+      "sha256": "6e21c6ea27c4e9f5dd6af46e8af4bc705c056e162988af82809f2a21d942edd5"
+    },
+    {
+      "path": "src/models/sandbox_grant_resource_http_response.rs",
+      "sha256": "1af0710be432d8a54830d3ac5eb38404f244ac5d09fc8d592bffe40818203b03"
+    },
+    {
+      "path": "src/models/sandbox_grant.rs",
+      "sha256": "597beae90cff2bab305f18f3154c1d8d14c3f15535ed09ab382086097af2f7be"
+    },
+    {
+      "path": "src/models/sandbox_grants_create_response201.rs",
+      "sha256": "1102c70a7522383712b3fac51002f86fc412e76c18a2126c83a0b430ab40f652"
+    },
+    {
+      "path": "src/models/sandbox_grants_list_response.rs",
+      "sha256": "dbfe3a4a77e2a82470bc71fb6dae27399fffb1e9dd95c0487741fe792376e35f"
+    },
+    {
+      "path": "src/models/sandbox_grants_retrieve_response.rs",
+      "sha256": "70d150aefceeeaf165e2c43f649888f129bc407d14d0b02e337530b95c3ba01b"
+    },
+    {
+      "path": "src/models/sandbox_grants_update_response.rs",
+      "sha256": "cf9f66cd822e9a5a5678b253159a7ff441a5532139e454ab07eb14428c585e24"
+    },
+    {
+      "path": "src/models/sandbox_volume_list_http_response.rs",
+      "sha256": "18062855eddb1a7e83902fe14dc32a93be36c20d111e1350fa6e73acb4fce175"
+    },
+    {
+      "path": "src/models/sandbox_volume_resource_http_response.rs",
+      "sha256": "b78f5acf7b035a5f840d5308d76152f1d01339cb16265225e6db411f2f1ebcdc"
+    },
+    {
+      "path": "src/models/sandbox_volume.rs",
+      "sha256": "bcf26b971a191989e7cbb3216e4ed4e964a88e6f7128bc564f57f489cf1f7f60"
+    },
+    {
+      "path": "src/models/sandbox_volumes_create_response201.rs",
+      "sha256": "3fa2cb1ac5a0493e272c1407f65ffe15fbc9e9f18c9146c6e0887c0e70eaf4a5"
+    },
+    {
+      "path": "src/models/sandbox_volumes_list_response.rs",
+      "sha256": "a5be742c6a526ff16cb65188a20682d11805e80a2f1111cd1962ded442470ff7"
+    },
+    {
+      "path": "src/models/sandbox_volumes_retrieve_response.rs",
+      "sha256": "45ed9cd1d31682c80f60da31f16f65e22fe3210bed0acdabd66069ea9221c74c"
+    },
+    {
+      "path": "src/models/sandbox_volumes_update_response.rs",
+      "sha256": "09f6e7b118478aeb78184b1c81d466f81fca2164cb795308838429ebb345b07c"
     },
     {
       "path": "src/models/sdk_work_api_response.rs",
@@ -244,7 +320,15 @@
     },
     {
       "path": "src/models/update_quota_policy_request.rs",
-      "sha256": "5c986aa5427fc731e6b666c213604caab2d2f5a505bbfcdb4c0d975baf0fb80a"
+      "sha256": "9c0e3b3466fb6e930c8d5c59d5e1e099848bb2dcc232e20d7fd9a8ced06d0755"
+    },
+    {
+      "path": "src/models/update_sandbox_grant_request.rs",
+      "sha256": "d308aa3a213d6161ab7d68b1d44149e391744a4367e0d39e8cef78481bc32f20"
+    },
+    {
+      "path": "src/models/update_sandbox_volume_request.rs",
+      "sha256": "7e7188ec2790b730569d7683237ee4f9ab50a74e55cdbe905c32eae8e4ab9b18"
     }
   ],
   "scaffoldFiles": [

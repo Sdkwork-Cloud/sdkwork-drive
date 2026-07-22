@@ -1,10 +1,12 @@
 pub mod audit_store;
+pub mod domain_outbox_embedded_relay;
 pub mod maintenance_store;
 pub mod node_store;
 pub mod node_version_store;
 pub mod permission_store;
 pub mod quota_store;
 pub mod resource_resolution_store;
+pub mod root_scope_event_delivery_store;
 pub mod root_scope_subscription_store;
 pub mod sandbox_admin_store;
 pub mod sandbox_directory_provider;

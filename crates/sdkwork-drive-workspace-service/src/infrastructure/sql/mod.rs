@@ -10,6 +10,7 @@ pub mod node_version_store;
 pub mod permission_store;
 pub mod quota_store;
 pub mod resource_resolution_store;
+pub mod root_scope_event_delivery_store;
 pub mod root_scope_subscription_store;
 mod runtime_id;
 pub mod sandbox_admin_store;

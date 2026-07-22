@@ -12,22 +12,29 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "1caaa492203391b021b708deb897d98bd737701537c282a92a1ac521d7b3bc9e",
+  "changeFingerprint": "c3d2e8b3b29247576c05b78d022f70ff8a08044d9ab6ccec9987ed553d3dd845",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
-      "build-metadata"
+      "api-surface",
+      "runtime"
     ],
     "details": [
       {
-        "area": "build-metadata",
+        "area": "api-surface",
         "paths": [
-          "sdkwork-sdk.json"
+          "http/client.go"
+        ]
+      },
+      {
+        "area": "runtime",
+        "paths": [
+          "http/client.go"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: build-metadata. Verification is required."
+    "summary": "Detected impact areas: api-surface, runtime. Verification is required."
   },
   "executionDecision": {
     "schemaVersion": 1,
@@ -48,7 +55,7 @@
         "id": "verify-check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-go\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -67,13 +74,13 @@
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: api-surface, runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-go\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -117,11 +124,11 @@
     "skippedUnchangedGeneratedFiles": 31,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "1caaa492203391b021b708deb897d98bd737701537c282a92a1ac521d7b3bc9e",
+    "changeFingerprint": "c3d2e8b3b29247576c05b78d022f70ff8a08044d9ab6ccec9987ed553d3dd845",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [
-        "sdkwork-sdk.json"
+        "http/client.go"
       ],
       "unchangedGeneratedFiles": [
         "api/base.go",
@@ -134,11 +141,11 @@
         "CHANGELOG.md",
         "doc.go",
         "go.mod",
-        "http/client.go",
         "http/doc.go",
         "LICENSE",
         "README.md",
         "sdk.go",
+        "sdkwork-sdk.json",
         "types/common.go",
         "types/create_open_download_url_request.go",
         "types/doc.go",
@@ -166,29 +173,36 @@
     "impact": {
       "schemaVersion": 1,
       "areas": [
-        "build-metadata"
+        "api-surface",
+        "runtime"
       ],
       "details": [
         {
-          "area": "build-metadata",
+          "area": "api-surface",
           "paths": [
-            "sdkwork-sdk.json"
+            "http/client.go"
+          ]
+        },
+        {
+          "area": "runtime",
+          "paths": [
+            "http/client.go"
           ]
         }
       ],
       "requiresVerification": true,
-      "summary": "Detected impact areas: build-metadata. Verification is required."
+      "summary": "Detected impact areas: api-surface, runtime. Verification is required."
     },
     "verificationPlan": {
       "shouldRun": true,
       "runPhase": "now",
-      "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "summary": "Detected impact areas: api-surface, runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
       "steps": [
         {
           "id": "check",
           "title": "Unified package check",
           "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, runtime.",
           "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-go\\generated\\server-openapi",
           "command": "node",
           "args": [

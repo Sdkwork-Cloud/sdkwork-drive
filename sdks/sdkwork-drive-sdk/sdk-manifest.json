@@ -6,7 +6,7 @@
   "sdkFamily": "sdkwork-drive-sdk",
   "sdkType": "custom",
   "apiPrefix": "/open/v3/api",
-  "generationInputSpec": "../../apis/open-api/drive/drive-open-api.openapi.json",
+  "generationInputSpec": "../../target/drive-sdk-generator-input/sdkwork-drive-sdk/drive-open-api.openapi.json",
   "generatedPackages": {
     "typescript": {
       "language": "typescript",
@@ -44,7 +44,7 @@
   "workspace": "sdkwork-drive-sdk",
   "authoritySpec": "../../apis/open-api/drive/drive-open-api.openapi.json",
   "derivedSpecs": {
-    "default": "../../apis/open-api/drive/drive-open-api.openapi.json"
+    "default": "../../target/drive-sdk-generator-input/sdkwork-drive-sdk/drive-open-api.openapi.json"
   },
   "discoverySurface": {
     "sdkTarget": "custom",

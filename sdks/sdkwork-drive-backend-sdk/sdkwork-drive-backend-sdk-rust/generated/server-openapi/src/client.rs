@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::api::{DriveApi, LabelsApi};
+use crate::api::{DriveApi, LabelsApi, SandboxVolumesApi, SandboxGrantsApi};
 use crate::http::{SdkworkConfig, SdkworkError, SdkworkHttpClient};
 
 #[derive(Clone)]
@@ -28,6 +28,7 @@ impl SdkworkBackendClient {
         self
     }
 
+
     pub fn set_header(&self, key: impl Into<String>, value: impl Into<String>) -> &Self {
         self.http.set_header(key, value);
         self
@@ -43,5 +44,13 @@ impl SdkworkBackendClient {
 
     pub fn labels(&self) -> LabelsApi {
             LabelsApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn sandbox_volumes(&self) -> SandboxVolumesApi {
+            SandboxVolumesApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn sandbox_grants(&self) -> SandboxGrantsApi {
+            SandboxGrantsApi::new(Arc::clone(&self.http))
         }
 }

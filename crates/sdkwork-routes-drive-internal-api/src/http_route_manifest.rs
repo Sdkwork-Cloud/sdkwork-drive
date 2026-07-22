@@ -31,6 +31,20 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "rootScopeSubscriptions.retrieve",
     )
     .with_rate_limit_tier(RateLimitTier::Internal),
+    HttpRoute::ingress_token(
+        HttpMethod::Put,
+        "/internal/v3/api/drive/root_scope_subscriptions/{subscriptionUuid}/event_delivery",
+        "drive",
+        "rootScopeEventDeliveries.replace",
+    )
+    .with_rate_limit_tier(RateLimitTier::Internal),
+    HttpRoute::ingress_token(
+        HttpMethod::Get,
+        "/internal/v3/api/drive/website_roots/{websiteRootUuid}",
+        "drive",
+        "websiteRoots.retrieve",
+    )
+    .with_rate_limit_tier(RateLimitTier::Internal),
 ];
 
 pub fn internal_route_manifest() -> HttpRouteManifest {

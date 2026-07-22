@@ -61,7 +61,7 @@
   "workspace": "sdkwork-drive-admin-storage-sdk",
   "authoritySpec": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json",
   "derivedSpecs": {
-    "default": "../../apis/backend-api/drive/drive-admin-storage-api.openapi.json"
+    "default": "../../target/drive-sdk-generator-input/sdkwork-drive-admin-storage-sdk/drive-admin-storage-api.openapi.json"
   },
   "discoverySurface": {
     "sdkTarget": "custom",

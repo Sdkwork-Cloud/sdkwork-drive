@@ -86,6 +86,7 @@ async retrieve(): Promise<unknown> {
 export interface DriveMaintenanceJobsListParams {
   jobType?: 'object_sweep' | 'upload_session_sweep' | 'expired_upload_content_sweep' | 'abandoned_upload_task_sweep';
   status?: 'completed' | 'failed';
+  operatorId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -102,6 +103,7 @@ async list(params?: DriveMaintenanceJobsListParams): Promise<unknown> {
     const query = buildQueryString([
       { name: 'jobType', value: params?.jobType, style: 'form', explode: true, allowReserved: false },
       { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
+      { name: 'operatorId', value: params?.operatorId, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);

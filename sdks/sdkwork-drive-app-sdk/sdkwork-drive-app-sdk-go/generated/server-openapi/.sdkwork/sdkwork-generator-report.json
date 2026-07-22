@@ -12,37 +12,29 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "258510fcc101de07ec87bd354b4d1aee8efadb0abd76aadb3ae7fc41260e5b17",
+  "changeFingerprint": "e60b8c559939753ebae26cb5abb5202ba3adfda7920c68d72e9316039d0f4058",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
       "api-surface",
-      "models"
+      "runtime"
     ],
     "details": [
       {
         "area": "api-surface",
         "paths": [
-          "api/drive.go"
+          "http/client.go"
         ]
       },
       {
-        "area": "models",
+        "area": "runtime",
         "paths": [
-          "types/create_website_root_request.go",
-          "types/website_root_folder_selector.go",
-          "types/website_root_http_response.go",
-          "types/website_root_list_http_response.go",
-          "types/website_root_page_data.go",
-          "types/website_root_resource_data.go",
-          "types/website_root_selector.go",
-          "types/website_root_space_selector.go",
-          "types/website_root.go"
+          "http/client.go"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models. Verification is required."
+    "summary": "Detected impact areas: api-surface, runtime. Verification is required."
   },
   "executionDecision": {
     "schemaVersion": 1,
@@ -63,7 +55,7 @@
         "id": "verify-check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-go\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -82,13 +74,13 @@
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: api-surface, runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-go\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -127,31 +119,22 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 10,
+    "writtenFiles": 1,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 183,
+    "skippedUnchangedGeneratedFiles": 192,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "258510fcc101de07ec87bd354b4d1aee8efadb0abd76aadb3ae7fc41260e5b17",
+    "changeFingerprint": "e60b8c559939753ebae26cb5abb5202ba3adfda7920c68d72e9316039d0f4058",
     "changes": {
-      "createdGeneratedFiles": [
-        "types/create_website_root_request.go",
-        "types/website_root_folder_selector.go",
-        "types/website_root_http_response.go",
-        "types/website_root_list_http_response.go",
-        "types/website_root_page_data.go",
-        "types/website_root_resource_data.go",
-        "types/website_root_selector.go",
-        "types/website_root_space_selector.go",
-        "types/website_root.go"
-      ],
+      "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [
-        "api/drive.go"
+        "http/client.go"
       ],
       "unchangedGeneratedFiles": [
         "api/assets.go",
         "api/base.go",
         "api/doc.go",
+        "api/drive.go",
         "api/node_labels.go",
         "api/node_properties.go",
         "api/nodes.go",
@@ -163,7 +146,6 @@
         "CHANGELOG.md",
         "doc.go",
         "go.mod",
-        "http/client.go",
         "http/doc.go",
         "LICENSE",
         "README.md",
@@ -220,6 +202,7 @@
         "types/create_space_request.go",
         "types/create_upload_session_request.go",
         "types/create_watch_channel_request.go",
+        "types/create_website_root_request.go",
         "types/doc.go",
         "types/download_package_http_response.go",
         "types/download_package_item.go",
@@ -331,7 +314,15 @@
         "types/uploader_retention_request.go",
         "types/uploader_upload_item.go",
         "types/uploader_upload_part_http_response.go",
-        "types/uploader_upload_part.go"
+        "types/uploader_upload_part.go",
+        "types/website_root_folder_selector.go",
+        "types/website_root_http_response.go",
+        "types/website_root_list_http_response.go",
+        "types/website_root_page_data.go",
+        "types/website_root_resource_data.go",
+        "types/website_root_selector.go",
+        "types/website_root_space_selector.go",
+        "types/website_root.go"
       ],
       "deletedGeneratedFiles": [],
       "scaffoldedFiles": [],
@@ -344,43 +335,35 @@
       "schemaVersion": 1,
       "areas": [
         "api-surface",
-        "models"
+        "runtime"
       ],
       "details": [
         {
           "area": "api-surface",
           "paths": [
-            "api/drive.go"
+            "http/client.go"
           ]
         },
         {
-          "area": "models",
+          "area": "runtime",
           "paths": [
-            "types/create_website_root_request.go",
-            "types/website_root_folder_selector.go",
-            "types/website_root_http_response.go",
-            "types/website_root_list_http_response.go",
-            "types/website_root_page_data.go",
-            "types/website_root_resource_data.go",
-            "types/website_root_selector.go",
-            "types/website_root_space_selector.go",
-            "types/website_root.go"
+            "http/client.go"
           ]
         }
       ],
       "requiresVerification": true,
-      "summary": "Detected impact areas: api-surface, models. Verification is required."
+      "summary": "Detected impact areas: api-surface, runtime. Verification is required."
     },
     "verificationPlan": {
       "shouldRun": true,
       "runPhase": "now",
-      "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "summary": "Detected impact areas: api-surface, runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
       "steps": [
         {
           "id": "check",
           "title": "Unified package check",
           "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, runtime.",
           "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-go\\generated\\server-openapi",
           "command": "node",
           "args": [

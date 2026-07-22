@@ -84,7 +84,7 @@
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "d88bea3a6cd9b0065c1b891cde726716c74fa6b7400520e22b0080811eee5951"
+      "sha256": "2e5bd0ae2159fce3ffbfa4950a0df83a6df97399be5c15196b284d3671da9b0a"
     },
     {
       "path": "src/http/mod.rs",

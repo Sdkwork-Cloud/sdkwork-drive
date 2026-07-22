@@ -19,6 +19,18 @@ pub struct NewDriveSpace {
     pub updated_by: String,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct ListAccessibleSpacesQuery<'a> {
+    pub tenant_id: &'a str,
+    pub viewer_subject_type: &'a str,
+    pub viewer_subject_id: &'a str,
+    pub owner_subject_type: Option<&'a str>,
+    pub owner_subject_id: Option<&'a str>,
+    pub space_type: Option<&'a str>,
+    pub offset: i64,
+    pub limit: i64,
+}
+
 #[async_trait]
 pub trait DriveSpaceStore: Send + Sync {
     async fn insert_space(
@@ -43,14 +55,7 @@ pub trait DriveSpaceStore: Send + Sync {
 
     async fn list_accessible_spaces(
         &self,
-        tenant_id: &str,
-        viewer_subject_type: &str,
-        viewer_subject_id: &str,
-        owner_subject_type: Option<&str>,
-        owner_subject_id: Option<&str>,
-        space_type: Option<&str>,
-        offset: i64,
-        limit: i64,
+        query: ListAccessibleSpacesQuery<'_>,
     ) -> Result<Vec<DriveSpace>, DriveServiceError>;
 
     async fn get_space(

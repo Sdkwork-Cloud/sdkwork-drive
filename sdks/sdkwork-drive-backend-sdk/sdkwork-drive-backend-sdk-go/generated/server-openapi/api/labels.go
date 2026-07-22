@@ -63,11 +63,8 @@ func (a *LabelsApi) Update(labelId string, body sdktypes.UpdateLabelRequest) (sd
 }
 
 // Delete a Drive label definition
-func (a *LabelsApi) Delete(labelId string, operatorId string) (struct{}, error) {
-    query := BuildQueryString([]QueryParameterSpec{
-        {Name: "operatorId", Value: operatorId, Style: "form", Explode: true, AllowReserved: false},
-    })
-    raw, err := a.client.Delete(AppendQueryString(BackendApiPath(fmt.Sprintf("/drive/labels/%s", SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), query), nil, nil)
+func (a *LabelsApi) Delete(labelId string) (struct{}, error) {
+    raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/drive/labels/%s", SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), nil, nil)
     if err != nil {
         var zero struct{}
         return zero, err

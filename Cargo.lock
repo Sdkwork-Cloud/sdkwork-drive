@@ -3569,6 +3569,7 @@ name = "sdkwork-api-drive-assembly"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "sdkwork-database-sqlx",
  "sdkwork-drive-config",
  "sdkwork-drive-http",
  "sdkwork-drive-security",

@@ -15,11 +15,14 @@ use tokio::sync::RwLock;
 use url::Url;
 
 const MAX_CACHED_PROVIDER_ADAPTERS: usize = 1024;
+type ProviderCacheKey = (String, i64);
+type ProviderObjectStore = Arc<dyn DriveObjectStore>;
+type ProviderObjectStoreCache = Arc<RwLock<HashMap<ProviderCacheKey, ProviderObjectStore>>>;
 
 #[derive(Clone)]
 pub struct DriveObjectStoreRuntime {
     provider_store: SqlStorageProviderStore,
-    cache: Arc<RwLock<HashMap<(String, i64), Arc<dyn DriveObjectStore>>>>,
+    cache: ProviderObjectStoreCache,
 }
 
 impl std::fmt::Debug for DriveObjectStoreRuntime {

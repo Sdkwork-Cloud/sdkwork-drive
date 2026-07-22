@@ -43,11 +43,8 @@ public class LabelsApi {
     }
 
     /** Delete a Drive label definition */
-    public Void delete(String labelId, String operatorId) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
-        ));
-        client.delete(ApiPaths.appendQueryString(ApiPaths.backendPath("/drive/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""), query));
+    public Void delete(String labelId) throws Exception {
+        client.delete(ApiPaths.backendPath("/drive/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""));
         return null;
     }
 

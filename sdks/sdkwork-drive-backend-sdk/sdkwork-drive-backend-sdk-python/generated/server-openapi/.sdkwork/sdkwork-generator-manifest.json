@@ -40,7 +40,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "cd09685991196f34988496437dc23efe505e312d069b6bfd18bb5632925d0511"
+      "sha256": "5c71ebd5f767174f527423c9904ecaf0576fd7380004f53512823373962be200"
     },
     {
       "path": "requirements.txt",
@@ -52,7 +52,7 @@
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/api/__init__.py",
-      "sha256": "2e4389a95e5bf53f99af9bc401bb305808ba1228f676790db91c7118c0864699"
+      "sha256": "bd4a9b14f5b711ab5eb0d00b14b864a444b888fe6e5264513ce04457907935ca"
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/api/drive.py",
@@ -60,19 +60,27 @@
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/api/labels.py",
-      "sha256": "02a10656d1d7cc3e12c23395342062357164235adab62015855c15e7df445e75"
+      "sha256": "5331264ba0827951060bb56216bb1b907e952742137a790d6d13bdc7f5cb015b"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/api/sandbox_grants.py",
+      "sha256": "fca194e928f2ce11468ba1ebbe67ef3a044c26b21a68cb82f69a51a06f1a325a"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/api/sandbox_volumes.py",
+      "sha256": "6c1646c52d55463fe05cdb7768ca58e98980dd2ea53c97987da0a9facb739451"
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/client.py",
-      "sha256": "1b8b641f842d5b4c8ed71c17399321a561d91f5cff24b2ac715ea85c99440a18"
+      "sha256": "9f9d5a71fc43ec9a4fa8135a8071b2261d3c09ee0ef96442f95d029356628891"
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/http_client.py",
-      "sha256": "6840cfb8a0faca42ec50d8722946b2bf75f8aede51a88876a35535e3a7b52392"
+      "sha256": "a08ed4f35a2ae41b540115ed2f3d5fea98f07a921a6b3c653ed6e8e57ed043a4"
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/models/__init__.py",
-      "sha256": "42cd0b23c57d870ff759d2089b19af9a8ea8479ebf5aed3760d1f2ca017285e5"
+      "sha256": "2f2ec57c4064809e548ba3b2fb3a09bd1b4c9f734e66e8ad627a00901ac3b137"
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/models/audit_event_list_http_response.py",
@@ -88,7 +96,15 @@
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/models/create_label_request.py",
-      "sha256": "8968b714ca5ce5566fb741188a057ea4d04c37f8c452941de07954ecb3017ce0"
+      "sha256": "1bbec6a38df9e950982dfa73877d314c701d0ec143c9a6cf7c5c0d675c54d69e"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/create_sandbox_grant_request.py",
+      "sha256": "d6b246fad76ff6e10016ebbd165670a19d241a5ca219ebc1a5a71ff96ac5e43d"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/create_sandbox_volume_request.py",
+      "sha256": "b284e110a98bef06172e6bc336b282368b7700164f2f2b242a3dac9cbd396db8"
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/models/download_package_list_http_response.py",
@@ -121,6 +137,10 @@
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/models/field_error.py",
       "sha256": "8bb46bf56c6424b0ec3d2a5b6aceca41145c5cb39ab6c2cd21b00569802115bb"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/initial_sandbox_user_grant_request.py",
+      "sha256": "b77af9d0e7ef26f78eb67e08348419ce25399053b50bd1f6b7bed60cdacd7db4"
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/models/labels_create_response201.py",
@@ -187,6 +207,62 @@
       "sha256": "56e66c9a142fe14471210c595b8ffcdb8a9fdb579cc43c7ab5bfbc119df7348c"
     },
     {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant_list_http_response.py",
+      "sha256": "cc264d12a9776a71847f126cb1b418f346a55d3731f410ad7f14237f30d00357"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant_resource_http_response.py",
+      "sha256": "bed40f2f487833dc00d1c820a846e2ce5f002c83f0ab1592390183750422198b"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant.py",
+      "sha256": "4b53c373fe97dd00fa7e0af2630b099eed80e7fb1173217feb44850270273c71"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_create_response201.py",
+      "sha256": "2442dcba7cfb2f89f0d8a3dc8be6e63503460339c3bab67dbc04954fe5133162"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_list_response.py",
+      "sha256": "4317319e81dd71efc5a2a4a7ea1e19717385f7641ca7407e813c840717007e32"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_retrieve_response.py",
+      "sha256": "1a7f329ed480516b315315c67130b9865e384b8e9a6b2b9e5539bbb0f5fe64c5"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_update_response.py",
+      "sha256": "6bb845de7625bdeefc97d4d51e414e4766a454d73efbbbcdb92015fa6681192c"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume_list_http_response.py",
+      "sha256": "82050e53069a2a03017c4d0f27d6d52699fa84dd2166cfab54508e62c7115aa6"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume_resource_http_response.py",
+      "sha256": "c0ed3e93aec1239e585ff2a0b72b465becba839b45b9e110e48db356ba69ea68"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume.py",
+      "sha256": "24cfe6d1afe5d24fecb83a4ee66cbb47ae1a316d1e4243e18cf33ea300c58336"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_create_response201.py",
+      "sha256": "f227255ad23a6319e030343ba1ad0d9a0bf48394dfba42e1b0b2c2ecac51c9f1"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_list_response.py",
+      "sha256": "641931806aebf57a61d3171871c9ee1ceb621c684a1f133d8a8ac639216f4a1c"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_retrieve_response.py",
+      "sha256": "6f4c92956aa356ab1d025e9d803d22b9d14d2e82831b667ee171f47c6dff2b0d"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_update_response.py",
+      "sha256": "53e68d951acf5f0450a6460dea82f607c80f616b104fc6106e2c7e4f99998011"
+    },
+    {
       "path": "sdkwork_drive_backend_sdk_generated_python/models/sdk_work_api_response.py",
       "sha256": "c76a9fa3784ba83c7ca1314987ef9811ed94f15164328840ef89b49b00cbd0a4"
     },
@@ -232,7 +308,15 @@
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/models/update_quota_policy_request.py",
-      "sha256": "188bc0f2af00455691b119e5fe1e05e844ad45d235d2a38f6c406ff49de448bc"
+      "sha256": "dc67670e91dd00d86d4248511979c8e882583c4f6ceaec1842692a4589364b9b"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/update_sandbox_grant_request.py",
+      "sha256": "4cecb6023089a7b454f9c09102a3534f8332a782e03e297f034074fa6037d4d6"
+    },
+    {
+      "path": "sdkwork_drive_backend_sdk_generated_python/models/update_sandbox_volume_request.py",
+      "sha256": "99e900417b75f09408340599987c9f112aaeb6135025faa15b1b2cc5578ecd2a"
     },
     {
       "path": "sdkwork-sdk.json",

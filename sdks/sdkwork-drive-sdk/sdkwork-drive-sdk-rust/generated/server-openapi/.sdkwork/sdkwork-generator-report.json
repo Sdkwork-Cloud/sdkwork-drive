@@ -12,31 +12,40 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "dc445d9c4872de31156f780e701e9e641d61a823a459d42e93a04ee680713f4e",
+  "changeFingerprint": "d13f2b918e7684409fe7f0d392c17699a3b3e2a375f49257fce32c59117491a7",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
-      "build-metadata"
+      "runtime",
+      "unknown"
     ],
     "details": [
       {
-        "area": "build-metadata",
+        "area": "runtime",
         "paths": [
-          "sdkwork-sdk.json"
+          "src/http/client.rs"
+        ]
+      },
+      {
+        "area": "unknown",
+        "paths": [
+          "src/client.rs"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: build-metadata. Verification is required."
+    "summary": "Detected impact areas: runtime, unknown. Verification is required."
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
+    "riskLevel": "high",
     "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
     "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
+      "manual-review-required",
+      "unknown-impact",
       "verification-required"
     ]
   },
@@ -48,7 +57,7 @@
         "id": "verify-check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime, unknown.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -66,7 +75,7 @@
         "id": "verify-build",
         "title": "Unified package build",
         "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: build-metadata.",
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: runtime, unknown.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -85,13 +94,13 @@
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: runtime, unknown. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime, unknown.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -109,7 +118,7 @@
         "id": "build",
         "title": "Unified package build",
         "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: build-metadata.",
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: runtime, unknown.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -148,16 +157,17 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 1,
+    "writtenFiles": 2,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 30,
+    "skippedUnchangedGeneratedFiles": 29,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "dc445d9c4872de31156f780e701e9e641d61a823a459d42e93a04ee680713f4e",
+    "changeFingerprint": "d13f2b918e7684409fe7f0d392c17699a3b3e2a375f49257fce32c59117491a7",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [
-        "sdkwork-sdk.json"
+        "src/client.rs",
+        "src/http/client.rs"
       ],
       "unchangedGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -167,12 +177,11 @@
         "CHANGELOG.md",
         "LICENSE",
         "README.md",
+        "sdkwork-sdk.json",
         "src/api/base.rs",
         "src/api/drive.rs",
         "src/api/mod.rs",
         "src/api/paths.rs",
-        "src/client.rs",
-        "src/http/client.rs",
         "src/http/mod.rs",
         "src/lib.rs",
         "src/models/common.rs",
@@ -201,29 +210,36 @@
     "impact": {
       "schemaVersion": 1,
       "areas": [
-        "build-metadata"
+        "runtime",
+        "unknown"
       ],
       "details": [
         {
-          "area": "build-metadata",
+          "area": "runtime",
           "paths": [
-            "sdkwork-sdk.json"
+            "src/http/client.rs"
+          ]
+        },
+        {
+          "area": "unknown",
+          "paths": [
+            "src/client.rs"
           ]
         }
       ],
       "requiresVerification": true,
-      "summary": "Detected impact areas: build-metadata. Verification is required."
+      "summary": "Detected impact areas: runtime, unknown. Verification is required."
     },
     "verificationPlan": {
       "shouldRun": true,
       "runPhase": "now",
-      "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "summary": "Detected impact areas: runtime, unknown. Verification is required. Run the required verification commands now against the generated SDK output.",
       "steps": [
         {
           "id": "check",
           "title": "Unified package check",
           "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime, unknown.",
           "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-rust\\generated\\server-openapi",
           "command": "node",
           "args": [
@@ -241,7 +257,7 @@
           "id": "build",
           "title": "Unified package build",
           "required": true,
-          "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: build-metadata.",
+          "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: runtime, unknown.",
           "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-sdk\\sdkwork-drive-sdk-rust\\generated\\server-openapi",
           "command": "node",
           "args": [
@@ -259,12 +275,14 @@
     },
     "executionDecision": {
       "schemaVersion": 1,
-      "riskLevel": "medium",
+      "riskLevel": "high",
       "nextAction": "verify",
       "requiresManualReview": false,
       "applyRequiresExpectedFingerprint": false,
       "summary": "Changes have been applied. Run the required verification plan now.",
       "reasons": [
+        "manual-review-required",
+        "unknown-impact",
         "verification-required"
       ]
     },

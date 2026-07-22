@@ -52,7 +52,7 @@
     },
     {
       "path": "http/client.go",
-      "sha256": "2a8abe8885c0147b4d484a39a8b7d63ac533bd20bf4c14ad6db2f49d075bae53"
+      "sha256": "e56a64ecc786f543c9954c7177ae8fc9ede046eaf8a320e995bfe9261a2f0482"
     },
     {
       "path": "http/doc.go",

@@ -56,7 +56,7 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "b0713eee61621c0a98d368f6cb5a69221855f75aedef8f607b6269c0361b4998"
+      "sha256": "7d046b1ee81927863438a90008a4e83703fe446495d69c75523d6144a900df40"
     },
     {
       "path": "src/api/index.ts",
@@ -152,7 +152,7 @@
     },
     {
       "path": "src/types/drive-space.ts",
-      "sha256": "778a57ee672daa69fd99166dcc03c392e2ba6734c219da4c4b89f48aeb3d2c5a"
+      "sha256": "ed6088d92c4f3f9382be1f86e03578ff79e2b261479fb83981226cc25390497c"
     },
     {
       "path": "src/types/field-error.ts",
@@ -336,7 +336,7 @@
     },
     {
       "path": "src/types/sweep-object-store-request.ts",
-      "sha256": "990fd1e0ca6d09182ca8ad42e8e142955a0191b11985c00b18c0b1cac5984ae0"
+      "sha256": "c369a4ad086adbf2297bdc0a2fc7c95da265544fa6d4c25543dfed662a4c474d"
     },
     {
       "path": "src/types/sweep-response.ts",
@@ -344,11 +344,11 @@
     },
     {
       "path": "src/types/sweep-upload-sessions-request.ts",
-      "sha256": "bc481abbff89c12c3e22299ea80a6b7a376ecb736001f7b0b82201b72c020d81"
+      "sha256": "f226509f0f12907c927b831563fcc25ea5f3b909ad438ef6e5b40a01aacbf6eb"
     },
     {
       "path": "src/types/update-label-request.ts",
-      "sha256": "c6faf5483eaabea96d934517f57b460e78351964296e4d5c1a370b32bcb39be8"
+      "sha256": "28956c90d7ae897514056c260d6cfec1475c5c1a3596543e8bcbb6ff0471e536"
     },
     {
       "path": "src/types/update-quota-policy-request.ts",

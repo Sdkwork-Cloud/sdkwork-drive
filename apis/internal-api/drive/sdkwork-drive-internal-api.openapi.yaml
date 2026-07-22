@@ -77,6 +77,80 @@ paths:
                 $ref: "#/components/schemas/RootScopeSubscriptionResponse"
         default:
           $ref: "#/components/responses/Problem"
+  /internal/v3/api/drive/root_scope_subscriptions/{subscriptionUuid}/event_delivery:
+    put:
+      tags: [driveInternalPublishing]
+      summary: Ensure the signed Knowledgebase event delivery channel for a root scope
+      description: >-
+        Creates or replaces the deterministic Drive-to-Knowledgebase webhook channel for a
+        root scope. The verification token is write-only and is never returned or logged.
+        Drive stores only its SHA-256 derived signing key and signs the exact event body bytes.
+      operationId: rootScopeEventDeliveries.replace
+      x-sdkwork-owner: sdkwork-drive
+      x-sdkwork-api-authority: sdkwork-drive-internal-api
+      x-sdkwork-source-route-crate: sdkwork-routes-drive-internal-api
+      x-sdkwork-api-surface: internal-api
+      x-sdkwork-auth-mode: ingress-token
+      x-sdkwork-request-context: WebRequestContext
+      x-sdkwork-tenant-scope: current
+      x-sdkwork-rate-limit-tier: internal
+      x-sdkwork-idempotent: true
+      security:
+        - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/SubscriptionUuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnsureRootScopeEventDeliveryRequest"
+      responses:
+        "200":
+          description: Existing delivery channel reconciled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RootScopeEventDeliveryResponse"
+        "201":
+          description: Delivery channel created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RootScopeEventDeliveryResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /internal/v3/api/drive/website_roots/{websiteRootUuid}:
+    get:
+      tags: [driveInternalPublishing]
+      summary: Retrieve a website delivery root
+      description: >-
+        Returns the tenant-scoped WebsiteRoot lifecycle, generation, selection mode, and
+        delivery capabilities required by trusted website runtimes. Drive node identities,
+        selected folder identities, object-store coordinates, credentials, and presigned URLs
+        never cross this boundary.
+      operationId: websiteRoots.retrieve
+      x-sdkwork-owner: sdkwork-drive
+      x-sdkwork-api-authority: sdkwork-drive-internal-api
+      x-sdkwork-source-route-crate: sdkwork-routes-drive-internal-api
+      x-sdkwork-api-surface: internal-api
+      x-sdkwork-auth-mode: ingress-token
+      x-sdkwork-request-context: WebRequestContext
+      x-sdkwork-tenant-scope: current
+      x-sdkwork-rate-limit-tier: internal
+      security:
+        - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WebsiteRootUuid"
+      responses:
+        "200":
+          description: Tenant-scoped website delivery root.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebsiteRootResponse"
+        default:
+          $ref: "#/components/responses/Problem"
   /internal/v3/api/drive/resource_resolutions:
     post:
       tags: [driveInternalPublishing]
@@ -212,6 +286,13 @@ components:
       name: X-API-Key
       description: Application ingress token. Bearer and X-SDKWork-Access-Token aliases are accepted by the runtime.
   parameters:
+    WebsiteRootUuid:
+      name: websiteRootUuid
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     SubscriptionUuid:
       name: subscriptionUuid
       in: path
@@ -296,7 +377,7 @@ components:
     CreateRootScopeSubscriptionRequest:
       type: object
       additionalProperties: false
-      required: [spaceId, knowledgeBaseId, rawFolderNodeId]
+      required: [spaceId, knowledgeBaseId]
       properties:
         spaceId:
           type: string
@@ -306,10 +387,26 @@ components:
           type: string
           minLength: 1
           maxLength: 128
-        rawFolderNodeId:
+    EnsureRootScopeEventDeliveryRequest:
+      type: object
+      additionalProperties: false
+      required: [address, verificationToken, expirationEpochMs]
+      properties:
+        address:
           type: string
-          minLength: 1
-          maxLength: 64
+          format: uri
+          pattern: "^https://.+"
+          minLength: 8
+          maxLength: 2048
+        verificationToken:
+          type: string
+          format: password
+          writeOnly: true
+          minLength: 32
+          maxLength: 1024
+          pattern: "^[A-Za-z0-9_-]+$"
+        expirationEpochMs:
+          $ref: "#/components/schemas/PositiveInt64String"
     ResolveDriveResourceRequest:
       type: object
       additionalProperties: false
@@ -371,6 +468,44 @@ components:
         version:
           $ref: "#/components/schemas/PositiveInt64String"
         createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    WebsiteRoot:
+      type: object
+      additionalProperties: false
+      required:
+        - uuid
+        - spaceId
+        - sourceRootMode
+        - contentMode
+        - activeGeneration
+        - rootStatus
+        - capabilities
+        - version
+        - updatedAt
+      properties:
+        uuid: { type: string, format: uuid }
+        spaceId: { type: string, minLength: 1, maxLength: 64 }
+        sourceRootMode:
+          type: string
+          enum: [SPACE_ROOT, FOLDER]
+        contentMode:
+          type: string
+          enum: [LIVE_TREE, ATOMIC_GENERATION]
+        activeGeneration:
+          $ref: "#/components/schemas/PositiveInt64String"
+        rootStatus:
+          type: string
+          enum: [ACTIVE, SUSPENDED, INVALID, ARCHIVED]
+        capabilities:
+          type: array
+          minItems: 3
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: string
+            enum: [STATIC_CONTENT, BYTE_RANGE, CONDITIONAL_REQUESTS]
+        version:
+          $ref: "#/components/schemas/PositiveInt64String"
         updatedAt: { type: string, format: date-time }
     DriveResourceResolution:
       type: object
@@ -449,6 +584,72 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/RootScopeSubscriptionResourceData"
+    WebsiteRootResourceData:
+      type: object
+      additionalProperties: false
+      required: [item]
+      properties:
+        item:
+          $ref: "#/components/schemas/WebsiteRoot"
+    WebsiteRootResponse:
+      allOf:
+        - $ref: "#/components/schemas/SdkWorkApiResponse"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/WebsiteRootResourceData"
+    RootScopeEventDelivery:
+      type: object
+      additionalProperties: false
+      required:
+        - channelId
+        - subscriptionUuid
+        - address
+        - expirationEpochMs
+        - lifecycleStatus
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        channelId:
+          type: string
+          minLength: 1
+          maxLength: 64
+        subscriptionUuid:
+          type: string
+          format: uuid
+        address:
+          type: string
+          format: uri
+        expirationEpochMs:
+          $ref: "#/components/schemas/PositiveInt64String"
+        lifecycleStatus:
+          type: string
+          enum: [ACTIVE, STOPPED, EXPIRED]
+        version:
+          $ref: "#/components/schemas/PositiveInt64String"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RootScopeEventDeliveryResourceData:
+      type: object
+      additionalProperties: false
+      required: [item]
+      properties:
+        item:
+          $ref: "#/components/schemas/RootScopeEventDelivery"
+    RootScopeEventDeliveryResponse:
+      allOf:
+        - $ref: "#/components/schemas/SdkWorkApiResponse"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/RootScopeEventDeliveryResourceData"
     DriveResourceResolutionResourceData:
       type: object
       additionalProperties: false

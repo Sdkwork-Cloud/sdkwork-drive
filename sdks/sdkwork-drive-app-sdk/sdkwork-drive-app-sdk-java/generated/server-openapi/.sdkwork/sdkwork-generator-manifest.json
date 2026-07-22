@@ -76,7 +76,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/http/HttpClient.java",
-      "sha256": "76eb04898e4dfe60a22ac042b979a6fecc1ca748e89f3656f1d4440a7807bdb2"
+      "sha256": "4450b9e1c0a132129c9c150388592fa53453290a5899d04f1c2369b08f305ae5"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ApplyNodeLabelRequest.java",

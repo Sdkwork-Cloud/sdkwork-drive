@@ -772,6 +772,17 @@
             }
           },
           {
+            "name": "operatorId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:@-]+$"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -2752,7 +2763,8 @@
               "app_upload",
               "im",
               "rtc",
-              "notary"
+              "notary",
+              "website"
             ]
           },
           "lifecycleStatus": {
@@ -2932,7 +2944,8 @@
       "SweepObjectStoreRequest": {
         "type": "object",
         "required": [
-          "dryRun"
+          "dryRun",
+          "operatorId"
         ],
         "properties": {
           "dryRun": {
@@ -2943,6 +2956,12 @@
             "format": "int64",
             "minimum": 1,
             "maximum": 1000
+          },
+          "operatorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
           },
           "correlationId": {
             "type": "string",
@@ -2981,7 +3000,8 @@
         "type": "object",
         "required": [
           "nowEpochMs",
-          "dryRun"
+          "dryRun",
+          "operatorId"
         ],
         "properties": {
           "nowEpochMs": {
@@ -2997,6 +3017,12 @@
             "minimum": 1,
             "maximum": 1000
           },
+          "operatorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
+          },
           "correlationId": {
             "type": "string",
             "maxLength": 64,
@@ -3011,7 +3037,9 @@
       },
       "UpdateLabelRequest": {
         "type": "object",
-        "required": [],
+        "required": [
+          "operatorId"
+        ],
         "properties": {
           "displayName": {
             "type": "string",
@@ -3024,6 +3052,12 @@
           },
           "description": {
             "type": "string"
+          },
+          "operatorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
         },
         "additionalProperties": false

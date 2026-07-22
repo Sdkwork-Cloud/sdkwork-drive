@@ -12,6 +12,7 @@ path = "src/lib.rs"
 axum.workspace = true
 tokio.workspace = true
 sqlx.workspace = true
+sdkwork-database-sqlx.workspace = true
 sdkwork-drive-http = { workspace = true, features = ["redis-rate-limit"] }
 sdkwork-drive-config.workspace = true
 sdkwork-drive-security.workspace = true

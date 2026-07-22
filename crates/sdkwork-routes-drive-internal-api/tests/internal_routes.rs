@@ -67,7 +67,7 @@ async fn response_json(response: Response<Body>) -> Value {
     serde_json::from_slice(&body).expect("response body should be JSON")
 }
 
-async fn insert_knowledgebase_tree(pool: &AnyPool) {
+async fn insert_knowledgebase_space(pool: &AnyPool) {
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
@@ -78,25 +78,6 @@ async fn insert_knowledgebase_tree(pool: &AnyPool) {
     .execute(pool)
     .await
     .expect("knowledgebase Space should be inserted");
-    for (id, parent_id, name) in [
-        ("root-kb", None, "Knowledgebase"),
-        ("sources-kb", Some("root-kb"), "sources"),
-        ("raw-kb", Some("sources-kb"), "raw"),
-    ] {
-        sqlx::query(
-            "INSERT INTO dr_drive_node (
-                id, tenant_id, space_id, space_type, parent_node_id, node_type, node_name,
-                content_state, lifecycle_status, version, created_by, updated_by
-             ) VALUES ($1, 'tenant-kb', 'space-kb', 'knowledge_base', $2, 'folder', $3,
-                       'ready', 'active', 1, 'service-kb', 'service-kb')",
-        )
-        .bind(id)
-        .bind(parent_id)
-        .bind(name)
-        .execute(pool)
-        .await
-        .expect("knowledgebase folder should be inserted");
-    }
 }
 
 async fn insert_website_resource(pool: &AnyPool, temp: &TempDir) -> String {
@@ -210,11 +191,10 @@ async fn insert_website_resource(pool: &AnyPool, temp: &TempDir) -> String {
 #[tokio::test]
 async fn subscription_routes_require_ingress_auth_replay_and_isolate_tenants() {
     let (pool, app, _temp) = setup().await;
-    insert_knowledgebase_tree(&pool).await;
+    insert_knowledgebase_space(&pool).await;
     let payload = json!({
         "spaceId": "space-kb",
-        "knowledgeBaseId": "knowledge-base-1",
-        "rawFolderNodeId": "raw-kb"
+        "knowledgeBaseId": "knowledge-base-1"
     });
 
     let unauthenticated = app
@@ -249,6 +229,25 @@ async fn subscription_routes_require_ingress_auth_replay_and_isolate_tenants() {
         created_json["data"]["item"]["consumerKind"],
         "KNOWLEDGEBASE_RAW"
     );
+    let raw_folder_node_id = created_json["data"]["item"]["rootNodeId"]
+        .as_str()
+        .expect("raw folder node id");
+    let canonical_tree_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1)
+         FROM dr_drive_node raw_node
+         INNER JOIN dr_drive_node sources_node ON sources_node.id=raw_node.parent_node_id
+         INNER JOIN dr_drive_node root_node ON root_node.id=sources_node.parent_node_id
+         WHERE raw_node.tenant_id='tenant-kb' AND raw_node.space_id='space-kb'
+           AND raw_node.id=$1 AND raw_node.node_name='raw' AND raw_node.node_type='folder'
+           AND sources_node.node_name='sources' AND sources_node.node_type='folder'
+           AND root_node.node_name='root' AND root_node.node_type='folder'
+           AND root_node.parent_node_id IS NULL",
+    )
+    .bind(raw_folder_node_id)
+    .fetch_one(&pool)
+    .await
+    .expect("canonical raw tree should be queryable");
+    assert_eq!(canonical_tree_count, 1);
 
     let replay = app
         .clone()
@@ -261,6 +260,71 @@ async fn subscription_routes_require_ingress_auth_replay_and_isolate_tenants() {
         .await
         .expect("replay request should be handled");
     assert_eq!(replay.status(), StatusCode::OK);
+
+    let delivery_uri =
+        format!("/internal/v3/api/drive/root_scope_subscriptions/{uuid}/event_delivery");
+    let verification_token = "6Yw1nJ37GZ8E0l9INjzQXklNSL4HE6Xe7n9m6hYS3jk";
+    let delivery_payload = json!({
+        "address": "https://knowledgebase.example.com/internal/v3/api/knowledgebase/drive_events",
+        "verificationToken": verification_token,
+        "expirationEpochMs": "1999999999999"
+    });
+    let delivery = app
+        .clone()
+        .oneshot(json_request(
+            Method::PUT,
+            &delivery_uri,
+            Some("tenant-kb"),
+            delivery_payload.clone(),
+        ))
+        .await
+        .expect("event delivery request should be handled");
+    assert_eq!(delivery.status(), StatusCode::CREATED);
+    let delivery_json = response_json(delivery).await;
+    assert_eq!(delivery_json["data"]["item"]["subscriptionUuid"], uuid);
+    assert_eq!(delivery_json["data"]["item"]["lifecycleStatus"], "ACTIVE");
+    assert!(!delivery_json.to_string().contains(verification_token));
+    let stored_signing_key: String = sqlx::query_scalar(
+        "SELECT token_hash FROM dr_drive_watch_channel WHERE tenant_id='tenant-kb' AND id=$1",
+    )
+    .bind(format!("kbraw:{uuid}"))
+    .fetch_one(&pool)
+    .await
+    .expect("derived event delivery signing key should be stored");
+    assert_eq!(
+        stored_signing_key,
+        sdkwork_utils_rust::sha256_hash(verification_token.as_bytes())
+    );
+
+    let delivery_replay = app
+        .clone()
+        .oneshot(json_request(
+            Method::PUT,
+            &delivery_uri,
+            Some("tenant-kb"),
+            delivery_payload,
+        ))
+        .await
+        .expect("event delivery replay should be handled");
+    assert_eq!(delivery_replay.status(), StatusCode::OK);
+    let delivery_replay_json = response_json(delivery_replay).await;
+    assert_eq!(delivery_replay_json["data"]["item"]["version"], "1");
+
+    let invalid_delivery = app
+        .clone()
+        .oneshot(json_request(
+            Method::PUT,
+            &delivery_uri,
+            Some("tenant-kb"),
+            json!({
+                "address": "https://knowledgebase.example.com/internal/v3/api/knowledgebase/drive_events",
+                "verificationToken": "too-short",
+                "expirationEpochMs": "1999999999999"
+            }),
+        ))
+        .await
+        .expect("invalid event delivery should be handled");
+    assert_eq!(invalid_delivery.status(), StatusCode::BAD_REQUEST);
 
     let cross_tenant = app
         .clone()
@@ -372,10 +436,73 @@ async fn resolution_and_content_routes_hide_locators_and_implement_http_semantic
     assert_eq!(wrong_scope.status(), StatusCode::NOT_FOUND);
 }
 
+#[tokio::test]
+async fn website_root_retrieve_is_tenant_scoped_and_hides_drive_structure() {
+    let (pool, app, temp) = setup().await;
+    insert_website_resource(&pool, &temp).await;
+    let uri = format!("/internal/v3/api/drive/website_roots/{WEBSITE_ROOT_UUID}");
+
+    let unauthenticated = app
+        .clone()
+        .oneshot(request(Method::GET, &uri, None, Body::empty()))
+        .await
+        .expect("request should be handled");
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let retrieved = app
+        .clone()
+        .oneshot(request(
+            Method::GET,
+            &uri,
+            Some("tenant-web"),
+            Body::empty(),
+        ))
+        .await
+        .expect("request should be handled");
+    assert_eq!(retrieved.status(), StatusCode::OK);
+    let response = response_json(retrieved).await;
+    let item = &response["data"]["item"];
+    assert_eq!(item["uuid"], WEBSITE_ROOT_UUID);
+    assert_eq!(item["spaceId"], "space-web");
+    assert_eq!(item["sourceRootMode"], "SPACE_ROOT");
+    assert_eq!(item["contentMode"], "LIVE_TREE");
+    assert_eq!(item["activeGeneration"], "1");
+    assert_eq!(item["rootStatus"], "ACTIVE");
+    assert_eq!(
+        item["capabilities"],
+        json!(["STATIC_CONTENT", "BYTE_RANGE", "CONDITIONAL_REQUESTS"])
+    );
+    let serialized = response.to_string();
+    assert!(!serialized.contains("root-web"));
+    assert!(!serialized.contains("selectedFolderNodeId"));
+    assert!(!serialized.contains("activeNodeId"));
+    assert!(!serialized.contains("objectKey"));
+    assert!(!serialized.contains("bucket"));
+
+    let cross_tenant = app
+        .oneshot(request(
+            Method::GET,
+            &uri,
+            Some("tenant-other"),
+            Body::empty(),
+        ))
+        .await
+        .expect("request should be handled");
+    assert_eq!(cross_tenant.status(), StatusCode::NOT_FOUND);
+}
+
 #[test]
 fn route_manifest_is_internal_and_ingress_token_only() {
     let manifest = sdkwork_routes_drive_internal_api::internal_route_manifest();
-    assert_eq!(manifest.routes().len(), 4);
+    assert_eq!(manifest.routes().len(), 6);
+    assert!(manifest.routes().iter().any(|route| {
+        route.operation_id == "rootScopeEventDeliveries.replace"
+            && route.method == sdkwork_web_core::HttpMethod::Put
+    }));
+    assert!(manifest.routes().iter().any(|route| {
+        route.operation_id == "websiteRoots.retrieve"
+            && route.method == sdkwork_web_core::HttpMethod::Get
+    }));
     for route in manifest.routes() {
         assert!(route.path.starts_with("/internal/v3/api/"));
         assert_eq!(route.auth, sdkwork_web_core::RouteAuth::IngressToken);

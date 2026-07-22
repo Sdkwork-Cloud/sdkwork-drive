@@ -9,11 +9,41 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-backend-sdk-generated-rust"
   },
-  "changeFingerprint": "64f0f76e8044fe15287836ccbf40ebc8e89e99bc5564a3a4d1cd360ec5ca61b5",
+  "changeFingerprint": "d87c1a935e5353f4114cf9a45d6b2d0cc456b555b0fe965d2c75358a29446a44",
   "changes": {
-    "createdGeneratedFiles": [],
+    "createdGeneratedFiles": [
+      "src/api/sandbox_grants.rs",
+      "src/api/sandbox_volumes.rs",
+      "src/models/create_sandbox_grant_request.rs",
+      "src/models/create_sandbox_volume_request.rs",
+      "src/models/initial_sandbox_user_grant_request.rs",
+      "src/models/sandbox_grant_list_http_response.rs",
+      "src/models/sandbox_grant_resource_http_response.rs",
+      "src/models/sandbox_grant.rs",
+      "src/models/sandbox_grants_create_response201.rs",
+      "src/models/sandbox_grants_list_response.rs",
+      "src/models/sandbox_grants_retrieve_response.rs",
+      "src/models/sandbox_grants_update_response.rs",
+      "src/models/sandbox_volume_list_http_response.rs",
+      "src/models/sandbox_volume_resource_http_response.rs",
+      "src/models/sandbox_volume.rs",
+      "src/models/sandbox_volumes_create_response201.rs",
+      "src/models/sandbox_volumes_list_response.rs",
+      "src/models/sandbox_volumes_retrieve_response.rs",
+      "src/models/sandbox_volumes_update_response.rs",
+      "src/models/update_sandbox_grant_request.rs",
+      "src/models/update_sandbox_volume_request.rs"
+    ],
     "updatedGeneratedFiles": [
-      "sdkwork-sdk.json"
+      "README.md",
+      "src/api/drive.rs",
+      "src/api/labels.rs",
+      "src/api/mod.rs",
+      "src/client.rs",
+      "src/http/client.rs",
+      "src/models/create_label_request.rs",
+      "src/models/mod.rs",
+      "src/models/update_quota_policy_request.rs"
     ],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -22,21 +52,15 @@
       "Cargo.toml",
       "CHANGELOG.md",
       "LICENSE",
-      "README.md",
+      "sdkwork-sdk.json",
       "src/api/base.rs",
-      "src/api/drive.rs",
-      "src/api/labels.rs",
-      "src/api/mod.rs",
       "src/api/paths.rs",
-      "src/client.rs",
-      "src/http/client.rs",
       "src/http/mod.rs",
       "src/lib.rs",
       "src/models/audit_event_list_http_response.rs",
       "src/models/audit_event.rs",
       "src/models/audit_events_list_response.rs",
       "src/models/common.rs",
-      "src/models/create_label_request.rs",
       "src/models/download_package_list_http_response.rs",
       "src/models/download_package.rs",
       "src/models/download_packages_list_response.rs",
@@ -56,7 +80,6 @@
       "src/models/maintenance_jobs_list_response.rs",
       "src/models/maintenance_object_sweep_response.rs",
       "src/models/maintenance_upload_session_sweep_response.rs",
-      "src/models/mod.rs",
       "src/models/page_info.rs",
       "src/models/problem_detail.rs",
       "src/models/quota_summary.rs",
@@ -72,44 +95,94 @@
       "src/models/sweep_object_store_request.rs",
       "src/models/sweep_response.rs",
       "src/models/sweep_upload_sessions_request.rs",
-      "src/models/update_label_request.rs",
-      "src/models/update_quota_policy_request.rs"
+      "src/models/update_label_request.rs"
     ],
     "deletedGeneratedFiles": [],
     "scaffoldedFiles": [],
     "preservedScaffoldFiles": [
       "custom/README.md"
     ],
-    "backedUpFiles": [
-      "sdkwork-sdk.json"
-    ]
+    "backedUpFiles": []
   },
   "impact": {
     "schemaVersion": 1,
     "areas": [
-      "build-metadata"
+      "api-surface",
+      "models",
+      "runtime",
+      "documentation",
+      "unknown"
     ],
     "details": [
       {
-        "area": "build-metadata",
+        "area": "api-surface",
         "paths": [
-          "sdkwork-sdk.json"
+          "src/api/drive.rs",
+          "src/api/labels.rs",
+          "src/api/mod.rs",
+          "src/api/sandbox_grants.rs",
+          "src/api/sandbox_volumes.rs"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "src/models/create_label_request.rs",
+          "src/models/create_sandbox_grant_request.rs",
+          "src/models/create_sandbox_volume_request.rs",
+          "src/models/initial_sandbox_user_grant_request.rs",
+          "src/models/mod.rs",
+          "src/models/sandbox_grant_list_http_response.rs",
+          "src/models/sandbox_grant_resource_http_response.rs",
+          "src/models/sandbox_grant.rs",
+          "src/models/sandbox_grants_create_response201.rs",
+          "src/models/sandbox_grants_list_response.rs",
+          "src/models/sandbox_grants_retrieve_response.rs",
+          "src/models/sandbox_grants_update_response.rs",
+          "src/models/sandbox_volume_list_http_response.rs",
+          "src/models/sandbox_volume_resource_http_response.rs",
+          "src/models/sandbox_volume.rs",
+          "src/models/sandbox_volumes_create_response201.rs",
+          "src/models/sandbox_volumes_list_response.rs",
+          "src/models/sandbox_volumes_retrieve_response.rs",
+          "src/models/sandbox_volumes_update_response.rs",
+          "src/models/update_quota_policy_request.rs",
+          "src/models/update_sandbox_grant_request.rs",
+          "src/models/update_sandbox_volume_request.rs"
+        ]
+      },
+      {
+        "area": "runtime",
+        "paths": [
+          "src/http/client.rs"
+        ]
+      },
+      {
+        "area": "documentation",
+        "paths": [
+          "README.md"
+        ]
+      },
+      {
+        "area": "unknown",
+        "paths": [
+          "src/client.rs"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: build-metadata. Verification is required."
+    "summary": "Detected impact areas: api-surface, models, runtime, documentation, unknown. Verification is required."
   },
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: api-surface, models, runtime, documentation, unknown. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, documentation, unknown.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -127,7 +200,7 @@
         "id": "build",
         "title": "Unified package build",
         "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: build-metadata.",
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, documentation, unknown.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -151,8 +224,8 @@
     "applyRequiresExpectedFingerprint": false,
     "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
-      "backed-up-generated-files",
       "manual-review-required",
+      "unknown-impact",
       "verification-required"
     ]
   },

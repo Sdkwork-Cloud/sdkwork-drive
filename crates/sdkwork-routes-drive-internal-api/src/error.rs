@@ -25,6 +25,15 @@ pub fn missing_internal_principal() -> RouteProblem {
     )
 }
 
+pub fn forbidden_internal_caller() -> RouteProblem {
+    problem(
+        StatusCode::FORBIDDEN,
+        "permission required",
+        "the internal caller is not authorized for root-scope event delivery",
+        SdkWorkResultCode::PermissionRequired,
+    )
+}
+
 pub fn precondition_failed(detail: impl Into<String>) -> RouteProblem {
     problem(
         StatusCode::PRECONDITION_FAILED,

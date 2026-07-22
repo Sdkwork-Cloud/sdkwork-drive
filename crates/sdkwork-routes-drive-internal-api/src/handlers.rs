@@ -5,9 +5,15 @@ use chrono::{DateTime, NaiveDateTime, SecondsFormat, Utc};
 use sdkwork_drive_workspace_service::application::resource_resolution_service::{
     DriveResourceResolutionService, ResolveDriveResourceCommand,
 };
+use sdkwork_drive_workspace_service::application::root_scope_event_delivery_service::{
+    DriveRootScopeEventDeliveryService, EnsureRootScopeEventDeliveryCommand,
+};
 use sdkwork_drive_workspace_service::application::root_scope_subscription_service::{
-    DriveRootScopeSubscriptionService, GetRootScopeSubscriptionCommand,
-    RegisterKnowledgebaseRawScopeCommand,
+    DriveRootScopeSubscriptionService, EnsureKnowledgebaseRawScopeCommand,
+    GetRootScopeSubscriptionCommand, SqlDriveKnowledgebaseRawScopeService,
+};
+use sdkwork_drive_workspace_service::application::website_root_service::{
+    DriveWebsiteRootService, GetWebsiteRootCommand,
 };
 use sdkwork_drive_workspace_service::domain::resource_resolution::{
     DriveResourceScopeKind, ResolvedDriveResource,
@@ -15,12 +21,14 @@ use sdkwork_drive_workspace_service::domain::resource_resolution::{
 use sdkwork_drive_workspace_service::domain::root_scope_subscription::DriveRootScopeSubscription;
 use sdkwork_drive_workspace_service::infrastructure::sql::resource_resolution_store::SqlResourceResolutionStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::root_scope_subscription_store::SqlRootScopeSubscriptionStore;
+use sdkwork_drive_workspace_service::infrastructure::sql::website_root_store::SqlWebsiteRootStore;
 use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use sdkwork_web_core::RequireInternalApi;
 
 use crate::dto::{
     CreateRootScopeSubscriptionRequest, DriveResourceResolutionResponse,
-    ResolveDriveResourceRequest, RootScopeSubscriptionResponse,
+    EnsureRootScopeEventDeliveryRequest, ResolveDriveResourceRequest,
+    RootScopeEventDeliveryResponse, RootScopeSubscriptionResponse, WebsiteRootResponse,
 };
 use crate::error::{
     invalid_parameter, map_service_error, missing_internal_principal, RouteProblem,
@@ -43,18 +51,15 @@ pub async fn create_root_scope_subscription(
         .principal
         .as_ref()
         .ok_or_else(missing_internal_principal)?;
-    let result = DriveRootScopeSubscriptionService::new(SqlRootScopeSubscriptionStore::new(
-        state.pool.clone(),
-    ))
-    .register_knowledgebase_raw(RegisterKnowledgebaseRawScopeCommand {
-        tenant_id: principal.tenant_id().to_string(),
-        space_id: payload.space_id,
-        knowledge_base_id: payload.knowledge_base_id,
-        raw_folder_node_id: payload.raw_folder_node_id,
-        operator_id: principal.user_id().to_string(),
-    })
-    .await
-    .map_err(map_service_error)?;
+    let result = SqlDriveKnowledgebaseRawScopeService::new(state.pool.clone())
+        .ensure_knowledgebase_raw_scope(EnsureKnowledgebaseRawScopeCommand {
+            tenant_id: principal.tenant_id().to_string(),
+            space_id: payload.space_id,
+            knowledge_base_id: payload.knowledge_base_id,
+            operator_id: principal.user_id().to_string(),
+        })
+        .await
+        .map_err(map_service_error)?;
     let status = if result.created {
         StatusCode::CREATED
     } else {
@@ -83,6 +88,99 @@ pub async fn retrieve_root_scope_subscription(
     .await
     .map_err(map_service_error)?;
     Ok(resource(map_subscription(subscription)))
+}
+
+pub async fn retrieve_website_root(
+    State(state): State<InternalApiState>,
+    RequireInternalApi(context): RequireInternalApi,
+    Path(website_root_uuid): Path<String>,
+) -> Result<ResourceResponse<WebsiteRootResponse>, RouteProblem> {
+    validate_uuid(&website_root_uuid, "websiteRootUuid")?;
+    let principal = context
+        .principal
+        .as_ref()
+        .ok_or_else(missing_internal_principal)?;
+    let website_root = DriveWebsiteRootService::new(SqlWebsiteRootStore::new(state.pool.clone()))
+        .get_root(GetWebsiteRootCommand {
+            tenant_id: principal.tenant_id().to_string(),
+            root_uuid: website_root_uuid,
+        })
+        .await
+        .map_err(map_service_error)?;
+    Ok(resource(WebsiteRootResponse {
+        uuid: website_root.uuid,
+        space_id: website_root.space_id,
+        source_root_mode: website_root.source_root_mode.as_str().to_ascii_uppercase(),
+        content_mode: website_root.content_mode.as_str().to_ascii_uppercase(),
+        active_generation: website_root.active_generation.to_string(),
+        root_status: website_root.root_status.to_ascii_uppercase(),
+        capabilities: vec![
+            "STATIC_CONTENT".to_string(),
+            "BYTE_RANGE".to_string(),
+            "CONDITIONAL_REQUESTS".to_string(),
+        ],
+        version: website_root.version.to_string(),
+        updated_at: normalize_timestamp(&website_root.updated_at),
+    }))
+}
+
+pub async fn ensure_root_scope_event_delivery(
+    State(state): State<InternalApiState>,
+    RequireInternalApi(context): RequireInternalApi,
+    Path(subscription_uuid): Path<String>,
+    Json(payload): Json<EnsureRootScopeEventDeliveryRequest>,
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<RootScopeEventDeliveryResponse>>>,
+    ),
+    RouteProblem,
+> {
+    validate_uuid(&subscription_uuid, "subscriptionUuid")?;
+    let principal = context
+        .principal
+        .as_ref()
+        .ok_or_else(missing_internal_principal)?;
+    let expected_caller_app_id = std::env::var("SDKWORK_DRIVE_ROOT_SCOPE_EVENT_CALLER_APP_ID")
+        .unwrap_or_else(|_| "knowledgebase".to_string());
+    if principal.app_id() != expected_caller_app_id {
+        return Err(crate::error::forbidden_internal_caller());
+    }
+    let expiration_epoch_ms =
+        parse_positive_i64(&payload.expiration_epoch_ms, "expirationEpochMs")?;
+    let result = DriveRootScopeEventDeliveryService::new(
+        sdkwork_drive_workspace_service::infrastructure::sql::root_scope_event_delivery_store::SqlRootScopeEventDeliveryStore::new(
+            state.pool.clone(),
+        ),
+    )
+    .ensure_delivery(EnsureRootScopeEventDeliveryCommand {
+        tenant_id: principal.tenant_id().to_string(),
+        subscription_uuid,
+        address: payload.address,
+        verification_token: payload.verification_token,
+        expiration_epoch_ms,
+        operator_id: principal.user_id().to_string(),
+    })
+    .await
+    .map_err(map_service_error)?;
+    let status = if result.created {
+        StatusCode::CREATED
+    } else {
+        StatusCode::OK
+    };
+    Ok((
+        status,
+        resource(RootScopeEventDeliveryResponse {
+            channel_id: result.delivery.channel_id,
+            subscription_uuid: result.delivery.subscription_uuid,
+            address: result.delivery.address,
+            expiration_epoch_ms: result.delivery.expiration_epoch_ms.to_string(),
+            lifecycle_status: result.delivery.lifecycle_status.to_ascii_uppercase(),
+            version: result.delivery.version.to_string(),
+            created_at: normalize_timestamp(&result.delivery.created_at),
+            updated_at: normalize_timestamp(&result.delivery.updated_at),
+        }),
+    ))
 }
 
 pub async fn resolve_drive_resource(

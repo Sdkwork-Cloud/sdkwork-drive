@@ -29,8 +29,13 @@ pub async fn build_protected_router_with_pool_and_config(
     crate::web_bootstrap::wrap_router_with_web_framework_from_env(router).await
 }
 
-/// Business-only admin storage router for platform collapsed ingress (no `/healthz` duplication).
-pub async fn build_gateway_business_router_with_pool_and_config(
+/// Business-only admin storage router for multi-surface assembly.
+pub async fn gateway_mount_business(pool: AnyPool) -> Router {
+    gateway_mount_business_with_config(pool, AdminStorageConfig::default()).await
+}
+
+/// Business-only admin storage router with explicit provider configuration.
+pub async fn gateway_mount_business_with_config(
     pool: AnyPool,
     config: AdminStorageConfig,
 ) -> Router {

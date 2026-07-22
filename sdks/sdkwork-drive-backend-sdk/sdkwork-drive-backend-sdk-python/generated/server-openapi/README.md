@@ -50,6 +50,8 @@ client.set_header('X-Custom-Header', 'value')
 
 - `client.drive` - drive API
 - `client.labels` - labels API
+- `client.sandbox_volumes` - sandbox_volumes API
+- `client.sandbox_grants` - sandbox_grants API
 
 ## Usage Examples
 
@@ -71,6 +73,33 @@ params = {
     'cursor': 'cursor',
 }
 result = client.labels.list(params)
+print(result)
+```
+
+### sandbox_volumes
+
+```python
+# List server sandbox volumes
+params = {
+    'lifecycle_status': 'active',
+    'provider_kind': 'local_filesystem',
+    'page': 3,
+    'page_size': 4,
+}
+result = client.sandbox_volumes.list(params)
+print(result)
+```
+
+### sandbox_grants
+
+```python
+# List explicit sandbox grants
+sandbox_id = '1'
+params = {
+    'page': 1,
+    'page_size': 2,
+}
+result = client.sandbox_grants.list(sandbox_id, params)
 print(result)
 ```
 

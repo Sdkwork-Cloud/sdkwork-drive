@@ -24,6 +24,16 @@ use crate::error::{
 use crate::handlers::{parse_timestamp, resolve_resource};
 use crate::state::InternalApiState;
 
+struct ContentResponseSpec<'a> {
+    status: StatusCode,
+    content_type: &'a str,
+    response_length: u64,
+    full_length: u64,
+    selected_range: Option<DriveByteRange>,
+    etag: &'a str,
+    last_modified: DateTime<Utc>,
+}
+
 pub async fn retrieve_drive_resource_content(
     State(state): State<InternalApiState>,
     RequireInternalApi(context): RequireInternalApi,
@@ -141,43 +151,42 @@ pub async fn retrieve_drive_resource_content(
     };
 
     build_content_response(
-        status,
         body,
-        &resource.content_type,
-        response_length,
-        content_length,
-        selected_range,
-        &etag,
-        last_modified,
+        ContentResponseSpec {
+            status,
+            content_type: &resource.content_type,
+            response_length,
+            full_length: content_length,
+            selected_range,
+            etag: &etag,
+            last_modified,
+        },
     )
     .map_err(IntoResponse::into_response)
 }
 
 fn build_content_response(
-    status: StatusCode,
     body: Body,
-    content_type: &str,
-    response_length: u64,
-    full_length: u64,
-    selected_range: Option<DriveByteRange>,
-    etag: &str,
-    last_modified: DateTime<Utc>,
+    spec: ContentResponseSpec<'_>,
 ) -> Result<Response<Body>, RouteProblem> {
     let mut builder = Response::builder()
-        .status(status)
+        .status(spec.status)
         .header(ACCEPT_RANGES, "bytes")
         .header(CACHE_CONTROL, "private, max-age=31536000, immutable")
-        .header(CONTENT_TYPE, safe_header_value(content_type)?)
-        .header(CONTENT_LENGTH, response_length.to_string())
-        .header(ETAG, safe_header_value(etag)?)
-        .header(LAST_MODIFIED, httpdate::fmt_http_date(last_modified.into()))
+        .header(CONTENT_TYPE, safe_header_value(spec.content_type)?)
+        .header(CONTENT_LENGTH, spec.response_length.to_string())
+        .header(ETAG, safe_header_value(spec.etag)?)
+        .header(
+            LAST_MODIFIED,
+            httpdate::fmt_http_date(spec.last_modified.into()),
+        )
         .header("x-content-type-options", "nosniff");
-    if let Some(range) = selected_range {
+    if let Some(range) = spec.selected_range {
         builder = builder.header(
             CONTENT_RANGE,
             format!(
                 "bytes {}-{}/{}",
-                range.start_inclusive, range.end_inclusive, full_length
+                range.start_inclusive, range.end_inclusive, spec.full_length
             ),
         );
     }

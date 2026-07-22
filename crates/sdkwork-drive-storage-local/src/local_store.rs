@@ -45,6 +45,12 @@ enum ListedObjectPageEntry {
     Prefix(String),
 }
 
+struct CollectedObjectPage {
+    items: Vec<ListedObject>,
+    prefixes: Vec<String>,
+    next_continuation_token: Option<String>,
+}
+
 impl Eq for ListedObjectPageCandidate {}
 
 impl PartialEq for ListedObjectPageCandidate {
@@ -317,7 +323,7 @@ impl LocalDriveObjectStore {
         delimiter: Option<&str>,
         continuation_token: Option<&str>,
         max_keys: usize,
-    ) -> Result<(Vec<ListedObject>, Vec<String>, Option<String>), DriveObjectStoreError> {
+    ) -> Result<CollectedObjectPage, DriveObjectStoreError> {
         let candidate_limit = max_keys.saturating_add(1);
         let mut candidates = BinaryHeap::<ListedObjectPageCandidate>::new();
         let mut pending_dirs = vec![bucket_root.to_path_buf()];
@@ -424,7 +430,11 @@ impl LocalDriveObjectStore {
                 ListedObjectPageEntry::Prefix(prefix) => prefixes.push(prefix),
             }
         }
-        Ok((items, prefixes, next_continuation_token))
+        Ok(CollectedObjectPage {
+            items,
+            prefixes,
+            next_continuation_token,
+        })
     }
 }
 
@@ -673,7 +683,11 @@ impl DriveObjectStore for LocalDriveObjectStore {
         let max_keys = usize::from(request.max_keys);
         let continuation_token = Self::normalize_continuation_token(request.continuation_token)?;
         let delimiter = Self::normalize_list_delimiter(request.delimiter)?;
-        let (items, prefixes, next_continuation_token) = Self::collect_object_page(
+        let CollectedObjectPage {
+            items,
+            prefixes,
+            next_continuation_token,
+        } = Self::collect_object_page(
             &bucket_path,
             prefix.as_deref(),
             delimiter.as_deref(),

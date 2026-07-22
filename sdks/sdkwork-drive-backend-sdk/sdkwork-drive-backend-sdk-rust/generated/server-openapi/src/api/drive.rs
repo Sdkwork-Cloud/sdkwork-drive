@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::backend_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{AuditEventsListResponse, DownloadPackagesListResponse, MaintenanceAbandonedUploadTaskSweepResponse, MaintenanceExpiredUploadContentSweepResponse, MaintenanceJobsListResponse, MaintenanceObjectSweepResponse, MaintenanceUploadSessionSweepResponse, QuotasRetrieveResponse, QuotasUpdateResponse, SpacesAdminListResponse, SweepObjectStoreRequest, SweepUploadSessionsRequest, UpdateQuotaPolicyRequest};
+use crate::models::{SweepObjectStoreRequest, SweepUploadSessionsRequest, UpdateQuotaPolicyRequest};
 
 #[derive(Clone)]
 pub struct DriveApi {
@@ -15,7 +15,7 @@ impl DriveApi {
         Self { client }
     }
 
-    pub async fn audit_events_list(&self, action: Option<&str>, resource_type: Option<&str>, resource_id: Option<&str>, correlation_id: Option<&str>, trace_id: Option<&str>, page: Option<i64>, page_size: Option<i64>) -> Result<AuditEventsListResponse, SdkworkError> {
+    pub async fn audit_events_list(&self, action: Option<&str>, resource_type: Option<&str>, resource_id: Option<&str>, correlation_id: Option<&str>, trace_id: Option<&str>, page: Option<i64>, page_size: Option<i64>) -> Result<serde_json::Value, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("action", action, "form", true, false, None),
             QueryParameterSpec::new("resourceType", resource_type, "form", true, false, None),
@@ -29,7 +29,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn maintenance_jobs_list(&self, job_type: Option<&str>, status: Option<&str>, operator_id: Option<&str>, page: Option<i64>, page_size: Option<i64>) -> Result<MaintenanceJobsListResponse, SdkworkError> {
+    pub async fn maintenance_jobs_list(&self, job_type: Option<&str>, status: Option<&str>, operator_id: Option<&str>, page: Option<i64>, page_size: Option<i64>) -> Result<serde_json::Value, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("jobType", job_type, "form", true, false, None),
             QueryParameterSpec::new("status", status, "form", true, false, None),
@@ -41,38 +41,38 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn maintenance_object_sweep(&self, body: &SweepObjectStoreRequest) -> Result<MaintenanceObjectSweepResponse, SdkworkError> {
+    pub async fn maintenance_object_sweep(&self, body: &SweepObjectStoreRequest) -> Result<serde_json::Value, SdkworkError> {
         let path = backend_path(&"/drive/maintenance/object_sweep".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn maintenance_upload_session_sweep(&self, body: &SweepUploadSessionsRequest) -> Result<MaintenanceUploadSessionSweepResponse, SdkworkError> {
+    pub async fn maintenance_upload_session_sweep(&self, body: &SweepUploadSessionsRequest) -> Result<serde_json::Value, SdkworkError> {
         let path = backend_path(&"/drive/maintenance/upload_session_sweep".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn maintenance_expired_upload_content_sweep(&self, body: &SweepUploadSessionsRequest) -> Result<MaintenanceExpiredUploadContentSweepResponse, SdkworkError> {
+    pub async fn maintenance_expired_upload_content_sweep(&self, body: &SweepUploadSessionsRequest) -> Result<serde_json::Value, SdkworkError> {
         let path = backend_path(&"/drive/maintenance/expired_upload_content_sweep".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn maintenance_abandoned_upload_task_sweep(&self, body: &SweepUploadSessionsRequest) -> Result<MaintenanceAbandonedUploadTaskSweepResponse, SdkworkError> {
+    pub async fn maintenance_abandoned_upload_task_sweep(&self, body: &SweepUploadSessionsRequest) -> Result<serde_json::Value, SdkworkError> {
         let path = backend_path(&"/drive/maintenance/abandoned_upload_task_sweep".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn quotas_retrieve(&self) -> Result<QuotasRetrieveResponse, SdkworkError> {
+    pub async fn quotas_retrieve(&self) -> Result<serde_json::Value, SdkworkError> {
         let path = backend_path(&"/drive/quotas".to_string());
         self.client.get(&path, None, None).await
     }
 
     /// Update tenant quota policy
-    pub async fn quotas_update(&self, body: &UpdateQuotaPolicyRequest) -> Result<QuotasUpdateResponse, SdkworkError> {
+    pub async fn quotas_update(&self, body: &UpdateQuotaPolicyRequest) -> Result<serde_json::Value, SdkworkError> {
         let path = backend_path(&"/drive/quotas".to_string());
         self.client.put(&path, Some(body), None, None, Some("application/json")).await
     }
 
-    pub async fn spaces_admin_list(&self, owner_subject_type: Option<&str>, owner_subject_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<SpacesAdminListResponse, SdkworkError> {
+    pub async fn spaces_admin_list(&self, owner_subject_type: Option<&str>, owner_subject_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<serde_json::Value, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("ownerSubjectType", owner_subject_type, "form", true, false, None),
             QueryParameterSpec::new("ownerSubjectId", owner_subject_id, "form", true, false, None),
@@ -83,7 +83,7 @@ impl DriveApi {
         self.client.get(&path, None, None).await
     }
 
-    pub async fn download_packages_list(&self, state: Option<&str>, page: Option<i64>, page_size: Option<i64>) -> Result<DownloadPackagesListResponse, SdkworkError> {
+    pub async fn download_packages_list(&self, state: Option<&str>, page: Option<i64>, page_size: Option<i64>) -> Result<serde_json::Value, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("state", state, "form", true, false, None),
             QueryParameterSpec::new("page", page, "form", true, false, None),

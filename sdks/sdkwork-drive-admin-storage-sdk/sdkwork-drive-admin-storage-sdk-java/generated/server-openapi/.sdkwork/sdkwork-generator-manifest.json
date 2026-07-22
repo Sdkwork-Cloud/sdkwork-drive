@@ -56,7 +56,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/http/HttpClient.java",
-      "sha256": "b9ab09b3c5da5708d9544226da98b4500dd060b276c4264b195ea2172f5eb24e"
+      "sha256": "0b3fd90d800cdbaaa6ae88c43afc704de96cde6367d448682f974443915b58ee"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/CopyProviderObjectRequest.java",

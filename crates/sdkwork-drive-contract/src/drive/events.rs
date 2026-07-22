@@ -1,9 +1,55 @@
 //! Versioned cross-service Drive event contracts.
 
+use sdkwork_utils_rust::{hmac_sha256, secure_compare, sha256_hash};
 use serde::{Deserialize, Serialize};
 
 pub const EVENT_SPEC_VERSION: &str = "1.0";
 pub const EVENT_SOURCE: &str = "sdkwork-drive";
+pub const WEBHOOK_EVENT_ID_HEADER: &str = "x-sdkwork-event-id";
+pub const WEBHOOK_EVENT_TIMESTAMP_HEADER: &str = "x-sdkwork-event-timestamp";
+pub const WEBHOOK_EVENT_SIGNATURE_HEADER: &str = "x-sdkwork-event-signature";
+pub const WEBHOOK_EVENT_RETRY_COUNT_HEADER: &str = "x-sdkwork-event-retry-count";
+pub const WEBHOOK_CHANNEL_ID_HEADER: &str = "x-sdkwork-drive-channel-id";
+pub const WEBHOOK_IDEMPOTENCY_KEY_HEADER: &str = "x-sdkwork-idempotency-key";
+pub const WEBHOOK_SIGNATURE_VERSION: &str = "v1";
+pub const WEBHOOK_SIGNING_TOKEN_MIN_LENGTH: usize = 32;
+pub const WEBHOOK_SIGNING_TOKEN_MAX_LENGTH: usize = 1_024;
+
+/// Derives the per-channel HMAC key retained by Drive from a high-entropy token.
+///
+/// Consumers keep the original token. Drive stores only this fixed-length digest and uses the
+/// digest bytes as the webhook signing key, so the raw token is never persisted or returned.
+pub fn derive_webhook_signing_key(token: &str) -> String {
+    sha256_hash(token.as_bytes())
+}
+
+/// Signs `timestamp + "." + exact_body_bytes` using the versioned Drive webhook contract.
+pub fn sign_webhook(timestamp: &str, exact_body: &[u8], signing_key: &[u8]) -> String {
+    let payload = webhook_signing_payload(timestamp, exact_body);
+    format!(
+        "{WEBHOOK_SIGNATURE_VERSION}={}",
+        hmac_sha256(&payload, signing_key)
+    )
+}
+
+/// Verifies a versioned Drive webhook signature in constant time after structural validation.
+pub fn verify_webhook_signature(
+    timestamp: &str,
+    exact_body: &[u8],
+    signing_key: &[u8],
+    signature: &str,
+) -> bool {
+    let expected = sign_webhook(timestamp, exact_body, signing_key);
+    secure_compare(&expected, signature)
+}
+
+fn webhook_signing_payload(timestamp: &str, exact_body: &[u8]) -> Vec<u8> {
+    let mut payload = Vec::with_capacity(timestamp.len() + 1 + exact_body.len());
+    payload.extend_from_slice(timestamp.as_bytes());
+    payload.push(b'.');
+    payload.extend_from_slice(exact_body);
+    payload
+}
 
 /// CloudEvents-aligned envelope used by Drive's cross-service event authority.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -156,6 +202,38 @@ pub struct DriveNodeDeletedV1Data {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn webhook_signature_covers_timestamp_and_exact_body_bytes() {
+        let key = derive_webhook_signing_key("6Yw1nJ37GZ8E0l9INjzQXklNSL4HE6Xe7n9m6hYS3jk");
+        let body = br#"{"id":"event-1","data":{"path":"docs/index.md"}}"#;
+        let signature = sign_webhook("1784592000", body, key.as_bytes());
+
+        assert!(verify_webhook_signature(
+            "1784592000",
+            body,
+            key.as_bytes(),
+            &signature,
+        ));
+        assert!(!verify_webhook_signature(
+            "1784592001",
+            body,
+            key.as_bytes(),
+            &signature,
+        ));
+        assert!(!verify_webhook_signature(
+            "1784592000",
+            br#"{"id":"event-1", "data":{"path":"docs/index.md"}}"#,
+            key.as_bytes(),
+            &signature,
+        ));
+        assert!(!verify_webhook_signature(
+            "1784592000",
+            body,
+            derive_webhook_signing_key("YkC7_QyF7V9fw6W3LMM5ssfvj1yzC6h5X3VYpP7x3CY",).as_bytes(),
+            &signature,
+        ));
+    }
 
     #[test]
     fn node_version_event_uses_cloud_event_fields_and_int64_strings() {

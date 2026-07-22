@@ -12,39 +12,22 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "b80ff935321e640722329930eb4cbef417c9e2c45ca3f455bf053e4c427a051e",
+  "changeFingerprint": "ef0b123d2e8ec96c679963c2d01b984564d029bf8abdc40865edbc1aca112436",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
-      "api-surface",
-      "models"
+      "runtime"
     ],
     "details": [
       {
-        "area": "api-surface",
+        "area": "runtime",
         "paths": [
-          "sdkwork_drive_app_sdk_generated_python/api/drive.py",
-          "sdkwork_drive_app_sdk_generated_python/models/__init__.py"
-        ]
-      },
-      {
-        "area": "models",
-        "paths": [
-          "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
-          "sdkwork_drive_app_sdk_generated_python/models/create_website_root_request.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_root_folder_selector.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_root_http_response.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_root_list_http_response.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_root_page_data.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_root_resource_data.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_root_selector.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_root_space_selector.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_root.py"
+          "sdkwork_drive_app_sdk_generated_python/http_client.py"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models. Verification is required."
+    "summary": "Detected impact areas: runtime. Verification is required."
   },
   "executionDecision": {
     "schemaVersion": 1,
@@ -65,7 +48,7 @@
         "id": "verify-check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-python\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -84,13 +67,13 @@
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-python\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -129,27 +112,16 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 11,
+    "writtenFiles": 1,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 180,
+    "skippedUnchangedGeneratedFiles": 190,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "b80ff935321e640722329930eb4cbef417c9e2c45ca3f455bf053e4c427a051e",
+    "changeFingerprint": "ef0b123d2e8ec96c679963c2d01b984564d029bf8abdc40865edbc1aca112436",
     "changes": {
-      "createdGeneratedFiles": [
-        "sdkwork_drive_app_sdk_generated_python/models/create_website_root_request.py",
-        "sdkwork_drive_app_sdk_generated_python/models/website_root_folder_selector.py",
-        "sdkwork_drive_app_sdk_generated_python/models/website_root_http_response.py",
-        "sdkwork_drive_app_sdk_generated_python/models/website_root_list_http_response.py",
-        "sdkwork_drive_app_sdk_generated_python/models/website_root_page_data.py",
-        "sdkwork_drive_app_sdk_generated_python/models/website_root_resource_data.py",
-        "sdkwork_drive_app_sdk_generated_python/models/website_root_selector.py",
-        "sdkwork_drive_app_sdk_generated_python/models/website_root_space_selector.py",
-        "sdkwork_drive_app_sdk_generated_python/models/website_root.py"
-      ],
+      "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [
-        "sdkwork_drive_app_sdk_generated_python/api/drive.py",
-        "sdkwork_drive_app_sdk_generated_python/models/__init__.py"
+        "sdkwork_drive_app_sdk_generated_python/http_client.py"
       ],
       "unchangedGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -164,12 +136,13 @@
         "sdkwork_drive_app_sdk_generated_python/__init__.py",
         "sdkwork_drive_app_sdk_generated_python/api/__init__.py",
         "sdkwork_drive_app_sdk_generated_python/api/assets.py",
+        "sdkwork_drive_app_sdk_generated_python/api/drive.py",
         "sdkwork_drive_app_sdk_generated_python/api/node_labels.py",
         "sdkwork_drive_app_sdk_generated_python/api/node_properties.py",
         "sdkwork_drive_app_sdk_generated_python/api/nodes.py",
         "sdkwork_drive_app_sdk_generated_python/api/watch_channels.py",
         "sdkwork_drive_app_sdk_generated_python/client.py",
-        "sdkwork_drive_app_sdk_generated_python/http_client.py",
+        "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
         "sdkwork_drive_app_sdk_generated_python/models/apply_node_label_request.py",
         "sdkwork_drive_app_sdk_generated_python/models/archive_entry_list_http_response.py",
         "sdkwork_drive_app_sdk_generated_python/models/archive_entry.py",
@@ -220,6 +193,7 @@
         "sdkwork_drive_app_sdk_generated_python/models/create_space_request.py",
         "sdkwork_drive_app_sdk_generated_python/models/create_upload_session_request.py",
         "sdkwork_drive_app_sdk_generated_python/models/create_watch_channel_request.py",
+        "sdkwork_drive_app_sdk_generated_python/models/create_website_root_request.py",
         "sdkwork_drive_app_sdk_generated_python/models/download_package_http_response.py",
         "sdkwork_drive_app_sdk_generated_python/models/download_package_item.py",
         "sdkwork_drive_app_sdk_generated_python/models/download_package_response.py",
@@ -330,6 +304,14 @@
         "sdkwork_drive_app_sdk_generated_python/models/uploader_upload_item.py",
         "sdkwork_drive_app_sdk_generated_python/models/uploader_upload_part_http_response.py",
         "sdkwork_drive_app_sdk_generated_python/models/uploader_upload_part.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_folder_selector.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_http_response.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_list_http_response.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_page_data.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_resource_data.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_selector.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root_space_selector.py",
+        "sdkwork_drive_app_sdk_generated_python/models/website_root.py",
         "sdkwork-sdk.json",
         "setup.py"
       ],
@@ -343,46 +325,29 @@
     "impact": {
       "schemaVersion": 1,
       "areas": [
-        "api-surface",
-        "models"
+        "runtime"
       ],
       "details": [
         {
-          "area": "api-surface",
+          "area": "runtime",
           "paths": [
-            "sdkwork_drive_app_sdk_generated_python/api/drive.py",
-            "sdkwork_drive_app_sdk_generated_python/models/__init__.py"
-          ]
-        },
-        {
-          "area": "models",
-          "paths": [
-            "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
-            "sdkwork_drive_app_sdk_generated_python/models/create_website_root_request.py",
-            "sdkwork_drive_app_sdk_generated_python/models/website_root_folder_selector.py",
-            "sdkwork_drive_app_sdk_generated_python/models/website_root_http_response.py",
-            "sdkwork_drive_app_sdk_generated_python/models/website_root_list_http_response.py",
-            "sdkwork_drive_app_sdk_generated_python/models/website_root_page_data.py",
-            "sdkwork_drive_app_sdk_generated_python/models/website_root_resource_data.py",
-            "sdkwork_drive_app_sdk_generated_python/models/website_root_selector.py",
-            "sdkwork_drive_app_sdk_generated_python/models/website_root_space_selector.py",
-            "sdkwork_drive_app_sdk_generated_python/models/website_root.py"
+            "sdkwork_drive_app_sdk_generated_python/http_client.py"
           ]
         }
       ],
       "requiresVerification": true,
-      "summary": "Detected impact areas: api-surface, models. Verification is required."
+      "summary": "Detected impact areas: runtime. Verification is required."
     },
     "verificationPlan": {
       "shouldRun": true,
       "runPhase": "now",
-      "summary": "Detected impact areas: api-surface, models. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
       "steps": [
         {
           "id": "check",
           "title": "Unified package check",
           "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models.",
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
           "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-python\\generated\\server-openapi",
           "command": "node",
           "args": [

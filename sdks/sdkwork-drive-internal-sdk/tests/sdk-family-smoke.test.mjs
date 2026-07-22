@@ -11,6 +11,8 @@ const languages = ["typescript", "rust", "java", "python", "go"];
 const requiredOperations = [
   "rootScopeSubscriptions.create",
   "rootScopeSubscriptions.retrieve",
+  "rootScopeEventDeliveries.replace",
+  "websiteRoots.retrieve",
   "driveResources.resolve",
   "driveResourceContent.retrieve",
 ];
@@ -51,7 +53,7 @@ test("internal SDK family declares canonical authority and generated-only transp
   assert(existsSync(path.join(sdkRoot, manifest.generationInputSpec)));
 });
 
-test("every official generated language carries only the four internal operations", () => {
+test("every official generated language carries only the six internal operations", () => {
   for (const language of languages) {
     const output = path.join(
       sdkRoot,

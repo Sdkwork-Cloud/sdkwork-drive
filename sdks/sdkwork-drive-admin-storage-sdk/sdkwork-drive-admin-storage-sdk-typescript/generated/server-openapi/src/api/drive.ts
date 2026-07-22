@@ -11,6 +11,10 @@ export interface DriveStorageProvidersObjectsListParams {
   pageSize?: number;
 }
 
+export interface DriveStorageProvidersObjectsDeleteParams {
+  operatorId: string;
+}
+
 export class DriveStorageProvidersObjectsApi {
   private client: HttpClient;
 
@@ -33,13 +37,24 @@ async retrieve(providerId: string, objectKey: string): Promise<StorageProvidersO
     return this.client.get<StorageProvidersObjectsRetrieveResponse>(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/objects/${serializePathParameter(objectKey, { name: 'objectKey', style: 'simple', explode: false })}`));
   }
 
-async delete(providerId: string, objectKey: string): Promise<void> {
-    return this.client.delete<void>(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/objects/${serializePathParameter(objectKey, { name: 'objectKey', style: 'simple', explode: false })}`));
+async delete(providerId: string, objectKey: string, params: DriveStorageProvidersObjectsDeleteParams): Promise<void> {
+    const query = buildQueryString([
+      { name: 'operatorId', value: params.operatorId, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.delete<void>(appendQueryString(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/objects/${serializePathParameter(objectKey, { name: 'objectKey', style: 'simple', explode: false })}`), query));
   }
 
 async copy(providerId: string, body: CopyProviderObjectRequest): Promise<StorageProvidersObjectsCopyResponse> {
     return this.client.post<StorageProvidersObjectsCopyResponse>(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/objects/copy`), body, undefined, undefined, 'application/json');
   }
+}
+
+export interface DriveStorageProvidersBucketUpdateParams {
+  operatorId: string;
+}
+
+export interface DriveStorageProvidersBucketDeleteParams {
+  operatorId: string;
 }
 
 export interface DriveStorageProvidersBucketListParams {
@@ -59,12 +74,18 @@ async retrieve(providerId: string): Promise<StorageProvidersBucketRetrieveRespon
     return this.client.get<StorageProvidersBucketRetrieveResponse>(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/bucket`));
   }
 
-async update(providerId: string): Promise<StorageProvidersBucketUpdateResponse> {
-    return this.client.put<StorageProvidersBucketUpdateResponse>(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/bucket`));
+async update(providerId: string, params: DriveStorageProvidersBucketUpdateParams): Promise<StorageProvidersBucketUpdateResponse> {
+    const query = buildQueryString([
+      { name: 'operatorId', value: params.operatorId, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.put<StorageProvidersBucketUpdateResponse>(appendQueryString(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/bucket`), query));
   }
 
-async delete(providerId: string): Promise<void> {
-    return this.client.delete<void>(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/bucket`));
+async delete(providerId: string, params: DriveStorageProvidersBucketDeleteParams): Promise<void> {
+    const query = buildQueryString([
+      { name: 'operatorId', value: params.operatorId, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.delete<void>(appendQueryString(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/bucket`), query));
   }
 
 /** List buckets visible to a Drive storage provider account */
@@ -161,11 +182,12 @@ async test(providerId: string, body: TestStorageProviderRequest): Promise<Storag
 
 export interface DriveStorageProviderBindingsDefaultRetrieveParams {
   spaceId?: string;
-  spaceType?: 'personal' | 'team' | 'knowledge_base' | 'ai_generated' | 'git_repository' | 'deployment' | 'app_upload' | 'im' | 'rtc' | 'notary';
+  spaceType?: 'personal' | 'team' | 'knowledge_base' | 'ai_generated' | 'git_repository' | 'deployment' | 'app_upload' | 'im' | 'rtc' | 'notary' | 'website';
 }
 
 export interface DriveStorageProviderBindingsDefaultDeleteParams {
   spaceId?: string;
+  operatorId: string;
 }
 
 export class DriveStorageProviderBindingsDefaultApi {
@@ -189,9 +211,10 @@ async update(body: SetDefaultStorageProviderBindingRequest): Promise<StorageProv
   }
 
 /** Delete a Drive default storage provider binding */
-  async delete(params?: DriveStorageProviderBindingsDefaultDeleteParams): Promise<void> {
+  async delete(params: DriveStorageProviderBindingsDefaultDeleteParams): Promise<void> {
     const query = buildQueryString([
-      { name: 'spaceId', value: params?.spaceId, style: 'form', explode: true, allowReserved: false },
+      { name: 'spaceId', value: params.spaceId, style: 'form', explode: true, allowReserved: false },
+      { name: 'operatorId', value: params.operatorId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.delete<void>(appendQueryString(customApiPath(`/drive/storage/bindings/default`), query));
   }

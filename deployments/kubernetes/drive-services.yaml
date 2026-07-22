@@ -410,9 +410,18 @@ spec:
               value: "127.0.0.1:18084"
             - name: SDKWORK_DRIVE_WORKER_OUTBOX_DISPATCH_INTERVAL_SECONDS
               value: "30"
+            - name: SDKWORK_DRIVE_KNOWLEDGEBASE_EVENT_CALLBACK_URL
+              value: https://knowledgebase.sdkwork.com/internal/v3/api/knowledgebase/drive_events
+            - name: SDKWORK_DRIVE_KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE
+              value: /run/secrets/sdkwork/knowledgebase-event-ingress-token
           envFrom:
             - secretRef:
                 name: sdkwork-drive-database
+          volumeMounts:
+            - name: knowledgebase-event-ingress-token
+              mountPath: /run/secrets/sdkwork/knowledgebase-event-ingress-token
+              subPath: ingress-token
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /readyz
@@ -432,6 +441,10 @@ spec:
             limits:
               cpu: "1"
               memory: 1Gi
+      volumes:
+        - name: knowledgebase-event-ingress-token
+          secret:
+            secretName: sdkwork-drive-knowledgebase-events
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -468,6 +481,8 @@ spec:
               value: "false"
             - name: SDKWORK_DRIVE_RATE_LIMIT_TRUST_PROXY
               value: "true"
+            - name: SDKWORK_DRIVE_ROOT_SCOPE_EVENT_CALLER_APP_ID
+              value: knowledgebase
           envFrom:
             - secretRef:
                 name: sdkwork-drive-database

@@ -6,7 +6,7 @@
     "displayName": "SDKWork drive Gateway Assembly",
     "version": "0.1.0",
     "type": "rust-api-assembly",
-    "root": "crates/sdkwork-api-drive-assembly",
+    "root": ".",
     "domain": "application",
     "capability": "api-assembly",
     "surface": "api-assembly",
@@ -41,8 +41,12 @@
       "."
     ],
     "runtimeEntrypoints": [
-      "sdkwork_api_drive_assembly::assemble_api_router_from_env",
-      "sdkwork_api_drive_assembly::assemble_backend_business_router_from_env"
+      "sdkwork_api_drive_assembly::assemble_api_router",
+      "sdkwork_api_drive_assembly::assemble_business_routes",
+      "sdkwork_api_drive_assembly::assemble_business_routes_from_env",
+      "sdkwork_api_drive_assembly::assemble_business_routes_with_config",
+      "sdkwork_api_drive_assembly::assemble_backend_business_router_from_env",
+      "sdkwork_api_drive_assembly::assemble_business_routes_with_process_pool"
     ],
     "routeManifest": "assembly-manifest.json",
     "sdkClients": [],
@@ -54,6 +58,7 @@
       "SDKWORK_DATABASE_URL",
       "SDKWORK_CLAW_DATABASE_URL",
       "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
+      "SDKWORK_DRIVE_APP_ROOT",
       "SDKWORK_DRIVE_CONFIG_FILE"
     ],
     "layerRole": "runtime-composition"

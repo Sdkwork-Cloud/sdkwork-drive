@@ -12,33 +12,76 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "82a675fce087d28ddb01e85fdb21894a280c8787dd58da8e796499d3a2748a42",
+  "changeFingerprint": "57cf033cc7a246cc138ccf26bfcc57839de3e246fea177ecc9c6c40d6276a44b",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
-      "build-metadata"
+      "api-surface",
+      "models",
+      "runtime",
+      "documentation"
     ],
     "details": [
       {
-        "area": "build-metadata",
+        "area": "api-surface",
         "paths": [
-          "sdkwork-sdk.json"
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/LabelsApi.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/package-info.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/SandboxGrantsApi.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/SandboxVolumesApi.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/SdkworkBackendClient.java"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateLabelRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateSandboxGrantRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateSandboxVolumeRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/InitialSandboxUserGrantRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrant.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantListHttpResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantResourceHttpResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsCreateResponse201.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsListResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsRetrieveResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsUpdateResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolume.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumeListHttpResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumeResourceHttpResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesCreateResponse201.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesListResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesRetrieveResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesUpdateResponse.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateQuotaPolicyRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateSandboxGrantRequest.java",
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateSandboxVolumeRequest.java"
+        ]
+      },
+      {
+        "area": "runtime",
+        "paths": [
+          "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/http/HttpClient.java"
+        ]
+      },
+      {
+        "area": "documentation",
+        "paths": [
+          "README.md"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: build-metadata. Verification is required."
+    "summary": "Detected impact areas: api-surface, models, runtime, documentation. Verification is required."
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "high",
+    "riskLevel": "medium",
     "nextAction": "verify",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
     "summary": "Changes have been applied. Run the required verification plan now.",
     "reasons": [
-      "backed-up-generated-files",
-      "manual-review-required",
       "verification-required"
     ]
   },
@@ -50,7 +93,7 @@
         "id": "verify-check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, documentation.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-java\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -69,13 +112,13 @@
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: api-surface, models, runtime, documentation. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, documentation.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-java\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -105,25 +148,53 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 55,
-    "models": 40,
-    "apis": 2,
+    "totalFiles": 76,
+    "models": 59,
+    "apis": 4,
     "types": 0
   },
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 1,
+    "writtenFiles": 28,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 53,
+    "skippedUnchangedGeneratedFiles": 47,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "82a675fce087d28ddb01e85fdb21894a280c8787dd58da8e796499d3a2748a42",
+    "changeFingerprint": "57cf033cc7a246cc138ccf26bfcc57839de3e246fea177ecc9c6c40d6276a44b",
     "changes": {
-      "createdGeneratedFiles": [],
+      "createdGeneratedFiles": [
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/SandboxGrantsApi.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/SandboxVolumesApi.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateSandboxGrantRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateSandboxVolumeRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/InitialSandboxUserGrantRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrant.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantListHttpResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantResourceHttpResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsCreateResponse201.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsListResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsRetrieveResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsUpdateResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolume.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumeListHttpResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumeResourceHttpResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesCreateResponse201.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesListResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesRetrieveResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesUpdateResponse.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateSandboxGrantRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateSandboxVolumeRequest.java"
+      ],
       "updatedGeneratedFiles": [
-        "sdkwork-sdk.json"
+        "README.md",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/LabelsApi.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/package-info.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/http/HttpClient.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateLabelRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateQuotaPolicyRequest.java",
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/SdkworkBackendClient.java"
       ],
       "unchangedGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -132,16 +203,12 @@
         "CHANGELOG.md",
         "LICENSE",
         "pom.xml",
-        "README.md",
+        "sdkwork-sdk.json",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/ApiPaths.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/DriveApi.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/LabelsApi.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/package-info.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/http/HttpClient.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/AuditEvent.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/AuditEventListHttpResponse.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/AuditEventsListResponse.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateLabelRequest.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DownloadPackage.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DownloadPackageListHttpResponse.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/DownloadPackagesListResponse.java",
@@ -176,45 +243,86 @@
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepObjectStoreRequest.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepResponse.java",
         "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepUploadSessionsRequest.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateLabelRequest.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateQuotaPolicyRequest.java",
-        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/SdkworkBackendClient.java"
+        "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateLabelRequest.java"
       ],
       "deletedGeneratedFiles": [],
       "scaffoldedFiles": [],
       "preservedScaffoldFiles": [
         "custom/README.md"
       ],
-      "backedUpFiles": [
-        "sdkwork-sdk.json"
-      ]
+      "backedUpFiles": []
     },
     "impact": {
       "schemaVersion": 1,
       "areas": [
-        "build-metadata"
+        "api-surface",
+        "models",
+        "runtime",
+        "documentation"
       ],
       "details": [
         {
-          "area": "build-metadata",
+          "area": "api-surface",
           "paths": [
-            "sdkwork-sdk.json"
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/LabelsApi.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/package-info.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/SandboxGrantsApi.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/SandboxVolumesApi.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/SdkworkBackendClient.java"
+          ]
+        },
+        {
+          "area": "models",
+          "paths": [
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateLabelRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateSandboxGrantRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/CreateSandboxVolumeRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/InitialSandboxUserGrantRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrant.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantListHttpResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantResourceHttpResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsCreateResponse201.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsListResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsRetrieveResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxGrantsUpdateResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolume.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumeListHttpResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumeResourceHttpResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesCreateResponse201.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesListResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesRetrieveResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SandboxVolumesUpdateResponse.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateQuotaPolicyRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateSandboxGrantRequest.java",
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateSandboxVolumeRequest.java"
+          ]
+        },
+        {
+          "area": "runtime",
+          "paths": [
+            "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/http/HttpClient.java"
+          ]
+        },
+        {
+          "area": "documentation",
+          "paths": [
+            "README.md"
           ]
         }
       ],
       "requiresVerification": true,
-      "summary": "Detected impact areas: build-metadata. Verification is required."
+      "summary": "Detected impact areas: api-surface, models, runtime, documentation. Verification is required."
     },
     "verificationPlan": {
       "shouldRun": true,
       "runPhase": "now",
-      "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "summary": "Detected impact areas: api-surface, models, runtime, documentation. Verification is required. Run the required verification commands now against the generated SDK output.",
       "steps": [
         {
           "id": "check",
           "title": "Unified package check",
           "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, documentation.",
           "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-java\\generated\\server-openapi",
           "command": "node",
           "args": [
@@ -232,20 +340,16 @@
     },
     "executionDecision": {
       "schemaVersion": 1,
-      "riskLevel": "high",
+      "riskLevel": "medium",
       "nextAction": "verify",
       "requiresManualReview": false,
       "applyRequiresExpectedFingerprint": false,
       "summary": "Changes have been applied. Run the required verification plan now.",
       "reasons": [
-        "backed-up-generated-files",
-        "manual-review-required",
         "verification-required"
       ]
     },
-    "backedUpFiles": [
-      "sdkwork-sdk.json"
-    ],
+    "backedUpFiles": [],
     "preservedLegacyFiles": false
   }
 }

@@ -6,7 +6,7 @@
     "displayName": "Sdkwork Drive Standalone Gateway",
     "version": "0.1.0",
     "type": "rust-api-standalone-gateway",
-    "root": "crates/sdkwork-api-drive-standalone-gateway",
+    "root": ".",
     "domain": "drive",
     "capability": "api-gateway",
     "surface": "gateway-api",

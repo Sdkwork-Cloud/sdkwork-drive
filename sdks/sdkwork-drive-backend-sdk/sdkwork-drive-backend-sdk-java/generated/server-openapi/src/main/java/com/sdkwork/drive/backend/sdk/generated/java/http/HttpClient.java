@@ -103,6 +103,14 @@ public class HttpClient {
         return mapper.readValue(bodyText, Object.class);
     }
 
+    private byte[] parseBinaryResponse(Response response) throws Exception {
+        if (!response.isSuccessful()) {
+            String body = response.body() != null ? response.body().string() : "";
+            throw new RuntimeException("HTTP " + response.code() + ": " + body);
+        }
+        return response.body() == null ? new byte[0] : response.body().bytes();
+    }
+
     public <T> T convertValue(Object value, TypeReference<T> typeReference) {
         if (value == null) {
             return null;
@@ -243,6 +251,12 @@ public class HttpClient {
         return request(method, path, body, params, requestHeaders, contentType, false);
     }
 
+    private byte[] executeBytes(Request request) throws Exception {
+        try (Response response = client.newCall(request).execute()) {
+            return parseBinaryResponse(response);
+        }
+    }
+
     public Object request(
         String method,
         String path,
@@ -258,6 +272,23 @@ public class HttpClient {
             .method(method, requestBody)
             .build();
         return execute(request);
+    }
+
+    public byte[] requestBytes(
+        String method,
+        String path,
+        Object body,
+        Map<String, Object> params,
+        Map<String, String> requestHeaders,
+        String contentType,
+        boolean skipAuth
+    ) throws Exception {
+        RequestBody requestBody = body == null ? null : createRequestBody(body, contentType);
+        Request request = applyHeaders(new Request.Builder(), requestHeaders, skipAuth)
+            .url(buildUrl(path, params))
+            .method(method, requestBody)
+            .build();
+        return executeBytes(request);
     }
 
     public <T> Iterable<T> stream(

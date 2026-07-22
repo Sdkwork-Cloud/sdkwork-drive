@@ -47,7 +47,7 @@
     "authMode": "ingress-token",
     "sdkClients": [],
     "events": [],
-    "configKeys": [],
+    "configKeys": ["SDKWORK_DRIVE_ROOT_SCOPE_EVENT_CALLER_APP_ID"],
     "sdkDependencies": [],
     "dependencyApiExports": [],
     "dependencyApiSurfaces": []

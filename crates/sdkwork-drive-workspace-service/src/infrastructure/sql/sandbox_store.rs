@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::{Any, AnyPool, QueryBuilder, Row};
+use sqlx::{AnyPool, Row};
 
 use crate::domain::sandbox::{AuthorizedSandboxMount, DriveSandboxGrant, DriveSandboxVolume};
 use crate::ports::sandbox_principal_resolver::EffectiveSandboxPrincipal;
@@ -29,54 +29,40 @@ impl DriveSandboxStore for SqlSandboxStore {
         if principals.is_empty() {
             return Ok((Vec::new(), 0));
         }
-        let mut query = QueryBuilder::<Any>::new(
-            "SELECT v.id, v.tenant_id, v.organization_id, v.display_name, v.root_entry_id, v.provider_kind, v.lifecycle_status, v.default_access, CASE WHEN MAX(CASE WHEN g.access_level = 'full' THEN 1 ELSE 0 END) = 1 THEN 'full' ELSE 'read_only' END AS effective_access, v.version FROM dr_drive_sandbox_volume v JOIN dr_drive_sandbox_grant g ON g.sandbox_id = v.id WHERE v.tenant_id = "
+        let principal_predicate = principal_predicate_sql(principals.len(), 2);
+        let limit_bind_index = 2 + principals.len() * 2;
+        let offset_bind_index = limit_bind_index + 1;
+        let query_sql = format!(
+            "SELECT v.id, v.tenant_id, v.organization_id, v.display_name, v.root_entry_id, v.provider_kind, v.lifecycle_status, v.default_access, CASE WHEN MAX(CASE WHEN g.access_level = 'full' THEN 1 ELSE 0 END) = 1 THEN 'full' ELSE 'read_only' END AS effective_access, v.version FROM dr_drive_sandbox_volume v JOIN dr_drive_sandbox_grant g ON g.sandbox_id = v.id WHERE v.tenant_id = $1 AND v.lifecycle_status <> 'disabled' AND ({principal_predicate}) GROUP BY v.id, v.tenant_id, v.organization_id, v.display_name, v.root_entry_id, v.provider_kind, v.lifecycle_status, v.default_access, v.version ORDER BY v.display_name ASC, v.id ASC LIMIT ${limit_bind_index} OFFSET ${offset_bind_index}"
         );
-        query
-            .push_bind(tenant_id)
-            .push(" AND v.lifecycle_status <> 'disabled' AND (");
-        let mut predicate = query.separated(" OR ");
+        let mut query = sqlx::query(&query_sql).bind(tenant_id);
         for principal in principals {
-            predicate
-                .push("(g.subject_type = ")
-                .push_bind_unseparated(&principal.subject_type)
-                .push_unseparated(" AND g.subject_id = ")
-                .push_bind_unseparated(&principal.subject_id)
-                .push_unseparated(")");
+            query = query
+                .bind(&principal.subject_type)
+                .bind(&principal.subject_id);
         }
-        query
-            .push(") GROUP BY v.id, v.tenant_id, v.organization_id, v.display_name, v.root_entry_id, v.provider_kind, v.lifecycle_status, v.default_access, v.version ORDER BY v.display_name ASC, v.id ASC LIMIT ")
-            .push_bind(limit)
-            .push(" OFFSET ")
-            .push_bind(offset);
-        let rows = query.build().fetch_all(&self.pool).await.map_err(|error| {
-            DriveServiceError::Internal(format!("list accessible sandbox volumes failed: {error}"))
-        })?;
-        let mut count_query = QueryBuilder::<Any>::new(
-            "SELECT COUNT(DISTINCT v.id) AS total FROM dr_drive_sandbox_volume v JOIN dr_drive_sandbox_grant g ON g.sandbox_id = v.id WHERE v.tenant_id = "
-        );
-        count_query
-            .push_bind(tenant_id)
-            .push(" AND v.lifecycle_status <> 'disabled' AND (");
-        let mut count_predicate = count_query.separated(" OR ");
-        for principal in principals {
-            count_predicate
-                .push("(g.subject_type = ")
-                .push_bind_unseparated(&principal.subject_type)
-                .push_unseparated(" AND g.subject_id = ")
-                .push_bind_unseparated(&principal.subject_id)
-                .push_unseparated(")");
-        }
-        count_query.push(")");
-        let total: i64 = count_query
-            .build_query_scalar()
-            .fetch_one(&self.pool)
+        let rows = query
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
             .await
             .map_err(|error| {
                 DriveServiceError::Internal(format!(
-                    "count accessible sandbox volumes failed: {error}"
+                    "list accessible sandbox volumes failed: {error}"
                 ))
             })?;
+        let count_query_sql = format!(
+            "SELECT COUNT(DISTINCT v.id) AS total FROM dr_drive_sandbox_volume v JOIN dr_drive_sandbox_grant g ON g.sandbox_id = v.id WHERE v.tenant_id = $1 AND v.lifecycle_status <> 'disabled' AND ({principal_predicate})"
+        );
+        let mut count_query = sqlx::query_scalar(&count_query_sql).bind(tenant_id);
+        for principal in principals {
+            count_query = count_query
+                .bind(&principal.subject_type)
+                .bind(&principal.subject_id);
+        }
+        let total: i64 = count_query.fetch_one(&self.pool).await.map_err(|error| {
+            DriveServiceError::Internal(format!("count accessible sandbox volumes failed: {error}"))
+        })?;
         Ok((rows.into_iter().map(map_volume).collect(), total))
     }
 
@@ -131,41 +117,29 @@ impl DriveSandboxStore for SqlSandboxStore {
             return Ok(None);
         }
 
-        let mut query = QueryBuilder::<Any>::new(
+        let principal_predicate = principal_predicate_sql(principals.len(), 3);
+        let query_sql = format!(
             "SELECT v.id, v.root_entry_id, v.provider_kind, v.provider_root_ref, \
                     v.lifecycle_status, v.version, \
                     CASE WHEN MAX(CASE WHEN g.access_level = 'full' THEN 1 ELSE 0 END) = 1 \
                          THEN 'full' ELSE 'read_only' END AS effective_access \
              FROM dr_drive_sandbox_volume v \
              JOIN dr_drive_sandbox_grant g ON g.sandbox_id = v.id \
-             WHERE v.tenant_id = ",
+             WHERE v.tenant_id = $1 AND v.id = $2 \
+             AND v.lifecycle_status <> 'disabled' AND ({principal_predicate}) \
+             GROUP BY v.id, v.root_entry_id, v.provider_kind, v.provider_root_ref, \
+                      v.lifecycle_status, v.version"
         );
-        query
-            .push_bind(tenant_id)
-            .push(" AND v.id = ")
-            .push_bind(sandbox_id)
-            .push(" AND v.lifecycle_status <> 'disabled' AND (");
-        let mut predicate = query.separated(" OR ");
+        let mut query = sqlx::query(&query_sql).bind(tenant_id).bind(sandbox_id);
         for principal in principals {
-            predicate
-                .push("(g.subject_type = ")
-                .push_bind_unseparated(&principal.subject_type)
-                .push_unseparated(" AND g.subject_id = ")
-                .push_bind_unseparated(&principal.subject_id)
-                .push_unseparated(")");
+            query = query
+                .bind(&principal.subject_type)
+                .bind(&principal.subject_id);
         }
-        query.push(
-            ") GROUP BY v.id, v.root_entry_id, v.provider_kind, v.provider_root_ref, \
-                        v.lifecycle_status, v.version",
-        );
 
-        let row = query
-            .build()
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(|error| {
-                DriveServiceError::Internal(format!("get authorized sandbox mount failed: {error}"))
-            })?;
+        let row = query.fetch_optional(&self.pool).await.map_err(|error| {
+            DriveServiceError::Internal(format!("get authorized sandbox mount failed: {error}"))
+        })?;
 
         Ok(row.map(|row| {
             AuthorizedSandboxMount::new(
@@ -181,6 +155,19 @@ impl DriveSandboxStore for SqlSandboxStore {
     }
 }
 
+fn principal_predicate_sql(principal_count: usize, first_bind_index: usize) -> String {
+    (0..principal_count)
+        .map(|index| {
+            let subject_type_bind_index = first_bind_index + index * 2;
+            let subject_id_bind_index = subject_type_bind_index + 1;
+            format!(
+                "(g.subject_type = ${subject_type_bind_index} AND g.subject_id = ${subject_id_bind_index})"
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" OR ")
+}
+
 fn map_volume(row: sqlx::any::AnyRow) -> DriveSandboxVolume {
     DriveSandboxVolume {
         id: row.get("id"),
@@ -193,5 +180,22 @@ fn map_volume(row: sqlx::any::AnyRow) -> DriveSandboxVolume {
         default_access: row.get("default_access"),
         effective_access: row.get("effective_access"),
         version: row.get("version"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::principal_predicate_sql;
+
+    #[test]
+    fn principal_predicate_uses_numbered_cross_engine_bind_parameters() {
+        assert_eq!(
+            principal_predicate_sql(2, 2),
+            "(g.subject_type = $2 AND g.subject_id = $3) OR (g.subject_type = $4 AND g.subject_id = $5)"
+        );
+        assert_eq!(
+            principal_predicate_sql(1, 3),
+            "(g.subject_type = $3 AND g.subject_id = $4)"
+        );
     }
 }

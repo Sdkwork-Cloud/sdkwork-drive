@@ -60,11 +60,11 @@
     },
     {
       "path": "src/client.rs",
-      "sha256": "fb1639063917a02c80d4eacd4d08b2265d3aa32ab2d51d0723d1c465be6358a3"
+      "sha256": "645c8a50c7e91f2eec64b6387e2f1a0e401336f2d2df5ebe71f6fed0576a96f3"
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "62e95c2d96eafa824b501e9279b52c67bae8172d54ba10b474cdd73443402d37"
+      "sha256": "a16bfafd5141537d55734353f25ae0a34dc13f46319e5a6964b024f658b8e98c"
     },
     {
       "path": "src/http/mod.rs",

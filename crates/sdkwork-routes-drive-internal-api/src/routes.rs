@@ -1,11 +1,12 @@
 use axum::middleware;
-use axum::routing::{get, post};
+use axum::routing::{get, post, put};
 use axum::Router;
 use sqlx::AnyPool;
 
 use crate::content::retrieve_drive_resource_content;
 use crate::handlers::{
-    create_root_scope_subscription, resolve_drive_resource, retrieve_root_scope_subscription,
+    create_root_scope_subscription, ensure_root_scope_event_delivery, resolve_drive_resource,
+    retrieve_root_scope_subscription, retrieve_website_root,
 };
 use crate::state::InternalApiState;
 
@@ -18,6 +19,14 @@ fn business_router(state: InternalApiState) -> Router {
         .route(
             "/internal/v3/api/drive/root_scope_subscriptions/{subscriptionUuid}",
             get(retrieve_root_scope_subscription),
+        )
+        .route(
+            "/internal/v3/api/drive/root_scope_subscriptions/{subscriptionUuid}/event_delivery",
+            put(ensure_root_scope_event_delivery),
+        )
+        .route(
+            "/internal/v3/api/drive/website_roots/{websiteRootUuid}",
+            get(retrieve_website_root),
         )
         .route(
             "/internal/v3/api/drive/resource_resolutions",

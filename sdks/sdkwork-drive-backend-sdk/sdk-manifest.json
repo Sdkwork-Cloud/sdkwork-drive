@@ -61,7 +61,7 @@
   "workspace": "sdkwork-drive-backend-sdk",
   "authoritySpec": "../../apis/backend-api/drive/drive-backend-api.openapi.json",
   "derivedSpecs": {
-    "default": "../../apis/backend-api/drive/drive-backend-api.openapi.json"
+    "default": "../../target/drive-sdk-generator-input/sdkwork-drive-backend-sdk/drive-backend-api.openapi.json"
   },
   "discoverySurface": {
     "sdkTarget": "backend",

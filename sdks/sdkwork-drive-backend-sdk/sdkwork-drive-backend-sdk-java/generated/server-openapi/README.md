@@ -63,6 +63,8 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 
 - `client.getDrive()` - drive API
 - `client.getLabels()` - labels API
+- `client.getSandboxVolumes()` - sandbox_volumes API
+- `client.getSandboxGrants()` - sandbox_grants API
 
 ## Usage Examples
 
@@ -83,6 +85,31 @@ params.put("lifecycleStatus", "active");
 params.put("page_size", 2);
 params.put("cursor", "cursor");
 LabelsListResponse result = client.getLabels().list(params);
+System.out.println(result);
+```
+
+### sandbox_volumes
+
+```java
+// List server sandbox volumes
+Map<String, Object> params = new LinkedHashMap<>();
+params.put("lifecycle_status", "active");
+params.put("provider_kind", "local_filesystem");
+params.put("page", 3);
+params.put("page_size", 4);
+SandboxVolumesListResponse result = client.getSandboxVolumes().list(params);
+System.out.println(result);
+```
+
+### sandbox_grants
+
+```java
+// List explicit sandbox grants
+String sandboxId = "1";
+Map<String, Object> params = new LinkedHashMap<>();
+params.put("page", 1);
+params.put("page_size", 2);
+SandboxGrantsListResponse result = client.getSandboxGrants().list(sandboxId, params);
 System.out.println(result);
 ```
 

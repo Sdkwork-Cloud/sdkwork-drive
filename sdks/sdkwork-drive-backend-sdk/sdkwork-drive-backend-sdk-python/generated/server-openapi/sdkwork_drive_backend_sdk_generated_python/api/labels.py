@@ -212,9 +212,6 @@ class LabelsApi:
         """Update a Drive label definition"""
         return self._client.patch(f"/backend/v3/api/drive/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}", json=body)
 
-    def delete(self, label_id: str, operator_id: str) -> None:
+    def delete(self, label_id: str) -> None:
         """Delete a Drive label definition"""
-        query = build_query_string([
-            {'name': 'operatorId', 'value': operator_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
-        ])
-        return self._client.delete(_append_query_string(f"/backend/v3/api/drive/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}", query))
+        return self._client.delete(f"/backend/v3/api/drive/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}")

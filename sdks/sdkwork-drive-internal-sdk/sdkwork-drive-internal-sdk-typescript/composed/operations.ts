@@ -16,6 +16,8 @@ export const sdkMetadata = {
 export const operations = {
   "driveResourceContent.retrieve": { method: "GET", path: "/internal/v3/api/drive/node_versions/{nodeVersionId}/content" },
   "driveResources.resolve": { method: "POST", path: "/internal/v3/api/drive/resource_resolutions" },
+  "rootScopeEventDeliveries.replace": { method: "PUT", path: "/internal/v3/api/drive/root_scope_subscriptions/{subscriptionUuid}/event_delivery" },
   "rootScopeSubscriptions.create": { method: "POST", path: "/internal/v3/api/drive/root_scope_subscriptions" },
   "rootScopeSubscriptions.retrieve": { method: "GET", path: "/internal/v3/api/drive/root_scope_subscriptions/{subscriptionUuid}" },
+  "websiteRoots.retrieve": { method: "GET", path: "/internal/v3/api/drive/website_roots/{websiteRootUuid}" },
 } as const;

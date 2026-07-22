@@ -71,7 +71,15 @@
   ],
   "contracts": {
     "publicExports": [
-      "."
+      ".",
+      "ports::domain_outbox_embedded_relay::DriveDomainOutboxEmbeddedRelay",
+      "infrastructure::outbox_dispatch::dispatch_pending_outbox_events_with_relay"
+    ],
+    "providedPorts": [
+      {
+        "name": "driveDomainOutboxEmbeddedRelay",
+        "export": "ports::domain_outbox_embedded_relay::DriveDomainOutboxEmbeddedRelay"
+      }
     ],
     "runtimeEntrypoints": [],
     "routeManifest": null,
@@ -82,14 +90,20 @@
       "drive.node.eligibility.changed.v1",
       "drive.node.deleted.v1"
     ],
-    "configKeys": [],
+    "configKeys": [
+      "SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH",
+      "SDKWORK_DRIVE_DOMAIN_OUTBOX_DISPATCH_INTERVAL_SECONDS",
+      "SDKWORK_DRIVE_KNOWLEDGEBASE_EVENT_CALLBACK_URL",
+      "SDKWORK_DRIVE_KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE"
+    ],
     "sdkDependencies": [],
     "dependencyApiExports": [],
     "dependencyApiSurfaces": []
   },
   "verification": {
     "commands": [
-      "cargo test"
+      "cargo test -p sdkwork-drive-workspace-service --test outbox_dispatch",
+      "cargo test -p sdkwork-drive-workspace-service"
     ]
   }
 }

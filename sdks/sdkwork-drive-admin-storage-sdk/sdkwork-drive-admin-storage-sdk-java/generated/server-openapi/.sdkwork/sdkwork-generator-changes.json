@@ -9,11 +9,11 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-java"
   },
-  "changeFingerprint": "6d5590cbaf161f016921c3c40c06ef6e8da222b462e60f1420fb84efe1692eba",
+  "changeFingerprint": "9043680c7966db920fa5a63b380defb32f6a423116ed0f233f8c172a25179306",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [
-      "sdkwork-sdk.json"
+      "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/http/HttpClient.java"
     ],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -23,10 +23,10 @@
       "LICENSE",
       "pom.xml",
       "README.md",
+      "sdkwork-sdk.json",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/api/ApiPaths.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/api/DriveApi.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/api/package-info.java",
-      "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/http/HttpClient.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/CopyProviderObjectRequest.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/CreateStorageProviderRequest.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/FieldError.java",
@@ -82,29 +82,29 @@
   "impact": {
     "schemaVersion": 1,
     "areas": [
-      "build-metadata"
+      "runtime"
     ],
     "details": [
       {
-        "area": "build-metadata",
+        "area": "runtime",
         "paths": [
-          "sdkwork-sdk.json"
+          "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/http/HttpClient.java"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: build-metadata. Verification is required."
+    "summary": "Detected impact areas: runtime. Verification is required."
   },
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: build-metadata.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-java\\generated\\server-openapi",
         "command": "node",
         "args": [

@@ -56,7 +56,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/http/HttpClient.java",
-      "sha256": "649a8c380c9317f203fd9efad9da3d9df16af908fece53ffc2237f028d57edb8"
+      "sha256": "ba3b2c9ec4ab5f11fd7593c2bc31e2221a4f9b0b823740fab572d56e6babc16c"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/CreateOpenDownloadUrlRequest.java",

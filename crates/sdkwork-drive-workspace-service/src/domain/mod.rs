@@ -7,6 +7,7 @@ pub mod node_version;
 pub mod permission_role;
 pub mod quota;
 pub mod resource_resolution;
+pub mod root_scope_event_delivery;
 pub mod root_scope_subscription;
 pub mod sandbox;
 pub mod sandbox_admin;

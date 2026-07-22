@@ -7,6 +7,7 @@ pub mod permission_service;
 pub mod quota_enforcement;
 pub mod quota_service;
 pub mod resource_resolution_service;
+pub mod root_scope_event_delivery_service;
 pub mod root_scope_subscription_service;
 pub mod sandbox_admin_service;
 pub mod sandbox_directory_service;

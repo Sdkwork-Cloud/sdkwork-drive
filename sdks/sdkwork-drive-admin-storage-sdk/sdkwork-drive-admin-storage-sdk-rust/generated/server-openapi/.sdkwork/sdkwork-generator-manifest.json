@@ -60,11 +60,11 @@
     },
     {
       "path": "src/client.rs",
-      "sha256": "fb1639063917a02c80d4eacd4d08b2265d3aa32ab2d51d0723d1c465be6358a3"
+      "sha256": "645c8a50c7e91f2eec64b6387e2f1a0e401336f2d2df5ebe71f6fed0576a96f3"
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "1d30ef65ca14328e4c40fa82e89678a411bee8805498bcec516e9cf96dfe1bf4"
+      "sha256": "3385b5f3fc4e15d5d93543cf66cdcdc8738257fd52777849402f48b041a7b4d4"
     },
     {
       "path": "src/http/mod.rs",
@@ -124,7 +124,7 @@
     },
     {
       "path": "src/models/provider_object.rs",
-      "sha256": "216ecf4e570c5ddb562aa6d6640c6f04189be5fb41d802ea153b2f16a7678eb0"
+      "sha256": "2c298775625fb50cbd73113c62ec1d22ed1537489dc9f55d7742e3b9a6c2d43e"
     },
     {
       "path": "src/models/rotate_storage_provider_credential_request.rs",

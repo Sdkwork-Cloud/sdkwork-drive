@@ -57,6 +57,8 @@ client.SetHeader("X-Custom-Header", "value")
 
 - `client.Drive` - drive API
 - `client.Labels` - labels API
+- `client.SandboxVolumes` - sandbox_volumes API
+- `client.SandboxGrants` - sandbox_grants API
 
 ## Usage Examples
 
@@ -81,6 +83,39 @@ params := map[string]interface{}{
     "cursor": "cursor",
 }
 result, err := client.Labels.List(params)
+if err != nil {
+    panic(err)
+}
+fmt.Println(result)
+```
+
+### sandbox_volumes
+
+```go
+// List server sandbox volumes
+params := map[string]interface{}{
+    "lifecycle_status": "active",
+    "provider_kind": "local_filesystem",
+    "page": 3,
+    "page_size": 4,
+}
+result, err := client.SandboxVolumes.List(params)
+if err != nil {
+    panic(err)
+}
+fmt.Println(result)
+```
+
+### sandbox_grants
+
+```go
+// List explicit sandbox grants
+sandboxId := "1"
+params := map[string]interface{}{
+    "page": 1,
+    "page_size": 2,
+}
+result, err := client.SandboxGrants.List(sandboxId, params)
 if err != nil {
     panic(err)
 }
