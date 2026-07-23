@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct DriveRootScopeEventDelivery {
+pub struct DriveProviderEventDelivery {
     pub channel_id: String,
-    pub subscription_uuid: String,
+    pub provider_resource_uuid: String,
     pub address: String,
     pub expiration_epoch_ms: i64,
     pub lifecycle_status: String,

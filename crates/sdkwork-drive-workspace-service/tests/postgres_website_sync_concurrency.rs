@@ -43,6 +43,7 @@ async fn postgres_mutation_first_blocks_finalize_and_finalize_observes_committed
     let mutation_pool = pool.clone();
     let mutation_tenant_id = fixture.tenant_id.clone();
     let mutation_space_id = fixture.space_id.clone();
+    let mutation_provider_id = fixture.provider_id.clone();
     let staging_node_id = sync.sync.staging_node_id.clone();
     let (locked_tx, locked_rx) = oneshot::channel();
     let (release_tx, release_rx) = oneshot::channel();
@@ -63,6 +64,7 @@ async fn postgres_mutation_first_blocks_finalize_and_finalize_observes_committed
         )
         .await
         .expect("created staging should be writable");
+        let file_node_id = format!("node-{}", uuid::Uuid::new_v4());
         sqlx::query(
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, space_type, parent_node_id,
@@ -77,7 +79,7 @@ async fn postgres_mutation_first_blocks_finalize_and_finalize_observes_committed
                 $5, 'active', 1, 'postgres-test', 'postgres-test'
              )",
         )
-        .bind(format!("node-{}", uuid::Uuid::new_v4()))
+        .bind(&file_node_id)
         .bind(&mutation_tenant_id)
         .bind(&mutation_space_id)
         .bind(&staging_node_id)
@@ -85,6 +87,25 @@ async fn postgres_mutation_first_blocks_finalize_and_finalize_observes_committed
         .execute(&mut *connection)
         .await
         .expect("staging file should insert");
+        sqlx::query(
+            "INSERT INTO dr_drive_storage_object (
+               id, tenant_id, node_id, version_no, storage_provider_id,
+               bucket, object_key, content_type, content_length,
+               checksum_sha256_hex, lifecycle_status, created_by, updated_by
+             ) VALUES (
+               $1, $2, $3, 1, $4, 'bucket-pg-website-sync', $5,
+               'text/html', 18, $6, 'active', 'postgres-test', 'postgres-test'
+             )",
+        )
+        .bind(format!("object-{}", uuid::Uuid::new_v4()))
+        .bind(&mutation_tenant_id)
+        .bind(&file_node_id)
+        .bind(&mutation_provider_id)
+        .bind(format!("website-sync/{file_node_id}"))
+        .bind(format!("sha256:{}", "a".repeat(64)))
+        .execute(&mut *connection)
+        .await
+        .expect("staging storage object should insert");
         locked_tx
             .send(())
             .expect("mutation lock signal should be delivered");
@@ -209,6 +230,7 @@ struct WebsiteFixture {
     tenant_id: String,
     space_id: String,
     website_root_uuid: String,
+    provider_id: String,
 }
 
 async fn postgres_pool() -> Option<AnyPool> {
@@ -237,6 +259,7 @@ async fn create_fixture(pool: &AnyPool, label: &str) -> WebsiteFixture {
     let suffix = uuid::Uuid::new_v4();
     let tenant_id = format!("tenant-pg-{label}-{suffix}");
     let space_id = format!("space-pg-{label}-{suffix}");
+    let provider_id = format!("provider-pg-{suffix}");
     DriveSpaceService::new(SqlSpaceStore::new(pool.clone()))
         .create_space(CreateSpaceCommand {
             id: space_id.clone(),
@@ -252,6 +275,22 @@ async fn create_fixture(pool: &AnyPool, label: &str) -> WebsiteFixture {
         })
         .await
         .expect("PostgreSQL website Space should be created");
+    sqlx::query(
+        "INSERT INTO dr_drive_storage_provider (
+           id, provider_kind, name, endpoint_url, region, bucket, path_style,
+           strict_tls, credential_ref, status, version, created_by, updated_by
+         ) VALUES (
+           $1, 's3_compatible', $2, 'https://s3.example.test', 'test-region',
+           'bucket-pg-website-sync', TRUE, TRUE,
+           'plain:test-access-key:test-secret-key', 'active', 1,
+           'postgres-test', 'postgres-test'
+         )",
+    )
+    .bind(&provider_id)
+    .bind(format!("PostgreSQL {label} Provider"))
+    .execute(pool)
+    .await
+    .expect("PostgreSQL storage provider should be created");
     let website_root_uuid = sqlx::query_scalar(
         "SELECT uuid
          FROM dr_drive_website_root
@@ -266,6 +305,7 @@ async fn create_fixture(pool: &AnyPool, label: &str) -> WebsiteFixture {
         tenant_id,
         space_id,
         website_root_uuid,
+        provider_id,
     }
 }
 

@@ -37,6 +37,7 @@ async fn main() {
         orphan_cleanup_seconds = scheduler_orphan_interval_secs(),
         quota_recalculation_seconds = scheduler_quota_interval_secs(),
         outbox_dispatch_seconds = scheduler_outbox_dispatch_interval_secs(),
+        website_publishing_cleanup_seconds = scheduler_website_publishing_cleanup_interval_secs(),
         "sdkwork-drive-install-worker started"
     );
 
@@ -66,6 +67,10 @@ fn read_scheduler_config() -> SchedulerConfig {
         domain_outbox_dispatch_interval: read_duration_seconds(
             "SDKWORK_DRIVE_WORKER_OUTBOX_DISPATCH_INTERVAL_SECONDS",
             30,
+        ),
+        website_publishing_cleanup_interval: read_duration_seconds(
+            "SDKWORK_DRIVE_WORKER_WEBSITE_PUBLISHING_CLEANUP_INTERVAL_SECONDS",
+            300,
         ),
     }
 }
@@ -97,6 +102,14 @@ fn scheduler_quota_interval_secs() -> u64 {
 
 fn scheduler_outbox_dispatch_interval_secs() -> u64 {
     read_duration_seconds("SDKWORK_DRIVE_WORKER_OUTBOX_DISPATCH_INTERVAL_SECONDS", 30).as_secs()
+}
+
+fn scheduler_website_publishing_cleanup_interval_secs() -> u64 {
+    read_duration_seconds(
+        "SDKWORK_DRIVE_WORKER_WEBSITE_PUBLISHING_CLEANUP_INTERVAL_SECONDS",
+        300,
+    )
+    .as_secs()
 }
 
 async fn shutdown_signal() {

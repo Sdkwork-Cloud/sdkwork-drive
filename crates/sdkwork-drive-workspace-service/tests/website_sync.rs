@@ -31,6 +31,7 @@ use sdkwork_drive_workspace_service::infrastructure::sql::node_store::SqlNodeSto
 use sdkwork_drive_workspace_service::infrastructure::sql::node_version_store::SqlDriveNodeVersionStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::uploader_store::SqlUploaderStore;
+use sdkwork_drive_workspace_service::infrastructure::sql::website_publishing_maintenance_store::SqlWebsitePublishingMaintenanceStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::website_sync_store::SqlWebsiteSyncStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::workspace_store::SqlDriveWorkspaceStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::{
@@ -38,6 +39,9 @@ use sdkwork_drive_workspace_service::infrastructure::sql::{
 };
 use sdkwork_drive_workspace_service::ports::node_store::{DriveNodeStore, NewDriveNode};
 use sdkwork_drive_workspace_service::ports::node_version_store::DriveNodeVersionStore;
+use sdkwork_drive_workspace_service::ports::website_publishing_maintenance::{
+    DriveWebsitePublishingMaintenanceStore, WebsiteTreeCleanupKind,
+};
 use sdkwork_drive_workspace_service::ports::website_sync_store::{
     ActivateValidatedWebsiteSync, DriveWebsiteSyncStore, ValidateDriveWebsiteSync,
 };
@@ -51,6 +55,14 @@ use sqlx::AnyPool;
 async fn atomic_sync_is_idempotent_switches_once_and_rolls_back_as_a_new_generation() {
     let pool = database().await;
     create_website_space(&pool).await;
+    sqlx::query(
+        "UPDATE dr_drive_space_website_profile
+         SET retained_generation_count=1
+         WHERE tenant_id='tenant-sync' AND space_id='space-sync'",
+    )
+    .execute(&pool)
+    .await
+    .expect("retained-generation policy should be configurable");
     let (root_uuid, original_root_node_id): (String, String) = sqlx::query_as(
         "SELECT uuid, active_node_id
          FROM dr_drive_website_root
@@ -193,6 +205,65 @@ async fn atomic_sync_is_idempotent_switches_once_and_rolls_back_as_a_new_generat
     assert_eq!(rollback.source_generation.generation_no, 1);
     assert_eq!(rollback.website_root.active_generation, 3);
     assert_eq!(rollback.website_root.active_node_id, original_root_node_id);
+    let post_rollback_generations: Vec<(i64, String)> = sqlx::query_as(
+        "SELECT generation_no, generation_status
+         FROM dr_drive_website_root_generation
+         WHERE website_root_id=$1 ORDER BY generation_no",
+    )
+    .bind(&activation.website_root.id)
+    .fetch_all(&pool)
+    .await
+    .expect("post-rollback generation retention should be queryable");
+    assert_eq!(
+        post_rollback_generations,
+        vec![
+            (1, "expired".to_string()),
+            (2, "retained".to_string()),
+            (3, "current".to_string()),
+        ]
+    );
+    sqlx::query(
+        "UPDATE dr_drive_website_root_generation
+         SET retention_until='2000-01-01T00:00:00.000Z'
+         WHERE website_root_id=$1 AND generation_no=1",
+    )
+    .bind(&activation.website_root.id)
+    .execute(&pool)
+    .await
+    .expect("expired generation should become cleanup-eligible");
+    let maintenance =
+        SqlWebsitePublishingMaintenanceStore::new(pool.clone(), DatabaseEngine::Sqlite);
+    let candidate = maintenance
+        .claim_next_cleanup_candidate("website-maintenance-test")
+        .await
+        .expect("expired generation cleanup should be claimable")
+        .expect("expired generation cleanup candidate should exist");
+    assert_eq!(candidate.kind, WebsiteTreeCleanupKind::ExpiredGeneration);
+    assert!(
+        !candidate.delete_tree,
+        "generation metadata may retire, but a tree reused by the current generation must remain"
+    );
+    let deleted_nodes = maintenance
+        .complete_cleanup_candidate(&candidate, "website-maintenance-test")
+        .await
+        .expect("shared generation metadata cleanup should complete");
+    assert_eq!(deleted_nodes, 0);
+    let cleaned_generation_status: String = sqlx::query_scalar(
+        "SELECT generation_status FROM dr_drive_website_root_generation
+         WHERE website_root_id=$1 AND generation_no=1",
+    )
+    .bind(&activation.website_root.id)
+    .fetch_one(&pool)
+    .await
+    .expect("cleaned generation status should be queryable");
+    assert_eq!(cleaned_generation_status, "deleted");
+    let reused_root_status: String =
+        sqlx::query_scalar("SELECT lifecycle_status FROM dr_drive_node WHERE id=$1")
+            .bind(&original_root_node_id)
+            .fetch_one(&pool)
+            .await
+            .expect("reused root status should be queryable");
+    assert_eq!(reused_root_status, "active");
 
     let rollback_event: String = sqlx::query_scalar(
         "SELECT payload_json
@@ -288,6 +359,147 @@ async fn invalid_manifest_fails_closed_and_abort_never_changes_the_active_root()
 }
 
 #[tokio::test]
+async fn sync_quota_is_reserved_on_create_and_rechecked_before_switch() {
+    let pool = database().await;
+    create_website_space(&pool).await;
+    let root_uuid: String = sqlx::query_scalar(
+        "SELECT uuid FROM dr_drive_website_root
+         WHERE tenant_id='tenant-sync' AND space_id='space-sync' AND root_key='default'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("quota WebsiteRoot should exist");
+    let manifest = validate_website_sync_tree(&[file("index.html", 18, 'a')])
+        .expect("quota manifest should be valid");
+    sqlx::query(
+        "INSERT INTO dr_drive_tenant_quota (tenant_id, max_bytes, updated_by)
+         VALUES ('tenant-sync', 17, 'quota-test')",
+    )
+    .execute(&pool)
+    .await
+    .expect("quota policy should be inserted");
+    let service = DriveWebsiteSyncService::new(SqlWebsiteSyncStore::new(pool.clone()));
+    let denied = service
+        .create_sync(create_command(&root_uuid, "quota-denied", &manifest))
+        .await;
+    assert!(
+        denied.is_err(),
+        "declared staging reservation must honor quota"
+    );
+    let denied_syncs: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1) FROM dr_drive_website_sync WHERE tenant_id='tenant-sync'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("denied syncs should be countable");
+    assert_eq!(
+        denied_syncs, 0,
+        "quota rejection must not leave staging state"
+    );
+
+    sqlx::query(
+        "UPDATE dr_drive_tenant_quota
+         SET max_bytes=100, updated_by='quota-test', updated_at=CURRENT_TIMESTAMP
+         WHERE tenant_id='tenant-sync'",
+    )
+    .execute(&pool)
+    .await
+    .expect("quota policy should allow a reservation");
+    let created = service
+        .create_sync(create_command(&root_uuid, "quota-race", &manifest))
+        .await
+        .expect("sync reservation should fit the initial quota");
+    insert_tree(
+        &pool,
+        &created.sync.staging_node_id,
+        &[file("index.html", 18, 'a')],
+    )
+    .await;
+    sqlx::query(
+        "UPDATE dr_drive_tenant_quota
+         SET max_bytes=17, updated_by='quota-test', updated_at=CURRENT_TIMESTAMP
+         WHERE tenant_id='tenant-sync'",
+    )
+    .execute(&pool)
+    .await
+    .expect("quota downgrade should be visible before activation");
+    let activation = service
+        .finalize_sync(FinalizeWebsiteSyncCommand {
+            tenant_id: "tenant-sync".to_string(),
+            website_root_uuid: root_uuid.clone(),
+            sync_id: created.sync.id.clone(),
+            expected_sync_version: 1,
+            operator_id: "user-sync".to_string(),
+        })
+        .await;
+    assert!(
+        activation.is_err(),
+        "quota race must fail closed before switch"
+    );
+    let active_generation: i64 =
+        sqlx::query_scalar("SELECT active_generation FROM dr_drive_website_root WHERE uuid=$1")
+            .bind(root_uuid)
+            .fetch_one(&pool)
+            .await
+            .expect("quota-race WebsiteRoot should be queryable");
+    assert_eq!(active_generation, 1);
+}
+
+#[tokio::test]
+async fn disabled_storage_provider_blocks_generation_activation() {
+    let pool = database().await;
+    create_website_space(&pool).await;
+    let root_uuid: String = sqlx::query_scalar(
+        "SELECT uuid FROM dr_drive_website_root
+         WHERE tenant_id='tenant-sync' AND space_id='space-sync' AND root_key='default'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("provider gate WebsiteRoot should exist");
+    let entries = [file("index.html", 18, 'a')];
+    let manifest =
+        validate_website_sync_tree(&entries).expect("provider gate manifest should be valid");
+    let service = DriveWebsiteSyncService::new(SqlWebsiteSyncStore::new(pool.clone()));
+    let created = service
+        .create_sync(create_command(&root_uuid, "provider-disabled", &manifest))
+        .await
+        .expect("provider gate WebsiteSync should be created");
+    insert_tree(&pool, &created.sync.staging_node_id, &entries).await;
+    sqlx::query(
+        "UPDATE dr_drive_storage_provider
+         SET status='disabled', updated_at=CURRENT_TIMESTAMP, version=version + 1
+         WHERE id='provider-sync'",
+    )
+    .execute(&pool)
+    .await
+    .expect("provider should be disabled before activation");
+    let activation = service
+        .finalize_sync(FinalizeWebsiteSyncCommand {
+            tenant_id: "tenant-sync".to_string(),
+            website_root_uuid: root_uuid.clone(),
+            sync_id: created.sync.id.clone(),
+            expected_sync_version: 1,
+            operator_id: "user-sync".to_string(),
+        })
+        .await;
+    assert!(
+        activation.is_err(),
+        "disabled provider must block activation"
+    );
+    let state: (String, i64) = sqlx::query_as(
+        "SELECT sync.sync_status, root.active_generation
+         FROM dr_drive_website_sync sync
+         INNER JOIN dr_drive_website_root root ON root.id=sync.website_root_id
+         WHERE sync.id=$1",
+    )
+    .bind(&created.sync.id)
+    .fetch_one(&pool)
+    .await
+    .expect("provider gate state should be queryable");
+    assert_eq!(state, ("failed".to_string(), 1));
+}
+
+#[tokio::test]
 async fn expired_validation_lease_is_recoverable_and_fences_the_stale_finalizer() {
     let pool = database().await;
     create_website_space(&pool).await;
@@ -327,14 +539,16 @@ async fn expired_validation_lease_is_recoverable_and_fences_the_stale_finalizer(
         .lease_token
         .expect("active validation should return a lease token");
     assert_eq!(first.sync.version, 2);
-    let active_lease: (String, String) = sqlx::query_as(
-        "SELECT lease_owner, lease_token FROM dr_drive_website_sync WHERE id=$1",
-    )
-    .bind(&created.sync.id)
-    .fetch_one(&pool)
-    .await
-    .expect("validation lease should be queryable");
-    assert_eq!(active_lease, ("worker-first".to_string(), first_token.clone()));
+    let active_lease: (String, String) =
+        sqlx::query_as("SELECT lease_owner, lease_token FROM dr_drive_website_sync WHERE id=$1")
+            .bind(&created.sync.id)
+            .fetch_one(&pool)
+            .await
+            .expect("validation lease should be queryable");
+    assert_eq!(
+        active_lease,
+        ("worker-first".to_string(), first_token.clone())
+    );
 
     assert!(
         store
@@ -386,7 +600,10 @@ async fn expired_validation_lease_is_recoverable_and_fences_the_stale_finalizer(
             operator_id: "worker-first".to_string(),
         })
         .await;
-    assert!(stale.is_err(), "stale lease token must not activate a generation");
+    assert!(
+        stale.is_err(),
+        "stale lease token must not activate a generation"
+    );
 
     let activation = store
         .activate_validated(&ActivateValidatedWebsiteSync {
@@ -415,7 +632,6 @@ async fn expired_validation_lease_is_recoverable_and_fences_the_stale_finalizer(
 #[tokio::test]
 async fn uploader_writes_only_to_writable_website_sync_staging() {
     let pool = database().await;
-    seed_storage_provider(&pool).await;
     create_website_space(&pool).await;
     let root_uuid: String = sqlx::query_scalar(
         "SELECT uuid FROM dr_drive_website_root
@@ -498,7 +714,6 @@ async fn uploader_writes_only_to_writable_website_sync_staging() {
 #[tokio::test]
 async fn low_level_stores_cannot_mutate_activated_or_retained_atomic_generations() {
     let pool = database().await;
-    seed_storage_provider(&pool).await;
     create_website_space(&pool).await;
     let (root_uuid, original_root_node_id): (String, String) = sqlx::query_as(
         "SELECT uuid, active_node_id
@@ -781,6 +996,7 @@ async fn create_website_space(pool: &AnyPool) {
         })
         .await
         .expect("website Space should be created");
+    seed_storage_provider(pool).await;
 }
 
 fn uploader_command(id: &str, task_id: &str, parent_node_id: &str) -> PrepareUploaderUploadCommand {
@@ -892,14 +1108,27 @@ async fn insert_tree(pool: &AnyPool, staging_node_id: &str, entries: &[DriveWebs
         } else {
             staging_node_id
         };
+        let is_file = entry.node_type == "file";
+        let content_type = if is_file {
+            Some(if node_name.ends_with(".html") {
+                "text/html"
+            } else if node_name.ends_with(".js") {
+                "application/javascript"
+            } else {
+                "application/octet-stream"
+            })
+        } else {
+            None
+        };
         sqlx::query(
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, space_type, parent_node_id,
-                node_type, node_name, content_state, head_content_length,
+                node_type, node_name, content_state, head_content_type,
+                head_content_type_group, head_content_length, head_version_no,
                 head_checksum_sha256_hex, lifecycle_status, version,
                 created_by, updated_by
              ) VALUES ($1, 'tenant-sync', 'space-sync', 'website', $2,
-                       $3, $4, $5, $6, $7, 'active', 1,
+                       $3, $4, $5, $6, $7, $8, $9, $10, 'active', 1,
                        'user-sync', 'user-sync')",
         )
         .bind(&node_id)
@@ -907,11 +1136,41 @@ async fn insert_tree(pool: &AnyPool, staging_node_id: &str, entries: &[DriveWebs
         .bind(&entry.node_type)
         .bind(node_name)
         .bind(&entry.content_state)
+        .bind(content_type)
+        .bind(if is_file { Some("text") } else { None })
         .bind(entry.content_length)
+        .bind(if is_file { Some(1_i64) } else { None })
         .bind(entry.checksum_sha256_hex.as_deref())
         .execute(pool)
         .await
         .expect("sync tree entry should insert");
+        if is_file {
+            sqlx::query(
+                "INSERT INTO dr_drive_storage_object (
+                   id, tenant_id, node_id, version_no, storage_provider_id,
+                   bucket, object_key, content_type, content_length,
+                   checksum_sha256_hex, lifecycle_status, created_by, updated_by
+                 ) VALUES (
+                   $1, 'tenant-sync', $2, 1, 'provider-sync',
+                   'bucket-sync', $3, $4, $5, $6,
+                   'active', 'user-sync', 'user-sync'
+                 )",
+            )
+            .bind(format!("sync-object-{index}"))
+            .bind(&node_id)
+            .bind(format!("website-sync/{node_id}"))
+            .bind(content_type.expect("file content type should exist"))
+            .bind(entry.content_length.expect("file length should exist"))
+            .bind(
+                entry
+                    .checksum_sha256_hex
+                    .as_deref()
+                    .expect("file checksum should exist"),
+            )
+            .execute(pool)
+            .await
+            .expect("sync tree storage object should insert");
+        }
         if entry.node_type == "folder" {
             parent_id = node_id;
         }

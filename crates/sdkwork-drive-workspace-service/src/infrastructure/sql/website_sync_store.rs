@@ -36,9 +36,8 @@ const MAX_SERIALIZABLE_TRANSACTION_ATTEMPTS: usize = 4;
 const RETRYABLE_TRANSACTION_ERROR_PREFIX: &str = "[retryable-database-transaction] ";
 const WEBSITE_SYNC_VALIDATION_LEASE_MINUTES: i64 = 5;
 
-type WebsiteSyncTransactionFuture<'a, T> = Pin<
-    Box<dyn Future<Output = Result<T, DriveServiceError>> + Send + 'a>,
->;
+type WebsiteSyncTransactionFuture<'a, T> =
+    Pin<Box<dyn Future<Output = Result<T, DriveServiceError>> + Send + 'a>>;
 
 #[derive(Debug, Clone)]
 pub struct SqlWebsiteSyncStore {
@@ -222,6 +221,7 @@ async fn create_sync_on_connection(
         command.expected_root_version,
         command.expected_generation,
     )?;
+    ensure_tenant_sync_quota(connection, &command.tenant_id, command.manifest_total_bytes).await?;
 
     let anchor_node_id: String = match root.source_root_mode {
         DriveWebsiteSourceRootMode::Folder => {
@@ -474,6 +474,8 @@ async fn activate_validated_on_connection(
             "WEBSITE_SYNC_MANIFEST_MISMATCH".to_string(),
         ));
     }
+    ensure_activation_eligibility(connection, &sync).await?;
+    ensure_tenant_sync_quota(connection, &command.tenant_id, 0).await?;
 
     let previous_root_node_id = root.active_node_id.clone();
     let next_generation = root.active_generation + 1;
@@ -517,6 +519,15 @@ async fn activate_validated_on_connection(
     .execute(&mut *connection)
     .await
     .map_err(|error| internal("insert active WebsiteRoot generation", error))?;
+    expire_excess_retained_generations(
+        connection,
+        &command.tenant_id,
+        &root.id,
+        &root.space_id,
+        &root.uuid,
+        &command.operator_id,
+    )
+    .await?;
     let switched = sqlx::query(
         "UPDATE dr_drive_website_root
          SET active_node_id=$1, active_generation=$2, content_mode='atomic_generation',
@@ -762,6 +773,15 @@ async fn activate_generation_on_connection(
     .execute(&mut *connection)
     .await
     .map_err(|error| internal("insert WebsiteRoot rollback generation", error))?;
+    expire_excess_retained_generations(
+        connection,
+        &command.tenant_id,
+        &root.id,
+        &root.space_id,
+        &root.uuid,
+        &command.operator_id,
+    )
+    .await?;
     let switched = sqlx::query(
         "UPDATE dr_drive_website_root
          SET active_node_id=$1, active_generation=$2, content_mode='atomic_generation',
@@ -926,6 +946,64 @@ async fn ensure_validation_lease_current(
     Ok(())
 }
 
+async fn expire_excess_retained_generations(
+    connection: &mut AnyConnection,
+    tenant_id: &str,
+    website_root_id: &str,
+    space_id: &str,
+    website_root_uuid: &str,
+    operator_id: &str,
+) -> Result<(), DriveServiceError> {
+    let retained_generation_count: i64 = sqlx::query_scalar(
+        "SELECT retained_generation_count
+         FROM dr_drive_space_website_profile
+         WHERE tenant_id=$1 AND space_id=$2 AND profile_status='active'",
+    )
+    .bind(tenant_id)
+    .bind(space_id)
+    .fetch_optional(&mut *connection)
+    .await
+    .map_err(|error| internal("read Website Space retained generation policy", error))?
+    .ok_or_else(|| {
+        DriveServiceError::Conflict("Website Space publishing profile is not active".to_string())
+    })?;
+    let expired = sqlx::query(
+        "UPDATE dr_drive_website_root_generation
+         SET generation_status='expired'
+         WHERE tenant_id=$1 AND website_root_id=$2 AND generation_status='retained'
+           AND (
+             SELECT COUNT(1)
+             FROM dr_drive_website_root_generation newer
+             WHERE newer.tenant_id=$1
+               AND newer.website_root_id=$2
+               AND newer.generation_status='retained'
+               AND newer.generation_no > dr_drive_website_root_generation.generation_no
+           ) >= $3",
+    )
+    .bind(tenant_id)
+    .bind(website_root_id)
+    .bind(retained_generation_count)
+    .execute(&mut *connection)
+    .await
+    .map_err(|error| internal("expire excess retained WebsiteRoot generations", error))?
+    .rows_affected();
+    if expired == 0 {
+        return Ok(());
+    }
+    insert_audit(
+        connection,
+        tenant_id,
+        "drive.website_root.generations_expired_by_retention_count",
+        "website_root",
+        website_root_uuid,
+        operator_id,
+        None,
+    )
+    .await?;
+    sdkwork_drive_observability::metrics::record_website_generations_expired(expired);
+    Ok(())
+}
+
 async fn ensure_staging_parent(
     connection: &mut AnyConnection,
     tenant_id: &str,
@@ -994,6 +1072,148 @@ async fn ensure_active_folder(
     if found.is_none() {
         return Err(DriveServiceError::Validation(
             "WebsiteSync root folder is not active".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+async fn ensure_activation_eligibility(
+    connection: &mut AnyConnection,
+    sync: &DriveWebsiteSync,
+) -> Result<(), DriveServiceError> {
+    let invalid_files: i64 = sqlx::query_scalar(
+        "WITH RECURSIVE tree(id, depth) AS (
+           SELECT id, 0 FROM dr_drive_node WHERE tenant_id=$1 AND id=$2
+           UNION ALL
+           SELECT child.id, tree.depth + 1
+           FROM dr_drive_node child
+           INNER JOIN tree ON child.parent_node_id=tree.id
+           WHERE child.tenant_id=$1 AND child.space_id=$3
+             AND child.lifecycle_status='active' AND tree.depth < 64
+         )
+         SELECT COUNT(1)
+         FROM dr_drive_node node
+         INNER JOIN tree ON tree.id=node.id
+         WHERE node.tenant_id=$1 AND node.node_type='file'
+           AND (
+             node.lifecycle_status != 'active'
+             OR node.content_state != 'ready'
+             OR NOT EXISTS (
+               SELECT 1
+               FROM dr_drive_storage_object object
+               INNER JOIN dr_drive_storage_provider provider
+                 ON provider.id=object.storage_provider_id
+               WHERE object.tenant_id=$1
+                 AND object.node_id=node.id
+                 AND object.version_no=node.head_version_no
+                 AND object.content_length=node.head_content_length
+                 AND object.checksum_sha256_hex=node.head_checksum_sha256_hex
+                 AND object.lifecycle_status='active'
+                 AND provider.status='active'
+             )
+             OR EXISTS (
+               SELECT 1
+               FROM dr_drive_upload_item upload
+               WHERE upload.id=(
+                 SELECT latest.id
+                 FROM dr_drive_upload_item latest
+                 WHERE latest.tenant_id=$1 AND latest.node_id=node.id
+                 ORDER BY latest.updated_at DESC, latest.id DESC
+                 LIMIT 1
+               )
+                 AND (
+                   upload.status != 'completed'
+                   OR upload.cleanup_status != 'active'
+                   OR upload.post_process_status NOT IN ('not_required', 'completed')
+                 )
+             )
+           )",
+    )
+    .bind(&sync.tenant_id)
+    .bind(&sync.staging_node_id)
+    .bind(&sync.space_id)
+    .fetch_one(&mut *connection)
+    .await
+    .map_err(|error| internal("validate WebsiteSync activation eligibility", error))?;
+    if invalid_files != 0 {
+        return Err(DriveServiceError::Validation(
+            "WEBSITE_SYNC_CONTENT_NOT_ELIGIBLE".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+async fn ensure_tenant_sync_quota(
+    connection: &mut AnyConnection,
+    tenant_id: &str,
+    additional_reserved_bytes: i64,
+) -> Result<(), DriveServiceError> {
+    let locked = sqlx::query(
+        "UPDATE dr_drive_tenant_quota
+         SET updated_at=updated_at
+         WHERE tenant_id=$1",
+    )
+    .bind(tenant_id)
+    .execute(&mut *connection)
+    .await
+    .map_err(|error| internal("lock tenant quota for WebsiteSync", error))?;
+    if locked.rows_affected() == 0 {
+        return Ok(());
+    }
+    let max_bytes: Option<i64> =
+        sqlx::query_scalar("SELECT max_bytes FROM dr_drive_tenant_quota WHERE tenant_id=$1")
+            .bind(tenant_id)
+            .fetch_one(&mut *connection)
+            .await
+            .map_err(|error| internal("read tenant quota for WebsiteSync", error))?;
+    let Some(max_bytes) = max_bytes else {
+        return Ok(());
+    };
+    let row = sqlx::query(
+        "WITH RECURSIVE staging_tree(sync_id, node_id, depth) AS (
+           SELECT sync.id, sync.staging_node_id, 0
+           FROM dr_drive_website_sync sync
+           WHERE sync.tenant_id=$1
+             AND sync.sync_status IN ('created', 'uploading', 'ready', 'validating')
+           UNION ALL
+           SELECT tree.sync_id, child.id, tree.depth + 1
+           FROM dr_drive_node child
+           INNER JOIN staging_tree tree ON child.parent_node_id=tree.node_id
+           WHERE child.tenant_id=$1 AND tree.depth < 64
+         )
+         SELECT
+           CAST(COALESCE((
+             SELECT SUM(content_length) FROM dr_drive_storage_object
+             WHERE tenant_id=$1 AND lifecycle_status='active'
+           ), 0) AS BIGINT) AS stored_bytes,
+           CAST(COALESCE((
+             SELECT SUM(object.content_length)
+             FROM dr_drive_storage_object object
+             INNER JOIN staging_tree tree ON tree.node_id=object.node_id
+             WHERE object.tenant_id=$1 AND object.lifecycle_status='active'
+           ), 0) AS BIGINT) AS staging_bytes,
+           CAST(COALESCE((
+             SELECT SUM(manifest_total_bytes)
+             FROM dr_drive_website_sync
+             WHERE tenant_id=$1
+               AND sync_status IN ('created', 'uploading', 'ready', 'validating')
+           ), 0) AS BIGINT) AS reserved_bytes",
+    )
+    .bind(tenant_id)
+    .fetch_one(&mut *connection)
+    .await
+    .map_err(|error| internal("calculate WebsiteSync quota reservation", error))?;
+    let stored_bytes: i64 = row.get("stored_bytes");
+    let staging_bytes: i64 = row.get("staging_bytes");
+    let reserved_bytes: i64 = row.get("reserved_bytes");
+    let projected = stored_bytes
+        .checked_sub(staging_bytes)
+        .and_then(|value| value.checked_add(reserved_bytes))
+        .and_then(|value| value.checked_add(additional_reserved_bytes))
+        .ok_or_else(|| DriveServiceError::Validation("WEBSITE_SYNC_QUOTA_OVERFLOW".to_string()))?;
+    if projected > max_bytes {
+        return Err(DriveServiceError::Conflict(
+            "WEBSITE_SYNC_QUOTA_EXCEEDED".to_string(),
         ));
     }
     Ok(())
@@ -1268,10 +1488,7 @@ async fn run_serializable_transaction<T, F>(
 ) -> Result<T, DriveServiceError>
 where
     T: Send,
-    F: for<'a> FnMut(
-        &'a mut AnyConnection,
-        DatabaseEngine,
-    ) -> WebsiteSyncTransactionFuture<'a, T>,
+    F: for<'a> FnMut(&'a mut AnyConnection, DatabaseEngine) -> WebsiteSyncTransactionFuture<'a, T>,
 {
     let engine = detect_any_pool_database_engine(pool)
         .await

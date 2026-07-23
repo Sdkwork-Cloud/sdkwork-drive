@@ -45,6 +45,13 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "websiteRoots.retrieve",
     )
     .with_rate_limit_tier(RateLimitTier::Internal),
+    HttpRoute::ingress_token(
+        HttpMethod::Put,
+        "/internal/v3/api/drive/website_roots/{websiteRootUuid}/event_deliveries/{channelId}",
+        "drive",
+        "websiteRootEventDeliveries.replace",
+    )
+    .with_rate_limit_tier(RateLimitTier::Internal),
 ];
 
 pub fn internal_route_manifest() -> HttpRouteManifest {

@@ -14,6 +14,8 @@ pub struct SchedulerConfig {
     pub quota_recalculation_interval: Duration,
     /// Interval for domain outbox dispatch.
     pub domain_outbox_dispatch_interval: Duration,
+    /// Interval for WebsiteSync and expired generation cleanup.
+    pub website_publishing_cleanup_interval: Duration,
 }
 
 impl Default for SchedulerConfig {
@@ -23,6 +25,7 @@ impl Default for SchedulerConfig {
             orphan_cleanup_interval: Duration::from_secs(86400),
             quota_recalculation_interval: Duration::from_secs(3600),
             domain_outbox_dispatch_interval: Duration::from_secs(30),
+            website_publishing_cleanup_interval: Duration::from_secs(300),
         }
     }
 }
@@ -192,6 +195,52 @@ impl Scheduler {
                             }
                             Err(error) => {
                                 tracing::error!("Domain outbox dispatch failed: {}", error);
+                            }
+                        }
+                    },
+                )
+                .await;
+            }
+        }));
+
+        let pool_clone = pool.clone();
+        let interval = self.config.website_publishing_cleanup_interval;
+        self.handles.push(tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(interval).await;
+                let pool_for_task = pool_clone.clone();
+                crate::maintenance::leader::run_if_maintenance_leader(
+                    &pool_clone,
+                    engine,
+                    "website_publishing_cleanup",
+                    || async move {
+                        match crate::maintenance::website_publishing_cleanup::
+                            cleanup_website_publishing(&pool_for_task, engine, 1_000)
+                            .await
+                        {
+                            Ok(result) => {
+                                if result.expired_syncs > 0
+                                    || result.completed_candidates > 0
+                                    || result.deleted_objects > 0
+                                {
+                                    tracing::info!(
+                                        target: "sdkwork.drive",
+                                        event = "drive.install_worker.website_publishing_cleanup",
+                                        expired_syncs = result.expired_syncs,
+                                        completed_candidates = result.completed_candidates,
+                                        deleted_objects = result.deleted_objects,
+                                        deleted_nodes = result.deleted_nodes,
+                                        "website publishing cleanup completed"
+                                    );
+                                }
+                            }
+                            Err(error) => {
+                                tracing::error!(
+                                    target: "sdkwork.drive",
+                                    event = "drive.install_worker.website_publishing_cleanup_failed",
+                                    error = %error,
+                                    "website publishing cleanup failed"
+                                );
                             }
                         }
                     },

@@ -1,6 +1,6 @@
 //! Versioned cross-service Drive event contracts.
 
-use sdkwork_utils_rust::{hmac_sha256, secure_compare, sha256_hash};
+use sdkwork_utils_rust::{hmac_sha256, hmac_sha256_base64url, secure_compare, sha256_hash};
 use serde::{Deserialize, Serialize};
 
 pub const EVENT_SPEC_VERSION: &str = "1.0";
@@ -14,6 +14,31 @@ pub const WEBHOOK_IDEMPOTENCY_KEY_HEADER: &str = "x-sdkwork-idempotency-key";
 pub const WEBHOOK_SIGNATURE_VERSION: &str = "v1";
 pub const WEBHOOK_SIGNING_TOKEN_MIN_LENGTH: usize = 32;
 pub const WEBHOOK_SIGNING_TOKEN_MAX_LENGTH: usize = 1_024;
+pub const WEBSITE_EVENT_CHANNEL_PREFIX: &str = "web:";
+pub const WEBSITE_PROVIDER_EVENT_SUBSCRIPTION_ID: &str = "drive-website-events";
+
+const WEBSITE_EVENT_CHANNEL_DERIVATION_DOMAIN: &str = "sdkwork.drive.website-event-channel.v1";
+const WEBSITE_EVENT_TOKEN_DERIVATION_DOMAIN: &str = "sdkwork.drive.website-event-token.v1";
+
+/// Derives the stable Drive channel identifier for one Web Node and WebsiteRoot.
+///
+/// The 60 hexadecimal digest characters plus the `web:` prefix fit the Drive channel contract's
+/// 64-byte limit while retaining 240 bits of collision resistance.
+pub fn derive_website_event_channel_id(node_uuid: &str, website_root_uuid: &str) -> String {
+    let context =
+        format!("{WEBSITE_EVENT_CHANNEL_DERIVATION_DOMAIN}\0{node_uuid}\0{website_root_uuid}");
+    let digest = sha256_hash(context.as_bytes());
+    format!("{WEBSITE_EVENT_CHANNEL_PREFIX}{}", &digest[..60])
+}
+
+/// Derives an independent, write-only verification token for one Node/root Drive channel.
+pub fn derive_website_event_verification_token(
+    channel_id: &str,
+    node_derivation_secret: &[u8],
+) -> String {
+    let context = format!("{WEBSITE_EVENT_TOKEN_DERIVATION_DOMAIN}\0{channel_id}");
+    hmac_sha256_base64url(context.as_bytes(), node_derivation_secret)
+}
 
 /// Derives the per-channel HMAC key retained by Drive from a high-entropy token.
 ///
@@ -224,6 +249,32 @@ pub struct DriveWebsiteRootGenerationChangedV1Data {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn website_event_channel_and_token_derivation_has_a_stable_vector() {
+        assert_eq!(
+            WEBSITE_PROVIDER_EVENT_SUBSCRIPTION_ID,
+            "drive-website-events"
+        );
+        let channel_id =
+            derive_website_event_channel_id("node-1", "11111111-1111-4111-8111-111111111111");
+        assert_eq!(
+            channel_id,
+            "web:a56a1a8c243f49b7245ccb2ae7a23552d25717cb8e1609cbc152bb58cdb6"
+        );
+        assert_eq!(channel_id.len(), 64);
+        assert_eq!(
+            derive_website_event_verification_token(
+                &channel_id,
+                b"test-only-node-derivation-secret-32-bytes",
+            ),
+            "6OMVdPmSy7B2fksxP6E6eBhOcdW7zen27cFldxbhRwU"
+        );
+        assert_ne!(
+            channel_id,
+            derive_website_event_channel_id("node-1", "22222222-2222-4222-8222-222222222222",)
+        );
+    }
 
     #[test]
     fn webhook_signature_covers_timestamp_and_exact_body_bytes() {

@@ -151,6 +151,50 @@ paths:
                 $ref: "#/components/schemas/WebsiteRootResponse"
         default:
           $ref: "#/components/responses/Problem"
+  /internal/v3/api/drive/website_roots/{websiteRootUuid}/event_deliveries/{channelId}:
+    put:
+      tags: [driveInternalPublishing]
+      summary: Ensure a signed WebsiteRoot event delivery channel
+      description: >-
+        Creates or reconciles one root-scoped Drive-to-Web-Server webhook channel for a Web Node.
+        The channel receives only typed events that affect this stable WebsiteRoot UUID. The
+        verification token is write-only; Drive stores only its SHA-256 derived signing key.
+      operationId: websiteRootEventDeliveries.replace
+      x-sdkwork-owner: sdkwork-drive
+      x-sdkwork-api-authority: sdkwork-drive-internal-api
+      x-sdkwork-source-route-crate: sdkwork-routes-drive-internal-api
+      x-sdkwork-api-surface: internal-api
+      x-sdkwork-auth-mode: ingress-token
+      x-sdkwork-request-context: WebRequestContext
+      x-sdkwork-tenant-scope: current
+      x-sdkwork-rate-limit-tier: internal
+      x-sdkwork-idempotent: true
+      security:
+        - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/WebsiteRootUuid"
+        - $ref: "#/components/parameters/ChannelId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnsureWebsiteRootEventDeliveryRequest"
+      responses:
+        "200":
+          description: Existing WebsiteRoot delivery channel reconciled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebsiteRootEventDeliveryResponse"
+        "201":
+          description: WebsiteRoot delivery channel created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebsiteRootEventDeliveryResponse"
+        default:
+          $ref: "#/components/responses/Problem"
   /internal/v3/api/drive/resource_resolutions:
     post:
       tags: [driveInternalPublishing]
@@ -300,6 +344,15 @@ components:
       schema:
         type: string
         format: uuid
+    ChannelId:
+      name: channelId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+        pattern: "^[A-Za-z0-9._:-]+$"
     NodeVersionId:
       name: nodeVersionId
       in: path
@@ -388,6 +441,26 @@ components:
           minLength: 1
           maxLength: 128
     EnsureRootScopeEventDeliveryRequest:
+      type: object
+      additionalProperties: false
+      required: [address, verificationToken, expirationEpochMs]
+      properties:
+        address:
+          type: string
+          format: uri
+          pattern: "^https://.+"
+          minLength: 8
+          maxLength: 2048
+        verificationToken:
+          type: string
+          format: password
+          writeOnly: true
+          minLength: 32
+          maxLength: 1024
+          pattern: "^[A-Za-z0-9_-]+$"
+        expirationEpochMs:
+          $ref: "#/components/schemas/PositiveInt64String"
+    EnsureWebsiteRootEventDeliveryRequest:
       type: object
       additionalProperties: false
       required: [address, verificationToken, expirationEpochMs]
@@ -650,6 +723,57 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/RootScopeEventDeliveryResourceData"
+    WebsiteRootEventDelivery:
+      type: object
+      additionalProperties: false
+      required:
+        - channelId
+        - websiteRootUuid
+        - address
+        - expirationEpochMs
+        - lifecycleStatus
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        channelId:
+          type: string
+          minLength: 1
+          maxLength: 64
+        websiteRootUuid:
+          type: string
+          format: uuid
+        address:
+          type: string
+          format: uri
+        expirationEpochMs:
+          $ref: "#/components/schemas/PositiveInt64String"
+        lifecycleStatus:
+          type: string
+          enum: [ACTIVE, STOPPED, EXPIRED]
+        version:
+          $ref: "#/components/schemas/PositiveInt64String"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    WebsiteRootEventDeliveryResourceData:
+      type: object
+      additionalProperties: false
+      required: [item]
+      properties:
+        item:
+          $ref: "#/components/schemas/WebsiteRootEventDelivery"
+    WebsiteRootEventDeliveryResponse:
+      allOf:
+        - $ref: "#/components/schemas/SdkWorkApiResponse"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/WebsiteRootEventDeliveryResourceData"
     DriveResourceResolutionResourceData:
       type: object
       additionalProperties: false

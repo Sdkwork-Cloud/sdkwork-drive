@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use crate::api::{DriveApi, NodeLabelsApi, NodePropertiesApi, NodesApi, WatchChannelsApi, AssetsApi};
+use crate::api::{
+    AssetsApi, DriveApi, NodeLabelsApi, NodePropertiesApi, NodesApi, WatchChannelsApi,
+};
 use crate::http::{SdkworkConfig, SdkworkError, SdkworkHttpClient};
 
 #[derive(Clone)]
@@ -28,7 +30,6 @@ impl SdkworkAppClient {
         self
     }
 
-
     pub fn set_header(&self, key: impl Into<String>, value: impl Into<String>) -> &Self {
         self.http.set_header(key, value);
         self
@@ -39,26 +40,26 @@ impl SdkworkAppClient {
     }
 
     pub fn drive(&self) -> DriveApi {
-            DriveApi::new(Arc::clone(&self.http))
-        }
+        DriveApi::new(Arc::clone(&self.http))
+    }
 
     pub fn node_labels(&self) -> NodeLabelsApi {
-            NodeLabelsApi::new(Arc::clone(&self.http))
-        }
+        NodeLabelsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn node_properties(&self) -> NodePropertiesApi {
-            NodePropertiesApi::new(Arc::clone(&self.http))
-        }
+        NodePropertiesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn nodes(&self) -> NodesApi {
-            NodesApi::new(Arc::clone(&self.http))
-        }
+        NodesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn watch_channels(&self) -> WatchChannelsApi {
-            WatchChannelsApi::new(Arc::clone(&self.http))
-        }
+        WatchChannelsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn assets(&self) -> AssetsApi {
-            AssetsApi::new(Arc::clone(&self.http))
-        }
+        AssetsApi::new(Arc::clone(&self.http))
+    }
 }

@@ -17,6 +17,14 @@ pub struct EnsureRootScopeEventDeliveryRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct EnsureWebsiteRootEventDeliveryRequest {
+    pub address: String,
+    pub verification_token: String,
+    pub expiration_epoch_ms: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResolveDriveResourceRequest {
     pub scope_type: String,
     pub scope_uuid: String,
@@ -67,6 +75,19 @@ pub struct WebsiteRootResponse {
 pub struct RootScopeEventDeliveryResponse {
     pub channel_id: String,
     pub subscription_uuid: String,
+    pub address: String,
+    pub expiration_epoch_ms: String,
+    pub lifecycle_status: String,
+    pub version: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebsiteRootEventDeliveryResponse {
+    pub channel_id: String,
+    pub website_root_uuid: String,
     pub address: String,
     pub expiration_epoch_ms: String,
     pub lifecycle_status: String,

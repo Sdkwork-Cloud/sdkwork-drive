@@ -2,36 +2,36 @@ use async_trait::async_trait;
 use sqlx::any::AnyRow;
 use sqlx::{AnyConnection, AnyPool, Row};
 
-use crate::domain::root_scope_event_delivery::DriveRootScopeEventDelivery;
+use crate::domain::provider_event_delivery::DriveProviderEventDelivery;
 use crate::infrastructure::sql::begin_transaction_sql;
-use crate::ports::root_scope_event_delivery_store::{
-    DriveRootScopeEventDeliveryStore, EnsureDriveRootScopeEventDelivery,
-    EnsureDriveRootScopeEventDeliveryResult,
+use crate::ports::provider_event_delivery_store::{
+    DriveProviderEventDeliveryStore, DriveProviderEventResourceKind,
+    EnsureDriveProviderEventDelivery, EnsureDriveProviderEventDeliveryResult,
 };
 use crate::DriveServiceError;
 
 const DELIVERY_SELECT_COLUMNS: &str = "id, address, expiration_epoch_ms, lifecycle_status, version, CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at";
 
 #[derive(Debug, Clone)]
-pub struct SqlRootScopeEventDeliveryStore {
+pub struct SqlProviderEventDeliveryStore {
     pool: AnyPool,
 }
 
-impl SqlRootScopeEventDeliveryStore {
+impl SqlProviderEventDeliveryStore {
     pub fn new(pool: AnyPool) -> Self {
         Self { pool }
     }
 }
 
 #[async_trait]
-impl DriveRootScopeEventDeliveryStore for SqlRootScopeEventDeliveryStore {
+impl DriveProviderEventDeliveryStore for SqlProviderEventDeliveryStore {
     async fn ensure_delivery(
         &self,
-        command: &EnsureDriveRootScopeEventDelivery,
-    ) -> Result<EnsureDriveRootScopeEventDeliveryResult, DriveServiceError> {
+        command: &EnsureDriveProviderEventDelivery,
+    ) -> Result<EnsureDriveProviderEventDeliveryResult, DriveServiceError> {
         let mut connection = self.pool.acquire().await.map_err(|error| {
             DriveServiceError::Internal(format!(
-                "acquire root scope event delivery transaction failed: {error}"
+                "acquire provider event delivery transaction failed: {error}"
             ))
         })?;
         sqlx::query(begin_transaction_sql())
@@ -39,7 +39,7 @@ impl DriveRootScopeEventDeliveryStore for SqlRootScopeEventDeliveryStore {
             .await
             .map_err(|error| {
                 DriveServiceError::Internal(format!(
-                    "begin root scope event delivery transaction failed: {error}"
+                    "begin provider event delivery transaction failed: {error}"
                 ))
             })?;
         let result = ensure_on_connection(&mut connection, command).await;
@@ -50,7 +50,7 @@ impl DriveRootScopeEventDeliveryStore for SqlRootScopeEventDeliveryStore {
                     .await
                     .map_err(|error| {
                         DriveServiceError::Internal(format!(
-                            "commit root scope event delivery transaction failed: {error}"
+                            "commit provider event delivery transaction failed: {error}"
                         ))
                     })?;
                 Ok(result)
@@ -65,31 +65,9 @@ impl DriveRootScopeEventDeliveryStore for SqlRootScopeEventDeliveryStore {
 
 async fn ensure_on_connection(
     connection: &mut AnyConnection,
-    command: &EnsureDriveRootScopeEventDelivery,
-) -> Result<EnsureDriveRootScopeEventDeliveryResult, DriveServiceError> {
-    let subscription = sqlx::query(
-        "SELECT space_id, scope_status
-         FROM dr_drive_root_scope_subscription
-         WHERE tenant_id=$1 AND uuid=$2 AND consumer_kind='knowledgebase_raw'",
-    )
-    .bind(&command.tenant_id)
-    .bind(&command.subscription_uuid)
-    .fetch_optional(&mut *connection)
-    .await
-    .map_err(|error| {
-        DriveServiceError::Internal(format!(
-            "find root scope for event delivery failed: {error}"
-        ))
-    })?
-    .ok_or_else(|| DriveServiceError::NotFound("root scope subscription not found".to_string()))?;
-    let space_id: String = subscription.get("space_id");
-    let scope_status: String = subscription.get("scope_status");
-    if scope_status != "active" {
-        return Err(DriveServiceError::Conflict(
-            "root scope subscription is not active".to_string(),
-        ));
-    }
-
+    command: &EnsureDriveProviderEventDelivery,
+) -> Result<EnsureDriveProviderEventDeliveryResult, DriveServiceError> {
+    let space_id = resolve_active_provider_resource(connection, command).await?;
     let existing = sqlx::query(&format!(
         "SELECT {DELIVERY_SELECT_COLUMNS}, space_id, node_id, resource_type, resource_id, token_hash
          FROM dr_drive_watch_channel
@@ -101,30 +79,33 @@ async fn ensure_on_connection(
     .await
     .map_err(|error| {
         DriveServiceError::Internal(format!(
-            "find root scope event delivery channel failed: {error}"
+            "find provider event delivery channel failed: {error}"
         ))
     })?;
 
     if let Some(existing) = existing {
-        validate_existing_channel(&existing, &space_id)?;
+        validate_existing_channel(&existing, &space_id, command)?;
         let unchanged = existing.get::<String, _>("address") == command.address
             && existing.get::<Option<String>, _>("token_hash").as_deref()
                 == Some(command.signing_key_sha256.as_str())
             && existing.get::<i64, _>("expiration_epoch_ms") == command.expiration_epoch_ms
-            && existing.get::<String, _>("lifecycle_status") == "active";
+            && existing.get::<String, _>("lifecycle_status") == "active"
+            && existing.get::<Option<String>, _>("resource_id").as_deref()
+                == Some(command.provider_resource_uuid.as_str());
         if unchanged {
-            return Ok(EnsureDriveRootScopeEventDeliveryResult {
-                delivery: map_delivery(&existing, &command.subscription_uuid),
+            return Ok(EnsureDriveProviderEventDeliveryResult {
+                delivery: map_delivery(&existing, &command.provider_resource_uuid),
                 created: false,
             });
         }
         sqlx::query(
             "UPDATE dr_drive_watch_channel
-             SET address=$1, token_hash=$2, expiration_epoch_ms=$3,
-                 lifecycle_status='active', updated_by=$4,
+             SET resource_id=$1, address=$2, token_hash=$3, expiration_epoch_ms=$4,
+                 lifecycle_status='active', updated_by=$5,
                  updated_at=CURRENT_TIMESTAMP, version=version + 1
-             WHERE tenant_id=$5 AND id=$6",
+             WHERE tenant_id=$6 AND id=$7",
         )
+        .bind(&command.provider_resource_uuid)
         .bind(&command.address)
         .bind(&command.signing_key_sha256)
         .bind(command.expiration_epoch_ms)
@@ -135,7 +116,7 @@ async fn ensure_on_connection(
         .await
         .map_err(|error| {
             DriveServiceError::Internal(format!(
-                "update root scope event delivery channel failed: {error}"
+                "update provider event delivery channel failed: {error}"
             ))
         })?;
         return read_delivery(connection, command, false).await;
@@ -146,12 +127,13 @@ async fn ensure_on_connection(
             id, tenant_id, space_id, node_id, resource_type, resource_id,
             channel_type, address, token_hash, expiration_epoch_ms,
             lifecycle_status, version, created_by, updated_by
-         ) VALUES ($1, $2, $3, NULL, 'changes', $3, 'web_hook', $4, $5, $6,
-                   'active', 1, $7, $7)",
+         ) VALUES ($1, $2, $3, NULL, 'changes', $4, 'web_hook', $5, $6, $7,
+                   'active', 1, $8, $8)",
     )
     .bind(&command.channel_id)
     .bind(&command.tenant_id)
     .bind(&space_id)
+    .bind(&command.provider_resource_uuid)
     .bind(&command.address)
     .bind(&command.signing_key_sha256)
     .bind(command.expiration_epoch_ms)
@@ -160,20 +142,68 @@ async fn ensure_on_connection(
     .await
     .map_err(|error| {
         DriveServiceError::Internal(format!(
-            "insert root scope event delivery channel failed: {error}"
+            "insert provider event delivery channel failed: {error}"
         ))
     })?;
     read_delivery(connection, command, true).await
 }
 
-fn validate_existing_channel(row: &AnyRow, space_id: &str) -> Result<(), DriveServiceError> {
+async fn resolve_active_provider_resource(
+    connection: &mut AnyConnection,
+    command: &EnsureDriveProviderEventDelivery,
+) -> Result<String, DriveServiceError> {
+    let (table, status_column, required_status, extra_predicate) = match command.resource_kind {
+        DriveProviderEventResourceKind::KnowledgebaseRawScope => (
+            "dr_drive_root_scope_subscription",
+            "scope_status",
+            "active",
+            " AND consumer_kind='knowledgebase_raw'",
+        ),
+        DriveProviderEventResourceKind::WebsiteRoot => {
+            ("dr_drive_website_root", "root_status", "active", "")
+        }
+    };
+    let row = sqlx::query(&format!(
+        "SELECT space_id, {status_column} AS resource_status
+         FROM {table}
+         WHERE tenant_id=$1 AND uuid=$2{extra_predicate}",
+    ))
+    .bind(&command.tenant_id)
+    .bind(&command.provider_resource_uuid)
+    .fetch_optional(&mut *connection)
+    .await
+    .map_err(|error| {
+        DriveServiceError::Internal(format!(
+            "find provider resource for event delivery failed: {error}"
+        ))
+    })?
+    .ok_or_else(|| DriveServiceError::NotFound("provider resource not found".to_string()))?;
+    if row.get::<String, _>("resource_status") != required_status {
+        return Err(DriveServiceError::Conflict(
+            "provider resource is not active".to_string(),
+        ));
+    }
+    Ok(row.get("space_id"))
+}
+
+fn validate_existing_channel(
+    row: &AnyRow,
+    space_id: &str,
+    command: &EnsureDriveProviderEventDelivery,
+) -> Result<(), DriveServiceError> {
+    let resource_id: Option<String> = row.get("resource_id");
+    let legacy_knowledgebase_scope = matches!(
+        command.resource_kind,
+        DriveProviderEventResourceKind::KnowledgebaseRawScope
+    ) && resource_id.as_deref() == Some(space_id);
     if row.get::<Option<String>, _>("space_id").as_deref() != Some(space_id)
         || row.get::<Option<String>, _>("node_id").is_some()
         || row.get::<String, _>("resource_type") != "changes"
-        || row.get::<Option<String>, _>("resource_id").as_deref() != Some(space_id)
+        || (resource_id.as_deref() != Some(command.provider_resource_uuid.as_str())
+            && !legacy_knowledgebase_scope)
     {
         return Err(DriveServiceError::Conflict(
-            "root scope event delivery channel cannot be retargeted".to_string(),
+            "provider event delivery channel cannot be retargeted".to_string(),
         ));
     }
     Ok(())
@@ -181,9 +211,9 @@ fn validate_existing_channel(row: &AnyRow, space_id: &str) -> Result<(), DriveSe
 
 async fn read_delivery(
     connection: &mut AnyConnection,
-    command: &EnsureDriveRootScopeEventDelivery,
+    command: &EnsureDriveProviderEventDelivery,
     created: bool,
-) -> Result<EnsureDriveRootScopeEventDeliveryResult, DriveServiceError> {
+) -> Result<EnsureDriveProviderEventDeliveryResult, DriveServiceError> {
     let row = sqlx::query(&format!(
         "SELECT {DELIVERY_SELECT_COLUMNS}
          FROM dr_drive_watch_channel WHERE tenant_id=$1 AND id=$2",
@@ -194,19 +224,19 @@ async fn read_delivery(
     .await
     .map_err(|error| {
         DriveServiceError::Internal(format!(
-            "read root scope event delivery channel failed: {error}"
+            "read provider event delivery channel failed: {error}"
         ))
     })?;
-    Ok(EnsureDriveRootScopeEventDeliveryResult {
-        delivery: map_delivery(&row, &command.subscription_uuid),
+    Ok(EnsureDriveProviderEventDeliveryResult {
+        delivery: map_delivery(&row, &command.provider_resource_uuid),
         created,
     })
 }
 
-fn map_delivery(row: &AnyRow, subscription_uuid: &str) -> DriveRootScopeEventDelivery {
-    DriveRootScopeEventDelivery {
+fn map_delivery(row: &AnyRow, provider_resource_uuid: &str) -> DriveProviderEventDelivery {
+    DriveProviderEventDelivery {
         channel_id: row.get("id"),
-        subscription_uuid: subscription_uuid.to_string(),
+        provider_resource_uuid: provider_resource_uuid.to_string(),
         address: row.get("address"),
         expiration_epoch_ms: row.get("expiration_epoch_ms"),
         lifecycle_status: row.get("lifecycle_status"),

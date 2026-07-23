@@ -36,14 +36,45 @@ fn request(
     tenant_id: Option<&str>,
     body: Body,
 ) -> Request<Body> {
+    request_for_app(method, uri, tenant_id, "knowledgebase", body)
+}
+
+fn request_for_app(
+    method: Method,
+    uri: impl AsRef<str>,
+    tenant_id: Option<&str>,
+    app_id: &str,
+    body: Body,
+) -> Request<Body> {
     let mut builder = Request::builder().method(method).uri(uri.as_ref());
     if let Some(tenant_id) = tenant_id {
         builder = builder.header(
             "x-api-key",
-            ingress_token(tenant_id, "service-publisher", "knowledgebase"),
+            ingress_token(tenant_id, "service-publisher", app_id),
         );
     }
     builder.body(body).expect("request should be built")
+}
+
+fn json_request_for_app(
+    method: Method,
+    uri: impl AsRef<str>,
+    tenant_id: Option<&str>,
+    app_id: &str,
+    payload: Value,
+) -> Request<Body> {
+    let mut request = request_for_app(
+        method,
+        uri,
+        tenant_id,
+        app_id,
+        Body::from(payload.to_string()),
+    );
+    request.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        http::HeaderValue::from_static("application/json"),
+    );
+    request
 }
 
 fn json_request(
@@ -284,13 +315,15 @@ async fn subscription_routes_require_ingress_auth_replay_and_isolate_tenants() {
     assert_eq!(delivery_json["data"]["item"]["subscriptionUuid"], uuid);
     assert_eq!(delivery_json["data"]["item"]["lifecycleStatus"], "ACTIVE");
     assert!(!delivery_json.to_string().contains(verification_token));
-    let stored_signing_key: String = sqlx::query_scalar(
-        "SELECT token_hash FROM dr_drive_watch_channel WHERE tenant_id='tenant-kb' AND id=$1",
+    let (stored_resource_id, stored_signing_key): (Option<String>, String) = sqlx::query_as(
+        "SELECT resource_id, token_hash
+         FROM dr_drive_watch_channel WHERE tenant_id='tenant-kb' AND id=$1",
     )
     .bind(format!("kbraw:{uuid}"))
     .fetch_one(&pool)
     .await
     .expect("derived event delivery signing key should be stored");
+    assert_eq!(stored_resource_id.as_deref(), Some(uuid.as_str()));
     assert_eq!(
         stored_signing_key,
         sdkwork_utils_rust::sha256_hash(verification_token.as_bytes())
@@ -333,6 +366,97 @@ async fn subscription_routes_require_ingress_auth_replay_and_isolate_tenants() {
             format!("/internal/v3/api/drive/root_scope_subscriptions/{uuid}"),
             Some("tenant-other"),
             Body::empty(),
+        ))
+        .await
+        .expect("cross-tenant request should be handled");
+    assert_eq!(cross_tenant.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn website_root_event_delivery_is_root_scoped_write_only_and_idempotent() {
+    let (pool, app, temp) = setup().await;
+    insert_website_resource(&pool, &temp).await;
+    let uri = format!(
+        "/internal/v3/api/drive/website_roots/{WEBSITE_ROOT_UUID}/event_deliveries/web-node-1"
+    );
+    let verification_token = "K3p4Jc9zYv2Nw8Tx5Qg7Ld1Rs6Hm0BaUEfIiVnXoS_4";
+    let payload = json!({
+        "address": "https://web-events.example.com/provider-events/drive-node-1",
+        "verificationToken": verification_token,
+        "expirationEpochMs": "1999999999999"
+    });
+
+    let wrong_caller = app
+        .clone()
+        .oneshot(json_request(
+            Method::PUT,
+            &uri,
+            Some("tenant-web"),
+            payload.clone(),
+        ))
+        .await
+        .expect("wrong caller request should be handled");
+    assert_eq!(wrong_caller.status(), StatusCode::FORBIDDEN);
+
+    let created = app
+        .clone()
+        .oneshot(json_request_for_app(
+            Method::PUT,
+            &uri,
+            Some("tenant-web"),
+            "sdkwork-deployments",
+            payload.clone(),
+        ))
+        .await
+        .expect("website event delivery request should be handled");
+    assert_eq!(created.status(), StatusCode::CREATED);
+    let created_json = response_json(created).await;
+    assert_eq!(created_json["data"]["item"]["channelId"], "web-node-1");
+    assert_eq!(
+        created_json["data"]["item"]["websiteRootUuid"],
+        WEBSITE_ROOT_UUID
+    );
+    assert!(!created_json.to_string().contains(verification_token));
+    let stored: (String, String, String) = sqlx::query_as(
+        "SELECT space_id, resource_id, token_hash
+         FROM dr_drive_watch_channel
+         WHERE tenant_id='tenant-web' AND id='web-node-1'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("website event channel should be stored");
+    assert_eq!(stored.0, "space-web");
+    assert_eq!(stored.1, WEBSITE_ROOT_UUID);
+    assert_eq!(
+        stored.2,
+        sdkwork_utils_rust::sha256_hash(verification_token.as_bytes())
+    );
+
+    let replay = app
+        .clone()
+        .oneshot(json_request_for_app(
+            Method::PUT,
+            &uri,
+            Some("tenant-web"),
+            "sdkwork-deployments",
+            payload,
+        ))
+        .await
+        .expect("website event delivery replay should be handled");
+    assert_eq!(replay.status(), StatusCode::OK);
+    assert_eq!(response_json(replay).await["data"]["item"]["version"], "1");
+
+    let cross_tenant = app
+        .oneshot(json_request_for_app(
+            Method::PUT,
+            &uri,
+            Some("tenant-other"),
+            "sdkwork-deployments",
+            json!({
+                "address": "https://web-events.example.com/provider-events/drive-node-1",
+                "verificationToken": verification_token,
+                "expirationEpochMs": "1999999999999"
+            }),
         ))
         .await
         .expect("cross-tenant request should be handled");
@@ -494,7 +618,7 @@ async fn website_root_retrieve_is_tenant_scoped_and_hides_drive_structure() {
 #[test]
 fn route_manifest_is_internal_and_ingress_token_only() {
     let manifest = sdkwork_routes_drive_internal_api::internal_route_manifest();
-    assert_eq!(manifest.routes().len(), 6);
+    assert_eq!(manifest.routes().len(), 7);
     assert!(manifest.routes().iter().any(|route| {
         route.operation_id == "rootScopeEventDeliveries.replace"
             && route.method == sdkwork_web_core::HttpMethod::Put
@@ -502,6 +626,10 @@ fn route_manifest_is_internal_and_ingress_token_only() {
     assert!(manifest.routes().iter().any(|route| {
         route.operation_id == "websiteRoots.retrieve"
             && route.method == sdkwork_web_core::HttpMethod::Get
+    }));
+    assert!(manifest.routes().iter().any(|route| {
+        route.operation_id == "websiteRootEventDeliveries.replace"
+            && route.method == sdkwork_web_core::HttpMethod::Put
     }));
     for route in manifest.routes() {
         assert!(route.path.starts_with("/internal/v3/api/"));

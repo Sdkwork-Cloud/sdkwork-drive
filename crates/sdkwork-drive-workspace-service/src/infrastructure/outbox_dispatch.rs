@@ -17,12 +17,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 const MAX_OUTBOX_ATTEMPTS: i32 = 10;
 const OUTBOX_BATCH_SIZE: i64 = 100;
-const NO_ACTIVE_WATCH_CHANNELS_ERROR: &str = "no_active_watch_channels";
 const KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE_ENV: &str =
     "SDKWORK_DRIVE_KNOWLEDGEBASE_EVENT_INGRESS_TOKEN_FILE";
 const KNOWLEDGEBASE_EVENT_CALLBACK_URL_ENV: &str = "SDKWORK_DRIVE_KNOWLEDGEBASE_EVENT_CALLBACK_URL";
 /// Bound webhook fan-out per outbox event to keep dispatch memory O(channels cap).
 const MAX_WATCH_CHANNELS_PER_OUTBOX_EVENT: i64 = 200;
+const MAX_PROVIDER_SCOPES_PER_OUTBOX_EVENT: usize = 512;
 
 static DOMAIN_OUTBOX_DISPATCHER_STARTED: AtomicBool = AtomicBool::new(false);
 static IMMEDIATE_OUTBOX_DISPATCH_IN_FLIGHT: AtomicBool = AtomicBool::new(false);
@@ -164,6 +164,7 @@ async fn dispatch_pending_outbox_events_with_optional_relay(
             &OutboxChangeEvent {
                 tenant_id: &claimed.tenant_id,
                 space_id: &claimed.space_id,
+                event_type: &claimed.event_type,
                 attempt_count: claimed.attempt_count,
                 payload_json: &claimed.payload_json,
             },
@@ -203,6 +204,7 @@ struct ClaimedOutboxEvent {
     outbox_id: String,
     tenant_id: String,
     space_id: String,
+    event_type: String,
     attempt_count: i32,
     payload_json: String,
 }
@@ -226,7 +228,7 @@ async fn claim_next_pending_outbox_event(
                    LIMIT 1
                    FOR UPDATE SKIP LOCKED
                  )
-                 RETURNING id, tenant_id, space_id, attempt_count, payload_json",
+                 RETURNING id, tenant_id, space_id, event_type, attempt_count, payload_json",
             ))
             .bind(MAX_OUTBOX_ATTEMPTS)
             .fetch_optional(pool)
@@ -244,6 +246,7 @@ async fn claim_next_pending_outbox_event(
         outbox_id: row.get("id"),
         tenant_id: row.get("tenant_id"),
         space_id: row.get("space_id"),
+        event_type: row.get("event_type"),
         attempt_count: row.get("attempt_count"),
         payload_json: row.get("payload_json"),
     }))
@@ -267,7 +270,7 @@ async fn claim_sqlite_outbox_event(
            ORDER BY created_at ASC
            LIMIT 1
          )
-         RETURNING id, tenant_id, space_id, attempt_count, payload_json",
+         RETURNING id, tenant_id, space_id, event_type, attempt_count, payload_json",
     ))
     .bind(MAX_OUTBOX_ATTEMPTS)
     .fetch_optional(&mut *connection)
@@ -333,6 +336,7 @@ async fn mark_outbox_event_failed(
 struct OutboxChangeEvent<'a> {
     tenant_id: &'a str,
     space_id: &'a str,
+    event_type: &'a str,
     attempt_count: i32,
     payload_json: &'a str,
 }
@@ -345,39 +349,67 @@ async fn dispatch_outbox_event(
     event: &OutboxChangeEvent<'_>,
 ) -> Result<(), String> {
     let now_epoch_ms = chrono::Utc::now().timestamp_millis();
-    let rows = sqlx::query(
-        "SELECT id, address, token_hash
+    let payload: Value = serde_json::from_str(event.payload_json)
+        .map_err(|error| format!("domain outbox payload is invalid JSON: {error}"))?;
+    let affected_resources = affected_provider_resource_ids(event.event_type, &payload)?;
+    let affected_resource_ids = affected_resources.iter().collect::<Vec<_>>();
+    let mut channel_query = String::from(
+        "SELECT id, address, token_hash, resource_id
          FROM dr_drive_watch_channel
          WHERE tenant_id=$1
            AND lifecycle_status='active'
            AND resource_type='changes'
            AND (space_id IS NULL OR space_id=$2)
            AND expiration_epoch_ms > $3
-         ORDER BY created_at ASC
-         LIMIT $4",
-    )
-    .bind(event.tenant_id)
-    .bind(event.space_id)
-    .bind(now_epoch_ms)
-    .bind(MAX_WATCH_CHANNELS_PER_OUTBOX_EVENT)
-    .fetch_all(pool)
-    .await
-    .map_err(|error| format!("list watch channels for outbox failed: {error}"))?;
-
-    let payload: Value = serde_json::from_str(event.payload_json)
-        .map_err(|error| format!("domain outbox payload is invalid JSON: {error}"))?;
-    let event_id = payload
-        .get("id")
-        .and_then(Value::as_str)
-        .filter(|value| !value.is_empty() && value.len() <= 128)
-        .ok_or_else(|| "domain outbox payload has no valid event id".to_string())?;
+           AND (resource_id IS NULL OR resource_id=$4",
+    );
+    for bind_index in 0..affected_resource_ids.len() {
+        channel_query.push_str(&format!(" OR resource_id=${}", bind_index + 5));
+    }
+    channel_query.push_str(&format!(
+        ") ORDER BY created_at ASC LIMIT {}",
+        MAX_WATCH_CHANNELS_PER_OUTBOX_EVENT + 1
+    ));
+    let mut query = sqlx::query(&channel_query)
+        .bind(event.tenant_id)
+        .bind(event.space_id)
+        .bind(now_epoch_ms)
+        .bind(event.space_id);
+    for resource_id in affected_resource_ids {
+        query = query.bind(resource_id);
+    }
+    let rows = query
+        .fetch_all(pool)
+        .await
+        .map_err(|error| format!("list watch channels for outbox failed: {error}"))?;
+    if rows.len() > MAX_WATCH_CHANNELS_PER_OUTBOX_EVENT as usize {
+        return Err("active watch channel fan-out exceeds the bounded limit".to_string());
+    }
+    let rows = rows
+        .into_iter()
+        .filter(|row| {
+            let channel_id: String = row.get("id");
+            let resource_id: Option<String> = row.get("resource_id");
+            channel_matches_provider_resources(
+                &channel_id,
+                resource_id.as_deref(),
+                event.space_id,
+                &affected_resources,
+            )
+        })
+        .collect::<Vec<_>>();
     let timestamp = chrono::Utc::now().timestamp().to_string();
     let retry_count = event.attempt_count.saturating_sub(1).to_string();
     let embedded_targets = resolve_embedded_targets(relay, event).await?;
 
     if rows.is_empty() && embedded_targets.is_empty() {
-        return Err(NO_ACTIVE_WATCH_CHANNELS_ERROR.to_string());
+        return Ok(());
     }
+    let event_id = payload
+        .get("id")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty() && value.len() <= 128)
+        .unwrap_or(outbox_id);
 
     if let Some(relay) = relay {
         for target in embedded_targets {
@@ -460,6 +492,87 @@ async fn dispatch_outbox_event(
     }
 
     Ok(())
+}
+
+fn affected_provider_resource_ids(
+    event_type: &str,
+    payload: &Value,
+) -> Result<HashSet<String>, String> {
+    let mut resources = HashSet::new();
+    let Some(data) = payload.get("data").and_then(Value::as_object) else {
+        return Ok(resources);
+    };
+    match event_type {
+        "drive.website_root.generation.changed.v1" => {
+            let resource_id = data
+                .get("websiteRootUuid")
+                .and_then(Value::as_str)
+                .ok_or_else(|| {
+                    "website root generation event has no provider resource UUID".to_string()
+                })?;
+            insert_provider_resource_id(&mut resources, resource_id)?;
+        }
+        "drive.node.version.committed.v1"
+        | "drive.node.eligibility.changed.v1"
+        | "drive.node.deleted.v1" => {
+            collect_root_scope_ids(data.get("rootScopes"), &mut resources)?;
+        }
+        "drive.node.path.changed.v1" => {
+            collect_root_scope_ids(data.get("oldRootScopes"), &mut resources)?;
+            collect_root_scope_ids(data.get("newRootScopes"), &mut resources)?;
+        }
+        _ => {}
+    }
+    Ok(resources)
+}
+
+fn collect_root_scope_ids(
+    value: Option<&Value>,
+    resources: &mut HashSet<String>,
+) -> Result<(), String> {
+    let scopes = value
+        .and_then(Value::as_array)
+        .ok_or_else(|| "typed Drive node event has no root scope array".to_string())?;
+    for scope in scopes {
+        let resource_id = scope
+            .get("scopeId")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "typed Drive node event has an invalid root scope".to_string())?;
+        insert_provider_resource_id(resources, resource_id)?;
+    }
+    Ok(())
+}
+
+fn insert_provider_resource_id(
+    resources: &mut HashSet<String>,
+    resource_id: &str,
+) -> Result<(), String> {
+    if resource_id.is_empty()
+        || resource_id.len() > 64
+        || resource_id.trim() != resource_id
+        || resource_id.bytes().any(|byte| byte.is_ascii_control())
+        || (!resources.contains(resource_id)
+            && resources.len() >= MAX_PROVIDER_SCOPES_PER_OUTBOX_EVENT)
+    {
+        return Err("provider resource scope is outside bounded limits".to_string());
+    }
+    resources.insert(resource_id.to_string());
+    Ok(())
+}
+
+fn channel_matches_provider_resources(
+    channel_id: &str,
+    resource_id: Option<&str>,
+    space_id: &str,
+    affected_resources: &HashSet<String>,
+) -> bool {
+    if let Some(root_scope_uuid) = channel_id.strip_prefix("kbraw:") {
+        return affected_resources.contains(root_scope_uuid);
+    }
+    match resource_id {
+        Some(resource_id) if resource_id != space_id => affected_resources.contains(resource_id),
+        _ => true,
+    }
 }
 
 async fn resolve_embedded_targets(
@@ -676,11 +789,6 @@ mod tests {
     }
 
     #[test]
-    fn no_active_watch_channels_error_is_stable() {
-        assert_eq!(NO_ACTIVE_WATCH_CHANNELS_ERROR, "no_active_watch_channels");
-    }
-
-    #[test]
     fn outbox_claim_exclude_clause_escapes_single_quotes() {
         let mut exclude = HashSet::new();
         exclude.insert("outbox-'quoted".to_string());
@@ -746,6 +854,48 @@ mod tests {
         .expect("ordinary webhook request should build");
 
         assert!(!request.headers().contains_key("x-api-key"));
+    }
+
+    #[test]
+    fn provider_resource_routing_is_root_scoped_and_keeps_space_channels_generic() {
+        let payload = serde_json::json!({
+            "data": {
+                "oldRootScopes": [
+                    {"scopeId": "website-root-1"},
+                    {"scopeId": "raw-scope-1"}
+                ],
+                "newRootScopes": [
+                    {"scopeId": "website-root-2"}
+                ]
+            }
+        });
+        let resources = affected_provider_resource_ids("drive.node.path.changed.v1", &payload)
+            .expect("root scope routing should parse");
+        assert_eq!(resources.len(), 3);
+        assert!(channel_matches_provider_resources(
+            "website-node-1",
+            Some("website-root-2"),
+            "space-1",
+            &resources,
+        ));
+        assert!(!channel_matches_provider_resources(
+            "website-node-1",
+            Some("website-root-other"),
+            "space-1",
+            &resources,
+        ));
+        assert!(channel_matches_provider_resources(
+            "kbraw:raw-scope-1",
+            Some("space-1"),
+            "space-1",
+            &resources,
+        ));
+        assert!(channel_matches_provider_resources(
+            "ordinary-space-channel",
+            Some("space-1"),
+            "space-1",
+            &resources,
+        ));
     }
 
     #[test]

@@ -2,9 +2,10 @@ use sdkwork_drive_contract::drive::events::{
     derive_webhook_signing_key, WEBHOOK_SIGNING_TOKEN_MAX_LENGTH, WEBHOOK_SIGNING_TOKEN_MIN_LENGTH,
 };
 
-use crate::domain::root_scope_event_delivery::DriveRootScopeEventDelivery;
-use crate::ports::root_scope_event_delivery_store::{
-    DriveRootScopeEventDeliveryStore, EnsureDriveRootScopeEventDelivery,
+use crate::domain::provider_event_delivery::DriveProviderEventDelivery;
+use crate::ports::provider_event_delivery_store::{
+    DriveProviderEventDeliveryStore, DriveProviderEventResourceKind,
+    EnsureDriveProviderEventDelivery,
 };
 use crate::DriveServiceError;
 
@@ -24,21 +25,21 @@ pub struct EnsureRootScopeEventDeliveryCommand {
 
 #[derive(Debug, Clone)]
 pub struct EnsureRootScopeEventDeliveryResult {
-    pub delivery: DriveRootScopeEventDelivery,
+    pub delivery: DriveProviderEventDelivery,
     pub created: bool,
 }
 
 #[derive(Debug, Clone)]
 pub struct DriveRootScopeEventDeliveryService<S>
 where
-    S: DriveRootScopeEventDeliveryStore,
+    S: DriveProviderEventDeliveryStore,
 {
     store: S,
 }
 
 impl<S> DriveRootScopeEventDeliveryService<S>
 where
-    S: DriveRootScopeEventDeliveryStore,
+    S: DriveProviderEventDeliveryStore,
 {
     pub fn new(store: S) -> Self {
         Self { store }
@@ -57,18 +58,15 @@ where
             .map_err(|detail| DriveServiceError::Validation(detail.to_string()))?
             .to_string();
         validate_verification_token(&command.verification_token)?;
-        if command.expiration_epoch_ms <= chrono::Utc::now().timestamp_millis() {
-            return Err(DriveServiceError::Validation(
-                "expiration_epoch_ms must be in the future".to_string(),
-            ));
-        }
+        validate_event_delivery_expiration(command.expiration_epoch_ms)?;
         let operator_id = require_text(command.operator_id, "operator_id", 128)?;
         let channel_id = format!("{KNOWLEDGEBASE_CHANNEL_PREFIX}{subscription_uuid}");
         let result = self
             .store
-            .ensure_delivery(&EnsureDriveRootScopeEventDelivery {
+            .ensure_delivery(&EnsureDriveProviderEventDelivery {
                 tenant_id,
-                subscription_uuid,
+                resource_kind: DriveProviderEventResourceKind::KnowledgebaseRawScope,
+                provider_resource_uuid: subscription_uuid,
                 channel_id,
                 address,
                 signing_key_sha256: derive_webhook_signing_key(&command.verification_token),
@@ -83,7 +81,7 @@ where
     }
 }
 
-fn validate_verification_token(token: &str) -> Result<(), DriveServiceError> {
+pub(crate) fn validate_verification_token(token: &str) -> Result<(), DriveServiceError> {
     if token.len() < WEBHOOK_SIGNING_TOKEN_MIN_LENGTH
         || token.len() > WEBHOOK_SIGNING_TOKEN_MAX_LENGTH
         || token.chars().any(char::is_whitespace)
@@ -94,6 +92,17 @@ fn validate_verification_token(token: &str) -> Result<(), DriveServiceError> {
         return Err(DriveServiceError::Validation(format!(
             "verification_token must contain {WEBHOOK_SIGNING_TOKEN_MIN_LENGTH} to {WEBHOOK_SIGNING_TOKEN_MAX_LENGTH} base64url characters"
         )));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_event_delivery_expiration(
+    expiration_epoch_ms: i64,
+) -> Result<(), DriveServiceError> {
+    if expiration_epoch_ms <= chrono::Utc::now().timestamp_millis() {
+        return Err(DriveServiceError::Validation(
+            "expiration_epoch_ms must be in the future".to_string(),
+        ));
     }
     Ok(())
 }

@@ -19,5 +19,6 @@ export const operations = {
   "rootScopeEventDeliveries.replace": { method: "PUT", path: "/internal/v3/api/drive/root_scope_subscriptions/{subscriptionUuid}/event_delivery" },
   "rootScopeSubscriptions.create": { method: "POST", path: "/internal/v3/api/drive/root_scope_subscriptions" },
   "rootScopeSubscriptions.retrieve": { method: "GET", path: "/internal/v3/api/drive/root_scope_subscriptions/{subscriptionUuid}" },
+  "websiteRootEventDeliveries.replace": { method: "PUT", path: "/internal/v3/api/drive/website_roots/{websiteRootUuid}/event_deliveries/{channelId}" },
   "websiteRoots.retrieve": { method: "GET", path: "/internal/v3/api/drive/website_roots/{websiteRootUuid}" },
 } as const;

@@ -12,6 +12,9 @@ use sdkwork_drive_workspace_service::application::root_scope_subscription_servic
     DriveRootScopeSubscriptionService, EnsureKnowledgebaseRawScopeCommand,
     GetRootScopeSubscriptionCommand, SqlDriveKnowledgebaseRawScopeService,
 };
+use sdkwork_drive_workspace_service::application::website_root_event_delivery_service::{
+    DriveWebsiteRootEventDeliveryService, EnsureWebsiteRootEventDeliveryCommand,
+};
 use sdkwork_drive_workspace_service::application::website_root_service::{
     DriveWebsiteRootService, GetWebsiteRootCommand,
 };
@@ -27,8 +30,9 @@ use sdkwork_web_core::RequireInternalApi;
 
 use crate::dto::{
     CreateRootScopeSubscriptionRequest, DriveResourceResolutionResponse,
-    EnsureRootScopeEventDeliveryRequest, ResolveDriveResourceRequest,
-    RootScopeEventDeliveryResponse, RootScopeSubscriptionResponse, WebsiteRootResponse,
+    EnsureRootScopeEventDeliveryRequest, EnsureWebsiteRootEventDeliveryRequest,
+    ResolveDriveResourceRequest, RootScopeEventDeliveryResponse, RootScopeSubscriptionResponse,
+    WebsiteRootEventDeliveryResponse, WebsiteRootResponse,
 };
 use crate::error::{
     invalid_parameter, map_service_error, missing_internal_principal, RouteProblem,
@@ -149,7 +153,7 @@ pub async fn ensure_root_scope_event_delivery(
     let expiration_epoch_ms =
         parse_positive_i64(&payload.expiration_epoch_ms, "expirationEpochMs")?;
     let result = DriveRootScopeEventDeliveryService::new(
-        sdkwork_drive_workspace_service::infrastructure::sql::root_scope_event_delivery_store::SqlRootScopeEventDeliveryStore::new(
+        sdkwork_drive_workspace_service::infrastructure::sql::provider_event_delivery_store::SqlProviderEventDeliveryStore::new(
             state.pool.clone(),
         ),
     )
@@ -172,7 +176,67 @@ pub async fn ensure_root_scope_event_delivery(
         status,
         resource(RootScopeEventDeliveryResponse {
             channel_id: result.delivery.channel_id,
-            subscription_uuid: result.delivery.subscription_uuid,
+            subscription_uuid: result.delivery.provider_resource_uuid,
+            address: result.delivery.address,
+            expiration_epoch_ms: result.delivery.expiration_epoch_ms.to_string(),
+            lifecycle_status: result.delivery.lifecycle_status.to_ascii_uppercase(),
+            version: result.delivery.version.to_string(),
+            created_at: normalize_timestamp(&result.delivery.created_at),
+            updated_at: normalize_timestamp(&result.delivery.updated_at),
+        }),
+    ))
+}
+
+pub async fn ensure_website_root_event_delivery(
+    State(state): State<InternalApiState>,
+    RequireInternalApi(context): RequireInternalApi,
+    Path((website_root_uuid, channel_id)): Path<(String, String)>,
+    Json(payload): Json<EnsureWebsiteRootEventDeliveryRequest>,
+) -> Result<
+    (
+        StatusCode,
+        Json<SdkWorkApiResponse<SdkWorkResourceData<WebsiteRootEventDeliveryResponse>>>,
+    ),
+    RouteProblem,
+> {
+    validate_uuid(&website_root_uuid, "websiteRootUuid")?;
+    let principal = context
+        .principal
+        .as_ref()
+        .ok_or_else(missing_internal_principal)?;
+    let expected_caller_app_id = std::env::var("SDKWORK_DRIVE_WEBSITE_EVENT_CALLER_APP_ID")
+        .unwrap_or_else(|_| "sdkwork-deployments".to_string());
+    if principal.app_id() != expected_caller_app_id {
+        return Err(crate::error::forbidden_internal_caller());
+    }
+    let expiration_epoch_ms =
+        parse_positive_i64(&payload.expiration_epoch_ms, "expirationEpochMs")?;
+    let result = DriveWebsiteRootEventDeliveryService::new(
+        sdkwork_drive_workspace_service::infrastructure::sql::provider_event_delivery_store::SqlProviderEventDeliveryStore::new(
+            state.pool.clone(),
+        ),
+    )
+    .ensure_delivery(EnsureWebsiteRootEventDeliveryCommand {
+        tenant_id: principal.tenant_id().to_string(),
+        website_root_uuid,
+        channel_id,
+        address: payload.address,
+        verification_token: payload.verification_token,
+        expiration_epoch_ms,
+        operator_id: principal.user_id().to_string(),
+    })
+    .await
+    .map_err(map_service_error)?;
+    let status = if result.created {
+        StatusCode::CREATED
+    } else {
+        StatusCode::OK
+    };
+    Ok((
+        status,
+        resource(WebsiteRootEventDeliveryResponse {
+            channel_id: result.delivery.channel_id,
+            website_root_uuid: result.delivery.provider_resource_uuid,
             address: result.delivery.address,
             expiration_epoch_ms: result.delivery.expiration_epoch_ms.to_string(),
             lifecycle_status: result.delivery.lifecycle_status.to_ascii_uppercase(),

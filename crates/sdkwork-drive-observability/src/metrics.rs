@@ -17,6 +17,11 @@ static MULTIPART_COMPENSATION_SUCCEEDED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static MULTIPART_COMPENSATION_FAILED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static WEBSITE_SYNC_TRANSACTION_RETRIES_TOTAL: AtomicU64 = AtomicU64::new(0);
 static WEBSITE_SYNC_TRANSACTION_RETRY_EXHAUSTED_TOTAL: AtomicU64 = AtomicU64::new(0);
+static WEBSITE_GENERATIONS_EXPIRED_TOTAL: AtomicU64 = AtomicU64::new(0);
+static WEBSITE_SYNCS_EXPIRED_TOTAL: AtomicU64 = AtomicU64::new(0);
+static WEBSITE_CLEANUP_CANDIDATES_COMPLETED_TOTAL: AtomicU64 = AtomicU64::new(0);
+static WEBSITE_CLEANUP_OBJECTS_DELETED_TOTAL: AtomicU64 = AtomicU64::new(0);
+static WEBSITE_CLEANUP_NODES_DELETED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static HEALTH_SERVING: AtomicU64 = AtomicU64::new(1);
 static HTTP_REQUEST_ROUTE_LABELS: LazyLock<Mutex<HashMap<String, u64>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -53,6 +58,22 @@ pub fn record_website_sync_transaction_retry() {
 
 pub fn record_website_sync_transaction_retry_exhausted() {
     WEBSITE_SYNC_TRANSACTION_RETRY_EXHAUSTED_TOTAL.fetch_add(1, Ordering::Relaxed);
+}
+
+pub fn record_website_generations_expired(count: u64) {
+    WEBSITE_GENERATIONS_EXPIRED_TOTAL.fetch_add(count, Ordering::Relaxed);
+}
+
+pub fn record_website_publishing_cleanup(
+    expired_syncs: u64,
+    completed_candidates: u64,
+    deleted_objects: u64,
+    deleted_nodes: u64,
+) {
+    WEBSITE_SYNCS_EXPIRED_TOTAL.fetch_add(expired_syncs, Ordering::Relaxed);
+    WEBSITE_CLEANUP_CANDIDATES_COMPLETED_TOTAL.fetch_add(completed_candidates, Ordering::Relaxed);
+    WEBSITE_CLEANUP_OBJECTS_DELETED_TOTAL.fetch_add(deleted_objects, Ordering::Relaxed);
+    WEBSITE_CLEANUP_NODES_DELETED_TOTAL.fetch_add(deleted_nodes, Ordering::Relaxed);
 }
 
 pub fn record_http_request() {
@@ -129,6 +150,21 @@ pub fn render_prometheus(service: &str) -> String {
          # HELP drive_website_sync_transaction_retry_exhausted_total WebsiteSync serializable transactions that exhausted bounded retries.\n\
          # TYPE drive_website_sync_transaction_retry_exhausted_total counter\n\
          drive_website_sync_transaction_retry_exhausted_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
+         # HELP drive_website_generations_expired_total WebsiteRoot generations expired by retained-generation policy.\n\
+         # TYPE drive_website_generations_expired_total counter\n\
+         drive_website_generations_expired_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
+         # HELP drive_website_syncs_expired_total WebsiteSync rows expired by background publishing maintenance.\n\
+         # TYPE drive_website_syncs_expired_total counter\n\
+         drive_website_syncs_expired_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
+         # HELP drive_website_cleanup_candidates_completed_total Website publishing cleanup candidates completed.\n\
+         # TYPE drive_website_cleanup_candidates_completed_total counter\n\
+         drive_website_cleanup_candidates_completed_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
+         # HELP drive_website_cleanup_objects_deleted_total Website publishing storage objects deleted from providers.\n\
+         # TYPE drive_website_cleanup_objects_deleted_total counter\n\
+         drive_website_cleanup_objects_deleted_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
+         # HELP drive_website_cleanup_nodes_deleted_total Website publishing nodes retired after reference checks.\n\
+         # TYPE drive_website_cleanup_nodes_deleted_total counter\n\
+         drive_website_cleanup_nodes_deleted_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
          # HELP drive_health_status Service health serving status (1=serving, 0=not serving).\n\
          # TYPE drive_health_status gauge\n\
          drive_health_status{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n",
@@ -144,6 +180,11 @@ pub fn render_prometheus(service: &str) -> String {
         MULTIPART_COMPENSATION_FAILED_TOTAL.load(Ordering::Relaxed),
         WEBSITE_SYNC_TRANSACTION_RETRIES_TOTAL.load(Ordering::Relaxed),
         WEBSITE_SYNC_TRANSACTION_RETRY_EXHAUSTED_TOTAL.load(Ordering::Relaxed),
+        WEBSITE_GENERATIONS_EXPIRED_TOTAL.load(Ordering::Relaxed),
+        WEBSITE_SYNCS_EXPIRED_TOTAL.load(Ordering::Relaxed),
+        WEBSITE_CLEANUP_CANDIDATES_COMPLETED_TOTAL.load(Ordering::Relaxed),
+        WEBSITE_CLEANUP_OBJECTS_DELETED_TOTAL.load(Ordering::Relaxed),
+        WEBSITE_CLEANUP_NODES_DELETED_TOTAL.load(Ordering::Relaxed),
         HEALTH_SERVING.load(Ordering::Relaxed),
     );
     output.push_str(&latency_histogram::render_prometheus_histogram(

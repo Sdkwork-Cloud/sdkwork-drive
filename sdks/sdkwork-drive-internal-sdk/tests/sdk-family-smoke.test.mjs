@@ -13,6 +13,7 @@ const requiredOperations = [
   "rootScopeSubscriptions.retrieve",
   "rootScopeEventDeliveries.replace",
   "websiteRoots.retrieve",
+  "websiteRootEventDeliveries.replace",
   "driveResources.resolve",
   "driveResourceContent.retrieve",
 ];
@@ -53,7 +54,7 @@ test("internal SDK family declares canonical authority and generated-only transp
   assert(existsSync(path.join(sdkRoot, manifest.generationInputSpec)));
 });
 
-test("every official generated language carries only the six internal operations", () => {
+test("every official generated language carries only the seven internal operations", () => {
   for (const language of languages) {
     const output = path.join(
       sdkRoot,

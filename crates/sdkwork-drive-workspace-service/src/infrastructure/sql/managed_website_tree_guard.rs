@@ -8,6 +8,7 @@ const MAXIMUM_ANCESTRY_DEPTH: i64 = 128;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ManagedWebsiteTreeSystemOverrideReason {
     ContentPolicyQuarantine,
+    ExpiredWebsitePublishingCleanup,
     TenantAuthorizedSpaceRetirement,
 }
 
@@ -16,6 +17,9 @@ impl ManagedWebsiteTreeSystemOverrideReason {
         match self {
             Self::ContentPolicyQuarantine => {
                 "drive.website_tree.system_override.content_policy_quarantine"
+            }
+            Self::ExpiredWebsitePublishingCleanup => {
+                "drive.website_tree.system_override.expired_publishing_cleanup"
             }
             Self::TenantAuthorizedSpaceRetirement => {
                 "drive.website_tree.system_override.tenant_authorized_space_retirement"

@@ -164,7 +164,7 @@ where
                         validation_lease.lease_token.as_deref(),
                         &error,
                     )
-                        .await;
+                    .await;
                     return Err(error);
                 }
             }
@@ -177,7 +177,7 @@ where
                 validation_lease.lease_token.as_deref(),
                 &error,
             )
-                .await;
+            .await;
             return Err(error);
         }
 
@@ -201,7 +201,7 @@ where
                     validation_lease.lease_token.as_deref(),
                     error,
                 )
-                    .await;
+                .await;
             }
         }
         activation

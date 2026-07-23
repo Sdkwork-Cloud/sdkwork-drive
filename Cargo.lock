@@ -3795,10 +3795,13 @@ dependencies = [
  "chrono",
  "sdkwork-drive-config",
  "sdkwork-drive-http",
+ "sdkwork-drive-object-runtime",
  "sdkwork-drive-observability",
+ "sdkwork-drive-storage-contract",
  "sdkwork-drive-workspace-service",
  "serde_json",
  "sqlx",
+ "tempfile",
  "tokio",
  "tracing",
 ]

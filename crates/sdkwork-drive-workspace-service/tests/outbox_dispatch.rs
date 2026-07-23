@@ -44,16 +44,18 @@ async fn sqlite_claims_pending_outbox_event_with_begin_immediate() {
         .await
         .expect("sqlite outbox dispatch should run");
     assert_eq!(1, result.processed);
-    assert_eq!(0, result.delivered);
+    assert_eq!(1, result.delivered);
     assert_eq!(0, result.failed);
 
-    let attempt_count: i32 = sqlx::query_scalar(
-        "SELECT attempt_count FROM dr_drive_domain_outbox WHERE id = 'outbox-1'",
+    let row: (i32, String) = sqlx::query_as(
+        "SELECT attempt_count, delivery_status
+         FROM dr_drive_domain_outbox WHERE id = 'outbox-1'",
     )
     .fetch_one(&pool)
     .await
-    .expect("outbox row should remain");
-    assert_eq!(1, attempt_count);
+    .expect("outbox row should be completed");
+    assert_eq!(1, row.0);
+    assert_eq!("delivered", row.1);
 }
 
 #[tokio::test]
@@ -103,6 +105,74 @@ async fn sqlite_embedded_relay_reuses_outbox_retry_and_channel_idempotency() {
 }
 
 #[tokio::test]
+async fn sqlite_does_not_contact_an_unmatched_provider_root_channel() {
+    let pool = sqlite_outbox_pool().await;
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+         ) VALUES (
+            'space-web', 'tenant-web', 'organization', 'organization-web', 'website',
+            'Website', 'active', 1, 'test', 'test'
+         )",
+    )
+    .execute(&pool)
+    .await
+    .expect("seed website Space");
+    sqlx::query(
+        "INSERT INTO dr_drive_watch_channel (
+            id, tenant_id, space_id, node_id, resource_type, resource_id,
+            channel_type, address, token_hash, expiration_epoch_ms,
+            lifecycle_status, version, created_by, updated_by
+         ) VALUES (
+            'web-node-other-root', 'tenant-web', 'space-web', NULL, 'changes',
+            'website-root-other', 'web_hook', 'https://127.0.0.1:9/must-not-be-called',
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            1999999999999, 'active', 1, 'test', 'test'
+         )",
+    )
+    .execute(&pool)
+    .await
+    .expect("seed unmatched provider root channel");
+    sqlx::query(
+        "INSERT INTO dr_drive_domain_outbox (
+            id, tenant_id, space_id, node_id, event_type, actor_id, sequence_no, payload_json
+         ) VALUES (
+            'outbox-root-routing-1', 'tenant-web', 'space-web', NULL,
+            'drive.website_root.generation.changed.v1', 'user-1', 1,
+            '{\"id\":\"event-root-routing-1\",\"data\":{\"websiteRootUuid\":\"website-root-matching\"}}'
+         )",
+    )
+    .execute(&pool)
+    .await
+    .expect("seed website root generation event");
+
+    let result = dispatch_pending_outbox_events(&pool)
+        .await
+        .expect("unmatched root channel must be filtered before network delivery");
+    assert_eq!(result.processed, 1);
+    assert_eq!(result.delivered, 1);
+    assert_eq!(result.failed, 0);
+
+    let outbox_status: String = sqlx::query_scalar(
+        "SELECT delivery_status FROM dr_drive_domain_outbox
+         WHERE id='outbox-root-routing-1'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("read routed outbox status");
+    assert_eq!(outbox_status, "delivered");
+    let channel_delivery_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM dr_drive_domain_outbox_channel_delivery
+         WHERE outbox_id='outbox-root-routing-1'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("read unmatched channel delivery count");
+    assert_eq!(channel_delivery_count, 0);
+}
+
+#[tokio::test]
 async fn postgres_claims_pending_outbox_event_with_skip_locked() {
     let database_url = match std::env::var("SDKWORK_DRIVE_POSTGRES_URL") {
         Ok(value) if !value.trim().is_empty() => value,
@@ -144,17 +214,17 @@ async fn postgres_claims_pending_outbox_event_with_skip_locked() {
         result.processed >= 1,
         "dispatcher must process the seeded event even when the contract database contains other pending events"
     );
-    assert_eq!(0, result.delivered);
-    assert_eq!(0, result.failed);
 
-    let attempt_count: i32 = sqlx::query_scalar(
-        "SELECT attempt_count FROM dr_drive_domain_outbox WHERE id = $1",
+    let row: (i32, String) = sqlx::query_as(
+        "SELECT attempt_count, delivery_status
+         FROM dr_drive_domain_outbox WHERE id = $1",
     )
     .bind(&outbox_id)
     .fetch_one(&pool)
     .await
-    .expect("postgres outbox row should remain");
-    assert_eq!(1, attempt_count);
+    .expect("postgres outbox row should complete");
+    assert_eq!(1, row.0);
+    assert_eq!("delivered", row.1);
 }
 
 #[derive(Default)]

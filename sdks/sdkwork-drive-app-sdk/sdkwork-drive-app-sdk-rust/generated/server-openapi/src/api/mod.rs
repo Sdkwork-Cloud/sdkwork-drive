@@ -1,6 +1,6 @@
 pub mod base;
-pub mod paths;
 pub mod drive;
+pub mod paths;
 pub use drive::DriveApi;
 pub mod node_labels;
 pub use node_labels::NodeLabelsApi;

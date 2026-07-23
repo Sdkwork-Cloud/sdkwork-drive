@@ -15,9 +15,13 @@ impl NodesApi {
     }
 
     /// Create a shortcut node
-    pub async fn shortcuts_create(&self, body: &CreateShortcutRequest) -> Result<DriveNode, SdkworkError> {
+    pub async fn shortcuts_create(
+        &self,
+        body: &CreateShortcutRequest,
+    ) -> Result<DriveNode, SdkworkError> {
         let path = app_path(&"/drive/nodes/shortcuts".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }
