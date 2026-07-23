@@ -37,11 +37,18 @@ pub struct ValidateDriveWebsiteSync {
 }
 
 #[derive(Debug, Clone)]
+pub struct DriveWebsiteSyncValidation {
+    pub sync: DriveWebsiteSync,
+    pub lease_token: Option<String>,
+}
+
+#[derive(Debug, Clone)]
 pub struct ActivateValidatedWebsiteSync {
     pub tenant_id: String,
     pub website_root_uuid: String,
     pub sync_id: String,
     pub expected_sync_version: i64,
+    pub lease_token: Option<String>,
     pub observed_manifest: DriveWebsiteManifestSummary,
     pub operator_id: String,
 }
@@ -94,7 +101,7 @@ pub trait DriveWebsiteSyncStore: Send + Sync {
     async fn begin_validation(
         &self,
         command: &ValidateDriveWebsiteSync,
-    ) -> Result<DriveWebsiteSync, DriveServiceError>;
+    ) -> Result<DriveWebsiteSyncValidation, DriveServiceError>;
 
     async fn list_staging_tree(
         &self,
@@ -114,6 +121,7 @@ pub trait DriveWebsiteSyncStore: Send + Sync {
         website_root_uuid: &str,
         sync_id: &str,
         expected_sync_version: i64,
+        lease_token: &str,
         error_code: &str,
         error_summary: &str,
         operator_id: &str,

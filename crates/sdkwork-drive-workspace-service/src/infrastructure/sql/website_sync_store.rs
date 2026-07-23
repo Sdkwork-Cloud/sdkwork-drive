@@ -25,7 +25,8 @@ use crate::infrastructure::sql::{
 use crate::ports::website_sync_store::{
     AbortDriveWebsiteSync, ActivateDriveWebsiteGeneration, ActivateValidatedWebsiteSync,
     CreateDriveWebsiteSync, CreateDriveWebsiteSyncResult, DriveWebsiteGenerationActivation,
-    DriveWebsiteSyncActivation, DriveWebsiteSyncStore, ValidateDriveWebsiteSync,
+    DriveWebsiteSyncActivation, DriveWebsiteSyncStore, DriveWebsiteSyncValidation,
+    ValidateDriveWebsiteSync,
 };
 use crate::DriveServiceError;
 
@@ -33,6 +34,7 @@ const WEBSITE_SYNC_SELECT_COLUMNS: &str = "sync.id, sync.tenant_id, sync.website
 const WEBSITE_ROOT_SELECT_COLUMNS: &str = "root.id, root.uuid, root.tenant_id, root.space_id, root.root_key, root.display_name, root.source_root_mode, root.selected_folder_node_id, root.content_mode, root.active_node_id, root.active_generation, root.root_status, root.version, CAST(root.created_at AS TEXT) AS created_at, CAST(root.updated_at AS TEXT) AS updated_at";
 const MAX_SERIALIZABLE_TRANSACTION_ATTEMPTS: usize = 4;
 const RETRYABLE_TRANSACTION_ERROR_PREFIX: &str = "[retryable-database-transaction] ";
+const WEBSITE_SYNC_VALIDATION_LEASE_MINUTES: i64 = 5;
 
 type WebsiteSyncTransactionFuture<'a, T> = Pin<
     Box<dyn Future<Output = Result<T, DriveServiceError>> + Send + 'a>,
@@ -56,7 +58,8 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         command: &CreateDriveWebsiteSync,
     ) -> Result<CreateDriveWebsiteSyncResult, DriveServiceError> {
         run_serializable_transaction(&self.pool, "create WebsiteSync", |connection, engine| {
-            Box::pin(create_sync_on_connection(connection, command, engine))
+            let command = command.clone();
+            Box::pin(async move { create_sync_on_connection(connection, &command, engine).await })
         })
         .await
     }
@@ -73,11 +76,16 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
     async fn begin_validation(
         &self,
         command: &ValidateDriveWebsiteSync,
-    ) -> Result<DriveWebsiteSync, DriveServiceError> {
+    ) -> Result<DriveWebsiteSyncValidation, DriveServiceError> {
         run_serializable_transaction(
             &self.pool,
             "begin WebsiteSync validation",
-            |connection, _| Box::pin(begin_validation_on_connection(connection, command)),
+            |connection, engine| {
+                let command = command.clone();
+                Box::pin(async move {
+                    begin_validation_on_connection(connection, &command, engine).await
+                })
+            },
         )
         .await
     }
@@ -100,9 +108,10 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
             &self.pool,
             "activate WebsiteSync",
             |connection, engine| {
-                Box::pin(activate_validated_on_connection(
-                    connection, command, engine,
-                ))
+                let command = command.clone();
+                Box::pin(async move {
+                    activate_validated_on_connection(connection, &command, engine).await
+                })
             },
         )
         .await?;
@@ -116,6 +125,7 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         website_root_uuid: &str,
         sync_id: &str,
         expected_sync_version: i64,
+        lease_token: &str,
         error_code: &str,
         error_summary: &str,
         operator_id: &str,
@@ -123,14 +133,16 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         let updated = sqlx::query(
             "UPDATE dr_drive_website_sync
              SET sync_status='failed', error_code=$1, error_summary=$2,
+                 lease_owner=NULL, lease_token=NULL, lease_expires_at=NULL,
                  updated_by=$3, updated_at=CURRENT_TIMESTAMP, version=version + 1
              WHERE tenant_id=$4
                AND id=$5
                AND version=$6
+               AND lease_token=$7
                AND sync_status='validating'
                AND website_root_id=(
                  SELECT id FROM dr_drive_website_root
-                 WHERE tenant_id=$4 AND uuid=$7
+                 WHERE tenant_id=$4 AND uuid=$8
                )",
         )
         .bind(error_code)
@@ -139,6 +151,7 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         .bind(tenant_id)
         .bind(sync_id)
         .bind(expected_sync_version)
+        .bind(lease_token)
         .bind(website_root_uuid)
         .execute(&self.pool)
         .await
@@ -156,7 +169,8 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         command: &AbortDriveWebsiteSync,
     ) -> Result<DriveWebsiteSync, DriveServiceError> {
         run_serializable_transaction(&self.pool, "abort WebsiteSync", |connection, _| {
-            Box::pin(abort_on_connection(connection, command))
+            let command = command.clone();
+            Box::pin(async move { abort_on_connection(connection, &command).await })
         })
         .await
     }
@@ -169,9 +183,10 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
             &self.pool,
             "activate retained WebsiteRoot generation",
             |connection, engine| {
-                Box::pin(activate_generation_on_connection(
-                    connection, command, engine,
-                ))
+                let command = command.clone();
+                Box::pin(async move {
+                    activate_generation_on_connection(connection, &command, engine).await
+                })
             },
         )
         .await?;
@@ -315,7 +330,8 @@ async fn create_sync_on_connection(
 async fn begin_validation_on_connection(
     connection: &mut AnyConnection,
     command: &ValidateDriveWebsiteSync,
-) -> Result<DriveWebsiteSync, DriveServiceError> {
+    engine: DatabaseEngine,
+) -> Result<DriveWebsiteSyncValidation, DriveServiceError> {
     let sync = get_sync_on_connection(
         connection,
         &command.tenant_id,
@@ -324,32 +340,50 @@ async fn begin_validation_on_connection(
     )
     .await?;
     if sync.status == DriveWebsiteSyncStatus::Completed {
-        return Ok(sync);
+        return Ok(DriveWebsiteSyncValidation {
+            sync,
+            lease_token: None,
+        });
     }
     if sync.version != command.expected_sync_version {
         return Err(DriveServiceError::Conflict(
             "WebsiteSync version changed".to_string(),
         ));
     }
-    if !matches!(
-        sync.status,
-        DriveWebsiteSyncStatus::Created
-            | DriveWebsiteSyncStatus::Uploading
-            | DriveWebsiteSyncStatus::Ready
-    ) {
+    let recover_expired_lease = sync.status == DriveWebsiteSyncStatus::Validating;
+    if !recover_expired_lease
+        && !matches!(
+            sync.status,
+            DriveWebsiteSyncStatus::Created
+                | DriveWebsiteSyncStatus::Uploading
+                | DriveWebsiteSyncStatus::Ready
+        )
+    {
         return Err(DriveServiceError::Conflict(
             "WebsiteSync is not finalizable".to_string(),
         ));
     }
-    let updated = sqlx::query(
+    let lease_token = uuid::Uuid::new_v4().to_string();
+    let lease_expires_at = (chrono::Utc::now()
+        + Duration::minutes(WEBSITE_SYNC_VALIDATION_LEASE_MINUTES))
+    .to_rfc3339_opts(SecondsFormat::Millis, true);
+    let lease_expires_at_parameter = instant_parameter(engine, "$3");
+    let updated = sqlx::query(&format!(
         "UPDATE dr_drive_website_sync
          SET sync_status='validating', validated_at=CURRENT_TIMESTAMP,
-             error_code=NULL, error_summary=NULL, updated_by=$1,
+             lease_owner=$1, lease_token=$2, lease_expires_at={lease_expires_at_parameter},
+             error_code=NULL, error_summary=NULL, updated_by=$4,
              updated_at=CURRENT_TIMESTAMP, version=version + 1
-         WHERE tenant_id=$2 AND id=$3 AND version=$4
-           AND sync_status IN ('created', 'uploading', 'ready')
+         WHERE tenant_id=$5 AND id=$6 AND version=$7
+           AND (
+             sync_status IN ('created', 'uploading', 'ready')
+             OR (sync_status='validating' AND lease_expires_at <= CURRENT_TIMESTAMP)
+           )
            AND expires_at > CURRENT_TIMESTAMP",
-    )
+    ))
+    .bind(&command.operator_id)
+    .bind(&lease_token)
+    .bind(&lease_expires_at)
     .bind(&command.operator_id)
     .bind(&command.tenant_id)
     .bind(&command.sync_id)
@@ -362,13 +396,30 @@ async fn begin_validation_on_connection(
             "WebsiteSync expired or changed before validation".to_string(),
         ));
     }
-    get_sync_on_connection(
+    insert_audit(
         connection,
         &command.tenant_id,
-        &command.website_root_uuid,
+        if recover_expired_lease {
+            "drive.website_sync.validation_lease_recovered"
+        } else {
+            "drive.website_sync.validation_lease_acquired"
+        },
+        "website_sync",
         &command.sync_id,
+        &command.operator_id,
+        Some(&command.sync_id),
     )
-    .await
+    .await?;
+    Ok(DriveWebsiteSyncValidation {
+        sync: get_sync_on_connection(
+            connection,
+            &command.tenant_id,
+            &command.website_root_uuid,
+            &command.sync_id,
+        )
+        .await?,
+        lease_token: Some(lease_token),
+    })
 }
 
 async fn activate_validated_on_connection(
@@ -377,6 +428,14 @@ async fn activate_validated_on_connection(
     engine: DatabaseEngine,
 ) -> Result<DriveWebsiteSyncActivation, DriveServiceError> {
     lock_website_root(connection, &command.tenant_id, &command.website_root_uuid).await?;
+    lock_website_sync(
+        connection,
+        &command.tenant_id,
+        &command.website_root_uuid,
+        &command.sync_id,
+        engine,
+    )
+    .await?;
     let root =
         get_root_on_connection(connection, &command.tenant_id, &command.website_root_uuid).await?;
     let sync = get_sync_on_connection(
@@ -392,6 +451,9 @@ async fn activate_validated_on_connection(
             website_root: root,
         });
     }
+    let lease_token = command.lease_token.as_deref().ok_or_else(|| {
+        DriveServiceError::Conflict("WebsiteSync validation lease is missing".to_string())
+    })?;
     if sync.status != DriveWebsiteSyncStatus::Validating
         || sync.version != command.expected_sync_version
     {
@@ -399,6 +461,7 @@ async fn activate_validated_on_connection(
             "WebsiteSync validation fence changed".to_string(),
         ));
     }
+    ensure_validation_lease_current(connection, &sync, lease_token).await?;
     ensure_root_can_sync(&root, sync.expected_root_version, sync.expected_generation)?;
     let entries = list_staging_tree_on_connection(&mut *connection, &sync).await?;
     let current_manifest = validate_website_sync_tree(&entries)?;
@@ -483,9 +546,12 @@ async fn activate_validated_on_connection(
          SET uploaded_file_count=$1, uploaded_total_bytes=$2,
              sync_status='completed', activated_at=CURRENT_TIMESTAMP,
              completed_at=CURRENT_TIMESTAMP, error_code=NULL, error_summary=NULL,
+             lease_owner=NULL, lease_token=NULL, lease_expires_at=NULL,
              updated_by=$3, updated_at=CURRENT_TIMESTAMP, version=version + 1
          WHERE tenant_id=$4 AND id=$5 AND website_root_id=$6
-           AND version=$7 AND sync_status='validating'",
+           AND version=$7 AND sync_status='validating'
+           AND lease_token=$8 AND lease_expires_at > CURRENT_TIMESTAMP
+           AND expires_at > CURRENT_TIMESTAMP",
     )
     .bind(current_manifest.file_count)
     .bind(current_manifest.total_bytes)
@@ -494,6 +560,7 @@ async fn activate_validated_on_connection(
     .bind(&sync.id)
     .bind(&root.id)
     .bind(command.expected_sync_version)
+    .bind(lease_token)
     .execute(&mut *connection)
     .await
     .map_err(|error| internal("complete WebsiteSync", error))?;

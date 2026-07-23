@@ -142,7 +142,8 @@ where
             )?,
             operator_id: require_text(command.operator_id, "operator_id", 128)?,
         };
-        let sync = self.store.begin_validation(&validation).await?;
+        let validation_lease = self.store.begin_validation(&validation).await?;
+        let sync = validation_lease.sync;
         let observed_manifest = if sync.status == DriveWebsiteSyncStatus::Completed {
             declared_manifest(&sync)
         } else {
@@ -157,7 +158,12 @@ where
             match validate_website_sync_tree(&entries) {
                 Ok(manifest) => manifest,
                 Err(error) => {
-                    self.persist_validation_failure(&validation, sync.version, &error)
+                    self.persist_validation_failure(
+                        &validation,
+                        sync.version,
+                        validation_lease.lease_token.as_deref(),
+                        &error,
+                    )
                         .await;
                     return Err(error);
                 }
@@ -165,7 +171,12 @@ where
         };
         if observed_manifest != declared_manifest(&sync) {
             let error = DriveServiceError::Validation("WEBSITE_SYNC_MANIFEST_MISMATCH".to_string());
-            self.persist_validation_failure(&validation, sync.version, &error)
+            self.persist_validation_failure(
+                &validation,
+                sync.version,
+                validation_lease.lease_token.as_deref(),
+                &error,
+            )
                 .await;
             return Err(error);
         }
@@ -177,13 +188,19 @@ where
                 website_root_uuid: validation.website_root_uuid.clone(),
                 sync_id: validation.sync_id.clone(),
                 expected_sync_version: sync.version,
+                lease_token: validation_lease.lease_token.clone(),
                 observed_manifest,
                 operator_id: validation.operator_id.clone(),
             })
             .await;
         if let Err(error) = &activation {
             if matches!(error, DriveServiceError::Validation(_)) {
-                self.persist_validation_failure(&validation, sync.version, error)
+                self.persist_validation_failure(
+                    &validation,
+                    sync.version,
+                    validation_lease.lease_token.as_deref(),
+                    error,
+                )
                     .await;
             }
         }
@@ -245,8 +262,12 @@ where
         &self,
         validation: &ValidateDriveWebsiteSync,
         sync_version: i64,
+        lease_token: Option<&str>,
         error: &DriveServiceError,
     ) {
+        let Some(lease_token) = lease_token else {
+            return;
+        };
         let code = match error {
             DriveServiceError::Validation(code) => code.as_str(),
             _ => "WEBSITE_SYNC_VALIDATION_FAILED",
@@ -258,6 +279,7 @@ where
                 &validation.website_root_uuid,
                 &validation.sync_id,
                 sync_version,
+                lease_token,
                 code,
                 "Website sync validation failed",
                 &validation.operator_id,
