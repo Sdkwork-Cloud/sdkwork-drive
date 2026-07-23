@@ -506,6 +506,88 @@ pub(crate) struct WebsiteRootResponse {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct CreateWebsiteSyncRequest {
+    pub(crate) expected_root_version: String,
+    pub(crate) expected_generation: String,
+    pub(crate) manifest_sha256: String,
+    pub(crate) manifest_file_count: String,
+    pub(crate) manifest_total_bytes: String,
+    pub(crate) expires_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct WebsiteSyncVersionRequest {
+    pub(crate) expected_version: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct ActivateWebsiteGenerationRequest {
+    pub(crate) expected_root_version: String,
+    pub(crate) expected_generation: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct WebsiteSyncResponse {
+    pub(crate) id: String,
+    pub(crate) website_root_uuid: String,
+    pub(crate) space_id: String,
+    pub(crate) expected_root_version: String,
+    pub(crate) expected_generation: String,
+    pub(crate) staging_node_id: String,
+    pub(crate) manifest_sha256: String,
+    pub(crate) manifest_file_count: String,
+    pub(crate) manifest_total_bytes: String,
+    pub(crate) uploaded_file_count: String,
+    pub(crate) uploaded_total_bytes: String,
+    pub(crate) status: String,
+    pub(crate) expires_at: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) validated_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) activated_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) completed_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) error_code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) error_summary: Option<String>,
+    pub(crate) version: String,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct WebsiteSyncActivationResponse {
+    pub(crate) sync: WebsiteSyncResponse,
+    pub(crate) website_root: WebsiteRootResponse,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct WebsiteGenerationResponse {
+    pub(crate) generation: String,
+    pub(crate) root_node_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) manifest_sha256: Option<String>,
+    pub(crate) file_count: String,
+    pub(crate) total_bytes: String,
+    pub(crate) status: String,
+    pub(crate) activated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct WebsiteGenerationActivationResponse {
+    pub(crate) source_generation: WebsiteGenerationResponse,
+    pub(crate) website_root: WebsiteRootResponse,
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListNodesQuery {
     pub(crate) parent_node_id: Option<String>,

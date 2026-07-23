@@ -39,6 +39,14 @@
           "$ref": "#/components/messages/DriveNodeDeletedV1"
         }
       }
+    },
+    "websiteRootGenerationChanged": {
+      "address": "drive.website_root.generation.changed.v1",
+      "messages": {
+        "DriveWebsiteRootGenerationChangedV1": {
+          "$ref": "#/components/messages/DriveWebsiteRootGenerationChangedV1"
+        }
+      }
     }
   },
   "operations": {
@@ -85,6 +93,17 @@
           "$ref": "#/channels/nodeDeleted/messages/DriveNodeDeletedV1"
         }
       ]
+    },
+    "publishWebsiteRootGenerationChanged": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/websiteRootGenerationChanged"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/websiteRootGenerationChanged/messages/DriveWebsiteRootGenerationChangedV1"
+        }
+      ]
     }
   },
   "components": {
@@ -119,6 +138,14 @@
         "contentType": "application/json",
         "payload": {
           "$ref": "#/components/schemas/DriveNodeDeletedV1Envelope"
+        }
+      },
+      "DriveWebsiteRootGenerationChangedV1": {
+        "name": "DriveWebsiteRootGenerationChangedV1",
+        "title": "Drive WebsiteRoot generation changed",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "#/components/schemas/DriveWebsiteRootGenerationChangedV1Envelope"
         }
       }
     },
@@ -554,6 +581,144 @@
       "DriveNodeEligibility": {
         "type": "string",
         "enum": ["ELIGIBLE", "INELIGIBLE"]
+      },
+      "DriveWebsiteRootGenerationChangedV1Envelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "source",
+          "specversion",
+          "time",
+          "tenantId",
+          "subject",
+          "actorId",
+          "sequenceNo",
+          "data"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "type": {
+            "const": "drive.website_root.generation.changed.v1"
+          },
+          "source": {
+            "const": "sdkwork-drive"
+          },
+          "specversion": {
+            "const": "1.0"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tenantId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "organizationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "subject": {
+            "type": "string",
+            "pattern": "^drive://spaces/[^/]+/website_roots/[0-9a-f-]{36}$"
+          },
+          "actorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "sequenceNo": {
+            "type": "string",
+            "format": "int64",
+            "pattern": "^[1-9][0-9]*$",
+            "x-sdkwork-int64-string": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/DriveWebsiteRootGenerationChangedV1Data"
+          }
+        }
+      },
+      "DriveWebsiteRootGenerationChangedV1Data": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "spaceId",
+          "websiteRootUuid",
+          "previousRootNodeId",
+          "rootNodeId",
+          "previousGeneration",
+          "generation",
+          "fileCount",
+          "totalBytes",
+          "changeReason"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "spaceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "websiteRootUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "previousRootNodeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "rootNodeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "previousGeneration": {
+            "type": "string",
+            "format": "int64",
+            "pattern": "^[1-9][0-9]*$",
+            "x-sdkwork-int64-string": true
+          },
+          "generation": {
+            "type": "string",
+            "format": "int64",
+            "pattern": "^[1-9][0-9]*$",
+            "x-sdkwork-int64-string": true
+          },
+          "manifestSha256": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "fileCount": {
+            "type": "string",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "x-sdkwork-int64-string": true
+          },
+          "totalBytes": {
+            "type": "string",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "x-sdkwork-int64-string": true
+          },
+          "changeReason": {
+            "type": "string",
+            "enum": ["SYNC_ACTIVATED", "ROLLBACK_ACTIVATED"]
+          }
+        }
       },
       "DriveRootScopeEffects": {
         "type": "array",

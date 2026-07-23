@@ -458,31 +458,95 @@ pub(crate) async fn abort_storage_multipart_upload(
     state: &AppState,
     upload_session: &UploadSessionRecord,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-    let provider = find_storage_provider_by_id(&state.pool, &upload_session.storage_provider_id)
+    abort_storage_multipart_upload_by_locator(
+        state,
+        &upload_session.storage_provider_id,
+        &upload_session.bucket,
+        &upload_session.object_key,
+        &upload_session.storage_upload_id,
+    )
+    .await
+}
+
+pub(crate) async fn compensate_created_storage_multipart_upload(
+    state: &AppState,
+    tenant_id: &str,
+    node_id: &str,
+    target: &StorageTarget,
+    created: &CreatedStorageMultipartUpload,
+    reason: &str,
+) {
+    sdkwork_drive_observability::metrics::record_multipart_compensation_attempted();
+    match abort_storage_multipart_upload_by_locator(
+        state,
+        &target.provider_id,
+        &target.bucket,
+        &target.object_key,
+        &created.upload_id,
+    )
+    .await
+    {
+        Ok(()) => {
+            sdkwork_drive_observability::metrics::record_multipart_compensation_succeeded();
+            tracing::info!(
+                event = "drive.upload.multipart_compensation_succeeded",
+                tenant_id = %tenant_id,
+                node_id = %node_id,
+                provider_id = %target.provider_id,
+                bucket = %target.bucket,
+                object_key = %target.object_key,
+                storage_upload_id = %created.upload_id,
+                reason = %reason,
+                "aborted multipart upload after database publication failure"
+            );
+        }
+        Err(error) => {
+            sdkwork_drive_observability::metrics::record_multipart_compensation_failed();
+            tracing::warn!(
+                event = "drive.upload.multipart_compensation_failed",
+                tenant_id = %tenant_id,
+                node_id = %node_id,
+                provider_id = %target.provider_id,
+                bucket = %target.bucket,
+                object_key = %target.object_key,
+                storage_upload_id = %created.upload_id,
+                reason = %reason,
+                error = ?error,
+                "failed to abort multipart upload after database publication failure"
+            );
+        }
+    }
+}
+
+async fn abort_storage_multipart_upload_by_locator(
+    state: &AppState,
+    storage_provider_id: &str,
+    bucket: &str,
+    object_key: &str,
+    storage_upload_id: &str,
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    let provider = find_storage_provider_by_id(&state.pool, storage_provider_id)
         .await
         .map_err(map_service_error)?;
     let Some(provider) = provider else {
-        return Err(map_service_error(missing_signing_provider_error(
-            &upload_session.bucket,
-        )));
+        return Err(map_service_error(missing_signing_provider_error(bucket)));
     };
-    let provider = require_active_storage_provider(provider, &upload_session.bucket)
-        .map_err(map_service_error)?;
+    let provider = require_active_storage_provider(provider, bucket).map_err(map_service_error)?;
     let Some(object_store) = build_s3_object_store_for_provider(&provider)
         .await
         .map_err(map_service_error)?
     else {
         return Err(map_service_error(unsupported_signing_provider_error(
-            &upload_session.bucket,
+            bucket,
         )));
     };
     object_store
         .abort_multipart_upload(AbortMultipartUploadRequest {
             locator: DriveObjectLocator {
-                bucket: upload_session.bucket.clone(),
-                object_key: upload_session.object_key.clone(),
+                bucket: bucket.to_string(),
+                object_key: object_key.to_string(),
             },
-            upload_id: upload_session.storage_upload_id.clone(),
+            upload_id: storage_upload_id.to_string(),
         })
         .await
         .map_err(map_object_store_route_error)?;

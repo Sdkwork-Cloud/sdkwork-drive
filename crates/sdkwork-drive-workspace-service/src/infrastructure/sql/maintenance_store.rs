@@ -9,6 +9,7 @@ use crate::infrastructure::change_recorder::{
     record_drive_change_on_connection, RecordDriveChangeCommand,
 };
 use crate::infrastructure::sql::begin_transaction_sql;
+use crate::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed;
 use crate::infrastructure::sql::runtime_id::next_drive_runtime_id;
 use crate::ports::maintenance_store::{
     DriveMaintenanceStore, ListMaintenanceJobsQuery, MaintenanceJobPage, NewDriveMaintenanceJob,
@@ -237,6 +238,13 @@ impl DriveMaintenanceStore for SqlMaintenanceStore {
                 })?;
 
             let tx_result: Result<bool, DriveServiceError> = async {
+                ensure_managed_website_node_mutation_allowed(
+                    &mut connection,
+                    &tenant_id,
+                    &node_id,
+                )
+                .await?;
+
                 let object_delete_status = if cleanup_action == "hard_delete" {
                     let object_rows = sqlx::query(
                         "UPDATE dr_drive_storage_object

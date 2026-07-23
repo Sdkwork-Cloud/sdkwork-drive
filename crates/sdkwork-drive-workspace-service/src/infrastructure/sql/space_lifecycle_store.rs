@@ -2,6 +2,10 @@ use sqlx::AnyConnection;
 use sqlx::AnyPool;
 
 use crate::infrastructure::sql::begin_transaction_sql;
+use crate::infrastructure::sql::managed_website_tree_guard::{
+    ensure_managed_website_space_mutation_allowed, ManagedWebsiteTreeSystemOverride,
+    ManagedWebsiteTreeSystemOverrideReason,
+};
 use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
@@ -112,6 +116,20 @@ impl SqlSpaceLifecycleStore {
         space_id: &str,
         operator_id: &str,
     ) -> Result<i64, DriveServiceError> {
+        let system_override =
+            match ensure_managed_website_space_mutation_allowed(connection, tenant_id, space_id)
+                .await
+            {
+                Ok(()) => None,
+                Err(DriveServiceError::Conflict(_)) => {
+                    Some(ManagedWebsiteTreeSystemOverride::authorize(
+                        ManagedWebsiteTreeSystemOverrideReason::TenantAuthorizedSpaceRetirement,
+                        operator_id,
+                    )?)
+                }
+                Err(error) => return Err(error),
+            };
+
         sqlx::query(
             "UPDATE dr_drive_storage_object
              SET lifecycle_status='deleted', updated_by=$1, updated_at=CURRENT_TIMESTAMP
@@ -147,6 +165,12 @@ impl SqlSpaceLifecycleStore {
         .map_err(|error| {
             DriveServiceError::Internal(format!("retire dr_drive_node for space failed: {error}"))
         })?;
+
+        if let Some(system_override) = system_override {
+            system_override
+                .record_on_connection(connection, tenant_id, "drive_space", space_id)
+                .await?;
+        }
 
         Ok(retired_nodes.rows_affected() as i64)
     }

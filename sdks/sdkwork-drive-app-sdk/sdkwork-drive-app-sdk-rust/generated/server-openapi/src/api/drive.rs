@@ -4,7 +4,7 @@ use crate::api::base::{RequestHeaders};
 use crate::api::paths::app_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, CreateWebsiteRootRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DrivePermission, DriveSandboxEntry, DriveSandboxEntryListData, DriveSandboxFileContent, DriveSandboxMutationCommandData, DriveSandboxVolumeListData, DriveShareLink, DriveSpace, DriveUploadSession, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodePathResponse, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignUploadPartRequest, PresignedUploadPart, PurgeDriveSandboxEntryRequest, QuotaSummary, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, WebsiteRoot, WebsiteRootPageData};
+use crate::models::{ActivateWebsiteGenerationRequest, ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, CreateWebsiteRootRequest, CreateWebsiteSyncRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DrivePermission, DriveSandboxEntry, DriveSandboxEntryListData, DriveSandboxFileContent, DriveSandboxMutationCommandData, DriveSandboxVolumeListData, DriveShareLink, DriveSpace, DriveUploadSession, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodePathResponse, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignUploadPartRequest, PresignedUploadPart, PurgeDriveSandboxEntryRequest, QuotaSummary, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, WebsiteGenerationActivation, WebsiteRoot, WebsiteRootPageData, WebsiteSync, WebsiteSyncActivation, WebsiteSyncVersionRequest};
 
 #[derive(Clone)]
 pub struct DriveApi {
@@ -448,6 +448,42 @@ impl DriveApi {
     pub async fn website_roots_retrieve(&self, root_uuid: &str) -> Result<WebsiteRoot, SdkworkError> {
         let path = app_path(&format!("/drive/website_roots/{}", serialize_path_parameter(root_uuid, PathParameterSpec::new("rootUuid", "simple", false))));
         self.client.get(&path, None, None).await
+    }
+
+    /// Create an isolated atomic website synchronization
+    pub async fn website_roots_syncs_create(&self, root_uuid: &str, body: &CreateWebsiteSyncRequest, idempotency_key: &str) -> Result<WebsiteSync, SdkworkError> {
+        let path = app_path(&format!("/drive/website_roots/{}/syncs", serialize_path_parameter(root_uuid, PathParameterSpec::new("rootUuid", "simple", false))));
+        let headers = build_request_headers(
+            &[
+                ("Idempotency-Key", HeaderParameterSpec::new(idempotency_key, "simple", false, None)),
+            ],
+            &[],
+        );
+        self.client.post(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
+    }
+
+    /// Retrieve an atomic website synchronization
+    pub async fn website_roots_syncs_retrieve(&self, root_uuid: &str, sync_id: &str) -> Result<WebsiteSync, SdkworkError> {
+        let path = app_path(&format!("/drive/website_roots/{}/syncs/{}", serialize_path_parameter(root_uuid, PathParameterSpec::new("rootUuid", "simple", false)), serialize_path_parameter(sync_id, PathParameterSpec::new("syncId", "simple", false))));
+        self.client.get(&path, None, None).await
+    }
+
+    /// Validate and atomically activate a complete website tree
+    pub async fn website_roots_syncs_finalize(&self, root_uuid: &str, sync_id: &str, body: &WebsiteSyncVersionRequest) -> Result<WebsiteSyncActivation, SdkworkError> {
+        let path = app_path(&format!("/drive/website_roots/{}/syncs/{}/finalize", serialize_path_parameter(root_uuid, PathParameterSpec::new("rootUuid", "simple", false)), serialize_path_parameter(sync_id, PathParameterSpec::new("syncId", "simple", false))));
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// Abort an unactivated website synchronization
+    pub async fn website_roots_syncs_abort(&self, root_uuid: &str, sync_id: &str, body: &WebsiteSyncVersionRequest) -> Result<WebsiteSync, SdkworkError> {
+        let path = app_path(&format!("/drive/website_roots/{}/syncs/{}/abort", serialize_path_parameter(root_uuid, PathParameterSpec::new("rootUuid", "simple", false)), serialize_path_parameter(sync_id, PathParameterSpec::new("syncId", "simple", false))));
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// Activate a retained website generation as a new logical generation
+    pub async fn website_roots_generations_activate(&self, root_uuid: &str, generation: &str, body: &ActivateWebsiteGenerationRequest) -> Result<WebsiteGenerationActivation, SdkworkError> {
+        let path = app_path(&format!("/drive/website_roots/{}/generations/{}/activate", serialize_path_parameter(root_uuid, PathParameterSpec::new("rootUuid", "simple", false)), serialize_path_parameter(generation, PathParameterSpec::new("generation", "simple", false))));
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     pub async fn move_destinations_list(&self, space_id: &str, exclude_node_ids: Option<&str>, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveNodeListData, SdkworkError> {

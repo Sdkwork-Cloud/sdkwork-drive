@@ -118,6 +118,11 @@ export const operations = {
   "watchChannels.retrieve": { method: "GET", path: "/app/v3/api/drive/watch_channels/{channelId}" },
   "watchChannels.stop": { method: "POST", path: "/app/v3/api/drive/watch_channels/{channelId}/stop" },
   "websiteRoots.create": { method: "POST", path: "/app/v3/api/drive/spaces/{spaceId}/website_roots" },
+  "websiteRoots.generations.activate": { method: "POST", path: "/app/v3/api/drive/website_roots/{rootUuid}/generations/{generation}/activate" },
   "websiteRoots.list": { method: "GET", path: "/app/v3/api/drive/spaces/{spaceId}/website_roots" },
   "websiteRoots.retrieve": { method: "GET", path: "/app/v3/api/drive/website_roots/{rootUuid}" },
+  "websiteRoots.syncs.abort": { method: "POST", path: "/app/v3/api/drive/website_roots/{rootUuid}/syncs/{syncId}/abort" },
+  "websiteRoots.syncs.create": { method: "POST", path: "/app/v3/api/drive/website_roots/{rootUuid}/syncs" },
+  "websiteRoots.syncs.finalize": { method: "POST", path: "/app/v3/api/drive/website_roots/{rootUuid}/syncs/{syncId}/finalize" },
+  "websiteRoots.syncs.retrieve": { method: "GET", path: "/app/v3/api/drive/website_roots/{rootUuid}/syncs/{syncId}" },
 } as const;

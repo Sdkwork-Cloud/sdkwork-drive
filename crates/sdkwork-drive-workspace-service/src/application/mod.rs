@@ -21,4 +21,5 @@ pub mod upload_content_policy;
 pub mod upload_service;
 pub mod uploader_service;
 pub mod website_root_service;
+pub mod website_sync_service;
 pub mod workspace_service;

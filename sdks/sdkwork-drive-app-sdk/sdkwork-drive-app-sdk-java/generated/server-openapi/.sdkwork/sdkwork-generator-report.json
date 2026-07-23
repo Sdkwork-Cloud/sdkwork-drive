@@ -12,22 +12,48 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "e27c2baf3f9b047396eb732b3ce8331efbe9e3953d62b82bc680ace1badc2b08",
+  "changeFingerprint": "5d60c6bd411fc056253b83d714fce908ffc8fed35b246b5d73cada6f45395cc6",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
-      "runtime"
+      "api-surface",
+      "models",
+      "publish-workflow"
     ],
     "details": [
       {
-        "area": "runtime",
+        "area": "api-surface",
         "paths": [
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/http/HttpClient.java"
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ActivateWebsiteGenerationRequest.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateWebsiteSyncRequest.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGeneration.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivation.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationHttpResponse.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationResourceData.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSync.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivation.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationHttpResponse.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationResourceData.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncHttpResponse.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncResourceData.java",
+          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncVersionRequest.java"
+        ]
+      },
+      {
+        "area": "publish-workflow",
+        "paths": [
+          "bin/publish-core.mjs"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: runtime. Verification is required."
+    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required."
   },
   "executionDecision": {
     "schemaVersion": 1,
@@ -48,7 +74,7 @@
         "id": "verify-check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, publish-workflow.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-java\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -67,13 +93,13 @@
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, publish-workflow.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-java\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -103,8 +129,8 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 188,
-    "models": 169,
+    "totalFiles": 201,
+    "models": 182,
     "apis": 6,
     "types": 0
   },
@@ -112,19 +138,33 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 1,
+    "writtenFiles": 15,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 186,
+    "skippedUnchangedGeneratedFiles": 185,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "e27c2baf3f9b047396eb732b3ce8331efbe9e3953d62b82bc680ace1badc2b08",
+    "changeFingerprint": "5d60c6bd411fc056253b83d714fce908ffc8fed35b246b5d73cada6f45395cc6",
     "changes": {
-      "createdGeneratedFiles": [],
+      "createdGeneratedFiles": [
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ActivateWebsiteGenerationRequest.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateWebsiteSyncRequest.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGeneration.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivation.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationHttpResponse.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationResourceData.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSync.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivation.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationHttpResponse.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationResourceData.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncHttpResponse.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncResourceData.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncVersionRequest.java"
+      ],
       "updatedGeneratedFiles": [
-        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/http/HttpClient.java"
+        "bin/publish-core.mjs",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java"
       ],
       "unchangedGeneratedFiles": [
-        "bin/publish-core.mjs",
         "bin/publish.ps1",
         "bin/publish.sh",
         "CHANGELOG.md",
@@ -134,12 +174,12 @@
         "sdkwork-sdk.json",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/ApiPaths.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/AssetsApi.java",
-        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodeLabelsApi.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodePropertiesApi.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodesApi.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/package-info.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/WatchChannelsApi.java",
+        "src/main/java/com/sdkwork/drive/app/sdk/generated/java/http/HttpClient.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ApplyNodeLabelRequest.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ArchiveEntry.java",
         "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ArchiveEntryListHttpResponse.java",
@@ -321,29 +361,55 @@
     "impact": {
       "schemaVersion": 1,
       "areas": [
-        "runtime"
+        "api-surface",
+        "models",
+        "publish-workflow"
       ],
       "details": [
         {
-          "area": "runtime",
+          "area": "api-surface",
           "paths": [
-            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/http/HttpClient.java"
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java"
+          ]
+        },
+        {
+          "area": "models",
+          "paths": [
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ActivateWebsiteGenerationRequest.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateWebsiteSyncRequest.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGeneration.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivation.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationHttpResponse.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationResourceData.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSync.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivation.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationHttpResponse.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationResourceData.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncHttpResponse.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncResourceData.java",
+            "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncVersionRequest.java"
+          ]
+        },
+        {
+          "area": "publish-workflow",
+          "paths": [
+            "bin/publish-core.mjs"
           ]
         }
       ],
       "requiresVerification": true,
-      "summary": "Detected impact areas: runtime. Verification is required."
+      "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required."
     },
     "verificationPlan": {
       "shouldRun": true,
       "runPhase": "now",
-      "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
+      "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required. Run the required verification commands now against the generated SDK output.",
       "steps": [
         {
           "id": "check",
           "title": "Unified package check",
           "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
+          "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, publish-workflow.",
           "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-java\\generated\\server-openapi",
           "command": "node",
           "args": [

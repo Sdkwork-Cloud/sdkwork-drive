@@ -699,6 +699,60 @@ func (a *DriveApi) WebsiteRootsRetrieve(rootUuid string) (sdktypes.WebsiteRootHt
     return decodeResult[sdktypes.WebsiteRootHttpResponse](raw)
 }
 
+// Create an isolated atomic website synchronization
+func (a *DriveApi) WebsiteRootsSyncsCreate(rootUuid string, body sdktypes.CreateWebsiteSyncRequest, idempotencyKey string) (sdktypes.WebsiteSyncHttpResponse, error) {
+    headers := BuildRequestHeaders(
+        map[string]ParameterSpec{"Idempotency-Key": ParameterSpec{Value: idempotencyKey, Style: "simple", Explode: false},},
+        map[string]ParameterSpec{},
+    )
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/drive/website_roots/%s/syncs", SerializePathParameter(rootUuid, PathParameterSpec{Name: "rootUuid", Style: "simple", Explode: false}))), body, nil, headers, "application/json")
+    if err != nil {
+        var zero sdktypes.WebsiteSyncHttpResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.WebsiteSyncHttpResponse](raw)
+}
+
+// Retrieve an atomic website synchronization
+func (a *DriveApi) WebsiteRootsSyncsRetrieve(rootUuid string, syncId string) (sdktypes.WebsiteSyncHttpResponse, error) {
+    raw, err := a.client.Get(AppApiPath(fmt.Sprintf("/drive/website_roots/%s/syncs/%s", SerializePathParameter(rootUuid, PathParameterSpec{Name: "rootUuid", Style: "simple", Explode: false}), SerializePathParameter(syncId, PathParameterSpec{Name: "syncId", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero sdktypes.WebsiteSyncHttpResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.WebsiteSyncHttpResponse](raw)
+}
+
+// Validate and atomically activate a complete website tree
+func (a *DriveApi) WebsiteRootsSyncsFinalize(rootUuid string, syncId string, body sdktypes.WebsiteSyncVersionRequest) (sdktypes.WebsiteSyncActivationHttpResponse, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/drive/website_roots/%s/syncs/%s/finalize", SerializePathParameter(rootUuid, PathParameterSpec{Name: "rootUuid", Style: "simple", Explode: false}), SerializePathParameter(syncId, PathParameterSpec{Name: "syncId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.WebsiteSyncActivationHttpResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.WebsiteSyncActivationHttpResponse](raw)
+}
+
+// Abort an unactivated website synchronization
+func (a *DriveApi) WebsiteRootsSyncsAbort(rootUuid string, syncId string, body sdktypes.WebsiteSyncVersionRequest) (sdktypes.WebsiteSyncHttpResponse, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/drive/website_roots/%s/syncs/%s/abort", SerializePathParameter(rootUuid, PathParameterSpec{Name: "rootUuid", Style: "simple", Explode: false}), SerializePathParameter(syncId, PathParameterSpec{Name: "syncId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.WebsiteSyncHttpResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.WebsiteSyncHttpResponse](raw)
+}
+
+// Activate a retained website generation as a new logical generation
+func (a *DriveApi) WebsiteRootsGenerationsActivate(rootUuid string, generation sdktypes.PositiveInt64String, body sdktypes.ActivateWebsiteGenerationRequest) (sdktypes.WebsiteGenerationActivationHttpResponse, error) {
+    raw, err := a.client.Post(AppApiPath(fmt.Sprintf("/drive/website_roots/%s/generations/%s/activate", SerializePathParameter(rootUuid, PathParameterSpec{Name: "rootUuid", Style: "simple", Explode: false}), SerializePathParameter(generation, PathParameterSpec{Name: "generation", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.WebsiteGenerationActivationHttpResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.WebsiteGenerationActivationHttpResponse](raw)
+}
+
 func (a *DriveApi) MoveDestinationsList(spaceId string, excludeNodeIds *string, pageSize *int, cursor *string) (sdktypes.DriveNodeListHttpResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "excludeNodeIds", Value: func() interface{} { if excludeNodeIds == nil { return nil }; return *excludeNodeIds }(), Style: "form", Explode: true, AllowReserved: false},

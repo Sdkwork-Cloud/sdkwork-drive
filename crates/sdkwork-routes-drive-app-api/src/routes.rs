@@ -104,6 +104,26 @@ fn build_business_router_layers(state: AppState) -> Router {
             get(get_website_root),
         )
         .route(
+            "/app/v3/api/drive/website_roots/{root_uuid}/syncs",
+            post(create_website_sync),
+        )
+        .route(
+            "/app/v3/api/drive/website_roots/{root_uuid}/syncs/{sync_id}",
+            get(get_website_sync),
+        )
+        .route(
+            "/app/v3/api/drive/website_roots/{root_uuid}/syncs/{sync_id}/finalize",
+            post(finalize_website_sync),
+        )
+        .route(
+            "/app/v3/api/drive/website_roots/{root_uuid}/syncs/{sync_id}/abort",
+            post(abort_website_sync),
+        )
+        .route(
+            "/app/v3/api/drive/website_roots/{root_uuid}/generations/{generation}/activate",
+            post(activate_website_generation),
+        )
+        .route(
             "/app/v3/api/drive/upload_sessions",
             post(create_upload_session),
         )

@@ -19,11 +19,11 @@ export class NodesShortcutsApi {
 }
 
 export class NodesApi {
-  private client: HttpClient;
+
   public readonly shortcuts: NodesShortcutsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.shortcuts = new NodesShortcutsApi(client);
   }
 
@@ -31,12 +31,4 @@ export class NodesApi {
 
 export function createNodesApi(client: HttpClient): NodesApi {
   return new NodesApi(client);
-}
-
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
 }

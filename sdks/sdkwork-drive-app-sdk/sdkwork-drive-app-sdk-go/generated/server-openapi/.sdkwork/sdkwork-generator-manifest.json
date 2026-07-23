@@ -24,7 +24,7 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "b787a54d13cb7bccfff5b12d17128e293addf9603b0ef38612bba631a4d4f153"
+      "sha256": "288ebb376d7038ae3937d53cded96eaae7e29516424f5dde96d24259b525a87d"
     },
     {
       "path": "api/node_labels.go",
@@ -48,7 +48,7 @@
     },
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
     },
     {
       "path": "bin/publish.ps1",
@@ -93,6 +93,10 @@
     {
       "path": "sdkwork-sdk.json",
       "sha256": "353db8e15ff5501aace994a7b2e0d828bfc0f7f117f1ca3f86425b3199753120"
+    },
+    {
+      "path": "types/activate_website_generation_request.go",
+      "sha256": "a95936f8e0329d23efa3f240436c05beb77354b24be2c04bfd635638de1428ea"
     },
     {
       "path": "types/apply_node_label_request.go",
@@ -301,6 +305,10 @@
     {
       "path": "types/create_website_root_request.go",
       "sha256": "4d7cedab61040a64452dcb335710f7b00136c95a7b8b778bb1518cf40befa66d"
+    },
+    {
+      "path": "types/create_website_sync_request.go",
+      "sha256": "7bfe67a1267833e6cf7a289b37016659a568bb21a150b80fd1a4d0cf69d15e75"
     },
     {
       "path": "types/doc.go",
@@ -591,8 +599,16 @@
       "sha256": "1f5e5b759d754e4673467b3a9008a5de0390afb9cd8b411a0ca8a9c9b520f60b"
     },
     {
+      "path": "types/non_negative_int64string.go",
+      "sha256": "0a42c50bb009b8d66948bcec31a866c8251e98fb6612b817a5802cdb7021a0cd"
+    },
+    {
       "path": "types/page_info.go",
       "sha256": "e3ed0f4d7f04c05a38a7b1c3932d98eeaaa25143954e65d843a19a69a3777af0"
+    },
+    {
+      "path": "types/positive_int64string.go",
+      "sha256": "a1e147fbf56f17aa06447a6ce0e156cfbbfec89fee57494c5ff2e2c6bd165dd3"
     },
     {
       "path": "types/prepare_uploader_upload_http_response.go",
@@ -751,6 +767,22 @@
       "sha256": "a77ec6154759d11582eaa4a82a359bf755377a13d37754597ff2241215709262"
     },
     {
+      "path": "types/website_generation_activation_http_response.go",
+      "sha256": "b09107b4959aef75447b5db975da76c00dcb99158d823f18ec3ceba850f65e46"
+    },
+    {
+      "path": "types/website_generation_activation_resource_data.go",
+      "sha256": "2f0a51a850d38d1a728e19f1638e4d56cc8ac8b365636dfaa09c826faef30140"
+    },
+    {
+      "path": "types/website_generation_activation.go",
+      "sha256": "bd31a9ec7a06a17b3a40b5fa74944724dc3479a12f465aebe231b8fc3c43fd94"
+    },
+    {
+      "path": "types/website_generation.go",
+      "sha256": "c716e76539ceaabe6036a6e6a12e9fb66e171c322567c1aaaccfa023e027cea2"
+    },
+    {
       "path": "types/website_root_folder_selector.go",
       "sha256": "b58e7e85179b756b27e02562d0126e3a6106adcf159652b89b2138d052c3443a"
     },
@@ -781,6 +813,34 @@
     {
       "path": "types/website_root.go",
       "sha256": "fb986da8f160e87c2d98da050aaa0fb446b4418d511371a902f3a96598001370"
+    },
+    {
+      "path": "types/website_sync_activation_http_response.go",
+      "sha256": "60d64bf33380b617cbc6ab2343a2bfd76fb5a398ec19091216131cfa6fe45202"
+    },
+    {
+      "path": "types/website_sync_activation_resource_data.go",
+      "sha256": "b7c91820efdf49fc01c44f1fc20d206db2f0425608a6aeb835aefbce1c08ad3f"
+    },
+    {
+      "path": "types/website_sync_activation.go",
+      "sha256": "c17c91b402604fe773b424937a36ac43a7c41f0b15d1ba7993f05514952afa5e"
+    },
+    {
+      "path": "types/website_sync_http_response.go",
+      "sha256": "cf502ea81e3b9e099de7029ed2a917b337898ee24f45ede2d457c5d916395175"
+    },
+    {
+      "path": "types/website_sync_resource_data.go",
+      "sha256": "ca551cf16024c2fe8dd75ce51fc1b5bb1adc44f564afdf3497b5a6ce2fe3a034"
+    },
+    {
+      "path": "types/website_sync_version_request.go",
+      "sha256": "a70aa61ebf2afd58e694c366ba00298d0626af65fd4b3537726ededfcff1b2a5"
+    },
+    {
+      "path": "types/website_sync.go",
+      "sha256": "630ae7d1a3f6296f87bc81da7c77ee3c1f9bb3fd0099d020c774fec3366e13a7"
     }
   ],
   "scaffoldFiles": [

@@ -31,6 +31,9 @@ use sdkwork_drive_contract::drive::domain_events as drive_events;
 use sdkwork_drive_workspace_service::application::upload_service::{
     CreateUploadSessionCommand, DriveUploadService,
 };
+use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::{
+    ensure_managed_website_node_mutation_allowed, ensure_managed_website_parent_mutation_allowed,
+};
 use sdkwork_drive_workspace_service::infrastructure::sql::upload_session_store::SqlUploadSessionStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::{
     begin_transaction_sql, NODE_API_SELECT_COLUMNS,
@@ -266,36 +269,72 @@ pub(crate) async fn create_folder(
     )
     .await?;
 
-    sqlx::query(
-        "INSERT INTO dr_drive_node (
+    let mut connection = state.pool.acquire().await.map_err(|error| {
+        internal_problem(format!(
+            "acquire folder creation transaction connection failed: {error}"
+        ))
+    })?;
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
+        .await
+        .map_err(internal_sql_error(
+            "begin folder creation transaction failed",
+        ))?;
+    let insert_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+        ensure_managed_website_parent_mutation_allowed(
+            &mut connection,
+            &tenant_id,
+            &payload.space_id,
+            payload.parent_node_id.as_deref(),
+        )
+        .await
+        .map_err(crate::error::map_service_error)?;
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
          ) VALUES ($1, $2, $3, $4, 'folder', $5, 'ready', 'active', 1, $6, $6)",
-    )
-    .bind(&node_id)
-    .bind(&tenant_id)
-    .bind(&payload.space_id)
-    .bind(&payload.parent_node_id)
-    .bind(node_name)
-    .bind(&operator_id)
-    .execute(&state.pool)
-    .await
-    .map_err(|error| {
-        if is_unique_constraint_error(&error) {
-            let detail = if unique_node_insert_conflict_target(&error) == "id" {
-                "node id already exists"
-            } else {
-                "node name already exists in parent"
-            };
-            return problem(
-                StatusCode::CONFLICT,
-                "conflict",
-                detail,
-                SdkWorkResultCode::Conflict,
-            );
+        )
+        .bind(&node_id)
+        .bind(&tenant_id)
+        .bind(&payload.space_id)
+        .bind(&payload.parent_node_id)
+        .bind(node_name)
+        .bind(&operator_id)
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| {
+            if is_unique_constraint_error(&error) {
+                let detail = if unique_node_insert_conflict_target(&error) == "id" {
+                    "node id already exists"
+                } else {
+                    "node name already exists in parent"
+                };
+                return problem(
+                    StatusCode::CONFLICT,
+                    "conflict",
+                    detail,
+                    SdkWorkResultCode::Conflict,
+                );
+            }
+            internal_problem(format!("insert dr_drive_node failed: {error}"))
+        })?;
+        Ok(())
+    }
+    .await;
+    match insert_result {
+        Ok(()) => sqlx::query("COMMIT")
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error(
+                "commit folder creation transaction failed",
+            ))?,
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(error);
         }
-        internal_problem(format!("insert dr_drive_node failed: {error}"))
-    })?;
+    };
+    drop(connection);
 
     record_change(
         &state.pool,
@@ -417,31 +456,112 @@ pub(crate) async fn create_file(
     .await?;
     let created_storage_upload = initiate_storage_multipart_upload(&state, &storage_target).await?;
 
-    sqlx::query(
-        "INSERT INTO dr_drive_node (
+    let mut connection = match state.pool.acquire().await {
+        Ok(connection) => connection,
+        Err(error) => {
+            compensate_created_storage_multipart_upload(
+                &state,
+                &tenant_id,
+                payload.id.trim(),
+                &storage_target,
+                &created_storage_upload,
+                "NODE_TRANSACTION_CONNECTION_ACQUIRE_FAILED",
+            )
+            .await;
+            return Err(internal_problem(format!(
+                "acquire file creation transaction connection failed: {error}"
+            )));
+        }
+    };
+    if let Err(error) = sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
+        .await
+    {
+        drop(connection);
+        compensate_created_storage_multipart_upload(
+            &state,
+            &tenant_id,
+            payload.id.trim(),
+            &storage_target,
+            &created_storage_upload,
+            "NODE_TRANSACTION_BEGIN_FAILED",
+        )
+        .await;
+        return Err(internal_problem(format!(
+            "begin file creation transaction failed: {error}"
+        )));
+    }
+    let insert_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+        ensure_managed_website_parent_mutation_allowed(
+            &mut connection,
+            &tenant_id,
+            &payload.space_id,
+            payload.parent_node_id.as_deref(),
+        )
+        .await
+        .map_err(crate::error::map_service_error)?;
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
          ) VALUES ($1, $2, $3, $4, 'file', $5, 'uploading', 'active', 1, $6, $6)",
-    )
-    .bind(payload.id.trim())
-    .bind(&tenant_id)
-    .bind(&payload.space_id)
-    .bind(&payload.parent_node_id)
-    .bind(payload.node_name.trim())
-    .bind(operator_id.as_str())
-    .execute(&state.pool)
-    .await
-    .map_err(|error| {
-        if is_unique_constraint_error(&error) {
-            return problem(
-                StatusCode::CONFLICT,
-                "conflict",
-                "node name already exists in parent",
-                SdkWorkResultCode::Conflict,
-            );
+        )
+        .bind(payload.id.trim())
+        .bind(&tenant_id)
+        .bind(&payload.space_id)
+        .bind(&payload.parent_node_id)
+        .bind(payload.node_name.trim())
+        .bind(operator_id.as_str())
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| {
+            if is_unique_constraint_error(&error) {
+                return problem(
+                    StatusCode::CONFLICT,
+                    "conflict",
+                    "node name already exists in parent",
+                    SdkWorkResultCode::Conflict,
+                );
+            }
+            internal_problem(format!("insert file dr_drive_node failed: {error}"))
+        })?;
+        Ok(())
+    }
+    .await;
+    match insert_result {
+        Ok(()) => {
+            if let Err(error) = sqlx::query("COMMIT").execute(&mut *connection).await {
+                drop(connection);
+                compensate_created_storage_multipart_upload(
+                    &state,
+                    &tenant_id,
+                    payload.id.trim(),
+                    &storage_target,
+                    &created_storage_upload,
+                    "NODE_TRANSACTION_COMMIT_FAILED",
+                )
+                .await;
+                return Err(internal_problem(format!(
+                    "commit file creation transaction failed: {error}"
+                )));
+            }
         }
-        internal_problem(format!("insert file dr_drive_node failed: {error}"))
-    })?;
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            drop(connection);
+            compensate_created_storage_multipart_upload(
+                &state,
+                &tenant_id,
+                payload.id.trim(),
+                &storage_target,
+                &created_storage_upload,
+                "NODE_PUBLICATION_REJECTED",
+            )
+            .await;
+            return Err(error);
+        }
+    };
+    drop(connection);
 
     let service = DriveUploadService::new(SqlUploadSessionStore::new(state.pool.clone()));
     let created = service
@@ -571,33 +691,69 @@ pub(crate) async fn create_shortcut(
     )
     .await?;
 
-    sqlx::query(
-        "INSERT INTO dr_drive_node (
+    let mut connection = state.pool.acquire().await.map_err(|error| {
+        internal_problem(format!(
+            "acquire shortcut creation transaction connection failed: {error}"
+        ))
+    })?;
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
+        .await
+        .map_err(internal_sql_error(
+            "begin shortcut creation transaction failed",
+        ))?;
+    let insert_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+        ensure_managed_website_parent_mutation_allowed(
+            &mut connection,
+            &tenant_id,
+            &payload.space_id,
+            payload.parent_node_id.as_deref(),
+        )
+        .await
+        .map_err(crate::error::map_service_error)?;
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, shortcut_target_node_id,
             node_type, node_name, content_state, lifecycle_status, version,
             created_by, updated_by
          ) VALUES ($1, $2, $3, $4, $5, 'shortcut', $6, 'ready', 'active', 1, $7, $7)",
-    )
-    .bind(payload.id.trim())
-    .bind(&tenant_id)
-    .bind(&payload.space_id)
-    .bind(&payload.parent_node_id)
-    .bind(target.id.as_str())
-    .bind(payload.node_name.trim())
-    .bind(operator_id.as_str())
-    .execute(&state.pool)
-    .await
-    .map_err(|error| {
-        if is_unique_constraint_error(&error) {
-            return problem(
-                StatusCode::CONFLICT,
-                "conflict",
-                "node name already exists in parent",
-                SdkWorkResultCode::Conflict,
-            );
+        )
+        .bind(payload.id.trim())
+        .bind(&tenant_id)
+        .bind(&payload.space_id)
+        .bind(&payload.parent_node_id)
+        .bind(target.id.as_str())
+        .bind(payload.node_name.trim())
+        .bind(operator_id.as_str())
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| {
+            if is_unique_constraint_error(&error) {
+                return problem(
+                    StatusCode::CONFLICT,
+                    "conflict",
+                    "node name already exists in parent",
+                    SdkWorkResultCode::Conflict,
+                );
+            }
+            internal_problem(format!("insert shortcut dr_drive_node failed: {error}"))
+        })?;
+        Ok(())
+    }
+    .await;
+    match insert_result {
+        Ok(()) => sqlx::query("COMMIT")
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error(
+                "commit shortcut creation transaction failed",
+            ))?,
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(error);
         }
-        internal_problem(format!("insert shortcut dr_drive_node failed: {error}"))
-    })?;
+    };
+    drop(connection);
 
     record_change(
         &state.pool,
@@ -924,6 +1080,17 @@ pub(crate) async fn update_node(
         .map_err(internal_sql_error("begin node update transaction failed"))?;
 
     let tx_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+        ensure_managed_website_node_mutation_allowed(&mut connection, &tenant_id, &node_id)
+            .await
+            .map_err(crate::error::map_service_error)?;
+        ensure_managed_website_parent_mutation_allowed(
+            &mut connection,
+            &tenant_id,
+            &current.space_id,
+            next_parent.as_deref(),
+        )
+        .await
+        .map_err(crate::error::map_service_error)?;
         let old_location = resolve_node_location_on_connection(
             &mut connection,
             &tenant_id,
@@ -1085,6 +1252,17 @@ pub(crate) async fn move_node(
         .await
         .map_err(internal_sql_error("begin node move transaction failed"))?;
     let tx_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+        ensure_managed_website_node_mutation_allowed(&mut connection, &tenant_id, &node_id)
+            .await
+            .map_err(crate::error::map_service_error)?;
+        ensure_managed_website_parent_mutation_allowed(
+            &mut connection,
+            &tenant_id,
+            &current.space_id,
+            target_parent.as_deref(),
+        )
+        .await
+        .map_err(crate::error::map_service_error)?;
         let old_location = resolve_node_location_on_connection(
             &mut connection,
             &tenant_id,
@@ -1262,45 +1440,76 @@ pub(crate) async fn copy_node(
         .await?;
     }
 
-    sqlx::query(
-        "INSERT INTO dr_drive_node (
+    let mut connection = state.pool.acquire().await.map_err(|error| {
+        internal_problem(format!(
+            "acquire node copy transaction connection failed: {error}"
+        ))
+    })?;
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
+        .await
+        .map_err(internal_sql_error("begin node copy transaction failed"))?;
+    let copy_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+        ensure_managed_website_parent_mutation_allowed(
+            &mut connection,
+            &tenant_id,
+            &target_space_id,
+            target_parent.as_deref(),
+        )
+        .await
+        .map_err(crate::error::map_service_error)?;
+        sqlx::query(
+            "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, shortcut_target_node_id,
             node_type, node_name, content_state, lifecycle_status, version,
             created_by, updated_by
          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active', 1, $9, $9)",
-    )
-    .bind(payload.id.trim())
-    .bind(&tenant_id)
-    .bind(&target_space_id)
-    .bind(target_parent.as_deref())
-    .bind(source.shortcut_target_node_id.as_deref())
-    .bind(&source.node_type)
-    .bind(&target_name)
-    .bind(&content_state)
-    .bind(&operator_id)
-    .execute(&state.pool)
-    .await
-    .map_err(|error| {
-        if is_unique_constraint_error(&error) {
-            return problem(
-                StatusCode::CONFLICT,
-                "conflict",
-                "node name already exists in parent",
-                SdkWorkResultCode::Conflict,
-            );
-        }
-        internal_problem(format!("copy dr_drive_node failed: {error}"))
-    })?;
+        )
+        .bind(payload.id.trim())
+        .bind(&tenant_id)
+        .bind(&target_space_id)
+        .bind(target_parent.as_deref())
+        .bind(source.shortcut_target_node_id.as_deref())
+        .bind(&source.node_type)
+        .bind(&target_name)
+        .bind(&content_state)
+        .bind(&operator_id)
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| {
+            if is_unique_constraint_error(&error) {
+                return problem(
+                    StatusCode::CONFLICT,
+                    "conflict",
+                    "node name already exists in parent",
+                    SdkWorkResultCode::Conflict,
+                );
+            }
+            internal_problem(format!("copy dr_drive_node failed: {error}"))
+        })?;
 
-    copy_active_storage_object_metadata(
-        &state.pool,
-        &tenant_id,
-        &target_space_id,
-        &node_id,
-        payload.id.trim(),
-        &operator_id,
-    )
-    .await?;
+        copy_active_storage_object_metadata(
+            &mut connection,
+            &tenant_id,
+            &target_space_id,
+            &node_id,
+            payload.id.trim(),
+            &operator_id,
+        )
+        .await
+    }
+    .await;
+    match copy_result {
+        Ok(()) => sqlx::query("COMMIT")
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error("commit node copy transaction failed"))?,
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(error);
+        }
+    };
+    drop(connection);
     record_change(
         &state.pool,
         &tenant_id,
@@ -1342,6 +1551,9 @@ pub(crate) async fn delete_node(
         .map_err(internal_sql_error("begin node delete transaction failed"))?;
 
     let tx_result: Result<u64, (StatusCode, Json<ProblemDetail>)> = async {
+        ensure_managed_website_node_mutation_allowed(&mut connection, &tenant_id, &node_id)
+            .await
+            .map_err(crate::error::map_service_error)?;
         let mut locations = Vec::with_capacity(nodes_to_delete.len());
         for node_to_delete in &nodes_to_delete {
             locations.push(

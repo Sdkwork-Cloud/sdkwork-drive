@@ -41,6 +41,7 @@ use crate::route_change::record_change;
 use crate::upload_support::*;
 use sdkwork_drive_workspace_service::infrastructure::outbox_dispatch::trigger_immediate_outbox_dispatch;
 use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
+use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed;
 use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 
 pub(crate) async fn create_upload_session(
@@ -393,6 +394,13 @@ pub(crate) async fn complete_upload_session(
         ))?;
 
     let tx_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+        ensure_managed_website_node_mutation_allowed(
+            &mut connection,
+            &tenant_id,
+            &upload_session.node_id,
+        )
+        .await
+        .map_err(map_service_error)?;
         sqlx::query(
             "INSERT INTO dr_drive_storage_object (
                 id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,

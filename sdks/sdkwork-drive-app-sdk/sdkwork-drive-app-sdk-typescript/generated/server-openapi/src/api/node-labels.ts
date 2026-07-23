@@ -19,13 +19,13 @@ export class NodeLabelsApi {
 
 
 /** List labels applied to a node */
-  async list(nodeId: string, params?: NodeLabelsListParams): Promise<Record<string, unknown>> {
+  async list(nodeId: string, params?: NodeLabelsListParams): Promise<{ items: NodeLabel[]; pageInfo: PageInfo; }> {
     const query = buildQueryString([
       { name: 'labelKey', value: params?.labelKey, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels`), query));
+    return this.client.get<{ items: NodeLabel[]; pageInfo: PageInfo; }>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels`), query));
   }
 
 /** Apply a label to a node */

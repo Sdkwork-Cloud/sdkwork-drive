@@ -9,7 +9,7 @@ export interface MediaResource {
   fileName?: string;
   mimeType?: string;
   sizeBytes?: string;
-  checksum?: Record<string, unknown>;
+  checksum?: { algorithm?: string; value?: string; };
   width?: number;
   height?: number;
   durationSeconds?: number;
@@ -18,8 +18,8 @@ export interface MediaResource {
   poster?: MediaResource;
   thumbnails?: MediaResource[];
   variants?: MediaResource[];
-  access?: Record<string, unknown>;
-  ai?: Record<string, unknown>;
+  access?: { visibility: 'private' | 'tenant' | 'organization' | 'public' | 'signed'; expiresAt?: string; };
+  ai?: { provenance?: 'uploaded' | 'generated' | 'edited' | 'imported'; provider?: string; model?: string; promptId?: string; generationTaskId?: string; sourceMediaIds?: string[]; seed?: string; moderationStatus?: 'unknown' | 'pending' | 'approved' | 'rejected' | 'blocked'; safetyLabels?: string[]; };
   metadata?: Record<string, unknown>;
   /** Legacy alias for id. */
   mediaResourceId?: string;

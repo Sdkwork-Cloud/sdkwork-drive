@@ -22,6 +22,11 @@ pub mod node {
     pub const DELETED_V1: &str = "drive.node.deleted.v1";
 }
 
+/// WebsiteRoot generation lifecycle events.
+pub mod website_root {
+    pub const GENERATION_CHANGED_V1: &str = "drive.website_root.generation.changed.v1";
+}
+
 /// Node property mutation events.
 pub mod node_property {
     pub const SET: &str = "drive.node_property.set";

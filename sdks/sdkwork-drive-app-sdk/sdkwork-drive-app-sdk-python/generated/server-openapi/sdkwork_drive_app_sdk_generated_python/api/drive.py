@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import ArchiveEntryListHttpResponse, ChangeListHttpResponse, CheckFavoriteNodesRequest, ClaimShareLinkHttpResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlHttpResponse, CreateDownloadUrlRequest, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileHttpResponse, CreateFileRequest, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkHttpResponse, CreateShareLinkRequest, CreateSpaceRequest, CreateUploadSessionRequest, CreateWebsiteRootRequest, DownloadPackageHttpResponse, DriveCommentHttpResponse, DriveCommentListHttpResponse, DriveCommentReplyHttpResponse, DriveCommentReplyListHttpResponse, DriveNodeHttpResponse, DriveNodeListHttpResponse, DrivePermissionHttpResponse, DrivePermissionListHttpResponse, DriveSandboxEntryHttpResponse, DriveSandboxEntryListHttpResponse, DriveSandboxFileContentHttpResponse, DriveSandboxMutationCommandHttpResponse, DriveSandboxVolumeListHttpResponse, DriveSpaceHttpResponse, DriveSpaceListHttpResponse, DriveUploadSessionHttpResponse, EffectivePermissionListHttpResponse, EmptyTrashHttpResponse, EmptyTrashRequest, ExtractArchiveEntriesHttpResponse, ExtractArchiveEntriesRequest, FavoriteNodeHttpResponse, FavoriteNodeRequest, FileVersionHttpResponse, FileVersionListHttpResponse, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesHttpResponse, NodeCommandRequest, NodePathHttpResponse, PrepareUploaderUploadHttpResponse, PrepareUploaderUploadRequest, PresignedUploadPartHttpResponse, PresignUploadPartRequest, PurgeDriveSandboxEntryRequest, QuotaSummaryHttpResponse, SdkWorkApiResponse, ShareLinkHttpResponse, ShareLinkListHttpResponse, StartPageTokenHttpResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPartHttpResponse, WebsiteRootHttpResponse, WebsiteRootListHttpResponse
+from ..models import ActivateWebsiteGenerationRequest, ArchiveEntryListHttpResponse, ChangeListHttpResponse, CheckFavoriteNodesRequest, ClaimShareLinkHttpResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlHttpResponse, CreateDownloadUrlRequest, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileHttpResponse, CreateFileRequest, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkHttpResponse, CreateShareLinkRequest, CreateSpaceRequest, CreateUploadSessionRequest, CreateWebsiteRootRequest, CreateWebsiteSyncRequest, DownloadPackageHttpResponse, DriveCommentHttpResponse, DriveCommentListHttpResponse, DriveCommentReplyHttpResponse, DriveCommentReplyListHttpResponse, DriveNodeHttpResponse, DriveNodeListHttpResponse, DrivePermissionHttpResponse, DrivePermissionListHttpResponse, DriveSandboxEntryHttpResponse, DriveSandboxEntryListHttpResponse, DriveSandboxFileContentHttpResponse, DriveSandboxMutationCommandHttpResponse, DriveSandboxVolumeListHttpResponse, DriveSpaceHttpResponse, DriveSpaceListHttpResponse, DriveUploadSessionHttpResponse, EffectivePermissionListHttpResponse, EmptyTrashHttpResponse, EmptyTrashRequest, ExtractArchiveEntriesHttpResponse, ExtractArchiveEntriesRequest, FavoriteNodeHttpResponse, FavoriteNodeRequest, FileVersionHttpResponse, FileVersionListHttpResponse, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesHttpResponse, NodeCommandRequest, NodePathHttpResponse, PrepareUploaderUploadHttpResponse, PrepareUploaderUploadRequest, PresignedUploadPartHttpResponse, PresignUploadPartRequest, PurgeDriveSandboxEntryRequest, QuotaSummaryHttpResponse, SdkWorkApiResponse, ShareLinkHttpResponse, ShareLinkListHttpResponse, StartPageTokenHttpResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPartHttpResponse, WebsiteGenerationActivationHttpResponse, WebsiteRootHttpResponse, WebsiteRootListHttpResponse, WebsiteSyncActivationHttpResponse, WebsiteSyncHttpResponse, WebsiteSyncVersionRequest
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -818,6 +818,8 @@ class DriveWebsiteRootsApi:
 
     def __init__(self, client: HttpClient):
         self._client = client
+        self.syncs = DriveWebsiteRootsSyncsApi(client)
+        self.generations = DriveWebsiteRootsGenerationsApi(client)
 
 
     def list(self, space_id: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> WebsiteRootListHttpResponse:
@@ -832,6 +834,46 @@ class DriveWebsiteRootsApi:
 
     def retrieve(self, root_uuid: str) -> WebsiteRootHttpResponse:
         return self._client.get(f"/app/v3/api/drive/website_roots/{serialize_path_parameter(root_uuid, {'name': 'rootUuid', 'style': 'simple', 'explode': False})}")
+
+class DriveWebsiteRootsSyncsApi:
+    """drive drive.website_roots.syncs API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def create(self, root_uuid: str, body: CreateWebsiteSyncRequest, idempotency_key: str) -> WebsiteSyncHttpResponse:
+        """Create an isolated atomic website synchronization"""
+        request_headers = build_request_headers(
+            {
+                'Idempotency-Key': {'value': idempotency_key, 'style': 'simple', 'explode': False},
+            },
+            {}
+        )
+        return self._client.post(f"/app/v3/api/drive/website_roots/{serialize_path_parameter(root_uuid, {'name': 'rootUuid', 'style': 'simple', 'explode': False})}/syncs", json=body, headers=request_headers)
+
+    def retrieve(self, root_uuid: str, sync_id: str) -> WebsiteSyncHttpResponse:
+        """Retrieve an atomic website synchronization"""
+        return self._client.get(f"/app/v3/api/drive/website_roots/{serialize_path_parameter(root_uuid, {'name': 'rootUuid', 'style': 'simple', 'explode': False})}/syncs/{serialize_path_parameter(sync_id, {'name': 'syncId', 'style': 'simple', 'explode': False})}")
+
+    def finalize(self, root_uuid: str, sync_id: str, body: WebsiteSyncVersionRequest) -> WebsiteSyncActivationHttpResponse:
+        """Validate and atomically activate a complete website tree"""
+        return self._client.post(f"/app/v3/api/drive/website_roots/{serialize_path_parameter(root_uuid, {'name': 'rootUuid', 'style': 'simple', 'explode': False})}/syncs/{serialize_path_parameter(sync_id, {'name': 'syncId', 'style': 'simple', 'explode': False})}/finalize", json=body)
+
+    def abort(self, root_uuid: str, sync_id: str, body: WebsiteSyncVersionRequest) -> WebsiteSyncHttpResponse:
+        """Abort an unactivated website synchronization"""
+        return self._client.post(f"/app/v3/api/drive/website_roots/{serialize_path_parameter(root_uuid, {'name': 'rootUuid', 'style': 'simple', 'explode': False})}/syncs/{serialize_path_parameter(sync_id, {'name': 'syncId', 'style': 'simple', 'explode': False})}/abort", json=body)
+
+class DriveWebsiteRootsGenerationsApi:
+    """drive drive.website_roots.generations API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def activate(self, root_uuid: str, generation: str, body: ActivateWebsiteGenerationRequest) -> WebsiteGenerationActivationHttpResponse:
+        """Activate a retained website generation as a new logical generation"""
+        return self._client.post(f"/app/v3/api/drive/website_roots/{serialize_path_parameter(root_uuid, {'name': 'rootUuid', 'style': 'simple', 'explode': False})}/generations/{serialize_path_parameter(generation, {'name': 'generation', 'style': 'simple', 'explode': False})}/activate", json=body)
 
 class DriveMoveDestinationsApi:
     """drive drive.move_destinations API client."""

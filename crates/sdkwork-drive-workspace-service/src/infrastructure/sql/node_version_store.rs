@@ -1,12 +1,13 @@
 use async_trait::async_trait;
 use sqlx::any::AnyRow;
-use sqlx::AnyPool;
 use sqlx::Row;
+use sqlx::{AnyConnection, AnyPool};
 
 use crate::domain::node_version::{
     CreateDriveNodeVersionCommand, DriveNodeVersion, DriveNodeVersionChangeSource,
     DriveNodeVersionKind,
 };
+use crate::infrastructure::sql::begin_transaction_sql;
 use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::ports::node_version_store::DriveNodeVersionStore;
 use crate::DriveServiceError;
@@ -28,60 +29,38 @@ impl DriveNodeVersionStore for SqlDriveNodeVersionStore {
         &self,
         command: CreateDriveNodeVersionCommand,
     ) -> Result<DriveNodeVersion, DriveServiceError> {
-        let result = sqlx::query(
-            "INSERT INTO dr_drive_node_version (
-                id, tenant_id, space_id, node_id, version_no, storage_object_id,
-                content_type, content_length, checksum_sha256_hex,
-                version_kind, version_label, change_source, change_summary,
-                restored_from_version_id, app_id, app_resource_type, app_resource_id,
-                scene, source, lifecycle_status, created_by, updated_by
-             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-                $13, $14, $15, $16, $17, $18, $19, 'active', $20, $20
-             )",
-        )
-        .bind(&command.id)
-        .bind(&command.tenant_id)
-        .bind(&command.space_id)
-        .bind(&command.node_id)
-        .bind(command.version_no)
-        .bind(command.storage_object_id.as_deref())
-        .bind(&command.content_type)
-        .bind(command.content_length)
-        .bind(&command.checksum_sha256_hex)
-        .bind(command.version_kind.as_str())
-        .bind(command.version_label.as_deref())
-        .bind(command.change_source.as_str())
-        .bind(command.change_summary.as_deref())
-        .bind(command.restored_from_version_id.as_deref())
-        .bind(command.app_id.as_deref())
-        .bind(command.app_resource_type.as_deref())
-        .bind(command.app_resource_id.as_deref())
-        .bind(command.scene.as_deref())
-        .bind(command.source.as_deref())
-        .bind(&command.operator_id)
-        .execute(&self.pool)
-        .await;
+        let mut connection = self.pool.acquire().await.map_err(|error| {
+            DriveServiceError::Internal(format!(
+                "acquire node version transaction connection failed: {error}"
+            ))
+        })?;
+        sqlx::query(begin_transaction_sql())
+            .execute(&mut *connection)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "begin node version transaction failed: {error}"
+                ))
+            })?;
 
-        if let Err(error) = result {
-            let message = error.to_string();
-            if is_unique_constraint_violation(&message) {
-                return Err(DriveServiceError::Conflict(
-                    "node version already exists for tenant/node/version".to_string(),
-                ));
+        let result = create_node_version_in_transaction(&mut connection, &command).await;
+        match result {
+            Ok(version) => {
+                sqlx::query("COMMIT")
+                    .execute(&mut *connection)
+                    .await
+                    .map_err(|error| {
+                        DriveServiceError::Internal(format!(
+                            "commit node version transaction failed: {error}"
+                        ))
+                    })?;
+                Ok(version)
             }
-            return Err(DriveServiceError::Internal(format!(
-                "insert dr_drive_node_version failed: {message}"
-            )));
+            Err(error) => {
+                let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+                Err(error)
+            }
         }
-
-        self.find_by_id(&command.tenant_id, &command.node_id, &command.id)
-            .await?
-            .ok_or_else(|| {
-                DriveServiceError::Internal(
-                    "read inserted dr_drive_node_version failed".to_string(),
-                )
-            })
     }
 
     async fn find_by_id(
@@ -135,6 +114,85 @@ impl DriveNodeVersionStore for SqlDriveNodeVersionStore {
 
         rows.iter().map(map_row_to_node_version).collect()
     }
+}
+
+async fn create_node_version_in_transaction(
+    connection: &mut AnyConnection,
+    command: &CreateDriveNodeVersionCommand,
+) -> Result<DriveNodeVersion, DriveServiceError> {
+    super::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed(
+        connection,
+        &command.tenant_id,
+        &command.node_id,
+    )
+    .await?;
+
+    let result = sqlx::query(
+        "INSERT INTO dr_drive_node_version (
+            id, tenant_id, space_id, node_id, version_no, storage_object_id,
+            content_type, content_length, checksum_sha256_hex,
+            version_kind, version_label, change_source, change_summary,
+            restored_from_version_id, app_id, app_resource_type, app_resource_id,
+            scene, source, lifecycle_status, created_by, updated_by
+         ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+            $13, $14, $15, $16, $17, $18, $19, 'active', $20, $20
+         )",
+    )
+    .bind(&command.id)
+    .bind(&command.tenant_id)
+    .bind(&command.space_id)
+    .bind(&command.node_id)
+    .bind(command.version_no)
+    .bind(command.storage_object_id.as_deref())
+    .bind(&command.content_type)
+    .bind(command.content_length)
+    .bind(&command.checksum_sha256_hex)
+    .bind(command.version_kind.as_str())
+    .bind(command.version_label.as_deref())
+    .bind(command.change_source.as_str())
+    .bind(command.change_summary.as_deref())
+    .bind(command.restored_from_version_id.as_deref())
+    .bind(command.app_id.as_deref())
+    .bind(command.app_resource_type.as_deref())
+    .bind(command.app_resource_id.as_deref())
+    .bind(command.scene.as_deref())
+    .bind(command.source.as_deref())
+    .bind(&command.operator_id)
+    .execute(&mut *connection)
+    .await;
+
+    if let Err(error) = result {
+        let message = error.to_string();
+        if is_unique_constraint_violation(&message) {
+            return Err(DriveServiceError::Conflict(
+                "node version already exists for tenant/node/version".to_string(),
+            ));
+        }
+        return Err(DriveServiceError::Internal(format!(
+            "insert dr_drive_node_version failed: {message}"
+        )));
+    }
+
+    let sql = node_version_select_sql("WHERE tenant_id=$1 AND node_id=$2 AND id=$3");
+    let row = sqlx::query(&sql)
+        .bind(&command.tenant_id)
+        .bind(&command.node_id)
+        .bind(&command.id)
+        .fetch_optional(&mut *connection)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!(
+                "read inserted dr_drive_node_version failed: {error}"
+            ))
+        })?;
+
+    row.as_ref()
+        .map(map_row_to_node_version)
+        .transpose()?
+        .ok_or_else(|| {
+            DriveServiceError::Internal("read inserted dr_drive_node_version failed".to_string())
+        })
 }
 
 fn node_version_select_sql(predicate: &str) -> String {

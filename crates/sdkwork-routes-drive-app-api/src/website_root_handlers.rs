@@ -146,7 +146,7 @@ fn parse_content_mode(
     }
 }
 
-fn map_website_root(root: DriveWebsiteRoot) -> WebsiteRootResponse {
+pub(crate) fn map_website_root(root: DriveWebsiteRoot) -> WebsiteRootResponse {
     WebsiteRootResponse {
         uuid: root.uuid,
         space_id: root.space_id,

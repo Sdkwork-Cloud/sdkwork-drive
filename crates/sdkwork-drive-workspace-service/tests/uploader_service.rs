@@ -1267,6 +1267,70 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
         .clone()
         .expect("prepare should create upload session");
 
+    sqlx::query("UPDATE dr_drive_space SET space_type='website' WHERE id=?1")
+        .bind(&prepared.space_id)
+        .execute(&pool)
+        .await
+        .expect("quarantine test Space should become website-capable");
+    sqlx::query("UPDATE dr_drive_node SET space_type='website' WHERE id=?1")
+        .bind(&prepared.node_id)
+        .execute(&pool)
+        .await
+        .expect("quarantine test node should use website Space type");
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, space_type, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+         ) VALUES (
+            'quarantine-website-root', 'tenant-quarantine', ?1, 'website', NULL,
+            'folder', 'public', 'ready', 'active', 1,
+            'user-quarantine', 'user-quarantine'
+         )",
+    )
+    .bind(&prepared.space_id)
+    .execute(&pool)
+    .await
+    .expect("quarantine WebsiteRoot folder should be inserted");
+    sqlx::query(
+        "UPDATE dr_drive_node
+         SET parent_node_id='quarantine-website-root'
+         WHERE tenant_id='tenant-quarantine' AND id=?1",
+    )
+    .bind(&prepared.node_id)
+    .execute(&pool)
+    .await
+    .expect("quarantine upload should be placed in the active website generation");
+    sqlx::query(
+        "INSERT INTO dr_drive_website_root (
+            id, uuid, tenant_id, space_id, root_key, display_name,
+            source_root_mode, selected_folder_node_id, selector_key, content_mode,
+            active_node_id, active_generation, root_status, last_switch_by,
+            version, created_by, updated_by
+         ) VALUES (
+            'quarantine-root-record', 'quarantine-root-uuid', 'tenant-quarantine', ?1,
+            'default', 'Default', 'folder', 'quarantine-website-root',
+            'folder:quarantine-website-root', 'atomic_generation',
+            'quarantine-website-root', 1, 'active', 'user-quarantine', 1,
+            'user-quarantine', 'user-quarantine'
+         )",
+    )
+    .bind(&prepared.space_id)
+    .execute(&pool)
+    .await
+    .expect("atomic quarantine WebsiteRoot should be inserted");
+    sqlx::query(
+        "INSERT INTO dr_drive_website_root_generation (
+            id, tenant_id, website_root_id, generation_no, root_node_id,
+            file_count, total_bytes, generation_status, activated_by
+         ) VALUES (
+            'quarantine-generation', 'tenant-quarantine', 'quarantine-root-record', 1,
+            'quarantine-website-root', 1, 128, 'current', 'user-quarantine'
+         )",
+    )
+    .execute(&pool)
+    .await
+    .expect("active quarantine website generation should be inserted");
+
     let error = service
         .complete_stored_upload(CompleteStoredUploaderUploadCommand {
             tenant_id: "tenant-quarantine".to_string(),
@@ -1337,6 +1401,20 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
     .await
     .expect("quarantine outbox event should exist");
     assert_eq!(outbox_event, "drive.object.quarantined");
+
+    let override_audit_action: String = sqlx::query_scalar(
+        "SELECT action
+         FROM dr_drive_audit_event
+         WHERE tenant_id='tenant-quarantine' AND resource_id=?1",
+    )
+    .bind(&prepared.node_id)
+    .fetch_one(&pool)
+    .await
+    .expect("quarantine system override audit should exist");
+    assert_eq!(
+        override_audit_action,
+        "drive.website_tree.system_override.content_policy_quarantine"
+    );
 
     std::env::remove_var("SDKWORK_DRIVE_CONTENT_SCAN_MODE");
 }

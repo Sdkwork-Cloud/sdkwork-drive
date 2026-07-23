@@ -1,15 +1,22 @@
 # SDKWork Drive Website Space Publishing PRD
 
-Status: draft
+Status: active
 Owner: SDKWork Drive maintainers
 Application: sdkwork-drive
-Updated: 2026-07-21
+Updated: 2026-07-22
 Requirement: REQ-2026-0004
 Parent: [PRD.md](PRD.md)
 Specs: REQUIREMENTS_SPEC.md, DOCUMENTATION_SPEC.md, DRIVE_SPEC.md, DATABASE_SPEC.md,
 API_SPEC.md, SDK_SPEC.md, APP_SDK_INTEGRATION_SPEC.md, SECURITY_SPEC.md,
 PRIVACY_SPEC.md, PERFORMANCE_SPEC.md, OBSERVABILITY_SPEC.md, TEST_SPEC.md,
 MIGRATION_SPEC.md
+
+Implementation boundary: the Website Space type, default `SPACE_ROOT`, explicit `FOLDER`
+WebsiteRoots, dual-engine persistence, App/Internal API contracts, generated SDKs, provider
+validation, path resolution/open, and root-scoped change events are implemented. `ATOMIC_SYNC`
+commands/workers/rollback/cleanup, complete user/admin workflows, provider-aware cache evidence,
+commercial metering reconciliation, and production load/security/operations evidence remain open.
+The reserved `dr_drive_website_sync` schema is not evidence that the atomic sync workflow exists.
 
 ## 1. Purpose
 

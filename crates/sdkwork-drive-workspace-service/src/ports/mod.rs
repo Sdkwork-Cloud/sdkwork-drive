@@ -19,4 +19,5 @@ pub mod storage_provider_store;
 pub mod upload_session_store;
 pub mod uploader_store;
 pub mod website_root_store;
+pub mod website_sync_store;
 pub mod workspace_store;

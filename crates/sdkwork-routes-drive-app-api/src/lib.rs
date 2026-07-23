@@ -55,6 +55,7 @@ mod watch_repository;
 mod web_bootstrap;
 mod webhook_url;
 mod website_root_handlers;
+mod website_sync_handlers;
 
 pub use http_route_manifest::app_route_manifest;
 pub use routes::*;

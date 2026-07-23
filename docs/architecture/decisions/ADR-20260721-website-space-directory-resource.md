@@ -1,9 +1,9 @@
 # ADR-20260721 Website Space Directory Resource
 
-Status: proposed
+Status: accepted
 Requirement: REQ-2026-0004
 Owner: SDKWork Drive maintainers
-Date: 2026-07-21
+Date: 2026-07-22
 Specs: ARCHITECTURE_DECISION_SPEC.md, DATABASE_SPEC.md, DRIVE_SPEC.md, API_SPEC.md,
 SDK_SPEC.md, SECURITY_SPEC.md, PERFORMANCE_SPEC.md, MIGRATION_SPEC.md
 
@@ -14,8 +14,10 @@ one website project, while a selected folder behaves as the document root. Ordin
 must not become public by accident. Framework bundles also need an atomic tree switch because
 uploading `index.html` and hashed assets independently can create a broken mixed deployment.
 
-The current Drive Space type enum has no `website`, and its owner/type uniqueness rule is incompatible
-with one owner having multiple website projects.
+At decision time, the Drive Space type enum had no `website`, and its owner/type uniqueness rule was
+incompatible with one owner having multiple website projects. The accepted baseline now materializes
+the type-aware model and stable WebsiteRoot provider contract; the remaining implementation work is
+tracked separately from this decision.
 
 ## Decision
 
@@ -61,8 +63,10 @@ with one owner having multiple website projects.
 
 ## Consequences
 
-- Drive requires reviewed enum/constraint/index migrations and SDK regeneration.
-- A new WebsiteRoot/sync aggregate and cleanup/reconciliation worker are required.
+- Drive now carries the reviewed enum/constraint/index baseline, WebsiteRoot aggregate, App/Internal
+  API authorities, and generated SDK/provider surfaces in PostgreSQL and SQLite.
+- The WebsiteSync schema is reserved, while its command API, fenced worker, rollback, cleanup, and
+  operational workflows remain implementation gates.
 - Temporary staging storage must be reserved, metered, expired, and cleaned.
 - Deploy/Web Server receive stable root generation events and can cache safely without a SiteRevision.
 - Existing Space owner/type uniqueness must become type-aware before multiple Website Spaces launch.
@@ -79,5 +83,6 @@ with one owner having multiple website projects.
 ## Supersedes / Superseded By
 
 This decision supersedes any implied design that treats every Drive Space as publishable or requires
-a Deploy Release/SiteRevision for each Website Space file change. It is proposed until schema and
-public contract human review is complete.
+a Deploy Release/SiteRevision for each Website Space file change. It is accepted and materialized in
+the Drive schema and owner contracts; commercial activation remains gated by the outstanding atomic
+sync, UI, operations, and production-evidence work recorded in the PRD and technical architecture.

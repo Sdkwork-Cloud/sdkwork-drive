@@ -4,6 +4,7 @@ pub mod change_feed_store;
 pub mod entities;
 mod installer;
 pub mod maintenance_store;
+pub mod managed_website_tree_guard;
 pub mod node_head_metadata;
 pub mod node_store;
 pub mod node_version_store;
@@ -27,6 +28,7 @@ pub mod upload_session_store;
 pub mod uploader_store;
 pub mod website_root_store;
 mod website_space_store;
+pub mod website_sync_store;
 pub mod workspace_store;
 
 pub use installer::{

@@ -8,8 +8,8 @@ use crate::dto::{
     MediaResourceResponse, PageRequest, UpdateAssetRequest, ASSET_NODE_SELECT_COLUMNS,
 };
 use crate::error::{
-    internal_sql_error, is_unique_constraint_error, not_found_problem, problem, ProblemDetail,
-    SdkWorkResultCode,
+    internal_problem, internal_sql_error, is_unique_constraint_error, map_service_error,
+    not_found_problem, problem, ProblemDetail, SdkWorkResultCode,
 };
 use crate::hashing::sha256_raw_hex_separated;
 use crate::ids::next_drive_id;
@@ -37,6 +37,8 @@ use sdkwork_drive_contract::{
 use sdkwork_drive_workspace_service::infrastructure::change_recorder::{
     self, RecordDriveChangeCommand,
 };
+use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
+use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed;
 use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use serde_json::{json, Value};
 use sqlx::AnyPool;
@@ -1194,18 +1196,14 @@ async fn update_node_name_if_needed(
     title: &str,
     operator_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-    sqlx::query(
-        "UPDATE dr_drive_node
-         SET node_name=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
-         WHERE tenant_id=$3 AND id=$4 AND lifecycle_status != 'deleted'",
+    update_asset_node_metadata(
+        pool,
+        tenant_id,
+        node_id,
+        AssetNodeMetadataUpdate::Name(title),
+        operator_id,
     )
-    .bind(title)
-    .bind(operator_id)
-    .bind(tenant_id)
-    .bind(node_id)
-    .execute(pool)
-    .await
-    .map_err(internal_sql_error("update asset title failed"))?;
+    .await?;
     record_change(
         pool,
         tenant_id,
@@ -1224,25 +1222,14 @@ async fn update_node_scene(
     scene: &str,
     operator_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-    let space_id: String =
-        sqlx::query_scalar("SELECT space_id FROM dr_drive_node WHERE tenant_id=$1 AND id=$2")
-            .bind(tenant_id)
-            .bind(node_id)
-            .fetch_one(pool)
-            .await
-            .map_err(internal_sql_error("load node space_id failed"))?;
-    sqlx::query(
-        "UPDATE dr_drive_node
-         SET scene=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
-         WHERE tenant_id=$3 AND id=$4",
+    let space_id = update_asset_node_metadata(
+        pool,
+        tenant_id,
+        node_id,
+        AssetNodeMetadataUpdate::Scene(scene),
+        operator_id,
     )
-    .bind(scene)
-    .bind(operator_id)
-    .bind(tenant_id)
-    .bind(node_id)
-    .execute(pool)
-    .await
-    .map_err(internal_sql_error("update asset scene failed"))?;
+    .await?;
     record_change(
         pool,
         tenant_id,
@@ -1261,25 +1248,14 @@ async fn update_node_source(
     source: &str,
     operator_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
-    let space_id: String =
-        sqlx::query_scalar("SELECT space_id FROM dr_drive_node WHERE tenant_id=$1 AND id=$2")
-            .bind(tenant_id)
-            .bind(node_id)
-            .fetch_one(pool)
-            .await
-            .map_err(internal_sql_error("load node space_id failed"))?;
-    sqlx::query(
-        "UPDATE dr_drive_node
-         SET source=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
-         WHERE tenant_id=$3 AND id=$4",
+    let space_id = update_asset_node_metadata(
+        pool,
+        tenant_id,
+        node_id,
+        AssetNodeMetadataUpdate::Source(source),
+        operator_id,
     )
-    .bind(source)
-    .bind(operator_id)
-    .bind(tenant_id)
-    .bind(node_id)
-    .execute(pool)
-    .await
-    .map_err(internal_sql_error("update asset source failed"))?;
+    .await?;
     record_change(
         pool,
         tenant_id,
@@ -1289,6 +1265,105 @@ async fn update_node_source(
         operator_id,
     )
     .await
+}
+
+enum AssetNodeMetadataUpdate<'a> {
+    Name(&'a str),
+    Scene(&'a str),
+    Source(&'a str),
+}
+
+async fn update_asset_node_metadata(
+    pool: &AnyPool,
+    tenant_id: &str,
+    node_id: &str,
+    update: AssetNodeMetadataUpdate<'_>,
+    operator_id: &str,
+) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
+    let mut connection = pool.acquire().await.map_err(|error| {
+        internal_problem(format!(
+            "acquire asset node update transaction connection failed: {error}"
+        ))
+    })?;
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
+        .await
+        .map_err(internal_sql_error(
+            "begin asset node update transaction failed",
+        ))?;
+    let update_result: Result<String, (StatusCode, Json<ProblemDetail>)> = async {
+        ensure_managed_website_node_mutation_allowed(&mut connection, tenant_id, node_id)
+            .await
+            .map_err(map_service_error)?;
+        let space_id: String =
+            sqlx::query_scalar("SELECT space_id FROM dr_drive_node WHERE tenant_id=$1 AND id=$2")
+                .bind(tenant_id)
+                .bind(node_id)
+                .fetch_one(&mut *connection)
+                .await
+                .map_err(internal_sql_error("load node space_id failed"))?;
+        let affected = match update {
+            AssetNodeMetadataUpdate::Name(value) => sqlx::query(
+                "UPDATE dr_drive_node
+                 SET node_name=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
+                 WHERE tenant_id=$3 AND id=$4 AND lifecycle_status != 'deleted'",
+            )
+            .bind(value)
+            .bind(operator_id)
+            .bind(tenant_id)
+            .bind(node_id)
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error("update asset title failed"))?
+            .rows_affected(),
+            AssetNodeMetadataUpdate::Scene(value) => sqlx::query(
+                "UPDATE dr_drive_node
+                 SET scene=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
+                 WHERE tenant_id=$3 AND id=$4 AND lifecycle_status != 'deleted'",
+            )
+            .bind(value)
+            .bind(operator_id)
+            .bind(tenant_id)
+            .bind(node_id)
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error("update asset scene failed"))?
+            .rows_affected(),
+            AssetNodeMetadataUpdate::Source(value) => sqlx::query(
+                "UPDATE dr_drive_node
+                 SET source=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
+                 WHERE tenant_id=$3 AND id=$4 AND lifecycle_status != 'deleted'",
+            )
+            .bind(value)
+            .bind(operator_id)
+            .bind(tenant_id)
+            .bind(node_id)
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error("update asset source failed"))?
+            .rows_affected(),
+        };
+        if affected == 0 {
+            return Err(not_found_problem("asset node not found"));
+        }
+        Ok(space_id)
+    }
+    .await;
+    match update_result {
+        Ok(space_id) => {
+            sqlx::query("COMMIT")
+                .execute(&mut *connection)
+                .await
+                .map_err(internal_sql_error(
+                    "commit asset node update transaction failed",
+                ))?;
+            Ok(space_id)
+        }
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            Err(error)
+        }
+    }
 }
 
 async fn create_virtual_reference_asset_node(
@@ -1348,7 +1423,25 @@ async fn create_virtual_reference_asset_node(
             .map(|resource_type| format!("external:{resource_type}"))
     });
 
-    sqlx::query(
+    let mut connection = pool.acquire().await.map_err(|error| {
+        internal_problem(format!(
+            "acquire virtual asset transaction connection failed: {error}"
+        ))
+    })?;
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
+        .await
+        .map_err(internal_sql_error("begin virtual asset transaction failed"))?;
+    let insert_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+        sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_parent_mutation_allowed(
+            &mut connection,
+            tenant_id,
+            &space_id,
+            None,
+        )
+        .await
+        .map_err(map_service_error)?;
+        sqlx::query(
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name, scene, source,
             content_state, lifecycle_status, version, created_by, updated_by
@@ -1361,19 +1454,37 @@ async fn create_virtual_reference_asset_node(
     .bind(scene_value)
     .bind(source_value)
     .bind(operator_id)
-    .execute(pool)
-    .await
-    .map_err(|error| {
-        if is_unique_constraint_error(&error) {
-            return problem(
-                StatusCode::CONFLICT,
-                "conflict",
-                "node id already exists",
-                SdkWorkResultCode::Conflict,
-            );
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| {
+            if is_unique_constraint_error(&error) {
+                return problem(
+                    StatusCode::CONFLICT,
+                    "conflict",
+                    "node id already exists",
+                    SdkWorkResultCode::Conflict,
+                );
+            }
+            internal_problem(format!(
+                "insert virtual_reference dr_drive_node failed: {error}"
+            ))
+        })?;
+        Ok(())
+    }
+    .await;
+    match insert_result {
+        Ok(()) => sqlx::query("COMMIT")
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error(
+                "commit virtual asset transaction failed",
+            ))?,
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(error);
         }
-        crate::error::internal_problem(format!("insert virtual_reference dr_drive_node failed: {error}"))
-    })?;
+    };
+    drop(connection);
 
     record_change(
         pool,

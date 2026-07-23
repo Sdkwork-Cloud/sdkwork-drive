@@ -694,6 +694,36 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "websiteRoots.retrieve",
     ),
     HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/drive/website_roots/{rootUuid}/generations/{generation}/activate",
+        "drive-app-api",
+        "websiteRoots.generations.activate",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/drive/website_roots/{rootUuid}/syncs",
+        "drive-app-api",
+        "websiteRoots.syncs.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/drive/website_roots/{rootUuid}/syncs/{syncId}",
+        "drive-app-api",
+        "websiteRoots.syncs.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/drive/website_roots/{rootUuid}/syncs/{syncId}/abort",
+        "drive-app-api",
+        "websiteRoots.syncs.abort",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/drive/website_roots/{rootUuid}/syncs/{syncId}/finalize",
+        "drive-app-api",
+        "websiteRoots.syncs.finalize",
+    ),
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/iam/users/current",
         "drive-app-api",

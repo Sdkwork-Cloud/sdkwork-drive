@@ -3,6 +3,10 @@ use sqlx::any::AnyRow;
 use sqlx::{AnyConnection, AnyPool, Row};
 
 use crate::domain::uploader::{DriveUploadItem, DriveUploadPart};
+use crate::infrastructure::sql::managed_website_tree_guard::{
+    ensure_managed_website_node_mutation_allowed, ManagedWebsiteTreeSystemOverride,
+    ManagedWebsiteTreeSystemOverrideReason,
+};
 use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::infrastructure::sql::upload_query_columns::{
     DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS, DRIVE_UPLOAD_PART_SELECT_COLUMNS,
@@ -254,7 +258,32 @@ impl DriveUploaderStore for SqlUploaderStore {
         &self,
         node: &NewDriveUploaderNode,
     ) -> Result<String, DriveServiceError> {
-        sqlx::query(
+        let mut connection = self.pool.acquire().await.map_err(|error| {
+            DriveServiceError::Internal(format!(
+                "acquire uploader node transaction connection failed: {error}"
+            ))
+        })?;
+        sqlx::query(begin_transaction_sql())
+            .execute(&mut *connection)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "begin uploader node transaction failed: {error}"
+                ))
+            })?;
+        if let Err(error) =
+            super::managed_website_tree_guard::ensure_managed_website_parent_mutation_allowed(
+                &mut connection,
+                &node.tenant_id,
+                &node.space_id,
+                node.parent_node_id.as_deref(),
+            )
+            .await
+        {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(error);
+        }
+        let insert_result = sqlx::query(
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type,
                 node_name, scene, source, content_state, lifecycle_status, version,
@@ -269,7 +298,7 @@ impl DriveUploaderStore for SqlUploaderStore {
         .bind(node.scene.as_deref())
         .bind(node.source.as_deref())
         .bind(&node.operator_id)
-        .execute(&self.pool)
+        .execute(&mut *connection)
         .await
         .map_err(|error| {
             let message = error.to_string();
@@ -280,7 +309,19 @@ impl DriveUploaderStore for SqlUploaderStore {
                 ));
             }
             DriveServiceError::Internal(format!("insert uploader node failed: {message}"))
-        })?;
+        });
+        if let Err(error) = insert_result {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(error);
+        }
+        sqlx::query("COMMIT")
+            .execute(&mut *connection)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "commit uploader node transaction failed: {error}"
+                ))
+            })?;
 
         Ok(node.id.clone())
     }
@@ -615,6 +656,23 @@ impl DriveUploaderStore for SqlUploaderStore {
             })?;
 
         let transaction_result: Result<(), DriveServiceError> = async {
+            let system_override = match ensure_managed_website_node_mutation_allowed(
+                &mut connection,
+                tenant_id,
+                &node_id,
+            )
+            .await
+            {
+                Ok(()) => None,
+                Err(DriveServiceError::Conflict(_)) => {
+                    Some(ManagedWebsiteTreeSystemOverride::authorize(
+                        ManagedWebsiteTreeSystemOverrideReason::ContentPolicyQuarantine,
+                        operator_id,
+                    )?)
+                }
+                Err(error) => return Err(error),
+            };
+
             sqlx::query(
                 "UPDATE dr_drive_node
                  SET lifecycle_status='trashed',
@@ -715,6 +773,12 @@ impl DriveUploaderStore for SqlUploaderStore {
                     "insert quarantine dr_drive_file_sensitive_operation failed: {error}"
                 ))
             })?;
+
+            if let Some(system_override) = system_override {
+                system_override
+                    .record_on_connection(&mut connection, tenant_id, "drive_node", &node_id)
+                    .await?;
+            }
 
             record_drive_change_on_connection(
                 &mut connection,
@@ -818,6 +882,13 @@ async fn complete_stored_upload_in_transaction(
         ensure_stored_object_matches_completion(&stored_object, completion)?;
         return read_upload_item_by_id(connection, &completion.tenant_id, &target.item.id).await;
     }
+
+    super::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed(
+        connection,
+        &completion.tenant_id,
+        &target.item.node_id,
+    )
+    .await?;
 
     if !matches!(
         target.item.status.as_str(),

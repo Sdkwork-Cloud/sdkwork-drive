@@ -1,10 +1,11 @@
 use async_trait::async_trait;
 use sqlx::any::AnyRow;
-use sqlx::AnyPool;
 use sqlx::Row;
+use sqlx::{AnyConnection, AnyPool};
 
 use crate::domain::node::{DriveNode, DriveNodeType};
 use crate::domain::space::DriveSpaceType;
+use crate::infrastructure::sql::begin_transaction_sql;
 use crate::infrastructure::sql::sql_error::is_unique_constraint_violation;
 use crate::ports::node_store::{DriveNodeStore, NewDriveNode};
 use crate::DriveServiceError;
@@ -112,51 +113,95 @@ impl DriveNodeStore for SqlNodeStore {
     }
 
     async fn insert_node(&self, new_node: &NewDriveNode) -> Result<DriveNode, DriveServiceError> {
-        sqlx::query(
-            "INSERT INTO dr_drive_node (
+        let mut connection = self.pool.acquire().await.map_err(|error| {
+            DriveServiceError::Internal(format!(
+                "acquire node insert transaction connection failed: {error}"
+            ))
+        })?;
+        sqlx::query(begin_transaction_sql())
+            .execute(&mut *connection)
+            .await
+            .map_err(|error| {
+                DriveServiceError::Internal(format!(
+                    "begin node insert transaction failed: {error}"
+                ))
+            })?;
+
+        let result = insert_node_in_transaction(&mut connection, new_node).await;
+        match result {
+            Ok(node) => {
+                sqlx::query("COMMIT")
+                    .execute(&mut *connection)
+                    .await
+                    .map_err(|error| {
+                        DriveServiceError::Internal(format!(
+                            "commit node insert transaction failed: {error}"
+                        ))
+                    })?;
+                Ok(node)
+            }
+            Err(error) => {
+                let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+                Err(error)
+            }
+        }
+    }
+}
+
+async fn insert_node_in_transaction(
+    connection: &mut AnyConnection,
+    new_node: &NewDriveNode,
+) -> Result<DriveNode, DriveServiceError> {
+    super::managed_website_tree_guard::ensure_managed_website_parent_mutation_allowed(
+        connection,
+        &new_node.tenant_id,
+        &new_node.space_id,
+        new_node.parent_node_id.as_deref(),
+    )
+    .await?;
+
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id,
                 node_type, node_name, content_state, lifecycle_status,
                 version, created_by, updated_by
              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'empty', $9, 1, $10, $11)",
-        )
-        .bind(&new_node.id)
-        .bind(&new_node.tenant_id)
-        .bind(&new_node.space_id)
-        .bind(&new_node.space_type)
-        .bind(&new_node.parent_node_id)
-        .bind(&new_node.shortcut_target_node_id)
-        .bind(&new_node.node_type)
-        .bind(&new_node.node_name)
-        .bind(&new_node.lifecycle_status)
-        .bind(&new_node.created_by)
-        .bind(&new_node.updated_by)
-        .execute(&self.pool)
-        .await
-        .map_err(|error| {
-            let message = error.to_string();
-            if is_unique_constraint_violation(&message) {
-                return DriveServiceError::Conflict(
-                    "node name already exists in parent".to_string(),
-                );
-            }
-            DriveServiceError::Internal(format!("insert dr_drive_node failed: {message}"))
-        })?;
+    )
+    .bind(&new_node.id)
+    .bind(&new_node.tenant_id)
+    .bind(&new_node.space_id)
+    .bind(&new_node.space_type)
+    .bind(&new_node.parent_node_id)
+    .bind(&new_node.shortcut_target_node_id)
+    .bind(&new_node.node_type)
+    .bind(&new_node.node_name)
+    .bind(&new_node.lifecycle_status)
+    .bind(&new_node.created_by)
+    .bind(&new_node.updated_by)
+    .execute(&mut *connection)
+    .await
+    .map_err(|error| {
+        let message = error.to_string();
+        if is_unique_constraint_violation(&message) {
+            return DriveServiceError::Conflict("node name already exists in parent".to_string());
+        }
+        DriveServiceError::Internal(format!("insert dr_drive_node failed: {message}"))
+    })?;
 
-        let row = sqlx::query(
-            "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id,
+    let row = sqlx::query(
+        "SELECT id, tenant_id, space_id, space_type, parent_node_id, shortcut_target_node_id,
                     node_type, node_name, lifecycle_status, version
              FROM dr_drive_node
              WHERE id=$1",
-        )
-        .bind(&new_node.id)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|error| {
-            DriveServiceError::Internal(format!("read inserted dr_drive_node failed: {error}"))
-        })?;
+    )
+    .bind(&new_node.id)
+    .fetch_one(&mut *connection)
+    .await
+    .map_err(|error| {
+        DriveServiceError::Internal(format!("read inserted dr_drive_node failed: {error}"))
+    })?;
 
-        drive_node_from_row(&row)
-    }
+    drive_node_from_row(&row)
 }
 
 fn drive_node_from_row(row: &AnyRow) -> Result<DriveNode, DriveServiceError> {

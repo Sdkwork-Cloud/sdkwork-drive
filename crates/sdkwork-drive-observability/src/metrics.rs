@@ -12,6 +12,9 @@ static DOMAIN_OUTBOX_PENDING_TOTAL: AtomicU64 = AtomicU64::new(0);
 static DOMAIN_OUTBOX_DELIVERED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static UPLOAD_CONTENT_POLICY_EVALUATED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static UPLOADER_PART_UPLOADED_TOTAL: AtomicU64 = AtomicU64::new(0);
+static MULTIPART_COMPENSATION_ATTEMPTED_TOTAL: AtomicU64 = AtomicU64::new(0);
+static MULTIPART_COMPENSATION_SUCCEEDED_TOTAL: AtomicU64 = AtomicU64::new(0);
+static MULTIPART_COMPENSATION_FAILED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static HEALTH_SERVING: AtomicU64 = AtomicU64::new(1);
 static HTTP_REQUEST_ROUTE_LABELS: LazyLock<Mutex<HashMap<String, u64>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -28,6 +31,18 @@ pub fn record_http_request_route_labels(method: &str, route: &str, status: u16, 
 
 pub fn record_uploader_part_uploaded() {
     UPLOADER_PART_UPLOADED_TOTAL.fetch_add(1, Ordering::Relaxed);
+}
+
+pub fn record_multipart_compensation_attempted() {
+    MULTIPART_COMPENSATION_ATTEMPTED_TOTAL.fetch_add(1, Ordering::Relaxed);
+}
+
+pub fn record_multipart_compensation_succeeded() {
+    MULTIPART_COMPENSATION_SUCCEEDED_TOTAL.fetch_add(1, Ordering::Relaxed);
+}
+
+pub fn record_multipart_compensation_failed() {
+    MULTIPART_COMPENSATION_FAILED_TOTAL.fetch_add(1, Ordering::Relaxed);
 }
 
 pub fn record_http_request() {
@@ -89,6 +104,15 @@ pub fn render_prometheus(service: &str) -> String {
          # HELP drive_uploader_part_uploaded_total Uploader multipart parts marked uploaded.\n\
          # TYPE drive_uploader_part_uploaded_total counter\n\
          drive_uploader_part_uploaded_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
+         # HELP drive_multipart_compensation_attempted_total Multipart abort compensations attempted after publication failure.\n\
+         # TYPE drive_multipart_compensation_attempted_total counter\n\
+         drive_multipart_compensation_attempted_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
+         # HELP drive_multipart_compensation_succeeded_total Multipart abort compensations completed after publication failure.\n\
+         # TYPE drive_multipart_compensation_succeeded_total counter\n\
+         drive_multipart_compensation_succeeded_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
+         # HELP drive_multipart_compensation_failed_total Multipart abort compensations that failed after publication failure.\n\
+         # TYPE drive_multipart_compensation_failed_total counter\n\
+         drive_multipart_compensation_failed_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
          # HELP drive_health_status Service health serving status (1=serving, 0=not serving).\n\
          # TYPE drive_health_status gauge\n\
          drive_health_status{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n",
@@ -99,6 +123,9 @@ pub fn render_prometheus(service: &str) -> String {
         DOMAIN_OUTBOX_DELIVERED_TOTAL.load(Ordering::Relaxed),
         UPLOAD_CONTENT_POLICY_EVALUATED_TOTAL.load(Ordering::Relaxed),
         UPLOADER_PART_UPLOADED_TOTAL.load(Ordering::Relaxed),
+        MULTIPART_COMPENSATION_ATTEMPTED_TOTAL.load(Ordering::Relaxed),
+        MULTIPART_COMPENSATION_SUCCEEDED_TOTAL.load(Ordering::Relaxed),
+        MULTIPART_COMPENSATION_FAILED_TOTAL.load(Ordering::Relaxed),
         HEALTH_SERVING.load(Ordering::Relaxed),
     );
     output.push_str(&latency_histogram::render_prometheus_histogram(

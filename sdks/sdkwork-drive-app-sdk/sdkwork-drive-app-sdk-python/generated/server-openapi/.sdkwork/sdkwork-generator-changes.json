@@ -9,14 +9,29 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-python"
   },
-  "changeFingerprint": "ef0b123d2e8ec96c679963c2d01b984564d029bf8abdc40865edbc1aca112436",
+  "changeFingerprint": "9cb6396b15003a448c71c65d34edc8252f27a7e27bfabcdd5bbc4541ce75c83e",
   "changes": {
-    "createdGeneratedFiles": [],
+    "createdGeneratedFiles": [
+      "sdkwork_drive_app_sdk_generated_python/models/activate_website_generation_request.py",
+      "sdkwork_drive_app_sdk_generated_python/models/create_website_sync_request.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation_http_response.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation_resource_data.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_generation.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation_http_response.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation_resource_data.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_http_response.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_resource_data.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_version_request.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync.py"
+    ],
     "updatedGeneratedFiles": [
-      "sdkwork_drive_app_sdk_generated_python/http_client.py"
+      "bin/publish-core.mjs",
+      "sdkwork_drive_app_sdk_generated_python/api/drive.py",
+      "sdkwork_drive_app_sdk_generated_python/models/__init__.py"
     ],
     "unchangedGeneratedFiles": [
-      "bin/publish-core.mjs",
       "bin/publish.ps1",
       "bin/publish.sh",
       "CHANGELOG.md",
@@ -28,13 +43,12 @@
       "sdkwork_drive_app_sdk_generated_python/__init__.py",
       "sdkwork_drive_app_sdk_generated_python/api/__init__.py",
       "sdkwork_drive_app_sdk_generated_python/api/assets.py",
-      "sdkwork_drive_app_sdk_generated_python/api/drive.py",
       "sdkwork_drive_app_sdk_generated_python/api/node_labels.py",
       "sdkwork_drive_app_sdk_generated_python/api/node_properties.py",
       "sdkwork_drive_app_sdk_generated_python/api/nodes.py",
       "sdkwork_drive_app_sdk_generated_python/api/watch_channels.py",
       "sdkwork_drive_app_sdk_generated_python/client.py",
-      "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
+      "sdkwork_drive_app_sdk_generated_python/http_client.py",
       "sdkwork_drive_app_sdk_generated_python/models/apply_node_label_request.py",
       "sdkwork_drive_app_sdk_generated_python/models/archive_entry_list_http_response.py",
       "sdkwork_drive_app_sdk_generated_python/models/archive_entry.py",
@@ -217,29 +231,57 @@
   "impact": {
     "schemaVersion": 1,
     "areas": [
-      "runtime"
+      "api-surface",
+      "models",
+      "publish-workflow"
     ],
     "details": [
       {
-        "area": "runtime",
+        "area": "api-surface",
         "paths": [
-          "sdkwork_drive_app_sdk_generated_python/http_client.py"
+          "sdkwork_drive_app_sdk_generated_python/api/drive.py",
+          "sdkwork_drive_app_sdk_generated_python/models/__init__.py"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
+          "sdkwork_drive_app_sdk_generated_python/models/activate_website_generation_request.py",
+          "sdkwork_drive_app_sdk_generated_python/models/create_website_sync_request.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation_http_response.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation_resource_data.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_generation.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation_http_response.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation_resource_data.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_sync_http_response.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_sync_resource_data.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_sync_version_request.py",
+          "sdkwork_drive_app_sdk_generated_python/models/website_sync.py"
+        ]
+      },
+      {
+        "area": "publish-workflow",
+        "paths": [
+          "bin/publish-core.mjs"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: runtime. Verification is required."
+    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required."
   },
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, publish-workflow.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-python\\generated\\server-openapi",
         "command": "node",
         "args": [

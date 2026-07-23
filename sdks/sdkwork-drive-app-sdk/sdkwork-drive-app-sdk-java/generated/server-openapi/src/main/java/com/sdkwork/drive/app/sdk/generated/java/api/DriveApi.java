@@ -434,6 +434,40 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<WebsiteRootHttpResponse>() {});
     }
 
+    /** Create an isolated atomic website synchronization */
+    public WebsiteSyncHttpResponse websiteRootsSyncsCreate(String rootUuid, CreateWebsiteSyncRequest body, String idempotencyKey) throws Exception {
+        Map<String, String> requestHeaders = buildRequestHeaders(
+                Map.of("Idempotency-Key", new HeaderParameterSpec(idempotencyKey, "simple", false, null)),
+                Map.of()
+        );
+        Object raw = client.post(ApiPaths.appPath("/drive/website_roots/" + serializePathParameter(rootUuid, new PathParameterSpec("rootUuid", "simple", false)) + "/syncs"), body, null, requestHeaders, "application/json");
+        return client.convertValue(raw, new TypeReference<WebsiteSyncHttpResponse>() {});
+    }
+
+    /** Retrieve an atomic website synchronization */
+    public WebsiteSyncHttpResponse websiteRootsSyncsRetrieve(String rootUuid, String syncId) throws Exception {
+        Object raw = client.get(ApiPaths.appPath("/drive/website_roots/" + serializePathParameter(rootUuid, new PathParameterSpec("rootUuid", "simple", false)) + "/syncs/" + serializePathParameter(syncId, new PathParameterSpec("syncId", "simple", false)) + ""));
+        return client.convertValue(raw, new TypeReference<WebsiteSyncHttpResponse>() {});
+    }
+
+    /** Validate and atomically activate a complete website tree */
+    public WebsiteSyncActivationHttpResponse websiteRootsSyncsFinalize(String rootUuid, String syncId, WebsiteSyncVersionRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/drive/website_roots/" + serializePathParameter(rootUuid, new PathParameterSpec("rootUuid", "simple", false)) + "/syncs/" + serializePathParameter(syncId, new PathParameterSpec("syncId", "simple", false)) + "/finalize"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<WebsiteSyncActivationHttpResponse>() {});
+    }
+
+    /** Abort an unactivated website synchronization */
+    public WebsiteSyncHttpResponse websiteRootsSyncsAbort(String rootUuid, String syncId, WebsiteSyncVersionRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/drive/website_roots/" + serializePathParameter(rootUuid, new PathParameterSpec("rootUuid", "simple", false)) + "/syncs/" + serializePathParameter(syncId, new PathParameterSpec("syncId", "simple", false)) + "/abort"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<WebsiteSyncHttpResponse>() {});
+    }
+
+    /** Activate a retained website generation as a new logical generation */
+    public WebsiteGenerationActivationHttpResponse websiteRootsGenerationsActivate(String rootUuid, String generation, ActivateWebsiteGenerationRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/drive/website_roots/" + serializePathParameter(rootUuid, new PathParameterSpec("rootUuid", "simple", false)) + "/generations/" + serializePathParameter(generation, new PathParameterSpec("generation", "simple", false)) + "/activate"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<WebsiteGenerationActivationHttpResponse>() {});
+    }
+
     public DriveNodeListHttpResponse moveDestinationsList(String spaceId, String excludeNodeIds, Integer pageSize, String cursor) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("excludeNodeIds", excludeNodeIds, "form", true, false, null),

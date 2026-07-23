@@ -23,6 +23,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
+use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed;
 use sdkwork_drive_workspace_service::infrastructure::sql::{
     begin_transaction_sql, NODE_API_SELECT_COLUMNS,
 };
@@ -424,6 +425,13 @@ pub(crate) async fn empty_trash(
         let tx_result: Result<(i64, Vec<String>), (StatusCode, Json<ProblemDetail>)> = async {
             let mut locations = Vec::with_capacity(authorized_rows.len());
             for (node_id, space_id_value) in &authorized_rows {
+                ensure_managed_website_node_mutation_allowed(
+                    &mut connection,
+                    &tenant_id,
+                    node_id,
+                )
+                .await
+                .map_err(crate::error::map_service_error)?;
                 locations.push(
                     resolve_node_location_on_connection(
                         &mut connection,

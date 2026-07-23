@@ -9,14 +9,29 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-rust"
   },
-  "changeFingerprint": "e4b805d04776908ede474a573de15574b15e61f1345a778f0493335755f1e7b9",
+  "changeFingerprint": "1bcfa86365b4386a91e8a3eca1b38b03152106d92f3d16ba60f2aa012ed7e1fe",
   "changes": {
-    "createdGeneratedFiles": [],
+    "createdGeneratedFiles": [
+      "src/models/activate_website_generation_request.rs",
+      "src/models/create_website_sync_request.rs",
+      "src/models/website_generation_activation_http_response.rs",
+      "src/models/website_generation_activation_resource_data.rs",
+      "src/models/website_generation_activation.rs",
+      "src/models/website_generation.rs",
+      "src/models/website_sync_activation_http_response.rs",
+      "src/models/website_sync_activation_resource_data.rs",
+      "src/models/website_sync_activation.rs",
+      "src/models/website_sync_http_response.rs",
+      "src/models/website_sync_resource_data.rs",
+      "src/models/website_sync_version_request.rs",
+      "src/models/website_sync.rs"
+    ],
     "updatedGeneratedFiles": [
-      "src/http/client.rs"
+      "bin/publish-core.mjs",
+      "src/api/drive.rs",
+      "src/models/mod.rs"
     ],
     "unchangedGeneratedFiles": [
-      "bin/publish-core.mjs",
       "bin/publish.ps1",
       "bin/publish.sh",
       "Cargo.toml",
@@ -26,7 +41,6 @@
       "sdkwork-sdk.json",
       "src/api/assets.rs",
       "src/api/base.rs",
-      "src/api/drive.rs",
       "src/api/mod.rs",
       "src/api/node_labels.rs",
       "src/api/node_properties.rs",
@@ -34,6 +48,7 @@
       "src/api/paths.rs",
       "src/api/watch_channels.rs",
       "src/client.rs",
+      "src/http/client.rs",
       "src/http/mod.rs",
       "src/lib.rs",
       "src/models/apply_node_label_request.rs",
@@ -150,7 +165,6 @@
       "src/models/file_version.rs",
       "src/models/mark_uploader_part_uploaded_request.rs",
       "src/models/media_resource.rs",
-      "src/models/mod.rs",
       "src/models/move_node_request.rs",
       "src/models/node_capabilities_http_response.rs",
       "src/models/node_capabilities_response.rs",
@@ -218,29 +232,56 @@
   "impact": {
     "schemaVersion": 1,
     "areas": [
-      "runtime"
+      "api-surface",
+      "models",
+      "publish-workflow"
     ],
     "details": [
       {
-        "area": "runtime",
+        "area": "api-surface",
         "paths": [
-          "src/http/client.rs"
+          "src/api/drive.rs"
+        ]
+      },
+      {
+        "area": "models",
+        "paths": [
+          "src/models/activate_website_generation_request.rs",
+          "src/models/create_website_sync_request.rs",
+          "src/models/mod.rs",
+          "src/models/website_generation_activation_http_response.rs",
+          "src/models/website_generation_activation_resource_data.rs",
+          "src/models/website_generation_activation.rs",
+          "src/models/website_generation.rs",
+          "src/models/website_sync_activation_http_response.rs",
+          "src/models/website_sync_activation_resource_data.rs",
+          "src/models/website_sync_activation.rs",
+          "src/models/website_sync_http_response.rs",
+          "src/models/website_sync_resource_data.rs",
+          "src/models/website_sync_version_request.rs",
+          "src/models/website_sync.rs"
+        ]
+      },
+      {
+        "area": "publish-workflow",
+        "paths": [
+          "bin/publish-core.mjs"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: runtime. Verification is required."
+    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required."
   },
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, publish-workflow.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [
@@ -258,7 +299,7 @@
         "id": "build",
         "title": "Unified package build",
         "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: runtime.",
+        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, publish-workflow.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
         "command": "node",
         "args": [

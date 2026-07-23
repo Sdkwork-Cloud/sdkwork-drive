@@ -8,7 +8,7 @@ use sdkwork_drive_contract::drive::domain_events as drive_events;
 use sdkwork_drive_contract::drive::events::{
     DriveEventEnvelope, DriveNodeDeletedV1Data, DriveNodeEligibility,
     DriveNodeEligibilityChangedV1Data, DriveNodePathChangedV1Data, DriveNodeVersionCommittedV1Data,
-    DriveRootScopeEffect, DriveRootScopeKind,
+    DriveRootScopeEffect, DriveRootScopeKind, DriveWebsiteRootGenerationChangedV1Data,
 };
 use serde::Serialize;
 use serde_json::json;
@@ -82,6 +82,24 @@ pub struct RecordDriveNodeDeletedCommand<'a> {
     pub actor_id: &'a str,
     pub deletion_reason: &'a str,
     pub last_location: &'a DriveNodeLocationSnapshot,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct RecordDriveWebsiteRootGenerationChangedCommand<'a> {
+    pub tenant_id: &'a str,
+    pub organization_id: Option<&'a str>,
+    pub space_id: &'a str,
+    pub website_root_uuid: &'a str,
+    pub operation_id: &'a str,
+    pub previous_root_node_id: &'a str,
+    pub root_node_id: &'a str,
+    pub previous_generation: i64,
+    pub generation: i64,
+    pub manifest_sha256: Option<&'a str>,
+    pub file_count: i64,
+    pub total_bytes: i64,
+    pub change_reason: &'a str,
+    pub actor_id: &'a str,
 }
 
 pub async fn record_drive_change_on_connection(
@@ -299,6 +317,59 @@ pub async fn record_drive_node_deleted_on_connection(
             subject: &drive_uri,
         },
         data,
+    )
+    .await
+}
+
+pub async fn record_drive_website_root_generation_changed_on_connection(
+    connection: &mut AnyConnection,
+    command: RecordDriveWebsiteRootGenerationChangedCommand<'_>,
+) -> Result<(), DriveServiceError> {
+    let sequence_no =
+        allocate_change_sequence(connection, command.tenant_id, command.space_id).await?;
+    let outbox_id = next_drive_runtime_id("domain outbox")?;
+    let subject = format!(
+        "drive://spaces/{}/website_roots/{}",
+        command.space_id, command.website_root_uuid
+    );
+    let envelope = DriveEventEnvelope::new(
+        outbox_id.to_string(),
+        drive_events::website_root::GENERATION_CHANGED_V1,
+        chrono::Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true),
+        command.tenant_id,
+        command.organization_id.map(str::to_string),
+        subject,
+        command.actor_id,
+        sequence_no,
+        DriveWebsiteRootGenerationChangedV1Data {
+            operation_id: command.operation_id.to_string(),
+            space_id: command.space_id.to_string(),
+            website_root_uuid: command.website_root_uuid.to_string(),
+            previous_root_node_id: command.previous_root_node_id.to_string(),
+            root_node_id: command.root_node_id.to_string(),
+            previous_generation: command.previous_generation.to_string(),
+            generation: command.generation.to_string(),
+            manifest_sha256: command.manifest_sha256.map(str::to_string),
+            file_count: command.file_count.to_string(),
+            total_bytes: command.total_bytes.to_string(),
+            change_reason: command.change_reason.to_string(),
+        },
+    );
+    let payload_json = serde_json::to_string(&envelope).map_err(|error| {
+        DriveServiceError::Internal(format!("serialize Drive event envelope failed: {error}"))
+    })?;
+    insert_change_log_and_outbox_with_payload(
+        connection,
+        RecordDriveChangeCommand {
+            tenant_id: command.tenant_id,
+            space_id: command.space_id,
+            node_id: None,
+            event_type: drive_events::website_root::GENERATION_CHANGED_V1,
+            actor_id: command.actor_id,
+        },
+        sequence_no,
+        outbox_id,
+        &payload_json,
     )
     .await
 }

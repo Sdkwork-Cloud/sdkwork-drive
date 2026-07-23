@@ -1,8 +1,8 @@
 # Drive Website Directory Resource Provider Architecture
 
-Status: proposed
+Status: active
 Owner: SDKWork Drive maintainers
-Updated: 2026-07-21
+Updated: 2026-07-22
 Requirement: REQ-2026-0004
 Decision: ADR-20260721-website-space-directory-resource
 Specs: ARCHITECTURE_DECISION_SPEC.md, DATABASE_SPEC.md, DRIVE_SPEC.md, API_SPEC.md,
@@ -31,14 +31,30 @@ retention, and provider events. Deploy owns Site/mount/domain/TLS configuration.
 anonymous HTTP delivery. Cross-repository calls use owner-generated SDKs or approved typed service
 ports; repositories do not write one another's tables.
 
+### 1.1 Implementation Boundary
+
+| Surface | Current state |
+| --- | --- |
+| `website` Space type and multi-project uniqueness | implemented in PostgreSQL/SQLite, Rust domain, App API, and generated SDK contracts |
+| Default `SPACE_ROOT` and explicit `FOLDER` WebsiteRoots | implemented with transactional default provisioning, immutable selector/idempotency, same-Space/reserved-path validation, and App API create/list/retrieve |
+| Trusted Provider validate/resolve/open | implemented through the Drive Internal API and generated Rust SDK for both root modes, including generation/version, conditional/Range, confinement, and non-disclosing failures |
+| Root/path change events | implemented for Web freshness without Deploy Release/SiteRevision creation |
+| `ATOMIC_SYNC` lifecycle | schema reserved only; command API, manifest/finalize flow, fenced worker, switch/rollback, retention, and cleanup are not implemented |
+| User/admin product workflows and commercial operations | incomplete; UI, entitlement/metering reconciliation, load/security/backup/restore, and live fleet evidence remain release gates |
+
+Website eligibility never makes a Space anonymous or public. Public delivery still requires an
+active Deploy Site Resource, Variant, Mount, Binding, exact runtime assignment, successful Web
+node-local activation, and Deploy's all-frozen-target `ACTIVE` convergence. The node-local probe is
+not external public-domain reachability evidence.
+
 ## 2. Domain Types
 
 ### 2.1 Space Type
 
-Add canonical storage/API enum value `website`. It is a project Space and supports multiple Spaces
-for one owner. Every enum mirror, check constraint, storage-provider binding validator, Rust model,
-OpenAPI schema, generated SDK, filter, example, and UI label must change from the owner source and
-regenerate. Generated SDK output is not hand-edited.
+The canonical storage/API enum value is `website`. It is a project Space and supports multiple
+Spaces for one owner. Enum mirrors, check constraints, storage-provider binding validation, Rust
+models, OpenAPI schemas, and generated SDK contracts are materialized from owner sources. Generated
+SDK output is not hand-edited. Complete UI labeling remains part of the product-workflow gate.
 
 ### 2.2 WebsiteRoot
 
@@ -79,21 +95,21 @@ validates and cleans asynchronously; switch is a short transaction.
 
 ## 3. Target Database Contract
 
-This is a planned portable contract, not executable migration approval. Tables also use standard
-SDKWork ID, tenant, audit, lifecycle, and optimistic-version fields from `DATABASE_SPEC.md`.
+The portable contract is materialized in the PostgreSQL and SQLite baselines, schema registry,
+database contract, and workspace-service SQL. Tables use standard SDKWork ID, tenant, audit,
+lifecycle, and optimistic-version fields from `DATABASE_SPEC.md`. Any later migration or destructive
+data operation still requires separate human review.
 
 ### 3.1 `dr_drive_space`
 
-Add `website` to `space_type`. The current unique `(tenant_id, owner_subject_type,
-owner_subject_id, space_type)` index cannot apply unchanged to multi-instance website projects.
-Replace it through expand-and-contract with explicit type-aware rules:
+`website` is present in `space_type`. The unique `(tenant_id, owner_subject_type,
+owner_subject_id, space_type)` rule is type-aware so it does not prevent multi-instance website
+projects. The materialized rules:
 
 - preserve uniqueness for canonical singleton Space profiles;
 - permit multiple active `website` rows per owner;
 - add tenant/owner/project `space_key` or approved slug uniqueness;
-- update PostgreSQL, SQLite, validators, stores, tests, OpenAPI, and SDKs together.
-
-No migration executes until human review approves the exact singleton catalog and compatibility.
+- keep PostgreSQL, SQLite, validators, stores, tests, OpenAPI, and SDKs aligned.
 
 ### 3.2 `dr_drive_space_website_profile`
 
@@ -264,7 +280,9 @@ lag and bounded root reconciliation are part of the event contract.
 
 ## 6. API And SDK Surfaces
 
-Proposed app SDK groups, subject to Drive OpenAPI review:
+The implemented App API exposes WebsiteRoot create/list/retrieve over the existing Space workflow;
+the trusted Internal API exposes Provider validate/resolve/open through the generated SDK. Remaining
+target groups are:
 
 - `websiteSpaces` create/list/retrieve/update/archive;
 - `websiteRoots` create/list/retrieve/update/switch/rollback;
@@ -349,13 +367,16 @@ high-cardinality metrics.
 
 ## 11. Migration And Rollout
 
-1. Approve type vocabulary, root-selector/content-mode union, singleton catalog, tables,
-   permissions, and API ownership.
-2. Expand dual-engine schema and validators with website profile/root/sync/generation.
-3. Regenerate owner SDKs and add user/admin UI behind tenant feature flags.
-4. Implement typed provider and shadow validation from Deploy.
-5. Pilot ordinary static content, then atomic React/Vite sync.
-6. Certify freshness, outage, rollback, cleanup, quota, security, and backup/restore.
+1. Maintain the accepted type vocabulary, root-selector/content-mode union, singleton catalog,
+   tables, permissions, and API ownership.
+2. Maintain the implemented dual-engine website profile/root/sync/generation schema and validators.
+3. Maintain owner-generated App/Internal SDKs and complete user/admin UI behind tenant feature flags.
+4. Maintain the implemented typed Provider and Web activation path; add external public-domain
+   multi-vantage evidence in a non-public shadow environment.
+5. Implement and pilot atomic React/Vite sync, rollback, retention, and cleanup over the existing
+   live ordinary static-content baseline.
+6. Certify freshness, outage, rollback, cleanup, quota, security, backup/restore, and commercial
+   operations before launch.
 
 Existing generic Spaces are not silently converted. Ad hoc deployment-space content is explicitly
 copied/imported into a Website Space if a tenant chooses to adopt the feature.

@@ -4,7 +4,7 @@ export interface CreateAssetRequest {
   organizationId?: string;
   /** Existing Drive node to expose through /assets. */
   driveNodeId?: string;
-  virtualReference?: Record<string, unknown>;
+  virtualReference?: { driveSpaceId?: string; title?: string; sourceDomain?: string; sourceResourceType?: string; sourceResourceId?: string; resourceSnapshot?: MediaResource; };
   title?: string;
   description?: string;
   scene?: string;

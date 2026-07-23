@@ -5762,6 +5762,18 @@ async fn app_drive_restore_folder_recursively_restores_descendants_and_requires_
             "grandchild.txt",
         ),
         (
+            "file-restore-duplicate-a",
+            Some("folder-restore-root"),
+            "file",
+            "duplicate.txt",
+        ),
+        (
+            "file-restore-duplicate-b",
+            Some("folder-restore-root"),
+            "file",
+            "duplicate.txt",
+        ),
+        (
             "folder-restore-block-parent",
             None,
             "folder",
@@ -5876,14 +5888,31 @@ async fn app_drive_restore_folder_recursively_restores_descendants_and_requires_
                'folder-restore-root',
                'folder-restore-child',
                'file-restore-child',
-               'file-restore-grandchild'
+               'file-restore-grandchild',
+               'file-restore-duplicate-a',
+               'file-restore-duplicate-b'
            )
            AND lifecycle_status='active'",
     )
     .fetch_one(&pool)
     .await
     .expect("active node count should be readable");
-    assert_eq!(active_node_count, 4);
+    assert_eq!(active_node_count, 6);
+
+    let restored_duplicate_names: Vec<String> = sqlx::query_scalar(
+        "SELECT node_name
+         FROM dr_drive_node
+         WHERE tenant_id='tenant-tree-restore'
+           AND id IN ('file-restore-duplicate-a', 'file-restore-duplicate-b')
+         ORDER BY node_name",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("restored duplicate names should be readable");
+    assert_eq!(
+        restored_duplicate_names,
+        vec!["duplicate (1).txt".to_string(), "duplicate.txt".to_string()]
+    );
 
     let still_trashed_blocked_child_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
@@ -10146,6 +10175,159 @@ async fn create_file_rejects_past_expiration_before_storage_side_effects() {
         .expect("captured s3 requests mutex should not be poisoned")
         .clone();
     assert!(requests.is_empty());
+}
+
+#[tokio::test]
+async fn create_file_aborts_multipart_when_atomic_website_root_rejects_publication() {
+    let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    sqlx::query(
+        "INSERT INTO dr_drive_space (
+            id, tenant_id, owner_subject_type, owner_subject_id, space_type,
+            display_name, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'space-file-atomic', 'tenant-file-atomic', 'user', 'user-file-atomic',
+            'website', 'Atomic Website', 'active', 1,
+            'user-file-atomic', 'user-file-atomic'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("website space should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, space_type, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'atomic-root-node', 'tenant-file-atomic', 'space-file-atomic', 'website',
+            NULL, 'folder', '__website_root__', 'ready', 'active', 1,
+            'user-file-atomic', 'user-file-atomic'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("atomic root node should be seeded");
+    sqlx::query(
+        "INSERT INTO dr_drive_website_root (
+            id, uuid, tenant_id, space_id, root_key, display_name,
+            source_root_mode, selected_folder_node_id, selector_key, content_mode,
+            active_node_id, active_generation, root_status, last_switch_by,
+            version, created_by, updated_by
+        ) VALUES (
+            'atomic-root', 'atomic-root-uuid', 'tenant-file-atomic', 'space-file-atomic',
+            'default', 'Default', 'space_root', NULL, 'space_root', 'atomic_generation',
+            'atomic-root-node', 1, 'active', 'user-file-atomic', 1,
+            'user-file-atomic', 'user-file-atomic'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("atomic WebsiteRoot should be seeded");
+    seed_s3_provider_fixture(
+        &pool,
+        "provider-file-atomic",
+        "Atomic Website S3",
+        &s3_endpoint,
+        "bucket-file-atomic",
+        "active",
+        "user-file-atomic",
+    )
+    .await;
+    sqlx::query(
+        "INSERT INTO dr_drive_storage_provider_binding (
+            id, tenant_id, space_id, provider_id, binding_scope, purpose,
+            storage_root_prefix, lifecycle_status, version, created_by, updated_by
+        ) VALUES (
+            'default:space:tenant-file-atomic:space-file-atomic',
+            'tenant-file-atomic', 'space-file-atomic',
+            'provider-file-atomic', 'space', 'primary',
+            'sdkwork-drive/v1/tenants/tenant-file-atomic/spaces/space-file-atomic',
+            'active', 1, 'user-file-atomic', 'user-file-atomic'
+        )",
+    )
+    .execute(&pool)
+    .await
+    .expect("storage provider binding should be seeded");
+
+    let app = common::test_router_with_pool(pool.clone());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-file-atomic", "user-file-atomic", "appbase")
+                    ),
+                )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-file-atomic", "user-file-atomic", "appbase"),
+                )
+                .method(Method::POST)
+                .uri("/app/v3/api/drive/nodes/files")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "id":"file-atomic-rejected",
+                        "spaceId":"space-file-atomic",
+                        "nodeName":"rejected.html",
+                        "operatorId":"user-file-atomic",
+                        "uploadSessionId":"upload-file-atomic-rejected",
+                        "idempotencyKey":"idem-file-atomic-rejected",
+                        "expiresAtEpochMs":4102444800000
+                    }"#,
+                ))
+                .expect("atomic website create file request should be built"),
+        )
+        .await
+        .expect("atomic website create file request should be handled");
+    assert_eq!(response.status(), StatusCode::CONFLICT);
+
+    let rejected_node_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1)
+         FROM dr_drive_node
+         WHERE tenant_id='tenant-file-atomic' AND id='file-atomic-rejected'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("rejected node count should be readable");
+    let upload_session_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1)
+         FROM dr_drive_upload_session
+         WHERE tenant_id='tenant-file-atomic'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("upload session count should be readable");
+    assert_eq!(rejected_node_count, 0);
+    assert_eq!(upload_session_count, 0);
+
+    let requests = captured_requests
+        .lock()
+        .expect("captured s3 requests mutex should not be poisoned")
+        .clone();
+    let multipart_create_count = requests
+        .iter()
+        .filter(|request| request.method == "POST" && request.query.contains("uploads"))
+        .count();
+    let multipart_abort_count = requests
+        .iter()
+        .filter(|request| {
+            request.method == "DELETE" && request.query.contains("uploadId=mock-s3-upload-id")
+        })
+        .count();
+    assert_eq!(multipart_create_count, 1);
+    assert_eq!(multipart_abort_count, 1);
 }
 
 #[tokio::test]

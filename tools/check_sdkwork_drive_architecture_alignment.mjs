@@ -634,16 +634,42 @@ assert(
   'backend-sdk composed operations must not include deprecated storageProviders.* ops',
 );
 
-const retiredEnvPrefixes = ['SDKWORK_CLAW_DATABASE_'];
+const canonicalWorkspaceDatabaseKeys = [
+  'SDKWORK_CLAW_DATABASE_ENGINE',
+  'SDKWORK_CLAW_DATABASE_HOST',
+  'SDKWORK_CLAW_DATABASE_PORT',
+  'SDKWORK_CLAW_DATABASE_NAME',
+  'SDKWORK_CLAW_DATABASE_SCHEMA',
+  'SDKWORK_CLAW_DATABASE_USERNAME',
+  'SDKWORK_CLAW_DATABASE_SSL_MODE',
+  'SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS',
+];
 for (const relativePath of [
   '.env.postgres.example',
   'etc/topology/standalone.production.env',
 ]) {
   const text = readText(relativePath);
-  for (const prefix of retiredEnvPrefixes) {
-    assert(!text.includes(prefix), `${relativePath} must not use retired env prefix ${prefix}`);
+  for (const key of canonicalWorkspaceDatabaseKeys) {
+    assert(
+      text.includes(`${key}=`),
+      `${relativePath} must declare canonical unified workspace database key ${key}`,
+    );
   }
+  assert(
+    !text.includes('SDKWORK_DRIVE_DATABASE_'),
+    `${relativePath} must not use per-application database identity keys; use SDKWORK_CLAW_DATABASE_* per ENVIRONMENT_SPEC.md section 7.1`,
+  );
 }
+assert(
+  readText('.env.postgres.example').includes('SDKWORK_CLAW_DATABASE_PASSWORD='),
+  '.env.postgres.example must declare a local-only placeholder database password',
+);
+assert(
+  readText('etc/topology/standalone.production.env').includes(
+    'SDKWORK_CLAW_DATABASE_PASSWORD_FILE=',
+  ),
+  'standalone.production.env must reference a protected database password file',
+);
 
 if (failures.length > 0) {
   process.stderr.write(

@@ -199,6 +199,28 @@ pub struct DriveNodeDeletedV1Data {
     pub root_scopes: Vec<DriveRootScopeEffect>,
 }
 
+/// Payload for `drive.website_root.generation.changed.v1`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DriveWebsiteRootGenerationChangedV1Data {
+    pub operation_id: String,
+    pub space_id: String,
+    pub website_root_uuid: String,
+    pub previous_root_node_id: String,
+    pub root_node_id: String,
+    /// Previous logical root generation, serialized as an int64 string.
+    pub previous_generation: String,
+    /// Newly active logical root generation, serialized as an int64 string.
+    pub generation: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub manifest_sha256: Option<String>,
+    /// File count for the newly active tree, serialized as an int64 string.
+    pub file_count: String,
+    /// Total bytes for the newly active tree, serialized as an int64 string.
+    pub total_bytes: String,
+    pub change_reason: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -349,5 +371,40 @@ mod tests {
         for forbidden in ["objectKey", "bucketName", "presignedUrl", "credential"] {
             assert!(!serialized.contains(forbidden));
         }
+    }
+
+    #[test]
+    fn website_root_generation_event_uses_stable_root_identity() {
+        let envelope = DriveEventEnvelope::new(
+            "event-generation-1",
+            "drive.website_root.generation.changed.v1",
+            "2026-07-23T00:00:00.000Z",
+            "tenant-1",
+            None,
+            "drive://spaces/space-1/website_roots/root-uuid-1",
+            "user-1",
+            44,
+            DriveWebsiteRootGenerationChangedV1Data {
+                operation_id: "sync-1".to_string(),
+                space_id: "space-1".to_string(),
+                website_root_uuid: "root-uuid-1".to_string(),
+                previous_root_node_id: "node-generation-1".to_string(),
+                root_node_id: "node-generation-2".to_string(),
+                previous_generation: "1".to_string(),
+                generation: "2".to_string(),
+                manifest_sha256: Some(format!("sha256:{}", "a".repeat(64))),
+                file_count: "2".to_string(),
+                total_bytes: "19".to_string(),
+                change_reason: "SYNC_ACTIVATED".to_string(),
+            },
+        );
+
+        let value = serde_json::to_value(envelope).expect("event should serialize");
+        assert_eq!(
+            value["subject"],
+            "drive://spaces/space-1/website_roots/root-uuid-1"
+        );
+        assert_eq!(value["data"]["generation"], "2");
+        assert!(value.to_string().find("objectKey").is_none());
     }
 }

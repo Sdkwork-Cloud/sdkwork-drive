@@ -9,28 +9,44 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-go"
   },
-  "changeFingerprint": "e60b8c559939753ebae26cb5abb5202ba3adfda7920c68d72e9316039d0f4058",
+  "changeFingerprint": "317254f3fbdf57753107996043f439699eff330b4cf80b2fb5813da1b037ef0b",
   "changes": {
-    "createdGeneratedFiles": [],
+    "createdGeneratedFiles": [
+      "types/activate_website_generation_request.go",
+      "types/create_website_sync_request.go",
+      "types/non_negative_int64string.go",
+      "types/positive_int64string.go",
+      "types/website_generation_activation_http_response.go",
+      "types/website_generation_activation_resource_data.go",
+      "types/website_generation_activation.go",
+      "types/website_generation.go",
+      "types/website_sync_activation_http_response.go",
+      "types/website_sync_activation_resource_data.go",
+      "types/website_sync_activation.go",
+      "types/website_sync_http_response.go",
+      "types/website_sync_resource_data.go",
+      "types/website_sync_version_request.go",
+      "types/website_sync.go"
+    ],
     "updatedGeneratedFiles": [
-      "http/client.go"
+      "api/drive.go",
+      "bin/publish-core.mjs"
     ],
     "unchangedGeneratedFiles": [
       "api/assets.go",
       "api/base.go",
       "api/doc.go",
-      "api/drive.go",
       "api/node_labels.go",
       "api/node_properties.go",
       "api/nodes.go",
       "api/paths.go",
       "api/watch_channels.go",
-      "bin/publish-core.mjs",
       "bin/publish.ps1",
       "bin/publish.sh",
       "CHANGELOG.md",
       "doc.go",
       "go.mod",
+      "http/client.go",
       "http/doc.go",
       "LICENSE",
       "README.md",
@@ -220,35 +236,56 @@
     "schemaVersion": 1,
     "areas": [
       "api-surface",
-      "runtime"
+      "models",
+      "publish-workflow"
     ],
     "details": [
       {
         "area": "api-surface",
         "paths": [
-          "http/client.go"
+          "api/drive.go"
         ]
       },
       {
-        "area": "runtime",
+        "area": "models",
         "paths": [
-          "http/client.go"
+          "types/activate_website_generation_request.go",
+          "types/create_website_sync_request.go",
+          "types/non_negative_int64string.go",
+          "types/positive_int64string.go",
+          "types/website_generation_activation_http_response.go",
+          "types/website_generation_activation_resource_data.go",
+          "types/website_generation_activation.go",
+          "types/website_generation.go",
+          "types/website_sync_activation_http_response.go",
+          "types/website_sync_activation_resource_data.go",
+          "types/website_sync_activation.go",
+          "types/website_sync_http_response.go",
+          "types/website_sync_resource_data.go",
+          "types/website_sync_version_request.go",
+          "types/website_sync.go"
+        ]
+      },
+      {
+        "area": "publish-workflow",
+        "paths": [
+          "bin/publish-core.mjs"
         ]
       }
     ],
     "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, runtime. Verification is required."
+    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required."
   },
   "verificationPlan": {
     "shouldRun": true,
     "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
+    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required. Run the required verification commands now against the generated SDK output.",
     "steps": [
       {
         "id": "check",
         "title": "Unified package check",
         "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, runtime.",
+        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, publish-workflow.",
         "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-go\\generated\\server-openapi",
         "command": "node",
         "args": [

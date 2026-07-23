@@ -3,6 +3,7 @@ use sqlx::AnyPool;
 use sqlx::Row;
 
 use crate::domain::uploader::content_type_group_for;
+use crate::infrastructure::sql::begin_transaction_sql;
 use crate::DriveServiceError;
 
 /// Denormalized latest-file metadata stored on `dr_drive_node` for fast listing.
@@ -46,43 +47,43 @@ pub async fn apply_file_node_head_snapshot(
     operator_id: &str,
     snapshot: &FileNodeHeadSnapshot,
 ) -> Result<(), DriveServiceError> {
-    sqlx::query(
-        "UPDATE dr_drive_node
-         SET content_state='ready',
-             file_extension=$3,
-             head_content_type=$4,
-             head_content_type_group=$5,
-             head_content_length=$6,
-             head_version_no=$7,
-             head_checksum_sha256_hex=$8,
-             updated_by=$9,
-             updated_at=CURRENT_TIMESTAMP,
-             version=version + 1
-         WHERE tenant_id=$1
-           AND id=$2
-           AND node_type='file'
-           AND lifecycle_status != 'deleted'
-           AND (
-               content_state != 'ready'
-               OR head_content_type IS NULL
-               OR head_version_no IS NULL
-           )",
-    )
-    .bind(tenant_id)
-    .bind(node_id)
-    .bind(snapshot.file_extension.as_deref())
-    .bind(&snapshot.content_type)
-    .bind(&snapshot.content_type_group)
-    .bind(snapshot.content_length)
-    .bind(snapshot.version_no)
-    .bind(&snapshot.checksum_sha256_hex)
-    .bind(operator_id)
-    .execute(pool)
-    .await
-    .map_err(|error| {
-        DriveServiceError::Internal(format!("apply file node head snapshot failed: {error}"))
+    let mut connection = pool.acquire().await.map_err(|error| {
+        DriveServiceError::Internal(format!(
+            "acquire file node head transaction connection failed: {error}"
+        ))
     })?;
-    Ok(())
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| {
+            DriveServiceError::Internal(format!("begin file node head transaction failed: {error}"))
+        })?;
+
+    let result = apply_file_node_head_snapshot_in_transaction(
+        &mut connection,
+        tenant_id,
+        node_id,
+        operator_id,
+        snapshot,
+    )
+    .await;
+    match result {
+        Ok(()) => {
+            sqlx::query("COMMIT")
+                .execute(&mut *connection)
+                .await
+                .map_err(|error| {
+                    DriveServiceError::Internal(format!(
+                        "commit file node head transaction failed: {error}"
+                    ))
+                })?;
+            Ok(())
+        }
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            Err(error)
+        }
+    }
 }
 
 pub async fn apply_file_node_head_snapshot_in_transaction(
@@ -92,6 +93,11 @@ pub async fn apply_file_node_head_snapshot_in_transaction(
     operator_id: &str,
     snapshot: &FileNodeHeadSnapshot,
 ) -> Result<(), DriveServiceError> {
+    super::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed(
+        connection, tenant_id, node_id,
+    )
+    .await?;
+
     sqlx::query(
         "UPDATE dr_drive_node
          SET content_state='ready',

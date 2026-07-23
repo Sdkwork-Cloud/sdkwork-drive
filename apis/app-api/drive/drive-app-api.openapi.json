@@ -7840,6 +7840,494 @@
         "x-sdkwork-auth-mode": "dual-token"
       }
     },
+    "/app/v3/api/drive/website_roots/{rootUuid}/syncs": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "websiteRoots.syncs.create",
+        "summary": "Create an isolated atomic website synchronization",
+        "parameters": [
+          {
+            "name": "rootUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:/-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebsiteSyncRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The idempotent WebsiteSync already exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteSyncHttpResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "WebsiteSync and isolated staging folder created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteSyncHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid synchronization request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The subject cannot publish this WebsiteRoot.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "WebsiteRoot not found in the request tenant.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency or WebsiteRoot version conflict.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-idempotent": true,
+        "x-sdkwork-audit-event": "drive.website_sync.created"
+      }
+    },
+    "/app/v3/api/drive/website_roots/{rootUuid}/syncs/{syncId}": {
+      "get": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "websiteRoots.syncs.retrieve",
+        "summary": "Retrieve an atomic website synchronization",
+        "parameters": [
+          {
+            "name": "rootUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "syncId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "WebsiteSync retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteSyncHttpResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The subject cannot read this WebsiteRoot.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "WebsiteRoot or WebsiteSync not found in the request tenant.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token"
+      }
+    },
+    "/app/v3/api/drive/website_roots/{rootUuid}/syncs/{syncId}/finalize": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "websiteRoots.syncs.finalize",
+        "summary": "Validate and atomically activate a complete website tree",
+        "parameters": [
+          {
+            "name": "rootUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "syncId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteSyncVersionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "WebsiteSync completed or an existing completed result replayed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteSyncActivationHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The staged tree or manifest is invalid.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The subject cannot publish this WebsiteRoot.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "WebsiteRoot or WebsiteSync not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A root, generation, or synchronization fence changed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-idempotent": true,
+        "x-sdkwork-audit-event": "drive.website_root.generation_activated"
+      }
+    },
+    "/app/v3/api/drive/website_roots/{rootUuid}/syncs/{syncId}/abort": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "websiteRoots.syncs.abort",
+        "summary": "Abort an unactivated website synchronization",
+        "parameters": [
+          {
+            "name": "rootUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "syncId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteSyncVersionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "WebsiteSync aborted or an existing aborted result replayed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteSyncHttpResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The subject cannot publish this WebsiteRoot.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "WebsiteRoot or WebsiteSync not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The synchronization cannot be aborted in its current state.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-idempotent": true,
+        "x-sdkwork-audit-event": "drive.website_sync.aborted"
+      }
+    },
+    "/app/v3/api/drive/website_roots/{rootUuid}/generations/{generation}/activate": {
+      "post": {
+        "tags": [
+          "drive"
+        ],
+        "operationId": "websiteRoots.generations.activate",
+        "summary": "Activate a retained website generation as a new logical generation",
+        "parameters": [
+          {
+            "name": "rootUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "generation",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PositiveInt64String"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivateWebsiteGenerationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Retained tree activated as a new WebsiteRoot generation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteGenerationActivationHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid generation request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The subject cannot publish this WebsiteRoot.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "WebsiteRoot or retained generation not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The WebsiteRoot version or generation changed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-owner": "sdkwork-drive",
+        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-audit-event": "drive.website_root.generation_rolled_back"
+      }
+    },
     "/app/v3/api/drive/spaces/{spaceId}/move_destinations": {
       "get": {
         "tags": [
@@ -16146,6 +16634,369 @@
             "properties": {
               "data": {
                 "$ref": "#/components/schemas/WebsiteRootPageData"
+              }
+            }
+          }
+        ]
+      },
+      "PositiveInt64String": {
+        "type": "string",
+        "format": "int64",
+        "pattern": "^[1-9][0-9]*$",
+        "x-sdkwork-int64-string": true
+      },
+      "NonNegativeInt64String": {
+        "type": "string",
+        "format": "int64",
+        "pattern": "^[0-9]+$",
+        "x-sdkwork-int64-string": true
+      },
+      "CreateWebsiteSyncRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedRootVersion",
+          "expectedGeneration",
+          "manifestSha256",
+          "manifestFileCount",
+          "manifestTotalBytes",
+          "expiresAt"
+        ],
+        "properties": {
+          "expectedRootVersion": {
+            "$ref": "#/components/schemas/PositiveInt64String"
+          },
+          "expectedGeneration": {
+            "$ref": "#/components/schemas/PositiveInt64String"
+          },
+          "manifestSha256": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "manifestFileCount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PositiveInt64String"
+              },
+              {
+                "pattern": "^(?:[1-9][0-9]{0,4}|100000)$"
+              }
+            ]
+          },
+          "manifestTotalBytes": {
+            "$ref": "#/components/schemas/NonNegativeInt64String"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WebsiteSyncVersionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedVersion"
+        ],
+        "properties": {
+          "expectedVersion": {
+            "$ref": "#/components/schemas/PositiveInt64String"
+          }
+        }
+      },
+      "ActivateWebsiteGenerationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedRootVersion",
+          "expectedGeneration"
+        ],
+        "properties": {
+          "expectedRootVersion": {
+            "$ref": "#/components/schemas/PositiveInt64String"
+          },
+          "expectedGeneration": {
+            "$ref": "#/components/schemas/PositiveInt64String"
+          }
+        }
+      },
+      "WebsiteSync": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "websiteRootUuid",
+          "spaceId",
+          "expectedRootVersion",
+          "expectedGeneration",
+          "stagingNodeId",
+          "manifestSha256",
+          "manifestFileCount",
+          "manifestTotalBytes",
+          "uploadedFileCount",
+          "uploadedTotalBytes",
+          "status",
+          "expiresAt",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "websiteRootUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "spaceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "expectedRootVersion": {
+            "$ref": "#/components/schemas/PositiveInt64String"
+          },
+          "expectedGeneration": {
+            "$ref": "#/components/schemas/PositiveInt64String"
+          },
+          "stagingNodeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "manifestSha256": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "manifestFileCount": {
+            "$ref": "#/components/schemas/PositiveInt64String"
+          },
+          "manifestTotalBytes": {
+            "$ref": "#/components/schemas/NonNegativeInt64String"
+          },
+          "uploadedFileCount": {
+            "$ref": "#/components/schemas/NonNegativeInt64String"
+          },
+          "uploadedTotalBytes": {
+            "$ref": "#/components/schemas/NonNegativeInt64String"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "CREATED",
+              "UPLOADING",
+              "READY",
+              "VALIDATING",
+              "ACTIVE",
+              "COMPLETED",
+              "FAILED",
+              "ABORTED",
+              "EXPIRED"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "activatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errorCode": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "errorSummary": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "version": {
+            "$ref": "#/components/schemas/PositiveInt64String"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WebsiteSyncResourceData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item"
+        ],
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/WebsiteSync"
+          }
+        }
+      },
+      "WebsiteSyncHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/WebsiteSyncResourceData"
+              }
+            }
+          }
+        ]
+      },
+      "WebsiteSyncActivation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sync",
+          "websiteRoot"
+        ],
+        "properties": {
+          "sync": {
+            "$ref": "#/components/schemas/WebsiteSync"
+          },
+          "websiteRoot": {
+            "$ref": "#/components/schemas/WebsiteRoot"
+          }
+        }
+      },
+      "WebsiteSyncActivationResourceData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item"
+        ],
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/WebsiteSyncActivation"
+          }
+        }
+      },
+      "WebsiteSyncActivationHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/WebsiteSyncActivationResourceData"
+              }
+            }
+          }
+        ]
+      },
+      "WebsiteGeneration": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "generation",
+          "rootNodeId",
+          "fileCount",
+          "totalBytes",
+          "status",
+          "activatedAt"
+        ],
+        "properties": {
+          "generation": {
+            "$ref": "#/components/schemas/PositiveInt64String"
+          },
+          "rootNodeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "manifestSha256": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "fileCount": {
+            "$ref": "#/components/schemas/NonNegativeInt64String"
+          },
+          "totalBytes": {
+            "$ref": "#/components/schemas/NonNegativeInt64String"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "CURRENT",
+              "RETAINED",
+              "EXPIRED",
+              "DELETING",
+              "DELETED",
+              "INVALID"
+            ]
+          },
+          "activatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WebsiteGenerationActivation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourceGeneration",
+          "websiteRoot"
+        ],
+        "properties": {
+          "sourceGeneration": {
+            "$ref": "#/components/schemas/WebsiteGeneration"
+          },
+          "websiteRoot": {
+            "$ref": "#/components/schemas/WebsiteRoot"
+          }
+        }
+      },
+      "WebsiteGenerationActivationResourceData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item"
+        ],
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/WebsiteGenerationActivation"
+          }
+        }
+      },
+      "WebsiteGenerationActivationHttpResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/WebsiteGenerationActivationResourceData"
               }
             }
           }

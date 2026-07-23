@@ -23,13 +23,13 @@ export class NodePropertiesApi {
 
 
 /** List node custom properties */
-  async list(nodeId: string, params?: NodePropertiesListParams): Promise<Record<string, unknown>> {
+  async list(nodeId: string, params?: NodePropertiesListParams): Promise<{ items: DriveNodeProperty[]; pageInfo: PageInfo; }> {
     const query = buildQueryString([
       { name: 'visibility', value: params?.visibility, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties`), query));
+    return this.client.get<{ items: DriveNodeProperty[]; pageInfo: PageInfo; }>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties`), query));
   }
 
 /** Create or update a node custom property */

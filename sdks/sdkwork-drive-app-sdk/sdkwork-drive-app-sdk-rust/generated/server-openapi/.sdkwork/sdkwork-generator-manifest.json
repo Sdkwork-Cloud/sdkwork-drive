@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
     },
     {
       "path": "bin/publish.ps1",
@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "2acb88bce8c383d877196e274353909edd1cdc9638162909df65f00da26ccc63"
+      "sha256": "277c86885b21adfa83389de7fa57f29c648854cd5a61e3a93aa8824ed0e939d8"
     },
     {
       "path": "src/api/mod.rs",
@@ -93,6 +93,10 @@
     {
       "path": "src/lib.rs",
       "sha256": "66c33eb3d258b9c3c3fc720b89f87c48153a93755bf7ab2d025fc7a806143406"
+    },
+    {
+      "path": "src/models/activate_website_generation_request.rs",
+      "sha256": "d7b2f839c6396ad71b32cdc0f777bab40b11dd6f5990e4cb95ed25ed4e129554"
     },
     {
       "path": "src/models/apply_node_label_request.rs",
@@ -301,6 +305,10 @@
     {
       "path": "src/models/create_website_root_request.rs",
       "sha256": "948a9586344dbee8e4a3aa11830eb36c507dd209d4f6b32152d91090ffd7c640"
+    },
+    {
+      "path": "src/models/create_website_sync_request.rs",
+      "sha256": "3c929a0d995eebf9e13de6ec04c643fb1ef306b883bf6a1b056ac0c2141f325d"
     },
     {
       "path": "src/models/download_package_http_response.rs",
@@ -552,7 +560,7 @@
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "77ccb538e1818fee33195ad80085cc23a3ae2654df59fa74108bb459f59761b9"
+      "sha256": "ad2f9c1cfd0e5f40749608f8ac1f5585bff8df93eed4a6ee290b3aad6cbcebe6"
     },
     {
       "path": "src/models/move_node_request.rs",
@@ -747,6 +755,22 @@
       "sha256": "c528f4250a8b53c0cc57fee6623d9436c1ebef7b0380a937f3ba477024ac7eef"
     },
     {
+      "path": "src/models/website_generation_activation_http_response.rs",
+      "sha256": "f5c6e3deedc9cb2bdb7be776cfb08305e9dc7c3ed39a91041f5c023e84d7b3f8"
+    },
+    {
+      "path": "src/models/website_generation_activation_resource_data.rs",
+      "sha256": "2d7fcca222c6d7acceaac1490ad426d57d7679a0ce2a1458c590ac90979591aa"
+    },
+    {
+      "path": "src/models/website_generation_activation.rs",
+      "sha256": "3387c99f66f8f527b1336a64f744884ea86c3460acf0e4733e65b9bca0cad3a9"
+    },
+    {
+      "path": "src/models/website_generation.rs",
+      "sha256": "f25de39ffeab472e88ccf05b9e9056daea1fc7011fc18ca2cf3ae1ce92dfc73d"
+    },
+    {
       "path": "src/models/website_root_folder_selector.rs",
       "sha256": "8e58a58d5381f59a407f787351b76f7a0e5256d8a4a5399e090224f42c900636"
     },
@@ -777,6 +801,34 @@
     {
       "path": "src/models/website_root.rs",
       "sha256": "310e9400e03870f9842f22e75b0603a8f40d35e8d1f45539925c8b4b1bd95e10"
+    },
+    {
+      "path": "src/models/website_sync_activation_http_response.rs",
+      "sha256": "d5b626c6262e68d86095964b2976014075ddf3ff83f675d41186fa67ceb2ef28"
+    },
+    {
+      "path": "src/models/website_sync_activation_resource_data.rs",
+      "sha256": "40270a7ee71ccdffeccf5bf68166cb09bf147e56e2a06aaf767801708ffde6b8"
+    },
+    {
+      "path": "src/models/website_sync_activation.rs",
+      "sha256": "49d11da5afe91a8e864d71b71949451735718c559d62c890c2a7865b327ff18c"
+    },
+    {
+      "path": "src/models/website_sync_http_response.rs",
+      "sha256": "6e4b2469a9d347444e5d462bc2e7ba5786f1fa274c0dd9a83a3ab22571602093"
+    },
+    {
+      "path": "src/models/website_sync_resource_data.rs",
+      "sha256": "fb7dd8492fee4fd902492039ce4db578fca0307070d34da56e299fcd501312b7"
+    },
+    {
+      "path": "src/models/website_sync_version_request.rs",
+      "sha256": "cb0881cd74515905cfb981cdb67f5b3eacbd0a0c6a31f6f9332590ec85e60596"
+    },
+    {
+      "path": "src/models/website_sync.rs",
+      "sha256": "fb1819eb6b1c0450307ce88bacf0d6b155c18bf527bd5e428a5cdc3ec479ef79"
     }
   ],
   "scaffoldFiles": [

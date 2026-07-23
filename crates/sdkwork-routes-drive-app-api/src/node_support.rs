@@ -19,10 +19,12 @@ use axum::Json;
 use sdkwork_drive_contract::drive::domain_events as drive_events;
 use sdkwork_drive_storage_contract::{DriveObjectLocator, DriveObjectStore, PutObjectRequest};
 use sdkwork_drive_workspace_service::domain::uploader::content_type_group_for;
+use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
+use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_parent_mutation_allowed;
 use sdkwork_drive_workspace_service::infrastructure::sql::node_head_metadata::file_extension_from_name;
 use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
-use sqlx::AnyPool;
 use sqlx::Row;
+use sqlx::{AnyConnection, AnyPool};
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::route_change::record_change;
@@ -165,24 +167,60 @@ pub(crate) async fn ensure_archive_parent_folders(
             continue;
         }
         let folder_id = next_drive_id("node");
-        sqlx::query(
-            "INSERT INTO dr_drive_node (
+        let mut connection = pool.acquire().await.map_err(|error| {
+            crate::error::internal_problem(format!(
+                "acquire archive folder transaction connection failed: {error}"
+            ))
+        })?;
+        sqlx::query(begin_transaction_sql())
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error(
+                "begin archive folder transaction failed",
+            ))?;
+        let insert_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+            ensure_managed_website_parent_mutation_allowed(
+                &mut connection,
+                tenant_id,
+                space_id,
+                current_parent.as_deref(),
+            )
+            .await
+            .map_err(map_service_error)?;
+            sqlx::query(
+                "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, shortcut_target_node_id,
                 node_type, node_name, content_state, lifecycle_status, version,
                 created_by, updated_by
              ) VALUES ($1, $2, $3, $4, NULL, 'folder', $5, 'empty', 'active', 1, $6, $6)",
-        )
-        .bind(&folder_id)
-        .bind(tenant_id)
-        .bind(space_id)
-        .bind(current_parent.as_deref())
-        .bind(segment)
-        .bind(operator_id)
-        .execute(pool)
-        .await
-        .map_err(internal_sql_error(
-            "insert archive extraction folder failed",
-        ))?;
+            )
+            .bind(&folder_id)
+            .bind(tenant_id)
+            .bind(space_id)
+            .bind(current_parent.as_deref())
+            .bind(segment)
+            .bind(operator_id)
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error(
+                "insert archive extraction folder failed",
+            ))?;
+            Ok(())
+        }
+        .await;
+        match insert_result {
+            Ok(()) => sqlx::query("COMMIT")
+                .execute(&mut *connection)
+                .await
+                .map_err(internal_sql_error(
+                    "commit archive folder transaction failed",
+                ))?,
+            Err(error) => {
+                let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+                return Err(error);
+            }
+        };
+        drop(connection);
         record_change(
             pool,
             tenant_id,
@@ -266,6 +304,30 @@ pub(crate) async fn create_extracted_archive_file(
         1,
     )
     .await?;
+    let mut guard_connection = state.pool.acquire().await.map_err(|error| {
+        crate::error::internal_problem(format!(
+            "acquire archive extraction guard connection failed: {error}"
+        ))
+    })?;
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *guard_connection)
+        .await
+        .map_err(internal_sql_error(
+            "begin archive extraction guard transaction failed",
+        ))?;
+    let guard_result = ensure_managed_website_parent_mutation_allowed(
+        &mut guard_connection,
+        tenant_id,
+        space_id,
+        parent_node_id,
+    )
+    .await
+    .map_err(map_service_error);
+    let _ = sqlx::query("ROLLBACK")
+        .execute(&mut *guard_connection)
+        .await;
+    guard_result?;
+    drop(guard_connection);
     let provider = find_storage_provider_by_id(&state.pool, &target.provider_id)
         .await
         .map_err(map_service_error)?
@@ -299,7 +361,25 @@ pub(crate) async fn create_extracted_archive_file(
         })
         .await
         .map_err(map_object_store_route_error)?;
-    sqlx::query(
+    let mut connection = state.pool.acquire().await.map_err(|error| {
+        crate::error::internal_problem(format!(
+            "acquire archive file transaction connection failed: {error}"
+        ))
+    })?;
+    sqlx::query(begin_transaction_sql())
+        .execute(&mut *connection)
+        .await
+        .map_err(internal_sql_error("begin archive file transaction failed"))?;
+    let insert_result: Result<(), (StatusCode, Json<ProblemDetail>)> = async {
+        ensure_managed_website_parent_mutation_allowed(
+            &mut connection,
+            tenant_id,
+            space_id,
+            parent_node_id,
+        )
+        .await
+        .map_err(map_service_error)?;
+        sqlx::query(
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, shortcut_target_node_id,
             node_type, node_name, content_state, file_extension,
@@ -319,12 +399,12 @@ pub(crate) async fn create_extracted_archive_file(
     .bind(file.content.len() as i64)
     .bind(&file.checksum_sha256_hex)
     .bind(operator_id)
-    .execute(&state.pool)
-    .await
-    .map_err(internal_sql_error(
-        "insert archive extraction file node failed",
-    ))?;
-    sqlx::query(
+        .execute(&mut *connection)
+        .await
+        .map_err(internal_sql_error(
+            "insert archive extraction file node failed",
+        ))?;
+        sqlx::query(
         "INSERT INTO dr_drive_storage_object (
             id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,
             scene, source, content_type, content_length, checksum_sha256_hex, lifecycle_status,
@@ -341,13 +421,13 @@ pub(crate) async fn create_extracted_archive_file(
     .bind(file.content.len() as i64)
     .bind(&file.checksum_sha256_hex)
     .bind(operator_id)
-    .execute(&state.pool)
-    .await
-    .map_err(internal_sql_error(
-        "insert archive extraction storage object failed",
-    ))?;
-    insert_node_version_metadata(
-        &state.pool,
+        .execute(&mut *connection)
+        .await
+        .map_err(internal_sql_error(
+            "insert archive extraction storage object failed",
+        ))?;
+        insert_node_version_metadata(
+        &mut *connection,
         NodeVersionStorageMetadata {
             tenant_id,
             space_id,
@@ -370,7 +450,21 @@ pub(crate) async fn create_extracted_archive_file(
         },
         operator_id,
     )
-    .await?;
+        .await?;
+        Ok(())
+    }
+    .await;
+    match insert_result {
+        Ok(()) => sqlx::query("COMMIT")
+            .execute(&mut *connection)
+            .await
+            .map_err(internal_sql_error("commit archive file transaction failed"))?,
+        Err(error) => {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            return Err(error);
+        }
+    };
+    drop(connection);
     record_change(
         &state.pool,
         tenant_id,
@@ -569,7 +663,7 @@ pub(crate) async fn ensure_node_id_available(
     Ok(())
 }
 pub(crate) async fn copy_active_storage_object_metadata(
-    pool: &AnyPool,
+    connection: &mut AnyConnection,
     tenant_id: &str,
     target_space_id: &str,
     source_node_id: &str,
@@ -593,7 +687,7 @@ pub(crate) async fn copy_active_storage_object_metadata(
     .bind(target_node_id)
     .bind(target_node_id)
     .bind(operator_id)
-    .execute(pool)
+    .execute(&mut *connection)
     .await
     .map_err(internal_sql_error(
         "copy dr_drive_storage_object metadata failed",
@@ -607,7 +701,7 @@ pub(crate) async fn copy_active_storage_object_metadata(
     )
     .bind(tenant_id)
     .bind(target_node_id)
-    .fetch_all(pool)
+    .fetch_all(&mut *connection)
     .await
     .map_err(internal_sql_error(
         "list copied dr_drive_storage_object metadata failed",
@@ -622,7 +716,7 @@ pub(crate) async fn copy_active_storage_object_metadata(
         let scene: Option<String> = row.get("scene");
         let source: Option<String> = row.get("source");
         insert_node_version_metadata(
-            pool,
+            &mut *connection,
             NodeVersionStorageMetadata {
                 tenant_id,
                 space_id: target_space_id,

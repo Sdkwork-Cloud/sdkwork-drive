@@ -17,3 +17,4 @@ pub mod storage_provider;
 pub mod upload;
 pub mod uploader;
 pub mod website_root;
+pub mod website_sync;

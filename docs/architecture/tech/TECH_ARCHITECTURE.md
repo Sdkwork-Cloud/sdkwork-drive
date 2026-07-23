@@ -24,7 +24,8 @@ SECURITY_SPEC.md
 ### Feature-specific shards
 
 - [TECH-website-directory-resource-provider.md](TECH-website-directory-resource-provider.md) -
-  proposed Website Space/root/sync database and provider architecture for cloud Sites.
+  active Website Space/root Provider architecture for cloud Sites; live directory delivery is
+  implemented and atomic sync/UI/operations remain incomplete.
 - [TECH-2026-06-06-drive-uploader.md](TECH-2026-06-06-drive-uploader.md)
 - [TECH-2026-06-08-drive-node-version-policy-design.md](TECH-2026-06-08-drive-node-version-policy-design.md)
 - [TECH-2026-06-08-drive-node-version-policy.md](TECH-2026-06-08-drive-node-version-policy.md)
@@ -109,7 +110,7 @@ Cloud API Deployments must set `SDKWORK_DRIVE_RATE_LIMIT_BACKEND=redis`, source 
 
 ## 8. Architecture Decision Index
 
-- [ADR-20260721 Website Space Directory Resource](../decisions/ADR-20260721-website-space-directory-resource.md) - proposed multi-project Website Space and atomic root design.
+- [ADR-20260721 Website Space Directory Resource](../decisions/ADR-20260721-website-space-directory-resource.md) - accepted multi-project Website Space and atomic root design.
 
 | Topic | Shard / ADR |
 | --- | --- |

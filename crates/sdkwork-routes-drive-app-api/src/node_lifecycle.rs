@@ -16,6 +16,7 @@ use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_contract::drive::events::DriveNodeEligibility;
 use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
+use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed;
 use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use sqlx::AnyPool;
 use sqlx::Row;
@@ -39,31 +40,6 @@ pub(crate) async fn set_node_lifecycle(
     let nodes_to_update = collect_node_subtree(&state.pool, &tenant_id, &node).await?;
     if lifecycle_status == "active" {
         ensure_restorable_subtree(&state.pool, &tenant_id, &nodes_to_update).await?;
-        for node_to_update in &nodes_to_update {
-            let unique_name = crate::node_support::resolve_live_unique_node_name_in_parent(
-                &state.pool,
-                &tenant_id,
-                &node_to_update.space_id,
-                node_to_update.parent_node_id.as_deref(),
-                &node_to_update.node_name,
-                Some(node_to_update.id.as_str()),
-            )
-            .await?;
-            if unique_name != node_to_update.node_name {
-                sqlx::query(
-                    "UPDATE dr_drive_node
-                     SET node_name=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
-                     WHERE tenant_id=$3 AND id=$4 AND lifecycle_status != 'deleted'",
-                )
-                .bind(&unique_name)
-                .bind(&operator_id)
-                .bind(&tenant_id)
-                .bind(&node_to_update.id)
-                .execute(&state.pool)
-                .await
-                .map_err(internal_sql_error("rename node before restore failed"))?;
-            }
-        }
     }
     let (old_eligibility, new_eligibility, reason) = match lifecycle_status {
         "active" => (
@@ -98,6 +74,18 @@ pub(crate) async fn set_node_lifecycle(
             "begin node lifecycle transaction failed",
         ))?;
     let tx_result: Result<u64, (StatusCode, Json<ProblemDetail>)> = async {
+        ensure_managed_website_node_mutation_allowed(&mut connection, &tenant_id, &node_id)
+            .await
+            .map_err(crate::error::map_service_error)?;
+        if lifecycle_status == "active" {
+            rename_restoring_nodes_for_live_name_uniqueness(
+                &mut connection,
+                &tenant_id,
+                &operator_id,
+                &nodes_to_update,
+            )
+            .await?;
+        }
         let mut locations = Vec::with_capacity(nodes_to_update.len());
         for node_to_update in &nodes_to_update {
             locations.push(
@@ -176,6 +164,111 @@ pub(crate) async fn set_node_lifecycle(
         )
         .await?,
     ))
+}
+
+async fn rename_restoring_nodes_for_live_name_uniqueness(
+    connection: &mut sqlx::AnyConnection,
+    tenant_id: &str,
+    operator_id: &str,
+    nodes: &[DriveNodeResponse],
+) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
+    let mut reserved_names = BTreeSet::new();
+    for node in nodes {
+        let unique_name =
+            resolve_restore_unique_name(connection, tenant_id, node, &reserved_names).await?;
+        reserved_names.insert((
+            node.space_id.clone(),
+            node.parent_node_id.clone(),
+            unique_name.clone(),
+        ));
+        if unique_name == node.node_name {
+            continue;
+        }
+        sqlx::query(
+            "UPDATE dr_drive_node
+             SET node_name=$1, updated_by=$2, updated_at=CURRENT_TIMESTAMP, version=version + 1
+             WHERE tenant_id=$3 AND id=$4 AND lifecycle_status != 'deleted'",
+        )
+        .bind(&unique_name)
+        .bind(operator_id)
+        .bind(tenant_id)
+        .bind(&node.id)
+        .execute(&mut *connection)
+        .await
+        .map_err(internal_sql_error("rename node before restore failed"))?;
+    }
+    Ok(())
+}
+
+async fn resolve_restore_unique_name(
+    connection: &mut sqlx::AnyConnection,
+    tenant_id: &str,
+    node: &DriveNodeResponse,
+    reserved_names: &BTreeSet<(String, Option<String>, String)>,
+) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
+    if restore_name_is_available(connection, tenant_id, node, &node.node_name, reserved_names)
+        .await?
+    {
+        return Ok(node.node_name.clone());
+    }
+
+    let (stem, extension) = sdkwork_utils_rust::split_filename_stem_extension(&node.node_name);
+    for index in 1..=9_999 {
+        let candidate = sdkwork_utils_rust::format_numbered_filename_variant(
+            &stem,
+            index,
+            extension.as_deref(),
+        );
+        if restore_name_is_available(connection, tenant_id, node, &candidate, reserved_names)
+            .await?
+        {
+            return Ok(candidate);
+        }
+    }
+
+    Err(problem(
+        StatusCode::CONFLICT,
+        "conflict",
+        "no unique node name is available for restore",
+        SdkWorkResultCode::Conflict,
+    ))
+}
+
+async fn restore_name_is_available(
+    connection: &mut sqlx::AnyConnection,
+    tenant_id: &str,
+    node: &DriveNodeResponse,
+    candidate: &str,
+    reserved_names: &BTreeSet<(String, Option<String>, String)>,
+) -> Result<bool, (StatusCode, Json<ProblemDetail>)> {
+    if reserved_names.contains(&(
+        node.space_id.clone(),
+        node.parent_node_id.clone(),
+        candidate.to_string(),
+    )) {
+        return Ok(false);
+    }
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1)
+         FROM dr_drive_node
+         WHERE tenant_id=$1
+           AND space_id=$2
+           AND node_name=$3
+           AND lifecycle_status='active'
+           AND ((parent_node_id IS NULL AND $4 IS NULL) OR parent_node_id=$4)
+           AND id != $5",
+    )
+    .bind(tenant_id)
+    .bind(&node.space_id)
+    .bind(candidate)
+    .bind(node.parent_node_id.as_deref())
+    .bind(&node.id)
+    .fetch_one(&mut *connection)
+    .await
+    .map_err(internal_sql_error(
+        "check restore node name availability failed",
+    ))?;
+    Ok(count == 0)
 }
 
 pub(crate) async fn ensure_restorable_subtree(

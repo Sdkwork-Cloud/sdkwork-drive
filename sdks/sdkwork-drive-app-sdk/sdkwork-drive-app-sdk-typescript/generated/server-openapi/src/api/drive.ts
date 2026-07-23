@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ArchiveEntry, ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, CreateWebsiteRootRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DrivePermission, DriveSandboxEntry, DriveSandboxEntryListData, DriveSandboxFileContent, DriveSandboxMutationCommandData, DriveSandboxVolumeListData, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermission, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodePathResponse, PageInfo, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, PurgeDriveSandboxEntryRequest, QuotaSummary, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, WebsiteRoot, WebsiteRootPageData } from '../types';
+import type { ActivateWebsiteGenerationRequest, ArchiveEntry, ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, CreateWebsiteRootRequest, CreateWebsiteSyncRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DrivePermission, DriveSandboxEntry, DriveSandboxEntryListData, DriveSandboxFileContent, DriveSandboxMutationCommandData, DriveSandboxVolumeListData, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermission, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodePathResponse, PageInfo, PositiveInt64String, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, PurgeDriveSandboxEntryRequest, QuotaSummary, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, WebsiteGenerationActivation, WebsiteRoot, WebsiteRootPageData, WebsiteSync, WebsiteSyncActivation, WebsiteSyncVersionRequest } from '../types';
 
 
 export class DriveUploaderUploadsPartsApi {
@@ -33,11 +33,11 @@ async create(body: PrepareUploaderUploadRequest): Promise<PrepareUploaderUploadR
 }
 
 export class DriveUploaderApi {
-  private client: HttpClient;
+
   public readonly uploads: DriveUploaderUploadsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.uploads = new DriveUploaderUploadsApi(client);
   }
 
@@ -51,8 +51,8 @@ export class DriveArchiveEntriesApi {
   }
 
 
-async list(nodeId: string): Promise<Record<string, unknown>> {
-    return this.client.get<Record<string, unknown>>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/archive_entries`));
+async list(nodeId: string): Promise<{ items: ArchiveEntry[]; pageInfo: PageInfo; }> {
+    return this.client.get<{ items: ArchiveEntry[]; pageInfo: PageInfo; }>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/archive_entries`));
   }
 
 async extract(nodeId: string, body: ExtractArchiveEntriesRequest): Promise<ExtractArchiveEntriesResponse> {
@@ -152,6 +152,59 @@ async list(spaceId: string, params?: DriveMoveDestinationsListParams): Promise<D
   }
 }
 
+export class DriveWebsiteRootsGenerationsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Activate a retained website generation as a new logical generation */
+  async activate(rootUuid: string, generation: PositiveInt64String, body: ActivateWebsiteGenerationRequest): Promise<WebsiteGenerationActivation> {
+    return this.client.post<WebsiteGenerationActivation>(appApiPath(`/drive/website_roots/${serializePathParameter(rootUuid, { name: 'rootUuid', style: 'simple', explode: false })}/generations/${serializePathParameter(generation, { name: 'generation', style: 'simple', explode: false })}/activate`), body, undefined, undefined, 'application/json');
+  }
+}
+
+export interface DriveWebsiteRootsSyncsCreateParams {
+  idempotencyKey: string;
+}
+
+export class DriveWebsiteRootsSyncsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Create an isolated atomic website synchronization */
+  async create(rootUuid: string, body: CreateWebsiteSyncRequest, params: DriveWebsiteRootsSyncsCreateParams): Promise<WebsiteSync> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.post<WebsiteSync>(appApiPath(`/drive/website_roots/${serializePathParameter(rootUuid, { name: 'rootUuid', style: 'simple', explode: false })}/syncs`), body, undefined, requestHeaders, 'application/json');
+  }
+
+/** Retrieve an atomic website synchronization */
+  async retrieve(rootUuid: string, syncId: string): Promise<WebsiteSync> {
+    return this.client.get<WebsiteSync>(appApiPath(`/drive/website_roots/${serializePathParameter(rootUuid, { name: 'rootUuid', style: 'simple', explode: false })}/syncs/${serializePathParameter(syncId, { name: 'syncId', style: 'simple', explode: false })}`));
+  }
+
+/** Validate and atomically activate a complete website tree */
+  async finalize(rootUuid: string, syncId: string, body: WebsiteSyncVersionRequest): Promise<WebsiteSyncActivation> {
+    return this.client.post<WebsiteSyncActivation>(appApiPath(`/drive/website_roots/${serializePathParameter(rootUuid, { name: 'rootUuid', style: 'simple', explode: false })}/syncs/${serializePathParameter(syncId, { name: 'syncId', style: 'simple', explode: false })}/finalize`), body, undefined, undefined, 'application/json');
+  }
+
+/** Abort an unactivated website synchronization */
+  async abort(rootUuid: string, syncId: string, body: WebsiteSyncVersionRequest): Promise<WebsiteSync> {
+    return this.client.post<WebsiteSync>(appApiPath(`/drive/website_roots/${serializePathParameter(rootUuid, { name: 'rootUuid', style: 'simple', explode: false })}/syncs/${serializePathParameter(syncId, { name: 'syncId', style: 'simple', explode: false })}/abort`), body, undefined, undefined, 'application/json');
+  }
+}
+
 export interface DriveWebsiteRootsListParams {
   pageSize?: number;
   cursor?: string;
@@ -159,9 +212,13 @@ export interface DriveWebsiteRootsListParams {
 
 export class DriveWebsiteRootsApi {
   private client: HttpClient;
+  public readonly syncs: DriveWebsiteRootsSyncsApi;
+  public readonly generations: DriveWebsiteRootsGenerationsApi;
 
   constructor(client: HttpClient) {
     this.client = client;
+    this.syncs = new DriveWebsiteRootsSyncsApi(client);
+    this.generations = new DriveWebsiteRootsGenerationsApi(client);
   }
 
 
@@ -198,7 +255,7 @@ export class DriveSpacesApi {
   }
 
 
-async list(params?: DriveSpacesListParams): Promise<Record<string, unknown>> {
+async list(params?: DriveSpacesListParams): Promise<{ items: DriveSpace[]; pageInfo: PageInfo; }> {
     const query = buildQueryString([
       { name: 'ownerSubjectType', value: params?.ownerSubjectType, style: 'form', explode: true, allowReserved: false },
       { name: 'ownerSubjectId', value: params?.ownerSubjectId, style: 'form', explode: true, allowReserved: false },
@@ -206,7 +263,7 @@ async list(params?: DriveSpacesListParams): Promise<Record<string, unknown>> {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/spaces`), query));
+    return this.client.get<{ items: DriveSpace[]; pageInfo: PageInfo; }>(appendQueryString(appApiPath(`/drive/spaces`), query));
   }
 
 async create(body: CreateSpaceRequest): Promise<DriveSpace> {
@@ -563,12 +620,12 @@ async create(nodeId: string, body: CreateShareLinkRequest): Promise<CreateShareL
     return this.client.post<CreateShareLinkResponse>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/share_links`), body, undefined, undefined, 'application/json');
   }
 
-async list(nodeId: string, params?: DriveShareLinksListParams): Promise<Record<string, unknown>> {
+async list(nodeId: string, params?: DriveShareLinksListParams): Promise<{ items: DriveShareLink[]; pageInfo: PageInfo; }> {
     const query = buildQueryString([
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/share_links`), query));
+    return this.client.get<{ items: DriveShareLink[]; pageInfo: PageInfo; }>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/share_links`), query));
   }
 
 async claim(token: string): Promise<ClaimShareLinkResponse> {
@@ -601,12 +658,12 @@ export class DrivePermissionsEffectiveApi {
   }
 
 
-async list(nodeId: string, params?: DrivePermissionsEffectiveListParams): Promise<Record<string, unknown>> {
+async list(nodeId: string, params?: DrivePermissionsEffectiveListParams): Promise<{ items: EffectivePermission[]; pageInfo: PageInfo; }> {
     const query = buildQueryString([
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions/effective`), query));
+    return this.client.get<{ items: EffectivePermission[]; pageInfo: PageInfo; }>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions/effective`), query));
   }
 }
 
@@ -625,12 +682,12 @@ export class DrivePermissionsApi {
   }
 
 
-async list(nodeId: string, params?: DrivePermissionsListParams): Promise<Record<string, unknown>> {
+async list(nodeId: string, params?: DrivePermissionsListParams): Promise<{ items: DrivePermission[]; pageInfo: PageInfo; }> {
     const query = buildQueryString([
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions`), query));
+    return this.client.get<{ items: DrivePermission[]; pageInfo: PageInfo; }>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions`), query));
   }
 
 async create(nodeId: string, body: CreatePermissionRequest): Promise<DrivePermission> {
@@ -676,12 +733,12 @@ export class DriveCommentRepliesApi {
   }
 
 
-async list(nodeId: string, commentId: string, params?: DriveCommentRepliesListParams): Promise<Record<string, unknown>> {
+async list(nodeId: string, commentId: string, params?: DriveCommentRepliesListParams): Promise<{ items: DriveCommentReply[]; pageInfo: PageInfo; }> {
     const query = buildQueryString([
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}/replies`), query));
+    return this.client.get<{ items: DriveCommentReply[]; pageInfo: PageInfo; }>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments/${serializePathParameter(commentId, { name: 'commentId', style: 'simple', explode: false })}/replies`), query));
   }
 
 async create(nodeId: string, commentId: string, body: CreateCommentReplyRequest): Promise<DriveCommentReply> {
@@ -714,12 +771,12 @@ export class DriveCommentsApi {
   }
 
 
-async list(nodeId: string, params?: DriveCommentsListParams): Promise<Record<string, unknown>> {
+async list(nodeId: string, params?: DriveCommentsListParams): Promise<{ items: DriveComment[]; pageInfo: PageInfo; }> {
     const query = buildQueryString([
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<Record<string, unknown>>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments`), query));
+    return this.client.get<{ items: DriveComment[]; pageInfo: PageInfo; }>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/comments`), query));
   }
 
 async create(nodeId: string, body: CreateCommentRequest): Promise<DriveComment> {
@@ -995,7 +1052,7 @@ async list(params: DriveChangesListParams): Promise<ChangeListData> {
 }
 
 export class DriveApi {
-  private client: HttpClient;
+
   public readonly changes: DriveChangesApi;
   public readonly downloadTokens: DriveDownloadTokensApi;
   public readonly downloadUrls: DriveDownloadUrlsApi;
@@ -1026,7 +1083,7 @@ export class DriveApi {
   public readonly uploader: DriveUploaderApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.changes = new DriveChangesApi(client);
     this.downloadTokens = new DriveDownloadTokensApi(client);
     this.downloadUrls = new DriveDownloadUrlsApi(client);

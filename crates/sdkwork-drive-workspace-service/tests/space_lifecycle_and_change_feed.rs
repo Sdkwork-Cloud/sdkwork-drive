@@ -200,6 +200,71 @@ async fn delete_space_with_contents_is_atomic_and_records_change_feed() {
 }
 
 #[tokio::test]
+async fn delete_atomic_website_space_uses_typed_override_and_records_audit() {
+    sqlx::any::install_default_drivers();
+    let pool = AnyPoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("sqlite in-memory pool should be created");
+    install_any_schema(&pool, DatabaseEngine::Sqlite)
+        .await
+        .expect("sqlite schema should be installed");
+
+    let space = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()))
+        .create_space(CreateSpaceCommand {
+            id: "space-delete-website".to_string(),
+            tenant_id: "tenant-website".to_string(),
+            owner_subject_type: "user".to_string(),
+            owner_subject_id: "user-website".to_string(),
+            display_name: "Website".to_string(),
+            space_type: DriveSpaceType::Website,
+            presentation_icon: None,
+            presentation_color: None,
+            description: None,
+            operator_id: "user-website".to_string(),
+        })
+        .await
+        .expect("website Space should be created");
+    sqlx::query(
+        "UPDATE dr_drive_website_root
+         SET content_mode='atomic_generation'
+         WHERE tenant_id='tenant-website' AND space_id='space-delete-website'",
+    )
+    .execute(&pool)
+    .await
+    .expect("WebsiteRoot should become atomic for the override test");
+
+    let result = SqlDriveSpaceLifecycleService::new(pool.clone())
+        .delete_space_with_contents(DeleteSpaceWithContentsCommand {
+            tenant_id: space.tenant_id,
+            space_id: space.id,
+            operator_id: "user-website".to_string(),
+        })
+        .await
+        .expect("tenant-authorized atomic website Space delete should succeed");
+    assert_eq!(result.space.lifecycle_status, "deleted");
+    assert!(result.deleted_node_count >= 1);
+
+    let audit: (String, String, String) = sqlx::query_as(
+        "SELECT action, resource_type, operator_id
+         FROM dr_drive_audit_event
+         WHERE tenant_id='tenant-website' AND resource_id='space-delete-website'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("website Space retirement override audit should exist");
+    assert_eq!(
+        audit,
+        (
+            "drive.website_tree.system_override.tenant_authorized_space_retirement".to_string(),
+            "drive_space".to_string(),
+            "user-website".to_string(),
+        )
+    );
+}
+
+#[tokio::test]
 async fn change_feed_service_lists_changes_and_start_page_token() {
     sqlx::any::install_default_drivers();
     let pool = AnyPoolOptions::new()

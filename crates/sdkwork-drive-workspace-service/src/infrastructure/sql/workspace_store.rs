@@ -84,39 +84,38 @@ impl DriveWorkspaceStore for SqlDriveWorkspaceStore {
         &self,
         record: NewDriveWorkspaceNodeRecord,
     ) -> Result<DriveWorkspaceNodeRecord, DriveServiceError> {
-        let tenant_id = record.tenant_id;
-        let space_id = record.space_id;
-        let parent_node_id = record.parent_node_id;
-        let node_name = record.node_name;
-
-        sqlx::query(
-            "INSERT INTO dr_drive_node (
-                id, tenant_id, space_id, parent_node_id, node_type, node_name,
-                content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', 1, $8, $8)
-            ON CONFLICT DO NOTHING",
-        )
-        .bind(&record.id)
-        .bind(&tenant_id)
-        .bind(&space_id)
-        .bind(parent_node_id.as_deref())
-        .bind(&record.node_type)
-        .bind(&node_name)
-        .bind(&record.content_state)
-        .bind(&record.operator_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|error| {
-            DriveServiceError::Internal(format!("ensure workspace node failed: {error}"))
+        let mut connection = self.pool.acquire().await.map_err(|error| {
+            DriveServiceError::Internal(format!(
+                "acquire workspace node transaction connection failed: {error}"
+            ))
         })?;
-
-        self.find_child_node(&tenant_id, &space_id, parent_node_id.as_deref(), &node_name)
-            .await?
-            .ok_or_else(|| {
+        sqlx::query(begin_transaction_sql())
+            .execute(&mut *connection)
+            .await
+            .map_err(|error| {
                 DriveServiceError::Internal(format!(
-                    "ensured workspace node is not readable: {node_name}"
+                    "begin workspace node transaction failed: {error}"
                 ))
-            })
+            })?;
+
+        let result = ensure_workspace_node_in_transaction(&mut connection, &record).await;
+        match result {
+            Ok(node) => {
+                sqlx::query("COMMIT")
+                    .execute(&mut *connection)
+                    .await
+                    .map_err(|error| {
+                        DriveServiceError::Internal(format!(
+                            "commit workspace node transaction failed: {error}"
+                        ))
+                    })?;
+                Ok(node)
+            }
+            Err(error) => {
+                let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+                Err(error)
+            }
+        }
     }
 
     async fn ensure_object_ref(
@@ -404,6 +403,13 @@ impl SqlDriveWorkspaceStore {
         record: &NewDriveWorkspaceObjectRecord,
         next_version_no: i64,
     ) -> Result<bool, DriveServiceError> {
+        super::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed(
+            connection,
+            &record.tenant_id,
+            &record.node_id,
+        )
+        .await?;
+
         sqlx::query(
             "UPDATE dr_drive_storage_object
              SET lifecycle_status='deleted',
@@ -453,6 +459,126 @@ impl SqlDriveWorkspaceStore {
 
         Ok(result.rows_affected() > 0)
     }
+}
+
+async fn ensure_workspace_node_in_transaction(
+    connection: &mut AnyConnection,
+    record: &NewDriveWorkspaceNodeRecord,
+) -> Result<DriveWorkspaceNodeRecord, DriveServiceError> {
+    if let Some(existing) = find_workspace_child_node_in_transaction(
+        connection,
+        &record.tenant_id,
+        &record.space_id,
+        record.parent_node_id.as_deref(),
+        &record.node_name,
+    )
+    .await?
+    {
+        return Ok(existing);
+    }
+
+    super::managed_website_tree_guard::ensure_managed_website_parent_mutation_allowed(
+        connection,
+        &record.tenant_id,
+        &record.space_id,
+        record.parent_node_id.as_deref(),
+    )
+    .await?;
+
+    sqlx::query(
+        "INSERT INTO dr_drive_node (
+            id, tenant_id, space_id, parent_node_id, node_type, node_name,
+            content_state, lifecycle_status, version, created_by, updated_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', 1, $8, $8)
+        ON CONFLICT DO NOTHING",
+    )
+    .bind(&record.id)
+    .bind(&record.tenant_id)
+    .bind(&record.space_id)
+    .bind(record.parent_node_id.as_deref())
+    .bind(&record.node_type)
+    .bind(&record.node_name)
+    .bind(&record.content_state)
+    .bind(&record.operator_id)
+    .execute(&mut *connection)
+    .await
+    .map_err(|error| {
+        DriveServiceError::Internal(format!("ensure workspace node failed: {error}"))
+    })?;
+
+    find_workspace_child_node_in_transaction(
+        connection,
+        &record.tenant_id,
+        &record.space_id,
+        record.parent_node_id.as_deref(),
+        &record.node_name,
+    )
+    .await?
+    .ok_or_else(|| {
+        DriveServiceError::Internal(format!(
+            "ensured workspace node is not readable: {}",
+            record.node_name
+        ))
+    })
+}
+
+async fn find_workspace_child_node_in_transaction(
+    connection: &mut AnyConnection,
+    tenant_id: &str,
+    space_id: &str,
+    parent_node_id: Option<&str>,
+    node_name: &str,
+) -> Result<Option<DriveWorkspaceNodeRecord>, DriveServiceError> {
+    let row = sqlx::query(
+        "SELECT
+            n.id,
+            n.parent_node_id,
+            n.node_type,
+            n.node_name,
+            CAST(n.updated_at AS TEXT) AS updated_at,
+            o.content_type,
+            o.content_length,
+            (
+                SELECT COUNT(1)
+                FROM dr_drive_node child
+                WHERE child.tenant_id=n.tenant_id
+                  AND child.space_id=n.space_id
+                  AND child.parent_node_id=n.id
+                  AND child.lifecycle_status='active'
+            ) AS children_count
+         FROM dr_drive_node n
+         LEFT JOIN dr_drive_storage_object o
+           ON o.tenant_id=n.tenant_id
+          AND o.node_id=n.id
+          AND o.lifecycle_status='active'
+          AND o.version_no=(
+              SELECT MAX(o2.version_no)
+              FROM dr_drive_storage_object o2
+              WHERE o2.tenant_id=n.tenant_id
+                AND o2.node_id=n.id
+                AND o2.lifecycle_status='active'
+          )
+         WHERE n.tenant_id=$1
+           AND n.space_id=$2
+           AND n.node_name=$3
+           AND n.lifecycle_status='active'
+           AND (
+               (n.parent_node_id IS NULL AND $4 IS NULL)
+               OR n.parent_node_id=$4
+           )
+         LIMIT 1",
+    )
+    .bind(tenant_id)
+    .bind(space_id)
+    .bind(node_name)
+    .bind(parent_node_id)
+    .fetch_optional(&mut *connection)
+    .await
+    .map_err(|error| {
+        DriveServiceError::Internal(format!("find workspace child node failed: {error}"))
+    })?;
+
+    row.map(|row| map_workspace_node_row(&row)).transpose()
 }
 
 fn map_workspace_node_row(
