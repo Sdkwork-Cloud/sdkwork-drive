@@ -1,3 +1,7 @@
+use std::future::Future;
+use std::pin::Pin;
+use std::time::Duration as StdDuration;
+
 use async_trait::async_trait;
 use chrono::{Duration, SecondsFormat};
 use sdkwork_drive_config::DatabaseEngine;
@@ -15,7 +19,9 @@ use crate::infrastructure::change_recorder::{
     notify_drive_event_committed, record_drive_website_root_generation_changed_on_connection,
     RecordDriveWebsiteRootGenerationChangedCommand,
 };
-use crate::infrastructure::sql::{begin_transaction_sql, next_drive_runtime_id};
+use crate::infrastructure::sql::{
+    begin_transaction_sql_for_engine, detect_any_pool_database_engine, next_drive_runtime_id,
+};
 use crate::ports::website_sync_store::{
     AbortDriveWebsiteSync, ActivateDriveWebsiteGeneration, ActivateValidatedWebsiteSync,
     CreateDriveWebsiteSync, CreateDriveWebsiteSyncResult, DriveWebsiteGenerationActivation,
@@ -25,6 +31,12 @@ use crate::DriveServiceError;
 
 const WEBSITE_SYNC_SELECT_COLUMNS: &str = "sync.id, sync.tenant_id, sync.website_root_id, root.uuid AS website_root_uuid, sync.space_id, sync.idempotency_key, sync.expected_root_version, sync.expected_generation, sync.staging_node_id, sync.manifest_sha256, sync.manifest_file_count, sync.manifest_total_bytes, sync.uploaded_file_count, sync.uploaded_total_bytes, sync.sync_status, CAST(sync.expires_at AS TEXT) AS expires_at, CAST(sync.validated_at AS TEXT) AS validated_at, CAST(sync.activated_at AS TEXT) AS activated_at, CAST(sync.completed_at AS TEXT) AS completed_at, sync.error_code, sync.error_summary, sync.version, CAST(sync.created_at AS TEXT) AS created_at, CAST(sync.updated_at AS TEXT) AS updated_at";
 const WEBSITE_ROOT_SELECT_COLUMNS: &str = "root.id, root.uuid, root.tenant_id, root.space_id, root.root_key, root.display_name, root.source_root_mode, root.selected_folder_node_id, root.content_mode, root.active_node_id, root.active_generation, root.root_status, root.version, CAST(root.created_at AS TEXT) AS created_at, CAST(root.updated_at AS TEXT) AS updated_at";
+const MAX_SERIALIZABLE_TRANSACTION_ATTEMPTS: usize = 4;
+const RETRYABLE_TRANSACTION_ERROR_PREFIX: &str = "[retryable-database-transaction] ";
+
+type WebsiteSyncTransactionFuture<'a, T> = Pin<
+    Box<dyn Future<Output = Result<T, DriveServiceError>> + Send + 'a>,
+>;
 
 #[derive(Debug, Clone)]
 pub struct SqlWebsiteSyncStore {
@@ -43,19 +55,10 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         &self,
         command: &CreateDriveWebsiteSync,
     ) -> Result<CreateDriveWebsiteSyncResult, DriveServiceError> {
-        let mut connection = acquire(&self.pool).await?;
-        begin_serializable_write(&mut connection).await?;
-        let result = create_sync_on_connection(&mut connection, command).await;
-        match result {
-            Ok(created) => {
-                commit(&mut connection, "create WebsiteSync").await?;
-                Ok(created)
-            }
-            Err(error) => {
-                rollback(&mut connection).await;
-                Err(error)
-            }
-        }
+        run_serializable_transaction(&self.pool, "create WebsiteSync", |connection, engine| {
+            Box::pin(create_sync_on_connection(connection, command, engine))
+        })
+        .await
     }
 
     async fn get(
@@ -71,19 +74,12 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         &self,
         command: &ValidateDriveWebsiteSync,
     ) -> Result<DriveWebsiteSync, DriveServiceError> {
-        let mut connection = acquire(&self.pool).await?;
-        begin_serializable_write(&mut connection).await?;
-        let result = begin_validation_on_connection(&mut connection, command).await;
-        match result {
-            Ok(sync) => {
-                commit(&mut connection, "begin WebsiteSync validation").await?;
-                Ok(sync)
-            }
-            Err(error) => {
-                rollback(&mut connection).await;
-                Err(error)
-            }
-        }
+        run_serializable_transaction(
+            &self.pool,
+            "begin WebsiteSync validation",
+            |connection, _| Box::pin(begin_validation_on_connection(connection, command)),
+        )
+        .await
     }
 
     async fn list_staging_tree(
@@ -100,20 +96,18 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         &self,
         command: &ActivateValidatedWebsiteSync,
     ) -> Result<DriveWebsiteSyncActivation, DriveServiceError> {
-        let mut connection = acquire(&self.pool).await?;
-        begin_serializable_write(&mut connection).await?;
-        let result = activate_validated_on_connection(&mut connection, command).await;
-        match result {
-            Ok(activation) => {
-                commit(&mut connection, "activate WebsiteSync").await?;
-                notify_drive_event_committed(self.pool.clone());
-                Ok(activation)
-            }
-            Err(error) => {
-                rollback(&mut connection).await;
-                Err(error)
-            }
-        }
+        let activation = run_serializable_transaction(
+            &self.pool,
+            "activate WebsiteSync",
+            |connection, engine| {
+                Box::pin(activate_validated_on_connection(
+                    connection, command, engine,
+                ))
+            },
+        )
+        .await?;
+        notify_drive_event_committed(self.pool.clone());
+        Ok(activation)
     }
 
     async fn mark_failed(
@@ -161,45 +155,35 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         &self,
         command: &AbortDriveWebsiteSync,
     ) -> Result<DriveWebsiteSync, DriveServiceError> {
-        let mut connection = acquire(&self.pool).await?;
-        begin_serializable_write(&mut connection).await?;
-        let result = abort_on_connection(&mut connection, command).await;
-        match result {
-            Ok(sync) => {
-                commit(&mut connection, "abort WebsiteSync").await?;
-                Ok(sync)
-            }
-            Err(error) => {
-                rollback(&mut connection).await;
-                Err(error)
-            }
-        }
+        run_serializable_transaction(&self.pool, "abort WebsiteSync", |connection, _| {
+            Box::pin(abort_on_connection(connection, command))
+        })
+        .await
     }
 
     async fn activate_generation(
         &self,
         command: &ActivateDriveWebsiteGeneration,
     ) -> Result<DriveWebsiteGenerationActivation, DriveServiceError> {
-        let mut connection = acquire(&self.pool).await?;
-        begin_serializable_write(&mut connection).await?;
-        let result = activate_generation_on_connection(&mut connection, command).await;
-        match result {
-            Ok(activation) => {
-                commit(&mut connection, "activate retained WebsiteRoot generation").await?;
-                notify_drive_event_committed(self.pool.clone());
-                Ok(activation)
-            }
-            Err(error) => {
-                rollback(&mut connection).await;
-                Err(error)
-            }
-        }
+        let activation = run_serializable_transaction(
+            &self.pool,
+            "activate retained WebsiteRoot generation",
+            |connection, engine| {
+                Box::pin(activate_generation_on_connection(
+                    connection, command, engine,
+                ))
+            },
+        )
+        .await?;
+        notify_drive_event_committed(self.pool.clone());
+        Ok(activation)
     }
 }
 
 async fn create_sync_on_connection(
     connection: &mut AnyConnection,
     command: &CreateDriveWebsiteSync,
+    engine: DatabaseEngine,
 ) -> Result<CreateDriveWebsiteSyncResult, DriveServiceError> {
     if let Some(existing) =
         find_sync_by_idempotency(connection, &command.tenant_id, &command.idempotency_key).await?
@@ -279,7 +263,7 @@ async fn create_sync_on_connection(
     .execute(&mut *connection)
     .await
     .map_err(|error| internal("insert WebsiteSync staging node", error))?;
-    let expires_at_parameter = instant_parameter("$12");
+    let expires_at_parameter = instant_parameter(engine, "$12");
     sqlx::query(&format!(
         "INSERT INTO dr_drive_website_sync (
             id, tenant_id, website_root_id, space_id, idempotency_key,
@@ -390,6 +374,7 @@ async fn begin_validation_on_connection(
 async fn activate_validated_on_connection(
     connection: &mut AnyConnection,
     command: &ActivateValidatedWebsiteSync,
+    engine: DatabaseEngine,
 ) -> Result<DriveWebsiteSyncActivation, DriveServiceError> {
     lock_website_root(connection, &command.tenant_id, &command.website_root_uuid).await?;
     let root =
@@ -432,7 +417,7 @@ async fn activate_validated_on_connection(
     let next_generation = root.active_generation + 1;
     let retention_until =
         (chrono::Utc::now() + Duration::days(30)).to_rfc3339_opts(SecondsFormat::Millis, true);
-    let retention_until_parameter = instant_parameter("$1");
+    let retention_until_parameter = instant_parameter(engine, "$1");
     let retained = sqlx::query(&format!(
         "UPDATE dr_drive_website_root_generation
          SET generation_status='retained', retention_until={retention_until_parameter}
@@ -631,6 +616,7 @@ async fn abort_on_connection(
 async fn activate_generation_on_connection(
     connection: &mut AnyConnection,
     command: &ActivateDriveWebsiteGeneration,
+    engine: DatabaseEngine,
 ) -> Result<DriveWebsiteGenerationActivation, DriveServiceError> {
     lock_website_root(connection, &command.tenant_id, &command.website_root_uuid).await?;
     let root =
@@ -673,7 +659,7 @@ async fn activate_generation_on_connection(
     let previous_root_node_id = root.active_node_id.clone();
     let retention_until =
         (chrono::Utc::now() + Duration::days(30)).to_rfc3339_opts(SecondsFormat::Millis, true);
-    let retention_until_parameter = instant_parameter("$1");
+    let retention_until_parameter = instant_parameter(engine, "$1");
     let retained = sqlx::query(&format!(
         "UPDATE dr_drive_website_root_generation
          SET generation_status='retained', retention_until={retention_until_parameter}
@@ -1151,13 +1137,60 @@ async fn acquire(
         .map_err(|error| internal("acquire WebsiteSync connection", error))
 }
 
-async fn begin_serializable_write(connection: &mut AnyConnection) -> Result<(), DriveServiceError> {
-    let begin = begin_transaction_sql();
+async fn run_serializable_transaction<T, F>(
+    pool: &AnyPool,
+    operation: &str,
+    mut action: F,
+) -> Result<T, DriveServiceError>
+where
+    T: Send,
+    F: for<'a> FnMut(
+        &'a mut AnyConnection,
+        DatabaseEngine,
+    ) -> WebsiteSyncTransactionFuture<'a, T>,
+{
+    let engine = detect_any_pool_database_engine(pool)
+        .await
+        .map_err(|error| internal("resolve WebsiteSync database engine", error))?;
+    for attempt in 1..=MAX_SERIALIZABLE_TRANSACTION_ATTEMPTS {
+        let mut connection = acquire(pool).await?;
+        begin_serializable_write(&mut connection, engine).await?;
+        let result = action(&mut connection, engine).await;
+        let result = match result {
+            Ok(value) => commit(&mut connection, operation).await.map(|()| value),
+            Err(error) => Err(error),
+        };
+        match result {
+            Ok(value) => return Ok(value),
+            Err(error) => {
+                rollback(&mut connection).await;
+                if !is_retryable_transaction_error(&error)
+                    || attempt == MAX_SERIALIZABLE_TRANSACTION_ATTEMPTS
+                {
+                    if is_retryable_transaction_error(&error) {
+                        sdkwork_drive_observability::metrics::
+                            record_website_sync_transaction_retry_exhausted();
+                    }
+                    return Err(error);
+                }
+                sdkwork_drive_observability::metrics::record_website_sync_transaction_retry();
+                tokio::time::sleep(serializable_retry_delay(attempt)).await;
+            }
+        }
+    }
+    unreachable!("WebsiteSync transaction retry loop always returns")
+}
+
+async fn begin_serializable_write(
+    connection: &mut AnyConnection,
+    engine: DatabaseEngine,
+) -> Result<(), DriveServiceError> {
+    let begin = begin_transaction_sql_for_engine(engine);
     sqlx::query(begin)
         .execute(&mut *connection)
         .await
         .map_err(|error| internal("begin WebsiteSync transaction", error))?;
-    if begin == "BEGIN" {
+    if engine == DatabaseEngine::Postgresql {
         sqlx::query("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
             .execute(&mut *connection)
             .await
@@ -1178,14 +1211,39 @@ async fn rollback(connection: &mut AnyConnection) {
     let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
 }
 
-fn instant_parameter(parameter: &str) -> String {
-    if super::installed_database_engine() == Some(DatabaseEngine::Postgresql) {
+fn instant_parameter(engine: DatabaseEngine, parameter: &str) -> String {
+    if engine == DatabaseEngine::Postgresql {
         format!("CAST({parameter} AS TIMESTAMPTZ)")
     } else {
         parameter.to_string()
     }
 }
 
+fn serializable_retry_delay(attempt: usize) -> StdDuration {
+    let exponent = attempt.saturating_sub(1).min(3) as u32;
+    let base_millis = 10_u64 << exponent;
+    let jitter_millis = (uuid::Uuid::new_v4().as_u128() as u64) % (base_millis + 1);
+    StdDuration::from_millis(base_millis + jitter_millis)
+}
+
+fn is_retryable_transaction_error(error: &DriveServiceError) -> bool {
+    matches!(
+        error,
+        DriveServiceError::Internal(detail)
+            if detail.starts_with(RETRYABLE_TRANSACTION_ERROR_PREFIX)
+    )
+}
+
 fn internal(operation: &str, error: sqlx::Error) -> DriveServiceError {
-    DriveServiceError::Internal(format!("{operation} failed: {error}"))
+    let retryable = matches!(
+        &error,
+        sqlx::Error::Database(database_error)
+            if database_error.code().as_deref() == Some("40001")
+    );
+    let prefix = if retryable {
+        RETRYABLE_TRANSACTION_ERROR_PREFIX
+    } else {
+        ""
+    };
+    DriveServiceError::Internal(format!("{prefix}{operation} failed: {error}"))
 }

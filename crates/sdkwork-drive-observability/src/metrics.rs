@@ -15,6 +15,8 @@ static UPLOADER_PART_UPLOADED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static MULTIPART_COMPENSATION_ATTEMPTED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static MULTIPART_COMPENSATION_SUCCEEDED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static MULTIPART_COMPENSATION_FAILED_TOTAL: AtomicU64 = AtomicU64::new(0);
+static WEBSITE_SYNC_TRANSACTION_RETRIES_TOTAL: AtomicU64 = AtomicU64::new(0);
+static WEBSITE_SYNC_TRANSACTION_RETRY_EXHAUSTED_TOTAL: AtomicU64 = AtomicU64::new(0);
 static HEALTH_SERVING: AtomicU64 = AtomicU64::new(1);
 static HTTP_REQUEST_ROUTE_LABELS: LazyLock<Mutex<HashMap<String, u64>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -43,6 +45,14 @@ pub fn record_multipart_compensation_succeeded() {
 
 pub fn record_multipart_compensation_failed() {
     MULTIPART_COMPENSATION_FAILED_TOTAL.fetch_add(1, Ordering::Relaxed);
+}
+
+pub fn record_website_sync_transaction_retry() {
+    WEBSITE_SYNC_TRANSACTION_RETRIES_TOTAL.fetch_add(1, Ordering::Relaxed);
+}
+
+pub fn record_website_sync_transaction_retry_exhausted() {
+    WEBSITE_SYNC_TRANSACTION_RETRY_EXHAUSTED_TOTAL.fetch_add(1, Ordering::Relaxed);
 }
 
 pub fn record_http_request() {
@@ -113,6 +123,12 @@ pub fn render_prometheus(service: &str) -> String {
          # HELP drive_multipart_compensation_failed_total Multipart abort compensations that failed after publication failure.\n\
          # TYPE drive_multipart_compensation_failed_total counter\n\
          drive_multipart_compensation_failed_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
+         # HELP drive_website_sync_transaction_retries_total WebsiteSync serializable transactions retried after PostgreSQL serialization failures.\n\
+         # TYPE drive_website_sync_transaction_retries_total counter\n\
+         drive_website_sync_transaction_retries_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
+         # HELP drive_website_sync_transaction_retry_exhausted_total WebsiteSync serializable transactions that exhausted bounded retries.\n\
+         # TYPE drive_website_sync_transaction_retry_exhausted_total counter\n\
+         drive_website_sync_transaction_retry_exhausted_total{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n\
          # HELP drive_health_status Service health serving status (1=serving, 0=not serving).\n\
          # TYPE drive_health_status gauge\n\
          drive_health_status{{service=\"{service}\",environment=\"{environment}\",deployment_profile=\"{deployment_profile}\"}} {}\n",
@@ -126,6 +142,8 @@ pub fn render_prometheus(service: &str) -> String {
         MULTIPART_COMPENSATION_ATTEMPTED_TOTAL.load(Ordering::Relaxed),
         MULTIPART_COMPENSATION_SUCCEEDED_TOTAL.load(Ordering::Relaxed),
         MULTIPART_COMPENSATION_FAILED_TOTAL.load(Ordering::Relaxed),
+        WEBSITE_SYNC_TRANSACTION_RETRIES_TOTAL.load(Ordering::Relaxed),
+        WEBSITE_SYNC_TRANSACTION_RETRY_EXHAUSTED_TOTAL.load(Ordering::Relaxed),
         HEALTH_SERVING.load(Ordering::Relaxed),
     );
     output.push_str(&latency_histogram::render_prometheus_histogram(
