@@ -38,6 +38,9 @@ use sdkwork_drive_workspace_service::infrastructure::sql::{
 };
 use sdkwork_drive_workspace_service::ports::node_store::{DriveNodeStore, NewDriveNode};
 use sdkwork_drive_workspace_service::ports::node_version_store::DriveNodeVersionStore;
+use sdkwork_drive_workspace_service::ports::website_sync_store::{
+    ActivateValidatedWebsiteSync, DriveWebsiteSyncStore, ValidateDriveWebsiteSync,
+};
 use sdkwork_drive_workspace_service::ports::workspace_store::{
     DriveWorkspaceStore, NewDriveWorkspaceNodeRecord, NewDriveWorkspaceObjectRecord,
 };
@@ -282,6 +285,131 @@ async fn invalid_manifest_fails_closed_and_abort_never_changes_the_active_root()
     .await
     .expect("generation events should be countable");
     assert_eq!(event_count, 0);
+}
+
+#[tokio::test]
+async fn expired_validation_lease_is_recoverable_and_fences_the_stale_finalizer() {
+    let pool = database().await;
+    create_website_space(&pool).await;
+    let root_uuid: String = sqlx::query_scalar(
+        "SELECT uuid FROM dr_drive_website_root
+         WHERE tenant_id='tenant-sync' AND space_id='space-sync' AND root_key='default'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("default WebsiteRoot should exist");
+    let manifest = validate_website_sync_tree(&[file("index.html", 18, 'a')])
+        .expect("lease test manifest should be valid");
+    let store = SqlWebsiteSyncStore::new(pool.clone());
+    let service = DriveWebsiteSyncService::new(store.clone());
+    let created = service
+        .create_sync(create_command(&root_uuid, "lease-recovery", &manifest))
+        .await
+        .expect("lease test WebsiteSync should be created");
+    insert_tree(
+        &pool,
+        &created.sync.staging_node_id,
+        &[file("index.html", 18, 'a')],
+    )
+    .await;
+
+    let first = store
+        .begin_validation(&ValidateDriveWebsiteSync {
+            tenant_id: "tenant-sync".to_string(),
+            website_root_uuid: root_uuid.clone(),
+            sync_id: created.sync.id.clone(),
+            expected_sync_version: 1,
+            operator_id: "worker-first".to_string(),
+        })
+        .await
+        .expect("first finalizer should acquire validation lease");
+    let first_token = first
+        .lease_token
+        .expect("active validation should return a lease token");
+    assert_eq!(first.sync.version, 2);
+    let active_lease: (String, String) = sqlx::query_as(
+        "SELECT lease_owner, lease_token FROM dr_drive_website_sync WHERE id=$1",
+    )
+    .bind(&created.sync.id)
+    .fetch_one(&pool)
+    .await
+    .expect("validation lease should be queryable");
+    assert_eq!(active_lease, ("worker-first".to_string(), first_token.clone()));
+
+    assert!(
+        store
+            .begin_validation(&ValidateDriveWebsiteSync {
+                tenant_id: "tenant-sync".to_string(),
+                website_root_uuid: root_uuid.clone(),
+                sync_id: created.sync.id.clone(),
+                expected_sync_version: 2,
+                operator_id: "worker-early".to_string(),
+            })
+            .await
+            .is_err(),
+        "an unexpired validation lease must not be stolen"
+    );
+    sqlx::query(
+        "UPDATE dr_drive_website_sync
+         SET lease_expires_at='2000-01-01T00:00:00.000Z'
+         WHERE id=$1",
+    )
+    .bind(&created.sync.id)
+    .execute(&pool)
+    .await
+    .expect("test lease should expire");
+
+    let recovered = store
+        .begin_validation(&ValidateDriveWebsiteSync {
+            tenant_id: "tenant-sync".to_string(),
+            website_root_uuid: root_uuid.clone(),
+            sync_id: created.sync.id.clone(),
+            expected_sync_version: 2,
+            operator_id: "worker-recovered".to_string(),
+        })
+        .await
+        .expect("expired validation lease should be recoverable");
+    let recovered_token = recovered
+        .lease_token
+        .expect("recovered validation should return a lease token");
+    assert_ne!(first_token, recovered_token);
+    assert_eq!(recovered.sync.version, 3);
+
+    let stale = store
+        .activate_validated(&ActivateValidatedWebsiteSync {
+            tenant_id: "tenant-sync".to_string(),
+            website_root_uuid: root_uuid.clone(),
+            sync_id: created.sync.id.clone(),
+            expected_sync_version: 3,
+            lease_token: Some(first_token),
+            observed_manifest: manifest.clone(),
+            operator_id: "worker-first".to_string(),
+        })
+        .await;
+    assert!(stale.is_err(), "stale lease token must not activate a generation");
+
+    let activation = store
+        .activate_validated(&ActivateValidatedWebsiteSync {
+            tenant_id: "tenant-sync".to_string(),
+            website_root_uuid: root_uuid,
+            sync_id: created.sync.id.clone(),
+            expected_sync_version: 3,
+            lease_token: Some(recovered_token),
+            observed_manifest: manifest,
+            operator_id: "worker-recovered".to_string(),
+        })
+        .await
+        .expect("current lease owner should activate");
+    assert_eq!(activation.sync.status, DriveWebsiteSyncStatus::Completed);
+    let remaining_lease_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1) FROM dr_drive_website_sync
+         WHERE id=$1 AND (lease_owner IS NOT NULL OR lease_token IS NOT NULL OR lease_expires_at IS NOT NULL)",
+    )
+    .bind(&created.sync.id)
+    .fetch_one(&pool)
+    .await
+    .expect("completed lease state should be queryable");
+    assert_eq!(remaining_lease_count, 0);
 }
 
 #[tokio::test]

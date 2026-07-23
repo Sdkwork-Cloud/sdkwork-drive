@@ -433,7 +433,6 @@ async fn activate_validated_on_connection(
         &command.tenant_id,
         &command.website_root_uuid,
         &command.sync_id,
-        engine,
     )
     .await?;
     let root =
@@ -864,6 +863,64 @@ async fn lock_website_root(
     if locked.rows_affected() != 1 {
         return Err(DriveServiceError::NotFound(
             "WebsiteRoot not found".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+async fn lock_website_sync(
+    connection: &mut AnyConnection,
+    tenant_id: &str,
+    website_root_uuid: &str,
+    sync_id: &str,
+) -> Result<(), DriveServiceError> {
+    let locked = sqlx::query(
+        "UPDATE dr_drive_website_sync
+         SET updated_at=updated_at
+         WHERE tenant_id=$1 AND id=$2
+           AND website_root_id=(
+             SELECT id FROM dr_drive_website_root
+             WHERE tenant_id=$1 AND uuid=$3
+           )",
+    )
+    .bind(tenant_id)
+    .bind(sync_id)
+    .bind(website_root_uuid)
+    .execute(&mut *connection)
+    .await
+    .map_err(|error| internal("lock WebsiteSync", error))?;
+    if locked.rows_affected() != 1 {
+        return Err(DriveServiceError::NotFound(
+            "WebsiteSync not found".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+async fn ensure_validation_lease_current(
+    connection: &mut AnyConnection,
+    sync: &DriveWebsiteSync,
+    lease_token: &str,
+) -> Result<(), DriveServiceError> {
+    let current: i64 = sqlx::query_scalar(
+        "SELECT COUNT(1)
+         FROM dr_drive_website_sync
+         WHERE tenant_id=$1 AND id=$2 AND website_root_id=$3
+           AND sync_status='validating' AND version=$4
+           AND lease_token=$5 AND lease_expires_at > CURRENT_TIMESTAMP
+           AND expires_at > CURRENT_TIMESTAMP",
+    )
+    .bind(&sync.tenant_id)
+    .bind(&sync.id)
+    .bind(&sync.website_root_id)
+    .bind(sync.version)
+    .bind(lease_token)
+    .fetch_one(&mut *connection)
+    .await
+    .map_err(|error| internal("validate WebsiteSync lease", error))?;
+    if current != 1 {
+        return Err(DriveServiceError::Conflict(
+            "WebsiteSync validation lease expired or changed".to_string(),
         ));
     }
     Ok(())
