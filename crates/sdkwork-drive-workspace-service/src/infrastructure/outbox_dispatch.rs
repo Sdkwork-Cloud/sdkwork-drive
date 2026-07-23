@@ -659,19 +659,9 @@ fn build_outbox_claim_exclude_clause(exclude_ids: &HashSet<String>) -> String {
 }
 
 async fn resolve_pool_database_engine(pool: &AnyPool) -> Result<DatabaseEngine, String> {
-    if let Some(engine) = crate::infrastructure::sql::installed_database_engine() {
-        return Ok(engine);
-    }
-
-    let sqlite_version = sqlx::query_scalar::<_, String>("SELECT sqlite_version()")
-        .fetch_optional(pool)
+    crate::infrastructure::sql::detect_any_pool_database_engine(pool)
         .await
-        .map_err(|error| format!("probe sqlite_version failed: {error}"))?;
-    if sqlite_version.is_some() {
-        return Ok(DatabaseEngine::Sqlite);
-    }
-
-    Ok(DatabaseEngine::Postgresql)
+        .map_err(|error| format!("resolve domain outbox database engine failed: {error}"))
 }
 
 #[cfg(test)]

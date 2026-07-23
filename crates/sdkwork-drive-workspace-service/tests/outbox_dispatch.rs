@@ -122,13 +122,17 @@ async fn postgres_claims_pending_outbox_event_with_skip_locked() {
         .await
         .expect("postgres schema should install");
 
+    let outbox_id = format!("outbox-pg-{}", uuid::Uuid::new_v4());
     sqlx::query(
         "INSERT INTO dr_drive_domain_outbox (
-            id, tenant_id, space_id, node_id, event_type, actor_id, sequence_no, payload_json
+            id, tenant_id, space_id, node_id, event_type, actor_id, sequence_no, payload_json,
+            created_at
         ) VALUES (
-            'outbox-pg-1', '100001', 'space-1', NULL, 'node.updated', 'user-1', 1, '{}'
+            $1, '100001', 'space-1', NULL, 'node.updated', 'user-1', 1, '{}',
+            TIMESTAMPTZ '2000-01-01 00:00:00+00'
         )",
     )
+    .bind(&outbox_id)
     .execute(&pool)
     .await
     .expect("seed postgres outbox row");
@@ -136,13 +140,17 @@ async fn postgres_claims_pending_outbox_event_with_skip_locked() {
     let result = dispatch_pending_outbox_events(&pool)
         .await
         .expect("postgres outbox dispatch should run");
-    assert_eq!(1, result.processed);
+    assert!(
+        result.processed >= 1,
+        "dispatcher must process the seeded event even when the contract database contains other pending events"
+    );
     assert_eq!(0, result.delivered);
     assert_eq!(0, result.failed);
 
     let attempt_count: i32 = sqlx::query_scalar(
-        "SELECT attempt_count FROM dr_drive_domain_outbox WHERE id = 'outbox-pg-1'",
+        "SELECT attempt_count FROM dr_drive_domain_outbox WHERE id = $1",
     )
+    .bind(&outbox_id)
     .fetch_one(&pool)
     .await
     .expect("postgres outbox row should remain");

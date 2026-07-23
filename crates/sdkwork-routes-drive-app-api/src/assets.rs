@@ -37,7 +37,9 @@ use sdkwork_drive_contract::{
 use sdkwork_drive_workspace_service::infrastructure::change_recorder::{
     self, RecordDriveChangeCommand,
 };
-use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
+use sdkwork_drive_workspace_service::infrastructure::sql::{
+    begin_transaction_sql, detect_any_pool_database_engine,
+};
 use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed;
 use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use serde_json::{json, Value};
@@ -1783,14 +1785,9 @@ async fn find_collection_item_property_key(
 async fn resolve_pool_database_engine(
     pool: &AnyPool,
 ) -> Result<DatabaseEngine, (StatusCode, Json<ProblemDetail>)> {
-    let sqlite_version = sqlx::query_scalar::<_, String>("SELECT sqlite_version()")
-        .fetch_optional(pool)
+    detect_any_pool_database_engine(pool)
         .await
-        .map_err(internal_sql_error("probe sqlite_version failed"))?;
-    if sqlite_version.is_some() {
-        return Ok(DatabaseEngine::Sqlite);
-    }
-    Ok(DatabaseEngine::Postgresql)
+        .map_err(internal_sql_error("resolve asset database engine failed"))
 }
 
 fn build_collection_item_id(collection_id: &str, asset_id: &str) -> String {

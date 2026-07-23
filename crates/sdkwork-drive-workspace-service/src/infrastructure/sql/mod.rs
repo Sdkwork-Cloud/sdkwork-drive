@@ -32,8 +32,8 @@ pub mod website_sync_store;
 pub mod workspace_store;
 
 pub use installer::{
-    connect_any_database, connect_any_database_and_install_schema, install_any_schema,
-    install_postgres_schema, install_sqlite_schema, installed_database_engine,
+    connect_any_database, connect_any_database_and_install_schema, detect_any_pool_database_engine,
+    install_any_schema, install_postgres_schema, install_sqlite_schema, installed_database_engine,
     register_installed_database_engine,
 };
 pub use node_head_metadata::{

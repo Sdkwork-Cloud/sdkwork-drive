@@ -21,6 +21,37 @@ pub fn installed_database_engine() -> Option<DatabaseEngine> {
     DRIVE_INSTALLED_ENGINE.get().copied()
 }
 
+/// Resolves the SQL dialect from the concrete `AnyPool` instead of process-global state.
+///
+/// This keeps library callers and mixed-engine contract tests deterministic even when a
+/// process owns more than one pool. Runtime installation still records the primary engine
+/// for legacy transaction helpers that do not receive a pool.
+pub async fn detect_any_pool_database_engine(
+    pool: &AnyPool,
+) -> Result<DatabaseEngine, sqlx::Error> {
+    match sqlx::query_scalar::<_, String>("SELECT sqlite_version()")
+        .fetch_one(pool)
+        .await
+    {
+        Ok(_) => Ok(DatabaseEngine::Sqlite),
+        Err(sqlite_probe_error) => {
+            match sqlx::query_scalar::<_, String>("SELECT CAST(current_database() AS TEXT)")
+                .fetch_one(pool)
+                .await
+            {
+                Ok(_) => Ok(DatabaseEngine::Postgresql),
+                Err(postgres_probe_error) => Err(sqlx::Error::Configuration(
+                    format!(
+                        "unsupported AnyPool database engine; SQLite probe failed: \
+                         {sqlite_probe_error}; PostgreSQL probe failed: {postgres_probe_error}"
+                    )
+                    .into(),
+                )),
+            }
+        }
+    }
+}
+
 /// Registers the installed database engine for transaction SQL selection.
 ///
 /// Called by schema installation and test harnesses that install schema without
