@@ -104,9 +104,7 @@ async fn read_full_storage_object(
         return Err(problem(
             StatusCode::PAYLOAD_TOO_LARGE,
             "validation failed",
-            &format!(
-                "archive compressed size must be at most {ARCHIVE_MAX_COMPRESSED_BYTES} bytes"
-            ),
+            format!("archive compressed size must be at most {ARCHIVE_MAX_COMPRESSED_BYTES} bytes"),
             SdkWorkResultCode::ValidationError,
         ));
     }
@@ -133,7 +131,7 @@ async fn read_full_storage_object(
             return Err(problem(
                 StatusCode::PAYLOAD_TOO_LARGE,
                 "validation failed",
-                &format!(
+                format!(
                     "archive compressed size must be at most {ARCHIVE_MAX_COMPRESSED_BYTES} bytes"
                 ),
                 SdkWorkResultCode::ValidationError,

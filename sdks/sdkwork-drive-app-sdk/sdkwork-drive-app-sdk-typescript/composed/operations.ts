@@ -5,7 +5,7 @@ export const sdkMetadata = {
   name: "sdkwork-drive-app-sdk",
   packageName: "sdkwork-drive-app-sdk-generated-typescript",
   sdkOwner: "sdkwork-drive",
-  apiAuthority: "sdkwork-drive.app",
+  apiAuthority: "sdkwork-drive-app-api",
   language: "typescript",
   standardProfile: "sdkwork-v3",
   baseUrl: "http://127.0.0.1:18080",

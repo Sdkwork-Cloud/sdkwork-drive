@@ -4,8 +4,6 @@ package com.sdkwork.drive.app.sdk.generated.java.model;
 public class PrepareUploaderUploadRequest {
     private String id;
     private String taskId;
-    private String organizationId;
-    private String anonymousId;
     private String appResourceType;
     private String appResourceId;
     private String uploadProfileCode;
@@ -36,22 +34,6 @@ public class PrepareUploaderUploadRequest {
 
     public void setTaskId(String taskId) {
         this.taskId = taskId;
-    }
-
-    public String getOrganizationId() {
-        return this.organizationId;
-    }
-
-    public void setOrganizationId(String organizationId) {
-        this.organizationId = organizationId;
-    }
-
-    public String getAnonymousId() {
-        return this.anonymousId;
-    }
-
-    public void setAnonymousId(String anonymousId) {
-        this.anonymousId = anonymousId;
     }
 
     public String getAppResourceType() {

@@ -179,8 +179,3 @@ export type { FileVersionListData } from './file-version-list-data';
 export type { DriveWatchChannelListData } from './drive-watch-channel-list-data';
 export type { AssetListData } from './asset-list-data';
 export type { AssetCollectionListData } from './asset-collection-list-data';
-export type { SdkWorkResourceData } from './sdk-work-resource-data';
-export type { SdkWorkPageData } from './sdk-work-page-data';
-export type { SdkWorkCommandData } from './sdk-work-command-data';
-export type { SdkWorkResourceResponse } from './sdk-work-resource-response';
-export type { SdkWorkCommandResponse } from './sdk-work-command-response';

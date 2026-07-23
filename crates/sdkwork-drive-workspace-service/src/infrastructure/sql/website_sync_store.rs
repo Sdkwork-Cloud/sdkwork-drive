@@ -26,7 +26,7 @@ use crate::ports::website_sync_store::{
     AbortDriveWebsiteSync, ActivateDriveWebsiteGeneration, ActivateValidatedWebsiteSync,
     CreateDriveWebsiteSync, CreateDriveWebsiteSyncResult, DriveWebsiteGenerationActivation,
     DriveWebsiteSyncActivation, DriveWebsiteSyncStore, DriveWebsiteSyncValidation,
-    ValidateDriveWebsiteSync,
+    MarkDriveWebsiteSyncFailed, ValidateDriveWebsiteSync,
 };
 use crate::DriveServiceError;
 
@@ -120,14 +120,7 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
 
     async fn mark_failed(
         &self,
-        tenant_id: &str,
-        website_root_uuid: &str,
-        sync_id: &str,
-        expected_sync_version: i64,
-        lease_token: &str,
-        error_code: &str,
-        error_summary: &str,
-        operator_id: &str,
+        command: &MarkDriveWebsiteSyncFailed,
     ) -> Result<(), DriveServiceError> {
         let updated = sqlx::query(
             "UPDATE dr_drive_website_sync
@@ -144,14 +137,14 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
                  WHERE tenant_id=$4 AND uuid=$8
                )",
         )
-        .bind(error_code)
-        .bind(error_summary)
-        .bind(operator_id)
-        .bind(tenant_id)
-        .bind(sync_id)
-        .bind(expected_sync_version)
-        .bind(lease_token)
-        .bind(website_root_uuid)
+        .bind(&command.error_code)
+        .bind(&command.error_summary)
+        .bind(&command.operator_id)
+        .bind(&command.tenant_id)
+        .bind(&command.sync_id)
+        .bind(command.expected_sync_version)
+        .bind(&command.lease_token)
+        .bind(&command.website_root_uuid)
         .execute(&self.pool)
         .await
         .map_err(|error| internal("mark WebsiteSync failed", error))?;

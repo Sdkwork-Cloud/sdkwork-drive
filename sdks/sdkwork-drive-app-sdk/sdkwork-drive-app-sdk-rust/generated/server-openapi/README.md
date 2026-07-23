@@ -44,10 +44,6 @@ client.set_header("X-Custom-Header", "value");
 ## API Modules
 
 - `client.drive()` - drive API
-- `client.node_labels()` - node_labels API
-- `client.node_properties()` - node_properties API
-- `client.nodes()` - nodes API
-- `client.watch_channels()` - watch_channels API
 - `client.assets()` - assets API
 
 ## Usage Examples
@@ -57,65 +53,6 @@ client.set_header("X-Custom-Header", "value");
 ```rust
 // GET /app/v3/api/drive/quotas/summary
 let result = client.drive().quotas_retrieve().await?;
-println!("{result:?}");
-```
-
-### node_labels
-
-```rust
-use std::collections::HashMap;
-// List labels applied to a node
-let node_id = "1";
-let mut query = HashMap::new();
-query.insert("labelKey".to_string(), serde_json::json!("labelkey"));
-query.insert("page_size".to_string(), serde_json::json!(2));
-query.insert("cursor".to_string(), serde_json::json!("cursor"));
-let result = client.node_labels().list(node_id, Some(&query)).await?;
-println!("{result:?}");
-```
-
-### node_properties
-
-```rust
-use std::collections::HashMap;
-// List node custom properties
-let node_id = "1";
-let mut query = HashMap::new();
-query.insert("visibility".to_string(), serde_json::json!("private"));
-query.insert("page_size".to_string(), serde_json::json!(2));
-query.insert("cursor".to_string(), serde_json::json!("cursor"));
-let result = client.node_properties().list(node_id, Some(&query)).await?;
-println!("{result:?}");
-```
-
-### nodes
-
-```rust
-use sdkwork_drive_app_sdk_generated_rust::*;
-// Create a shortcut node
-let body = CreateShortcutRequest {
-    id: "1".to_string(),
-    space_id: "1".to_string(),
-    parent_node_id: Some("1".to_string()),
-    node_name: "name".to_string(),
-    target_node_id: "1".to_string(),
-    ..Default::default()
-};
-let result = client.nodes().shortcuts_create(&body).await?;
-println!("{result:?}");
-```
-
-### watch_channels
-
-```rust
-use std::collections::HashMap;
-// List Drive watch channels
-let mut query = HashMap::new();
-query.insert("resourceType".to_string(), serde_json::json!("changes"));
-query.insert("lifecycleStatus".to_string(), serde_json::json!("active"));
-query.insert("page_size".to_string(), serde_json::json!(3));
-query.insert("cursor".to_string(), serde_json::json!("cursor"));
-let result = client.watch_channels().list(Some(&query)).await?;
 println!("{result:?}");
 ```
 

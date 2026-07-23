@@ -31,7 +31,7 @@ runDriveSdkGenerator(
     sdkType: "backend",
     apiPrefix: "/backend/v3/api",
     defaultBaseUrl: "http://127.0.0.1:18080",
-    defaultOpenapiFile: "drive-backend-api.openapi.json",
+    defaultOpenapiPath: "apis/backend-api/drive/drive-backend-api.openapi.json",
     standardProfileArgs: ["--standard-profile", "sdkwork-v3"],
     manifestStandardProfile: "sdkwork-v3",
   },

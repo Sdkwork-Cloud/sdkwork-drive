@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateStorageProviderRequest {
     pub(crate) id: String,
     pub(crate) provider_kind: String,
@@ -15,11 +15,10 @@ pub(crate) struct CreateStorageProviderRequest {
     pub(crate) server_side_encryption_mode: Option<String>,
     pub(crate) default_storage_class: Option<String>,
     pub(crate) status: Option<String>,
-    pub(crate) operator_id: String,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct UpdateStorageProviderRequest {
     pub(crate) name: Option<String>,
     pub(crate) endpoint_url: Option<String>,
@@ -31,20 +30,12 @@ pub(crate) struct UpdateStorageProviderRequest {
     pub(crate) server_side_encryption_mode: Option<String>,
     pub(crate) default_storage_class: Option<String>,
     pub(crate) status: Option<String>,
-    pub(crate) operator_id: String,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct OperatorRequest {
-    pub(crate) operator_id: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct RotateStorageProviderCredentialRequest {
     pub(crate) credential_ref: String,
-    pub(crate) operator_id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -55,24 +46,6 @@ pub(crate) struct ListStorageProvidersQuery {
     pub(crate) page_size: Option<i64>,
     #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct DeleteStorageProviderQuery {
-    pub(crate) operator_id: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct OperatorQuery {
-    pub(crate) operator_id: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct TestStorageProviderRequest {
-    pub(crate) operator_id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -95,21 +68,19 @@ pub(crate) struct ListStorageProviderBindingsQuery {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct DeleteDefaultStorageProviderBindingQuery {
     pub(crate) space_id: Option<String>,
     pub(crate) space_type: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct SetDefaultStorageProviderBindingRequest {
     pub(crate) space_id: Option<String>,
     pub(crate) space_type: Option<String>,
     pub(crate) provider_id: String,
     pub(crate) storage_root_prefix: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -133,13 +104,12 @@ pub(crate) struct ListProviderObjectsQuery {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CopyProviderObjectRequest {
     pub(crate) source_object_key: String,
     pub(crate) destination_object_key: String,
     pub(crate) destination_bucket: Option<String>,
     pub(crate) metadata_directive: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

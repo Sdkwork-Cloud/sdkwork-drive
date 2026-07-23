@@ -18,6 +18,7 @@ mod common;
 async fn website_sync_routes_create_retrieve_finalize_replay_and_enforce_tenant_scope() {
     let (pool, app) = setup().await;
     create_space(&app).await;
+    seed_storage_provider(&pool).await;
     let (root_uuid, root_node_id): (String, String) = sqlx::query_as(
         "SELECT uuid, active_node_id FROM dr_drive_website_root
          WHERE tenant_id='tenant-route-sync' AND space_id='space-route-sync'",
@@ -133,24 +134,57 @@ async fn website_sync_routes_create_retrieve_finalize_replay_and_enforce_tenant_
     assert_eq!(cross_tenant.status(), StatusCode::NOT_FOUND);
 
     for (index, entry) in entries.iter().enumerate() {
+        let node_id = format!("route-sync-file-{index}");
+        let content_type = if entry.relative_path.ends_with(".html") {
+            "text/html"
+        } else {
+            "application/javascript"
+        };
         sqlx::query(
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, space_type, parent_node_id, node_type,
-                node_name, content_state, head_content_length,
+                node_name, content_state, head_content_type, head_content_type_group,
+                head_content_length, head_version_no,
                 head_checksum_sha256_hex, lifecycle_status, version,
                 created_by, updated_by
              ) VALUES ($1, 'tenant-route-sync', 'space-route-sync', 'website', $2,
-                       'file', $3, 'ready', $4, $5, 'active', 1,
+                       'file', $3, 'ready', $4, 'text', $5, 1, $6, 'active', 1,
                        'user-route-sync', 'user-route-sync')",
         )
-        .bind(format!("route-sync-file-{index}"))
+        .bind(&node_id)
         .bind(&staging_node_id)
         .bind(&entry.relative_path)
+        .bind(content_type)
         .bind(entry.content_length)
         .bind(entry.checksum_sha256_hex.as_deref())
         .execute(&pool)
         .await
         .expect("staging file should insert");
+        sqlx::query(
+            "INSERT INTO dr_drive_storage_object (
+                id, tenant_id, node_id, version_no, storage_provider_id,
+                bucket, object_key, content_type, content_length,
+                checksum_sha256_hex, lifecycle_status, created_by, updated_by
+             ) VALUES (
+                $1, 'tenant-route-sync', $2, 1, 'provider-route-sync',
+                'bucket-route-sync', $3, $4, $5, $6,
+                'active', 'user-route-sync', 'user-route-sync'
+             )",
+        )
+        .bind(format!("route-sync-object-{index}"))
+        .bind(&node_id)
+        .bind(format!("website-sync/{node_id}"))
+        .bind(content_type)
+        .bind(entry.content_length.expect("file length should exist"))
+        .bind(
+            entry
+                .checksum_sha256_hex
+                .as_deref()
+                .expect("file checksum should exist"),
+        )
+        .execute(&pool)
+        .await
+        .expect("staging storage object should insert");
     }
 
     let finalized = app
@@ -164,8 +198,13 @@ async fn website_sync_routes_create_retrieve_finalize_replay_and_enforce_tenant_
         ))
         .await
         .expect("finalize WebsiteSync request should be handled");
-    assert_eq!(finalized.status(), StatusCode::OK);
+    let finalized_status = finalized.status();
     let finalized_json = response_json(finalized).await;
+    assert_eq!(
+        finalized_status,
+        StatusCode::OK,
+        "finalize response: {finalized_json}"
+    );
     let activation = common::envelope_item(&finalized_json);
     assert_eq!(activation["sync"]["status"], "COMPLETED");
     assert_eq!(activation["websiteRoot"]["activeGeneration"], "2");
@@ -268,6 +307,24 @@ async fn create_space(app: &Router) {
         .await
         .expect("create Space request should be handled");
     assert_eq!(response.status(), StatusCode::CREATED);
+}
+
+async fn seed_storage_provider(pool: &AnyPool) {
+    sqlx::query(
+        "INSERT INTO dr_drive_storage_provider (
+            id, provider_kind, name, endpoint_url, region, bucket, path_style,
+            strict_tls, credential_ref, server_side_encryption_mode,
+            default_storage_class, status, version, created_by, updated_by
+         ) VALUES (
+            'provider-route-sync', 's3_compatible', 'Route Sync Provider',
+            'https://s3.example.com', 'us-east-1', 'bucket-route-sync', 1,
+            1, 'plain:test-access-key:test-secret-key', 'AES256',
+            'STANDARD', 'active', 1, 'test', 'test'
+         )",
+    )
+    .execute(pool)
+    .await
+    .expect("storage provider should be seeded");
 }
 
 async fn response_json(response: Response<Body>) -> Value {

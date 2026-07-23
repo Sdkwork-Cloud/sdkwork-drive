@@ -155,7 +155,7 @@
     "/backend/v3/api/drive/labels": {
       "get": {
         "tags": [
-          "labels"
+          "drive"
         ],
         "operationId": "labels.list",
         "summary": "List Drive label definitions",
@@ -288,7 +288,7 @@
       },
       "post": {
         "tags": [
-          "labels"
+          "drive"
         ],
         "operationId": "labels.create",
         "summary": "Create a Drive label definition",
@@ -413,7 +413,7 @@
     "/backend/v3/api/drive/labels/{labelId}": {
       "get": {
         "tags": [
-          "labels"
+          "drive"
         ],
         "operationId": "labels.retrieve",
         "summary": "Get a Drive label definition",
@@ -523,7 +523,7 @@
       },
       "patch": {
         "tags": [
-          "labels"
+          "drive"
         ],
         "operationId": "labels.update",
         "summary": "Update a Drive label definition",
@@ -643,7 +643,7 @@
       },
       "delete": {
         "tags": [
-          "labels"
+          "drive"
         ],
         "operationId": "labels.delete",
         "summary": "Delete a Drive label definition",
@@ -1580,7 +1580,7 @@
     "/backend/v3/api/drive/sandbox_volumes": {
       "get": {
         "tags": [
-          "sandboxVolumes"
+          "drive"
         ],
         "operationId": "sandboxVolumes.list",
         "summary": "List server sandbox volumes",
@@ -1700,7 +1700,7 @@
       },
       "post": {
         "tags": [
-          "sandboxVolumes"
+          "drive"
         ],
         "operationId": "sandboxVolumes.create",
         "summary": "Create a server sandbox volume",
@@ -1807,7 +1807,7 @@
       ],
       "get": {
         "tags": [
-          "sandboxVolumes"
+          "drive"
         ],
         "operationId": "sandboxVolumes.retrieve",
         "summary": "Retrieve a server sandbox volume",
@@ -1895,7 +1895,7 @@
       },
       "patch": {
         "tags": [
-          "sandboxVolumes"
+          "drive"
         ],
         "operationId": "sandboxVolumes.update",
         "summary": "Update a server sandbox volume",
@@ -2005,7 +2005,7 @@
       },
       "delete": {
         "tags": [
-          "sandboxVolumes"
+          "drive"
         ],
         "operationId": "sandboxVolumes.delete",
         "summary": "Delete a server sandbox volume",
@@ -2088,7 +2088,7 @@
       ],
       "get": {
         "tags": [
-          "sandboxGrants"
+          "drive"
         ],
         "operationId": "sandboxGrants.list",
         "summary": "List explicit sandbox grants",
@@ -2201,7 +2201,7 @@
       },
       "post": {
         "tags": [
-          "sandboxGrants"
+          "drive"
         ],
         "operationId": "sandboxGrants.create",
         "summary": "Create an explicit sandbox grant",
@@ -2321,7 +2321,7 @@
       ],
       "get": {
         "tags": [
-          "sandboxGrants"
+          "drive"
         ],
         "operationId": "sandboxGrants.retrieve",
         "summary": "Retrieve a sandbox grant",
@@ -2409,7 +2409,7 @@
       },
       "patch": {
         "tags": [
-          "sandboxGrants"
+          "drive"
         ],
         "operationId": "sandboxGrants.update",
         "summary": "Update a sandbox grant",
@@ -2508,7 +2508,7 @@
       },
       "delete": {
         "tags": [
-          "sandboxGrants"
+          "drive"
         ],
         "operationId": "sandboxGrants.delete",
         "summary": "Delete a sandbox grant",
@@ -2944,8 +2944,7 @@
       "SweepObjectStoreRequest": {
         "type": "object",
         "required": [
-          "dryRun",
-          "operatorId"
+          "dryRun"
         ],
         "properties": {
           "dryRun": {
@@ -2956,24 +2955,9 @@
             "format": "int64",
             "minimum": 1,
             "maximum": 1000
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
-          "correlationId": {
-            "type": "string",
-            "maxLength": 64,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
-          "traceId": {
-            "type": "string",
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
-        }
+        },
+        "additionalProperties": false
       },
       "SweepResponse": {
         "type": "object",
@@ -3000,8 +2984,7 @@
         "type": "object",
         "required": [
           "nowEpochMs",
-          "dryRun",
-          "operatorId"
+          "dryRun"
         ],
         "properties": {
           "nowEpochMs": {
@@ -3016,30 +2999,13 @@
             "format": "int64",
             "minimum": 1,
             "maximum": 1000
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
-          "correlationId": {
-            "type": "string",
-            "maxLength": 64,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          },
-          "traceId": {
-            "type": "string",
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
-        }
+        },
+        "additionalProperties": false
       },
       "UpdateLabelRequest": {
         "type": "object",
-        "required": [
-          "operatorId"
-        ],
+        "required": [],
         "properties": {
           "displayName": {
             "type": "string",
@@ -3052,12 +3018,6 @@
           },
           "description": {
             "type": "string"
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
           }
         },
         "additionalProperties": false

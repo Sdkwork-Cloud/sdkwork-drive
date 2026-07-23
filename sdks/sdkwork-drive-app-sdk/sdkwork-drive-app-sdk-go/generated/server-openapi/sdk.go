@@ -8,10 +8,6 @@ import (
 type SdkworkAppClient struct {
     http *sdkhttp.Client
     Drive *api.DriveApi
-    NodeLabels *api.NodeLabelsApi
-    NodeProperties *api.NodePropertiesApi
-    Nodes *api.NodesApi
-    WatchChannels *api.WatchChannelsApi
     Assets *api.AssetsApi
 }
 
@@ -25,10 +21,6 @@ func NewSdkworkAppClientWithConfig(config sdkhttp.Config) *SdkworkAppClient {
     return &SdkworkAppClient{
         http: client,
         Drive: api.NewDriveApi(client),
-        NodeLabels: api.NewNodeLabelsApi(client),
-        NodeProperties: api.NewNodePropertiesApi(client),
-        Nodes: api.NewNodesApi(client),
-        WatchChannels: api.NewWatchChannelsApi(client),
         Assets: api.NewAssetsApi(client),
     }
 }

@@ -172,15 +172,6 @@ pub(crate) fn normalize_optional_text(value: Option<String>) -> Option<String> {
         .filter(|trimmed| !trimmed.is_empty())
 }
 
-pub(crate) fn require_query_operator_id(
-    value: Option<String>,
-) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
-    let Some(value) = value else {
-        return Err(validation_problem("operatorId is required"));
-    };
-    require_non_empty_text(value, "operatorId")
-}
-
 pub(crate) fn require_non_empty_text(
     value: String,
     field_name: &str,

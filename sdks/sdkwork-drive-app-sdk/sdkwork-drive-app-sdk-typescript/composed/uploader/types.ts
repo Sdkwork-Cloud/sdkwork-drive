@@ -1,10 +1,13 @@
 import type {
+  CompleteUploadSessionRequest,
   CreateUploadSessionRequest,
   DriveUploadSession,
   MarkUploaderPartUploadedRequest,
+  NodeCommandRequest,
   PrepareUploaderUploadRequest,
   PrepareUploaderUploadResponse,
   PresignedUploadPart,
+  PresignUploadPartRequest,
   UploadSessionMutationResponse,
   UploaderUploadItem,
   UploaderUploadPart,
@@ -44,12 +47,10 @@ export interface DriveUploaderRequest
     | "contentLength"
     | "chunkSizeBytes"
     | "nowEpochMs"
-    | "userId"
   > {
   file: DriveUploaderBlobLike;
   id?: string;
   taskId?: string;
-  userId?: string;
   uploadProfileCode?: DriveUploaderProfile;
   fileFingerprint?: string;
   originalFileName?: string;
@@ -65,11 +66,6 @@ export interface DriveUploaderRequest
 
 export interface DriveUploaderReplaceNodeContentRequest {
   file: DriveUploaderBlobLike;
-  tenantId?: string;
-  organizationId?: string;
-  userId?: string;
-  anonymousId?: string;
-  appId?: string;
   appResourceType: string;
   appResourceId: string;
   scene?: string;
@@ -84,7 +80,6 @@ export interface DriveUploaderReplaceNodeContentRequest {
   idempotencyKey?: string;
   expiresAtEpochMs?: string;
   chunkSizeBytes?: number;
-  operatorId?: string;
   checksumSha256Hex?: string;
   uploadFetch?: typeof fetch;
   requestedPartTtlSeconds?: number;
@@ -143,9 +138,7 @@ export interface DriveUploaderTransport {
     uploader: {
       uploads: {
         create(
-          body: Omit<PrepareUploaderUploadRequest, "userId"> & {
-            userId?: string;
-          },
+          body: PrepareUploaderUploadRequest,
           options?: DriveUploaderTransportOptions,
         ): Promise<PrepareUploaderUploadResponse>;
         parts: {
@@ -167,33 +160,18 @@ export interface DriveUploaderTransport {
         update(
           uploadSessionId: string,
           partNo: number,
-          body: {
-            tenantId?: string;
-            uploadId?: string;
-            requestedTtlSeconds?: number;
-          },
+          body: PresignUploadPartRequest,
           options?: DriveUploaderTransportOptions,
         ): Promise<PresignedUploadPart>;
       };
       complete(
         uploadSessionId: string,
-        body: {
-          tenantId?: string;
-          uploadId?: string;
-          contentType: string;
-          contentLength: string;
-          checksumSha256Hex: string;
-          operatorId?: string;
-          parts: Array<{ partNo: number; etag: string }>;
-        },
+        body: CompleteUploadSessionRequest,
         options?: DriveUploaderTransportOptions,
       ): Promise<UploadSessionMutationResponse>;
       abort?(
         uploadSessionId: string,
-        body: {
-          tenantId?: string;
-          operatorId?: string;
-        },
+        body: NodeCommandRequest,
         options?: DriveUploaderTransportOptions,
       ): Promise<UploadSessionMutationResponse>;
     };

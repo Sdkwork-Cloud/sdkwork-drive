@@ -80,7 +80,7 @@ const HTTP_METHODS = new Set([
 const SDK_OWNER = "sdkwork-drive";
 const SDK_AUTHORITIES = {
   open: "sdkwork-drive.open",
-  app: "sdkwork-drive.app",
+  app: "sdkwork-drive-app-api",
   backend: "sdkwork-drive.backend",
   adminStorage: "sdkwork-drive.admin.storage",
 };
@@ -127,64 +127,6 @@ const APPBASE_BACKEND_PATH_PREFIXES = [
 ];
 const APPBASE_SCHEMA_PREFIXES = ["Iam"];
 const APPBASE_TAGS = new Set(["auth", "iam", "oauth", "openPlatform", "system"]);
-const APPBASE_APP_OPENAPI_RELATIVE_PATHS = [
-  path.join("sdks", "sdkwork-iam-app-sdk", "openapi", "sdkwork-iam-app-api.openapi.yaml"),
-  path.join("apis", "app-api", "iam", "sdkwork-iam-app-api.openapi.yaml"),
-  path.join("sdks", "sdkwork-iam-app-sdk", "openapi", "sdkwork-iam-app-api.openapi.json"),
-];
-
-function resolveIamRoot() {
-  const override = String(process.env.SDKWORK_IAM_ROOT || process.env.SDKWORK_APPBASE_ROOT || "").trim();
-  if (override) {
-    return path.resolve(override);
-  }
-  const candidates = [
-    path.resolve(workspaceRoot, "..", "sdkwork-iam"),
-    path.resolve(workspaceRoot, "..", "sdkwork-appbase"),
-  ];
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) {
-      return candidate;
-    }
-  }
-  return candidates[0];
-}
-
-function resolveAppbaseIamAppOpenapiPath(explicitPath = null) {
-  if (explicitPath) {
-    return resolveWorkspacePath(explicitPath);
-  }
-  const iamRoot = resolveIamRoot();
-  for (const relativePath of APPBASE_APP_OPENAPI_RELATIVE_PATHS) {
-    const candidate = path.join(iamRoot, relativePath);
-    if (existsSync(candidate)) {
-      return candidate;
-    }
-  }
-  return path.join(iamRoot, APPBASE_APP_OPENAPI_RELATIVE_PATHS[0]);
-}
-
-const APPBASE_APP_OPENAPI_PATH = resolveAppbaseIamAppOpenapiPath();
-const APPBASE_APP_OPERATION_IDS = new Set([
-  "oauth.authorizationUrls.create",
-  "oauth.sessions.create",
-  "passwordResetRequests.create",
-  "passwordResets.create",
-  "registrations.create",
-  "sessions.create",
-  "sessions.current.delete",
-  "sessions.current.retrieve",
-  "sessions.current.update",
-  "sessions.organizationSelection.create",
-  "sessions.refresh",
-  "oauth.deviceAuthorizations.create",
-  "oauth.deviceAuthorizations.retrieve",
-  "oauth.deviceAuthorizations.scans.create",
-  "oauth.deviceAuthorizations.passwordCompletions.create",
-  "iam.runtime.retrieve",
-  "iam.verificationPolicy.retrieve",
-  "users.current.retrieve",
-]);
 const APP_STORAGE_ADMIN_PATH_PREFIXES = [
   "/app/v3/api/drive/storage_providers",
   "/app/v3/api/drive/storage_provider_bindings",
@@ -228,21 +170,24 @@ const DRIVE_SPACE_TYPE_ENUM = [
   "im",
   "rtc",
   "notary",
+  "website",
 ];
 const STORAGE_PROVIDER_KIND_PATTERN =
   "^(local_filesystem|s3_compatible|google_cloud_storage|aliyun_oss|tencent_cos|huawei_obs|volcengine_tos|custom:[a-z0-9_-]{2,32})$";
 const OBJECT_KEY_PATTERN =
   "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\u0000).*(?:[^/])$";
+const OBJECT_LIST_ENTRY_KEY_PATTERN =
+  "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\u0000).+$";
 const OBJECT_KEY_DESCRIPTION =
   "Drive object key. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments.";
+const OBJECT_LIST_ENTRY_KEY_DESCRIPTION =
+  "Drive object listing key. UTF-8 1-1024 bytes, trimmed relative key; prefixes may end with a slash; no leading slash, double slash, NUL, or period-only path segments.";
 const OBJECT_KEY_PATH_DESCRIPTION =
   "Drive object key path tail. The runtime accepts slash-separated tail paths such as objects/file.bin and URL-encoded keys where / is encoded as %2F. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments.";
 const S3_BUCKET_NAME_PATTERN =
   "^(?!xn--)(?!sthree-)(?!.*\\.\\.)(?!.*\\.-)(?!.*-\\.)(?!\\d+\\.\\d+\\.\\d+\\.\\d+$)(?!.*(-s3alias|--ol-s3|\\.mrap|--x-s3)$)[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$";
 const S3_BUCKET_NAME_DESCRIPTION =
   "S3-compatible bucket name. DNS-compatible 3-63 characters; lowercase letters, digits, dots, and hyphens only; must start and end with a letter or digit; no IPv4-looking names, adjacent dots, dot-hyphen adjacency, or reserved S3 affixes.";
-const OPERATOR_ID_DESCRIPTION =
-  "Drive administration operator subject identifier used for audit events.";
 const STORAGE_CREDENTIAL_REF_PATTERN = "^(plain|env|secret|kms|vault):.+$";
 const STORAGE_CREDENTIAL_REF_DESCRIPTION =
   "Drive storage credential reference. Supported forms: plain:<accessKeyId>:<secretAccessKey>[:<sessionToken>], env:<accessKeyEnv>:<secretKeyEnv>[:<sessionTokenEnv>], secret:<ref>, kms:<ref>, or vault:<ref>. secret/kms/vault refs are materialized at runtime from SDKWORK_DRIVE_STORAGE_CREDENTIAL__<sanitized_ref>__ACCESS_KEY_ID, __SECRET_ACCESS_KEY, and optional __SESSION_TOKEN environment variables.";
@@ -252,6 +197,13 @@ const OBJECT_KEY_SCHEMA = {
   maxLength: 1024,
   pattern: OBJECT_KEY_PATTERN,
   description: OBJECT_KEY_DESCRIPTION,
+};
+const OBJECT_LIST_ENTRY_KEY_SCHEMA = {
+  type: "string",
+  minLength: 1,
+  maxLength: 1024,
+  pattern: OBJECT_LIST_ENTRY_KEY_PATTERN,
+  description: OBJECT_LIST_ENTRY_KEY_DESCRIPTION,
 };
 const STORAGE_ROOT_PREFIX_SCHEMA = {
   type: "string",
@@ -267,13 +219,6 @@ const S3_BUCKET_NAME_SCHEMA = {
   maxLength: 63,
   pattern: S3_BUCKET_NAME_PATTERN,
   description: S3_BUCKET_NAME_DESCRIPTION,
-};
-const OPERATOR_ID_SCHEMA = {
-  type: "string",
-  minLength: 1,
-  maxLength: 128,
-  pattern: "^[A-Za-z0-9._:@-]+$",
-  description: OPERATOR_ID_DESCRIPTION,
 };
 const USAGE_CONTEXT_SCHEMA = {
   type: "string",
@@ -536,9 +481,6 @@ function removeDependencyOwnedOperations(document, {
       if (!matched) {
         continue;
       }
-      if (operation?.["x-sdkwork-composed-from-owner"]) {
-        continue;
-      }
       removed.push({
         method: methodName.toUpperCase(),
         path: pathKey,
@@ -639,43 +581,6 @@ function annotateBackendPermissions(document, authority) {
   }
 }
 
-function ensureComponentContainer(document, componentName) {
-  document.components = document.components || {};
-  document.components[componentName] = document.components[componentName] || {};
-  return document.components[componentName];
-}
-
-function mergeSecuritySchemes(targetDocument, sourceDocument) {
-  const sourceSchemes = sourceDocument.components?.securitySchemes;
-  if (!sourceSchemes || typeof sourceSchemes !== "object") {
-    return;
-  }
-  const targetSchemes = ensureComponentContainer(targetDocument, "securitySchemes");
-  for (const [schemeName, scheme] of Object.entries(sourceSchemes)) {
-    targetSchemes[schemeName] = cloneJson(scheme);
-  }
-}
-
-function mergeTags(targetDocument, sourceDocument, tagNames) {
-  const existingNames = new Set(
-    Array.isArray(targetDocument.tags)
-      ? targetDocument.tags.map((tag) => String(tag?.name || ""))
-      : [],
-  );
-  targetDocument.tags = Array.isArray(targetDocument.tags) ? targetDocument.tags : [];
-  for (const tag of sourceDocument.tags || []) {
-    const tagName = String(tag?.name || "");
-    if (!tagNames.has(tagName) || existingNames.has(tagName)) {
-      continue;
-    }
-    targetDocument.tags.push(cloneJson(tag));
-    existingNames.add(tagName);
-  }
-  targetDocument.tags.sort((left, right) =>
-    String(left?.name || "").localeCompare(String(right?.name || "")),
-  );
-}
-
 function collectSchemaRefs(value, refs = new Set()) {
   if (!value || typeof value !== "object") {
     return refs;
@@ -696,33 +601,6 @@ function collectSchemaRefs(value, refs = new Set()) {
     collectSchemaRefs(nested, refs);
   }
   return refs;
-}
-
-function copyReferencedSchemas(targetDocument, sourceDocument, rootSchemaNames) {
-  const sourceSchemas = sourceDocument.components?.schemas;
-  if (!sourceSchemas || typeof sourceSchemas !== "object") {
-    return;
-  }
-  const targetSchemas = ensureComponentContainer(targetDocument, "schemas");
-  const queue = [...rootSchemaNames];
-  const copied = new Set();
-  while (queue.length > 0) {
-    const schemaName = queue.shift();
-    if (!schemaName || copied.has(schemaName)) {
-      continue;
-    }
-    const sourceSchema = sourceSchemas[schemaName];
-    if (!sourceSchema) {
-      continue;
-    }
-    targetSchemas[schemaName] = cloneJson(sourceSchema);
-    copied.add(schemaName);
-    for (const nestedName of collectSchemaRefs(sourceSchema)) {
-      if (!copied.has(nestedName)) {
-        queue.push(nestedName);
-      }
-    }
-  }
 }
 
 function removePathsByPrefix(document, pathPrefixes) {
@@ -799,81 +677,9 @@ function problemDetailResponse(description) {
   };
 }
 
-function composeAppbaseIamAppOperations(targetDocument, sourceDocument) {
-  const existingOperationIds = new Set();
-  for (const pathItem of Object.values(targetDocument.paths || {})) {
-    if (!pathItem || typeof pathItem !== "object") {
-      continue;
-    }
-    for (const [methodName, operation] of Object.entries(pathItem)) {
-      if (!HTTP_METHODS.has(methodName.toLowerCase()) || !operation || typeof operation !== "object") {
-        continue;
-      }
-      existingOperationIds.add(String(operation.operationId || ""));
-    }
-  }
-  const missingOperationIds = [...APPBASE_APP_OPERATION_IDS].filter(
-    (operationId) => !existingOperationIds.has(operationId),
-  );
-  if (missingOperationIds.length === 0) {
-    return;
-  }
-  if (!sourceDocument) {
-    fail(`missing appbase app OpenAPI at ${resolveAppbaseIamAppOpenapiPath()}; run sdkwork-iam materializer or pass --appbase-app-input`);
-  }
-  const normalizedSource = normalizeOpenapiDocument(sourceDocument, "appbase app openapi");
-  const copiedOperationIds = new Set();
-  const copiedTags = new Set();
-  const rootSchemaNames = new Set();
-  for (const [pathKey, pathItem] of Object.entries(normalizedSource.paths || {})) {
-    if (!pathItem || typeof pathItem !== "object") {
-      continue;
-    }
-    for (const [methodName, operation] of Object.entries(pathItem)) {
-      if (!HTTP_METHODS.has(methodName.toLowerCase()) || !operation || typeof operation !== "object") {
-        continue;
-      }
-      if (!APPBASE_APP_OPERATION_IDS.has(String(operation.operationId || ""))) {
-        continue;
-      }
-      if (existingOperationIds.has(String(operation.operationId || ""))) {
-        continue;
-      }
-      if (targetDocument.paths?.[pathKey]?.[methodName]) {
-        fail(`cannot compose appbase IAM operation ${operation.operationId}: ${methodName.toUpperCase()} ${pathKey} already exists`);
-      }
-      targetDocument.paths = targetDocument.paths || {};
-      targetDocument.paths[pathKey] = targetDocument.paths[pathKey] || {};
-      const composedOperation = cloneJson(operation);
-      composedOperation["x-sdkwork-composed-from-owner"] =
-        operation["x-sdkwork-owner"] || "sdkwork-appbase";
-      composedOperation["x-sdkwork-composed-from-api-authority"] =
-        operation["x-sdkwork-api-authority"] || "sdkwork-iam-app-api";
-      targetDocument.paths[pathKey][methodName] = composedOperation;
-      copiedOperationIds.add(String(operation.operationId));
-      for (const tagName of composedOperation.tags || []) {
-        copiedTags.add(String(tagName));
-      }
-      for (const schemaName of collectSchemaRefs(composedOperation)) {
-        rootSchemaNames.add(schemaName);
-      }
-    }
-  }
-  for (const operationId of missingOperationIds) {
-    if (!copiedOperationIds.has(operationId)) {
-      fail(`appbase app OpenAPI missing required IAM operationId: ${operationId}`);
-    }
-  }
-  mergeSecuritySchemes(targetDocument, normalizedSource);
-  mergeTags(targetDocument, normalizedSource, copiedTags);
-  copyReferencedSchemas(targetDocument, normalizedSource, rootSchemaNames);
-}
-
 function materializeOwnerOnlyOpenapi(document, {
   authority,
   dependencyExclusions = [],
-  composeAppbaseIam = false,
-  appbaseAppOpenapi = null,
 }) {
   const normalized = normalizeOpenapiDocument(document, `${authority} openapi`);
   const exclusionsByWorkspace = {};
@@ -889,9 +695,7 @@ function materializeOwnerOnlyOpenapi(document, {
   if (authority === SDK_AUTHORITIES.app) {
     removeAppStorageAdminSurface(normalized);
   }
-  if (composeAppbaseIam) {
-    composeAppbaseIamAppOperations(normalized, appbaseAppOpenapi);
-  }
+  pruneUnreferencedSchemas(normalized);
   annotateOwnerOnlyOpenapi(normalized, {
     authority,
     dependencyExclusions: exclusionsByWorkspace,
@@ -920,84 +724,7 @@ function normalizeOpenapiDocument(document, label) {
   normalizeStorageCredentialRefSchemas(normalized);
   normalizeObjectKeyContract(normalized);
   normalizeUploaderUsageContextSchemas(normalized);
-  normalizeAdminStorageMutationOperatorContract(normalized);
-  normalizeAuthProjectionRequestSurfaces(normalized);
   return normalized;
-}
-
-const AUTH_PROJECTION_REQUEST_FIELDS = new Set([
-  "tenantId",
-  "userId",
-  "appId",
-  "operatorId",
-  "subjectType",
-  "subjectId",
-]);
-
-function isRequestSchemaName(schemaName) {
-  return /Request$/.test(schemaName);
-}
-
-function stripAuthProjectionFromSchema(schema) {
-  if (!schema || typeof schema !== "object") {
-    return;
-  }
-  if (schema.properties && typeof schema.properties === "object") {
-    for (const field of AUTH_PROJECTION_REQUEST_FIELDS) {
-      delete schema.properties[field];
-    }
-  }
-  if (Array.isArray(schema.required)) {
-    schema.required = schema.required.filter((field) => !AUTH_PROJECTION_REQUEST_FIELDS.has(field));
-  }
-}
-
-function normalizeAuthProjectionRequestSurfaces(document) {
-  const paths = document.paths;
-  if (!paths || typeof paths !== "object") {
-    return;
-  }
-
-  for (const pathItem of Object.values(paths)) {
-    if (!pathItem || typeof pathItem !== "object") {
-      continue;
-    }
-    for (const method of HTTP_METHODS) {
-      const operation = pathItem[method];
-      if (!operation || typeof operation !== "object") {
-        continue;
-      }
-      if (Array.isArray(operation.parameters)) {
-        operation.parameters = operation.parameters.filter(
-          (parameter) =>
-            !(
-              parameter?.in === "query"
-              && AUTH_PROJECTION_REQUEST_FIELDS.has(parameter?.name)
-            ),
-        );
-      }
-      const requestBody = operation.requestBody?.content?.["application/json"]?.schema;
-      if (requestBody?.$ref) {
-        const schemaName = String(requestBody.$ref).split("/").pop();
-        const schema = document.components?.schemas?.[schemaName];
-        if (schemaName && isRequestSchemaName(schemaName)) {
-          stripAuthProjectionFromSchema(schema);
-        }
-      } else if (requestBody && typeof requestBody === "object") {
-        stripAuthProjectionFromSchema(requestBody);
-      }
-    }
-  }
-
-  const schemas = document.components?.schemas;
-  if (!schemas || typeof schemas !== "object") {
-    return;
-  }
-  for (const [schemaName, schema] of Object.entries(schemas)) {
-    if (isRequestSchemaName(schemaName)) {
-      stripAuthProjectionFromSchema(schema);
-    }
-  }
 }
 
 function normalizeDriveSpaceTypeSchemas(document) {
@@ -1187,7 +914,7 @@ function normalizeObjectKeySchemas(document) {
 
   const providerObjectKey = schemas.ProviderObject?.properties?.objectKey;
   if (providerObjectKey && typeof providerObjectKey === "object") {
-    Object.assign(providerObjectKey, cloneJson(OBJECT_KEY_SCHEMA));
+    Object.assign(providerObjectKey, cloneJson(OBJECT_LIST_ENTRY_KEY_SCHEMA));
   }
 
   const copyRequestProperties = schemas.CopyProviderObjectRequest?.properties;
@@ -1231,68 +958,6 @@ function normalizeObjectKeyPathParameters(document) {
   }
 }
 
-function normalizeAdminStorageMutationOperatorContract(document) {
-  if (!document.paths?.["/backend/v3/api/drive/storage/providers/{providerId}/objects/copy"]) {
-    return;
-  }
-  ensureAdminStorageMutationQueryOperator(
-    document,
-    "/backend/v3/api/drive/storage/providers/{providerId}/bucket",
-    "put",
-  );
-  ensureAdminStorageMutationQueryOperator(
-    document,
-    "/backend/v3/api/drive/storage/providers/{providerId}/bucket",
-    "delete",
-  );
-  ensureAdminStorageMutationQueryOperator(
-    document,
-    "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
-    "delete",
-  );
-  ensureAdminStorageMutationQueryOperator(
-    document,
-    "/backend/v3/api/drive/storage/bindings/default",
-    "delete",
-  );
-
-  const copyRequest = document.components?.schemas?.CopyProviderObjectRequest;
-  if (!copyRequest || typeof copyRequest !== "object") {
-    return;
-  }
-  copyRequest.properties = copyRequest.properties || {};
-  copyRequest.properties.operatorId = cloneJson(OPERATOR_ID_SCHEMA);
-  copyRequest.required = Array.isArray(copyRequest.required)
-    ? copyRequest.required.filter((value, index, values) => values.indexOf(value) === index)
-    : [];
-  if (!copyRequest.required.includes("operatorId")) {
-    copyRequest.required.push("operatorId");
-  }
-}
-
-function ensureAdminStorageMutationQueryOperator(document, pathKey, methodName) {
-  const operation = document.paths?.[pathKey]?.[methodName];
-  if (!operation || typeof operation !== "object") {
-    return;
-  }
-  operation.parameters = Array.isArray(operation.parameters)
-    ? operation.parameters
-    : [];
-  const existing = operation.parameters.find(
-    (parameter) => parameter?.in === "query" && parameter?.name === "operatorId",
-  );
-  const parameter = existing || {
-    name: "operatorId",
-    in: "query",
-  };
-  parameter.required = true;
-  parameter.description = OPERATOR_ID_DESCRIPTION;
-  parameter.schema = cloneJson(OPERATOR_ID_SCHEMA);
-  if (!existing) {
-    operation.parameters.push(parameter);
-  }
-}
-
 function parseArgs(argv) {
   const parsed = {
     check: false,
@@ -1301,7 +966,6 @@ function parseArgs(argv) {
     appInput: defaultAppOpenapiPath,
     backendInput: defaultBackendOpenapiPath,
     adminStorageInput: defaultAdminStorageOpenapiPath,
-    appbaseAppInput: resolveAppbaseIamAppOpenapiPath(),
   };
   for (let index = 0; index < argv.length; index += 1) {
     const current = argv[index];
@@ -1329,11 +993,6 @@ function parseArgs(argv) {
       index += 1;
       continue;
     }
-    if (current === "--appbase-app-input") {
-      parsed.appbaseAppInput = resolveWorkspacePath(argv[index + 1] || "");
-      index += 1;
-      continue;
-    }
     if (current === "--output-dir") {
       parsed.outputDir = resolveWorkspacePath(argv[index + 1] || "");
       index += 1;
@@ -1345,7 +1004,6 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const appbaseAppOpenapi = maybeReadJson(args.appbaseAppInput, args.appbaseAppInput);
 const openOpenapi = materializeOwnerOnlyOpenapi(ensureReadableJson(args.openInput), {
   authority: SDK_AUTHORITIES.open,
 });
@@ -1360,8 +1018,6 @@ const appOpenapi = materializeOwnerOnlyOpenapi(ensureReadableJson(args.appInput)
       tagNames: APPBASE_TAGS,
     },
   ],
-  composeAppbaseIam: true,
-  appbaseAppOpenapi,
 });
 const backendOpenapi = materializeOwnerOnlyOpenapi(ensureReadableJson(args.backendInput), {
   authority: SDK_AUTHORITIES.backend,

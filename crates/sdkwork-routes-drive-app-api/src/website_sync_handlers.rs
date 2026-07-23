@@ -70,7 +70,7 @@ pub(crate) async fn create_website_sync(
                 "manifestTotalBytes",
             )?,
             expires_at: payload.expires_at,
-            operator_id: ctx.resolve_operator_id(None)?,
+            operator_id: ctx.resolve_operator_id()?,
         })
         .await
         .map_err(map_service_error)?;
@@ -116,7 +116,7 @@ pub(crate) async fn finalize_website_sync(
                 &payload.expected_version,
                 "expectedVersion",
             )?,
-            operator_id: ctx.resolve_operator_id(None)?,
+            operator_id: ctx.resolve_operator_id()?,
         })
         .await
         .map_err(map_service_error)?;
@@ -142,7 +142,7 @@ pub(crate) async fn abort_website_sync(
                 &payload.expected_version,
                 "expectedVersion",
             )?,
-            operator_id: ctx.resolve_operator_id(None)?,
+            operator_id: ctx.resolve_operator_id()?,
         })
         .await
         .map_err(map_service_error)?;
@@ -169,7 +169,7 @@ pub(crate) async fn activate_website_generation(
                 &payload.expected_generation,
                 "expectedGeneration",
             )?,
-            operator_id: ctx.resolve_operator_id(None)?,
+            operator_id: ctx.resolve_operator_id()?,
         })
         .await
         .map_err(map_service_error)?;

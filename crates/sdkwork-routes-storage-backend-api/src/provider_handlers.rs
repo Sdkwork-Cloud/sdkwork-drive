@@ -1,6 +1,9 @@
+use crate::app_context::DriveRequestContext;
 use crate::audit::record_storage_provider_audit;
 use crate::dto::*;
-use crate::error::{map_object_store_route_error, map_service_error, ProblemDetail};
+use crate::error::{
+    invalid_json_problem, map_object_store_route_error, map_service_error, ProblemDetail,
+};
 use crate::object_store::{
     build_full_s3_object_store_for_provider, provider_supports_s3_object_store,
 };
@@ -11,9 +14,10 @@ use crate::provider_mappers::{
 use crate::response::{no_content, success_list_page_simple, StorageListHttpResponse};
 use crate::state::AdminStorageState;
 use crate::validators::{next_page_token, parse_offset_page};
+use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use axum::Json;
+use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events::admin_audit;
 use sdkwork_drive_storage_contract::{DriveObjectStore, HeadBucketRequest};
 use sdkwork_drive_workspace_service::application::storage_provider_service::{
@@ -49,9 +53,11 @@ pub(crate) async fn list_storage_providers(
 
 pub(crate) async fn create_storage_provider(
     State(state): State<AdminStorageState>,
-    Json(payload): Json<CreateStorageProviderRequest>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    payload: Result<Json<CreateStorageProviderRequest>, JsonRejection>,
 ) -> Result<(StatusCode, Json<StorageProviderResponse>), (StatusCode, Json<ProblemDetail>)> {
-    let operator_id = payload.operator_id.clone();
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let service =
         DriveStorageProviderService::new(SqlStorageProviderStore::new(state.pool.clone()));
     let provider_kind =
@@ -94,10 +100,12 @@ pub(crate) async fn get_storage_provider(
 
 pub(crate) async fn update_storage_provider(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(provider_id): Path<String>,
-    Json(payload): Json<UpdateStorageProviderRequest>,
+    payload: Result<Json<UpdateStorageProviderRequest>, JsonRejection>,
 ) -> Result<Json<StorageProviderResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let operator_id = payload.operator_id.clone();
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let service =
         DriveStorageProviderService::new(SqlStorageProviderStore::new(state.pool.clone()));
     let updated = service
@@ -129,13 +137,10 @@ pub(crate) async fn update_storage_provider(
 
 pub(crate) async fn delete_storage_provider(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(provider_id): Path<String>,
-    Query(query): Query<DeleteStorageProviderQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
-    let operator_id = query
-        .operator_id
-        .ok_or_else(|| DriveServiceError::Validation("operator_id is required".to_string()))
-        .map_err(map_service_error)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let service =
         DriveStorageProviderService::new(SqlStorageProviderStore::new(state.pool.clone()));
     let deleted = service
@@ -171,14 +176,10 @@ pub(crate) async fn get_storage_provider_capabilities(
 
 pub(crate) async fn test_storage_provider(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(provider_id): Path<String>,
-    Json(payload): Json<TestStorageProviderRequest>,
 ) -> Result<Json<TestStorageProviderResponse>, (StatusCode, Json<ProblemDetail>)> {
-    if payload.operator_id.trim().is_empty() {
-        return Err(map_service_error(DriveServiceError::Validation(
-            "operator_id is required".to_string(),
-        )));
-    }
+    let operator_id = ctx.resolve_operator_id()?;
     let provider = get_provider(&state, &provider_id).await?;
     if provider.status == "deleted" {
         return Err(map_service_error(DriveServiceError::Conflict(
@@ -209,7 +210,7 @@ pub(crate) async fn test_storage_provider(
         &state,
         admin_audit::storage_provider::TESTED,
         &provider_id,
-        &payload.operator_id,
+        &operator_id,
     )
     .await?;
     Ok(Json(TestStorageProviderResponse {
@@ -220,26 +221,30 @@ pub(crate) async fn test_storage_provider(
 
 pub(crate) async fn activate_storage_provider(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(provider_id): Path<String>,
-    Json(payload): Json<OperatorRequest>,
 ) -> Result<Json<StorageProviderResponse>, (StatusCode, Json<ProblemDetail>)> {
-    set_storage_provider_status(state, provider_id, payload.operator_id, "active").await
+    let operator_id = ctx.resolve_operator_id()?;
+    set_storage_provider_status(state, provider_id, operator_id, "active").await
 }
 
 pub(crate) async fn deactivate_storage_provider(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(provider_id): Path<String>,
-    Json(payload): Json<OperatorRequest>,
 ) -> Result<Json<StorageProviderResponse>, (StatusCode, Json<ProblemDetail>)> {
-    set_storage_provider_status(state, provider_id, payload.operator_id, "disabled").await
+    let operator_id = ctx.resolve_operator_id()?;
+    set_storage_provider_status(state, provider_id, operator_id, "disabled").await
 }
 
 pub(crate) async fn rotate_storage_provider_credentials(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(provider_id): Path<String>,
-    Json(payload): Json<RotateStorageProviderCredentialRequest>,
+    payload: Result<Json<RotateStorageProviderCredentialRequest>, JsonRejection>,
 ) -> Result<Json<StorageProviderResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let operator_id = payload.operator_id.clone();
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let service =
         DriveStorageProviderService::new(SqlStorageProviderStore::new(state.pool.clone()));
     let updated = service

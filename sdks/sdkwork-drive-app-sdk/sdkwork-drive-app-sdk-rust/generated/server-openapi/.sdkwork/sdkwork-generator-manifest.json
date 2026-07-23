@@ -36,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "61d69678ff1bb8d6ad9066e989273dff63c2afb63ef5362923d46f882b7a94bb"
+      "sha256": "61ec8d60b5f3c93b2595c4f2303bdb08812f9477ea30e88ef6868e1b1c189661"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -44,7 +44,7 @@
     },
     {
       "path": "src/api/assets.rs",
-      "sha256": "4cf40ad377ca3dcc72c980c526df61675da0df44b2b657d741fcfbc84501d58d"
+      "sha256": "678a5777283250a6579c0d37e1f4f8c493c5f5297092dd89013166c8261ffa23"
     },
     {
       "path": "src/api/base.rs",
@@ -52,35 +52,19 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "277c86885b21adfa83389de7fa57f29c648854cd5a61e3a93aa8824ed0e939d8"
+      "sha256": "ddb0a60d3ba0e9b53b02110dbabb9d1e166487a720678a2aafb0db6df53b106b"
     },
     {
       "path": "src/api/mod.rs",
-      "sha256": "15a82016b5c949306c729ff13234ed5b3234096b2e936866ff495ca9f54e568f"
-    },
-    {
-      "path": "src/api/node_labels.rs",
-      "sha256": "16cc35d5044fe738181dcbd9a58897b39c7ed217dfcd3c9be9127eae93ea53b0"
-    },
-    {
-      "path": "src/api/node_properties.rs",
-      "sha256": "326e59a7417428aee96c0cd80926785b8de2a614eb5d73dcb2c5bcb30a813f5a"
-    },
-    {
-      "path": "src/api/nodes.rs",
-      "sha256": "4c71c89b970be8a737abedbb6049376ff9885cbdef832005738909b781e4bd77"
+      "sha256": "314afadf8ed873ed4e97f1fc705787afabd0dfbea42b897850747f72f776565c"
     },
     {
       "path": "src/api/paths.rs",
       "sha256": "6a1767fd9cdbeca0f69fa7dd61b1c4ba2f82bebf1a43b0a2fc8fa1d9f4e423b2"
     },
     {
-      "path": "src/api/watch_channels.rs",
-      "sha256": "362fb82dfebebda1df2fb724bc6fcb150407c1e639028ec3877a0586a5eb6c79"
-    },
-    {
       "path": "src/client.rs",
-      "sha256": "81549af2e1c463f308f19bdd60f4f5e38c720b95db39ce44bb155156a0c3b9ed"
+      "sha256": "557e5f918218abf4b12bf9b820fd07ca4599bc76ae356f3385db16435cd622dc"
     },
     {
       "path": "src/http/client.rs",
@@ -100,7 +84,7 @@
     },
     {
       "path": "src/models/apply_node_label_request.rs",
-      "sha256": "42aff2ae9a02727da7d65e8191d7ff516c76f75717e8a0d791a9188de29e3f15"
+      "sha256": "82e9b6398562ea3a48d1da387d5139ebb41cdcb4fbc08620222765addda06ab6"
     },
     {
       "path": "src/models/archive_entry_list_http_response.rs",
@@ -176,7 +160,7 @@
     },
     {
       "path": "src/models/check_favorite_nodes_request.rs",
-      "sha256": "da9293aefe5bdcc392187dc554debc7d9ab63f5f7d20fb31395f859a2486d276"
+      "sha256": "44d3b5036e4e68f08787c49225ad65a362218bf6f7c855bebc7e1daf1b75a9dd"
     },
     {
       "path": "src/models/claim_share_link_http_response.rs",
@@ -208,7 +192,7 @@
     },
     {
       "path": "src/models/create_asset_collection_request.rs",
-      "sha256": "ddf9b526e0b92ca7ae035bd0d01f602ce4caa46603ac77a12c8a3c877d078ca5"
+      "sha256": "c98bc882ac155156a73753941b2748f7ea31a4fad66fe0913c96b7cdd213e7eb"
     },
     {
       "path": "src/models/create_asset_relation_request.rs",
@@ -216,7 +200,7 @@
     },
     {
       "path": "src/models/create_asset_request.rs",
-      "sha256": "894d83e56ce01e82641815cfdb6a8ab98d8484081dc2c9437075bad8e4c9aafd"
+      "sha256": "65d21f3c851b6692261ae102c84f926975136e60d3d2d05f5eff42f668777d8d"
     },
     {
       "path": "src/models/create_comment_reply_request.rs",
@@ -272,7 +256,7 @@
     },
     {
       "path": "src/models/create_permission_request.rs",
-      "sha256": "320c6fd5e68e9fc6e1a7706e8e2a4d62e18aa2faf07f8757d24c36545d7fc371"
+      "sha256": "17b665aefdffc0f053bb0acf11577217550059ab73caf838b838b332898555de"
     },
     {
       "path": "src/models/create_share_link_http_response.rs",
@@ -524,7 +508,7 @@
     },
     {
       "path": "src/models/favorite_node_request.rs",
-      "sha256": "f56fa5aae95c175b0b69c1d36b725894aa440a15bdc702c5fe4561fb8067ed63"
+      "sha256": "fb5a866c0cd73cfdeeb709dce55155f998e8d85c08bde0c0b373c1c83a8cd1bb"
     },
     {
       "path": "src/models/favorite_node_response.rs",
@@ -560,7 +544,7 @@
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "ad2f9c1cfd0e5f40749608f8ac1f5585bff8df93eed4a6ee290b3aad6cbcebe6"
+      "sha256": "225ed90677c4cc884197d42d37ee2d2d6692a2b3f6ae9fe91a06da0f559e0669"
     },
     {
       "path": "src/models/move_node_request.rs",
@@ -576,7 +560,7 @@
     },
     {
       "path": "src/models/node_command_request.rs",
-      "sha256": "ffdc5cf3b5cdd11761b6900f27d495832bd464a78dac3191b3755eb4bb875a70"
+      "sha256": "5e83c46b19c09db82c031eb6839b9bbe993d0cabab2bdef22d34fcfe1376bbd9"
     },
     {
       "path": "src/models/node_label_http_response.rs",
@@ -608,7 +592,7 @@
     },
     {
       "path": "src/models/prepare_uploader_upload_request.rs",
-      "sha256": "e139780cd98417dd969ae62f7d7e077bbd795761efc0a7078f082da7755f1947"
+      "sha256": "b72603216264c7d9871c7f049c7055c2fc42c3edaafd01efd801d7488dcc7b6d"
     },
     {
       "path": "src/models/prepare_uploader_upload_response.rs",
@@ -647,26 +631,6 @@
       "sha256": "e5fd3b922322a1cd1b1b6a82810b0fc8222ca9bf54dd9438152e2db940d591ef"
     },
     {
-      "path": "src/models/sdk_work_command_data.rs",
-      "sha256": "76685631578c6bce4144c045a43d5f2746a85600f6a26e775f07874c75504b7a"
-    },
-    {
-      "path": "src/models/sdk_work_command_response.rs",
-      "sha256": "efbedd3b191e36c50add6e707435d85f98e7ed8c75f2ef0b87a1a24e784fdfa5"
-    },
-    {
-      "path": "src/models/sdk_work_page_data.rs",
-      "sha256": "9c53ab781272ad35a7b232ce231fc603989c774613fb09719538b0c6309c99f9"
-    },
-    {
-      "path": "src/models/sdk_work_resource_data.rs",
-      "sha256": "ec82fbd431813024f47031c6ab0d5d355ff2d8075dd2d0a71602a8ee6f6ee7fd"
-    },
-    {
-      "path": "src/models/sdk_work_resource_response.rs",
-      "sha256": "a16ff12f0418a861ef9a744a53676071b75f036536d35a0f310c9f875025a203"
-    },
-    {
       "path": "src/models/set_node_property_request.rs",
       "sha256": "ff0f2908f9538a554f08000dcf8e676bb49355040f0752b6e7f6eb1e605f51be"
     },
@@ -692,7 +656,7 @@
     },
     {
       "path": "src/models/stop_watch_channel_request.rs",
-      "sha256": "8b6e92ebf0adde4e8d51656cb5e422b2a8d5d8a8e7a796e71f6725a5617f2cb9"
+      "sha256": "c3ed2b8852601a22c4d798c328b416b8687ced0a21937a309fc71b054fdf62c5"
     },
     {
       "path": "src/models/stop_watch_channel_response.rs",

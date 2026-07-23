@@ -197,25 +197,16 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         !app.contains("/app/v3/api/drive/storage_provider_bindings"),
         "app api must not expose storage provider binding administration routes"
     );
-    assert!(app.contains("/app/v3/api/auth/sessions"));
-    assert!(app.contains("/app/v3/api/auth/sessions/current"));
-    assert!(app.contains("/app/v3/api/auth/sessions/organization_selection"));
-    assert!(app.contains("/app/v3/api/auth/sessions/refresh"));
-    assert!(app.contains("/app/v3/api/auth/registrations"));
-    assert!(app.contains("/app/v3/api/oauth/authorization_urls"));
-    assert!(app.contains("/app/v3/api/oauth/device_authorizations"));
-    assert!(app.contains("/app/v3/api/oauth/sessions"));
-    assert!(
-        !app.contains("/app/v3/api/auth/oauth_authorization_urls"),
-        "app api must not expose legacy appbase oauth authorization url route"
-    );
-    assert!(
-        !app.contains("/app/v3/api/auth/oauth_sessions"),
-        "app api must not expose legacy appbase oauth session route"
-    );
-    assert!(app.contains("/app/v3/api/system/iam/runtime"));
-    assert!(app.contains("/app/v3/api/system/iam/verification_policy"));
-    assert!(app.contains("/app/v3/api/iam/users/current"));
+    let app_json: Value = serde_json::from_str(&app).expect("app openapi must be valid json");
+    for dependency_path in [
+        "/app/v3/api/auth/",
+        "/app/v3/api/iam/",
+        "/app/v3/api/oauth/",
+        "/app/v3/api/open_platform/",
+        "/app/v3/api/system/iam/",
+    ] {
+        assert_no_path_starts_with(&app_json, dependency_path);
+    }
     assert!(app.contains("\"operationId\": \"downloadUrls.create\""));
     assert!(app.contains("\"operationId\": \"downloadPackages.create\""));
     assert!(app.contains("\"operationId\": \"downloadPackages.downloadUrls.retrieve\""));
@@ -227,15 +218,8 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         !app.contains("\"operationId\": \"storageProviderBindings."),
         "app api must not expose storage provider binding administration operation ids"
     );
-    assert!(app.contains("\"operationId\": \"sessions.create\""));
-    assert!(app.contains("\"operationId\": \"sessions.current.retrieve\""));
-    assert!(app.contains("\"operationId\": \"sessions.current.delete\""));
-    assert!(app.contains("\"operationId\": \"sessions.organizationSelection.create\""));
-    assert!(app.contains("\"operationId\": \"sessions.refresh\""));
-    assert!(app.contains("\"operationId\": \"registrations.create\""));
-    assert!(app.contains("\"operationId\": \"iam.runtime.retrieve\""));
-    assert!(app.contains("\"operationId\": \"iam.verificationPolicy.retrieve\""));
-    assert!(app.contains("\"operationId\": \"users.current.retrieve\""));
+    assert!(!app.contains("x-sdkwork-composed-from-owner"));
+    assert!(!app.contains("x-sdkwork-composed-from-api-authority"));
     assert!(app.contains("\"signedSourceUrl\""));
     assert!(backend.contains("/backend/v3/api/drive/quotas"));
     assert!(backend.contains("\"operationId\": \"quotas.retrieve\""));
@@ -264,7 +248,6 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
 
     let open_json: Value = serde_json::from_str(&open).expect("open openapi must be valid json");
     assert_all_paths_start_with(&open_json, "/open/v3/api/drive/");
-    let app_json: Value = serde_json::from_str(&app).expect("app openapi must be valid json");
     assert_schema_property_enum_contains(&app_json, "MediaResource", "source", "drive");
     assert_schema_property_enum_contains(&app_json, "MediaResource", "source", "external_url");
     assert_all_paths_start_with(&app_json, "/app/v3/api/");
@@ -273,7 +256,6 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         "app openapi drive routes",
         "/app/v3/api/drive/",
     );
-    assert_iam_appbase_security_contract(&app_json, "app openapi appbase IAM routes");
     let backend_json: Value =
         serde_json::from_str(&backend).expect("backend openapi must be valid json");
     assert_all_paths_start_with(&backend_json, "/backend/v3/api/drive/");
@@ -306,7 +288,13 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_schema_property_minimum(&app_json, "DriveShareLink", "expiresAtEpochMs", 1);
     assert_schema_property_minimum(&app_json, "DriveShareLink", "downloadLimit", 0);
     assert_schema_property_minimum(&app_json, "DriveShareLink", "downloadCount", 0);
-    assert_schema_property_exists(&app_json, "FavoriteNodeRequest", "subjectType");
+    for context_field in ["subjectType", "subjectId", "operatorId"] {
+        assert_schema_property_absent(&app_json, "FavoriteNodeRequest", context_field);
+    }
+    assert_schema_property_exists(&app_json, "CreatePermissionRequest", "subjectType");
+    assert_schema_property_exists(&app_json, "CreatePermissionRequest", "subjectId");
+    assert_schema_required(&app_json, "CreatePermissionRequest", "subjectType");
+    assert_schema_required(&app_json, "CreatePermissionRequest", "subjectId");
     assert_schema_property_exists(&app_json, "FavoriteNodeResponse", "favorited");
     assert_schema_property_absent(&app_json, "DriveShareLink", "token");
     assert_schema_property_absent(&app_json, "DriveShareLink", "tokenHash");
@@ -813,51 +801,11 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
         "^[A-Za-z0-9._:@-]+$",
     );
 
-    let sweep_object_properties = schemas
-        .get("SweepObjectStoreRequest")
-        .and_then(|value| value.get("properties"))
-        .expect("SweepObjectStoreRequest.properties should exist");
-    assert_property_string_constraints(
-        sweep_object_properties,
-        "operatorId",
-        128,
-        "^[A-Za-z0-9._:@-]+$",
-    );
-    assert_property_string_constraints(
-        sweep_object_properties,
-        "correlationId",
-        64,
-        "^[A-Za-z0-9._:@-]+$",
-    );
-    assert_property_string_constraints(
-        sweep_object_properties,
-        "traceId",
-        128,
-        "^[A-Za-z0-9._:@-]+$",
-    );
-
-    let sweep_upload_properties = schemas
-        .get("SweepUploadSessionsRequest")
-        .and_then(|value| value.get("properties"))
-        .expect("SweepUploadSessionsRequest.properties should exist");
-    assert_property_string_constraints(
-        sweep_upload_properties,
-        "operatorId",
-        128,
-        "^[A-Za-z0-9._:@-]+$",
-    );
-    assert_property_string_constraints(
-        sweep_upload_properties,
-        "correlationId",
-        64,
-        "^[A-Za-z0-9._:@-]+$",
-    );
-    assert_property_string_constraints(
-        sweep_upload_properties,
-        "traceId",
-        128,
-        "^[A-Za-z0-9._:@-]+$",
-    );
+    for schema_name in ["SweepObjectStoreRequest", "SweepUploadSessionsRequest"] {
+        for context_field in ["operatorId", "requestId", "correlationId", "traceId"] {
+            assert_schema_property_absent(&backend_json, schema_name, context_field);
+        }
+    }
 
     assert_property_string_constraints(properties, "operatorId", 128, "^[A-Za-z0-9._:@-]+$");
     assert_property_string_constraints(properties, "correlationId", 64, "^[A-Za-z0-9._:@-]+$");
@@ -1030,7 +978,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
     assert_schema_property_exists(&admin_storage_json, "ProviderBucketListItem", "configured");
     assert_schema_property_exists(&backend_json, "DriveLabel", "labelKey");
     assert_schema_property_exists(&backend_json, "CreateLabelRequest", "labelKey");
-    assert_schema_property_exists(&backend_json, "UpdateLabelRequest", "operatorId");
+    assert_schema_property_absent(&backend_json, "UpdateLabelRequest", "operatorId");
     assert_enum_values(
         storage_provider_properties,
         "providerKind",
@@ -1137,7 +1085,7 @@ fn openapi_paths_follow_sdkwork_v3_prefixes() {
 }
 
 #[test]
-fn admin_storage_mutation_operations_require_operator_id_contract() {
+fn admin_storage_mutation_operations_derive_operator_id_from_request_context() {
     let admin_json: Value = serde_json::from_str(
         &std::fs::read_to_string(
             workspace_root().join("apis/backend-api/drive/drive-admin-storage-api.openapi.json"),
@@ -1161,11 +1109,10 @@ fn admin_storage_mutation_operations_require_operator_id_contract() {
         ),
         ("/backend/v3/api/drive/storage/bindings/default", "delete"),
     ] {
-        assert_query_parameter_exists(&admin_json, path_key, method, "operatorId");
+        assert_query_parameter_absent(&admin_json, path_key, method, "operatorId");
     }
 
-    assert_schema_property_exists(&admin_json, "CopyProviderObjectRequest", "operatorId");
-    assert_schema_required(&admin_json, "CopyProviderObjectRequest", "operatorId");
+    assert_schema_property_absent(&admin_json, "CopyProviderObjectRequest", "operatorId");
     assert_no_content_response(
         &admin_json,
         "/backend/v3/api/drive/storage/bindings/default",
@@ -1238,6 +1185,19 @@ fn assert_all_paths_start_with(openapi: &Value, expected_prefix: &str) {
         assert!(
             path_key.starts_with(expected_prefix),
             "path {path_key} should start with {expected_prefix}",
+        );
+    }
+}
+
+fn assert_no_path_starts_with(openapi: &Value, forbidden_prefix: &str) {
+    let paths = openapi
+        .get("paths")
+        .and_then(Value::as_object)
+        .expect("openapi paths should be an object");
+    for path_key in paths.keys() {
+        assert!(
+            !path_key.starts_with(forbidden_prefix),
+            "Drive app authority must consume dependency path {path_key} through sdkDependencies",
         );
     }
 }
@@ -1327,83 +1287,6 @@ fn assert_dual_token_security_contract_for_prefix(openapi: &Value, label: &str, 
             );
         }
     }
-}
-
-fn assert_iam_appbase_security_contract(openapi: &Value, label: &str) {
-    for operation_id in [
-        "oauth.authorizationUrls.create",
-        "oauth.sessions.create",
-        "passwordResetRequests.create",
-        "passwordResets.create",
-        "registrations.create",
-        "sessions.create",
-        "sessions.organizationSelection.create",
-        "sessions.refresh",
-        "oauth.deviceAuthorizations.create",
-        "oauth.deviceAuthorizations.retrieve",
-        "oauth.deviceAuthorizations.scans.create",
-        "oauth.deviceAuthorizations.passwordCompletions.create",
-        "iam.runtime.retrieve",
-        "iam.verificationPolicy.retrieve",
-    ] {
-        assert_operation_security_contract(openapi, operation_id, false, label);
-    }
-
-    for operation_id in [
-        "sessions.current.delete",
-        "sessions.current.retrieve",
-        "sessions.current.update",
-        "users.current.retrieve",
-    ] {
-        assert_operation_security_contract(openapi, operation_id, true, label);
-    }
-}
-
-fn assert_operation_security_contract(
-    openapi: &Value,
-    operation_id: &str,
-    expect_dual_token: bool,
-    label: &str,
-) {
-    for (path_key, path_item) in openapi
-        .get("paths")
-        .and_then(Value::as_object)
-        .unwrap_or_else(|| panic!("{label} paths should exist"))
-    {
-        for (method, operation) in path_item.as_object().expect("path item should be object") {
-            if operation.get("operationId").and_then(Value::as_str) != Some(operation_id) {
-                continue;
-            }
-            let security = operation
-                .get("security")
-                .and_then(Value::as_array)
-                .unwrap_or_else(|| panic!("{label} {method} {path_key} security should exist"));
-            let has_dual_token = security.iter().any(|entry| {
-                entry
-                    .get("AuthToken")
-                    .and_then(Value::as_array)
-                    .is_some_and(Vec::is_empty)
-                    && entry
-                        .get("AccessToken")
-                        .and_then(Value::as_array)
-                        .is_some_and(Vec::is_empty)
-            });
-
-            if expect_dual_token {
-                assert!(
-                    has_dual_token,
-                    "{label} {method} {path_key} {operation_id} must require AuthToken and AccessToken"
-                );
-            } else {
-                assert!(
-                    security.is_empty(),
-                    "{label} {method} {path_key} {operation_id} must be explicitly public"
-                );
-            }
-            return;
-        }
-    }
-    panic!("{label} missing operationId {operation_id}");
 }
 
 fn assert_public_security_contract(openapi: &Value, label: &str) {
@@ -1532,6 +1415,31 @@ fn assert_query_parameter_exists(
         method,
         path_key,
         parameter_name
+    );
+}
+
+fn assert_query_parameter_absent(
+    openapi: &Value,
+    path_key: &str,
+    method: &str,
+    parameter_name: &str,
+) {
+    let parameters = openapi
+        .get("paths")
+        .and_then(|value| value.get(path_key))
+        .and_then(|value| value.get(method))
+        .and_then(|value| value.get("parameters"))
+        .and_then(Value::as_array);
+    let is_exposed = parameters.is_some_and(|items| {
+        items.iter().any(|item| {
+            item.get("in").and_then(Value::as_str) == Some("query")
+                && item.get("name").and_then(Value::as_str) == Some(parameter_name)
+        })
+    });
+    assert!(
+        !is_exposed,
+        "{} {} query parameter {} must not be client writable",
+        method, path_key, parameter_name
     );
 }
 

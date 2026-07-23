@@ -2,7 +2,7 @@
 id: REQ-2026-0002
 title: Production security and IAM alignment for SDKWork Drive
 owner: SDKWork maintainers
-status: done
+status: accepted
 source: platform
 updated: 2026-07-08
 problem: Drive production routers must validate IAM sessions through the IAM database resolver, harden webhook dispatch, and align deployment descriptors with SECURITY_SPEC and IAM_LOGIN_INTEGRATION_SPEC without leaving stale documentation.

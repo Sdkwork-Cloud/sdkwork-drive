@@ -6,8 +6,6 @@
 //! This module is gated behind the `redis-rate-limit` feature flag.
 //! Build with: `cargo build --features redis-rate-limit`
 
-#![cfg(feature = "redis-rate-limit")]
-
 use std::sync::OnceLock;
 
 use redis::aio::ConnectionManager;

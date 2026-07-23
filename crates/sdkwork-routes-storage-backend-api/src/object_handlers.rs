@@ -1,20 +1,22 @@
+use crate::app_context::DriveRequestContext;
 use crate::audit::record_storage_provider_audit;
 use crate::dto::{
-    CopyProviderObjectRequest, ListProviderObjectsQuery, OperatorQuery,
-    ProviderObjectMutationResponse, ProviderObjectResponse,
+    CopyProviderObjectRequest, ListProviderObjectsQuery, ProviderObjectMutationResponse,
+    ProviderObjectResponse,
 };
-use crate::error::{map_object_store_route_error, ProblemDetail};
+use crate::error::{invalid_json_problem, map_object_store_route_error, ProblemDetail};
 use crate::object_store::build_object_store_for_provider;
 use crate::provider_lookup::get_active_provider;
 use crate::response::{no_content, success_cursor_list_page, StorageListHttpResponse};
 use crate::state::AdminStorageState;
 use crate::validators::{
-    decode_object_key, require_query_operator_id, validate_object_delimiter, validate_object_key,
-    validate_object_prefix, validate_page_size_u16,
+    decode_object_key, validate_object_delimiter, validate_object_key, validate_object_prefix,
+    validate_page_size_u16,
 };
+use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use axum::Json;
+use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events::admin_audit;
 use sdkwork_drive_storage_contract::{
     validate_s3_bucket_name, CopyObjectRequest, DeleteObjectRequest, DriveObjectLocator,
@@ -116,10 +118,10 @@ pub(crate) async fn head_storage_provider_object(
 
 pub(crate) async fn delete_storage_provider_object(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path((provider_id, object_key)): Path<(String, String)>,
-    Query(query): Query<OperatorQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
-    let operator_id = require_query_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let provider = get_active_provider(&state, &provider_id).await?;
     let object_store = build_object_store_for_provider(&state.config, &provider).await?;
     let object_key = decode_object_key(&object_key)?;
@@ -145,13 +147,15 @@ pub(crate) async fn delete_storage_provider_object(
 
 pub(crate) async fn copy_storage_provider_object(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(provider_id): Path<String>,
-    Json(payload): Json<CopyProviderObjectRequest>,
+    payload: Result<Json<CopyProviderObjectRequest>, JsonRejection>,
 ) -> Result<Json<ProviderObjectMutationResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
     let source_key = validate_object_key(payload.source_object_key, "sourceObjectKey")?;
     let destination_key =
         validate_object_key(payload.destination_object_key, "destinationObjectKey")?;
-    let operator_id = require_query_operator_id(payload.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let provider = get_active_provider(&state, &provider_id).await?;
     let object_store = build_object_store_for_provider(&state.config, &provider).await?;
     let destination_bucket = match payload.destination_bucket.as_deref() {

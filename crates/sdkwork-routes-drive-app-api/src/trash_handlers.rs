@@ -87,7 +87,7 @@ pub(crate) async fn list_trashed_nodes(
     let order_by_for_fetch = order_by.clone();
     let parent_node_id = normalize_optional_text(query.parent_node_id);
     let space_id = normalize_optional_text(query.space_id);
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     if let Some(space_id) = space_id.as_deref() {
         validate_space_exists(&state.pool, &tenant_id, space_id).await?;
         acl::ensure_list_parent_reader(&state.pool, &ctx, space_id, parent_node_id.as_deref())
@@ -366,7 +366,7 @@ pub(crate) async fn empty_trash(
     Json(payload): Json<EmptyTrashRequest>,
 ) -> Result<Json<SdkWorkApiResponse<EmptyTrashResponse>>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let space_id = normalize_optional_text(payload.space_id);
     let trashed_rows = if let Some(space_id_value) = space_id.as_deref() {
         validate_space_exists(&state.pool, &tenant_id, space_id_value).await?;

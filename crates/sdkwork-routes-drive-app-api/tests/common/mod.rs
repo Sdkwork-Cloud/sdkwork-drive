@@ -9,6 +9,7 @@ use serde_json::json;
 use sqlx::AnyPool;
 
 const DEFAULT_SESSION_ID: &str = "session-1";
+const ANONYMOUS_SESSION_ID: &str = "anonymous-session-1";
 
 pub fn auth_token(tenant: &str, user: &str, app_id: &str) -> String {
     auth_token_jwt(tenant, user, DEFAULT_SESSION_ID, app_id)
@@ -16,6 +17,33 @@ pub fn auth_token(tenant: &str, user: &str, app_id: &str) -> String {
 
 pub fn access_token(tenant: &str, user: &str, app_id: &str) -> String {
     access_token_jwt(tenant, user, DEFAULT_SESSION_ID, app_id)
+}
+
+pub fn anonymous_auth_token(tenant: &str, subject_id: &str, app_id: &str) -> String {
+    encode_unsigned_test_jwt(json!({
+        "token_type": "auth",
+        "tenant_id": tenant,
+        "user_id": subject_id,
+        "session_id": ANONYMOUS_SESSION_ID,
+        "app_id": app_id,
+        "subject_type": "user",
+        "auth_level": "anonymous",
+        "login_scope": "TENANT",
+    }))
+}
+
+pub fn anonymous_access_token(tenant: &str, subject_id: &str, app_id: &str) -> String {
+    encode_unsigned_test_jwt(json!({
+        "token_type": "access",
+        "tenant_id": tenant,
+        "user_id": subject_id,
+        "session_id": ANONYMOUS_SESSION_ID,
+        "app_id": app_id,
+        "subject_type": "user",
+        "environment": "prod",
+        "deployment_mode": "saas",
+        "login_scope": "TENANT",
+    }))
 }
 
 pub fn auth_token_for_organization(
@@ -134,6 +162,32 @@ pub fn authed_post_json(
         .header("content-type", "application/json")
         .body(body.into())
         .expect("authed post request should be built")
+}
+
+pub fn anonymous_post_json(
+    uri: impl AsRef<str>,
+    tenant: &str,
+    subject_id: &str,
+    app_id: &str,
+    body: impl Into<Body>,
+) -> Request<Body> {
+    Request::builder()
+        .method(Method::POST)
+        .uri(uri.as_ref())
+        .header(
+            "authorization",
+            format!(
+                "Bearer {}",
+                anonymous_auth_token(tenant, subject_id, app_id)
+            ),
+        )
+        .header(
+            "access-token",
+            anonymous_access_token(tenant, subject_id, app_id),
+        )
+        .header("content-type", "application/json")
+        .body(body.into())
+        .expect("anonymous post request should be built")
 }
 
 pub fn authed_idempotent_post_json(

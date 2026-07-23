@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
     },
     {
       "path": "bin/publish.ps1",
@@ -108,7 +108,7 @@
     },
     {
       "path": "src/types/open-download-url-create-response.ts",
-      "sha256": "b7657fa31f93fd2a842f92bd3ab22e36c6ee58cf77b541292b9b9b66079993b2"
+      "sha256": "66245a412f2878d7c0408e7a1e6f4fa0aecb3c9aebde2e5ea7f050182a3619e9"
     },
     {
       "path": "src/types/open-download-url-response.ts",
@@ -120,15 +120,15 @@
     },
     {
       "path": "src/types/open-share-link-resolve-response.ts",
-      "sha256": "6dbd1e11cd16c251267e5a393b73514927d94c7b5bfd5cc040116277b0745c79"
+      "sha256": "2b90c773d68f146903226bfae7f71fcc1ab80306b69776335efdfa0e4409a6be"
     },
     {
       "path": "src/types/open-share-links-download-urls-create-response201.ts",
-      "sha256": "36b5dea2e309765965bd829114d8fcbd8e813e122c2c303dd5b10e0b0ffce22e"
+      "sha256": "edacbad76ee360957607f2e80c4902f297dc5c4f17cd1e4725c5371ca3d7e558"
     },
     {
       "path": "src/types/open-share-links-retrieve-response.ts",
-      "sha256": "3bcb1cefde3421a7806cbfdea075b98975cde4a2852d3828749f527d0894d632"
+      "sha256": "d9840ac16664ba54003f31cf86065fdf888bd391dd3c7713f4d97480a55e73fc"
     },
     {
       "path": "src/types/problem-detail.ts",

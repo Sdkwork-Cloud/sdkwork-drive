@@ -103,7 +103,7 @@ async fn version_routes_prefer_logical_node_version_ids() {
             .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
                 .method(Method::DELETE)
                 .uri(
-                    "/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1?operatorId=user-001",
+                    "/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1",
                 )
                 .body(Body::empty())
                 .expect("version delete request should be built"),
@@ -144,7 +144,7 @@ async fn version_routes_prefer_logical_node_version_ids() {
                 .method(Method::POST)
                 .uri("/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1/restore")
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{"operatorId":"user-001"}"#))
+                .body(Body::from("{}"))
                 .expect("version restore request should be built"),
         )
         .await

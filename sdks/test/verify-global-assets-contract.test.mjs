@@ -105,7 +105,7 @@ test("drive app OpenAPI exposes global assets and no generation-scoped assets", 
     const operation = assertPathMethod(openapi, pathKey, method);
     assert.ok(hasDualTokenSecurity(operation), `${method.toUpperCase()} ${pathKey} must be protected`);
     assert.equal(operation["x-sdkwork-owner"], "sdkwork-drive");
-    assert.equal(operation["x-sdkwork-api-authority"], "sdkwork-drive.app");
+    assert.equal(operation["x-sdkwork-api-authority"], "sdkwork-drive-app-api");
   }
 
   for (const pathKey of forbiddenAssetPaths) {
@@ -126,10 +126,12 @@ test("drive app asset schemas use Drive nodes as canonical global assets", () =>
 
   for (const schemaName of [
     "AssetItem",
+    "AssetListData",
     "AssetListHttpResponse",
     "CreateAssetRequest",
     "UpdateAssetRequest",
     "AssetCollection",
+    "AssetCollectionListData",
     "AssetCollectionListHttpResponse",
     "CreateAssetCollectionRequest",
     "AssetRelation",
@@ -139,7 +141,12 @@ test("drive app asset schemas use Drive nodes as canonical global assets", () =>
     assert.ok(schemas[schemaName], `missing schema ${schemaName}`);
   }
 
-  const assetListPayload = schemas.AssetListHttpResponse?.allOf?.[1]?.properties?.data?.properties || {};
+  assert.equal(
+    schemas.AssetListHttpResponse?.allOf?.[1]?.properties?.data?.$ref,
+    "#/components/schemas/AssetListData",
+    "AssetListHttpResponse.data must use AssetListData",
+  );
+  const assetListPayload = schemas.AssetListData?.properties || {};
   assert.equal(
     assetListPayload.items?.items?.$ref,
     "#/components/schemas/AssetItem",
@@ -151,8 +158,12 @@ test("drive app asset schemas use Drive nodes as canonical global assets", () =>
     "AssetListHttpResponse.data.pageInfo must use PageInfo",
   );
 
-  const assetCollectionListPayload =
-    schemas.AssetCollectionListHttpResponse?.allOf?.[1]?.properties?.data?.properties || {};
+  assert.equal(
+    schemas.AssetCollectionListHttpResponse?.allOf?.[1]?.properties?.data?.$ref,
+    "#/components/schemas/AssetCollectionListData",
+    "AssetCollectionListHttpResponse.data must use AssetCollectionListData",
+  );
+  const assetCollectionListPayload = schemas.AssetCollectionListData?.properties || {};
   assert.equal(
     assetCollectionListPayload.items?.items?.$ref,
     "#/components/schemas/AssetCollection",

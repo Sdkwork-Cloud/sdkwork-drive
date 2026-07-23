@@ -22,7 +22,7 @@ pub(crate) async fn search_nodes(
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let needle = format!("%{}%", query.q.unwrap_or_default().trim());
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     let space_id = normalize_optional_text(query.space_id);
     if let Some(space_id) = space_id.as_deref() {
         validate_space_exists(&state.pool, &tenant_id, space_id).await?;

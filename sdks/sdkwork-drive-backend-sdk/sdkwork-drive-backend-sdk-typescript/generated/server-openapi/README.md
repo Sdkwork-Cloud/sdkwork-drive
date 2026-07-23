@@ -55,9 +55,6 @@ const client = new SdkworkBackendClient({
 ## API Modules
 
 - `client.drive` - drive API
-- `client.labels` - labels API
-- `client.sandboxVolumes` - sandbox_volumes API
-- `client.sandboxGrants` - sandbox_grants API
 
 ## Usage Examples
 
@@ -66,43 +63,6 @@ const client = new SdkworkBackendClient({
 ```typescript
 // GET /backend/v3/api/drive/quotas
 const result = await client.drive.quotas.retrieve();
-```
-
-### labels
-
-```typescript
-// List Drive label definitions
-const params = {
-  lifecycleStatus: 'active',
-  page_size: 2,
-  cursor: 'cursor',
-};
-const result = await client.labels.list(params);
-```
-
-### sandbox_volumes
-
-```typescript
-// List server sandbox volumes
-const params = {
-  lifecycle_status: 'active',
-  provider_kind: 'local_filesystem',
-  page: 3,
-  page_size: 4,
-};
-const result = await client.sandboxVolumes.list(params);
-```
-
-### sandbox_grants
-
-```typescript
-// List explicit sandbox grants
-const sandboxId = '1';
-const params = {
-  page: 1,
-  page_size: 2,
-};
-const result = await client.sandboxGrants.list(sandboxId, params);
 ```
 
 ## Error Handling

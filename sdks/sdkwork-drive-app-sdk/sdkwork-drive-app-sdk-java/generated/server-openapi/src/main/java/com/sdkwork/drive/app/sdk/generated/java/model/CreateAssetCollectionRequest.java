@@ -2,19 +2,10 @@ package com.sdkwork.drive.app.sdk.generated.java.model;
 
 
 public class CreateAssetCollectionRequest {
-    private String organizationId;
     private String title;
     private String description;
     private String collectionType;
     private String visibility;
-
-    public String getOrganizationId() {
-        return this.organizationId;
-    }
-
-    public void setOrganizationId(String organizationId) {
-        this.organizationId = organizationId;
-    }
 
     public String getTitle() {
         return this.title;

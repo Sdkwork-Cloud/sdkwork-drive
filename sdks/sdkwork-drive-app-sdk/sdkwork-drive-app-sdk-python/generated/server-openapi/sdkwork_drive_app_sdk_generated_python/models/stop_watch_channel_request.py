@@ -5,4 +5,4 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 @dataclass
 class StopWatchChannelRequest:
-    operator_id: Optional[str] = None
+    pass

@@ -35,6 +35,61 @@ func (a *DriveApi) AuditEventsList(action *string, resourceType *string, resourc
     return decodeResult[sdktypes.AuditEventsListResponse](raw)
 }
 
+// List Drive label definitions
+func (a *DriveApi) LabelsList(lifecycleStatus *string, pageSize *int, cursor *string) (sdktypes.LabelsListResponse, error) {
+    query := BuildQueryString([]QueryParameterSpec{
+        {Name: "lifecycleStatus", Value: func() interface{} { if lifecycleStatus == nil { return nil }; return *lifecycleStatus }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
+    })
+    raw, err := a.client.Get(AppendQueryString(BackendApiPath("/drive/labels"), query), nil, nil)
+    if err != nil {
+        var zero sdktypes.LabelsListResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.LabelsListResponse](raw)
+}
+
+// Create a Drive label definition
+func (a *DriveApi) LabelsCreate(body sdktypes.CreateLabelRequest) (sdktypes.LabelsCreateResponse201, error) {
+    raw, err := a.client.Post(BackendApiPath("/drive/labels"), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.LabelsCreateResponse201
+        return zero, err
+    }
+    return decodeResult[sdktypes.LabelsCreateResponse201](raw)
+}
+
+// Get a Drive label definition
+func (a *DriveApi) LabelsRetrieve(labelId string) (sdktypes.LabelsRetrieveResponse, error) {
+    raw, err := a.client.Get(BackendApiPath(fmt.Sprintf("/drive/labels/%s", SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero sdktypes.LabelsRetrieveResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.LabelsRetrieveResponse](raw)
+}
+
+// Update a Drive label definition
+func (a *DriveApi) LabelsUpdate(labelId string, body sdktypes.UpdateLabelRequest) (sdktypes.LabelsUpdateResponse, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/drive/labels/%s", SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.LabelsUpdateResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.LabelsUpdateResponse](raw)
+}
+
+// Delete a Drive label definition
+func (a *DriveApi) LabelsDelete(labelId string) (struct{}, error) {
+    raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/drive/labels/%s", SerializePathParameter(labelId, PathParameterSpec{Name: "labelId", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero struct{}
+        return zero, err
+    }
+    return decodeResult[struct{}](raw)
+}
+
 func (a *DriveApi) MaintenanceJobsList(jobType *string, status *string, operatorId *string, page *int, pageSize *int) (sdktypes.MaintenanceJobsListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "jobType", Value: func() interface{} { if jobType == nil { return nil }; return *jobType }(), Style: "form", Explode: true, AllowReserved: false},
@@ -135,7 +190,220 @@ func (a *DriveApi) DownloadPackagesList(state *string, page *int, pageSize *int)
     return decodeResult[sdktypes.DownloadPackagesListResponse](raw)
 }
 
+// List server sandbox volumes
+func (a *DriveApi) SandboxVolumesList(lifecycleStatus *sdktypes.SandboxLifecycleStatus, providerKind *sdktypes.SandboxProviderKind, page *int, pageSize *int) (sdktypes.SandboxVolumesListResponse, error) {
+    query := BuildQueryString([]QueryParameterSpec{
+        {Name: "lifecycle_status", Value: func() interface{} { if lifecycleStatus == nil { return nil }; return *lifecycleStatus }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "provider_kind", Value: func() interface{} { if providerKind == nil { return nil }; return *providerKind }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+    })
+    raw, err := a.client.Get(AppendQueryString(BackendApiPath("/drive/sandbox_volumes"), query), nil, nil)
+    if err != nil {
+        var zero sdktypes.SandboxVolumesListResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.SandboxVolumesListResponse](raw)
+}
 
+// Create a server sandbox volume
+func (a *DriveApi) SandboxVolumesCreate(body sdktypes.CreateSandboxVolumeRequest) (sdktypes.SandboxVolumesCreateResponse201, error) {
+    raw, err := a.client.Post(BackendApiPath("/drive/sandbox_volumes"), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.SandboxVolumesCreateResponse201
+        return zero, err
+    }
+    return decodeResult[sdktypes.SandboxVolumesCreateResponse201](raw)
+}
+
+// Retrieve a server sandbox volume
+func (a *DriveApi) SandboxVolumesRetrieve(sandboxId string) (sdktypes.SandboxVolumesRetrieveResponse, error) {
+    raw, err := a.client.Get(BackendApiPath(fmt.Sprintf("/drive/sandbox_volumes/%s", SerializePathParameter(sandboxId, PathParameterSpec{Name: "sandboxId", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero sdktypes.SandboxVolumesRetrieveResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.SandboxVolumesRetrieveResponse](raw)
+}
+
+// Update a server sandbox volume
+func (a *DriveApi) SandboxVolumesUpdate(sandboxId string, body sdktypes.UpdateSandboxVolumeRequest) (sdktypes.SandboxVolumesUpdateResponse, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/drive/sandbox_volumes/%s", SerializePathParameter(sandboxId, PathParameterSpec{Name: "sandboxId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.SandboxVolumesUpdateResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.SandboxVolumesUpdateResponse](raw)
+}
+
+// Delete a server sandbox volume
+func (a *DriveApi) SandboxVolumesDelete(sandboxId string) (struct{}, error) {
+    raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/drive/sandbox_volumes/%s", SerializePathParameter(sandboxId, PathParameterSpec{Name: "sandboxId", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero struct{}
+        return zero, err
+    }
+    return decodeResult[struct{}](raw)
+}
+
+// List explicit sandbox grants
+func (a *DriveApi) SandboxGrantsList(sandboxId string, page *int, pageSize *int) (sdktypes.SandboxGrantsListResponse, error) {
+    query := BuildQueryString([]QueryParameterSpec{
+        {Name: "page", Value: func() interface{} { if page == nil { return nil }; return *page }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+    })
+    raw, err := a.client.Get(AppendQueryString(BackendApiPath(fmt.Sprintf("/drive/sandbox_volumes/%s/grants", SerializePathParameter(sandboxId, PathParameterSpec{Name: "sandboxId", Style: "simple", Explode: false}))), query), nil, nil)
+    if err != nil {
+        var zero sdktypes.SandboxGrantsListResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.SandboxGrantsListResponse](raw)
+}
+
+// Create an explicit sandbox grant
+func (a *DriveApi) SandboxGrantsCreate(sandboxId string, body sdktypes.CreateSandboxGrantRequest) (sdktypes.SandboxGrantsCreateResponse201, error) {
+    raw, err := a.client.Post(BackendApiPath(fmt.Sprintf("/drive/sandbox_volumes/%s/grants", SerializePathParameter(sandboxId, PathParameterSpec{Name: "sandboxId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.SandboxGrantsCreateResponse201
+        return zero, err
+    }
+    return decodeResult[sdktypes.SandboxGrantsCreateResponse201](raw)
+}
+
+// Retrieve a sandbox grant
+func (a *DriveApi) SandboxGrantsRetrieve(sandboxId string, grantId string) (sdktypes.SandboxGrantsRetrieveResponse, error) {
+    raw, err := a.client.Get(BackendApiPath(fmt.Sprintf("/drive/sandbox_volumes/%s/grants/%s", SerializePathParameter(sandboxId, PathParameterSpec{Name: "sandboxId", Style: "simple", Explode: false}), SerializePathParameter(grantId, PathParameterSpec{Name: "grantId", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero sdktypes.SandboxGrantsRetrieveResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.SandboxGrantsRetrieveResponse](raw)
+}
+
+// Update a sandbox grant
+func (a *DriveApi) SandboxGrantsUpdate(sandboxId string, grantId string, body sdktypes.UpdateSandboxGrantRequest) (sdktypes.SandboxGrantsUpdateResponse, error) {
+    raw, err := a.client.Patch(BackendApiPath(fmt.Sprintf("/drive/sandbox_volumes/%s/grants/%s", SerializePathParameter(sandboxId, PathParameterSpec{Name: "sandboxId", Style: "simple", Explode: false}), SerializePathParameter(grantId, PathParameterSpec{Name: "grantId", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.SandboxGrantsUpdateResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.SandboxGrantsUpdateResponse](raw)
+}
+
+// Delete a sandbox grant
+func (a *DriveApi) SandboxGrantsDelete(sandboxId string, grantId string) (struct{}, error) {
+    raw, err := a.client.Delete(BackendApiPath(fmt.Sprintf("/drive/sandbox_volumes/%s/grants/%s", SerializePathParameter(sandboxId, PathParameterSpec{Name: "sandboxId", Style: "simple", Explode: false}), SerializePathParameter(grantId, PathParameterSpec{Name: "grantId", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero struct{}
+        return zero, err
+    }
+    return decodeResult[struct{}](raw)
+}
+
+type PathParameterSpec struct {
+    Name    string
+    Style   string
+    Explode bool
+}
+
+func SerializePathParameter(value interface{}, spec PathParameterSpec) string {
+    if value == nil {
+        return ""
+    }
+    style := spec.Style
+    if style == "" {
+        style = "simple"
+    }
+
+    switch typed := value.(type) {
+    case []string:
+        return SerializePathArray(spec.Name, stringSliceToInterface(typed), style, spec.Explode)
+    case []int:
+        return SerializePathArray(spec.Name, intSliceToInterface(typed), style, spec.Explode)
+    case []interface{}:
+        return SerializePathArray(spec.Name, typed, style, spec.Explode)
+    case map[string]string:
+        return SerializePathObject(spec.Name, stringMapToInterface(typed), style, spec.Explode)
+    case map[string]int:
+        return SerializePathObject(spec.Name, intMapToInterface(typed), style, spec.Explode)
+    case map[string]interface{}:
+        return SerializePathObject(spec.Name, typed, style, spec.Explode)
+    default:
+        return PathPrefix(spec.Name, style) + url.PathEscape(fmt.Sprint(value))
+    }
+}
+
+func SerializePathArray(name string, values []interface{}, style string, explode bool) string {
+    serialized := make([]string, 0, len(values))
+    for _, item := range values {
+        if item != nil {
+            serialized = append(serialized, url.PathEscape(fmt.Sprint(item)))
+        }
+    }
+    if len(serialized) == 0 {
+        return PathPrefix(name, style)
+    }
+    if style == "matrix" {
+        if explode {
+            parts := make([]string, 0, len(serialized))
+            for _, item := range serialized {
+                parts = append(parts, ";"+name+"="+item)
+            }
+            return strings.Join(parts, "")
+        }
+        return ";" + name + "=" + strings.Join(serialized, ",")
+    }
+    separator := ","
+    if explode {
+        separator = "."
+    }
+    return PathPrefix(name, style) + strings.Join(serialized, separator)
+}
+
+func SerializePathObject(name string, values map[string]interface{}, style string, explode bool) string {
+    entries := make([]string, 0, len(values)*2)
+    exploded := make([]string, 0, len(values))
+    for key, value := range values {
+        if value == nil {
+            continue
+        }
+        escapedKey := url.PathEscape(key)
+        escapedValue := url.PathEscape(fmt.Sprint(value))
+        if explode {
+            if style == "matrix" {
+                exploded = append(exploded, ";"+escapedKey+"="+escapedValue)
+            } else {
+                exploded = append(exploded, escapedKey+"="+escapedValue)
+            }
+        } else {
+            entries = append(entries, escapedKey, escapedValue)
+        }
+    }
+    if style == "matrix" {
+        if explode {
+            return strings.Join(exploded, "")
+        }
+        return ";" + name + "=" + strings.Join(entries, ",")
+    }
+    if explode {
+        separator := ","
+        if style == "label" {
+            separator = "."
+        }
+        return PathPrefix(name, style) + strings.Join(exploded, separator)
+    }
+    return PathPrefix(name, style) + strings.Join(entries, ",")
+}
+
+func PathPrefix(name string, style string) string {
+    if style == "label" {
+        return "."
+    }
+    if style == "matrix" {
+        return ";" + name
+    }
+    return ""
+}
 type QueryParameterSpec struct {
     Name          string
     Value         interface{}

@@ -82,7 +82,7 @@
   ],
   "contracts": {
     "apiAuthority": {
-      "name": "sdkwork-drive.app",
+      "name": "sdkwork-drive-app-api",
       "prefix": "/app/v3/api",
       "authorityOpenApi": "../../apis/app-api/drive/drive-app-api.openapi.json",
       "derivedOpenApi": [

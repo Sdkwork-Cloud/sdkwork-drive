@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 
 public class CreateAssetRequest {
-    private String organizationId;
     private String driveNodeId;
     private Map<String, Object> virtualReference;
     private String title;
@@ -12,14 +11,6 @@ public class CreateAssetRequest {
     private String scene;
     private String source;
     private List<String> tags;
-
-    public String getOrganizationId() {
-        return this.organizationId;
-    }
-
-    public void setOrganizationId(String organizationId) {
-        this.organizationId = organizationId;
-    }
 
     public String getDriveNodeId() {
         return this.driveNodeId;

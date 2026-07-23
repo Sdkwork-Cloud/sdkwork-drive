@@ -6,7 +6,6 @@ public class CopyProviderObjectRequest {
     private String destinationObjectKey;
     private String destinationBucket;
     private String metadataDirective;
-    private String operatorId;
 
     public String getSourceObjectKey() {
         return this.sourceObjectKey;
@@ -38,13 +37,5 @@ public class CopyProviderObjectRequest {
 
     public void setMetadataDirective(String metadataDirective) {
         this.metadataDirective = metadataDirective;
-    }
-
-    public String getOperatorId() {
-        return this.operatorId;
-    }
-
-    public void setOperatorId(String operatorId) {
-        this.operatorId = operatorId;
     }
 }

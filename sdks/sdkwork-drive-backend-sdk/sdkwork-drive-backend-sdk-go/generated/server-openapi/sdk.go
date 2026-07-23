@@ -8,9 +8,6 @@ import (
 type SdkworkBackendClient struct {
     http *sdkhttp.Client
     Drive *api.DriveApi
-    Labels *api.LabelsApi
-    SandboxVolumes *api.SandboxVolumesApi
-    SandboxGrants *api.SandboxGrantsApi
 }
 
 func NewSdkworkBackendClient(baseURL string) *SdkworkBackendClient {
@@ -23,9 +20,6 @@ func NewSdkworkBackendClientWithConfig(config sdkhttp.Config) *SdkworkBackendCli
     return &SdkworkBackendClient{
         http: client,
         Drive: api.NewDriveApi(client),
-        Labels: api.NewLabelsApi(client),
-        SandboxVolumes: api.NewSandboxVolumesApi(client),
-        SandboxGrants: api.NewSandboxGrantsApi(client),
     }
 }
 

@@ -111,7 +111,7 @@ async fn app_routes_validate_token_derived_app_context() {
         .expect("protected request should be handled");
     assert_problem(tenant_conflict, StatusCode::FORBIDDEN, 40301).await;
 
-    let operator_conflict = app
+    let unknown_operator_id = app
         .clone()
         .oneshot(
             Request::builder()
@@ -128,9 +128,13 @@ async fn app_routes_validate_token_derived_app_context() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(operator_conflict, StatusCode::FORBIDDEN, 40303).await;
+    assert_eq!(
+        unknown_operator_id.status(),
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "operatorId is not a writable command field and must be rejected as unknown input"
+    );
 
-    let subject_conflict = app
+    let unknown_subject_selector = app
         .clone()
         .oneshot(
             Request::builder()
@@ -146,7 +150,11 @@ async fn app_routes_validate_token_derived_app_context() {
         )
         .await
         .expect("protected request should be handled");
-    assert_problem(subject_conflict, StatusCode::FORBIDDEN, 40303).await;
+    assert_eq!(
+        unknown_subject_selector.status(),
+        StatusCode::BAD_REQUEST,
+        "subject selectors are token-derived and must be rejected as unknown query input"
+    );
 
     let prepare_without_app_id = app
         .clone()
@@ -179,11 +187,11 @@ async fn app_routes_validate_token_derived_app_context() {
         .expect("uploader prepare request should be handled");
     assert_ne!(
         prepare_without_app_id.status(),
-        StatusCode::BAD_REQUEST,
+        StatusCode::UNPROCESSABLE_ENTITY,
         "authenticated uploader prepare should not fail JSON deserialization when appId is omitted"
     );
 
-    let app_id_conflict = app
+    let unknown_app_id = app
         .clone()
         .oneshot(
             Request::builder()
@@ -213,7 +221,11 @@ async fn app_routes_validate_token_derived_app_context() {
         )
         .await
         .expect("uploader prepare request should be handled");
-    assert_problem(app_id_conflict, StatusCode::FORBIDDEN, 40303).await;
+    assert_eq!(
+        unknown_app_id.status(),
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "appId is not a writable prepare field and must be rejected as unknown input"
+    );
 
     let allowed = app
         .clone()

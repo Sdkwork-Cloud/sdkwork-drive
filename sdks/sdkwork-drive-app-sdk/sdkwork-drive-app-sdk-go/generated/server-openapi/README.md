@@ -56,10 +56,6 @@ client.SetHeader("X-Custom-Header", "value")
 ## API Modules
 
 - `client.Drive` - drive API
-- `client.NodeLabels` - node_labels API
-- `client.NodeProperties` - node_properties API
-- `client.Nodes` - nodes API
-- `client.WatchChannels` - watch_channels API
 - `client.Assets` - assets API
 
 ## Usage Examples
@@ -69,75 +65,6 @@ client.SetHeader("X-Custom-Header", "value")
 ```go
 // GET /app/v3/api/drive/quotas/summary
 result, err := client.Drive.QuotasRetrieve()
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### node_labels
-
-```go
-// List labels applied to a node
-nodeId := "1"
-params := map[string]interface{}{
-    "labelKey": "labelKey",
-    "page_size": 2,
-    "cursor": "cursor",
-}
-result, err := client.NodeLabels.List(nodeId, params)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### node_properties
-
-```go
-// List node custom properties
-nodeId := "1"
-params := map[string]interface{}{
-    "visibility": "private",
-    "page_size": 2,
-    "cursor": "cursor",
-}
-result, err := client.NodeProperties.List(nodeId, params)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### nodes
-
-```go
-// Create a shortcut node
-body := sdktypes.CreateShortcutRequest{
-    Id: "id",
-    SpaceId: "spaceId",
-    ParentNodeId: "parentNodeId",
-    NodeName: "nodeName",
-    TargetNodeId: "targetNodeId",
-}
-result, err := client.Nodes.ShortcutsCreate(body)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### watch_channels
-
-```go
-// List Drive watch channels
-params := map[string]interface{}{
-    "resourceType": "changes",
-    "lifecycleStatus": "active",
-    "page_size": 3,
-    "cursor": "cursor",
-}
-result, err := client.WatchChannels.List(params)
 if err != nil {
     panic(err)
 }

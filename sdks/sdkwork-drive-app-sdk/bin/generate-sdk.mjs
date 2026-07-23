@@ -8,7 +8,7 @@ runDriveSdkGenerator(
   {
     sdkName: "sdkwork-drive-app-sdk",
     sdkOwner: "sdkwork-drive",
-    apiAuthority: "sdkwork-drive.app",
+    apiAuthority: "sdkwork-drive-app-api",
     sdkDependencies: [
       {
         workspace: "sdkwork-iam-app-sdk",
@@ -31,7 +31,7 @@ runDriveSdkGenerator(
     sdkType: "app",
     apiPrefix: "/app/v3/api",
     defaultBaseUrl: "http://127.0.0.1:18080",
-    defaultOpenapiFile: "drive-app-api.openapi.json",
+    defaultOpenapiPath: "apis/app-api/drive/drive-app-api.openapi.json",
     standardProfileArgs: ["--standard-profile", "sdkwork-v3"],
     manifestStandardProfile: "sdkwork-v3",
   },

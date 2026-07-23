@@ -105,7 +105,7 @@ pub(crate) async fn create_share_link(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
 
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
@@ -207,7 +207,7 @@ pub(crate) async fn update_share_link(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let current = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
     let node = find_active_node(&state.pool, &tenant_id, &current.node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &current.node_id, "owner").await?;
@@ -260,10 +260,10 @@ pub(crate) async fn revoke_share_link(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(share_link_id): Path<String>,
-    Query(query): Query<NodeMutationQuery>,
+    Query(_query): Query<NodeMutationQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let current = find_share_link(&state.pool, &tenant_id, &share_link_id).await?;
     let node = find_active_node(&state.pool, &tenant_id, &current.node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &current.node_id, "owner").await?;
@@ -303,7 +303,7 @@ pub(crate) async fn claim_share_link(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     validate_subject_type(&subject_type)?;
     let share_link =
         find_active_share_link_by_token_for_tenant(&state.pool, &tenant_id, &token).await?;

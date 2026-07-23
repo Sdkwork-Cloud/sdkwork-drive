@@ -9,28 +9,12 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-java"
   },
-  "changeFingerprint": "5d60c6bd411fc056253b83d714fce908ffc8fed35b246b5d73cada6f45395cc6",
+  "changeFingerprint": "a4201dc8aaab6b06e7951c3f0621f76a5866e17589269cf5fb55983d53786b8b",
   "changes": {
-    "createdGeneratedFiles": [
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ActivateWebsiteGenerationRequest.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateWebsiteSyncRequest.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGeneration.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivation.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationHttpResponse.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationResourceData.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSync.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivation.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationHttpResponse.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationResourceData.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncHttpResponse.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncResourceData.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncVersionRequest.java"
-    ],
-    "updatedGeneratedFiles": [
-      "bin/publish-core.mjs",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java"
-    ],
+    "createdGeneratedFiles": [],
+    "updatedGeneratedFiles": [],
     "unchangedGeneratedFiles": [
+      "bin/publish-core.mjs",
       "bin/publish.ps1",
       "bin/publish.sh",
       "CHANGELOG.md",
@@ -40,12 +24,10 @@
       "sdkwork-sdk.json",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/ApiPaths.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/AssetsApi.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodeLabelsApi.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodePropertiesApi.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodesApi.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/package-info.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/WatchChannelsApi.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/http/HttpClient.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ActivateWebsiteGenerationRequest.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ApplyNodeLabelRequest.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ArchiveEntry.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ArchiveEntryListHttpResponse.java",
@@ -97,6 +79,7 @@
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateUploadSessionRequest.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateWatchChannelRequest.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateWebsiteRootRequest.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateWebsiteSyncRequest.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/DownloadPackageHttpResponse.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/DownloadPackageItem.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/DownloadPackageResponse.java",
@@ -180,11 +163,6 @@
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/QuotaSummary.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/QuotaSummaryHttpResponse.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SdkWorkApiResponse.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SdkWorkCommandData.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SdkWorkCommandResponse.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SdkWorkPageData.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SdkWorkResourceData.java",
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SdkWorkResourceResponse.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SetNodePropertyRequest.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ShareLinkHttpResponse.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ShareLinkListHttpResponse.java",
@@ -207,6 +185,10 @@
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/UploaderUploadPart.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/UploaderUploadPartHttpResponse.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/UploadSessionMutationResponse.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGeneration.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivation.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationHttpResponse.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationResourceData.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRoot.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootFolderSelector.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootHttpResponse.java",
@@ -215,6 +197,13 @@
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootResourceData.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootSelector.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteRootSpaceSelector.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSync.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivation.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationHttpResponse.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationResourceData.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncHttpResponse.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncResourceData.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncVersionRequest.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/SdkworkAppClient.java"
     ],
     "deletedGeneratedFiles": [],
@@ -226,80 +215,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface",
-      "models",
-      "publish-workflow"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java"
-        ]
-      },
-      {
-        "area": "models",
-        "paths": [
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ActivateWebsiteGenerationRequest.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateWebsiteSyncRequest.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGeneration.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivation.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationHttpResponse.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteGenerationActivationResourceData.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSync.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivation.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationHttpResponse.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncActivationResourceData.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncHttpResponse.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncResourceData.java",
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/WebsiteSyncVersionRequest.java"
-        ]
-      },
-      {
-        "area": "publish-workflow",
-        "paths": [
-          "bin/publish-core.mjs"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, publish-workflow.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-java\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "java",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language java --project-dir . --action check"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

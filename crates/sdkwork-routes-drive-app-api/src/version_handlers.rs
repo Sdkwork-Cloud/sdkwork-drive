@@ -135,13 +135,13 @@ pub(crate) async fn restore_version(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, version_id)): Path<(String, String)>,
-    Json(payload): Json<NodeCommandRequest>,
+    Json(_payload): Json<NodeCommandRequest>,
 ) -> Result<
     Json<SdkWorkApiResponse<SdkWorkResourceData<DriveNodeResponse>>>,
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let mut connection = state.pool.acquire().await.map_err(|error| {
@@ -264,10 +264,10 @@ pub(crate) async fn delete_version(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, version_id)): Path<(String, String)>,
-    Query(query): Query<NodeMutationQuery>,
+    Query(_query): Query<NodeMutationQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let mut connection = state.pool.acquire().await.map_err(|error| {

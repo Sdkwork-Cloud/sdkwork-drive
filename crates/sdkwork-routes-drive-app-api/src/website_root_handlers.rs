@@ -43,7 +43,7 @@ pub(crate) async fn create_website_root(
         }
     };
     let content_mode = parse_content_mode(&payload.content_mode)?;
-    let operator_id = ctx.resolve_operator_id(None)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let result = DriveWebsiteRootService::new(SqlWebsiteRootStore::new(state.pool.clone()))
         .create_root(CreateWebsiteRootCommand {
             tenant_id,
@@ -75,7 +75,7 @@ pub(crate) async fn list_website_roots(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     acl::ensure_subject_space_scoped_reader(
         &state.pool,
         &tenant_id,
@@ -118,7 +118,7 @@ pub(crate) async fn get_website_root(
         })
         .await
         .map_err(map_service_error)?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     acl::ensure_subject_space_scoped_reader(
         &state.pool,
         &tenant_id,

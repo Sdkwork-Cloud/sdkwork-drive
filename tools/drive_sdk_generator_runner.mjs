@@ -643,7 +643,7 @@ export function runDriveSdkGenerator(family, argv) {
     ? path.isAbsolute(args.input)
       ? args.input
       : path.resolve(workspaceRoot, args.input)
-    : path.join(workspaceRoot, "apis", "openapi", family.defaultOpenapiFile);
+    : resolveDefaultOpenApiPath(family);
 
   if (!existsSync(openapiPath)) {
     fail(sdkName, `openapi file not found: ${openapiPath}`);
@@ -729,6 +729,13 @@ export function runDriveSdkGenerator(family, argv) {
     generatorName: generator.generatorName,
     baseUrl: args.baseUrl,
   });
+}
+
+export function resolveDefaultOpenApiPath(family) {
+  if (family.defaultOpenapiPath) {
+    return path.resolve(workspaceRoot, family.defaultOpenapiPath);
+  }
+  return path.join(workspaceRoot, "apis", "openapi", family.defaultOpenapiFile);
 }
 
 export function resolveFamilySdkRoot(importMetaUrl) {

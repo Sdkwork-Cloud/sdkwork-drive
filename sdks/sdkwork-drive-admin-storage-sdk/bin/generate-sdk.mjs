@@ -31,7 +31,7 @@ runDriveSdkGenerator(
     sdkType: "custom",
     apiPrefix: "/backend/v3/api",
     defaultBaseUrl: "http://127.0.0.1:18080",
-    defaultOpenapiFile: "drive-admin-storage-api.openapi.json",
+    defaultOpenapiPath: "apis/backend-api/drive/drive-admin-storage-api.openapi.json",
     standardProfileArgs: [],
     manifestStandardProfile: "sdkwork-drive-admin-storage-v3",
   },

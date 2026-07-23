@@ -28,10 +28,10 @@ public class DriveApi {
     }
 
     /** Delete a Drive default storage provider binding */
-    public Void storageProviderBindingsDefaultDelete(String operatorId, String spaceId) throws Exception {
+    public Void storageProviderBindingsDefaultDelete(String spaceId, String spaceType) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("spaceId", spaceId, "form", true, false, null),
-            new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
+            new QueryParameterSpec("spaceType", spaceType, "form", true, false, null)
         ));
         client.delete(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/bindings/default"), query));
         return null;
@@ -65,8 +65,8 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<StorageProvidersRetrieveResponse>() {});
     }
 
-    public StorageProvidersActivateResponse storageProvidersActivate(String providerId, OperatorRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/activate"), body, null, null, "application/json");
+    public StorageProvidersActivateResponse storageProvidersActivate(String providerId) throws Exception {
+        Object raw = client.post(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/activate"), null);
         return client.convertValue(raw, new TypeReference<StorageProvidersActivateResponse>() {});
     }
 
@@ -80,13 +80,13 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<StorageProvidersCredentialsRotateResponse>() {});
     }
 
-    public StorageProvidersDeactivateResponse storageProvidersDeactivate(String providerId, OperatorRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/deactivate"), body, null, null, "application/json");
+    public StorageProvidersDeactivateResponse storageProvidersDeactivate(String providerId) throws Exception {
+        Object raw = client.post(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/deactivate"), null);
         return client.convertValue(raw, new TypeReference<StorageProvidersDeactivateResponse>() {});
     }
 
-    public StorageProvidersTestResponse storageProvidersTest(String providerId, TestStorageProviderRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/test"), body, null, null, "application/json");
+    public StorageProvidersTestResponse storageProvidersTest(String providerId) throws Exception {
+        Object raw = client.post(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/test"), null);
         return client.convertValue(raw, new TypeReference<StorageProvidersTestResponse>() {});
     }
 
@@ -95,19 +95,13 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<StorageProvidersBucketRetrieveResponse>() {});
     }
 
-    public StorageProvidersBucketUpdateResponse storageProvidersBucketUpdate(String providerId, String operatorId) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
-        ));
-        Object raw = client.put(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/bucket"), query), null);
+    public StorageProvidersBucketUpdateResponse storageProvidersBucketUpdate(String providerId) throws Exception {
+        Object raw = client.put(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/bucket"), null);
         return client.convertValue(raw, new TypeReference<StorageProvidersBucketUpdateResponse>() {});
     }
 
-    public Void storageProvidersBucketDelete(String providerId, String operatorId) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
-        ));
-        client.delete(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/bucket"), query));
+    public Void storageProvidersBucketDelete(String providerId) throws Exception {
+        client.delete(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/bucket"));
         return null;
     }
 
@@ -127,11 +121,8 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<StorageProvidersObjectsRetrieveResponse>() {});
     }
 
-    public Void storageProvidersObjectsDelete(String providerId, String objectKey, String operatorId) throws Exception {
-        String query = buildQueryString(List.of(
-            new QueryParameterSpec("operatorId", operatorId, "form", true, false, null)
-        ));
-        client.delete(ApiPaths.appendQueryString(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/objects/" + serializePathParameter(objectKey, new PathParameterSpec("objectKey", "simple", false)) + ""), query));
+    public Void storageProvidersObjectsDelete(String providerId, String objectKey) throws Exception {
+        client.delete(ApiPaths.customPath("/drive/storage/providers/" + serializePathParameter(providerId, new PathParameterSpec("providerId", "simple", false)) + "/objects/" + serializePathParameter(objectKey, new PathParameterSpec("objectKey", "simple", false)) + ""));
         return null;
     }
 

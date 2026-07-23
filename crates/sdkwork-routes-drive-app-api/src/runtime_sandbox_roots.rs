@@ -25,7 +25,7 @@ fn discover_runtime_sandbox_roots_with(
 ) -> Vec<RuntimeSandboxRoot> {
     #[cfg(windows)]
     {
-        return ('A'..='Z')
+        ('A'..='Z')
             .filter_map(|letter| {
                 let path = PathBuf::from(format!("{letter}:\\"));
                 is_accessible_directory(&path).then(|| RuntimeSandboxRoot {
@@ -33,7 +33,7 @@ fn discover_runtime_sandbox_roots_with(
                     path,
                 })
             })
-            .collect();
+            .collect()
     }
 
     #[cfg(not(windows))]
@@ -185,6 +185,7 @@ mod tests {
             actor_id: "user-runtime".to_owned(),
             subject_type: "user".to_owned(),
             subject_id: "user-runtime".to_owned(),
+            auth_level: sdkwork_web_core::WebAuthLevel::Password,
             request_id: "request-runtime".to_owned(),
             trace_id: "trace-runtime".to_owned(),
             from_token: true,

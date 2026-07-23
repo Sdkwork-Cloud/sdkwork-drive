@@ -73,6 +73,13 @@ display_name = Upload
 Organization attribution is recorded on uploader metadata. It does not require
 placing every logged-in upload into an organization-owned space.
 
+Tenant, organization, authenticated user, anonymous actor, operator, and app
+identity are ambient caller facts resolved from the verified request context.
+They are not client-writable fields on generated or composed uploader requests.
+Client services provide only business attribution such as resource type/id,
+scene, source, profile, target, and retention. `shareToken` remains an explicit
+target-folder authorization credential; it is not an anonymous actor identity.
+
 Explicit target-space uploads are supported for application workflows that need
 to drop files into an existing Drive folder. The uploader must validate the
 target space is active before creating a node. Logged-in users may upload when
@@ -184,7 +191,8 @@ must delegate to the same profile-driven core as generic uploads.
 The TypeScript App SDK must expose `client.uploader.*` from its composed layer.
 The high-level uploader may use generated operations, state stores, part
 planners, and queue helpers, but it must not hand-code business HTTP routes
-outside the SDK boundary.
+outside the SDK boundary or restore ambient identity fields removed from the
+generated request contracts.
 
 ## Persistence Model
 
@@ -215,4 +223,3 @@ node tools/drive_sdk_generate.mjs --check --language typescript
 pnpm --dir apps/sdkwork-drive-pc test
 pnpm --dir apps/sdkwork-drive-pc typecheck
 ```
-

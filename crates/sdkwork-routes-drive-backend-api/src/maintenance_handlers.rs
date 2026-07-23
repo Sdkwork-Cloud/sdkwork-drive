@@ -3,10 +3,11 @@ use crate::dto::{
     ListMaintenanceJobsQuery, MaintenanceJobItemResponse, SweepObjectStoreRequest, SweepResponse,
     SweepUploadSessionsRequest,
 };
-use crate::error::{map_service_error, service_error_kind, ProblemDetail};
+use crate::error::{invalid_json_problem, map_service_error, service_error_kind, ProblemDetail};
 use crate::response::{success_offset_list_page, DriveListHttpResponse};
 use crate::state::BackendState;
 use crate::tenant_context::authenticated_tenant_id;
+use axum::extract::rejection::JsonRejection;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Extension;
@@ -25,18 +26,22 @@ use sdkwork_utils_rust::MAX_LIST_PAGE_SIZE;
 pub(crate) async fn sweep_object_store(
     State(state): State<BackendState>,
     Extension(context): Extension<DriveAppContext>,
-    Json(payload): Json<SweepObjectStoreRequest>,
+    payload: Result<Json<SweepObjectStoreRequest>, JsonRejection>,
 ) -> Result<Json<SweepResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
     let tenant_id = authenticated_tenant_id(&context);
+    let operator_id = context.actor_id.clone();
+    let request_id = Some(context.request_id.clone());
+    let trace_id = Some(context.trace_id.clone());
     let started = start_timer();
     let service = DriveMaintenanceService::new(SqlMaintenanceStore::new(state.pool.clone()));
     let result = service
         .sweep_object_store(SweepObjectStoreCommand {
             dry_run: payload.dry_run,
             limit: payload.limit,
-            operator_id: payload.operator_id.clone(),
-            request_id: payload.request_id.clone(),
-            trace_id: payload.trace_id.clone(),
+            operator_id: operator_id.clone(),
+            request_id: request_id.clone(),
+            trace_id: trace_id.clone(),
         })
         .await;
 
@@ -47,9 +52,9 @@ pub(crate) async fn sweep_object_store(
                 &state,
                 &tenant_id,
                 admin_audit::maintenance::OBJECT_SWEEP_EXECUTED,
-                &payload.operator_id,
-                payload.request_id.clone(),
-                payload.trace_id.clone(),
+                &operator_id,
+                request_id.clone(),
+                trace_id.clone(),
             )
             .await?;
             sdkwork_drive_observability::observe_route!(
@@ -58,9 +63,9 @@ pub(crate) async fn sweep_object_store(
                 latency_ms = latency_ms,
                 dry_run = result.dry_run,
                 limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
-                operator_id = payload.operator_id.as_str(),
-                has_request_id = payload.request_id.is_some(),
-                has_trace_id = payload.trace_id.is_some(),
+                operator_id = operator_id.as_str(),
+                has_request_id = request_id.is_some(),
+                has_trace_id = trace_id.is_some(),
                 scanned_count = result.scanned_count,
                 affected_count = result.affected_count
             );
@@ -78,9 +83,9 @@ pub(crate) async fn sweep_object_store(
                 &state,
                 &tenant_id,
                 admin_audit::maintenance::OBJECT_SWEEP_FAILED,
-                &payload.operator_id,
-                payload.request_id.clone(),
-                payload.trace_id.clone(),
+                &operator_id,
+                request_id.clone(),
+                trace_id.clone(),
             )
             .await;
             sdkwork_drive_observability::observe_route!(
@@ -90,9 +95,9 @@ pub(crate) async fn sweep_object_store(
                 error_kind = error_kind,
                 dry_run = payload.dry_run,
                 limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
-                operator_id = payload.operator_id.as_str(),
-                has_request_id = payload.request_id.is_some(),
-                has_trace_id = payload.trace_id.is_some()
+                operator_id = operator_id.as_str(),
+                has_request_id = request_id.is_some(),
+                has_trace_id = trace_id.is_some()
             );
             Err(map_service_error(error))
         }
@@ -102,9 +107,13 @@ pub(crate) async fn sweep_object_store(
 pub(crate) async fn sweep_upload_sessions(
     State(state): State<BackendState>,
     Extension(context): Extension<DriveAppContext>,
-    Json(payload): Json<SweepUploadSessionsRequest>,
+    payload: Result<Json<SweepUploadSessionsRequest>, JsonRejection>,
 ) -> Result<Json<SweepResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
     let tenant_id = authenticated_tenant_id(&context);
+    let operator_id = context.actor_id.clone();
+    let request_id = Some(context.request_id.clone());
+    let trace_id = Some(context.trace_id.clone());
     let started = start_timer();
     let service = DriveMaintenanceService::new(SqlMaintenanceStore::new(state.pool.clone()));
     let result = service
@@ -112,9 +121,9 @@ pub(crate) async fn sweep_upload_sessions(
             now_epoch_ms: payload.now_epoch_ms,
             dry_run: payload.dry_run,
             limit: payload.limit,
-            operator_id: payload.operator_id.clone(),
-            request_id: payload.request_id.clone(),
-            trace_id: payload.trace_id.clone(),
+            operator_id: operator_id.clone(),
+            request_id: request_id.clone(),
+            trace_id: trace_id.clone(),
         })
         .await;
 
@@ -125,9 +134,9 @@ pub(crate) async fn sweep_upload_sessions(
                 &state,
                 &tenant_id,
                 admin_audit::maintenance::UPLOAD_SESSION_SWEEP_EXECUTED,
-                &payload.operator_id,
-                payload.request_id.clone(),
-                payload.trace_id.clone(),
+                &operator_id,
+                request_id.clone(),
+                trace_id.clone(),
             )
             .await?;
             sdkwork_drive_observability::observe_route!(
@@ -137,9 +146,9 @@ pub(crate) async fn sweep_upload_sessions(
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = result.dry_run,
                 limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
-                operator_id = payload.operator_id.as_str(),
-                has_request_id = payload.request_id.is_some(),
-                has_trace_id = payload.trace_id.is_some(),
+                operator_id = operator_id.as_str(),
+                has_request_id = request_id.is_some(),
+                has_trace_id = trace_id.is_some(),
                 scanned_count = result.scanned_count,
                 affected_count = result.affected_count
             );
@@ -157,9 +166,9 @@ pub(crate) async fn sweep_upload_sessions(
                 &state,
                 &tenant_id,
                 admin_audit::maintenance::UPLOAD_SESSION_SWEEP_FAILED,
-                &payload.operator_id,
-                payload.request_id.clone(),
-                payload.trace_id.clone(),
+                &operator_id,
+                request_id.clone(),
+                trace_id.clone(),
             )
             .await;
             sdkwork_drive_observability::observe_route!(
@@ -170,9 +179,9 @@ pub(crate) async fn sweep_upload_sessions(
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = payload.dry_run,
                 limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
-                operator_id = payload.operator_id.as_str(),
-                has_request_id = payload.request_id.is_some(),
-                has_trace_id = payload.trace_id.is_some()
+                operator_id = operator_id.as_str(),
+                has_request_id = request_id.is_some(),
+                has_trace_id = trace_id.is_some()
             );
             Err(map_service_error(error))
         }
@@ -182,9 +191,13 @@ pub(crate) async fn sweep_upload_sessions(
 pub(crate) async fn sweep_expired_upload_content(
     State(state): State<BackendState>,
     Extension(context): Extension<DriveAppContext>,
-    Json(payload): Json<SweepUploadSessionsRequest>,
+    payload: Result<Json<SweepUploadSessionsRequest>, JsonRejection>,
 ) -> Result<Json<SweepResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
     let tenant_id = authenticated_tenant_id(&context);
+    let operator_id = context.actor_id.clone();
+    let request_id = Some(context.request_id.clone());
+    let trace_id = Some(context.trace_id.clone());
     let started = start_timer();
     let service = DriveMaintenanceService::new(SqlMaintenanceStore::new(state.pool.clone()));
     let result = service
@@ -192,9 +205,9 @@ pub(crate) async fn sweep_expired_upload_content(
             now_epoch_ms: payload.now_epoch_ms,
             dry_run: payload.dry_run,
             limit: payload.limit,
-            operator_id: payload.operator_id.clone(),
-            request_id: payload.request_id.clone(),
-            trace_id: payload.trace_id.clone(),
+            operator_id: operator_id.clone(),
+            request_id: request_id.clone(),
+            trace_id: trace_id.clone(),
         })
         .await;
 
@@ -205,9 +218,9 @@ pub(crate) async fn sweep_expired_upload_content(
                 &state,
                 &tenant_id,
                 admin_audit::maintenance::EXPIRED_UPLOAD_CONTENT_SWEEP_EXECUTED,
-                &payload.operator_id,
-                payload.request_id.clone(),
-                payload.trace_id.clone(),
+                &operator_id,
+                request_id.clone(),
+                trace_id.clone(),
             )
             .await?;
             sdkwork_drive_observability::observe_route!(
@@ -217,9 +230,9 @@ pub(crate) async fn sweep_expired_upload_content(
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = result.dry_run,
                 limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
-                operator_id = payload.operator_id.as_str(),
-                has_request_id = payload.request_id.is_some(),
-                has_trace_id = payload.trace_id.is_some(),
+                operator_id = operator_id.as_str(),
+                has_request_id = request_id.is_some(),
+                has_trace_id = trace_id.is_some(),
                 scanned_count = result.scanned_count,
                 affected_count = result.affected_count
             );
@@ -237,9 +250,9 @@ pub(crate) async fn sweep_expired_upload_content(
                 &state,
                 &tenant_id,
                 admin_audit::maintenance::EXPIRED_UPLOAD_CONTENT_SWEEP_FAILED,
-                &payload.operator_id,
-                payload.request_id.clone(),
-                payload.trace_id.clone(),
+                &operator_id,
+                request_id.clone(),
+                trace_id.clone(),
             )
             .await;
             sdkwork_drive_observability::observe_route!(
@@ -250,9 +263,9 @@ pub(crate) async fn sweep_expired_upload_content(
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = payload.dry_run,
                 limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
-                operator_id = payload.operator_id.as_str(),
-                has_request_id = payload.request_id.is_some(),
-                has_trace_id = payload.trace_id.is_some()
+                operator_id = operator_id.as_str(),
+                has_request_id = request_id.is_some(),
+                has_trace_id = trace_id.is_some()
             );
             Err(map_service_error(error))
         }
@@ -262,9 +275,13 @@ pub(crate) async fn sweep_expired_upload_content(
 pub(crate) async fn sweep_abandoned_upload_tasks(
     State(state): State<BackendState>,
     Extension(context): Extension<DriveAppContext>,
-    Json(payload): Json<SweepUploadSessionsRequest>,
+    payload: Result<Json<SweepUploadSessionsRequest>, JsonRejection>,
 ) -> Result<Json<SweepResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
     let tenant_id = authenticated_tenant_id(&context);
+    let operator_id = context.actor_id.clone();
+    let request_id = Some(context.request_id.clone());
+    let trace_id = Some(context.trace_id.clone());
     let started = start_timer();
     let service = DriveMaintenanceService::new(SqlMaintenanceStore::new(state.pool.clone()));
     let result = service
@@ -272,9 +289,9 @@ pub(crate) async fn sweep_abandoned_upload_tasks(
             now_epoch_ms: payload.now_epoch_ms,
             dry_run: payload.dry_run,
             limit: payload.limit,
-            operator_id: payload.operator_id.clone(),
-            request_id: payload.request_id.clone(),
-            trace_id: payload.trace_id.clone(),
+            operator_id: operator_id.clone(),
+            request_id: request_id.clone(),
+            trace_id: trace_id.clone(),
         })
         .await;
 
@@ -285,9 +302,9 @@ pub(crate) async fn sweep_abandoned_upload_tasks(
                 &state,
                 &tenant_id,
                 admin_audit::maintenance::ABANDONED_UPLOAD_TASK_SWEEP_EXECUTED,
-                &payload.operator_id,
-                payload.request_id.clone(),
-                payload.trace_id.clone(),
+                &operator_id,
+                request_id.clone(),
+                trace_id.clone(),
             )
             .await?;
             sdkwork_drive_observability::observe_route!(
@@ -297,9 +314,9 @@ pub(crate) async fn sweep_abandoned_upload_tasks(
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = result.dry_run,
                 limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
-                operator_id = payload.operator_id.as_str(),
-                has_request_id = payload.request_id.is_some(),
-                has_trace_id = payload.trace_id.is_some(),
+                operator_id = operator_id.as_str(),
+                has_request_id = request_id.is_some(),
+                has_trace_id = trace_id.is_some(),
                 scanned_count = result.scanned_count,
                 affected_count = result.affected_count
             );
@@ -317,9 +334,9 @@ pub(crate) async fn sweep_abandoned_upload_tasks(
                 &state,
                 &tenant_id,
                 admin_audit::maintenance::ABANDONED_UPLOAD_TASK_SWEEP_FAILED,
-                &payload.operator_id,
-                payload.request_id.clone(),
-                payload.trace_id.clone(),
+                &operator_id,
+                request_id.clone(),
+                trace_id.clone(),
             )
             .await;
             sdkwork_drive_observability::observe_route!(
@@ -330,9 +347,9 @@ pub(crate) async fn sweep_abandoned_upload_tasks(
                 now_epoch_ms = payload.now_epoch_ms,
                 dry_run = payload.dry_run,
                 limit = payload.limit.unwrap_or(i64::from(MAX_LIST_PAGE_SIZE)),
-                operator_id = payload.operator_id.as_str(),
-                has_request_id = payload.request_id.is_some(),
-                has_trace_id = payload.trace_id.is_some()
+                operator_id = operator_id.as_str(),
+                has_request_id = request_id.is_some(),
+                has_trace_id = trace_id.is_some()
             );
             Err(map_service_error(error))
         }

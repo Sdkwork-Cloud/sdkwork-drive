@@ -3,33 +3,17 @@ import type { SdkworkAppConfig } from './types/common';
 import type { AuthTokenManager } from '@sdkwork/sdk-common';
 
 import { DriveApi, createDriveApi } from './api/drive';
-import { NodeLabelsApi, createNodeLabelsApi } from './api/node-labels';
-import { NodePropertiesApi, createNodePropertiesApi } from './api/node-properties';
-import { NodesApi, createNodesApi } from './api/nodes';
-import { WatchChannelsApi, createWatchChannelsApi } from './api/watch-channels';
 import { AssetsApi, createAssetsApi } from './api/assets';
 
 export class SdkworkAppClient {
   private httpClient: HttpClient;
 
   public readonly drive: DriveApi;
-  public readonly nodeLabels: NodeLabelsApi;
-  public readonly nodeProperties: NodePropertiesApi;
-  public readonly nodes: NodesApi;
-  public readonly watchChannels: WatchChannelsApi;
   public readonly assets: AssetsApi;
 
   constructor(config: SdkworkAppConfig) {
     this.httpClient = createHttpClient(config);
     this.drive = createDriveApi(this.httpClient);
-
-    this.nodeLabels = createNodeLabelsApi(this.httpClient);
-
-    this.nodeProperties = createNodePropertiesApi(this.httpClient);
-
-    this.nodes = createNodesApi(this.httpClient);
-
-    this.watchChannels = createWatchChannelsApi(this.httpClient);
 
     this.assets = createAssetsApi(this.httpClient);
   }

@@ -9,12 +9,10 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-java"
   },
-  "changeFingerprint": "9043680c7966db920fa5a63b380defb32f6a423116ed0f233f8c172a25179306",
+  "changeFingerprint": "f44616cac0f20a26187cd5bfa1ce985110a0d35844a0c9fc646e69541e037d98",
   "changes": {
     "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [
-      "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/http/HttpClient.java"
-    ],
+    "updatedGeneratedFiles": [],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
@@ -27,10 +25,10 @@
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/api/ApiPaths.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/api/DriveApi.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/api/package-info.java",
+      "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/http/HttpClient.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/CopyProviderObjectRequest.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/CreateStorageProviderRequest.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/FieldError.java",
-      "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/OperatorRequest.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/PageInfo.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProblemDetail.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderBucket.java",
@@ -67,7 +65,6 @@
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersRetrieveResponse.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersTestResponse.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersUpdateResponse.java",
-      "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/TestStorageProviderRequest.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/TestStorageProviderResponse.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/UpdateStorageProviderRequest.java",
       "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/SdkworkCustomClient.java"
@@ -81,54 +78,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "runtime"
-    ],
-    "details": [
-      {
-        "area": "runtime",
-        "paths": [
-          "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/http/HttpClient.java"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: runtime. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-java\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "java",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language java --project-dir . --action check"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

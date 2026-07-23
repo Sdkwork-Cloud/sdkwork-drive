@@ -120,7 +120,7 @@
       {
         "workspace": "sdkwork-drive",
         "sdkFamily": "sdkwork-drive-app-sdk",
-        "apiAuthority": "sdkwork-drive.app",
+        "apiAuthority": "sdkwork-drive-app-api",
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "embedded",

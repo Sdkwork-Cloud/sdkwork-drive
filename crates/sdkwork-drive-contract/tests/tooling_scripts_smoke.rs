@@ -55,7 +55,7 @@ fn openapi_export_supports_explicit_input_flags() {
 }
 
 #[test]
-fn openapi_export_normalizes_sdkwork_v3_problem_details_and_tags() {
+fn openapi_export_preserves_owner_contract_and_sdkwork_v3_problem_details() {
     let root = workspace_root();
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -93,9 +93,79 @@ fn openapi_export_normalizes_sdkwork_v3_problem_details_and_tags() {
             .and_then(serde_json::Value::as_array)
             .and_then(|values| values.first())
             .and_then(serde_json::Value::as_str),
-        Some("nodeLabels"),
-        "OpenAPI export should normalize SDK tags to lowerCamelCase"
+        Some("drive"),
+        "OpenAPI export should preserve the canonical Drive domain tag"
     );
+
+    let create_permission = app
+        .get("components")
+        .and_then(|value| value.get("schemas"))
+        .and_then(|value| value.get("CreatePermissionRequest"))
+        .and_then(|value| value.get("properties"))
+        .expect("CreatePermissionRequest properties should exist");
+    assert!(create_permission.get("subjectType").is_some());
+    assert!(create_permission.get("subjectId").is_some());
+
+    let backend: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(output_dir.join("drive-backend-api.openapi.json"))
+            .expect("exported backend OpenAPI should be readable"),
+    )
+    .expect("exported backend OpenAPI should be JSON");
+    for schema_name in ["SweepObjectStoreRequest", "SweepUploadSessionsRequest"] {
+        for context_field in ["operatorId", "requestId", "correlationId", "traceId"] {
+            assert!(
+                backend
+                    .pointer(&format!(
+                        "/components/schemas/{schema_name}/properties/{context_field}"
+                    ))
+                    .is_none(),
+                "exported {schema_name}.{context_field} must come from request context"
+            );
+        }
+    }
+
+    let admin_storage: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(output_dir.join("drive-admin-storage-api.openapi.json"))
+            .expect("exported admin storage OpenAPI should be readable"),
+    )
+    .expect("exported admin storage OpenAPI should be JSON");
+    assert!(
+        admin_storage
+            .pointer("/components/schemas/CopyProviderObjectRequest/properties/operatorId")
+            .is_none(),
+        "exported CopyProviderObjectRequest.operatorId must come from request context"
+    );
+    for (path_key, method) in [
+        (
+            "/backend/v3/api/drive/storage/providers/{providerId}/bucket",
+            "put",
+        ),
+        (
+            "/backend/v3/api/drive/storage/providers/{providerId}/bucket",
+            "delete",
+        ),
+        (
+            "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}",
+            "delete",
+        ),
+        ("/backend/v3/api/drive/storage/bindings/default", "delete"),
+    ] {
+        let exposes_operator_id = admin_storage
+            .get("paths")
+            .and_then(|value| value.get(path_key))
+            .and_then(|value| value.get(method))
+            .and_then(|value| value.get("parameters"))
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|parameters| {
+                parameters.iter().any(|parameter| {
+                    parameter.get("name").and_then(serde_json::Value::as_str) == Some("operatorId")
+                })
+            });
+        assert!(
+            !exposes_operator_id,
+            "exported {method} {path_key} must not accept operatorId"
+        );
+    }
 
     let bad_request = app
         .get("paths")

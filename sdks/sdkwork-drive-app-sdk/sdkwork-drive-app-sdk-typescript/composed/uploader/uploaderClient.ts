@@ -286,8 +286,6 @@ export class DriveUploaderClient {
     const prepared = await this.transport.drive.uploader.uploads.create({
       id: normalized.id,
       taskId: normalized.taskId,
-      organizationId: normalized.organizationId,
-      anonymousId: normalized.anonymousId,
       appResourceType: normalized.appResourceType,
       appResourceId: normalized.appResourceId,
       scene: normalized.scene,

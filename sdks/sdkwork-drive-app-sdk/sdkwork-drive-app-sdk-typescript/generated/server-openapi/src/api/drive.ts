@@ -1,8 +1,62 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { ActivateWebsiteGenerationRequest, ArchiveEntry, ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateSpaceRequest, CreateUploadSessionRequest, CreateWebsiteRootRequest, CreateWebsiteSyncRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DrivePermission, DriveSandboxEntry, DriveSandboxEntryListData, DriveSandboxFileContent, DriveSandboxMutationCommandData, DriveSandboxVolumeListData, DriveShareLink, DriveSpace, DriveUploadSession, EffectivePermission, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodePathResponse, PageInfo, PositiveInt64String, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, PurgeDriveSandboxEntryRequest, QuotaSummary, StartPageTokenResponse, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, WebsiteGenerationActivation, WebsiteRoot, WebsiteRootPageData, WebsiteSync, WebsiteSyncActivation, WebsiteSyncVersionRequest } from '../types';
+import type { ActivateWebsiteGenerationRequest, ApplyNodeLabelRequest, ArchiveEntry, AssetActionRequest, AssetItem, AssetListData, ChangeListData, CheckFavoriteNodesRequest, ClaimShareLinkResponse, CompleteUploadSessionRequest, CopyNodeRequest, CreateAssetRequest, CreateCommentReplyRequest, CreateCommentRequest, CreateDownloadGrantRequest, CreateDownloadPackageRequest, CreateDownloadUrlRequest, CreateDownloadUrlResponse, CreateDriveSandboxDirectoryRequest, CreateDriveSandboxFileRequest, CreateFileRequest, CreateFileResponse, CreateFolderRequest, CreatePermissionRequest, CreateShareLinkRequest, CreateShareLinkResponse, CreateShortcutRequest, CreateSpaceRequest, CreateUploadSessionRequest, CreateWatchChannelRequest, CreateWebsiteRootRequest, CreateWebsiteSyncRequest, DownloadPackageResponse, DriveComment, DriveCommentReply, DriveNode, DriveNodeListData, DriveNodeProperty, DrivePermission, DriveSandboxEntry, DriveSandboxEntryListData, DriveSandboxFileContent, DriveSandboxMutationCommandData, DriveSandboxVolumeListData, DriveShareLink, DriveSpace, DriveUploadSession, DriveWatchChannel, DriveWatchChannelListData, EffectivePermission, EmptyTrashRequest, EmptyTrashResponse, ExtractArchiveEntriesRequest, ExtractArchiveEntriesResponse, FavoriteNodeRequest, FavoriteNodeResponse, FileVersion, FileVersionListData, MarkUploaderPartUploadedRequest, MoveNodeRequest, NodeCapabilitiesResponse, NodeCommandRequest, NodeLabel, NodePathResponse, PageInfo, PositiveInt64String, PrepareUploaderUploadRequest, PrepareUploaderUploadResponse, PresignedUploadPart, PresignUploadPartRequest, PurgeDriveSandboxEntryRequest, QuotaSummary, SetNodePropertyRequest, StartPageTokenResponse, StopWatchChannelRequest, StopWatchChannelResponse, UpdateAssetRequest, UpdateCommentReplyRequest, UpdateCommentRequest, UpdateDriveSandboxEntryRequest, UpdateDriveSandboxFileContentRequest, UpdateNodeRequest, UpdatePermissionRequest, UpdateShareLinkRequest, UpdateSpaceRequest, UploaderUploadPart, WebsiteGenerationActivation, WebsiteRoot, WebsiteRootPageData, WebsiteSync, WebsiteSyncActivation, WebsiteSyncVersionRequest } from '../types';
 
+
+export interface DriveAssetsListParams {
+  cursor?: string;
+  pageSize?: number;
+  kind?: string;
+  sourceType?: string;
+  q?: string;
+}
+
+export class DriveAssetsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List global assets */
+  async list(params?: DriveAssetsListParams): Promise<AssetListData> {
+    const query = buildQueryString([
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'kind', value: params?.kind, style: 'form', explode: true, allowReserved: false },
+      { name: 'sourceType', value: params?.sourceType, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<AssetListData>(appendQueryString(appApiPath(`/assets`), query));
+  }
+
+/** Create a global asset metadata record */
+  async create(body: CreateAssetRequest): Promise<AssetItem> {
+    return this.client.post<AssetItem>(appApiPath(`/assets`), body, undefined, undefined, 'application/json');
+  }
+
+/** Get a global asset */
+  async retrieve(assetId: string): Promise<AssetItem> {
+    return this.client.get<AssetItem>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}`));
+  }
+
+/** Update a global asset */
+  async update(assetId: string, body: UpdateAssetRequest): Promise<AssetItem> {
+    return this.client.patch<AssetItem>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  }
+
+/** Archive a global asset */
+  async archive(assetId: string, body: AssetActionRequest): Promise<AssetItem> {
+    return this.client.post<AssetItem>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/archive`), body, undefined, undefined, 'application/json');
+  }
+
+/** Restore an archived global asset */
+  async restore(assetId: string, body: AssetActionRequest): Promise<AssetItem> {
+    return this.client.post<AssetItem>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/restore`), body, undefined, undefined, 'application/json');
+  }
+}
 
 export class DriveUploaderUploadsPartsApi {
   private client: HttpClient;
@@ -85,6 +139,43 @@ export class DriveDownloadPackagesApi {
 
 async create(body: CreateDownloadPackageRequest): Promise<DownloadPackageResponse> {
     return this.client.post<DownloadPackageResponse>(appApiPath(`/drive/download_packages`), body, undefined, undefined, 'application/json');
+  }
+}
+
+export interface DriveWatchChannelsListParams {
+  resourceType?: 'changes' | 'node';
+  lifecycleStatus?: 'active' | 'stopped' | 'expired';
+  pageSize?: number;
+  cursor?: string;
+}
+
+export class DriveWatchChannelsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List Drive watch channels */
+  async list(params?: DriveWatchChannelsListParams): Promise<DriveWatchChannelListData> {
+    const query = buildQueryString([
+      { name: 'resourceType', value: params?.resourceType, style: 'form', explode: true, allowReserved: false },
+      { name: 'lifecycleStatus', value: params?.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<DriveWatchChannelListData>(appendQueryString(appApiPath(`/drive/watch_channels`), query));
+  }
+
+/** Get a Drive watch channel */
+  async retrieve(channelId: string): Promise<DriveWatchChannel> {
+    return this.client.get<DriveWatchChannel>(appApiPath(`/drive/watch_channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
+  }
+
+/** Stop a Drive watch channel */
+  async stop(channelId: string, body: StopWatchChannelRequest): Promise<StopWatchChannelResponse> {
+    return this.client.post<StopWatchChannelResponse>(appApiPath(`/drive/watch_channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}/stop`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -645,6 +736,48 @@ async retrieve(shareLinkId: string): Promise<DriveShareLink> {
   }
 }
 
+export interface DriveNodePropertiesListParams {
+  visibility?: 'private' | 'app_public';
+  pageSize?: number;
+  cursor?: string;
+}
+
+export interface DriveNodePropertiesDeleteParams {
+  visibility?: 'private' | 'app_public';
+}
+
+export class DriveNodePropertiesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List node custom properties */
+  async list(nodeId: string, params?: DriveNodePropertiesListParams): Promise<{ items: DriveNodeProperty[]; pageInfo: PageInfo; }> {
+    const query = buildQueryString([
+      { name: 'visibility', value: params?.visibility, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<{ items: DriveNodeProperty[]; pageInfo: PageInfo; }>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties`), query));
+  }
+
+/** Create or update a node custom property */
+  async update(nodeId: string, propertyKey: string, body: SetNodePropertyRequest): Promise<DriveNodeProperty> {
+    return this.client.put<DriveNodeProperty>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties/${serializePathParameter(propertyKey, { name: 'propertyKey', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  }
+
+/** Delete a node custom property */
+  async delete(nodeId: string, propertyKey: string, params?: DriveNodePropertiesDeleteParams): Promise<void> {
+    const query = buildQueryString([
+      { name: 'visibility', value: params?.visibility, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.delete<void>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/properties/${serializePathParameter(propertyKey, { name: 'propertyKey', style: 'simple', explode: false })}`), query));
+  }
+}
+
 export interface DrivePermissionsEffectiveListParams {
   pageSize?: string;
   cursor?: string;
@@ -704,6 +837,41 @@ async update(nodeId: string, permissionId: string, body: UpdatePermissionRequest
 
 async retrieve(nodeId: string, permissionId: string): Promise<DrivePermission> {
     return this.client.get<DrivePermission>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/permissions/${serializePathParameter(permissionId, { name: 'permissionId', style: 'simple', explode: false })}`));
+  }
+}
+
+export interface DriveNodeLabelsListParams {
+  labelKey?: string;
+  pageSize?: number;
+  cursor?: string;
+}
+
+export class DriveNodeLabelsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List labels applied to a node */
+  async list(nodeId: string, params?: DriveNodeLabelsListParams): Promise<{ items: NodeLabel[]; pageInfo: PageInfo; }> {
+    const query = buildQueryString([
+      { name: 'labelKey', value: params?.labelKey, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<{ items: NodeLabel[]; pageInfo: PageInfo; }>(appendQueryString(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels`), query));
+  }
+
+/** Apply a label to a node */
+  async update(nodeId: string, labelId: string, body: ApplyNodeLabelRequest): Promise<NodeLabel> {
+    return this.client.put<NodeLabel>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  }
+
+/** Remove a label from a node */
+  async delete(nodeId: string, labelId: string): Promise<void> {
+    return this.client.delete<void>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -796,6 +964,20 @@ async delete(nodeId: string, commentId: string): Promise<void> {
   }
 }
 
+export class DriveNodesShortcutsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Create a shortcut node */
+  async create(body: CreateShortcutRequest): Promise<DriveNode> {
+    return this.client.post<DriveNode>(appApiPath(`/drive/nodes/shortcuts`), body, undefined, undefined, 'application/json');
+  }
+}
+
 export class DriveNodesFoldersApi {
   private client: HttpClient;
 
@@ -883,6 +1065,7 @@ export class DriveNodesApi {
   public readonly path: DriveNodesPathApi;
   public readonly files: DriveNodesFilesApi;
   public readonly folders: DriveNodesFoldersApi;
+  public readonly shortcuts: DriveNodesShortcutsApi;
 
   constructor(client: HttpClient) {
     this.client = client;
@@ -891,6 +1074,7 @@ export class DriveNodesApi {
     this.path = new DriveNodesPathApi(client);
     this.files = new DriveNodesFilesApi(client);
     this.folders = new DriveNodesFoldersApi(client);
+    this.shortcuts = new DriveNodesShortcutsApi(client);
   }
 
 
@@ -923,6 +1107,11 @@ async list(spaceId: string, params?: DriveNodesListParams): Promise<DriveNodeLis
       { name: 'sortOrder', value: params?.sortOrder, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<DriveNodeListData>(appendQueryString(appApiPath(`/drive/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/nodes`), query));
+  }
+
+/** Create a push notification channel for a Drive node */
+  async watch(nodeId: string, body: CreateWatchChannelRequest): Promise<DriveWatchChannel> {
+    return this.client.post<DriveWatchChannel>(appApiPath(`/drive/nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/watch`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -1049,6 +1238,11 @@ async list(params: DriveChangesListParams): Promise<ChangeListData> {
     ]);
     return this.client.get<ChangeListData>(appendQueryString(appApiPath(`/drive/changes`), query));
   }
+
+/** Create a push notification channel for Drive changes */
+  async watch(body: CreateWatchChannelRequest): Promise<DriveWatchChannel> {
+    return this.client.post<DriveWatchChannel>(appApiPath(`/drive/changes/watch`), body, undefined, undefined, 'application/json');
+  }
 }
 
 export class DriveApi {
@@ -1062,7 +1256,9 @@ export class DriveApi {
   public readonly comments: DriveCommentsApi;
   public readonly commentReplies: DriveCommentRepliesApi;
   public readonly downloadGrants: DriveDownloadGrantsApi;
+  public readonly nodeLabels: DriveNodeLabelsApi;
   public readonly permissions: DrivePermissionsApi;
+  public readonly nodeProperties: DriveNodePropertiesApi;
   public readonly shareLinks: DriveShareLinksApi;
   public readonly trash: DriveTrashApi;
   public readonly versions: DriveVersionsApi;
@@ -1078,9 +1274,11 @@ export class DriveApi {
   public readonly websiteRoots: DriveWebsiteRootsApi;
   public readonly moveDestinations: DriveMoveDestinationsApi;
   public readonly uploadSessions: DriveUploadSessionsApi;
+  public readonly watchChannels: DriveWatchChannelsApi;
   public readonly downloadPackages: DriveDownloadPackagesApi;
   public readonly archiveEntries: DriveArchiveEntriesApi;
   public readonly uploader: DriveUploaderApi;
+  public readonly assets: DriveAssetsApi;
 
   constructor(client: HttpClient) {
 
@@ -1093,7 +1291,9 @@ export class DriveApi {
     this.comments = new DriveCommentsApi(client);
     this.commentReplies = new DriveCommentRepliesApi(client);
     this.downloadGrants = new DriveDownloadGrantsApi(client);
+    this.nodeLabels = new DriveNodeLabelsApi(client);
     this.permissions = new DrivePermissionsApi(client);
+    this.nodeProperties = new DriveNodePropertiesApi(client);
     this.shareLinks = new DriveShareLinksApi(client);
     this.trash = new DriveTrashApi(client);
     this.versions = new DriveVersionsApi(client);
@@ -1109,9 +1309,11 @@ export class DriveApi {
     this.websiteRoots = new DriveWebsiteRootsApi(client);
     this.moveDestinations = new DriveMoveDestinationsApi(client);
     this.uploadSessions = new DriveUploadSessionsApi(client);
+    this.watchChannels = new DriveWatchChannelsApi(client);
     this.downloadPackages = new DriveDownloadPackagesApi(client);
     this.archiveEntries = new DriveArchiveEntriesApi(client);
     this.uploader = new DriveUploaderApi(client);
+    this.assets = new DriveAssetsApi(client);
   }
 
 }

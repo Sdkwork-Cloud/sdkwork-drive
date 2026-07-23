@@ -58,7 +58,7 @@ pub(crate) async fn create_node_download_grant(
         300,
         "requestedTtlSeconds",
     )?;
-    let operator_id = ctx.resolve_operator_id(None)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let service = build_download_service(&state);
     let result = service
         .create_download_url(CreateDownloadUrlCommand {

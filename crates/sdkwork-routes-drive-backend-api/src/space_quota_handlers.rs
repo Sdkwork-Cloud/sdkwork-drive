@@ -1,11 +1,12 @@
 use crate::audit::record_audit_event;
 use crate::dto::{ListSpacesQuery, QuotaQuery, QuotaResponse, UpdateQuotaPolicyRequest};
-use crate::error::{map_service_error, validation_problem, ProblemDetail};
+use crate::error::{invalid_json_problem, map_service_error, validation_problem, ProblemDetail};
 use crate::mappers::map_space;
 use crate::response::{success_list_page_simple, DriveListHttpResponse};
 use crate::state::BackendState;
 use crate::tenant_context::authenticated_tenant_id;
-use crate::validators::{next_page_token, parse_offset_page, require_non_empty_text};
+use crate::validators::{next_page_token, parse_offset_page};
+use axum::extract::rejection::JsonRejection;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Extension;
@@ -78,10 +79,11 @@ pub(crate) async fn list_quotas(
 pub(crate) async fn update_quota_policy(
     State(state): State<BackendState>,
     Extension(app_context): Extension<DriveAppContext>,
-    Json(payload): Json<UpdateQuotaPolicyRequest>,
+    payload: Result<Json<UpdateQuotaPolicyRequest>, JsonRejection>,
 ) -> Result<Json<QuotaResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
     let tenant_id = authenticated_tenant_id(&app_context);
-    let operator_id = require_non_empty_text(payload.operator_id, "operatorId")?;
+    let operator_id = app_context.actor_id.clone();
     let service = DriveQuotaService::new(SqlQuotaStore::new(state.pool.clone()));
 
     if payload.clear_tenant_policy.unwrap_or(false) {

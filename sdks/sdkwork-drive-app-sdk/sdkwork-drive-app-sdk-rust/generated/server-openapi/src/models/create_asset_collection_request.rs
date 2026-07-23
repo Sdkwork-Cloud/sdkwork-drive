@@ -2,10 +2,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct CreateAssetCollectionRequest {
-    #[serde(rename = "organizationId")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub organization_id: Option<String>,
-
     pub title: String,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]

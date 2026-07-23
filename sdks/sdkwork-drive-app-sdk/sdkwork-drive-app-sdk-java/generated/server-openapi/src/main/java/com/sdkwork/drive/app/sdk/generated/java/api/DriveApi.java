@@ -169,6 +169,29 @@ public class DriveApi {
         return null;
     }
 
+    /** List labels applied to a node */
+    public NodeLabelListHttpResponse nodeLabelsList(String nodeId, String labelKey, Integer pageSize, String cursor) throws Exception {
+        String query = buildQueryString(List.of(
+            new QueryParameterSpec("labelKey", labelKey, "form", true, false, null),
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("cursor", cursor, "form", true, false, null)
+        ));
+        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/labels"), query));
+        return client.convertValue(raw, new TypeReference<NodeLabelListHttpResponse>() {});
+    }
+
+    /** Apply a label to a node */
+    public NodeLabelHttpResponse nodeLabelsUpdate(String nodeId, String labelId, ApplyNodeLabelRequest body) throws Exception {
+        Object raw = client.put(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<NodeLabelHttpResponse>() {});
+    }
+
+    /** Remove a label from a node */
+    public Void nodeLabelsDelete(String nodeId, String labelId) throws Exception {
+        client.delete(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/labels/" + serializePathParameter(labelId, new PathParameterSpec("labelId", "simple", false)) + ""));
+        return null;
+    }
+
     public DriveNodeHttpResponse nodesMove(String nodeId, MoveNodeRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/move"), body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<DriveNodeHttpResponse>() {});
@@ -215,6 +238,32 @@ public class DriveApi {
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/permissions/effective"), query));
         return client.convertValue(raw, new TypeReference<EffectivePermissionListHttpResponse>() {});
+    }
+
+    /** List node custom properties */
+    public DriveNodePropertyListHttpResponse nodePropertiesList(String nodeId, String visibility, Integer pageSize, String cursor) throws Exception {
+        String query = buildQueryString(List.of(
+            new QueryParameterSpec("visibility", visibility, "form", true, false, null),
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("cursor", cursor, "form", true, false, null)
+        ));
+        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/properties"), query));
+        return client.convertValue(raw, new TypeReference<DriveNodePropertyListHttpResponse>() {});
+    }
+
+    /** Create or update a node custom property */
+    public DriveNodePropertyHttpResponse nodePropertiesUpdate(String nodeId, String propertyKey, SetNodePropertyRequest body) throws Exception {
+        Object raw = client.put(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/properties/" + serializePathParameter(propertyKey, new PathParameterSpec("propertyKey", "simple", false)) + ""), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<DriveNodePropertyHttpResponse>() {});
+    }
+
+    /** Delete a node custom property */
+    public Void nodePropertiesDelete(String nodeId, String propertyKey, String visibility) throws Exception {
+        String query = buildQueryString(List.of(
+            new QueryParameterSpec("visibility", visibility, "form", true, false, null)
+        ));
+        client.delete(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/properties/" + serializePathParameter(propertyKey, new PathParameterSpec("propertyKey", "simple", false)) + ""), query));
+        return null;
     }
 
     public CreateShareLinkHttpResponse shareLinksCreate(String nodeId, CreateShareLinkRequest body) throws Exception {
@@ -267,6 +316,12 @@ public class DriveApi {
 
     public DriveNodeHttpResponse nodesFoldersCreate(CreateFolderRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/drive/nodes/folders"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<DriveNodeHttpResponse>() {});
+    }
+
+    /** Create a shortcut node */
+    public DriveNodeHttpResponse nodesShortcutsCreate(CreateShortcutRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/drive/nodes/shortcuts"), body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<DriveNodeHttpResponse>() {});
     }
 
@@ -553,6 +608,42 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<PresignedUploadPartHttpResponse>() {});
     }
 
+    /** Create a push notification channel for Drive changes */
+    public DriveWatchChannelHttpResponse changesWatch(CreateWatchChannelRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/drive/changes/watch"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<DriveWatchChannelHttpResponse>() {});
+    }
+
+    /** Create a push notification channel for a Drive node */
+    public DriveWatchChannelHttpResponse nodesWatch(String nodeId, CreateWatchChannelRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/drive/nodes/" + serializePathParameter(nodeId, new PathParameterSpec("nodeId", "simple", false)) + "/watch"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<DriveWatchChannelHttpResponse>() {});
+    }
+
+    /** List Drive watch channels */
+    public DriveWatchChannelListHttpResponse watchChannelsList(String resourceType, String lifecycleStatus, Integer pageSize, String cursor) throws Exception {
+        String query = buildQueryString(List.of(
+            new QueryParameterSpec("resourceType", resourceType, "form", true, false, null),
+            new QueryParameterSpec("lifecycleStatus", lifecycleStatus, "form", true, false, null),
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("cursor", cursor, "form", true, false, null)
+        ));
+        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/watch_channels"), query));
+        return client.convertValue(raw, new TypeReference<DriveWatchChannelListHttpResponse>() {});
+    }
+
+    /** Get a Drive watch channel */
+    public DriveWatchChannelHttpResponse watchChannelsRetrieve(String channelId) throws Exception {
+        Object raw = client.get(ApiPaths.appPath("/drive/watch_channels/" + serializePathParameter(channelId, new PathParameterSpec("channelId", "simple", false)) + ""));
+        return client.convertValue(raw, new TypeReference<DriveWatchChannelHttpResponse>() {});
+    }
+
+    /** Stop a Drive watch channel */
+    public StopWatchChannelHttpResponse watchChannelsStop(String channelId, StopWatchChannelRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/drive/watch_channels/" + serializePathParameter(channelId, new PathParameterSpec("channelId", "simple", false)) + "/stop"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<StopWatchChannelHttpResponse>() {});
+    }
+
     public DownloadPackageHttpResponse downloadPackagesCreate(CreateDownloadPackageRequest body) throws Exception {
         Object raw = client.post(ApiPaths.appPath("/drive/download_packages"), body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<DownloadPackageHttpResponse>() {});
@@ -581,6 +672,49 @@ public class DriveApi {
     public UploaderUploadPartHttpResponse uploaderUploadsPartsUpdate(String uploadItemId, Integer partNo, MarkUploaderPartUploadedRequest body) throws Exception {
         Object raw = client.put(ApiPaths.appPath("/drive/uploader/uploads/" + serializePathParameter(uploadItemId, new PathParameterSpec("uploadItemId", "simple", false)) + "/parts/" + serializePathParameter(partNo, new PathParameterSpec("partNo", "simple", false)) + ""), body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<UploaderUploadPartHttpResponse>() {});
+    }
+
+    /** List global assets */
+    public AssetListHttpResponse assetsList(String cursor, Integer pageSize, String kind, String sourceType, String q) throws Exception {
+        String query = buildQueryString(List.of(
+            new QueryParameterSpec("cursor", cursor, "form", true, false, null),
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("kind", kind, "form", true, false, null),
+            new QueryParameterSpec("sourceType", sourceType, "form", true, false, null),
+            new QueryParameterSpec("q", q, "form", true, false, null)
+        ));
+        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/assets"), query));
+        return client.convertValue(raw, new TypeReference<AssetListHttpResponse>() {});
+    }
+
+    /** Create a global asset metadata record */
+    public AssetItemHttpResponse assetsCreate(CreateAssetRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/assets"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<AssetItemHttpResponse>() {});
+    }
+
+    /** Get a global asset */
+    public AssetItemHttpResponse assetsRetrieve(String assetId) throws Exception {
+        Object raw = client.get(ApiPaths.appPath("/assets/" + serializePathParameter(assetId, new PathParameterSpec("assetId", "simple", false)) + ""));
+        return client.convertValue(raw, new TypeReference<AssetItemHttpResponse>() {});
+    }
+
+    /** Update a global asset */
+    public AssetItemHttpResponse assetsUpdate(String assetId, UpdateAssetRequest body) throws Exception {
+        Object raw = client.patch(ApiPaths.appPath("/assets/" + serializePathParameter(assetId, new PathParameterSpec("assetId", "simple", false)) + ""), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<AssetItemHttpResponse>() {});
+    }
+
+    /** Archive a global asset */
+    public AssetItemHttpResponse assetsArchive(String assetId, AssetActionRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/assets/" + serializePathParameter(assetId, new PathParameterSpec("assetId", "simple", false)) + "/archive"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<AssetItemHttpResponse>() {});
+    }
+
+    /** Restore an archived global asset */
+    public AssetItemHttpResponse assetsRestore(String assetId, AssetActionRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.appPath("/assets/" + serializePathParameter(assetId, new PathParameterSpec("assetId", "simple", false)) + "/restore"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<AssetItemHttpResponse>() {});
     }
 
     private record PathParameterSpec(String name, String style, boolean explode) {}

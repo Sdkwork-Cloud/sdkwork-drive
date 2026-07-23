@@ -18,7 +18,7 @@ const families = [
   {
     root: "sdkwork-drive-app-sdk",
     owner: "sdkwork-drive",
-    authority: "sdkwork-drive.app",
+    authority: "sdkwork-drive-app-api",
     input: "apis/app-api/drive/drive-app-api.openapi.json",
     dependencyWorkspace: "sdkwork-iam-app-sdk",
     dependencyAuthority: "sdkwork-iam-app-api",
@@ -52,32 +52,6 @@ const appbaseOwnedPathPrefixes = [
   "/backend/v3/api/open_platform/",
   "/backend/v3/api/system/iam/",
 ];
-
-function isAllowedComposedAppbaseRoute(family, pathKey, operation) {
-  const composedAuthority = String(operation["x-sdkwork-composed-from-api-authority"] || "");
-  const allowedAuthorities = new Set([
-    "sdkwork-iam-app-api",
-    "sdkwork-iam-backend-api",
-  ]);
-
-  if (family.root === "sdkwork-drive-app-sdk") {
-    return (
-      appbaseOwnedPathPrefixes.some((prefix) => pathKey.startsWith(prefix)) &&
-      operation["x-sdkwork-composed-from-owner"] === "sdkwork-appbase" &&
-      allowedAuthorities.has(composedAuthority)
-    );
-  }
-
-  if (family.root === "sdkwork-drive-backend-sdk") {
-    return (
-      appbaseOwnedPathPrefixes.some((prefix) => pathKey.startsWith(prefix)) &&
-      operation["x-sdkwork-composed-from-owner"] === "sdkwork-appbase" &&
-      allowedAuthorities.has(composedAuthority)
-    );
-  }
-
-  return false;
-}
 
 function readJson(relativePath) {
   return JSON.parse(readFileSync(path.join(workspaceRoot, relativePath), "utf8"));
@@ -152,12 +126,19 @@ test("drive generated OpenAPI inputs contain only sdkwork-drive owned operations
         family.authority,
         `${family.root} ${method.toUpperCase()} ${pathKey} must use ${family.authority}`,
       );
-      if (appbaseOwnedPathPrefixes.some((prefix) => pathKey.startsWith(prefix))) {
-        assert(
-          isAllowedComposedAppbaseRoute(family, pathKey, operation),
-          `${family.root} must not copy appbase-owned route ${method.toUpperCase()} ${pathKey} without explicit composed-from metadata`,
-        );
-      }
+      assert.equal(
+        appbaseOwnedPathPrefixes.some((prefix) => pathKey.startsWith(prefix)),
+        false,
+        `${family.root} must consume dependency route ${method.toUpperCase()} ${pathKey} through sdkDependencies`,
+      );
+      assert.equal(
+        Boolean(
+          operation["x-sdkwork-composed-from-owner"] ||
+            operation["x-sdkwork-composed-from-api-authority"],
+        ),
+        false,
+        `${family.root} owner authority must not contain composed dependency operations`,
+      );
     }
   }
 });

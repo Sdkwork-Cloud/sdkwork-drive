@@ -26,7 +26,7 @@ pub(crate) async fn list_changes(
     let space_id = require_query_value(query.space_id, "spaceId")?;
     validate_space_exists_for_change_history(&state.pool, &tenant_id, &space_id).await?;
     acl::ensure_space_change_feed_reader(&state.pool, &ctx, &space_id).await?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     let is_space_owner = acl::is_subject_space_owner(
         &state.pool,
         &tenant_id,

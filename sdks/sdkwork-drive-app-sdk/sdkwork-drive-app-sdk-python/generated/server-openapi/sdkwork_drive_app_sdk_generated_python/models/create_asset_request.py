@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 
 @dataclass
 class CreateAssetRequest:
-    organization_id: Optional[str] = None
     drive_node_id: Optional[str] = None
     virtual_reference: Optional[Dict[str, Any]] = None
     title: Optional[str] = None

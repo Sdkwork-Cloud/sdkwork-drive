@@ -10,15 +10,4 @@ pub struct SweepUploadSessionsRequest {
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
-
-    #[serde(rename = "operatorId")]
-    pub operator_id: String,
-
-    #[serde(rename = "correlationId")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub correlation_id: Option<String>,
-
-    #[serde(rename = "traceId")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub trace_id: Option<String>,
 }

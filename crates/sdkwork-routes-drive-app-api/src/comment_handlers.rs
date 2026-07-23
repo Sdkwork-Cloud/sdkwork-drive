@@ -85,7 +85,7 @@ pub(crate) async fn create_comment(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
 
     let comment_id = require_non_empty_text(payload.id, "id")?;
     let content = require_non_empty_text(payload.content, "content")?;
@@ -134,7 +134,7 @@ pub(crate) async fn update_comment(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let current = find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
@@ -187,10 +187,10 @@ pub(crate) async fn delete_comment(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id)): Path<(String, String)>,
-    Query(query): Query<NodeMutationQuery>,
+    Query(_query): Query<NodeMutationQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let affected = sqlx::query(
@@ -305,7 +305,7 @@ pub(crate) async fn create_comment_reply(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
 
     let reply_id = require_non_empty_text(payload.id, "id")?;
     let content = require_non_empty_text(payload.content, "content")?;
@@ -354,7 +354,7 @@ pub(crate) async fn update_comment_reply(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;
@@ -401,10 +401,10 @@ pub(crate) async fn delete_comment_reply(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, comment_id, reply_id)): Path<(String, String, String)>,
-    Query(query): Query<NodeMutationQuery>,
+    Query(_query): Query<NodeMutationQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     find_comment(&state.pool, &tenant_id, &node_id, &comment_id).await?;

@@ -1,7 +1,6 @@
 import type { MediaResource } from './media-resource';
 
 export interface CreateAssetRequest {
-  organizationId?: string;
   /** Existing Drive node to expose through /assets. */
   driveNodeId?: string;
   virtualReference?: { driveSpaceId?: string; title?: string; sourceDomain?: string; sourceResourceType?: string; sourceResourceId?: string; resourceSnapshot?: MediaResource; };

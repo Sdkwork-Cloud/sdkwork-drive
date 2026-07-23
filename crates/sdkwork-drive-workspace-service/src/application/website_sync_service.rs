@@ -8,7 +8,8 @@ use crate::infrastructure::sql::website_sync_store::SqlWebsiteSyncStore;
 use crate::ports::website_sync_store::{
     AbortDriveWebsiteSync, ActivateDriveWebsiteGeneration, ActivateValidatedWebsiteSync,
     CreateDriveWebsiteSync, CreateDriveWebsiteSyncResult, DriveWebsiteGenerationActivation,
-    DriveWebsiteSyncActivation, DriveWebsiteSyncStore, ValidateDriveWebsiteSync,
+    DriveWebsiteSyncActivation, DriveWebsiteSyncStore, MarkDriveWebsiteSyncFailed,
+    ValidateDriveWebsiteSync,
 };
 use crate::DriveServiceError;
 
@@ -274,16 +275,16 @@ where
         };
         let _ = self
             .store
-            .mark_failed(
-                &validation.tenant_id,
-                &validation.website_root_uuid,
-                &validation.sync_id,
-                sync_version,
-                lease_token,
-                code,
-                "Website sync validation failed",
-                &validation.operator_id,
-            )
+            .mark_failed(&MarkDriveWebsiteSyncFailed {
+                tenant_id: validation.tenant_id.clone(),
+                website_root_uuid: validation.website_root_uuid.clone(),
+                sync_id: validation.sync_id.clone(),
+                expected_sync_version: sync_version,
+                lease_token: lease_token.to_string(),
+                error_code: code.to_string(),
+                error_summary: "Website sync validation failed".to_string(),
+                operator_id: validation.operator_id.clone(),
+            })
             .await;
     }
 }

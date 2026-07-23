@@ -47,7 +47,7 @@ pub(crate) async fn watch_changes(
     let space_id = require_body_value(payload.space_id, "spaceId")?;
     validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
     acl::ensure_list_parent_reader(&state.pool, &ctx, &space_id, None).await?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let channel_id = validate_watch_channel_id(&payload.id)?.to_string();
     let address = validate_watch_channel_address(&payload.address)?.to_string();
     let channel_type = validate_watch_channel_type(
@@ -103,7 +103,7 @@ pub(crate) async fn watch_node(
     let tenant_id = ctx.resolve_tenant_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let channel_id = validate_watch_channel_id(&payload.id)?.to_string();
     let address = validate_watch_channel_address(&payload.address)?.to_string();
     let channel_type = validate_watch_channel_type(
@@ -161,7 +161,7 @@ pub(crate) async fn list_watch_channels(
         Some(resource_type) => Some(validate_watch_resource_type(&resource_type)?.to_string()),
         None => None,
     };
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
 
     let pool = state.pool.clone();
     let tenant_id_for_fetch = tenant_id.clone();
@@ -253,10 +253,10 @@ pub(crate) async fn stop_watch_channel(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(channel_id): Path<String>,
-    Json(payload): Json<StopWatchChannelRequest>,
+    Json(_payload): Json<StopWatchChannelRequest>,
 ) -> Result<Json<SdkWorkApiResponse<StopWatchChannelResponse>>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let current = find_watch_channel(&state.pool, &tenant_id, &channel_id).await?;
     acl::ensure_watch_channel_role(&state.pool, &ctx, &current, "writer").await?;
     let affected = sqlx::query(

@@ -13,7 +13,7 @@ runDriveSdkGenerator(
     sdkType: "custom",
     apiPrefix: "/open/v3/api",
     defaultBaseUrl: "http://127.0.0.1:18082",
-    defaultOpenapiFile: "drive-open-api.openapi.json",
+    defaultOpenapiPath: "apis/open-api/drive/drive-open-api.openapi.json",
     standardProfileArgs: [],
     manifestStandardProfile: "sdkwork-drive-open-v3",
   },

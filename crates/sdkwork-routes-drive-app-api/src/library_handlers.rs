@@ -46,7 +46,7 @@ pub(crate) async fn list_recent_nodes(
     )?;
     let order_by_for_fetch = order_by.clone();
     let space_id = normalize_optional_text(query.space_id);
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     if let Some(space_id) = space_id.as_deref() {
         validate_space_exists(&state.pool, &tenant_id, space_id).await?;
         acl::ensure_list_parent_reader(&state.pool, &ctx, space_id, None).await?;
@@ -194,7 +194,7 @@ pub(crate) async fn list_shared_with_me(
     Query(query): Query<SubjectNodeViewQuery>,
 ) -> Result<DriveNodeListHttpResponse, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let order_by = resolve_aliased_node_list_order_by(
         query.sort_by.clone(),
@@ -325,7 +325,7 @@ pub(crate) async fn list_favorite_nodes(
     Query(query): Query<SubjectNodeViewQuery>,
 ) -> Result<DriveNodeListHttpResponse, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     let page = parse_page_request(query.page_size, query.page_token)?;
     let order_by = resolve_aliased_node_list_order_by(
         query.sort_by.clone(),
@@ -509,12 +509,11 @@ pub(crate) async fn set_favorite(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Json(payload): Json<FavoriteNodeRequest>,
+    Json(_payload): Json<FavoriteNodeRequest>,
 ) -> Result<Json<SdkWorkApiResponse<FavoriteNodeResponse>>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) =
-        ctx.resolve_subject(payload.subject_type, payload.subject_id)?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     validate_subject_type(&subject_type)?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
@@ -554,11 +553,11 @@ pub(crate) async fn unset_favorite(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Query(query): Query<FavoriteNodeQuery>,
+    Query(_query): Query<FavoriteNodeQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
-    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     validate_subject_type(&subject_type)?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "reader").await?;
@@ -600,8 +599,7 @@ pub(crate) async fn check_favorite_nodes(
     Json(payload): Json<CheckFavoriteNodesRequest>,
 ) -> Result<DriveListHttpResponse<FavoriteNodeCheckItem>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) =
-        ctx.resolve_subject(payload.subject_type, payload.subject_id)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     validate_subject_type(&subject_type)?;
 
     let mut node_ids = Vec::new();

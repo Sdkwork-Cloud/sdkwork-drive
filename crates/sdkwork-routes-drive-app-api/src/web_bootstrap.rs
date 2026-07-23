@@ -31,7 +31,8 @@ impl DomainContextInjector for DriveAppContextInjector {
             request.headers(),
             &mut app_context,
         );
-        let drive_context = DriveRequestContext::from_app_context(&app_context);
+        let drive_context =
+            DriveRequestContext::from_app_context(&app_context, principal.auth.auth_level.clone());
         request.extensions_mut().insert(app_context);
         request.extensions_mut().insert(drive_context);
     }
@@ -51,12 +52,7 @@ pub fn drive_app_context_from_web_principal(
         WebDeploymentMode::Local => Some("local".to_owned()),
         WebDeploymentMode::Private => Some("private".to_owned()),
     };
-    let auth_level = match principal.auth.auth_level {
-        WebAuthLevel::Anonymous => Some("anonymous".to_owned()),
-        WebAuthLevel::Password => Some("password".to_owned()),
-        WebAuthLevel::Mfa => Some("mfa".to_owned()),
-        WebAuthLevel::System | WebAuthLevel::ApiKey => Some("system".to_owned()),
-    };
+    let auth_level = Some(drive_auth_level_value(&principal.auth.auth_level).to_owned());
     let actor_kind = match principal.subject.subject_type {
         WebSubjectType::User => "user".to_owned(),
         WebSubjectType::Service => "service".to_owned(),
@@ -80,6 +76,16 @@ pub fn drive_app_context_from_web_principal(
         device_id: None,
         request_id: context.request_id.0.clone(),
         trace_id: String::new(),
+    }
+}
+
+fn drive_auth_level_value(auth_level: &WebAuthLevel) -> &'static str {
+    match auth_level {
+        WebAuthLevel::Anonymous => "anonymous",
+        WebAuthLevel::Password => "password",
+        WebAuthLevel::Mfa => "mfa",
+        WebAuthLevel::System => "system",
+        WebAuthLevel::ApiKey => "api_key",
     }
 }
 
@@ -125,4 +131,15 @@ where
 pub async fn wrap_router_with_web_framework_from_env(router: Router) -> Router {
     let resolver = sdkwork_iam_web_adapter::iam_web_request_context_resolver_from_env().await;
     wrap_router_with_iam_web_framework(resolver, router)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn auth_level_adapter_preserves_api_key_semantics() {
+        assert_eq!(drive_auth_level_value(&WebAuthLevel::ApiKey), "api_key");
+        assert_eq!(drive_auth_level_value(&WebAuthLevel::System), "system");
+    }
 }

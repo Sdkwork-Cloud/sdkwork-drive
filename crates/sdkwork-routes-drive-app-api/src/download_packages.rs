@@ -78,7 +78,7 @@ pub(crate) async fn create_download_package(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let requested_node_ids = normalize_download_package_node_ids(payload.node_ids)?;
     acl::ensure_node_ids_role(&state.pool, &ctx, &requested_node_ids, "reader").await?;
     let package_name = normalize_package_name(payload.package_name);

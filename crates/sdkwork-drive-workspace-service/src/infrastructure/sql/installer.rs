@@ -269,12 +269,13 @@ fn drive_database_config_with_unified_postgres_search_path(
 }
 
 pub async fn connect_any_database(config: &DatabaseConfig) -> Result<AnyPool, sqlx::Error> {
-    if let Some(pool) = installed_drive_any_pool() {
-        return Ok(pool);
-    }
-
     sqlx::any::install_default_drivers();
     let config = drive_database_config_with_unified_postgres_search_path(config)?;
+    if installed_database_engine() == Some(config.engine()) {
+        if let Some(pool) = installed_drive_any_pool() {
+            return Ok(pool);
+        }
+    }
     if sdkwork_database_sqlx::process_shared_database_pool_enabled() {
         let standard = StandardDatabaseConfig {
             engine: match config.engine() {
@@ -303,18 +304,20 @@ pub async fn connect_any_database(config: &DatabaseConfig) -> Result<AnyPool, sq
 pub async fn connect_any_database_and_install_schema(
     config: &DatabaseConfig,
 ) -> Result<AnyPool, sqlx::Error> {
+    let config = drive_database_config_with_unified_postgres_search_path(config)?;
+    if config.engine() == DatabaseEngine::Sqlite {
+        let pool = connect_any_database(&config).await?;
+        install_any_schema(&pool, DatabaseEngine::Sqlite).await?;
+        return Ok(pool);
+    }
     if let Some(pool) = installed_drive_any_pool() {
         return Ok(pool);
     }
 
-    let config = drive_database_config_with_unified_postgres_search_path(config)?;
     crate::bootstrap::bootstrap_drive_database_for_config(&config)
         .await
         .map_err(|error| sqlx::Error::Configuration(error.into()))?;
     let pool = connect_any_database(&config).await?;
-    if config.engine() == DatabaseEngine::Sqlite {
-        install_any_schema(&pool, config.engine()).await?;
-    }
     install_drive_runtime(pool.clone(), config.engine())?;
     Ok(pool)
 }

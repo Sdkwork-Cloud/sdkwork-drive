@@ -6,5 +6,4 @@ type CopyProviderObjectRequest struct {
 	DestinationObjectKey string `json:"destinationObjectKey"`
 	DestinationBucket string `json:"destinationBucket"`
 	MetadataDirective string `json:"metadataDirective"`
-	OperatorId string `json:"operatorId"`
 }

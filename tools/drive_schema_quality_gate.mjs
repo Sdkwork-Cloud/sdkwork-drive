@@ -101,7 +101,7 @@ const DRIVE_SPACE_TYPE_ENUM = [
 const SDK_OWNER = "sdkwork-drive";
 const SDK_AUTHORITIES = {
   open: "sdkwork-drive.open",
-  app: "sdkwork-drive.app",
+  app: "sdkwork-drive-app-api",
   backend: "sdkwork-drive.backend",
   adminStorage: "sdkwork-drive.admin.storage",
 };
@@ -122,7 +122,7 @@ const APPBASE_BACKEND_DEPENDENCY_PATH_PREFIXES = [
   "/backend/v3/api/open_platform/",
   "/backend/v3/api/system/iam/",
 ];
-const APPBASE_APP_OPERATION_IDS = [
+const APPBASE_APP_FORBIDDEN_OPERATION_IDS = [
   "oauth.authorizationUrls.create",
   "oauth.sessions.create",
   "passwordResetRequests.create",
@@ -216,11 +216,6 @@ function parseArgs(argv) {
   }
 
   return parsed;
-}
-
-function isSdkExportedOpenapi(openapiPath) {
-  const normalized = path.normalize(openapiPath).replace(/\\/g, "/");
-  return normalized.includes("/target/drive-openapi-check/");
 }
 
 function readJson(filePath) {
@@ -348,60 +343,6 @@ function hasDualTokenSecurity(security) {
       Array.isArray(entry?.AccessToken) &&
       entry.AccessToken.length === 0,
   );
-}
-
-function assertOperationSecurity(document, operationId, expectedSecurity, label) {
-  for (const [pathKey, pathItem] of Object.entries(document.paths || {})) {
-    for (const [method, operation] of Object.entries(pathItem || {})) {
-      if (!["get", "put", "post", "delete", "patch", "options", "head", "trace"].includes(method)) {
-        continue;
-      }
-      if (operation?.operationId !== operationId) {
-        continue;
-      }
-      const security = operation.security;
-      if (!Array.isArray(security)) {
-        fail(`${label} ${operationId} must declare operation security`);
-      }
-      if (expectedSecurity === "dualToken" && !hasDualTokenSecurity(security)) {
-        fail(`${label} ${operationId} must require AuthToken and AccessToken`);
-      }
-      if (expectedSecurity === "public" && security.length !== 0) {
-        fail(`${label} ${operationId} must declare security: []`);
-      }
-      return;
-    }
-  }
-  fail(`${label} missing operation security check target: ${operationId}`);
-}
-
-function assertIamAppbaseSecurity(document, label) {
-  for (const operationId of [
-    "oauth.authorizationUrls.create",
-    "oauth.sessions.create",
-    "passwordResetRequests.create",
-    "passwordResets.create",
-    "registrations.create",
-    "sessions.create",
-    "sessions.organizationSelection.create",
-    "sessions.refresh",
-    "oauth.deviceAuthorizations.create",
-    "oauth.deviceAuthorizations.retrieve",
-    "oauth.deviceAuthorizations.scans.create",
-    "oauth.deviceAuthorizations.passwordCompletions.create",
-    "iam.runtime.retrieve",
-    "iam.verificationPolicy.retrieve",
-  ]) {
-    assertOperationSecurity(document, operationId, "public", label);
-  }
-  for (const operationId of [
-    "sessions.current.delete",
-    "sessions.current.retrieve",
-    "sessions.current.update",
-    "users.current.retrieve",
-  ]) {
-    assertOperationSecurity(document, operationId, "dualToken", label);
-  }
 }
 
 function assertPublicSecurity(document, label) {
@@ -713,6 +654,67 @@ function assertQueryParameterAbsent(document, pathKey, method, parameterName, la
   }
 }
 
+const REQUEST_CONTEXT_ONLY_INPUT_FIELDS = new Set([
+  "tenantId",
+  "organizationId",
+  "userId",
+  "appId",
+  "operatorId",
+  "requestId",
+  "correlationId",
+  "traceId",
+  "subjectType",
+  "subjectId",
+  "anonymousId",
+]);
+
+const REQUEST_TARGET_FIELD_ALLOWLIST = new Map([
+  ["CreatePermissionRequest", new Set(["subjectType", "subjectId"])],
+]);
+
+const HISTORICAL_READ_FILTER_ALLOWLIST = new Set([
+  "GET /backend/v3/api/drive/audit_events query:correlationId",
+  "GET /backend/v3/api/drive/audit_events query:traceId",
+  "GET /backend/v3/api/drive/maintenance/jobs query:operatorId",
+]);
+
+function assertContextOnlyFieldsNotClientWritable(document, label) {
+  for (const [schemaName, schema] of Object.entries(document.components?.schemas || {})) {
+    if (!schemaName.endsWith("Request")) {
+      continue;
+    }
+    const allowedTargetFields = REQUEST_TARGET_FIELD_ALLOWLIST.get(schemaName) || new Set();
+    for (const propertyName of Object.keys(schema?.properties || {})) {
+      if (
+        REQUEST_CONTEXT_ONLY_INPUT_FIELDS.has(propertyName)
+        && !allowedTargetFields.has(propertyName)
+      ) {
+        fail(`${label} ${schemaName}.${propertyName} must come from authenticated request context`);
+      }
+    }
+  }
+
+  for (const [pathKey, pathItem] of Object.entries(document.paths || {})) {
+    for (const [method, operation] of Object.entries(pathItem || {})) {
+      if (!["get", "put", "post", "delete", "patch", "options", "head", "trace"].includes(method)) {
+        continue;
+      }
+      for (const parameter of operation?.parameters || []) {
+        if (!REQUEST_CONTEXT_ONLY_INPUT_FIELDS.has(parameter?.name)) {
+          continue;
+        }
+        const parameterKey = `${method.toUpperCase()} ${pathKey} ${parameter.in}:${parameter.name}`;
+        if (HISTORICAL_READ_FILTER_ALLOWLIST.has(parameterKey)) {
+          continue;
+        }
+        fail(
+          `${label} ${parameterKey} must come from authenticated request context`,
+        );
+      }
+    }
+  }
+}
+
 function assertNoContentResponse(document, pathKey, method, label) {
   const operation = document.paths?.[pathKey]?.[method];
   if (!operation || typeof operation !== "object") {
@@ -728,23 +730,6 @@ function assertNoContentResponse(document, pathKey, method, label) {
   }
   if (responses["200"]?.content?.["application/json"]) {
     fail(`${label} ${method.toUpperCase()} ${pathKey} must not keep legacy 200 JSON delete content`);
-  }
-}
-
-function assertQueryParameterRequired(document, pathKey, method, parameterName, label) {
-  const pathItem = document.paths && document.paths[pathKey];
-  if (!pathItem || !pathItem[method]) {
-    fail(`${label} missing ${method.toUpperCase()} ${pathKey}`);
-  }
-  const parameters = Array.isArray(pathItem[method].parameters) ? pathItem[method].parameters : [];
-  const parameter = parameters.find(
-    (item) => item && item.in === "query" && item.name === parameterName,
-  );
-  if (!parameter) {
-    fail(`${label} missing query parameter ${parameterName} at ${method.toUpperCase()} ${pathKey}`);
-  }
-  if (parameter.required !== true) {
-    fail(`${label} query parameter ${parameterName} must be required at ${method.toUpperCase()} ${pathKey}`);
   }
 }
 
@@ -871,10 +856,6 @@ function tableBlock(source, tableName, label) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const isSdkExportGate =
-  isSdkExportedOpenapi(args.appOpenapiPath)
-  || isSdkExportedOpenapi(args.backendOpenapiPath)
-  || isSdkExportedOpenapi(args.adminStorageOpenapiPath);
 const openOpenapi = readJson(args.openOpenapiPath);
 const appOpenapi = readJson(args.appOpenapiPath);
 const backendOpenapi = readJson(args.backendOpenapiPath);
@@ -890,8 +871,11 @@ assertOpenapiVersion31(backendOpenapi, "backend openapi");
 assertOpenapiVersion31(adminStorageOpenapi, "admin storage openapi");
 assertPathPrefix(openOpenapi, "/open/v3/api", "open openapi");
 assertPathPrefix(appOpenapi, "/app/v3/api", "app openapi");
+assertContextOnlyFieldsNotClientWritable(appOpenapi, "app openapi");
 assertPathPrefix(backendOpenapi, "/backend/v3/api", "backend openapi");
+assertContextOnlyFieldsNotClientWritable(backendOpenapi, "backend openapi");
 assertPathPrefix(adminStorageOpenapi, "/backend/v3/api/drive/storage", "admin storage openapi");
+assertContextOnlyFieldsNotClientWritable(adminStorageOpenapi, "admin storage openapi");
 
 assertPathExists(openOpenapi, "/open/v3/api/drive/share_links/{token}", "open openapi");
 assertPathExists(
@@ -1199,6 +1183,7 @@ assertDualTokenSecurity(appOpenapi, "app openapi drive routes", {
 assertDualTokenSecurity(backendOpenapi, "backend openapi");
 assertDualTokenSecurity(adminStorageOpenapi, "admin storage openapi");
 assertNoDependencyOwnedPaths(openOpenapi, "open openapi");
+assertNoDependencyOwnedPaths(appOpenapi, "app openapi");
 assertNoDependencyOwnedPaths(backendOpenapi, "backend openapi", APPBASE_BACKEND_DEPENDENCY_PATH_PREFIXES);
 for (const [document, pathKey, label] of [
   [
@@ -1325,18 +1310,22 @@ assertSchemaHasProperties(
   ["startPageToken"],
   "app openapi",
 );
-if (!isSdkExportGate) {
-  assertSchemaHasProperties(
+for (const propertyName of ["subjectType", "subjectId", "operatorId"]) {
+  assertSchemaPropertyAbsent(
     appOpenapi,
     "FavoriteNodeRequest",
-    [
-      "subjectType",
-      "subjectId",
-      "operatorId",
-    ],
+    propertyName,
     "app openapi",
   );
 }
+assertSchemaHasProperties(
+  appOpenapi,
+  "CreatePermissionRequest",
+  ["id", "subjectType", "subjectId", "role"],
+  "app openapi",
+);
+assertSchemaRequired(appOpenapi, "CreatePermissionRequest", "subjectType", "app openapi");
+assertSchemaRequired(appOpenapi, "CreatePermissionRequest", "subjectId", "app openapi");
 assertSchemaHasProperties(
   appOpenapi,
   "FavoriteNodeResponse",
@@ -1532,18 +1521,11 @@ assertSchemaPropertyEnum(
   DRIVE_SPACE_TYPE_ENUM,
   "app openapi",
 );
-assertSchemaHasProperties(
-  backendOpenapi,
-  "SweepObjectStoreRequest",
-  ["correlationId", "traceId"],
-  "backend openapi",
-);
-assertSchemaHasProperties(
-  backendOpenapi,
-  "SweepUploadSessionsRequest",
-  ["correlationId", "traceId"],
-  "backend openapi",
-);
+for (const schemaName of ["SweepObjectStoreRequest", "SweepUploadSessionsRequest"]) {
+  for (const propertyName of ["operatorId", "requestId", "correlationId", "traceId"]) {
+    assertSchemaPropertyAbsent(backendOpenapi, schemaName, propertyName, "backend openapi");
+  }
+}
 for (const fieldName of ["startedAt", "finishedAt", "createdAt"]) {
   assertSchemaPropertyFormat(
     backendOpenapi,
@@ -1723,37 +1705,25 @@ assertSchemaHasProperties(
   ],
   "admin storage openapi",
 );
-if (!isSdkExportGate) {
-  for (const [pathKey, method] of [
-    ["/backend/v3/api/drive/storage/providers/{providerId}/bucket", "put"],
-    ["/backend/v3/api/drive/storage/providers/{providerId}/bucket", "delete"],
-    ["/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}", "delete"],
-    ["/backend/v3/api/drive/storage/bindings/default", "delete"],
-  ]) {
-    assertQueryParameterExists(
-      adminStorageOpenapi,
-      pathKey,
-      method,
-      "operatorId",
-      "admin storage openapi",
-    );
-    assertQueryParameterRequired(
-      adminStorageOpenapi,
-      pathKey,
-      method,
-      "operatorId",
-      "admin storage openapi",
-    );
-    assertQueryParameterStringConstraints(
-      adminStorageOpenapi,
-      pathKey,
-      method,
-      "operatorId",
-      128,
-      "^[A-Za-z0-9._:@-]+$",
-      "admin storage openapi",
-    );
-  }
+assertSchemaPropertyAbsent(
+  adminStorageOpenapi,
+  "CopyProviderObjectRequest",
+  "operatorId",
+  "admin storage openapi",
+);
+for (const [pathKey, method] of [
+  ["/backend/v3/api/drive/storage/providers/{providerId}/bucket", "put"],
+  ["/backend/v3/api/drive/storage/providers/{providerId}/bucket", "delete"],
+  ["/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}", "delete"],
+  ["/backend/v3/api/drive/storage/bindings/default", "delete"],
+]) {
+  assertQueryParameterAbsent(
+    adminStorageOpenapi,
+    pathKey,
+    method,
+    "operatorId",
+    "admin storage openapi",
+  );
 }
 assertQueryParameterAbsent(
   adminStorageOpenapi,
@@ -1997,34 +1967,6 @@ assertSchemaPropertyAbsent(
   "providerRootRef",
   "app openapi",
 );
-for (const schemaName of ["SweepObjectStoreRequest", "SweepUploadSessionsRequest"]) {
-  if (!isSdkExportGate) {
-    assertSchemaPropertyStringConstraints(
-      backendOpenapi,
-      schemaName,
-      "operatorId",
-      128,
-      "^[A-Za-z0-9._:@-]+$",
-      "backend openapi",
-    );
-  }
-  assertSchemaPropertyStringConstraints(
-    backendOpenapi,
-    schemaName,
-    "correlationId",
-    64,
-    "^[A-Za-z0-9._:@-]+$",
-    "backend openapi",
-  );
-  assertSchemaPropertyStringConstraints(
-    backendOpenapi,
-    schemaName,
-    "traceId",
-    128,
-    "^[A-Za-z0-9._:@-]+$",
-    "backend openapi",
-  );
-}
 assertSchemaPropertyStringConstraints(
   backendOpenapi,
   "MaintenanceJob",
@@ -2070,17 +2012,15 @@ assertQueryParameterEnum(
   ["completed", "failed"],
   "backend openapi",
 );
-if (!isSdkExportGate) {
-  assertQueryParameterStringConstraints(
-    backendOpenapi,
-    "/backend/v3/api/drive/maintenance/jobs",
-    "get",
-    "operatorId",
-    128,
-    "^[A-Za-z0-9._:@-]+$",
-    "backend openapi",
-  );
-}
+assertQueryParameterStringConstraints(
+  backendOpenapi,
+  "/backend/v3/api/drive/maintenance/jobs",
+  "get",
+  "operatorId",
+  128,
+  "^[A-Za-z0-9._:@-]+$",
+  "backend openapi",
+);
 assertQueryParameterStringConstraints(
   backendOpenapi,
   "/backend/v3/api/drive/audit_events",
@@ -2347,8 +2287,11 @@ assertOperationIdsExclude(
   ],
   "app openapi",
 );
-assertOperationIdsInclude(appOperationIds, APPBASE_APP_OPERATION_IDS, "app openapi");
-assertIamAppbaseSecurity(appOpenapi, "app openapi appbase IAM routes");
+assertOperationIdsExclude(
+  appOperationIds,
+  APPBASE_APP_FORBIDDEN_OPERATION_IDS,
+  "app openapi",
+);
 assertOperationIdsInclude(
   backendOperationIds,
   [

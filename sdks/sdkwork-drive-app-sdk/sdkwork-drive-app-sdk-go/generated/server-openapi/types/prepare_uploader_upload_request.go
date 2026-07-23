@@ -4,8 +4,6 @@ package types
 type PrepareUploaderUploadRequest struct {
 	Id string `json:"id"`
 	TaskId string `json:"taskId"`
-	OrganizationId string `json:"organizationId"`
-	AnonymousId string `json:"anonymousId"`
 	AppResourceType string `json:"appResourceType"`
 	AppResourceId string `json:"appResourceId"`
 	UploadProfileCode string `json:"uploadProfileCode"`

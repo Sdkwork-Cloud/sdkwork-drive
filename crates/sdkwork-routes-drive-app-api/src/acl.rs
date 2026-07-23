@@ -133,7 +133,7 @@ pub(crate) async fn ensure_ctx_node_role(
     required_role: &str,
 ) -> Result<DriveEffectiveNodeAccess, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     ensure_subject_role(
         pool,
         &tenant_id,
@@ -153,7 +153,7 @@ pub(crate) async fn ensure_list_parent_reader(
     parent_node_id: Option<&str>,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     ensure_subject_space_scoped_reader(
         pool,
         &tenant_id,
@@ -262,7 +262,7 @@ pub(crate) async fn ensure_space_owner(
     space_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     let service = SqlDrivePermissionService::new(pool.clone());
     if service
         .is_space_owner(&tenant_id, space_id, &subject_type, &subject_id)
@@ -300,7 +300,7 @@ pub(crate) async fn ensure_parent_writer(
     parent_node_id: Option<&str>,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     let service = SqlDrivePermissionService::new(pool.clone());
     if service
         .is_space_owner(&tenant_id, space_id, &subject_type, &subject_id)
@@ -358,7 +358,7 @@ pub(crate) async fn ensure_space_change_feed_reader(
     space_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     if is_space_owner_any_lifecycle(pool, &tenant_id, space_id, &subject_type, &subject_id).await? {
         return Ok(());
     }

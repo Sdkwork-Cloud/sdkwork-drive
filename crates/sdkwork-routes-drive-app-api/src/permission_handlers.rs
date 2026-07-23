@@ -171,7 +171,7 @@ pub(crate) async fn create_permission(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
 
     validate_subject_type(&payload.subject_type)?;
     validate_permission_role(&payload.role)?;
@@ -239,7 +239,7 @@ pub(crate) async fn update_permission(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
     let current_row = sqlx::query(
@@ -310,10 +310,10 @@ pub(crate) async fn delete_permission(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, permission_id)): Path<(String, String)>,
-    Query(query): Query<NodeMutationQuery>,
+    Query(_query): Query<NodeMutationQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "owner").await?;
     let affected = sqlx::query(

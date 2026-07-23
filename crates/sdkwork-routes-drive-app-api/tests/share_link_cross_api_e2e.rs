@@ -51,8 +51,7 @@ async fn share_link_create_via_app_api_and_resolve_via_open_api_with_access_code
             r#"{
                     "id":"share-cross-api",
                     "role":"reader",
-                    "accessCode":"cross-e2e-code",
-                    "operatorId":"user-owner"
+                    "accessCode":"cross-e2e-code"
                 }"#,
         ))
         .await

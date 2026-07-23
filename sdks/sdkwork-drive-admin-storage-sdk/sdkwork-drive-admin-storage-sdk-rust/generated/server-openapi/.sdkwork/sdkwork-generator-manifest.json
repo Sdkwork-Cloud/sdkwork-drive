@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
     },
     {
       "path": "bin/publish.ps1",
@@ -48,7 +48,7 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "38c005ac4d1b3eea5303230a8283f15a37d8a6b00f1f1bb7f0eebc6faa6cadd1"
+      "sha256": "276b7a854b9eeadc08a073ebdb53f719c7f67bc2510b6ba918c28f948d028e1c"
     },
     {
       "path": "src/api/mod.rs",
@@ -80,7 +80,7 @@
     },
     {
       "path": "src/models/copy_provider_object_request.rs",
-      "sha256": "72e8fb4cfbcaa2ef6f68703943fd7e3a0439d817c4778b2ca97ecb738a7ae5ab"
+      "sha256": "312c2d6a759fcb4b0ae83cfff98e1cc20118e9f59c510026e60782c9bbe1edc4"
     },
     {
       "path": "src/models/create_storage_provider_request.rs",
@@ -92,11 +92,7 @@
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "3c13c6424226c3a6f4ede53b672cdabfdddc04879240c8a092d33e43e68f5c78"
-    },
-    {
-      "path": "src/models/operator_request.rs",
-      "sha256": "8dce662b3867e130d6b062911c8d7c67d872c181ca50a38b16738a758e1bbbce"
+      "sha256": "4425050ab0a7ff2dbb48a9a117f1a35534f901e2622a08a675919f989a2814cd"
     },
     {
       "path": "src/models/page_info.rs",
@@ -124,7 +120,7 @@
     },
     {
       "path": "src/models/provider_object.rs",
-      "sha256": "2c298775625fb50cbd73113c62ec1d22ed1537489dc9f55d7742e3b9a6c2d43e"
+      "sha256": "5b8baabadb7e53c572938507189e2817082a258cfbd4a4428698715e697bb8a5"
     },
     {
       "path": "src/models/rotate_storage_provider_credential_request.rs",
@@ -241,10 +237,6 @@
     {
       "path": "src/models/storage_providers_update_response.rs",
       "sha256": "000f6fa5cfef40c3e6ce35252940266d19a6bdf1eadfac7150f57689358ff570"
-    },
-    {
-      "path": "src/models/test_storage_provider_request.rs",
-      "sha256": "9050592a9399f547d7d37ca3da29f7206fdf7dfedc47d5dea5156e9b965ae782"
     },
     {
       "path": "src/models/test_storage_provider_response.rs",

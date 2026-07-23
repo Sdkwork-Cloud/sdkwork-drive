@@ -1,3 +1,1 @@
-export interface NodeCommandRequest {
-  operatorId?: string;
-}
+export interface NodeCommandRequest {}

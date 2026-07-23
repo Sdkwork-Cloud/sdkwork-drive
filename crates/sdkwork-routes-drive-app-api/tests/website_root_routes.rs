@@ -52,7 +52,6 @@ async fn create_space(
                     "ownerSubjectId": owner_id,
                     "displayName": format!("{space_id} display name"),
                     "spaceType": space_type,
-                    "operatorId": owner_id,
                 })
                 .to_string(),
             ),

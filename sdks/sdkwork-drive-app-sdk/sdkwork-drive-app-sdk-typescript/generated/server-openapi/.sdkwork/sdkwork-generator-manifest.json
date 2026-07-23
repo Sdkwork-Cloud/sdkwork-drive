@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "257ba3674f82e219bf8fa200a2b40cb2983daa878a60e537e31f72c538e95ea0"
+      "sha256": "858ca7509b2301add2e6257a4db235b855652b429ee602332f296863645cd1df"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/assets.ts",
-      "sha256": "a16bb4dd5aaf084b8d3e83c1ab5b51de70b34f5db8b9230e540238419508bc25"
+      "sha256": "af285a122eabb0d7d7829a6bdb6943d020ed20ef0c40e89f9d08d6673468aa9c"
     },
     {
       "path": "src/api/base.ts",
@@ -60,31 +60,15 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "b21f1c29602255608fa9c6266d84ff24e86e369b4238b89d0e4268c6b845542d"
+      "sha256": "3de5c1f59805ad9fa14c2a6488c125ac1ed1cd447dd90ded9666967187695013"
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "4ef67065bad4f8ceb49159dcc199b8891f0bd5aa47270ae63ee317631aeba390"
-    },
-    {
-      "path": "src/api/node-labels.ts",
-      "sha256": "76f98f55f87825e613d004af342b86f438430f44905f126d53267a3400eeacef"
-    },
-    {
-      "path": "src/api/node-properties.ts",
-      "sha256": "bc6c61417a72407de14b91f7bf63e1689e7a789ca43eac03cac84ea9661f6bae"
-    },
-    {
-      "path": "src/api/nodes.ts",
-      "sha256": "4b44b12c4b17286f4aad073caaee4689cb74dfc9df1c71b9fc93f33c10a1c454"
+      "sha256": "306252e78ed50f74574d14c2a35a7a0d777427a04258297a77bf7e7328ec551d"
     },
     {
       "path": "src/api/paths.ts",
       "sha256": "4ffed7b7d576dc11081bf6b43511465d3a5db410bd25c425ef47b69b154981ad"
-    },
-    {
-      "path": "src/api/watch-channels.ts",
-      "sha256": "78fc093ffa881a75bd44222fa55aa1dad514eeec2a471d5cb3d5ce3d434c9be0"
     },
     {
       "path": "src/auth/index.ts",
@@ -104,7 +88,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "ac51909b60bd1a37583f955ae138851d6ced606ca782751a917dbea1b5d6a3a1"
+      "sha256": "781e23194b70764b3a26170add2abc268050d13632750598680794eebc2d8d0a"
     },
     {
       "path": "src/types/activate-website-generation-request.ts",
@@ -112,7 +96,7 @@
     },
     {
       "path": "src/types/apply-node-label-request.ts",
-      "sha256": "e725bffa313f1739ab8a42d53e7d5339b5a601980e0f9980cb75611d21e168ca"
+      "sha256": "098b65b609460f2a1f9067d957662d6a4b274fed428fff4e28978a638ea8aad8"
     },
     {
       "path": "src/types/archive-entry-list-http-response.ts",
@@ -188,7 +172,7 @@
     },
     {
       "path": "src/types/check-favorite-nodes-request.ts",
-      "sha256": "7e51f51a4382bc95a5ca7a2033823b33a8a2c34b19de676499ecb7825d98bb2b"
+      "sha256": "1c0a2a93555e29f7fe5e10b251f4361b3fc803d908e1a88ba8a894c07a470214"
     },
     {
       "path": "src/types/claim-share-link-http-response.ts",
@@ -220,7 +204,7 @@
     },
     {
       "path": "src/types/create-asset-collection-request.ts",
-      "sha256": "30055bf30e5c7207208d375662cf9d9e37b6ce62faf155d25dbe150da37c4755"
+      "sha256": "26f27c27cf99a8d28ee5771d956b8c3b1e0e796128857125c88d1fd96d73ef64"
     },
     {
       "path": "src/types/create-asset-relation-request.ts",
@@ -228,7 +212,7 @@
     },
     {
       "path": "src/types/create-asset-request.ts",
-      "sha256": "06d2a6501a52af5c71615499b1a71ae38e476eb2cecb54b01a442be7ed188517"
+      "sha256": "38072e1d991fa45a8bc671eeed8ebf0e17e5b397d64aab0026efd60f0f087148"
     },
     {
       "path": "src/types/create-comment-reply-request.ts",
@@ -284,7 +268,7 @@
     },
     {
       "path": "src/types/create-permission-request.ts",
-      "sha256": "eea2584c4dbf186a393d189802032e9e61b0852a3fb5c82f3168a4c558c6000b"
+      "sha256": "f1210b41e74f82911298468b3827bc26e1b7fe54c734250d3d3d068b5f95a715"
     },
     {
       "path": "src/types/create-share-link-http-response.ts",
@@ -536,7 +520,7 @@
     },
     {
       "path": "src/types/favorite-node-request.ts",
-      "sha256": "579e322b7991ab6798b981e1c466f186c3b317cab38f6aafae79d071b4797770"
+      "sha256": "13deb2d54c373dd185522f47065ccf2a7244111eeef0834c63c2d75cc139936f"
     },
     {
       "path": "src/types/favorite-node-response.ts",
@@ -564,7 +548,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "119d5998f4fd33fd73e74d9c1f270cec5953689fbbf43d7caa134f9a49e2eacb"
+      "sha256": "ffc8c300cf661f106cc70e8d66161e59d5a22bb8fea91580a598f934185f8f72"
     },
     {
       "path": "src/types/mark-uploader-part-uploaded-request.ts",
@@ -588,7 +572,7 @@
     },
     {
       "path": "src/types/node-command-request.ts",
-      "sha256": "83d6834aa90fe832fc8147e397af2265487c19ff46a0ebe7fb7cc57a99b02ef0"
+      "sha256": "1a4bb463fb93532813769789bd48e617db7c1a985fd0d29ef97c4d91bcbaf7f9"
     },
     {
       "path": "src/types/node-label-http-response.ts",
@@ -628,7 +612,7 @@
     },
     {
       "path": "src/types/prepare-uploader-upload-request.ts",
-      "sha256": "470d3a7b16cd9a63474e30cf96c7605adcd43e68c9e2ba8c092cdb55a1c1cc33"
+      "sha256": "e446f8a77d13491695b4eca8e0c00c9e6b9779a3396cd048bee8e8ae0fdfe14d"
     },
     {
       "path": "src/types/prepare-uploader-upload-response.ts",
@@ -667,28 +651,8 @@
       "sha256": "79cef2c8e584ba8b8e96c6c77ccf6bda087b0c68cbed63cb97d5fb1ff3e47e1a"
     },
     {
-      "path": "src/types/sdk-work-command-data.ts",
-      "sha256": "a875c230e70650e636ac09c1af57ae8ea0f512a89dd21482bb9e6292bb6bad5a"
-    },
-    {
-      "path": "src/types/sdk-work-command-response.ts",
-      "sha256": "36f82aede9b7b352a9b57545705da4003816785c7913fb2436df633f5c2e8447"
-    },
-    {
-      "path": "src/types/sdk-work-page-data.ts",
-      "sha256": "b9f6e60cc3bc39eed4cdf6029a401cc88b6001e4f4c72703487f478001024743"
-    },
-    {
       "path": "src/types/sdk-work-platform-error-code.ts",
       "sha256": "f5e30be72be3d1aebd8200627bfac368f10cdd69d2271d24e6b4a2d7edf97fb7"
-    },
-    {
-      "path": "src/types/sdk-work-resource-data.ts",
-      "sha256": "f5a027b000a19c08d5b2560ae47fea43c83f4c5d7e85ad37faafe1e9177459cd"
-    },
-    {
-      "path": "src/types/sdk-work-resource-response.ts",
-      "sha256": "89c05f5549bef773335245f56f61ca1a6959978726799391d584a6bd25d12fdc"
     },
     {
       "path": "src/types/set-node-property-request.ts",
@@ -716,7 +680,7 @@
     },
     {
       "path": "src/types/stop-watch-channel-request.ts",
-      "sha256": "d3ee51c2636d40871d94f070c51f352a87274bfc9b09d7d219aa4e195e8524a3"
+      "sha256": "df8b149c14ab616c27616588ea83af509561b03a708295ce954d74448f76e65f"
     },
     {
       "path": "src/types/stop-watch-channel-response.ts",

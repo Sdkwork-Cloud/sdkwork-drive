@@ -5,7 +5,9 @@ use crate::dto::{
     ListStorageProviderBindingsQuery, SetDefaultStorageProviderBindingRequest,
     StorageProviderBindingResponse,
 };
-use crate::error::{map_service_error, not_found_binding_problem, ProblemDetail};
+use crate::error::{
+    invalid_json_problem, map_service_error, not_found_binding_problem, ProblemDetail,
+};
 use crate::provider_lookup::get_provider;
 use crate::provider_mappers::map_storage_provider;
 use crate::response::{no_content, success_list_page_simple, StorageListHttpResponse};
@@ -17,6 +19,7 @@ use crate::validators::{
     storage_provider_binding_scope, validate_storage_binding_lifecycle_status,
     StorageProviderBindingTarget,
 };
+use axum::extract::rejection::JsonRejection;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Extension;
@@ -98,11 +101,12 @@ pub(crate) async fn list_storage_provider_bindings(
 pub(crate) async fn set_default_storage_provider_binding(
     State(state): State<AdminStorageState>,
     Extension(ctx): Extension<DriveRequestContext>,
-    Json(payload): Json<SetDefaultStorageProviderBindingRequest>,
+    payload: Result<Json<SetDefaultStorageProviderBindingRequest>, JsonRejection>,
 ) -> Result<Json<StorageProviderBindingResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
     let tenant_id = ctx.resolve_tenant_id()?;
     let provider_id = require_non_empty_text(payload.provider_id, "providerId")?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let target = resolve_storage_provider_binding_target(payload.space_id, payload.space_type)?;
     let storage_root_prefix =
         normalize_storage_root_prefix(payload.storage_root_prefix, &tenant_id, &target)?;
@@ -173,7 +177,7 @@ pub(crate) async fn delete_default_storage_provider_binding(
     Query(query): Query<DeleteDefaultStorageProviderBindingQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let target = resolve_storage_provider_binding_target(query.space_id, query.space_type)?;
     let binding_id = default_storage_provider_binding_id(&tenant_id, &target);
     let purpose = storage_provider_binding_purpose(&target);

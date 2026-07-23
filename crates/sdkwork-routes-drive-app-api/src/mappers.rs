@@ -83,35 +83,6 @@ fn normalize_offset_suffix(value: &str) -> String {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::normalize_timestamp_text;
-
-    #[test]
-    fn normalizes_sqlite_timestamp_to_rfc3339_utc() {
-        assert_eq!(
-            normalize_timestamp_text("2026-06-04 12:00:00".to_string()),
-            "2026-06-04T12:00:00Z"
-        );
-    }
-
-    #[test]
-    fn normalizes_postgres_short_offset_to_rfc3339_utc() {
-        assert_eq!(
-            normalize_timestamp_text("2026-06-17 12:34:56.789+00".to_string()),
-            "2026-06-17T12:34:56.789Z"
-        );
-    }
-
-    #[test]
-    fn normalizes_rfc3339_offset_to_utc() {
-        assert_eq!(
-            normalize_timestamp_text("2026-06-17T08:34:56-04:00".to_string()),
-            "2026-06-17T12:34:56Z"
-        );
-    }
-}
-
 pub(crate) fn map_space_response(space: DriveSpace) -> CreateSpaceResponse {
     CreateSpaceResponse {
         id: space.id,
@@ -355,5 +326,34 @@ pub(crate) fn build_node_capabilities_response(
         can_share: can_write,
         can_manage_permissions,
         can_manage_versions,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_timestamp_text;
+
+    #[test]
+    fn normalizes_sqlite_timestamp_to_rfc3339_utc() {
+        assert_eq!(
+            normalize_timestamp_text("2026-06-04 12:00:00".to_string()),
+            "2026-06-04T12:00:00Z"
+        );
+    }
+
+    #[test]
+    fn normalizes_postgres_short_offset_to_rfc3339_utc() {
+        assert_eq!(
+            normalize_timestamp_text("2026-06-17 12:34:56.789+00".to_string()),
+            "2026-06-17T12:34:56.789Z"
+        );
+    }
+
+    #[test]
+    fn normalizes_rfc3339_offset_to_utc() {
+        assert_eq!(
+            normalize_timestamp_text("2026-06-17T08:34:56-04:00".to_string()),
+            "2026-06-17T12:34:56Z"
+        );
     }
 }

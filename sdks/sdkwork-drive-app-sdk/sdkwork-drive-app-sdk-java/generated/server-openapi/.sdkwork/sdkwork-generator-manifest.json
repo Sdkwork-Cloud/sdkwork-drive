@@ -36,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "6cf42540e45a8890e2331e84d56d038cb9a63a3cc972e0de7da49d161c9fed64"
+      "sha256": "9a3c53cc9e35c6e321d0d00a1af216b9e83ca94ab92820168f1e8716f7d0c983"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -48,31 +48,15 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/AssetsApi.java",
-      "sha256": "9f7d925b839637e8c8b1805c5c189bdd2c3ea3c8007d6f40777f306d2a4c8679"
+      "sha256": "c468b53f8a08c2134e4a5ff62cc966dfdfe73f7d79b888a1661f8de595e66547"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java",
-      "sha256": "0c3dc2853af0db241f6ab115221706d162d9cbe28e00567e7e6269f87c69b49d"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodeLabelsApi.java",
-      "sha256": "cf541112ca65a7eb6bee7c084b6221c5c1f601028f8a2bb5c38819a5fc178544"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodePropertiesApi.java",
-      "sha256": "4e6fb6953bcf09969901dbdca00d669cd1baf29cbed59f3546916c1a3fb439b5"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/NodesApi.java",
-      "sha256": "58aa69269948e040f1f8eaa6243349e5fdac0140dca4dad878a7050da7a8062c"
+      "sha256": "67add3e2c97b4e9e9e0584b2ac3912b2bacbce2f9e4985bd897c347592032266"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/package-info.java",
-      "sha256": "5774e9c68c0be126642238dbe59c418066f9379b1426dc70a288f9ee35c6a491"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/WatchChannelsApi.java",
-      "sha256": "9baffd848ecb198f06a177b69aca768914ccf99dca98cf6c1d6b9c14ef0b3004"
+      "sha256": "516ab8ba511651b9c5705649fb31a02860345c6b25ae26cd2a09357279740632"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/http/HttpClient.java",
@@ -84,7 +68,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ApplyNodeLabelRequest.java",
-      "sha256": "f2adb33027b87e54c30a116882b51601977c9543ed7223f959a171b106043dbc"
+      "sha256": "c54a5e42b8a03c6d2993df2ba12d805fa2ad56e4330e59bfa967da081200ada7"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ArchiveEntry.java",
@@ -160,7 +144,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CheckFavoriteNodesRequest.java",
-      "sha256": "3cd241fa0cd129793298fd448c1d66ed680b58f48e4e6d496809bf7a4347561d"
+      "sha256": "f2e2b67effd9d359d1653e7a6c9060215d0dc0791493b28f4d73b1c127a8c486"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ClaimShareLinkHttpResponse.java",
@@ -188,7 +172,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateAssetCollectionRequest.java",
-      "sha256": "43bd7554645b51270951ed5ecaa716a6f1e2e4d21b9285579bbc67ace890c581"
+      "sha256": "4b7f2fd5f0bae0253782b3d129f9e5a9dba9b21f0c44f06d47c3080b53fcdcd2"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateAssetRelationRequest.java",
@@ -196,7 +180,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateAssetRequest.java",
-      "sha256": "3dfc06aac7b486abd531dea17c00145a7337a7604deb193e2997d608ae044212"
+      "sha256": "671ff778f82ac813fac3ae3d5096ece8a85773091e38af4ff5e52c6b96a76600"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateCommentReplyRequest.java",
@@ -252,7 +236,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreatePermissionRequest.java",
-      "sha256": "17da63989ecf43854d3c12c53d7e8bf510b6fc2e023c97854b1aed5ea0ce33b9"
+      "sha256": "22eede447e668c373dc797ea0072e34b356b8a53560ba0c7d2cd8a417a25a96f"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/CreateShareLinkHttpResponse.java",
@@ -504,7 +488,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/FavoriteNodeRequest.java",
-      "sha256": "3f35e54d906d6237119a77cd2492eb7f45c874b3a1f63b573986e24c693ce0d5"
+      "sha256": "78d0dc79cc9af1d51d0344a30c9df6a36a6e63fab05546548a8ecec744d89e6f"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/FavoriteNodeResponse.java",
@@ -552,7 +536,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/NodeCommandRequest.java",
-      "sha256": "f3d3c331e638449b411ebf84698b69a9f50caff87b187cc07ef1fff2cd45492a"
+      "sha256": "3f06f8b628a12f8f4adc0d32e0e60d0a756bfca51ed5d76d7725eda3f71da6b0"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/NodeLabel.java",
@@ -584,7 +568,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/PrepareUploaderUploadRequest.java",
-      "sha256": "36aa6464169e6366b95304c065b52813682590d67989eebd86d9a184e2338cb7"
+      "sha256": "69f94fbf731ad0a7496b6d3094323970d173db5ad7b1d83b6c3b439424f14b19"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/PrepareUploaderUploadResponse.java",
@@ -623,26 +607,6 @@
       "sha256": "1926f209234c1201f03e06bd1786823ef47a65500cc2ac0a96f521cd1d14ca1f"
     },
     {
-      "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SdkWorkCommandData.java",
-      "sha256": "1eadc194c5e0269b2c7dcefb0bcb22830f52a1e8a0df61aea71c16bf3217f348"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SdkWorkCommandResponse.java",
-      "sha256": "9d0fc27fc999d8fefe44aab09f6a6fef15eb33a9a521a51d28ffcd96ba3728fe"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SdkWorkPageData.java",
-      "sha256": "6d9857c474a85d6baf7eab8bf7009e034f6cc68a28981536ddac897d810fef8b"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SdkWorkResourceData.java",
-      "sha256": "c04b66c4673e8e4a162982b1f55101139b6cf149556638c95d497c03002f38bc"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SdkWorkResourceResponse.java",
-      "sha256": "c0ba67c99d6b889cd67d9d007200077a2d8982c97e10f72d9cb09c66cdeba2eb"
-    },
-    {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/SetNodePropertyRequest.java",
       "sha256": "585614f40cade0bc4de6ad33d958092c6db01bdde3f3a1ccab28623df59e8b1e"
     },
@@ -668,7 +632,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/StopWatchChannelRequest.java",
-      "sha256": "ebb5c17a3633411348bdff803c91341528f66340a8152a65f471a94821c458a1"
+      "sha256": "0b65b41fd690bc370acfdfd3afd48965ef02f6009e8fb856296c97f33d63a40b"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/StopWatchChannelResponse.java",
@@ -808,7 +772,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/app/sdk/generated/java/SdkworkAppClient.java",
-      "sha256": "988e7d0daf5a5ba1683fe92272c9d77fcf74fc8bbb39263c7f433175e8cab0fa"
+      "sha256": "43db2245854b2c2d9b23b011670ae1261074d31f3ad8d297bab448014a2e236b"
     }
   ],
   "scaffoldFiles": [

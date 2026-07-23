@@ -1,8 +1,98 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { SweepObjectStoreRequest, SweepUploadSessionsRequest, UpdateQuotaPolicyRequest } from '../types';
+import type { CreateLabelRequest, CreateSandboxGrantRequest, CreateSandboxVolumeRequest, DriveLabel, SandboxLifecycleStatus, SandboxProviderKind, SweepObjectStoreRequest, SweepUploadSessionsRequest, UpdateLabelRequest, UpdateQuotaPolicyRequest, UpdateSandboxGrantRequest, UpdateSandboxVolumeRequest } from '../types';
 
+
+export interface DriveSandboxGrantsListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class DriveSandboxGrantsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List explicit sandbox grants */
+  async list(sandboxId: string, params?: DriveSandboxGrantsListParams): Promise<unknown> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants`), query));
+  }
+
+/** Create an explicit sandbox grant */
+  async create(sandboxId: string, body: CreateSandboxGrantRequest): Promise<unknown> {
+    return this.client.post<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants`), body, undefined, undefined, 'application/json');
+  }
+
+/** Retrieve a sandbox grant */
+  async retrieve(sandboxId: string, grantId: string): Promise<unknown> {
+    return this.client.get<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants/${serializePathParameter(grantId, { name: 'grantId', style: 'simple', explode: false })}`));
+  }
+
+/** Update a sandbox grant */
+  async update(sandboxId: string, grantId: string, body: UpdateSandboxGrantRequest): Promise<unknown> {
+    return this.client.patch<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants/${serializePathParameter(grantId, { name: 'grantId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  }
+
+/** Delete a sandbox grant */
+  async delete(sandboxId: string, grantId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants/${serializePathParameter(grantId, { name: 'grantId', style: 'simple', explode: false })}`));
+  }
+}
+
+export interface DriveSandboxVolumesListParams {
+  lifecycleStatus?: SandboxLifecycleStatus;
+  providerKind?: SandboxProviderKind;
+  page?: string;
+  pageSize?: string;
+}
+
+export class DriveSandboxVolumesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List server sandbox volumes */
+  async list(params?: DriveSandboxVolumesListParams): Promise<unknown> {
+    const query = buildQueryString([
+      { name: 'lifecycle_status', value: params?.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
+      { name: 'provider_kind', value: params?.providerKind, style: 'form', explode: true, allowReserved: false },
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/sandbox_volumes`), query));
+  }
+
+/** Create a server sandbox volume */
+  async create(body: CreateSandboxVolumeRequest): Promise<unknown> {
+    return this.client.post<unknown>(backendApiPath(`/drive/sandbox_volumes`), body, undefined, undefined, 'application/json');
+  }
+
+/** Retrieve a server sandbox volume */
+  async retrieve(sandboxId: string): Promise<unknown> {
+    return this.client.get<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}`));
+  }
+
+/** Update a server sandbox volume */
+  async update(sandboxId: string, body: UpdateSandboxVolumeRequest): Promise<unknown> {
+    return this.client.patch<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  }
+
+/** Delete a server sandbox volume */
+  async delete(sandboxId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}`));
+  }
+}
 
 export interface DriveDownloadPackagesListParams {
   state?: 'creating' | 'ready' | 'failed' | 'expired';
@@ -55,11 +145,11 @@ async list(params?: DriveSpacesAdminListParams): Promise<unknown> {
 }
 
 export class DriveSpacesApi {
-  private client: HttpClient;
+
   public readonly admin: DriveSpacesAdminApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.admin = new DriveSpacesAdminApi(client);
   }
 
@@ -138,6 +228,51 @@ async abandonedUploadTaskSweep(body: SweepUploadSessionsRequest): Promise<unknow
   }
 }
 
+export interface DriveLabelsListParams {
+  lifecycleStatus?: 'active' | 'deleted';
+  pageSize?: number;
+  cursor?: string;
+}
+
+export class DriveLabelsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List Drive label definitions */
+  async list(params?: DriveLabelsListParams): Promise<unknown> {
+    const query = buildQueryString([
+      { name: 'lifecycleStatus', value: params?.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/labels`), query));
+  }
+
+/** Create a Drive label definition */
+  async create(body: CreateLabelRequest): Promise<DriveLabel> {
+    return this.client.post<DriveLabel>(backendApiPath(`/drive/labels`), body, undefined, undefined, 'application/json');
+  }
+
+/** Get a Drive label definition */
+  async retrieve(labelId: string): Promise<unknown> {
+    return this.client.get<unknown>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`));
+  }
+
+/** Update a Drive label definition */
+  async update(labelId: string, body: UpdateLabelRequest): Promise<unknown> {
+    return this.client.patch<unknown>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  }
+
+/** Delete a Drive label definition */
+  async delete(labelId: string): Promise<void> {
+    return this.client.delete<void>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`));
+  }
+}
+
 export interface DriveAuditEventsListParams {
   action?: string;
   resourceType?: string;
@@ -171,20 +306,26 @@ async list(params?: DriveAuditEventsListParams): Promise<unknown> {
 }
 
 export class DriveApi {
-  private client: HttpClient;
+
   public readonly auditEvents: DriveAuditEventsApi;
+  public readonly labels: DriveLabelsApi;
   public readonly maintenance: DriveMaintenanceApi;
   public readonly quotas: DriveQuotasApi;
   public readonly spaces: DriveSpacesApi;
   public readonly downloadPackages: DriveDownloadPackagesApi;
+  public readonly sandboxVolumes: DriveSandboxVolumesApi;
+  public readonly sandboxGrants: DriveSandboxGrantsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.auditEvents = new DriveAuditEventsApi(client);
+    this.labels = new DriveLabelsApi(client);
     this.maintenance = new DriveMaintenanceApi(client);
     this.quotas = new DriveQuotasApi(client);
     this.spaces = new DriveSpacesApi(client);
     this.downloadPackages = new DriveDownloadPackagesApi(client);
+    this.sandboxVolumes = new DriveSandboxVolumesApi(client);
+    this.sandboxGrants = new DriveSandboxGrantsApi(client);
   }
 
 }
@@ -201,7 +342,77 @@ function appendQueryString(path: string, rawQueryString: string): string {
   return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
 }
 
+interface PathParameterSpec {
+  name: string;
+  style: string;
+  explode: boolean;
+}
 
+function serializePathParameter(value: unknown, spec: PathParameterSpec): string {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  const style = spec.style || 'simple';
+  if (Array.isArray(value)) {
+    return serializePathArray(spec.name, value, style, spec.explode);
+  }
+  if (typeof value === 'object') {
+    return serializePathObject(spec.name, value as Record<string, unknown>, style, spec.explode);
+  }
+  return pathPrefix(spec.name, style, false) + encodePathValue(serializePathPrimitive(value));
+}
+
+function serializePathArray(name: string, values: unknown[], style: string, explode: boolean): string {
+  const serialized = values
+    .filter((item) => item !== undefined && item !== null)
+    .map((item) => encodePathValue(serializePathPrimitive(item)));
+  if (serialized.length === 0) {
+    return pathPrefix(name, style, false);
+  }
+  if (style === 'matrix') {
+    return explode
+      ? serialized.map((item) => `;${name}=${item}`).join('')
+      : `;${name}=${serialized.join(',')}`;
+  }
+  return pathPrefix(name, style, false) + serialized.join(explode ? '.' : ',');
+}
+
+function serializePathObject(name: string, value: Record<string, unknown>, style: string, explode: boolean): string {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
+  if (entries.length === 0) {
+    return pathPrefix(name, style, true);
+  }
+  if (style === 'matrix') {
+    return explode
+      ? entries.map(([key, entryValue]) => `;${encodePathValue(key)}=${encodePathValue(serializePathPrimitive(entryValue))}`).join('')
+      : `;${name}=${entries.flatMap(([key, entryValue]) => [encodePathValue(key), encodePathValue(serializePathPrimitive(entryValue))]).join(',')}`;
+  }
+  const serialized = explode
+    ? entries.map(([key, entryValue]) => `${encodePathValue(key)}=${encodePathValue(serializePathPrimitive(entryValue))}`).join(style === 'label' ? '.' : ',')
+    : entries.flatMap(([key, entryValue]) => [encodePathValue(key), encodePathValue(serializePathPrimitive(entryValue))]).join(',');
+  return pathPrefix(name, style, true) + serialized;
+}
+
+function pathPrefix(name: string, style: string, _objectValue: boolean): string {
+  if (style === 'label') return '.';
+  if (style === 'matrix') return `;${name}`;
+  return '';
+}
+
+function encodePathValue(value: string): string {
+  return encodeURIComponent(value);
+}
+
+function serializePathPrimitive(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
 interface QueryParameterSpec {
   name: string;
   value: unknown;

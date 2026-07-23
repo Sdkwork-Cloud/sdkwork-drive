@@ -74,9 +74,7 @@ async fn backend_router_exposes_operations_and_quota_routes() {
                 .method(Method::POST)
                 .uri("/backend/v3/api/drive/maintenance/object_sweep")
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"dryRun": true, "limit": 1, "operatorId": "admin-ops"}"#,
-                ))
+                .body(Body::from(r#"{"dryRun": true, "limit": 1}"#))
                 .expect("request should be built"),
         )
         .await
@@ -95,7 +93,7 @@ async fn backend_router_exposes_operations_and_quota_routes() {
                     .uri(uri)
                     .header("content-type", "application/json")
                     .body(Body::from(
-                        r#"{"nowEpochMs":1800000000000,"dryRun":true,"limit":1,"operatorId":"admin-ops"}"#,
+                        r#"{"nowEpochMs":1800000000000,"dryRun":true,"limit":1}"#,
                     ))
                     .expect("request should be built"),
             )

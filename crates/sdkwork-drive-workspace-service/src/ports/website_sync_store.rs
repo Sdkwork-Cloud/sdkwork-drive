@@ -54,6 +54,18 @@ pub struct ActivateValidatedWebsiteSync {
 }
 
 #[derive(Debug, Clone)]
+pub struct MarkDriveWebsiteSyncFailed {
+    pub tenant_id: String,
+    pub website_root_uuid: String,
+    pub sync_id: String,
+    pub expected_sync_version: i64,
+    pub lease_token: String,
+    pub error_code: String,
+    pub error_summary: String,
+    pub operator_id: String,
+}
+
+#[derive(Debug, Clone)]
 pub struct DriveWebsiteSyncActivation {
     pub sync: DriveWebsiteSync,
     pub website_root: DriveWebsiteRoot,
@@ -117,14 +129,7 @@ pub trait DriveWebsiteSyncStore: Send + Sync {
 
     async fn mark_failed(
         &self,
-        tenant_id: &str,
-        website_root_uuid: &str,
-        sync_id: &str,
-        expected_sync_version: i64,
-        lease_token: &str,
-        error_code: &str,
-        error_summary: &str,
-        operator_id: &str,
+        command: &MarkDriveWebsiteSyncFailed,
     ) -> Result<(), DriveServiceError>;
 
     async fn abort(

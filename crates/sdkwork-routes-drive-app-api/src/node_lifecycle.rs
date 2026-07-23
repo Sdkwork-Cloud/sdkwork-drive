@@ -26,7 +26,7 @@ pub(crate) async fn set_node_lifecycle(
     state: AppState,
     ctx: &DriveRequestContext,
     node_id: String,
-    payload: NodeCommandRequest,
+    _payload: NodeCommandRequest,
     lifecycle_status: &str,
     event_type: &str,
 ) -> Result<
@@ -34,7 +34,7 @@ pub(crate) async fn set_node_lifecycle(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, ctx, &node.space_id, &node_id, "writer").await?;
     let nodes_to_update = collect_node_subtree(&state.pool, &tenant_id, &node).await?;

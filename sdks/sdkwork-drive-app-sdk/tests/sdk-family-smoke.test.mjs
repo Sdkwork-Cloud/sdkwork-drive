@@ -176,6 +176,10 @@ test("sdkwork-drive-app-sdk uses sdkwork-v3 profile", () => {
   const source = readFileSync(path.join(sdkRoot, "bin/generate-sdk.mjs"), "utf8");
   assert.match(source, /--standard-profile/);
   assert.match(source, /sdkwork-v3/);
+  assert.match(
+    source,
+    /defaultOpenapiPath:\s*"apis\/app-api\/drive\/drive-app-api\.openapi\.json"/,
+  );
 });
 
 test("sdkwork-drive-app-sdk records family metadata outside generated output for every official language", () => {
@@ -188,7 +192,7 @@ test("sdkwork-drive-app-sdk records family metadata outside generated output for
     "family manifest should include the completed app drive operation surface",
   );
   assert.equal(manifest.sdkOwner, "sdkwork-drive");
-  assert.equal(manifest.apiAuthority, "sdkwork-drive.app");
+  assert.equal(manifest.apiAuthority, "sdkwork-drive-app-api");
   assert.deepEqual(
     manifest.sdkDependencies?.map((dependency) => ({
       workspace: dependency.workspace,

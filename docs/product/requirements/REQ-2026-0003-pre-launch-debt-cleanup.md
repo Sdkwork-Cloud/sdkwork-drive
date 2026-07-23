@@ -2,9 +2,9 @@
 id: REQ-2026-0003
 title: Pre-launch technical debt cleanup for SDKWork Drive
 owner: SDKWork maintainers
-status: done
+status: accepted
 source: platform
-updated: 2026-07-08
+updated: 2026-07-23
 problem: Before commercial GA, Drive must remove dead auth-policy wiring, standardize deployment profile env keys, eliminate stale documentation, align deploy/API/database framework contracts with sdkwork-specs, and prevent legacy HTTP envelope modules from returning.
 goals:
   - Remove unused `auth_policy` state fields and deprecated `build_router_with_pool_and_iam_policy` builders.
@@ -13,6 +13,7 @@ goals:
   - Add a deployment validator that rejects deploy/topology profile drift and fails release-mode checks on `REPLACE_WITH_RELEASE_DIGEST` and non-immutable Kubernetes image references.
   - Route JWT/download crypto through `sdkwork-utils-rust` instead of direct `sha2`/`hmac` in workspace route crates.
   - Include `api:envelope:check` and `api:schema:check` in the root `pnpm check` gate.
+  - Keep Drive OpenAPI authorities owner-only, consume IAM through declared SDK/runtime dependencies, and eliminate operationId/tag duplication before first release.
   - Provide an operator pre-launch checklist linked from deployment validation.
   - Remove legacy `sdkwork-drive-http` envelope modules (`response.rs`, `problem_detail.rs`); keep `api_problem.rs` as the sole ProblemDetail authority.
   - Keep `.env.postgres.example` on the unified `SDKWORK_CLAW_DATABASE_*` identity only; application-specific database connection prefixes are forbidden.
@@ -37,9 +38,11 @@ acceptance_criteria:
   - `node --test tools/check_drive_deployments.test.mjs` proves default-mode digest warnings, strict-mode placeholder rejection, strict-mode real digest acceptance, Redis rate-limit enforcement, and legacy topology profile rejection.
   - `docs/guides/operator/pre-launch-checklist.md` exists and is referenced by deployment checks.
   - `crates/sdkwork-drive-http/src/response.rs` and `problem_detail.rs` do not exist; `lib.rs` exposes only `api_problem`.
-  - `.env.postgres.example` contains no `SDKWORK_CLAW_DATABASE_*` keys.
+  - `.env.postgres.example` uses only the unified `SDKWORK_CLAW_DATABASE_*` connection identity and contains no legacy application-specific database connection prefix.
   - `@sdkwork/drive-app-sdk` depends on `@sdkwork/utils`; `uploaderClient.ts` does not inline hex formatting.
   - `pnpm check:app-composition` (`verify-repo`) passes for workspace package wiring.
+  - Drive App and Backend authorities contain no dependency-owned routes or composed-operation markers; generated SDKs are rebuilt from owner-only OpenAPI inputs.
+  - `check-api-operation-patterns.mjs` passes without compatibility exceptions; pre-launch tag cleanup produces canonical `client.drive.<resource>.<action>()` SDK grouping.
   - `pnpm check:pnpm-script-standard` passes and scans root scripts, package manifests, docs, command JSON, and runner scripts.
   - The `test:sdkwork-command-dev-topology` contract proves cloud dev commands infer the cloud development topology internally without exposing retired public script tokens.
   - `node --test tools/check_sdkwork_drive_release_readiness.test.mjs` proves default-mode warnings remain non-blocking for development while `SDKWORK_RELEASE_VALIDATION=strict` fails on deferred signing, target-runner checksum evidence, and Catalog media evidence.
@@ -61,6 +64,8 @@ verification:
   - pnpm check
   - pnpm api:envelope:check
   - pnpm api:schema:check
+  - node ../sdkwork-specs/tools/check-api-operation-patterns.mjs --workspace .
+  - node --test sdks/test/verify-sdk-ownership-boundaries.test.mjs
   - pnpm check:pnpm-script-standard
   - pnpm test:sdkwork-command-dev-topology
   - node --test tests/contract/sdkwork-command-dev-topology.contract.test.mjs

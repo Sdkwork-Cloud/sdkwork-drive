@@ -9,29 +9,12 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-python"
   },
-  "changeFingerprint": "9cb6396b15003a448c71c65d34edc8252f27a7e27bfabcdd5bbc4541ce75c83e",
+  "changeFingerprint": "7a742a526db04f1a2a2f453f625df5fbe8165fd35b429f4502f9796eee077fd9",
   "changes": {
-    "createdGeneratedFiles": [
-      "sdkwork_drive_app_sdk_generated_python/models/activate_website_generation_request.py",
-      "sdkwork_drive_app_sdk_generated_python/models/create_website_sync_request.py",
-      "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation_http_response.py",
-      "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation_resource_data.py",
-      "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation.py",
-      "sdkwork_drive_app_sdk_generated_python/models/website_generation.py",
-      "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation_http_response.py",
-      "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation_resource_data.py",
-      "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation.py",
-      "sdkwork_drive_app_sdk_generated_python/models/website_sync_http_response.py",
-      "sdkwork_drive_app_sdk_generated_python/models/website_sync_resource_data.py",
-      "sdkwork_drive_app_sdk_generated_python/models/website_sync_version_request.py",
-      "sdkwork_drive_app_sdk_generated_python/models/website_sync.py"
-    ],
-    "updatedGeneratedFiles": [
-      "bin/publish-core.mjs",
-      "sdkwork_drive_app_sdk_generated_python/api/drive.py",
-      "sdkwork_drive_app_sdk_generated_python/models/__init__.py"
-    ],
+    "createdGeneratedFiles": [],
+    "updatedGeneratedFiles": [],
     "unchangedGeneratedFiles": [
+      "bin/publish-core.mjs",
       "bin/publish.ps1",
       "bin/publish.sh",
       "CHANGELOG.md",
@@ -43,12 +26,11 @@
       "sdkwork_drive_app_sdk_generated_python/__init__.py",
       "sdkwork_drive_app_sdk_generated_python/api/__init__.py",
       "sdkwork_drive_app_sdk_generated_python/api/assets.py",
-      "sdkwork_drive_app_sdk_generated_python/api/node_labels.py",
-      "sdkwork_drive_app_sdk_generated_python/api/node_properties.py",
-      "sdkwork_drive_app_sdk_generated_python/api/nodes.py",
-      "sdkwork_drive_app_sdk_generated_python/api/watch_channels.py",
+      "sdkwork_drive_app_sdk_generated_python/api/drive.py",
       "sdkwork_drive_app_sdk_generated_python/client.py",
       "sdkwork_drive_app_sdk_generated_python/http_client.py",
+      "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
+      "sdkwork_drive_app_sdk_generated_python/models/activate_website_generation_request.py",
       "sdkwork_drive_app_sdk_generated_python/models/apply_node_label_request.py",
       "sdkwork_drive_app_sdk_generated_python/models/archive_entry_list_http_response.py",
       "sdkwork_drive_app_sdk_generated_python/models/archive_entry.py",
@@ -100,6 +82,7 @@
       "sdkwork_drive_app_sdk_generated_python/models/create_upload_session_request.py",
       "sdkwork_drive_app_sdk_generated_python/models/create_watch_channel_request.py",
       "sdkwork_drive_app_sdk_generated_python/models/create_website_root_request.py",
+      "sdkwork_drive_app_sdk_generated_python/models/create_website_sync_request.py",
       "sdkwork_drive_app_sdk_generated_python/models/download_package_http_response.py",
       "sdkwork_drive_app_sdk_generated_python/models/download_package_item.py",
       "sdkwork_drive_app_sdk_generated_python/models/download_package_response.py",
@@ -183,11 +166,6 @@
       "sdkwork_drive_app_sdk_generated_python/models/quota_summary_http_response.py",
       "sdkwork_drive_app_sdk_generated_python/models/quota_summary.py",
       "sdkwork_drive_app_sdk_generated_python/models/sdk_work_api_response.py",
-      "sdkwork_drive_app_sdk_generated_python/models/sdk_work_command_data.py",
-      "sdkwork_drive_app_sdk_generated_python/models/sdk_work_command_response.py",
-      "sdkwork_drive_app_sdk_generated_python/models/sdk_work_page_data.py",
-      "sdkwork_drive_app_sdk_generated_python/models/sdk_work_resource_data.py",
-      "sdkwork_drive_app_sdk_generated_python/models/sdk_work_resource_response.py",
       "sdkwork_drive_app_sdk_generated_python/models/set_node_property_request.py",
       "sdkwork_drive_app_sdk_generated_python/models/share_link_http_response.py",
       "sdkwork_drive_app_sdk_generated_python/models/share_link_list_http_response.py",
@@ -210,6 +188,10 @@
       "sdkwork_drive_app_sdk_generated_python/models/uploader_upload_item.py",
       "sdkwork_drive_app_sdk_generated_python/models/uploader_upload_part_http_response.py",
       "sdkwork_drive_app_sdk_generated_python/models/uploader_upload_part.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation_http_response.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation_resource_data.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_generation.py",
       "sdkwork_drive_app_sdk_generated_python/models/website_root_folder_selector.py",
       "sdkwork_drive_app_sdk_generated_python/models/website_root_http_response.py",
       "sdkwork_drive_app_sdk_generated_python/models/website_root_list_http_response.py",
@@ -218,6 +200,13 @@
       "sdkwork_drive_app_sdk_generated_python/models/website_root_selector.py",
       "sdkwork_drive_app_sdk_generated_python/models/website_root_space_selector.py",
       "sdkwork_drive_app_sdk_generated_python/models/website_root.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation_http_response.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation_resource_data.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_http_response.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_resource_data.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync_version_request.py",
+      "sdkwork_drive_app_sdk_generated_python/models/website_sync.py",
       "sdkwork-sdk.json",
       "setup.py"
     ],
@@ -230,82 +219,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface",
-      "models",
-      "publish-workflow"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "sdkwork_drive_app_sdk_generated_python/api/drive.py",
-          "sdkwork_drive_app_sdk_generated_python/models/__init__.py"
-        ]
-      },
-      {
-        "area": "models",
-        "paths": [
-          "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
-          "sdkwork_drive_app_sdk_generated_python/models/activate_website_generation_request.py",
-          "sdkwork_drive_app_sdk_generated_python/models/create_website_sync_request.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation_http_response.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation_resource_data.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_generation_activation.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_generation.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation_http_response.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation_resource_data.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_sync_activation.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_sync_http_response.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_sync_resource_data.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_sync_version_request.py",
-          "sdkwork_drive_app_sdk_generated_python/models/website_sync.py"
-        ]
-      },
-      {
-        "area": "publish-workflow",
-        "paths": [
-          "bin/publish-core.mjs"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models, publish-workflow. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, publish-workflow.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-python\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "python",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language python --project-dir . --action check"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

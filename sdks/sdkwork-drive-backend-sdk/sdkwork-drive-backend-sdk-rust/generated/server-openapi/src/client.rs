@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::api::{DriveApi, LabelsApi, SandboxVolumesApi, SandboxGrantsApi};
+use crate::api::{DriveApi};
 use crate::http::{SdkworkConfig, SdkworkError, SdkworkHttpClient};
 
 #[derive(Clone)]
@@ -40,17 +40,5 @@ impl SdkworkBackendClient {
 
     pub fn drive(&self) -> DriveApi {
             DriveApi::new(Arc::clone(&self.http))
-        }
-
-    pub fn labels(&self) -> LabelsApi {
-            LabelsApi::new(Arc::clone(&self.http))
-        }
-
-    pub fn sandbox_volumes(&self) -> SandboxVolumesApi {
-            SandboxVolumesApi::new(Arc::clone(&self.http))
-        }
-
-    pub fn sandbox_grants(&self) -> SandboxGrantsApi {
-            SandboxGrantsApi::new(Arc::clone(&self.http))
         }
 }

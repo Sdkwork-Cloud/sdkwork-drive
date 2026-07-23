@@ -108,8 +108,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
                         "labelKey":"classification.confidential",
                         "displayName":"Confidential",
                         "color":"#D92D20",
-                        "description":"Restricted business content",
-                        "operatorId":"admin-label"
+                        "description":"Restricted business content"
                     }"##,
                 ))
                 .expect("create label request should be built"),
@@ -142,8 +141,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
                 .body(Body::from(
                     r##"{
                         "displayName":"Highly Confidential",
-                        "color":"#B42318",
-                        "operatorId":"admin-label"
+                        "color":"#B42318"
                     }"##,
                 ))
                 .expect("update label request should be built"),
@@ -175,8 +173,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
                         "id":"label-public",
                         "labelKey":"classification.public",
                         "displayName":"Public",
-                        "color":"#027A48",
-                        "operatorId":"admin-label"
+                        "color":"#027A48"
                     }"##,
                 ))
                 .expect("create second label request should be built"),
@@ -210,7 +207,7 @@ async fn backend_dr_drive_labels_manage_definition_lifecycle_with_pagination_and
         .oneshot(
             Request::builder()
                 .method(Method::DELETE)
-                .uri("/backend/v3/api/drive/labels/label-public?operatorId=admin-label")
+                .uri("/backend/v3/api/drive/labels/label-public")
                 .body(Body::empty())
                 .expect("delete label request should be built"),
         )
@@ -501,8 +498,7 @@ async fn update_quota_policy_route_persists_tenant_cap_and_returns_quota_bytes()
                 .header("content-type", "application/json")
                 .body(Body::from(
                     serde_json::json!({
-                        "quotaBytes": 4096,
-                        "operatorId": "admin-001",
+                        "quotaBytes": 4096
                     })
                     .to_string(),
                 ))
@@ -535,8 +531,7 @@ async fn update_quota_policy_route_persists_tenant_cap_and_returns_quota_bytes()
                 .header("content-type", "application/json")
                 .body(Body::from(
                     serde_json::json!({
-                        "clearTenantPolicy": true,
-                        "operatorId": "admin-001",
+                        "clearTenantPolicy": true
                     })
                     .to_string(),
                 ))
@@ -919,10 +914,7 @@ async fn maintenance_routes_sweep_objects_and_upload_sessions_and_emit_audit_eve
                 .body(Body::from(
                     r#"{
                         "dryRun": false,
-                        "limit": 100,
-                        "operatorId": "admin-ops",
-                        "correlationId": "request-001",
-                        "traceId": "trace-001"
+                        "limit": 100
                     }"#,
                 ))
                 .expect("request should be built"),
@@ -949,10 +941,7 @@ async fn maintenance_routes_sweep_objects_and_upload_sessions_and_emit_audit_eve
                     r#"{
                         "nowEpochMs": 1800000000000,
                         "dryRun": false,
-                        "limit": 100,
-                        "operatorId": "admin-ops",
-                        "correlationId": "request-001",
-                        "traceId": "trace-001"
+                        "limit": 100
                     }"#,
                 ))
                 .expect("request should be built"),
@@ -979,10 +968,7 @@ async fn maintenance_routes_sweep_objects_and_upload_sessions_and_emit_audit_eve
                     r#"{
                         "nowEpochMs": 1800000000000,
                         "dryRun": true,
-                        "limit": 100,
-                        "operatorId": "admin-ops",
-                        "correlationId": "request-002",
-                        "traceId": "trace-002"
+                        "limit": 100
                     }"#,
                 ))
                 .expect("request should be built"),
@@ -1002,10 +988,7 @@ async fn maintenance_routes_sweep_objects_and_upload_sessions_and_emit_audit_eve
                     r#"{
                         "nowEpochMs": 1800000000000,
                         "dryRun": true,
-                        "limit": 100,
-                        "operatorId": "admin-ops",
-                        "correlationId": "request-003",
-                        "traceId": "trace-003"
+                        "limit": 100
                     }"#,
                 ))
                 .expect("request should be built"),
@@ -1305,7 +1288,7 @@ async fn list_download_packages_rejects_page_and_page_size_outside_contract() {
 }
 
 #[tokio::test]
-async fn maintenance_routes_record_failed_jobs_with_request_and_trace() {
+async fn maintenance_routes_record_failed_jobs_with_server_context() {
     sqlx::any::install_default_drivers();
     let pool = AnyPoolOptions::new()
         .max_connections(1)
@@ -1332,10 +1315,7 @@ async fn maintenance_routes_record_failed_jobs_with_request_and_trace() {
                 .body(Body::from(
                     r#"{
                         "dryRun": false,
-                        "limit": 100,
-                        "operatorId": "admin-failed",
-                        "correlationId": "request-failed-001",
-                        "traceId": "trace-failed-001"
+                        "limit": 100
                     }"#,
                 ))
                 .expect("request should be built"),
@@ -1348,7 +1328,7 @@ async fn maintenance_routes_record_failed_jobs_with_request_and_trace() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/maintenance/jobs?status=failed&operatorId=admin-failed&page=1&page_size=10")
+                .uri("/backend/v3/api/drive/maintenance/jobs?status=failed&operatorId=user-001&page=1&page_size=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -1371,11 +1351,8 @@ async fn maintenance_routes_record_failed_jobs_with_request_and_trace() {
     assert_eq!(items.len(), 1);
     assert_eq!(items[0]["jobType"].as_str(), Some("object_sweep"));
     assert_eq!(items[0]["status"].as_str(), Some("failed"));
-    assert_eq!(
-        items[0]["correlationId"].as_str(),
-        Some("request-failed-001")
-    );
-    assert_eq!(items[0]["traceId"].as_str(), Some("trace-failed-001"));
+    assert_eq!(items[0]["correlationId"].as_str(), Some("request-test"));
+    assert_eq!(items[0]["traceId"].as_str(), Some("trace-test"));
     assert!(
         items[0]["errorMessage"]
             .as_str()
@@ -1389,9 +1366,9 @@ async fn maintenance_routes_record_failed_jobs_with_request_and_trace() {
          FROM dr_drive_audit_event
          WHERE resource_type='maintenance'
            AND action='drive.maintenance.object_sweep.failed'
-           AND operator_id='admin-failed'
-           AND request_id='request-failed-001'
-           AND trace_id='trace-failed-001'",
+           AND operator_id='user-001'
+           AND request_id='request-test'
+           AND trace_id='trace-test'",
     )
     .fetch_one(&pool)
     .await
@@ -1428,10 +1405,7 @@ async fn maintenance_upload_sweep_failure_records_failed_job_and_audit() {
                     r#"{
                         "nowEpochMs": 1800000000000,
                         "dryRun": false,
-                        "limit": 100,
-                        "operatorId": "admin-upload-failed",
-                        "correlationId": "request-upload-failed-001",
-                        "traceId": "trace-upload-failed-001"
+                        "limit": 100
                     }"#,
                 ))
                 .expect("request should be built"),
@@ -1444,7 +1418,7 @@ async fn maintenance_upload_sweep_failure_records_failed_job_and_audit() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/maintenance/jobs?jobType=upload_session_sweep&status=failed&operatorId=admin-upload-failed&page=1&page_size=10")
+                .uri("/backend/v3/api/drive/maintenance/jobs?jobType=upload_session_sweep&status=failed&operatorId=user-001&page=1&page_size=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -1467,14 +1441,8 @@ async fn maintenance_upload_sweep_failure_records_failed_job_and_audit() {
     assert_eq!(items.len(), 1);
     assert_eq!(items[0]["jobType"].as_str(), Some("upload_session_sweep"));
     assert_eq!(items[0]["status"].as_str(), Some("failed"));
-    assert_eq!(
-        items[0]["correlationId"].as_str(),
-        Some("request-upload-failed-001")
-    );
-    assert_eq!(
-        items[0]["traceId"].as_str(),
-        Some("trace-upload-failed-001")
-    );
+    assert_eq!(items[0]["correlationId"].as_str(), Some("request-test"));
+    assert_eq!(items[0]["traceId"].as_str(), Some("trace-test"));
     assert!(
         items[0]["errorMessage"]
             .as_str()
@@ -1488,9 +1456,9 @@ async fn maintenance_upload_sweep_failure_records_failed_job_and_audit() {
          FROM dr_drive_audit_event
          WHERE resource_type='maintenance'
            AND action='drive.maintenance.upload_session_sweep.failed'
-           AND operator_id='admin-upload-failed'
-           AND request_id='request-upload-failed-001'
-           AND trace_id='trace-upload-failed-001'",
+           AND operator_id='user-001'
+           AND request_id='request-test'
+           AND trace_id='trace-test'",
     )
     .fetch_one(&pool)
     .await
@@ -1499,7 +1467,7 @@ async fn maintenance_upload_sweep_failure_records_failed_job_and_audit() {
 }
 
 #[tokio::test]
-async fn maintenance_routes_reject_invalid_request_id_with_bad_request() {
+async fn maintenance_routes_reject_client_owned_audit_identity_fields() {
     sqlx::any::install_default_drivers();
     let pool = AnyPoolOptions::new()
         .max_connections(1)
@@ -1521,14 +1489,13 @@ async fn maintenance_routes_reject_invalid_request_id_with_bad_request() {
                     r#"{
                         "dryRun": true,
                         "limit": 1,
-                        "operatorId": "admin-ops",
                         "correlationId": "request id with spaces"
                     }"#,
                 ))
                 .expect("request should be built"),
         )
         .await
-        .expect("invalid correlationId sweep request should be handled");
+        .expect("client-owned correlationId sweep request should be handled");
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     let payload: serde_json::Value = serde_json::from_slice(
         &to_bytes(response.into_body(), usize::MAX)
@@ -1536,11 +1503,11 @@ async fn maintenance_routes_reject_invalid_request_id_with_bad_request() {
             .expect("response body should be readable"),
     )
     .expect("response body should be valid json");
-    assert_eq!(payload["code"].as_i64(), Some(40001));
+    assert_eq!(payload["code"].as_i64(), Some(40002));
     assert!(
         payload["detail"]
             .as_str()
-            .is_some_and(|detail| detail.contains("request_id contains invalid characters")),
+            .is_some_and(|detail| detail.contains("matching the operation schema")),
         "unexpected detail: {}",
         payload["detail"]
     );

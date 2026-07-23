@@ -59,7 +59,7 @@ pub(crate) async fn list_spaces(
     };
 
     let page = parse_page_request(query.page_size, query.page_token)?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     let owner_subject_type = normalize_optional_text(query.owner_subject_type);
     let owner_subject_id = normalize_optional_text(query.owner_subject_id);
     let space_type = normalize_optional_text(query.space_type);
@@ -138,7 +138,7 @@ pub(crate) async fn create_space(
 
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     ensure_create_space_owner_matches_caller(
         &space_type,
         payload.id.trim(),
@@ -148,7 +148,7 @@ pub(crate) async fn create_space(
         payload.owner_subject_id.trim(),
         ctx.organization_id.as_deref(),
     )?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let tenant_id_for_bootstrap = tenant_id.clone();
     let operator_id_for_bootstrap = operator_id.clone();
     let created_result = service
@@ -234,7 +234,7 @@ pub(crate) async fn get_space(
             return Err(error);
         }
     };
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
     acl::ensure_subject_space_scoped_reader(
         &state.pool,
@@ -301,7 +301,7 @@ pub(crate) async fn update_space(
             return Err(error);
         }
     };
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
     acl::ensure_parent_writer(&state.pool, &ctx, &space_id, None).await?;
     let service = DriveSpaceService::new(SqlSpaceStore::new(state.pool.clone()));
@@ -354,7 +354,7 @@ pub(crate) async fn delete_space(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(space_id): Path<String>,
-    Query(query): Query<NodeMutationQuery>,
+    Query(_query): Query<NodeMutationQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let started = start_timer();
     let tenant_id = match ctx.resolve_tenant_id() {
@@ -370,7 +370,7 @@ pub(crate) async fn delete_space(
             return Err(error);
         }
     };
-    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
     acl::ensure_space_owner(&state.pool, &ctx, &space_id).await?;
     let lifecycle_service = SqlDriveSpaceLifecycleService::new(state.pool.clone());

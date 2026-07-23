@@ -154,7 +154,7 @@ async fn assets_create_bind_existing_node_and_support_collections_and_relations(
     let item_response = app
         .clone()
         .oneshot(common::authed_post_json(
-            &format!("/app/v3/api/assets/collections/{collection_id}/items"),
+            format!("/app/v3/api/assets/collections/{collection_id}/items"),
             "tenant-assets",
             "user-assets",
             "appbase",

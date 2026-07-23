@@ -1,17 +1,18 @@
+use crate::app_context::DriveRequestContext;
 use crate::audit::record_storage_provider_audit;
 use crate::dto::{
-    ListProviderBucketsQuery, OperatorQuery, ProviderBucketListItemResponse,
-    ProviderBucketMutationResponse, ProviderBucketResponse,
+    ListProviderBucketsQuery, ProviderBucketListItemResponse, ProviderBucketMutationResponse,
+    ProviderBucketResponse,
 };
 use crate::error::{map_object_store_route_error, ProblemDetail};
 use crate::object_store::build_full_s3_object_store_for_provider;
 use crate::provider_lookup::get_active_provider;
 use crate::response::{no_content, success_list_page_simple, StorageListHttpResponse};
 use crate::state::AdminStorageState;
-use crate::validators::{next_page_token, parse_offset_page, require_query_operator_id};
+use crate::validators::{next_page_token, parse_offset_page};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use axum::Json;
+use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events::admin_audit;
 use sdkwork_drive_storage_contract::{
     CreateBucketRequest, DeleteBucketRequest, DriveObjectStore, HeadBucketRequest,
@@ -92,10 +93,10 @@ pub(crate) async fn list_storage_provider_buckets(
 
 pub(crate) async fn create_storage_provider_bucket(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(provider_id): Path<String>,
-    Query(query): Query<OperatorQuery>,
 ) -> Result<Json<ProviderBucketMutationResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let operator_id = require_query_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let provider = get_active_provider(&state, &provider_id).await?;
     let object_store = build_full_s3_object_store_for_provider(&provider).await?;
     let result = object_store
@@ -120,10 +121,10 @@ pub(crate) async fn create_storage_provider_bucket(
 
 pub(crate) async fn delete_storage_provider_bucket(
     State(state): State<AdminStorageState>,
+    Extension(ctx): Extension<DriveRequestContext>,
     Path(provider_id): Path<String>,
-    Query(query): Query<OperatorQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
-    let operator_id = require_query_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let provider = get_active_provider(&state, &provider_id).await?;
     let object_store = build_full_s3_object_store_for_provider(&provider).await?;
     let result = object_store

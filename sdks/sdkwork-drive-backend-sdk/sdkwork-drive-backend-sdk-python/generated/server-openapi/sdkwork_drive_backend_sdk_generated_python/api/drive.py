@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import AuditEventsListResponse, DownloadPackagesListResponse, MaintenanceAbandonedUploadTaskSweepResponse, MaintenanceExpiredUploadContentSweepResponse, MaintenanceJobsListResponse, MaintenanceObjectSweepResponse, MaintenanceUploadSessionSweepResponse, QuotasRetrieveResponse, QuotasUpdateResponse, SpacesAdminListResponse, SweepObjectStoreRequest, SweepUploadSessionsRequest, UpdateQuotaPolicyRequest
+from ..models import AuditEventsListResponse, CreateLabelRequest, CreateSandboxGrantRequest, CreateSandboxVolumeRequest, DownloadPackagesListResponse, LabelsCreateResponse201, LabelsListResponse, LabelsRetrieveResponse, LabelsUpdateResponse, MaintenanceAbandonedUploadTaskSweepResponse, MaintenanceExpiredUploadContentSweepResponse, MaintenanceJobsListResponse, MaintenanceObjectSweepResponse, MaintenanceUploadSessionSweepResponse, QuotasRetrieveResponse, QuotasUpdateResponse, SandboxGrantsCreateResponse201, SandboxGrantsListResponse, SandboxGrantsRetrieveResponse, SandboxGrantsUpdateResponse, SandboxVolumesCreateResponse201, SandboxVolumesListResponse, SandboxVolumesRetrieveResponse, SandboxVolumesUpdateResponse, SpacesAdminListResponse, SweepObjectStoreRequest, SweepUploadSessionsRequest, UpdateLabelRequest, UpdateQuotaPolicyRequest, UpdateSandboxGrantRequest, UpdateSandboxVolumeRequest
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -8,6 +8,67 @@ def _append_query_string(path: str, raw_query_string: str) -> str:
         return path
     separator = '&' if '?' in path else '?'
     return f"{path}{separator}{query}"
+
+def serialize_path_parameter(value: Any, spec: Dict[str, Any]) -> str:
+    if value is None:
+        return ''
+
+    style = str(spec.get('style') or 'simple')
+    name = str(spec.get('name') or '')
+    explode = bool(spec.get('explode'))
+    if isinstance(value, (list, tuple)):
+        return serialize_path_array(name, value, style, explode)
+    if isinstance(value, dict):
+        return serialize_path_object(name, value, style, explode)
+    return path_prefix(name, style) + encode_path_value(serialize_path_primitive(value))
+
+
+def serialize_path_array(name: str, values: Any, style: str, explode: bool) -> str:
+    serialized = [encode_path_value(serialize_path_primitive(item)) for item in values if item is not None]
+    if not serialized:
+        return path_prefix(name, style)
+    if style == 'matrix':
+        return ''.join(f";{name}={item}" for item in serialized) if explode else f";{name}={','.join(serialized)}"
+    return path_prefix(name, style) + ('.' if explode else ',').join(serialized)
+
+
+def serialize_path_object(name: str, value: Dict[str, Any], style: str, explode: bool) -> str:
+    entries = [(key, entry_value) for key, entry_value in value.items() if entry_value is not None]
+    if not entries:
+        return path_prefix(name, style)
+    if style == 'matrix':
+        if explode:
+            return ''.join(f";{encode_path_value(str(key))}={encode_path_value(serialize_path_primitive(entry_value))}" for key, entry_value in entries)
+        serialized = ','.join(item for key, entry_value in entries for item in (encode_path_value(str(key)), encode_path_value(serialize_path_primitive(entry_value))))
+        return f";{name}={serialized}"
+    if explode:
+        separator = '.' if style == 'label' else ','
+        serialized = separator.join(f"{encode_path_value(str(key))}={encode_path_value(serialize_path_primitive(entry_value))}" for key, entry_value in entries)
+    else:
+        serialized = ','.join(item for key, entry_value in entries for item in (encode_path_value(str(key)), encode_path_value(serialize_path_primitive(entry_value))))
+    return path_prefix(name, style) + serialized
+
+
+def path_prefix(name: str, style: str) -> str:
+    if style == 'label':
+        return '.'
+    if style == 'matrix':
+        return f";{name}"
+    return ''
+
+
+def encode_path_value(value: str) -> str:
+    from urllib.parse import quote
+
+    return quote(value, safe='')
+
+
+def serialize_path_primitive(value: Any) -> str:
+    if isinstance(value, dict):
+        import json
+
+        return json.dumps(value, separators=(',', ':'))
+    return str(value)
 
 
 def build_query_string(parameters: List[Dict[str, Any]]) -> str:
@@ -129,10 +190,13 @@ class DriveApi:
     def __init__(self, client: HttpClient):
         self._client = client
         self.audit_events = DriveAuditEventsApi(client)
+        self.labels = DriveLabelsApi(client)
         self.maintenance = DriveMaintenanceApi(client)
         self.quotas = DriveQuotasApi(client)
         self.spaces = DriveSpacesApi(client)
         self.download_packages = DriveDownloadPackagesApi(client)
+        self.sandbox_volumes = DriveSandboxVolumesApi(client)
+        self.sandbox_grants = DriveSandboxGrantsApi(client)
 
 
 class DriveAuditEventsApi:
@@ -153,6 +217,38 @@ class DriveAuditEventsApi:
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/backend/v3/api/drive/audit_events", query))
+
+class DriveLabelsApi:
+    """drive drive.labels API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def list(self, lifecycle_status: Optional[str] = None, page_size: Optional[int] = None, cursor: Optional[str] = None) -> LabelsListResponse:
+        """List Drive label definitions"""
+        query = build_query_string([
+            {'name': 'lifecycleStatus', 'value': lifecycle_status, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
+        ])
+        return self._client.get(_append_query_string(f"/backend/v3/api/drive/labels", query))
+
+    def create(self, body: CreateLabelRequest) -> LabelsCreateResponse201:
+        """Create a Drive label definition"""
+        return self._client.post(f"/backend/v3/api/drive/labels", json=body)
+
+    def retrieve(self, label_id: str) -> LabelsRetrieveResponse:
+        """Get a Drive label definition"""
+        return self._client.get(f"/backend/v3/api/drive/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}")
+
+    def update(self, label_id: str, body: UpdateLabelRequest) -> LabelsUpdateResponse:
+        """Update a Drive label definition"""
+        return self._client.patch(f"/backend/v3/api/drive/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}", json=body)
+
+    def delete(self, label_id: str) -> None:
+        """Delete a Drive label definition"""
+        return self._client.delete(f"/backend/v3/api/drive/labels/{serialize_path_parameter(label_id, {'name': 'labelId', 'style': 'simple', 'explode': False})}")
 
 class DriveMaintenanceApi:
     """drive drive.maintenance API client."""
@@ -243,3 +339,67 @@ class DriveDownloadPackagesApi:
             {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/backend/v3/api/drive/download_packages", query))
+
+class DriveSandboxVolumesApi:
+    """drive drive.sandbox_volumes API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def list(self, lifecycle_status: Optional[str] = None, provider_kind: Optional[str] = None, page: Optional[int] = None, page_size: Optional[int] = None) -> SandboxVolumesListResponse:
+        """List server sandbox volumes"""
+        query = build_query_string([
+            {'name': 'lifecycle_status', 'value': lifecycle_status, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'provider_kind', 'value': provider_kind, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+        ])
+        return self._client.get(_append_query_string(f"/backend/v3/api/drive/sandbox_volumes", query))
+
+    def create(self, body: CreateSandboxVolumeRequest) -> SandboxVolumesCreateResponse201:
+        """Create a server sandbox volume"""
+        return self._client.post(f"/backend/v3/api/drive/sandbox_volumes", json=body)
+
+    def retrieve(self, sandbox_id: str) -> SandboxVolumesRetrieveResponse:
+        """Retrieve a server sandbox volume"""
+        return self._client.get(f"/backend/v3/api/drive/sandbox_volumes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}")
+
+    def update(self, sandbox_id: str, body: UpdateSandboxVolumeRequest) -> SandboxVolumesUpdateResponse:
+        """Update a server sandbox volume"""
+        return self._client.patch(f"/backend/v3/api/drive/sandbox_volumes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}", json=body)
+
+    def delete(self, sandbox_id: str) -> None:
+        """Delete a server sandbox volume"""
+        return self._client.delete(f"/backend/v3/api/drive/sandbox_volumes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}")
+
+class DriveSandboxGrantsApi:
+    """drive drive.sandbox_grants API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def list(self, sandbox_id: str, page: Optional[int] = None, page_size: Optional[int] = None) -> SandboxGrantsListResponse:
+        """List explicit sandbox grants"""
+        query = build_query_string([
+            {'name': 'page', 'value': page, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+        ])
+        return self._client.get(_append_query_string(f"/backend/v3/api/drive/sandbox_volumes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/grants", query))
+
+    def create(self, sandbox_id: str, body: CreateSandboxGrantRequest) -> SandboxGrantsCreateResponse201:
+        """Create an explicit sandbox grant"""
+        return self._client.post(f"/backend/v3/api/drive/sandbox_volumes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/grants", json=body)
+
+    def retrieve(self, sandbox_id: str, grant_id: str) -> SandboxGrantsRetrieveResponse:
+        """Retrieve a sandbox grant"""
+        return self._client.get(f"/backend/v3/api/drive/sandbox_volumes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/grants/{serialize_path_parameter(grant_id, {'name': 'grantId', 'style': 'simple', 'explode': False})}")
+
+    def update(self, sandbox_id: str, grant_id: str, body: UpdateSandboxGrantRequest) -> SandboxGrantsUpdateResponse:
+        """Update a sandbox grant"""
+        return self._client.patch(f"/backend/v3/api/drive/sandbox_volumes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/grants/{serialize_path_parameter(grant_id, {'name': 'grantId', 'style': 'simple', 'explode': False})}", json=body)
+
+    def delete(self, sandbox_id: str, grant_id: str) -> None:
+        """Delete a sandbox grant"""
+        return self._client.delete(f"/backend/v3/api/drive/sandbox_volumes/{serialize_path_parameter(sandbox_id, {'name': 'sandboxId', 'style': 'simple', 'explode': False})}/grants/{serialize_path_parameter(grant_id, {'name': 'grantId', 'style': 'simple', 'explode': False})}")

@@ -18,7 +18,4 @@ pub struct CopyProviderObjectRequest {
     #[serde(rename = "metadataDirective")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata_directive: Option<String>,
-
-    #[serde(rename = "operatorId")]
-    pub operator_id: String,
 }

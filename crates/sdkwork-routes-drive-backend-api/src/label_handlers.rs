@@ -1,8 +1,6 @@
 use crate::audit::record_label_audit;
-use crate::dto::{
-    CreateLabelRequest, LabelListQuery, LabelMutationQuery, LabelResponse, UpdateLabelRequest,
-};
-use crate::error::{internal_sql_error, not_found_problem, ProblemDetail};
+use crate::dto::{CreateLabelRequest, LabelListQuery, LabelResponse, UpdateLabelRequest};
+use crate::error::{internal_sql_error, invalid_json_problem, not_found_problem, ProblemDetail};
 use crate::mappers::map_label_row;
 use crate::response::{no_content, success_list_page_simple, DriveListHttpResponse};
 use crate::state::BackendState;
@@ -11,6 +9,7 @@ use crate::validators::{
     next_page_token, normalize_optional_text, parse_offset_page, require_non_empty_text,
     validate_label_color, validate_label_key, validate_lifecycle_status,
 };
+use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Extension;
@@ -53,7 +52,6 @@ pub(crate) async fn get_label(
     State(state): State<BackendState>,
     Extension(app_context): Extension<DriveAppContext>,
     Path(label_id): Path<String>,
-    Query(_query): Query<LabelMutationQuery>,
 ) -> Result<Json<LabelResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = authenticated_tenant_id(&app_context);
     Ok(Json(find_label(&state, &tenant_id, &label_id).await?))
@@ -62,8 +60,9 @@ pub(crate) async fn get_label(
 pub(crate) async fn create_label(
     State(state): State<BackendState>,
     Extension(app_context): Extension<DriveAppContext>,
-    Json(payload): Json<CreateLabelRequest>,
+    payload: Result<Json<CreateLabelRequest>, JsonRejection>,
 ) -> Result<(StatusCode, Json<LabelResponse>), (StatusCode, Json<ProblemDetail>)> {
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
     let id = require_non_empty_text(payload.id, "id")?;
     let tenant_id = authenticated_tenant_id(&app_context);
     let label_key = validate_label_key(&payload.label_key)?.to_string();
@@ -73,7 +72,7 @@ pub(crate) async fn create_label(
         None => None,
     };
     let description = normalize_optional_text(payload.description);
-    let operator_id = require_non_empty_text(payload.operator_id, "operatorId")?;
+    let operator_id = app_context.actor_id.clone();
 
     sqlx::query(
         "INSERT INTO dr_drive_label (
@@ -108,10 +107,11 @@ pub(crate) async fn update_label(
     State(state): State<BackendState>,
     Extension(app_context): Extension<DriveAppContext>,
     Path(label_id): Path<String>,
-    Json(payload): Json<UpdateLabelRequest>,
+    payload: Result<Json<UpdateLabelRequest>, JsonRejection>,
 ) -> Result<Json<LabelResponse>, (StatusCode, Json<ProblemDetail>)> {
+    let Json(payload) = payload.map_err(invalid_json_problem)?;
     let tenant_id = authenticated_tenant_id(&app_context);
-    let operator_id = require_non_empty_text(payload.operator_id, "operatorId")?;
+    let operator_id = app_context.actor_id.clone();
     let current = find_label(&state, &tenant_id, &label_id).await?;
     let display_name = payload
         .display_name
@@ -160,15 +160,9 @@ pub(crate) async fn delete_label(
     State(state): State<BackendState>,
     Extension(app_context): Extension<DriveAppContext>,
     Path(label_id): Path<String>,
-    Query(query): Query<LabelMutationQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = authenticated_tenant_id(&app_context);
-    let operator_id = require_non_empty_text(
-        query
-            .operator_id
-            .unwrap_or_else(|| app_context.actor_id.clone()),
-        "operatorId",
-    )?;
+    let operator_id = app_context.actor_id.clone();
     find_label(&state, &tenant_id, &label_id).await?;
 
     sqlx::query(

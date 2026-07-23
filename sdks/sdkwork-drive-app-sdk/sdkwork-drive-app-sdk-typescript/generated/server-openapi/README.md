@@ -55,10 +55,6 @@ const client = new SdkworkAppClient({
 ## API Modules
 
 - `client.drive` - drive API
-- `client.nodeLabels` - node_labels API
-- `client.nodeProperties` - node_properties API
-- `client.nodes` - nodes API
-- `client.watchChannels` - watch_channels API
 - `client.assets` - assets API
 
 ## Usage Examples
@@ -68,59 +64,6 @@ const client = new SdkworkAppClient({
 ```typescript
 // GET /app/v3/api/drive/quotas/summary
 const result = await client.drive.quotas.retrieve();
-```
-
-### node_labels
-
-```typescript
-// List labels applied to a node
-const nodeId = '1';
-const params = {
-  labelKey: 'labelKey',
-  page_size: 2,
-  cursor: 'cursor',
-};
-const result = await client.nodeLabels.list(nodeId, params);
-```
-
-### node_properties
-
-```typescript
-// List node custom properties
-const nodeId = '1';
-const params = {
-  visibility: 'private',
-  page_size: 2,
-  cursor: 'cursor',
-};
-const result = await client.nodeProperties.list(nodeId, params);
-```
-
-### nodes
-
-```typescript
-// Create a shortcut node
-const body = {
-  id: 'id',
-  spaceId: 'spaceId',
-  parentNodeId: 'parentNodeId',
-  nodeName: 'nodeName',
-  targetNodeId: 'targetNodeId',
-};
-const result = await client.nodes.shortcuts.create(body);
-```
-
-### watch_channels
-
-```typescript
-// List Drive watch channels
-const params = {
-  resourceType: 'changes',
-  lifecycleStatus: 'active',
-  page_size: 3,
-  cursor: 'cursor',
-};
-const result = await client.watchChannels.list(params);
 ```
 
 ### assets

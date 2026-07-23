@@ -1,23 +1,21 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateLabelRequest {
     pub(crate) id: String,
     pub(crate) label_key: String,
     pub(crate) display_name: String,
     pub(crate) color: Option<String>,
     pub(crate) description: Option<String>,
-    pub(crate) operator_id: String,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct UpdateLabelRequest {
     pub(crate) display_name: Option<String>,
     pub(crate) color: Option<String>,
     pub(crate) description: Option<String>,
-    pub(crate) operator_id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -28,12 +26,6 @@ pub(crate) struct LabelListQuery {
     pub(crate) page_size: Option<i64>,
     #[serde(rename = "cursor")]
     pub(crate) page_token: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct LabelMutationQuery {
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -79,26 +71,18 @@ pub(crate) struct AuditEventItemResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct SweepObjectStoreRequest {
     pub(crate) dry_run: bool,
     pub(crate) limit: Option<i64>,
-    pub(crate) operator_id: String,
-    #[serde(rename = "correlationId")]
-    pub(crate) request_id: Option<String>,
-    pub(crate) trace_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct SweepUploadSessionsRequest {
     pub(crate) now_epoch_ms: i64,
     pub(crate) dry_run: bool,
     pub(crate) limit: Option<i64>,
-    pub(crate) operator_id: String,
-    #[serde(rename = "correlationId")]
-    pub(crate) request_id: Option<String>,
-    pub(crate) trace_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -209,11 +193,10 @@ pub(crate) struct QuotaResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct UpdateQuotaPolicyRequest {
     pub(crate) quota_bytes: Option<i64>,
     pub(crate) clear_tenant_policy: Option<bool>,
-    pub(crate) operator_id: String,
 }
 
 #[derive(Debug, Clone, Copy)]

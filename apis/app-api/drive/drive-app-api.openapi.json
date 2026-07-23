@@ -4,7 +4,7 @@
     "title": "SDKWork Drive App API",
     "version": "0.1.0",
     "x-sdkwork-owner": "sdkwork-drive",
-    "x-sdkwork-api-authority": "sdkwork-drive.app"
+    "x-sdkwork-api-authority": "sdkwork-drive-app-api"
   },
   "servers": [
     {
@@ -128,7 +128,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -228,7 +228,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -328,7 +328,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -413,7 +413,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -559,7 +559,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -609,7 +609,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -670,7 +670,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -780,7 +780,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -863,7 +863,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -939,7 +939,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -1024,7 +1024,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -1143,7 +1143,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -1251,7 +1251,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -1359,7 +1359,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -1475,7 +1475,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -1574,7 +1574,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -1701,7 +1701,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -1817,7 +1817,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -1933,7 +1933,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -2057,7 +2057,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -2164,7 +2164,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -2274,7 +2274,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -2369,7 +2369,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -2464,7 +2464,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -2574,7 +2574,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -2665,7 +2665,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -2673,7 +2673,7 @@
     "/app/v3/api/drive/nodes/{nodeId}/labels": {
       "get": {
         "tags": [
-          "nodeLabels"
+          "drive"
         ],
         "operationId": "nodeLabels.list",
         "summary": "List labels applied to a node",
@@ -2801,7 +2801,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -2809,7 +2809,7 @@
     "/app/v3/api/drive/nodes/{nodeId}/labels/{labelId}": {
       "put": {
         "tags": [
-          "nodeLabels"
+          "drive"
         ],
         "operationId": "nodeLabels.update",
         "summary": "Apply a label to a node",
@@ -2926,13 +2926,13 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
       "delete": {
         "tags": [
-          "nodeLabels"
+          "drive"
         ],
         "operationId": "nodeLabels.delete",
         "summary": "Remove a label from a node",
@@ -3032,7 +3032,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -3142,7 +3142,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -3242,7 +3242,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -3361,7 +3361,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -3469,7 +3469,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -3570,7 +3570,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -3686,7 +3686,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -3792,7 +3792,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -3911,7 +3911,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -3919,7 +3919,7 @@
     "/app/v3/api/drive/nodes/{nodeId}/properties": {
       "get": {
         "tags": [
-          "nodeProperties"
+          "drive"
         ],
         "summary": "List node custom properties",
         "operationId": "nodeProperties.list",
@@ -4036,7 +4036,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -4044,7 +4044,7 @@
     "/app/v3/api/drive/nodes/{nodeId}/properties/{propertyKey}": {
       "put": {
         "tags": [
-          "nodeProperties"
+          "drive"
         ],
         "summary": "Create or update a node custom property",
         "operationId": "nodeProperties.update",
@@ -4148,13 +4148,13 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
       "delete": {
         "tags": [
-          "nodeProperties"
+          "drive"
         ],
         "summary": "Delete a node custom property",
         "operationId": "nodeProperties.delete",
@@ -4255,7 +4255,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -4365,7 +4365,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -4482,7 +4482,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -4592,7 +4592,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -4711,7 +4711,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -4812,7 +4812,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -4918,7 +4918,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -5036,7 +5036,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -5136,7 +5136,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -5236,7 +5236,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -5244,7 +5244,7 @@
     "/app/v3/api/drive/nodes/shortcuts": {
       "post": {
         "tags": [
-          "nodes"
+          "drive"
         ],
         "summary": "Create a shortcut node",
         "operationId": "nodes.shortcuts.create",
@@ -5337,7 +5337,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -5483,7 +5483,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -5610,7 +5610,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -5735,7 +5735,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -5828,7 +5828,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -5936,7 +5936,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -6034,7 +6034,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -6180,7 +6180,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -6276,7 +6276,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token"
@@ -6405,7 +6405,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token",
@@ -6549,7 +6549,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token",
@@ -6686,7 +6686,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token",
@@ -6827,7 +6827,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token"
@@ -7004,7 +7004,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token",
@@ -7173,7 +7173,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token",
@@ -7342,7 +7342,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token",
@@ -7464,7 +7464,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -7547,7 +7547,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -7649,7 +7649,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token"
@@ -7760,7 +7760,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token",
@@ -7834,7 +7834,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token"
@@ -7948,7 +7948,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token",
@@ -8022,7 +8022,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token"
@@ -8124,7 +8124,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token",
@@ -8218,7 +8218,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token",
@@ -8321,7 +8321,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "dual-token",
@@ -8421,7 +8421,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -8506,7 +8506,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -8614,7 +8614,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -8705,7 +8705,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -8859,7 +8859,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -9013,7 +9013,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -9123,7 +9123,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -9223,7 +9223,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -9308,7 +9308,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -9408,7 +9408,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -9518,7 +9518,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -9628,7 +9628,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -9748,7 +9748,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -9756,7 +9756,7 @@
     "/app/v3/api/drive/changes/watch": {
       "post": {
         "tags": [
-          "watchChannels"
+          "drive"
         ],
         "operationId": "changes.watch",
         "summary": "Create a push notification channel for Drive changes",
@@ -9849,7 +9849,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -9857,7 +9857,7 @@
     "/app/v3/api/drive/nodes/{nodeId}/watch": {
       "post": {
         "tags": [
-          "watchChannels"
+          "drive"
         ],
         "operationId": "nodes.watch",
         "summary": "Create a push notification channel for a Drive node",
@@ -9963,7 +9963,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -9971,7 +9971,7 @@
     "/app/v3/api/drive/watch_channels": {
       "get": {
         "tags": [
-          "watchChannels"
+          "drive"
         ],
         "operationId": "watchChannels.list",
         "summary": "List Drive watch channels",
@@ -10103,7 +10103,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -10111,7 +10111,7 @@
     "/app/v3/api/drive/watch_channels/{channelId}": {
       "get": {
         "tags": [
-          "watchChannels"
+          "drive"
         ],
         "operationId": "watchChannels.retrieve",
         "summary": "Get a Drive watch channel",
@@ -10207,7 +10207,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -10215,7 +10215,7 @@
     "/app/v3/api/drive/watch_channels/{channelId}/stop": {
       "post": {
         "tags": [
-          "watchChannels"
+          "drive"
         ],
         "operationId": "watchChannels.stop",
         "summary": "Stop a Drive watch channel",
@@ -10321,7 +10321,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -10436,7 +10436,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -10553,7 +10553,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -10653,7 +10653,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -10763,7 +10763,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -10863,7 +10863,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -10984,7 +10984,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -10992,7 +10992,7 @@
     "/app/v3/api/assets": {
       "get": {
         "tags": [
-          "assets"
+          "drive"
         ],
         "operationId": "assets.list",
         "summary": "List global assets",
@@ -11136,13 +11136,13 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
       "post": {
         "tags": [
-          "assets"
+          "drive"
         ],
         "operationId": "assets.create",
         "summary": "Create a global asset metadata record",
@@ -11251,7 +11251,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -11259,7 +11259,7 @@
     "/app/v3/api/assets/{assetId}": {
       "get": {
         "tags": [
-          "assets"
+          "drive"
         ],
         "operationId": "assets.retrieve",
         "summary": "Get a global asset",
@@ -11367,13 +11367,13 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
       "patch": {
         "tags": [
-          "assets"
+          "drive"
         ],
         "operationId": "assets.update",
         "summary": "Update a global asset",
@@ -11491,7 +11491,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -11499,7 +11499,7 @@
     "/app/v3/api/assets/{assetId}/archive": {
       "post": {
         "tags": [
-          "assets"
+          "drive"
         ],
         "operationId": "assets.archive",
         "summary": "Archive a global asset",
@@ -11617,7 +11617,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -11625,7 +11625,7 @@
     "/app/v3/api/assets/{assetId}/restore": {
       "post": {
         "tags": [
-          "assets"
+          "drive"
         ],
         "operationId": "assets.restore",
         "summary": "Restore an archived global asset",
@@ -11743,7 +11743,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -11870,7 +11870,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       },
@@ -11985,7 +11985,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -12111,7 +12111,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -12228,7 +12228,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -12354,7 +12354,7 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api"
       }
@@ -12471,1856 +12471,8 @@
           }
         ],
         "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
+        "x-sdkwork-api-authority": "sdkwork-drive-app-api",
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/auth/password_reset_requests": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Password Reset Requests create.",
-        "operationId": "passwordResetRequests.create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": true,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "passwordResetRequests",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseOperationCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/auth/password_resets": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Password Resets create.",
-        "operationId": "passwordResets.create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": true,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "passwordResets",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseOperationCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/auth/registrations": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Registrations create.",
-        "operationId": "registrations.create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": true,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "registrations",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseOperationCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/auth/sessions": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Sessions create.",
-        "operationId": "sessions.create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": true,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "sessions",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseSessionCreateCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/auth/sessions/current": {
-      "delete": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Sessions current delete.",
-        "operationId": "sessions.current.delete",
-        "parameters": [],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "AuthToken": [],
-            "AccessToken": []
-          }
-        ],
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-forbid-credential-headers": false,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "sessions.current",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      },
-      "get": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Sessions current retrieve.",
-        "operationId": "sessions.current.retrieve",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "AuthToken": [],
-            "AccessToken": []
-          }
-        ],
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-forbid-credential-headers": false,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "sessions.current",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      },
-      "patch": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Sessions current update.",
-        "operationId": "sessions.current.update",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "AuthToken": [],
-            "AccessToken": []
-          }
-        ],
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-forbid-credential-headers": false,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "sessions.current",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseOperationCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/auth/sessions/organization_selection": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Sessions organization Selection create.",
-        "operationId": "sessions.organizationSelection.create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": true,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "sessions.organizationSelection",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseOperationCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/auth/sessions/refresh": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Sessions refresh.",
-        "operationId": "sessions.refresh",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "refresh-token",
-        "x-sdkwork-forbid-credential-headers": false,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "sessions",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseOperationCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/iam/users/current": {
-      "get": {
-        "tags": [
-          "iam"
-        ],
-        "summary": "Users current retrieve.",
-        "operationId": "users.current.retrieve",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "AuthToken": [],
-            "AccessToken": []
-          }
-        ],
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-forbid-credential-headers": false,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "users.current",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/oauth/authorization_urls": {
-      "post": {
-        "tags": [
-          "oauth"
-        ],
-        "summary": "Oauth authorization Urls create.",
-        "operationId": "oauth.authorizationUrls.create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": false,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "oauth.authorizationUrls",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseOperationCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/oauth/device_authorizations": {
-      "post": {
-        "tags": [
-          "oauth"
-        ],
-        "summary": "Oauth device Authorizations create.",
-        "operationId": "oauth.deviceAuthorizations.create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": true,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "oauth.deviceAuthorizations",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseOperationCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}": {
-      "get": {
-        "tags": [
-          "oauth"
-        ],
-        "summary": "Oauth device Authorizations retrieve.",
-        "operationId": "oauth.deviceAuthorizations.retrieve",
-        "parameters": [
-          {
-            "name": "deviceAuthorizationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": false,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "oauth.deviceAuthorizations",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}/password_completions": {
-      "post": {
-        "tags": [
-          "oauth"
-        ],
-        "summary": "Oauth device Authorizations password Completions create.",
-        "operationId": "oauth.deviceAuthorizations.passwordCompletions.create",
-        "parameters": [
-          {
-            "name": "deviceAuthorizationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": true,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "oauth.deviceAuthorizations.passwordCompletions",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseOperationCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}/scans": {
-      "post": {
-        "tags": [
-          "oauth"
-        ],
-        "summary": "Oauth device Authorizations scans create.",
-        "operationId": "oauth.deviceAuthorizations.scans.create",
-        "parameters": [
-          {
-            "name": "deviceAuthorizationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": false,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "oauth.deviceAuthorizations.scans",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseOperationCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/oauth/sessions": {
-      "post": {
-        "tags": [
-          "oauth"
-        ],
-        "summary": "Oauth sessions create.",
-        "operationId": "oauth.sessions.create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": true,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "oauth.sessions",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppbaseOperationCommand"
-              }
-            }
-          }
-        },
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/system/iam/runtime": {
-      "get": {
-        "tags": [
-          "system"
-        ],
-        "summary": "Iam runtime retrieve.",
-        "operationId": "iam.runtime.retrieve",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": false,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "iam.runtime",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
-        "x-sdkwork-api-surface": "app-api"
-      }
-    },
-    "/app/v3/api/system/iam/verification_policy": {
-      "get": {
-        "tags": [
-          "system"
-        ],
-        "summary": "Iam verification Policy retrieve.",
-        "operationId": "iam.verificationPolicy.retrieve",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SdkWorkApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-forbid-credential-headers": false,
-        "x-sdkwork-owner": "sdkwork-drive",
-        "x-sdkwork-api-authority": "sdkwork-drive.app",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-resource": "iam.verificationPolicy",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-server-request-id": true,
-        "x-sdkwork-composed-from-owner": "sdkwork-appbase",
-        "x-sdkwork-composed-from-api-authority": "sdkwork-iam-app-api",
         "x-sdkwork-api-surface": "app-api"
       }
     }
@@ -14421,14 +12573,7 @@
     "schemas": {
       "ApplyNodeLabelRequest": {
         "type": "object",
-        "properties": {
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          }
-        },
+        "properties": {},
         "additionalProperties": false
       },
       "Change": {
@@ -14725,11 +12870,27 @@
         "type": "object",
         "required": [
           "id",
+          "subjectType",
+          "subjectId",
           "role"
         ],
         "properties": {
           "id": {
             "type": "string"
+          },
+          "subjectType": {
+            "type": "string",
+            "enum": [
+              "user",
+              "group",
+              "domain",
+              "app"
+            ]
+          },
+          "subjectId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
           },
           "role": {
             "type": "string",
@@ -14740,7 +12901,8 @@
               "owner"
             ]
           }
-        }
+        },
+        "additionalProperties": false
       },
       "CreateShareLinkRequest": {
         "type": "object",
@@ -15248,24 +13410,6 @@
                     "$ref": "#/components/schemas/PageInfo"
                   }
                 }
-              }
-            }
-          }
-        ]
-      },
-      "RemoveNodeLabelHttpResponse": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "type": "object",
-            "required": [
-              "data"
-            ],
-            "properties": {
-              "data": {
-                "$ref": "#/components/schemas/RemoveNodeLabelResponse"
               }
             }
           }
@@ -15866,24 +14010,6 @@
                     "$ref": "#/components/schemas/PageInfo"
                   }
                 }
-              }
-            }
-          }
-        ]
-      },
-      "RevokeShareLinkHttpResponse": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "type": "object",
-            "required": [
-              "data"
-            ],
-            "properties": {
-              "data": {
-                "$ref": "#/components/schemas/RevokeShareLinkResponse"
               }
             }
           }
@@ -17245,20 +15371,8 @@
       },
       "FavoriteNodeRequest": {
         "type": "object",
-        "properties": {
-          "subjectType": {
-            "type": "string"
-          },
-          "subjectId": {
-            "type": "string"
-          },
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          }
-        }
+        "properties": {},
+        "additionalProperties": false
       },
       "FavoriteNodeResponse": {
         "type": "object",
@@ -17283,28 +15397,6 @@
               "type": "string"
             },
             "maxItems": 200
-          },
-          "subjectType": {
-            "type": "string"
-          },
-          "subjectId": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
-      },
-      "FavoriteNodeCheckItem": {
-        "type": "object",
-        "required": [
-          "nodeId",
-          "favorited"
-        ],
-        "properties": {
-          "nodeId": {
-            "type": "string"
-          },
-          "favorited": {
-            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -17545,14 +15637,8 @@
       },
       "NodeCommandRequest": {
         "type": "object",
-        "properties": {
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          }
-        }
+        "properties": {},
+        "additionalProperties": false
       },
       "NodeLabel": {
         "type": "object",
@@ -17990,14 +16076,7 @@
       },
       "StopWatchChannelRequest": {
         "type": "object",
-        "properties": {
-          "operatorId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "pattern": "^[A-Za-z0-9._:@-]+$"
-          }
-        },
+        "properties": {},
         "additionalProperties": false
       },
       "DriveWatchChannel": {
@@ -18466,14 +16545,6 @@
             "minLength": 1,
             "maxLength": 128
           },
-          "organizationId": {
-            "type": "string",
-            "maxLength": 128
-          },
-          "anonymousId": {
-            "type": "string",
-            "maxLength": 128
-          },
           "appResourceType": {
             "type": "string",
             "minLength": 1,
@@ -18562,7 +16633,8 @@
             "maxLength": 512,
             "description": "Optional Drive share token authorizing anonymous or external uploads into an explicit target folder. The raw token is accepted only on prepare requests and is never returned."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "UploaderUploadItem": {
         "type": "object",
@@ -19184,9 +17256,6 @@
         "additionalProperties": false,
         "required": [],
         "properties": {
-          "organizationId": {
-            "type": "string"
-          },
           "driveNodeId": {
             "type": "string",
             "description": "Existing Drive node to expose through /assets."
@@ -19350,9 +17419,6 @@
           "title"
         ],
         "properties": {
-          "organizationId": {
-            "type": "string"
-          },
           "title": {
             "type": "string"
           },
@@ -19511,51 +17577,6 @@
           }
         }
       },
-      "AppbaseOperationCommand": {
-        "type": "object",
-        "additionalProperties": true,
-        "description": "Operation-specific command payload defined by the owning appbase Rust module."
-      },
-      "AppbaseSessionCreateCommand": {
-        "type": "object",
-        "additionalProperties": true,
-        "description": "Session creation command for credential login and external user-center session exchange.",
-        "properties": {
-          "email": {
-            "type": "string",
-            "description": "Email credential used by standard password login."
-          },
-          "username": {
-            "type": "string",
-            "description": "Username credential used by standard password login."
-          },
-          "phone": {
-            "type": "string",
-            "description": "Phone credential used by standard password login."
-          },
-          "password": {
-            "type": "string",
-            "description": "Write-only password credential used by standard password login.",
-            "format": "password"
-          },
-          "externalToken": {
-            "type": "string",
-            "description": "Opaque upstream credential used only by an external user-center session exchange."
-          },
-          "providerKey": {
-            "type": "string",
-            "description": "External authority provider key used to select the configured bridge."
-          },
-          "tenantId": {
-            "type": "string",
-            "description": "Verified tenant id supplied by an external user-center session exchange after upstream identity validation."
-          },
-          "organizationId": {
-            "type": "string",
-            "description": "Verified organization id supplied by an external user-center session exchange when the upstream identity resolved an organization scope."
-          }
-        }
-      },
       "SdkWorkApiResponse": {
         "type": "object",
         "additionalProperties": false,
@@ -19582,59 +17603,6 @@
             "type": "string",
             "format": "uuid",
             "description": "Server-owned request correlation id."
-          }
-        }
-      },
-      "SdkWorkResourceData": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "item"
-        ],
-        "properties": {
-          "item": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Typed domain resource for the operation."
-          }
-        }
-      },
-      "SdkWorkPageData": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "items",
-          "pageInfo"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": true
-            }
-          },
-          "pageInfo": {
-            "$ref": "#/components/schemas/PageInfo"
-          }
-        }
-      },
-      "SdkWorkCommandData": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "accepted"
-        ],
-        "properties": {
-          "accepted": {
-            "type": "boolean",
-            "const": true
-          },
-          "resourceId": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
           }
         }
       },
@@ -19687,24 +17655,6 @@
         "maximum": 79999,
         "description": "Platform or domain error code per API_SPEC.md §15.3."
       },
-      "SdkWorkResourceResponse": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "type": "object",
-            "required": [
-              "data"
-            ],
-            "properties": {
-              "data": {
-                "$ref": "#/components/schemas/SdkWorkResourceData"
-              }
-            }
-          }
-        ]
-      },
       "DriveNodeHttpResponse": {
         "allOf": [
           {
@@ -19726,24 +17676,6 @@
                     "$ref": "#/components/schemas/DriveNode"
                   }
                 }
-              }
-            }
-          }
-        ]
-      },
-      "SdkWorkCommandResponse": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "type": "object",
-            "required": [
-              "data"
-            ],
-            "properties": {
-              "data": {
-                "$ref": "#/components/schemas/SdkWorkCommandData"
               }
             }
           }
@@ -20397,34 +18329,11 @@
   },
   "tags": [
     {
-      "name": "assets"
-    },
-    {
-      "name": "auth",
-      "description": "Auth API resources.",
-      "x-sdk-nested-resource-surface": true
-    },
-    {
       "name": "drive"
-    },
-    {
-      "name": "iam",
-      "description": "Iam API resources.",
-      "x-sdk-nested-resource-surface": true
-    },
-    {
-      "name": "oauth",
-      "description": "Oauth API resources.",
-      "x-sdk-nested-resource-surface": true
-    },
-    {
-      "name": "system",
-      "description": "System API resources.",
-      "x-sdk-nested-resource-surface": true
     }
   ],
   "x-sdkwork-owner": "sdkwork-drive",
-  "x-sdkwork-api-authority": "sdkwork-drive.app",
+  "x-sdkwork-api-authority": "sdkwork-drive-app-api",
   "x-sdkwork-dependency-exclusions": {
     "sdkwork-iam-app-sdk": [
       {

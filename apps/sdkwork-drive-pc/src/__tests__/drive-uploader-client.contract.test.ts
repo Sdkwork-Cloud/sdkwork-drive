@@ -4,6 +4,21 @@ import {
   type DriveUploaderTransport,
 } from '@sdkwork/drive-app-sdk';
 
+const AMBIENT_CALLER_IDENTITY_FIELDS = [
+  'tenantId',
+  'organizationId',
+  'userId',
+  'anonymousId',
+  'operatorId',
+  'appId',
+] as const;
+
+function expectBusinessOnlyRequest(body: object): void {
+  for (const field of AMBIENT_CALLER_IDENTITY_FIELDS) {
+    expect(body).not.toHaveProperty(field);
+  }
+}
+
 function createReplacementTransport(): {
   transport: DriveUploaderTransport;
   calls: string[];
@@ -22,9 +37,10 @@ function createReplacementTransport(): {
       uploadSessions: {
         create: vi.fn(async (body) => {
           calls.push('uploadSessions.create');
+          expectBusinessOnlyRequest(body);
           return {
             id: body.sessionId,
-            tenantId: body.tenantId,
+            tenantId: 'tenant-001',
             spaceId: body.spaceId,
             nodeId: body.nodeId,
             bucket: 'bucket-001',
@@ -54,9 +70,10 @@ function createReplacementTransport(): {
         },
         complete: vi.fn(async (uploadSessionId, body) => {
           calls.push('uploadSessions.complete');
+          expectBusinessOnlyRequest(body);
           return {
             id: uploadSessionId,
-            tenantId: body.tenantId,
+            tenantId: 'tenant-001',
             spaceId: 'my-storage',
             nodeId: 'file-001',
             bucket: 'bucket-001',
@@ -70,9 +87,10 @@ function createReplacementTransport(): {
         }),
         abort: vi.fn(async (uploadSessionId, body) => {
           calls.push('uploadSessions.abort');
+          expectBusinessOnlyRequest(body);
           return {
             id: uploadSessionId,
-            tenantId: body.tenantId,
+            tenantId: 'tenant-001',
             spaceId: 'my-storage',
             nodeId: 'file-001',
             bucket: 'bucket-001',
@@ -99,15 +117,16 @@ describe('Drive uploader composed client contract', () => {
           uploads: {
             create: vi.fn(async (body) => {
               calls.push('uploader.uploads.create');
+              expectBusinessOnlyRequest(body);
               return {
                 uploadItem: {
                   id: body.nowEpochMs === '1700000000000' ? 'upload-item-a' : 'upload-item-b',
                   taskId: body.taskId,
-                  tenantId: body.tenantId,
-                  userId: body.userId,
+                  tenantId: 'tenant-001',
+                  userId: 'user-001',
                   actorType: 'user',
-                  actorId: body.operatorId,
-                  appId: body.appId,
+                  actorId: 'actor-001',
+                  appId: 'drive-pc',
                   appResourceType: body.appResourceType,
                   appResourceId: body.appResourceId,
                   scene: body.scene,
@@ -133,7 +152,7 @@ describe('Drive uploader composed client contract', () => {
                 },
                 uploadSession: {
                   id: 'upload-stable',
-                  tenantId: body.tenantId,
+                  tenantId: 'tenant-001',
                   spaceId: body.spaceId,
                   nodeId: 'file-001',
                   bucket: 'bucket-001',
@@ -255,11 +274,8 @@ describe('Drive uploader composed client contract', () => {
 
     const result = await client.replaceNodeContent({
       file: new File(['# Updated\n'], 'Roadmap.md', { type: 'text/markdown' }),
-      tenantId: 'tenant-001',
-      userId: 'user-001',
       spaceId: 'my-storage',
       nodeId: 'file-001',
-      appId: 'drive-pc',
       appResourceType: 'desktop-file-editor',
       appResourceId: 'file-001',
       scene: 'drive_pc_text_save',
@@ -267,7 +283,6 @@ describe('Drive uploader composed client contract', () => {
       uploadProfileCode: 'text',
       originalFileName: 'Roadmap.md',
       contentType: 'text/markdown',
-      operatorId: 'actor-001',
       nowEpochMs: '1800000000000',
     });
 
@@ -326,15 +341,12 @@ describe('Drive uploader composed client contract', () => {
 
     await expect(client.replaceNodeContent({
       file: new File(['# Updated\n'], 'Roadmap.md', { type: 'text/markdown' }),
-      tenantId: 'tenant-001',
       spaceId: 'my-storage',
       nodeId: 'file-001',
-      appId: 'drive-pc',
       appResourceType: 'desktop-file-editor',
       appResourceId: 'file-001',
       originalFileName: 'Roadmap.md',
       contentType: 'text/markdown',
-      operatorId: 'actor-001',
       nowEpochMs: '1800000000000',
     })).rejects.toThrow('Drive uploader signed upload failed with HTTP 503.');
 
@@ -354,15 +366,16 @@ describe('Drive uploader composed client contract', () => {
     const { transport, calls } = createReplacementTransport();
     transport.drive.uploader.uploads.create = vi.fn(async (body) => {
       calls.push('uploader.uploads.create');
+      expectBusinessOnlyRequest(body);
       return {
         uploadItem: {
           id: body.id || 'upload-item-failed',
           taskId: body.taskId || 'task-failed',
-          tenantId: body.tenantId,
-          userId: body.userId,
+          tenantId: 'tenant-001',
+          userId: 'user-001',
           actorType: 'user',
-          actorId: body.operatorId,
-          appId: body.appId,
+          actorId: 'actor-001',
+          appId: 'drive-pc',
           appResourceType: body.appResourceType,
           appResourceId: body.appResourceId,
           scene: body.scene,
@@ -388,7 +401,7 @@ describe('Drive uploader composed client contract', () => {
         },
         uploadSession: {
           id: 'upload-failed',
-          tenantId: body.tenantId,
+          tenantId: 'tenant-001',
           spaceId: body.spaceId,
           nodeId: 'file-failed',
           bucket: 'bucket-001',
@@ -456,15 +469,12 @@ describe('Drive uploader composed client contract', () => {
 
     const result = await client.replaceNodeContent({
       file: new File(['0123456789'], 'split.txt', { type: 'text/plain' }),
-      tenantId: 'tenant-001',
       spaceId: 'my-storage',
       nodeId: 'file-001',
-      appId: 'drive-pc',
       appResourceType: 'desktop-file-editor',
       appResourceId: 'file-001',
       originalFileName: 'split.txt',
       contentType: 'text/plain',
-      operatorId: 'actor-001',
       nowEpochMs: '1800000000000',
     });
 

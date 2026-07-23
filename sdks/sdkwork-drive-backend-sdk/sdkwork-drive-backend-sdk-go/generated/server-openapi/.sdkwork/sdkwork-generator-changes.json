@@ -9,14 +9,60 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-backend-sdk-generated-go"
   },
-  "changeFingerprint": "bc08f6676c9459524a5d9700bf526372cdd9b4b8d2c1089cc5dd07a43ae73aec",
+  "changeFingerprint": "9edcb8cf6a50a4fd6f821925d763577b201e4881a59cb83c601dcbf8caecbb6e",
   "changes": {
-    "createdGeneratedFiles": [
-      "api/sandbox_grants.go",
-      "api/sandbox_volumes.go",
+    "createdGeneratedFiles": [],
+    "updatedGeneratedFiles": [],
+    "unchangedGeneratedFiles": [
+      "api/base.go",
+      "api/doc.go",
+      "api/drive.go",
+      "api/paths.go",
+      "bin/publish-core.mjs",
+      "bin/publish.ps1",
+      "bin/publish.sh",
+      "CHANGELOG.md",
+      "doc.go",
+      "go.mod",
+      "http/client.go",
+      "http/doc.go",
+      "LICENSE",
+      "README.md",
+      "sdk.go",
+      "sdkwork-sdk.json",
+      "types/audit_event_list_http_response.go",
+      "types/audit_event.go",
+      "types/audit_events_list_response.go",
+      "types/common.go",
+      "types/create_label_request.go",
       "types/create_sandbox_grant_request.go",
       "types/create_sandbox_volume_request.go",
+      "types/doc.go",
+      "types/download_package_list_http_response.go",
+      "types/download_package.go",
+      "types/download_packages_list_response.go",
+      "types/drive_label_list_http_response.go",
+      "types/drive_label.go",
+      "types/drive_space_list_http_response.go",
+      "types/drive_space.go",
+      "types/field_error.go",
       "types/initial_sandbox_user_grant_request.go",
+      "types/labels_create_response201.go",
+      "types/labels_list_response.go",
+      "types/labels_retrieve_response.go",
+      "types/labels_update_response.go",
+      "types/maintenance_abandoned_upload_task_sweep_response.go",
+      "types/maintenance_expired_upload_content_sweep_response.go",
+      "types/maintenance_job_list_http_response.go",
+      "types/maintenance_job.go",
+      "types/maintenance_jobs_list_response.go",
+      "types/maintenance_object_sweep_response.go",
+      "types/maintenance_upload_session_sweep_response.go",
+      "types/page_info.go",
+      "types/problem_detail.go",
+      "types/quota_summary.go",
+      "types/quotas_retrieve_response.go",
+      "types/quotas_update_response.go",
       "types/sandbox_access_level.go",
       "types/sandbox_grant_list_http_response.go",
       "types/sandbox_grant_resource_http_response.go",
@@ -35,60 +81,6 @@
       "types/sandbox_volumes_list_response.go",
       "types/sandbox_volumes_retrieve_response.go",
       "types/sandbox_volumes_update_response.go",
-      "types/update_sandbox_grant_request.go",
-      "types/update_sandbox_volume_request.go"
-    ],
-    "updatedGeneratedFiles": [
-      "api/labels.go",
-      "http/client.go",
-      "README.md",
-      "sdk.go",
-      "types/create_label_request.go",
-      "types/update_quota_policy_request.go"
-    ],
-    "unchangedGeneratedFiles": [
-      "api/base.go",
-      "api/doc.go",
-      "api/drive.go",
-      "api/paths.go",
-      "bin/publish-core.mjs",
-      "bin/publish.ps1",
-      "bin/publish.sh",
-      "CHANGELOG.md",
-      "doc.go",
-      "go.mod",
-      "http/doc.go",
-      "LICENSE",
-      "sdkwork-sdk.json",
-      "types/audit_event_list_http_response.go",
-      "types/audit_event.go",
-      "types/audit_events_list_response.go",
-      "types/common.go",
-      "types/doc.go",
-      "types/download_package_list_http_response.go",
-      "types/download_package.go",
-      "types/download_packages_list_response.go",
-      "types/drive_label_list_http_response.go",
-      "types/drive_label.go",
-      "types/drive_space_list_http_response.go",
-      "types/drive_space.go",
-      "types/field_error.go",
-      "types/labels_create_response201.go",
-      "types/labels_list_response.go",
-      "types/labels_retrieve_response.go",
-      "types/labels_update_response.go",
-      "types/maintenance_abandoned_upload_task_sweep_response.go",
-      "types/maintenance_expired_upload_content_sweep_response.go",
-      "types/maintenance_job_list_http_response.go",
-      "types/maintenance_job.go",
-      "types/maintenance_jobs_list_response.go",
-      "types/maintenance_object_sweep_response.go",
-      "types/maintenance_upload_session_sweep_response.go",
-      "types/page_info.go",
-      "types/problem_detail.go",
-      "types/quota_summary.go",
-      "types/quotas_retrieve_response.go",
-      "types/quotas_update_response.go",
       "types/sdk_work_api_response.go",
       "types/sdk_work_command_data.go",
       "types/sdk_work_command_response.go",
@@ -100,7 +92,10 @@
       "types/sweep_object_store_request.go",
       "types/sweep_response.go",
       "types/sweep_upload_sessions_request.go",
-      "types/update_label_request.go"
+      "types/update_label_request.go",
+      "types/update_quota_policy_request.go",
+      "types/update_sandbox_grant_request.go",
+      "types/update_sandbox_volume_request.go"
     ],
     "deletedGeneratedFiles": [],
     "scaffoldedFiles": [],
@@ -111,111 +106,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface",
-      "models",
-      "runtime",
-      "documentation",
-      "unknown"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "api/labels.go",
-          "api/sandbox_grants.go",
-          "api/sandbox_volumes.go",
-          "http/client.go"
-        ]
-      },
-      {
-        "area": "models",
-        "paths": [
-          "types/create_label_request.go",
-          "types/create_sandbox_grant_request.go",
-          "types/create_sandbox_volume_request.go",
-          "types/initial_sandbox_user_grant_request.go",
-          "types/sandbox_access_level.go",
-          "types/sandbox_grant_list_http_response.go",
-          "types/sandbox_grant_resource_http_response.go",
-          "types/sandbox_grant_subject_type.go",
-          "types/sandbox_grant.go",
-          "types/sandbox_grants_create_response201.go",
-          "types/sandbox_grants_list_response.go",
-          "types/sandbox_grants_retrieve_response.go",
-          "types/sandbox_grants_update_response.go",
-          "types/sandbox_lifecycle_status.go",
-          "types/sandbox_provider_kind.go",
-          "types/sandbox_volume_list_http_response.go",
-          "types/sandbox_volume_resource_http_response.go",
-          "types/sandbox_volume.go",
-          "types/sandbox_volumes_create_response201.go",
-          "types/sandbox_volumes_list_response.go",
-          "types/sandbox_volumes_retrieve_response.go",
-          "types/sandbox_volumes_update_response.go",
-          "types/update_quota_policy_request.go",
-          "types/update_sandbox_grant_request.go",
-          "types/update_sandbox_volume_request.go"
-        ]
-      },
-      {
-        "area": "runtime",
-        "paths": [
-          "http/client.go"
-        ]
-      },
-      {
-        "area": "documentation",
-        "paths": [
-          "README.md"
-        ]
-      },
-      {
-        "area": "unknown",
-        "paths": [
-          "sdk.go"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models, runtime, documentation, unknown. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models, runtime, documentation, unknown. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, documentation, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-go\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "go",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language go --project-dir . --action check"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "high",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "manual-review-required",
-      "unknown-impact",
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

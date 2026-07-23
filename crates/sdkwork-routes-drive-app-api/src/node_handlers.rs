@@ -70,7 +70,7 @@ pub(crate) async fn list_nodes(
     )
     .await?;
     acl::ensure_list_parent_reader(&state.pool, &ctx, &space_id, parent_node_id.as_deref()).await?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
 
     let pool = state.pool.clone();
     let tenant_id_for_fetch = tenant_id.clone();
@@ -195,7 +195,7 @@ pub(crate) async fn create_folder(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node_name = payload.node_name.trim();
     if node_name.is_empty() {
         return Err(problem(
@@ -363,7 +363,7 @@ pub(crate) async fn create_file(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
 
     let _client_requested_object_key = payload.object_key.as_deref();
     if payload.id.trim().is_empty()
@@ -627,7 +627,7 @@ pub(crate) async fn create_shortcut(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
 
     if payload.id.trim().is_empty()
         || payload.node_name.trim().is_empty()
@@ -811,13 +811,13 @@ pub(crate) async fn get_node_capabilities(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Query(query): Query<NodeCapabilitiesQuery>,
+    Query(_query): Query<NodeCapabilitiesQuery>,
 ) -> Result<
     Json<SdkWorkApiResponse<SdkWorkResourceData<NodeCapabilitiesResponse>>>,
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let (subject_type, subject_id) = ctx.resolve_subject(query.subject_type, query.subject_id)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     validate_subject_type(&subject_type)?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     validate_space_exists(&state.pool, &tenant_id, &node.space_id).await?;
@@ -927,7 +927,7 @@ pub(crate) async fn extract_archive_entries(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let source_node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &source_node.space_id, &node_id, "reader").await?;
     validate_archive_source_node(&source_node)?;
@@ -1009,7 +1009,7 @@ pub(crate) async fn update_node(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let current = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &current.space_id, &node_id, "writer").await?;
     let next_name = payload
@@ -1183,7 +1183,7 @@ pub(crate) async fn move_node(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let current = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &current.space_id, &node_id, "writer").await?;
     let target_parent = normalize_optional_text(payload.target_parent_node_id);
@@ -1362,7 +1362,7 @@ pub(crate) async fn copy_node(
     }
 
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let source = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &source.space_id, &node_id, "reader").await?;
     let target_space_id = payload
@@ -1533,10 +1533,10 @@ pub(crate) async fn delete_node(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(node_id): Path<String>,
-    Query(query): Query<NodeMutationQuery>,
+    Query(_query): Query<NodeMutationQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let nodes_to_delete = collect_node_subtree(&state.pool, &tenant_id, &node).await?;
@@ -1635,18 +1635,22 @@ pub(crate) async fn delete_node(
     Ok(no_content())
 }
 
-async fn fetch_folder_children_page(
-    pool: &sqlx::AnyPool,
-    tenant_id: &str,
-    space_id: &str,
-    parent_node_id: Option<&str>,
+struct MoveDestinationFolderScope<'a> {
+    pool: &'a sqlx::AnyPool,
+    tenant_id: &'a str,
+    space_id: &'a str,
     is_space_owner: bool,
-    subject_type: &str,
-    subject_id: &str,
+    subject_type: &'a str,
+    subject_id: &'a str,
+}
+
+async fn fetch_folder_children_page(
+    scope: &MoveDestinationFolderScope<'_>,
+    parent_node_id: Option<&str>,
     offset: i64,
     limit: i64,
 ) -> Result<Vec<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let rows = if is_space_owner {
+    let rows = if scope.is_space_owner {
         sqlx::query(&format!(
             "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
@@ -1659,12 +1663,12 @@ async fn fetch_folder_children_page(
              ORDER BY node_name ASC, id ASC
              LIMIT $4 OFFSET $5",
         ))
-        .bind(tenant_id)
-        .bind(space_id)
+        .bind(scope.tenant_id)
+        .bind(scope.space_id)
         .bind(parent_node_id)
         .bind(limit)
         .bind(offset)
-        .fetch_all(pool)
+        .fetch_all(scope.pool)
         .await
         .map_err(internal_sql_error(
             "list move destination folder page failed",
@@ -1685,14 +1689,14 @@ async fn fetch_folder_children_page(
              ORDER BY node_name ASC, id ASC
              LIMIT $6 OFFSET $7",
         ))
-        .bind(tenant_id)
-        .bind(space_id)
+        .bind(scope.tenant_id)
+        .bind(scope.space_id)
         .bind(parent_node_id)
-        .bind(subject_type)
-        .bind(subject_id)
+        .bind(scope.subject_type)
+        .bind(scope.subject_id)
         .bind(limit)
         .bind(offset)
-        .fetch_all(pool)
+        .fetch_all(scope.pool)
         .await
         .map_err(internal_sql_error(
             "list move destination folder page failed",
@@ -1713,12 +1717,7 @@ fn move_destination_inventory_too_large_problem() -> (StatusCode, Json<ProblemDe
 }
 
 async fn collect_move_destination_folder_window(
-    pool: &sqlx::AnyPool,
-    tenant_id: &str,
-    space_id: &str,
-    is_space_owner: bool,
-    subject_type: &str,
-    subject_id: &str,
+    scope: &MoveDestinationFolderScope<'_>,
     exclude_node_ids: &BTreeSet<String>,
     page: crate::dto::PageRequest,
 ) -> Result<Vec<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
@@ -1745,13 +1744,8 @@ async fn collect_move_destination_folder_window(
         let mut child_offset = 0_i64;
         loop {
             let children = fetch_folder_children_page(
-                pool,
-                tenant_id,
-                space_id,
+                scope,
                 parent_node_id.as_deref(),
-                is_space_owner,
-                subject_type,
-                subject_id,
                 child_offset,
                 child_batch_limit,
             )
@@ -1783,7 +1777,7 @@ async fn collect_move_destination_folder_window(
             if !has_more_at_parent {
                 break;
             }
-            child_offset += child_batch_limit as i64;
+            child_offset += child_batch_limit;
         }
     }
     Ok(items)
@@ -1798,7 +1792,7 @@ pub(crate) async fn list_move_destination_folders(
     let tenant_id = ctx.resolve_tenant_id()?;
     validate_space_exists(&state.pool, &tenant_id, &space_id).await?;
     acl::ensure_list_parent_reader(&state.pool, &ctx, &space_id, None).await?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     let is_space_owner = acl::is_subject_space_owner(
         &state.pool,
         &tenant_id,
@@ -1820,17 +1814,16 @@ pub(crate) async fn list_move_destination_folders(
         })
         .unwrap_or_default();
     let page = crate::validators::parse_page_request(query.page_size, query.page_token)?;
-    let mut folders = collect_move_destination_folder_window(
-        &state.pool,
-        &tenant_id,
-        &space_id,
+    let scope = MoveDestinationFolderScope {
+        pool: &state.pool,
+        tenant_id: &tenant_id,
+        space_id: &space_id,
         is_space_owner,
-        &subject_type,
-        &subject_id,
-        &exclude_node_ids,
-        page,
-    )
-    .await?;
+        subject_type: &subject_type,
+        subject_id: &subject_id,
+    };
+    let mut folders =
+        collect_move_destination_folder_window(&scope, &exclude_node_ids, page).await?;
 
     let next_page_token = crate::validators::next_page_token(&mut folders, page);
     present_node_list(

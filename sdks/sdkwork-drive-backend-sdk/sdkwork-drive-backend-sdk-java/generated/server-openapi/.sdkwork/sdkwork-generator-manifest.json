@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
     },
     {
       "path": "bin/publish.ps1",
@@ -36,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "f6fa83ed2fded710e6fda703f06cc213ec1f8c1cdf471586bf008834a25c90cd"
+      "sha256": "5fea5b211591ae9661bab75cda70db22b457f724763062736940bcfa73a7c43b"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -48,23 +48,11 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/DriveApi.java",
-      "sha256": "48944fc7ede8af3709f3b3fec3225bdba326d44cce94dc0aa91c71d4d567e2e0"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/LabelsApi.java",
-      "sha256": "01d22efc8d84aae3a2f1526d8986dbb63833393490e03568d467b38f5ea017d3"
+      "sha256": "27afe81399f22d3e103da263a450cc87cdec7806302ad2527c3cbb4807020f08"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/package-info.java",
-      "sha256": "c04b0baf9e787c3cfb306d79b1be8e580bbc0e837a33c76b54fdfd46415ac5af"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/SandboxGrantsApi.java",
-      "sha256": "fa7e8a8906b788ced7a39e302ca9a5effeffa3e8b390995b475d2956b30a941b"
-    },
-    {
-      "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/api/SandboxVolumesApi.java",
-      "sha256": "afc8f18451f53753bfc9eb29c43757ee394f6fe38825bc6d98e432b8e0895a0b"
+      "sha256": "05103fda82bf400c4801b0e8373ba7f89a53f568eb156751e644e510221c6d55"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/http/HttpClient.java",
@@ -280,7 +268,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepObjectStoreRequest.java",
-      "sha256": "de80427a67b1dd4b7f91790ed06855c1f4faba6a61027b90873344099711cd6e"
+      "sha256": "0128a6455f6e92ff1fc504408d1730a433802b7daabb417eea7455fb2caf0f90"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepResponse.java",
@@ -288,11 +276,11 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/SweepUploadSessionsRequest.java",
-      "sha256": "d9acb33b2e69d3831450217860bc4fb77acb9c68d376030648976a248aad1061"
+      "sha256": "9da191a30037784df50fc2f6c7b4ce58bfae14a8ac56c03bb5781bb9df7b395d"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateLabelRequest.java",
-      "sha256": "4f116b35d4d9f0f326abd9bc9b2bb1b9636ee23c5b07f4d6f1f235e3faf8acd1"
+      "sha256": "56cb11fb00bc17c7501b063cf45cb0dc1ac6af8bfe205852ff792ca3a0a7eb9c"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/UpdateQuotaPolicyRequest.java",
@@ -308,7 +296,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/SdkworkBackendClient.java",
-      "sha256": "fc2db4c4e4923abb02aa4ef2852a178f0dd5a3222a3abf33536378745ab94531"
+      "sha256": "8cc5c3ffca346b6cc550eb73f91b9196345baf64a5257a2d34d2bd7298fe4e12"
     }
   ],
   "scaffoldFiles": [

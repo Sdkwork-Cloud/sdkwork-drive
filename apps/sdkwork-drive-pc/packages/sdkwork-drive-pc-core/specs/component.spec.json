@@ -114,7 +114,7 @@
         "required": true,
         "dependencyMode": "consumer-sdk",
         "apiPrefix": "/app/v3/api",
-        "apiAuthority": "sdkwork-drive.app",
+        "apiAuthority": "sdkwork-drive-app-api",
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
           "typescript": "@sdkwork/drive-app-sdk"

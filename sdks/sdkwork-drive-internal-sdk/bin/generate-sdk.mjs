@@ -15,7 +15,7 @@ runDriveSdkGenerator(
     sdkType: "custom",
     apiPrefix: "/internal/v3/api",
     defaultBaseUrl: "http://127.0.0.1:18080",
-    defaultOpenapiFile: "../internal-api/drive/sdkwork-drive-internal-api.openapi.yaml",
+    defaultOpenapiPath: "apis/internal-api/drive/sdkwork-drive-internal-api.openapi.yaml",
     authorityMirrorFile: "sdkwork-drive-internal-api.openapi.yaml",
     generationInputFile: "sdkwork-drive-internal-api.sdkgen.yaml",
     standardProfileArgs: ["--standard-profile", "sdkwork-v3"],

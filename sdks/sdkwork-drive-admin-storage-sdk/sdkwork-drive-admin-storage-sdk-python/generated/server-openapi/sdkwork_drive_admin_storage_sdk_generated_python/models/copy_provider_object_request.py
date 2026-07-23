@@ -7,6 +7,5 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 class CopyProviderObjectRequest:
     source_object_key: str
     destination_object_key: str
-    operator_id: str
     destination_bucket: Optional[str] = None
     metadata_directive: Optional[str] = None

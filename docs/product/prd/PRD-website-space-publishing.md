@@ -3,7 +3,7 @@
 Status: active
 Owner: SDKWork Drive maintainers
 Application: sdkwork-drive
-Updated: 2026-07-22
+Updated: 2026-07-23
 Requirement: REQ-2026-0004
 Parent: [PRD.md](PRD.md)
 Specs: REQUIREMENTS_SPEC.md, DOCUMENTATION_SPEC.md, DRIVE_SPEC.md, DATABASE_SPEC.md,
@@ -13,10 +13,12 @@ MIGRATION_SPEC.md
 
 Implementation boundary: the Website Space type, default `SPACE_ROOT`, explicit `FOLDER`
 WebsiteRoots, dual-engine persistence, App/Internal API contracts, generated SDKs, provider
-validation, path resolution/open, and root-scoped change events are implemented. `ATOMIC_SYNC`
-commands/workers/rollback/cleanup, complete user/admin workflows, provider-aware cache evidence,
-commercial metering reconciliation, and production load/security/operations evidence remain open.
-The reserved `dr_drive_website_sync` schema is not evidence that the atomic sync workflow exists.
+validation, path resolution/open, root-scoped change events, and `ATOMIC_SYNC` create/retrieve/
+finalize/abort/activation are implemented. The atomic lifecycle includes uploader-confined staging,
+leased and fenced validation, serializable generation switching, retained-generation rollback,
+retention, expiry, and cleanup. Complete user/admin UI, a real React/Vite pilot, deployed
+Provider-cache freshness/load evidence, commercial metering reconciliation, and production
+load/security/backup/restore/operations evidence remain open.
 
 ## 1. Purpose
 

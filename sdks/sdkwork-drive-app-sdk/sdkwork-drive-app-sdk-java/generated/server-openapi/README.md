@@ -62,10 +62,6 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 ## API Modules
 
 - `client.getDrive()` - drive API
-- `client.getNodeLabels()` - node_labels API
-- `client.getNodeProperties()` - node_properties API
-- `client.getNodes()` - nodes API
-- `client.getWatchChannels()` - watch_channels API
 - `client.getAssets()` - assets API
 
 ## Usage Examples
@@ -75,59 +71,6 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 ```java
 // GET /app/v3/api/drive/quotas/summary
 QuotaSummaryHttpResponse result = client.getDrive().quotasRetrieve();
-System.out.println(result);
-```
-
-### node_labels
-
-```java
-// List labels applied to a node
-String nodeId = "1";
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("labelKey", "labelkey");
-params.put("page_size", 2);
-params.put("cursor", "cursor");
-NodeLabelListHttpResponse result = client.getNodeLabels().list(nodeId, params);
-System.out.println(result);
-```
-
-### node_properties
-
-```java
-// List node custom properties
-String nodeId = "1";
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("visibility", "private");
-params.put("page_size", 2);
-params.put("cursor", "cursor");
-DriveNodePropertyListHttpResponse result = client.getNodeProperties().list(nodeId, params);
-System.out.println(result);
-```
-
-### nodes
-
-```java
-// Create a shortcut node
-CreateShortcutRequest body = new CreateShortcutRequest();
-body.setId("1");
-body.setSpaceId("1");
-body.setParentNodeId("1");
-body.setNodeName("name");
-body.setTargetNodeId("1");
-DriveNodeHttpResponse result = client.getNodes().shortcutsCreate(body);
-System.out.println(result);
-```
-
-### watch_channels
-
-```java
-// List Drive watch channels
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("resourceType", "changes");
-params.put("lifecycleStatus", "active");
-params.put("page_size", 3);
-params.put("cursor", "cursor");
-DriveWatchChannelListHttpResponse result = client.getWatchChannels().list(params);
 System.out.println(result);
 ```
 

@@ -3,14 +3,15 @@
 Status: active
 Owner: SDKWork maintainers
 Application: sdkwork-drive
-Updated: 2026-07-21
+Updated: 2026-07-23
 Specs: REQUIREMENTS_SPEC.md, DOCUMENTATION_SPEC.md, DRIVE_SPEC.md, DEPLOYMENT_SPEC.md, SECURITY_SPEC.md
 
 ## Document Map
 
 - [PRD-website-space-publishing.md](PRD-website-space-publishing.md) - active Website Space and
-  WebsiteRoot publication contract; live Space-root/folder-root Provider is implemented, while
-  atomic sync, complete user/admin workflows, quotas, and commercial acceptance evidence remain.
+  WebsiteRoot publication contract; live Space-root/folder-root Provider and atomic sync/rollback/
+  cleanup lifecycle are implemented, while complete user/admin UI, a real bundle pilot, quota and
+  metering reconciliation, and commercial acceptance evidence remain.
 - [REQ-2026-0001-production-readiness.md](../requirements/REQ-2026-0001-production-readiness.md)
 - [REQ-2026-0002-production-security-alignment.md](../requirements/REQ-2026-0002-production-security-alignment.md)
 - [REQ-2026-0003-pre-launch-debt-cleanup.md](../requirements/REQ-2026-0003-pre-launch-debt-cleanup.md)
@@ -58,7 +59,7 @@ SDKWork Drive must provide a professional file workspace with metadata/object se
 | SDK families | sdkwork-drive-app-sdk, backend SDK, open SDK |
 | Storage backends | local filesystem, S3-compatible, OpenDAL providers |
 | Deployment | standalone unified gateway; cloud split services on Kubernetes |
-| Website source provider | implemented Website Space plus `SPACE_ROOT`/`FOLDER` live WebsiteRoots and generated Internal SDK Provider; atomic sync lifecycle remains open |
+| Website source provider | implemented Website Space, `SPACE_ROOT`/`FOLDER` live WebsiteRoots, generated Internal SDK Provider, and App API/generated SDK atomic sync, rollback, retention, and cleanup lifecycle |
 
 Legacy `/app/v3/api/assets/upload*` routes remain unavailable; global assets must use Drive uploader APIs per DRIVE_SPEC.
 
@@ -94,7 +95,7 @@ Legacy `/app/v3/api/assets/upload*` routes remain unavailable; global assets mus
 | P1 PC client | AuthGate, SDK-backed file browser, transfer center, desktop host | Done |
 | P2 Production hardening | Outbox singleton, readyz, K8s spec alignment, secure desktop storage, CSP, IAM DB resolver wiring | Done |
 | P3 Release & ops | Signed multi-platform artifacts, catalog media, staging smoke schedule, ACTIVE publish | In progress - code alignment complete; remaining gates are artifact signing, Catalog CDN, and staging operations evidence |
-| P4 Differentiation | Delta/changes API, Website Space atomic sync/UI/operations completion, knowledge/AI profiles, and storage-provider expansion | In progress - live WebsiteRoot provider baseline implemented; remaining product workflows and evidence are open |
+| P4 Differentiation | Delta/changes API, Website Space UI/pilot/operations certification, knowledge/AI profiles, and storage-provider expansion | In progress - live WebsiteRoot Provider and atomic sync lifecycle implemented; remaining UI, pilot, production, and commercial evidence are open |
 
 ## 8. Linked Requirements
 

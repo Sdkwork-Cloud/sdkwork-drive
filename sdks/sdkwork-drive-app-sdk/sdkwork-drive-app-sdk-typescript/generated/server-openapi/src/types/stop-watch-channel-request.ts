@@ -1,3 +1,1 @@
-export interface StopWatchChannelRequest {
-  operatorId?: string;
-}
+export interface StopWatchChannelRequest {}

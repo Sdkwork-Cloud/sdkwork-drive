@@ -100,7 +100,7 @@ pub(crate) async fn set_node_property(
     )?
     .to_string();
     let property_value = require_non_empty_text(payload.value, "value")?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let property_id = build_node_property_id(&tenant_id, &node_id, &property_key, &visibility);
@@ -163,7 +163,7 @@ pub(crate) async fn delete_node_property(
             .unwrap_or("private"),
     )?
     .to_string();
-    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let affected = sqlx::query(
@@ -278,13 +278,13 @@ pub(crate) async fn apply_node_label(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, label_id)): Path<(String, String)>,
-    Json(payload): Json<ApplyNodeLabelRequest>,
+    Json(_payload): Json<ApplyNodeLabelRequest>,
 ) -> Result<
     Json<SdkWorkApiResponse<SdkWorkResourceData<NodeLabelResponse>>>,
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     find_label(&state.pool, &tenant_id, &label_id).await?;
@@ -326,10 +326,10 @@ pub(crate) async fn remove_node_label(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path((node_id, label_id)): Path<(String, String)>,
-    Query(query): Query<RemoveNodeLabelQuery>,
+    Query(_query): Query<RemoveNodeLabelQuery>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(query.operator_id)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &node_id).await?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &node_id, "writer").await?;
     let affected = sqlx::query(

@@ -2,9 +2,9 @@
 id: REQ-2026-0001
 title: Production and commercial readiness for SDKWork Drive
 owner: SDKWork maintainers
-status: done
+status: in-progress
 source: platform
-updated: 2026-07-08
+updated: 2026-07-23
 problem: SDKWork Drive must reach production-operable and commercially publishable quality before public GA, without leaving backend, client, release, or deployment technical debt.
 goals:
   - All HTTP services expose health/readiness/metrics appropriate to their role.

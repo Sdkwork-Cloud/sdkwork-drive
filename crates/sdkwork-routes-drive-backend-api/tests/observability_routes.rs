@@ -256,10 +256,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
                 .body(Body::from(
                     r#"{
                         "dryRun": false,
-                        "limit": 100,
-                        "operatorId": "admin-ops",
-                        "correlationId": "request-001",
-                        "traceId": "trace-001"
+                        "limit": 100
                     }"#,
                 ))
                 .expect("request should be built"),
@@ -282,10 +279,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
                     r#"{
                         "nowEpochMs": 1800000000000,
                         "dryRun": false,
-                        "limit": 100,
-                        "operatorId": "admin-ops",
-                        "correlationId": "request-001",
-                        "traceId": "trace-001"
+                        "limit": 100
                     }"#,
                 ))
                 .expect("request should be built"),
@@ -312,10 +306,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
                         r#"{
                             "nowEpochMs": 1800000000000,
                             "dryRun": true,
-                            "limit": 100,
-                            "operatorId": "admin-ops",
-                            "correlationId": "request-001",
-                            "traceId": "trace-001"
+                            "limit": 100
                         }"#,
                     ))
                     .expect("request should be built"),
@@ -332,7 +323,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/backend/v3/api/drive/maintenance/jobs?jobType=object_sweep&status=completed&operatorId=admin-ops&page=1&page_size=10")
+                .uri("/backend/v3/api/drive/maintenance/jobs?jobType=object_sweep&status=completed&operatorId=user-001&page=1&page_size=10")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -352,7 +343,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
     );
     for expected_field in [
         "result=\"ok\"",
-        "operator_id=\"admin-ops\"",
+        "operator_id=\"user-001\"",
         "has_request_id=true",
         "has_trace_id=true",
         "scanned_count=1",
@@ -380,7 +371,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
     for expected_field in [
         "result=\"ok\"",
         "now_epoch_ms=1800000000000",
-        "operator_id=\"admin-ops\"",
+        "operator_id=\"user-001\"",
         "has_request_id=true",
         "has_trace_id=true",
         "scanned_count=1",

@@ -3,47 +3,23 @@ package com.sdkwork.drive.backend.sdk.generated.java;
 import com.sdkwork.common.core.Types;
 import com.sdkwork.drive.backend.sdk.generated.java.http.HttpClient;
 import com.sdkwork.drive.backend.sdk.generated.java.api.DriveApi;
-import com.sdkwork.drive.backend.sdk.generated.java.api.LabelsApi;
-import com.sdkwork.drive.backend.sdk.generated.java.api.SandboxVolumesApi;
-import com.sdkwork.drive.backend.sdk.generated.java.api.SandboxGrantsApi;
 
 public class SdkworkBackendClient {
     private final HttpClient httpClient;
     private DriveApi drive;
-    private LabelsApi labels;
-    private SandboxVolumesApi sandboxVolumes;
-    private SandboxGrantsApi sandboxGrants;
 
     public SdkworkBackendClient(String baseUrl) {
         this.httpClient = new HttpClient(baseUrl);
         this.drive = new DriveApi(httpClient);
-        this.labels = new LabelsApi(httpClient);
-        this.sandboxVolumes = new SandboxVolumesApi(httpClient);
-        this.sandboxGrants = new SandboxGrantsApi(httpClient);
     }
 
     public SdkworkBackendClient(Types.SdkConfig config) {
         this.httpClient = new HttpClient(config);
         this.drive = new DriveApi(httpClient);
-        this.labels = new LabelsApi(httpClient);
-        this.sandboxVolumes = new SandboxVolumesApi(httpClient);
-        this.sandboxGrants = new SandboxGrantsApi(httpClient);
     }
 
     public DriveApi getDrive() {
         return this.drive;
-    }
-
-    public LabelsApi getLabels() {
-        return this.labels;
-    }
-
-    public SandboxVolumesApi getSandboxVolumes() {
-        return this.sandboxVolumes;
-    }
-
-    public SandboxGrantsApi getSandboxGrants() {
-        return this.sandboxGrants;
     }
     public SdkworkBackendClient setAuthToken(String token) {
         httpClient.setAuthToken(token);

@@ -62,7 +62,7 @@ pub(crate) async fn create_upload_session(
     let space_id = payload.space_id.trim();
     let node_id = payload.node_id.trim();
     let idempotency_key = payload.idempotency_key.trim();
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     if idempotency_key.is_empty() {
         return Err(problem(
             StatusCode::BAD_REQUEST,
@@ -254,7 +254,7 @@ pub(crate) async fn presign_upload_part(
         "requestedTtlSeconds",
     )?;
     let expires_at_epoch_ms = current_epoch_ms() + i64::from(requested_ttl_seconds) * 1000;
-    let operator_id = ctx.resolve_operator_id(None)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let signed = AppDownloadSigner::new(state.pool.clone())
         .sign_upload_part(UploadPartSignCommand {
             storage_provider_id: upload_session.storage_provider_id.clone(),
@@ -309,7 +309,7 @@ pub(crate) async fn complete_upload_session(
         ));
     }
 
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let upload_session = find_upload_session(&state.pool, &tenant_id, &upload_session_id).await?;
     validate_mutable_upload_session(&upload_session)?;
     if let Some(upload_id) = payload.upload_id.as_deref() {
@@ -452,7 +452,7 @@ pub(crate) async fn complete_upload_session(
 
         if let Some(upload_item) = uploader_upload_item.as_ref() {
             complete_uploader_upload_item(
-                &mut *connection,
+                &mut connection,
                 CompletedUploaderUploadItem {
                     tenant_id: &tenant_id,
                     upload_item,
@@ -479,7 +479,7 @@ pub(crate) async fn complete_upload_session(
         .await?;
 
         apply_file_node_head_snapshot_in_transaction(
-            &mut *connection,
+            &mut connection,
             &tenant_id,
             &upload_session.node_id,
             &operator_id,
@@ -489,7 +489,7 @@ pub(crate) async fn complete_upload_session(
         .map_err(map_service_error)?;
 
         sdkwork_drive_workspace_service::infrastructure::change_recorder::record_drive_node_version_committed_on_connection(
-            &mut *connection,
+            &mut connection,
             sdkwork_drive_workspace_service::infrastructure::change_recorder::RecordDriveNodeVersionCommittedCommand {
                 tenant_id: &tenant_id,
                 organization_id: uploader_upload_item
@@ -552,13 +552,13 @@ pub(crate) async fn abort_upload_session(
     State(state): State<AppState>,
     Extension(ctx): Extension<DriveRequestContext>,
     Path(upload_session_id): Path<String>,
-    Json(payload): Json<NodeCommandRequest>,
+    Json(_payload): Json<NodeCommandRequest>,
 ) -> Result<
     Json<SdkWorkApiResponse<SdkWorkResourceData<UploadSessionMutationResponse>>>,
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
     let upload_session = find_upload_session(&state.pool, &tenant_id, &upload_session_id).await?;
     validate_mutable_upload_session(&upload_session)?;
     let node = find_active_node(&state.pool, &tenant_id, &upload_session.node_id).await?;
@@ -606,7 +606,7 @@ pub(crate) async fn prepare_uploader_upload(
 > {
     let started = start_timer();
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(payload.operator_id.clone())?;
+    let operator_id = ctx.resolve_operator_id()?;
 
     let command = prepare_uploader_command(payload, &ctx, tenant_id, operator_id.clone())?;
     if let UploaderTarget::Space {

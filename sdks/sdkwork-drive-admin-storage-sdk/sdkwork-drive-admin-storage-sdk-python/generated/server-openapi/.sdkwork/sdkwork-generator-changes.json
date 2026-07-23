@@ -9,12 +9,10 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-python"
   },
-  "changeFingerprint": "d8a39f31a8b02a3a768c7b5269a93ed44893ef357e77cb3c5d12dbb8220bfa0c",
+  "changeFingerprint": "1cef424a2283a12a951331f7fe15c5953b771518a6ab33155352a5d78ef0a269",
   "changes": {
     "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [
-      "sdkwork_drive_admin_storage_sdk_generated_python/http_client.py"
-    ],
+    "updatedGeneratedFiles": [],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
@@ -29,11 +27,11 @@
       "sdkwork_drive_admin_storage_sdk_generated_python/api/__init__.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/api/drive.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/client.py",
+      "sdkwork_drive_admin_storage_sdk_generated_python/http_client.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/models/__init__.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/models/copy_provider_object_request.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/models/create_storage_provider_request.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/models/field_error.py",
-      "sdkwork_drive_admin_storage_sdk_generated_python/models/operator_request.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/models/page_info.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/models/problem_detail.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_bucket_list_item.py",
@@ -70,7 +68,6 @@
       "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_retrieve_response.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_test_response.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_update_response.py",
-      "sdkwork_drive_admin_storage_sdk_generated_python/models/test_storage_provider_request.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/models/test_storage_provider_response.py",
       "sdkwork_drive_admin_storage_sdk_generated_python/models/update_storage_provider_request.py",
       "sdkwork-sdk.json",
@@ -85,54 +82,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "runtime"
-    ],
-    "details": [
-      {
-        "area": "runtime",
-        "paths": [
-          "sdkwork_drive_admin_storage_sdk_generated_python/http_client.py"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: runtime. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: runtime. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: runtime.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-admin-storage-sdk\\sdkwork-drive-admin-storage-sdk-python\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "python",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language python --project-dir . --action check"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

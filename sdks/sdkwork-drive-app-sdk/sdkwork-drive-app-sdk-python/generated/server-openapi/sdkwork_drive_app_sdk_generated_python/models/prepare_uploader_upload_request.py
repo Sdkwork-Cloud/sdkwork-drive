@@ -17,8 +17,6 @@ class PrepareUploaderUploadRequest:
     content_type: str
     content_length: int
     chunk_size_bytes: int
-    organization_id: Optional[str] = None
-    anonymous_id: Optional[str] = None
     upload_profile_code: Optional[str] = None
     space_id: Optional[str] = None
     parent_node_id: Optional[str] = None

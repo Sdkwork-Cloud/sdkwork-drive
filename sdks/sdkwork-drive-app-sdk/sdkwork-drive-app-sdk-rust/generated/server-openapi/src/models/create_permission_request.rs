@@ -4,5 +4,11 @@ use serde::{Deserialize, Serialize};
 pub struct CreatePermissionRequest {
     pub id: String,
 
+    #[serde(rename = "subjectType")]
+    pub subject_type: String,
+
+    #[serde(rename = "subjectId")]
+    pub subject_id: String,
+
     pub role: String,
 }

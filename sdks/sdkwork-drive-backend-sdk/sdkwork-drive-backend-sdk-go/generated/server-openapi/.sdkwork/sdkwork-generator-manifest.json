@@ -20,27 +20,15 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "f02e11b004f654f33fc15bfa5a7f93b21955549d0ac1d611e1ba3bf1f1883a42"
-    },
-    {
-      "path": "api/labels.go",
-      "sha256": "efa2f1adaa7b024d6a49f8c92ea6c314d0d436a7021f06989dfb5df5245471b9"
+      "sha256": "c39c813ceba1ffb6ea8fb5030d03e77ca97d322c853b2fa953fe8c92e919828c"
     },
     {
       "path": "api/paths.go",
       "sha256": "d837f8f1212389f20412298bed5f829cd35ee325e5b5d498c73bc2b1f7d399ea"
     },
     {
-      "path": "api/sandbox_grants.go",
-      "sha256": "711a1e6d09389c154250c1e107ee04a6c3d9f3b8e7f45358f3066b9060f4881c"
-    },
-    {
-      "path": "api/sandbox_volumes.go",
-      "sha256": "dc7366780a46c7183f68ad53a5490db774a47f348ba9384e4292efea2431dbbc"
-    },
-    {
       "path": "bin/publish-core.mjs",
-      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
     },
     {
       "path": "bin/publish.ps1",
@@ -76,11 +64,11 @@
     },
     {
       "path": "README.md",
-      "sha256": "172d58f022701d1a92aceafd0c9604498856d130f2740499421dc6dc9db01d9d"
+      "sha256": "ab18f96999ede74ffae82280db4a32f4a697789cff79b13d8fbea76d879f6af0"
     },
     {
       "path": "sdk.go",
-      "sha256": "65dda6e9e8de5da9f64a896b5e049cb636b9569977281dc313c31942f829187e"
+      "sha256": "4fcc35d24ac52003d6212b9e8c52b48af9fd921f24202490d0537cb4b2de0b27"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -324,7 +312,7 @@
     },
     {
       "path": "types/sweep_object_store_request.go",
-      "sha256": "0c9a8d5db4d13366585cbca5a2b64feba98caf4385546fbabf97a3200724eb69"
+      "sha256": "bb1b8368fdec29adf7c2c5177e3839ef1206175e1a8871f85d98536a77b7d572"
     },
     {
       "path": "types/sweep_response.go",
@@ -332,11 +320,11 @@
     },
     {
       "path": "types/sweep_upload_sessions_request.go",
-      "sha256": "c24876e3e5fc3d50224cdad7a8831ae3e9ea64bd36d61fa57ed6c58b739b3e50"
+      "sha256": "14dfe6ed641e7cb604ac17e1098feac414354f5c017e8efc9fd8213061926a53"
     },
     {
       "path": "types/update_label_request.go",
-      "sha256": "5a9365d21ac58cc039e2edf3b2c2cdc89c7613953fce9b0fb89826105809d8de"
+      "sha256": "59861e6db371b2e48b55b1d5a75f44b88b9e4670b5d5057119525e448462822e"
     },
     {
       "path": "types/update_quota_policy_request.go",

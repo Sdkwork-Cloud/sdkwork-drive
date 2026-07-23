@@ -49,10 +49,6 @@ client.set_header('X-Custom-Header', 'value')
 ## API Modules
 
 - `client.drive` - drive API
-- `client.node_labels` - node_labels API
-- `client.node_properties` - node_properties API
-- `client.nodes` - nodes API
-- `client.watch_channels` - watch_channels API
 - `client.assets` - assets API
 
 ## Usage Examples
@@ -62,63 +58,6 @@ client.set_header('X-Custom-Header', 'value')
 ```python
 # GET /app/v3/api/drive/quotas/summary
 result = client.drive.quotas.retrieve()
-print(result)
-```
-
-### node_labels
-
-```python
-# List labels applied to a node
-node_id = '1'
-params = {
-    'labelKey': 'labelKey',
-    'page_size': 2,
-    'cursor': 'cursor',
-}
-result = client.node_labels.list(node_id, params)
-print(result)
-```
-
-### node_properties
-
-```python
-# List node custom properties
-node_id = '1'
-params = {
-    'visibility': 'private',
-    'page_size': 2,
-    'cursor': 'cursor',
-}
-result = client.node_properties.list(node_id, params)
-print(result)
-```
-
-### nodes
-
-```python
-# Create a shortcut node
-body = {
-    'id': 'id',
-    'spaceId': 'spaceId',
-    'parentNodeId': 'parentNodeId',
-    'nodeName': 'nodeName',
-    'targetNodeId': 'targetNodeId',
-}
-result = client.nodes.shortcuts.create(body)
-print(result)
-```
-
-### watch_channels
-
-```python
-# List Drive watch channels
-params = {
-    'resourceType': 'changes',
-    'lifecycleStatus': 'active',
-    'page_size': 3,
-    'cursor': 'cursor',
-}
-result = client.watch_channels.list(params)
 print(result)
 ```
 

@@ -5,10 +5,8 @@ export type { SetDefaultStorageProviderBindingRequest } from './set-default-stor
 export type { CreateStorageProviderRequest } from './create-storage-provider-request';
 export type { StorageProvider } from './storage-provider';
 export type { UpdateStorageProviderRequest } from './update-storage-provider-request';
-export type { OperatorRequest } from './operator-request';
 export type { StorageProviderCapabilities } from './storage-provider-capabilities';
 export type { RotateStorageProviderCredentialRequest } from './rotate-storage-provider-credential-request';
-export type { TestStorageProviderRequest } from './test-storage-provider-request';
 export type { TestStorageProviderResponse } from './test-storage-provider-response';
 export type { ProviderBucket } from './provider-bucket';
 export type { ProviderBucketMutation } from './provider-bucket-mutation';

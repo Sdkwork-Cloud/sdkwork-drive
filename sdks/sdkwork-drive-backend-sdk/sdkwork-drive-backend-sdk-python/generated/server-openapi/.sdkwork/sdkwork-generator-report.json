@@ -10,131 +10,37 @@
   },
   "status": "ok",
   "mode": "apply",
-  "hasChanges": true,
+  "hasChanges": false,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "8e5d32057051325614f9e8ab0a6acb3121ebdf7ed84cf25fa01152d21e1f094a",
+  "changeFingerprint": "ff9bd3a071a885306559d282123ac74381e165f7d81c08cb4403c58b17389b42",
   "changeImpact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface",
-      "models",
-      "runtime",
-      "documentation"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "sdkwork_drive_backend_sdk_generated_python/api/__init__.py",
-          "sdkwork_drive_backend_sdk_generated_python/api/labels.py",
-          "sdkwork_drive_backend_sdk_generated_python/api/sandbox_grants.py",
-          "sdkwork_drive_backend_sdk_generated_python/api/sandbox_volumes.py",
-          "sdkwork_drive_backend_sdk_generated_python/client.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/__init__.py"
-        ]
-      },
-      {
-        "area": "models",
-        "paths": [
-          "sdkwork_drive_backend_sdk_generated_python/models/__init__.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/create_label_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/create_sandbox_grant_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/create_sandbox_volume_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/initial_sandbox_user_grant_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant_list_http_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant_resource_http_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_create_response201.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_list_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_retrieve_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_update_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume_list_http_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume_resource_http_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_create_response201.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_list_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_retrieve_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_update_response.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/update_quota_policy_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/update_sandbox_grant_request.py",
-          "sdkwork_drive_backend_sdk_generated_python/models/update_sandbox_volume_request.py"
-        ]
-      },
-      {
-        "area": "runtime",
-        "paths": [
-          "sdkwork_drive_backend_sdk_generated_python/http_client.py"
-        ]
-      },
-      {
-        "area": "documentation",
-        "paths": [
-          "README.md"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, models, runtime, documentation. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "executionHandoff": {
     "schemaVersion": 1,
-    "summary": "Run the required verification commands now.",
-    "steps": [
-      {
-        "id": "verify-check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, documentation.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-python\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "python",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language python --project-dir . --action check"
-      }
-    ]
+    "summary": "No further commands are required.",
+    "steps": []
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, models, runtime, documentation. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, documentation.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-python\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "python",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language python --project-dir . --action check"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "sdk": {
     "name": "sdkwork-drive-backend-sdk",
@@ -150,55 +56,24 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 80,
+    "totalFiles": 77,
     "models": 59,
-    "apis": 4,
+    "apis": 1,
     "types": 60
   },
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 29,
+    "writtenFiles": 0,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 50,
+    "skippedUnchangedGeneratedFiles": 76,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "8e5d32057051325614f9e8ab0a6acb3121ebdf7ed84cf25fa01152d21e1f094a",
+    "changeFingerprint": "ff9bd3a071a885306559d282123ac74381e165f7d81c08cb4403c58b17389b42",
     "changes": {
-      "createdGeneratedFiles": [
-        "sdkwork_drive_backend_sdk_generated_python/api/sandbox_grants.py",
-        "sdkwork_drive_backend_sdk_generated_python/api/sandbox_volumes.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/create_sandbox_grant_request.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/create_sandbox_volume_request.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/initial_sandbox_user_grant_request.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant_list_http_response.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant_resource_http_response.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_create_response201.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_list_response.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_retrieve_response.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_update_response.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume_list_http_response.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume_resource_http_response.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_create_response201.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_list_response.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_retrieve_response.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_update_response.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/update_sandbox_grant_request.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/update_sandbox_volume_request.py"
-      ],
-      "updatedGeneratedFiles": [
-        "README.md",
-        "sdkwork_drive_backend_sdk_generated_python/api/__init__.py",
-        "sdkwork_drive_backend_sdk_generated_python/api/labels.py",
-        "sdkwork_drive_backend_sdk_generated_python/client.py",
-        "sdkwork_drive_backend_sdk_generated_python/http_client.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/__init__.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/create_label_request.py",
-        "sdkwork_drive_backend_sdk_generated_python/models/update_quota_policy_request.py"
-      ],
+      "createdGeneratedFiles": [],
+      "updatedGeneratedFiles": [],
       "unchangedGeneratedFiles": [
         "bin/publish-core.mjs",
         "bin/publish.ps1",
@@ -207,12 +82,20 @@
         "LICENSE",
         "MANIFEST.in",
         "pyproject.toml",
+        "README.md",
         "requirements.txt",
         "sdkwork_drive_backend_sdk_generated_python/__init__.py",
+        "sdkwork_drive_backend_sdk_generated_python/api/__init__.py",
         "sdkwork_drive_backend_sdk_generated_python/api/drive.py",
+        "sdkwork_drive_backend_sdk_generated_python/client.py",
+        "sdkwork_drive_backend_sdk_generated_python/http_client.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/__init__.py",
         "sdkwork_drive_backend_sdk_generated_python/models/audit_event_list_http_response.py",
         "sdkwork_drive_backend_sdk_generated_python/models/audit_event.py",
         "sdkwork_drive_backend_sdk_generated_python/models/audit_events_list_response.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/create_label_request.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/create_sandbox_grant_request.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/create_sandbox_volume_request.py",
         "sdkwork_drive_backend_sdk_generated_python/models/download_package_list_http_response.py",
         "sdkwork_drive_backend_sdk_generated_python/models/download_package.py",
         "sdkwork_drive_backend_sdk_generated_python/models/download_packages_list_response.py",
@@ -221,6 +104,7 @@
         "sdkwork_drive_backend_sdk_generated_python/models/drive_space_list_http_response.py",
         "sdkwork_drive_backend_sdk_generated_python/models/drive_space.py",
         "sdkwork_drive_backend_sdk_generated_python/models/field_error.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/initial_sandbox_user_grant_request.py",
         "sdkwork_drive_backend_sdk_generated_python/models/labels_create_response201.py",
         "sdkwork_drive_backend_sdk_generated_python/models/labels_list_response.py",
         "sdkwork_drive_backend_sdk_generated_python/models/labels_retrieve_response.py",
@@ -237,6 +121,20 @@
         "sdkwork_drive_backend_sdk_generated_python/models/quota_summary.py",
         "sdkwork_drive_backend_sdk_generated_python/models/quotas_retrieve_response.py",
         "sdkwork_drive_backend_sdk_generated_python/models/quotas_update_response.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant_list_http_response.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant_resource_http_response.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_create_response201.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_list_response.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_retrieve_response.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_update_response.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume_list_http_response.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume_resource_http_response.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_create_response201.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_list_response.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_retrieve_response.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_update_response.py",
         "sdkwork_drive_backend_sdk_generated_python/models/sdk_work_api_response.py",
         "sdkwork_drive_backend_sdk_generated_python/models/sdk_work_command_data.py",
         "sdkwork_drive_backend_sdk_generated_python/models/sdk_work_command_response.py",
@@ -248,6 +146,9 @@
         "sdkwork_drive_backend_sdk_generated_python/models/sweep_response.py",
         "sdkwork_drive_backend_sdk_generated_python/models/sweep_upload_sessions_request.py",
         "sdkwork_drive_backend_sdk_generated_python/models/update_label_request.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/update_quota_policy_request.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/update_sandbox_grant_request.py",
+        "sdkwork_drive_backend_sdk_generated_python/models/update_sandbox_volume_request.py",
         "sdkwork-sdk.json",
         "setup.py"
       ],
@@ -260,101 +161,26 @@
     },
     "impact": {
       "schemaVersion": 1,
-      "areas": [
-        "api-surface",
-        "models",
-        "runtime",
-        "documentation"
-      ],
-      "details": [
-        {
-          "area": "api-surface",
-          "paths": [
-            "sdkwork_drive_backend_sdk_generated_python/api/__init__.py",
-            "sdkwork_drive_backend_sdk_generated_python/api/labels.py",
-            "sdkwork_drive_backend_sdk_generated_python/api/sandbox_grants.py",
-            "sdkwork_drive_backend_sdk_generated_python/api/sandbox_volumes.py",
-            "sdkwork_drive_backend_sdk_generated_python/client.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/__init__.py"
-          ]
-        },
-        {
-          "area": "models",
-          "paths": [
-            "sdkwork_drive_backend_sdk_generated_python/models/__init__.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/create_label_request.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/create_sandbox_grant_request.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/create_sandbox_volume_request.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/initial_sandbox_user_grant_request.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant_list_http_response.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant_resource_http_response.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grant.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_create_response201.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_list_response.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_retrieve_response.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_grants_update_response.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume_list_http_response.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume_resource_http_response.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volume.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_create_response201.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_list_response.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_retrieve_response.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/sandbox_volumes_update_response.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/update_quota_policy_request.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/update_sandbox_grant_request.py",
-            "sdkwork_drive_backend_sdk_generated_python/models/update_sandbox_volume_request.py"
-          ]
-        },
-        {
-          "area": "runtime",
-          "paths": [
-            "sdkwork_drive_backend_sdk_generated_python/http_client.py"
-          ]
-        },
-        {
-          "area": "documentation",
-          "paths": [
-            "README.md"
-          ]
-        }
-      ],
-      "requiresVerification": true,
-      "summary": "Detected impact areas: api-surface, models, runtime, documentation. Verification is required."
+      "areas": [],
+      "details": [],
+      "requiresVerification": false,
+      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
     },
     "verificationPlan": {
-      "shouldRun": true,
-      "runPhase": "now",
-      "summary": "Detected impact areas: api-surface, models, runtime, documentation. Verification is required. Run the required verification commands now against the generated SDK output.",
-      "steps": [
-        {
-          "id": "check",
-          "title": "Unified package check",
-          "required": true,
-          "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, documentation.",
-          "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-backend-sdk\\sdkwork-drive-backend-sdk-python\\generated\\server-openapi",
-          "command": "node",
-          "args": [
-            "./bin/publish-core.mjs",
-            "--language",
-            "python",
-            "--project-dir",
-            ".",
-            "--action",
-            "check"
-          ],
-          "displayCommand": "node ./bin/publish-core.mjs --language python --project-dir . --action check"
-        }
-      ]
+      "shouldRun": false,
+      "runPhase": "skip",
+      "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+      "steps": []
     },
     "executionDecision": {
       "schemaVersion": 1,
-      "riskLevel": "medium",
-      "nextAction": "verify",
+      "riskLevel": "low",
+      "nextAction": "skip",
       "requiresManualReview": false,
       "applyRequiresExpectedFingerprint": false,
-      "summary": "Changes have been applied. Run the required verification plan now.",
+      "summary": "No actionable changes were detected. No apply or verification step is required.",
       "reasons": [
-        "verification-required"
+        "no-actionable-changes"
       ]
     },
     "backedUpFiles": [],

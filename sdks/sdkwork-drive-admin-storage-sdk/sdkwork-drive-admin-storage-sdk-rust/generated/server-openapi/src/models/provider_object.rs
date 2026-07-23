@@ -11,7 +11,7 @@ pub struct ProviderObject {
     #[serde(rename = "objectKind")]
     pub object_kind: String,
 
-    /// Drive object key. UTF-8 1-1024 bytes, trimmed relative key; no leading/trailing slash, double slash, NUL, or period-only path segments.
+    /// Drive object listing key. UTF-8 1-1024 bytes, trimmed relative key; prefixes may end with a slash; no leading slash, double slash, NUL, or period-only path segments.
     #[serde(rename = "objectKey")]
     pub object_key: String,
 

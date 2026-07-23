@@ -1,9 +1,6 @@
 use axum::http::StatusCode;
 use axum::Json;
-use sdkwork_drive_http::api_problem::{
-    problem as shared_problem, problem_with_trace_id as shared_problem_with_trace_id,
-    SdkWorkProblemDetail,
-};
+use sdkwork_drive_http::api_problem::{problem as shared_problem, SdkWorkProblemDetail};
 use sdkwork_drive_observability::error_kinds;
 use sdkwork_drive_storage_contract::{DriveObjectStoreError, DriveObjectStoreErrorKind};
 use sdkwork_drive_workspace_service::DriveServiceError;
@@ -145,7 +142,7 @@ pub(crate) fn unique_node_insert_conflict_target(error: &sqlx::Error) -> &'stati
 
     if let Some(database_error) = error.as_database_error() {
         if let Some(constraint) = database_error.constraint() {
-            return match constraint.as_ref() {
+            return match constraint {
                 "dr_drive_node_pkey" | "ux_dr_drive_node_pkey" => "id",
                 "ux_dr_drive_node_root_name_live" | "ux_dr_drive_node_child_name_live" => "name",
                 _ => "unknown",
@@ -286,16 +283,6 @@ pub(crate) fn problem(
     code: SdkWorkResultCode,
 ) -> (StatusCode, Json<ProblemDetail>) {
     shared_problem(status, title, detail, code)
-}
-
-pub(crate) fn problem_with_ids(
-    status: StatusCode,
-    title: &str,
-    detail: impl Into<String>,
-    code: SdkWorkResultCode,
-    trace_id: &str,
-) -> (StatusCode, Json<ProblemDetail>) {
-    shared_problem_with_trace_id(status, title, detail, code, trace_id)
 }
 
 pub(crate) fn map_object_store_error(error: DriveObjectStoreError) -> DriveServiceError {

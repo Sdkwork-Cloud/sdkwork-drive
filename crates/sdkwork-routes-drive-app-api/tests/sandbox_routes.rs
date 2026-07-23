@@ -736,7 +736,7 @@ async fn sandbox_file_routes_complete_binary_safe_optimistic_and_recursive_workf
     let read_text = app
         .clone()
         .oneshot(common::authed_get(
-            &format!(
+            format!(
                 "/app/v3/api/drive/sandboxes/sandbox-files/files/{main_entry_id}/content?logical_path=src/main.rs&encoding=utf8"
             ),
             "tenant-001",
@@ -759,7 +759,7 @@ async fn sandbox_file_routes_complete_binary_safe_optimistic_and_recursive_workf
     let read_binary = app
         .clone()
         .oneshot(common::authed_get(
-            &format!(
+            format!(
                 "/app/v3/api/drive/sandboxes/sandbox-files/files/{binary_entry_id}/content?logical_path=src/data.bin&encoding=base64"
             ),
             "tenant-001",

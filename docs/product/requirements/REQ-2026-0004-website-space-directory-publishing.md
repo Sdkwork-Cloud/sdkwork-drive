@@ -4,7 +4,7 @@
 id: REQ-2026-0004
 title: Provide eligible Website Spaces and atomic directory roots for cloud site publication
 owner: SDKWork Drive maintainers
-status: ready
+status: in-progress
 source: product
 problem: Static application builds need directory-faithful live publication without exposing ordinary Spaces, leaking storage topology, or creating a Deploy Release for every file.
 goals:
@@ -92,3 +92,13 @@ PERFORMANCE_SPEC.md, OBSERVABILITY_SPEC.md, TEST_SPEC.md, MIGRATION_SPEC.md
 - Decision: `docs/architecture/decisions/ADR-20260721-website-space-directory-resource.md`
 - Architecture: `docs/architecture/tech/TECH-website-directory-resource-provider.md`
 - Cross-repository authority: `sdkwork-deployments` REQ-2026-0001
+
+## Current Status
+
+The Website Space, `SPACE_ROOT`/`FOLDER` WebsiteRoot, live-tree provider, atomic sync lifecycle,
+retained generation activation/rollback, App/Internal API and generated SDK boundaries, and
+provider invalidation contracts are implemented with focused executable evidence. The requirement
+remains `in-progress` because its acceptance criteria still require complete user/admin UI, a real
+React/Vite bundle pilot, deployed multi-node freshness/load/security evidence, and commercial
+metering/operations acceptance. Content updates behind an existing WebsiteRoot do not create a
+Deploy Release, Deployment, or SiteRevision.

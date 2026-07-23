@@ -44,9 +44,6 @@ client.set_header("X-Custom-Header", "value");
 ## API Modules
 
 - `client.drive()` - drive API
-- `client.labels()` - labels API
-- `client.sandbox_volumes()` - sandbox_volumes API
-- `client.sandbox_grants()` - sandbox_grants API
 
 ## Usage Examples
 
@@ -55,46 +52,6 @@ client.set_header("X-Custom-Header", "value");
 ```rust
 // GET /backend/v3/api/drive/quotas
 let result = client.drive().quotas_retrieve().await?;
-println!("{result:?}");
-```
-
-### labels
-
-```rust
-use std::collections::HashMap;
-// List Drive label definitions
-let mut query = HashMap::new();
-query.insert("lifecycleStatus".to_string(), serde_json::json!("active"));
-query.insert("page_size".to_string(), serde_json::json!(2));
-query.insert("cursor".to_string(), serde_json::json!("cursor"));
-let result = client.labels().list(Some(&query)).await?;
-println!("{result:?}");
-```
-
-### sandbox_volumes
-
-```rust
-use std::collections::HashMap;
-// List server sandbox volumes
-let mut query = HashMap::new();
-query.insert("lifecycle_status".to_string(), serde_json::json!("active"));
-query.insert("provider_kind".to_string(), serde_json::json!("local_filesystem"));
-query.insert("page".to_string(), serde_json::json!(3));
-query.insert("page_size".to_string(), serde_json::json!(4));
-let result = client.sandbox_volumes().list(Some(&query)).await?;
-println!("{result:?}");
-```
-
-### sandbox_grants
-
-```rust
-use std::collections::HashMap;
-// List explicit sandbox grants
-let sandbox_id = "1";
-let mut query = HashMap::new();
-query.insert("page".to_string(), serde_json::json!(1));
-query.insert("page_size".to_string(), serde_json::json!(2));
-let result = client.sandbox_grants().list(sandbox_id, Some(&query)).await?;
 println!("{result:?}");
 ```
 

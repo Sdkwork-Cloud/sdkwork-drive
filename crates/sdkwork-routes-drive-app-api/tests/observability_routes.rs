@@ -167,8 +167,7 @@ async fn app_routes_emit_standardized_observability_events() {
                         "ownerSubjectType":"user",
                         "ownerSubjectId":"user-001",
                         "displayName":"Obs Space",
-                        "spaceType":"personal",
-                        "operatorId":"user-001"
+                        "spaceType":"personal"
                     }"#,
                 ))
                 .expect("request should be built"),
@@ -237,7 +236,6 @@ async fn app_routes_emit_standardized_observability_events() {
                         "bucket":"bucket-001",
                         "objectKey":"objects/node-obs-001.bin",
                         "idempotencyKey":"idem-obs-001",
-                        "operatorId":"user-001",
                         "expiresAtEpochMs":1800000000000
                     }"#,
                 ))
@@ -390,8 +388,7 @@ async fn app_routes_emit_standardized_observability_events() {
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{
-                        "displayName":"Obs Space Updated",
-                        "operatorId":"user-001"
+                        "displayName":"Obs Space Updated"
                     }"#,
                 ))
                 .expect("request should be built"),
@@ -452,7 +449,7 @@ async fn app_routes_emit_standardized_observability_events() {
                     common::access_token("tenant-001", "user-001", "appbase"),
                 )
                 .method(Method::DELETE)
-                .uri("/app/v3/api/drive/spaces/space-obs-001?operatorId=user-001")
+                .uri("/app/v3/api/drive/spaces/space-obs-001")
                 .body(Body::empty())
                 .expect("request should be built"),
         )
@@ -534,8 +531,7 @@ async fn app_route_errors_emit_standardized_observability_events() {
                         "ownerSubjectType":"user",
                         "ownerSubjectId":"user-001",
                         "displayName":"Obs Space",
-                        "spaceType":"invalid-space-type",
-                        "operatorId":"user-001"
+                        "spaceType":"invalid-space-type"
                     }"#,
                 ))
                 .expect("request should be built"),

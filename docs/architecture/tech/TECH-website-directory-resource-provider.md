@@ -2,7 +2,7 @@
 
 Status: active
 Owner: SDKWork Drive maintainers
-Updated: 2026-07-22
+Updated: 2026-07-23
 Requirement: REQ-2026-0004
 Decision: ADR-20260721-website-space-directory-resource
 Specs: ARCHITECTURE_DECISION_SPEC.md, DATABASE_SPEC.md, DRIVE_SPEC.md, API_SPEC.md,
@@ -39,8 +39,8 @@ ports; repositories do not write one another's tables.
 | Default `SPACE_ROOT` and explicit `FOLDER` WebsiteRoots | implemented with transactional default provisioning, immutable selector/idempotency, same-Space/reserved-path validation, and App API create/list/retrieve |
 | Trusted Provider validate/resolve/open | implemented through the Drive Internal API and generated Rust SDK for both root modes, including generation/version, conditional/Range, confinement, and non-disclosing failures |
 | Root/path change events | implemented for Web freshness without Deploy Release/SiteRevision creation |
-| `ATOMIC_SYNC` lifecycle | schema reserved only; command API, manifest/finalize flow, fenced worker, switch/rollback, retention, and cleanup are not implemented |
-| User/admin product workflows and commercial operations | incomplete; UI, entitlement/metering reconciliation, load/security/backup/restore, and live fleet evidence remain release gates |
+| `ATOMIC_SYNC` lifecycle | implemented through App API/OpenAPI/generated SDK operations, uploader-confined staging, manifest/finalize/abort, leased and fenced validation, serializable generation activation, retained-generation rollback, retention, expiry, and cleanup worker flows |
+| User/admin product workflows and commercial operations | incomplete; full UI, a real React/Vite pilot, entitlement/metering reconciliation, deployed Provider-cache and load evidence, security/backup/restore exercises, and live fleet evidence remain release gates |
 
 Website eligibility never makes a Space anonymous or public. Public delivery still requires an
 active Deploy Site Resource, Variant, Mount, Binding, exact runtime assignment, successful Web
@@ -90,8 +90,9 @@ CREATED -> UPLOADING -> VALIDATING -> READY -> SWITCHING -> ACTIVE
 ```
 
 Sync state stores operation, manifest digest, checksum/count, status, and lease identities, not
-provider object paths. It references normal staging folder/nodes/upload sessions. A fenced worker
-validates and cleans asynchronously; switch is a short transaction.
+provider object paths. It references normal staging folder/nodes/upload sessions. The finalizer
+validates under a lease and fence before a short serializable switch transaction. The install worker
+expires stale syncs and cleans eligible staging and retained trees asynchronously.
 
 ## 3. Target Database Contract
 
@@ -280,15 +281,17 @@ lag and bounded root reconciliation are part of the event contract.
 
 ## 6. API And SDK Surfaces
 
-The implemented App API exposes WebsiteRoot create/list/retrieve over the existing Space workflow;
-the trusted Internal API exposes Provider validate/resolve/open through the generated SDK. Remaining
-target groups are:
+The implemented App API exposes WebsiteRoot create/list/retrieve, atomic sync
+create/retrieve/finalize/abort, and retained-generation activation for rollback. Existing uploader
+operations are confined to the writable staging tree for all bytes. These operations are present in
+the owner OpenAPI and generated App SDK families. Finalize uses a leased and fenced validation path
+and a short serializable activation transaction; the install worker expires stale syncs and safely
+retires eligible staging and retained trees. The trusted Internal API exposes Provider
+validate/resolve/open through the generated Internal SDK.
 
-- `websiteSpaces` create/list/retrieve/update/archive;
-- `websiteRoots` create/list/retrieve/update/switch/rollback;
-- `websiteSyncs` create/retrieve/list/finalize/abort/retry;
-- existing `uploader` methods for all bytes;
-- bounded validation/plan/problem results.
+Remaining product surfaces are the complete user/admin views, aggregate operational inventory and
+diagnostics, and production acceptance evidence. They must compose the implemented operations
+through generated SDKs; they do not justify a second sync protocol or handwritten transport.
 
 WebsiteRoot creation uses a discriminated selector rather than nullable guesswork:
 
@@ -370,11 +373,12 @@ high-cardinality metrics.
 1. Maintain the accepted type vocabulary, root-selector/content-mode union, singleton catalog,
    tables, permissions, and API ownership.
 2. Maintain the implemented dual-engine website profile/root/sync/generation schema and validators.
-3. Maintain owner-generated App/Internal SDKs and complete user/admin UI behind tenant feature flags.
+3. Maintain owner-generated App/Internal SDKs and implement the complete user/admin UI behind tenant
+   feature flags.
 4. Maintain the implemented typed Provider and Web activation path; add external public-domain
    multi-vantage evidence in a non-public shadow environment.
-5. Implement and pilot atomic React/Vite sync, rollback, retention, and cleanup over the existing
-   live ordinary static-content baseline.
+5. Pilot a real React/Vite bundle through the implemented atomic sync, rollback, retention, and
+   cleanup lifecycle over the existing live ordinary static-content baseline.
 6. Certify freshness, outage, rollback, cleanup, quota, security, backup/restore, and commercial
    operations before launch.
 

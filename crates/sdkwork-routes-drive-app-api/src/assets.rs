@@ -71,7 +71,7 @@ pub(crate) async fn list_assets(
 ) -> Result<DriveListHttpResponse<AssetItemResponse>, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let page = parse_asset_page_request(query.page_size, query.cursor)?;
-    let (subject_type, subject_id) = ctx.resolve_subject(None, None)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
     let kind_filter = normalize_optional_text(query.kind);
     let source_type_filter = normalize_optional_text(query.source_type);
     let needle = normalize_optional_text(query.q).map(|value| format!("%{value}%"));
@@ -171,9 +171,8 @@ pub(crate) async fn create_asset(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(None)?;
-    let organization_id =
-        normalize_optional_text(payload.organization_id).or_else(|| ctx.organization_id.clone());
+    let operator_id = ctx.resolve_operator_id()?;
+    let organization_id = ctx.organization_id.clone();
 
     let node = if let Some(drive_node_id) = normalize_optional_text(payload.drive_node_id) {
         let node = find_active_node(&state.pool, &tenant_id, &drive_node_id).await?;
@@ -183,13 +182,15 @@ pub(crate) async fn create_asset(
     } else if let Some(virtual_reference) = payload.virtual_reference.clone() {
         create_virtual_reference_asset_node(
             &state.pool,
-            &ctx,
-            &tenant_id,
-            &operator_id,
-            &virtual_reference,
-            payload.title.as_deref(),
-            payload.scene.as_deref(),
-            payload.source.as_deref(),
+            CreateVirtualReferenceAssetNode {
+                context: &ctx,
+                tenant_id: &tenant_id,
+                operator_id: &operator_id,
+                virtual_reference: &virtual_reference,
+                title: payload.title.as_deref(),
+                scene: payload.scene.as_deref(),
+                source: payload.source.as_deref(),
+            },
         )
         .await?
     } else {
@@ -293,7 +294,7 @@ pub(crate) async fn update_asset(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(None)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &asset_id).await?;
     ensure_asset_eligible_node(&node)?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &asset_id, "writer").await?;
@@ -453,7 +454,7 @@ pub(crate) async fn create_asset_collection(
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
     let user_id = ctx.user_id.clone();
-    let operator_id = ctx.resolve_operator_id(None)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let title = require_non_empty_text(payload.title, "title")?;
     let catalog = ensure_asset_catalog_anchor(&state.pool, &tenant_id, &user_id, &ctx).await?;
     let collection_id = next_drive_id("acol");
@@ -463,8 +464,7 @@ pub(crate) async fn create_asset_collection(
     let collection_type =
         normalize_optional_text(payload.collection_type).unwrap_or_else(|| "manual".to_string());
     let now = current_timestamp_text();
-    let organization_id =
-        normalize_optional_text(payload.organization_id).or_else(|| ctx.organization_id.clone());
+    let organization_id = ctx.organization_id.clone();
     let body = json!({
         "id": collection_id,
         "tenantId": tenant_id,
@@ -509,7 +509,7 @@ pub(crate) async fn add_asset_collection_item(
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
     let user_id = ctx.user_id.clone();
-    let operator_id = ctx.resolve_operator_id(None)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let asset_id = require_non_empty_text(payload.asset_id, "assetId")?;
     let catalog = ensure_asset_catalog_anchor(&state.pool, &tenant_id, &user_id, &ctx).await?;
     load_collection_for_user(
@@ -561,7 +561,7 @@ pub(crate) async fn delete_asset_collection_item(
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
     let user_id = ctx.user_id.clone();
-    let operator_id = ctx.resolve_operator_id(None)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let catalog = ensure_asset_catalog_anchor(&state.pool, &tenant_id, &user_id, &ctx).await?;
     load_collection_for_user(
         &state.pool,
@@ -611,7 +611,7 @@ pub(crate) async fn create_asset_relation(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(None)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let relation_type = require_non_empty_text(payload.relation_type, "relationType")?;
     validate_relation_type(&relation_type)?;
 
@@ -669,7 +669,7 @@ pub(crate) async fn delete_asset_relation(
     Path((asset_id, relation_id)): Path<(String, String)>,
 ) -> Result<StatusCode, (StatusCode, Json<ProblemDetail>)> {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(None)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, &asset_id).await?;
     ensure_asset_eligible_node(&node)?;
     acl::ensure_ctx_node_role(&state.pool, &ctx, &node.space_id, &asset_id, "writer").await?;
@@ -1112,7 +1112,7 @@ async fn set_asset_archived_flag(
     (StatusCode, Json<ProblemDetail>),
 > {
     let tenant_id = ctx.resolve_tenant_id()?;
-    let operator_id = ctx.resolve_operator_id(None)?;
+    let operator_id = ctx.resolve_operator_id()?;
     let node = find_active_node(&state.pool, &tenant_id, asset_id).await?;
     ensure_asset_eligible_node(&node)?;
     acl::ensure_ctx_node_role(&state.pool, ctx, &node.space_id, asset_id, "writer").await?;
@@ -1368,16 +1368,29 @@ async fn update_asset_node_metadata(
     }
 }
 
+struct CreateVirtualReferenceAssetNode<'a> {
+    context: &'a DriveRequestContext,
+    tenant_id: &'a str,
+    operator_id: &'a str,
+    virtual_reference: &'a Value,
+    title: Option<&'a str>,
+    scene: Option<&'a str>,
+    source: Option<&'a str>,
+}
+
 async fn create_virtual_reference_asset_node(
     pool: &AnyPool,
-    ctx: &DriveRequestContext,
-    tenant_id: &str,
-    operator_id: &str,
-    virtual_reference: &Value,
-    title: Option<&str>,
-    scene: Option<&str>,
-    source: Option<&str>,
+    request: CreateVirtualReferenceAssetNode<'_>,
 ) -> Result<crate::dto::DriveNodeResponse, (StatusCode, Json<ProblemDetail>)> {
+    let CreateVirtualReferenceAssetNode {
+        context: ctx,
+        tenant_id,
+        operator_id,
+        virtual_reference,
+        title,
+        scene,
+        source,
+    } = request;
     let space_id = if let Some(space_id) = virtual_reference
         .get("driveSpaceId")
         .and_then(Value::as_str)
@@ -1549,7 +1562,7 @@ async fn ensure_asset_catalog_anchor(
         });
     }
 
-    let operator_id = ctx.resolve_operator_id(None)?;
+    let operator_id = ctx.resolve_operator_id()?;
     if find_node(pool, tenant_id, &catalog_node_id).await.is_err() {
         let insert_result = sqlx::query(
             "INSERT INTO dr_drive_node (

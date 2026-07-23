@@ -20,7 +20,7 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "f27b6e3d917c6869cf4050f71f718a55bebf851d28bb475e19e5da5f2a4d6fc1"
+      "sha256": "1c649c06b5372da5ab81c6ee5f2074687cfeb8fcce2aaaa2fcdd840146f6059e"
     },
     {
       "path": "api/paths.go",
@@ -28,7 +28,7 @@
     },
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
     },
     {
       "path": "bin/publish.ps1",
@@ -80,7 +80,7 @@
     },
     {
       "path": "types/copy_provider_object_request.go",
-      "sha256": "577a7aed4ab0bfd9464d0550932f22950b0785a05200cfe0cb2494d456b0ed60"
+      "sha256": "f44746d57b27f34cabc98a15e640682e489ede5518e4afd5a317dd7d4b8efaf9"
     },
     {
       "path": "types/create_storage_provider_request.go",
@@ -93,10 +93,6 @@
     {
       "path": "types/field_error.go",
       "sha256": "8575bfc9ee6b3ddf91724c774a813b582d26f54092c78f2048173add7155fd17"
-    },
-    {
-      "path": "types/operator_request.go",
-      "sha256": "04b8f55bba6b64ca845dab13b4486052907219fdfbc39d40c7e64e691a885bb9"
     },
     {
       "path": "types/page_info.go",
@@ -245,10 +241,6 @@
     {
       "path": "types/storage_providers_update_response.go",
       "sha256": "9dbe8a0cd97e0a7a4248e5924bea0c97b84223312bb82676e0373ef144d6e9d9"
-    },
-    {
-      "path": "types/test_storage_provider_request.go",
-      "sha256": "3a461f85970b6efab19bbab108f9ae6e3a6def43697471dc082c26593b30af72"
     },
     {
       "path": "types/test_storage_provider_response.go",

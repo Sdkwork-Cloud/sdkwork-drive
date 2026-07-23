@@ -123,7 +123,7 @@ pub(crate) struct SandboxMutationCommandResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateSpaceRequest {
     pub(crate) id: String,
     pub(crate) owner_subject_type: String,
@@ -133,8 +133,6 @@ pub(crate) struct CreateSpaceRequest {
     pub(crate) presentation_icon: Option<String>,
     pub(crate) presentation_color: Option<String>,
     pub(crate) description: Option<String>,
-    #[serde(default)]
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -155,17 +153,16 @@ pub(crate) struct CreateSpaceResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct UpdateSpaceRequest {
     pub(crate) display_name: Option<String>,
     pub(crate) presentation_icon: Option<String>,
     pub(crate) presentation_color: Option<String>,
     pub(crate) description: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateUploadSessionRequest {
     pub(crate) session_id: String,
     pub(crate) space_id: String,
@@ -174,8 +171,6 @@ pub(crate) struct CreateUploadSessionRequest {
     #[serde(rename = "objectKey")]
     pub(crate) object_key: Option<String>,
     pub(crate) idempotency_key: String,
-    #[serde(default)]
-    pub(crate) operator_id: Option<String>,
     pub(crate) expires_at_epoch_ms: i64,
 }
 
@@ -219,12 +214,11 @@ pub(crate) struct CreateDownloadUrlResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateDownloadPackageRequest {
     pub(crate) node_ids: Vec<String>,
     pub(crate) package_name: Option<String>,
     pub(crate) requested_ttl_seconds: Option<u32>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -282,16 +276,10 @@ pub(crate) struct UploaderRetentionRequest {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct PrepareUploaderUploadRequest {
     pub(crate) id: String,
     pub(crate) task_id: String,
-    pub(crate) organization_id: Option<String>,
-    #[serde(default)]
-    pub(crate) user_id: Option<String>,
-    pub(crate) anonymous_id: Option<String>,
-    #[serde(default)]
-    pub(crate) app_id: Option<String>,
     pub(crate) app_resource_type: String,
     pub(crate) app_resource_id: String,
     pub(crate) scene: Option<String>,
@@ -306,8 +294,6 @@ pub(crate) struct PrepareUploaderUploadRequest {
     pub(crate) parent_node_id: Option<String>,
     pub(crate) share_token: Option<String>,
     pub(crate) retention: Option<UploaderRetentionRequest>,
-    #[serde(default)]
-    pub(crate) operator_id: Option<String>,
     pub(crate) now_epoch_ms: Option<FlexibleI64>,
 }
 
@@ -434,11 +420,10 @@ pub(crate) struct ArchiveEntryResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct ExtractArchiveEntriesRequest {
     pub(crate) entry_paths: Option<Vec<String>>,
     pub(crate) target_parent_node_id: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -600,26 +585,22 @@ pub(crate) struct ListNodesQuery {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateFolderRequest {
     #[serde(default)]
     pub(crate) id: Option<String>,
     pub(crate) space_id: String,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) node_name: String,
-    #[serde(default)]
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateFileRequest {
     pub(crate) id: String,
     pub(crate) space_id: String,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) node_name: String,
-    #[serde(default)]
-    pub(crate) operator_id: Option<String>,
     pub(crate) upload_session_id: String,
     pub(crate) idempotency_key: String,
     pub(crate) expires_at_epoch_ms: i64,
@@ -629,15 +610,13 @@ pub(crate) struct CreateFileRequest {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateShortcutRequest {
     pub(crate) id: String,
     pub(crate) space_id: String,
     pub(crate) parent_node_id: Option<String>,
     pub(crate) node_name: String,
     pub(crate) target_node_id: String,
-    #[serde(default)]
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -648,41 +627,35 @@ pub(crate) struct CreateFileResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct UpdateNodeRequest {
     pub(crate) node_name: Option<String>,
     pub(crate) parent_node_id: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct MoveNodeRequest {
     pub(crate) target_parent_node_id: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CopyNodeRequest {
     pub(crate) id: String,
     pub(crate) target_space_id: Option<String>,
     pub(crate) target_parent_node_id: Option<String>,
     pub(crate) node_name: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct NodeCommandRequest {
-    pub(crate) operator_id: Option<String>,
-}
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct NodeCommandRequest {}
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct EmptyTrashRequest {
     pub(crate) space_id: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -707,10 +680,8 @@ pub(crate) struct NodeViewQuery {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct SubjectNodeViewQuery {
-    pub(crate) subject_type: Option<String>,
-    pub(crate) subject_id: Option<String>,
     pub(crate) space_id: Option<String>,
     #[serde(rename = "page_size")]
     pub(crate) page_size: Option<i64>,
@@ -721,27 +692,16 @@ pub(crate) struct SubjectNodeViewQuery {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct FavoriteNodeRequest {
-    pub(crate) subject_type: Option<String>,
-    pub(crate) subject_id: Option<String>,
-    pub(crate) operator_id: Option<String>,
-}
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct FavoriteNodeRequest {}
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct FavoriteNodeQuery {
-    pub(crate) subject_type: Option<String>,
-    pub(crate) subject_id: Option<String>,
-    pub(crate) operator_id: Option<String>,
-}
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct FavoriteNodeQuery {}
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct NodeCapabilitiesQuery {
-    pub(crate) subject_type: Option<String>,
-    pub(crate) subject_id: Option<String>,
-}
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct NodeCapabilitiesQuery {}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -750,11 +710,9 @@ pub(crate) struct FavoriteNodeResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CheckFavoriteNodesRequest {
     pub(crate) node_ids: Vec<String>,
-    pub(crate) subject_type: Option<String>,
-    pub(crate) subject_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -853,18 +811,16 @@ pub(crate) struct NodePropertyListQuery {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct SetNodePropertyRequest {
     pub(crate) value: String,
     pub(crate) visibility: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct DeleteNodePropertyQuery {
     pub(crate) visibility: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -891,16 +847,12 @@ pub(crate) struct NodeLabelListQuery {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ApplyNodeLabelRequest {
-    pub(crate) operator_id: Option<String>,
-}
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct ApplyNodeLabelRequest {}
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct RemoveNodeLabelQuery {
-    pub(crate) operator_id: Option<String>,
-}
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct RemoveNodeLabelQuery {}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -939,7 +891,7 @@ pub(crate) struct WatchChannelListQuery {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateWatchChannelRequest {
     pub(crate) id: String,
     pub(crate) space_id: Option<String>,
@@ -947,14 +899,11 @@ pub(crate) struct CreateWatchChannelRequest {
     pub(crate) token: Option<String>,
     pub(crate) channel_type: Option<String>,
     pub(crate) expiration_epoch_ms: i64,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct StopWatchChannelRequest {
-    pub(crate) operator_id: Option<String>,
-}
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct StopWatchChannelRequest {}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -994,10 +943,8 @@ pub(crate) struct InsertWatchChannel<'a> {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct NodeMutationQuery {
-    pub(crate) operator_id: Option<String>,
-}
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct NodeMutationQuery {}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -1022,21 +969,18 @@ pub(crate) struct FileVersionResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreatePermissionRequest {
     pub(crate) id: String,
     pub(crate) subject_type: String,
     pub(crate) subject_id: String,
     pub(crate) role: String,
-    #[serde(default)]
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct UpdatePermissionRequest {
     pub(crate) role: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1070,7 +1014,7 @@ pub(crate) struct EffectivePermissionResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateShareLinkRequest {
     pub(crate) id: String,
     #[serde(default)]
@@ -1080,8 +1024,6 @@ pub(crate) struct CreateShareLinkRequest {
     pub(crate) role: Option<String>,
     pub(crate) expires_at_epoch_ms: Option<i64>,
     pub(crate) download_limit: Option<i64>,
-    #[serde(default)]
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1121,33 +1063,29 @@ pub(crate) struct ClaimShareLinkResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct UpdateShareLinkRequest {
     pub(crate) role: Option<String>,
     #[serde(default, deserialize_with = "deserialize_optional_i64_patch")]
     pub(crate) expires_at_epoch_ms: OptionalI64Patch,
     #[serde(default, deserialize_with = "deserialize_optional_i64_patch")]
     pub(crate) download_limit: OptionalI64Patch,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateCommentRequest {
     pub(crate) id: String,
     pub(crate) content: String,
     pub(crate) anchor: Option<String>,
-    #[serde(default)]
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct UpdateCommentRequest {
     pub(crate) content: Option<String>,
     pub(crate) anchor: Option<String>,
     pub(crate) resolved: Option<bool>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1168,19 +1106,16 @@ pub(crate) struct CommentResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateCommentReplyRequest {
     pub(crate) id: String,
     pub(crate) content: String,
-    #[serde(default)]
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct UpdateCommentReplyRequest {
     pub(crate) content: Option<String>,
-    pub(crate) operator_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1278,13 +1213,12 @@ pub(crate) struct CompletedUploadPartRequest {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CompleteUploadSessionRequest {
     pub(crate) upload_id: Option<String>,
     pub(crate) content_type: String,
     pub(crate) content_length: FlexibleI64,
     pub(crate) checksum_sha256_hex: String,
-    pub(crate) operator_id: Option<String>,
     pub(crate) parts: Vec<CompletedUploadPartRequest>,
 }
 
@@ -1676,9 +1610,8 @@ pub(crate) struct ListAssetsQuery {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateAssetRequest {
-    pub(crate) organization_id: Option<String>,
     pub(crate) drive_node_id: Option<String>,
     pub(crate) virtual_reference: Option<serde_json::Value>,
     pub(crate) title: Option<String>,
@@ -1766,9 +1699,8 @@ pub(crate) struct ListAssetCollectionsQuery {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateAssetCollectionRequest {
-    pub(crate) organization_id: Option<String>,
     pub(crate) title: String,
     pub(crate) description: Option<String>,
     pub(crate) collection_type: Option<String>,
@@ -1849,8 +1781,8 @@ mod auth_projection_request_tests {
     use super::PrepareUploaderUploadRequest;
 
     #[test]
-    fn prepare_uploader_upload_request_accepts_missing_auth_projection_fields() {
-        let payload: PrepareUploaderUploadRequest = serde_json::from_str(
+    fn prepare_uploader_upload_request_uses_only_business_fields() {
+        serde_json::from_str::<PrepareUploaderUploadRequest>(
             r#"{
                 "id":"upload-item-001",
                 "taskId":"task-001",
@@ -1864,10 +1796,27 @@ mod auth_projection_request_tests {
             }"#,
         )
         .expect("prepare request should deserialize without auth projection fields");
+    }
 
-        assert_eq!(payload.app_id, None);
-        assert_eq!(payload.user_id, None);
-        assert_eq!(payload.operator_id, None);
+    #[test]
+    fn prepare_uploader_upload_request_rejects_auth_projection_fields() {
+        let error = serde_json::from_str::<PrepareUploaderUploadRequest>(
+            r#"{
+                "id":"upload-item-001",
+                "taskId":"task-001",
+                "appResourceType":"desktop-file-browser",
+                "appResourceId":"root",
+                "fileFingerprint":"fp-001",
+                "originalFileName":"a.pdf",
+                "contentType":"application/pdf",
+                "contentLength":5,
+                "chunkSizeBytes":5242880,
+                "operatorId":"user-002"
+            }"#,
+        )
+        .expect_err("auth projection fields must not be accepted by app request DTOs");
+
+        assert!(error.to_string().contains("operatorId"));
     }
 }
 

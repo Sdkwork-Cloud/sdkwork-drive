@@ -3,8 +3,6 @@ import type { UploaderRetentionRequest } from './uploader-retention-request';
 export interface PrepareUploaderUploadRequest {
   id: string;
   taskId: string;
-  organizationId?: string;
-  anonymousId?: string;
   appResourceType: string;
   appResourceId: string;
   uploadProfileCode?: 'generic' | 'video' | 'image' | 'audio' | 'document' | 'archive' | 'text' | 'dataset' | 'attachment' | 'avatar' | 'thumbnail';

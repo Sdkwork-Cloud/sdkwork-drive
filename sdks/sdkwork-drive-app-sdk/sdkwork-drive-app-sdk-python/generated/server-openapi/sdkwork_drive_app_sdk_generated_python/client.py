@@ -1,9 +1,5 @@
 from .http_client import HttpClient, SdkConfig
 from .api.drive import DriveApi
-from .api.node_labels import NodeLabelsApi
-from .api.node_properties import NodePropertiesApi
-from .api.nodes import NodesApi
-from .api.watch_channels import WatchChannelsApi
 from .api.assets import AssetsApi
 
 
@@ -13,18 +9,10 @@ class SdkworkAppClient:
     def __init__(self, config: SdkConfig):
         self._client = HttpClient(config)
         self.drive: DriveApi
-        self.node_labels: NodeLabelsApi
-        self.node_properties: NodePropertiesApi
-        self.nodes: NodesApi
-        self.watch_channels: WatchChannelsApi
         self.assets: AssetsApi
 
         # Initialize API modules
         self.drive = DriveApi(self._client)
-        self.node_labels = NodeLabelsApi(self._client)
-        self.node_properties = NodePropertiesApi(self._client)
-        self.nodes = NodesApi(self._client)
-        self.watch_channels = WatchChannelsApi(self._client)
         self.assets = AssetsApi(self._client)
     def set_auth_token(self, token: str) -> 'SdkworkAppClient':
         """Set auth token for authentication."""
