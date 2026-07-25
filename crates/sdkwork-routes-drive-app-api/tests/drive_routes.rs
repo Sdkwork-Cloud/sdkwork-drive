@@ -83,20 +83,11 @@ async fn app_router_exposes_dr_drive_space_and_upload_routes() {
         (Method::GET, "/app/v3/api/drive/trash?spaceId=space-001"),
         (Method::POST, "/app/v3/api/drive/trash/empty"),
         (Method::GET, "/app/v3/api/drive/recent?spaceId=space-001"),
-        (
-            Method::GET,
-            "/app/v3/api/drive/shared_with_me",
-        ),
-        (
-            Method::GET,
-            "/app/v3/api/drive/favorites",
-        ),
+        (Method::GET, "/app/v3/api/drive/shared_with_me"),
+        (Method::GET, "/app/v3/api/drive/favorites"),
         (Method::GET, "/app/v3/api/drive/quotas/summary"),
         (Method::PUT, "/app/v3/api/drive/nodes/node-001/favorite"),
-        (
-            Method::DELETE,
-            "/app/v3/api/drive/nodes/node-001/favorite",
-        ),
+        (Method::DELETE, "/app/v3/api/drive/nodes/node-001/favorite"),
         (Method::GET, "/app/v3/api/drive/nodes/node-001/versions"),
         (
             Method::POST,

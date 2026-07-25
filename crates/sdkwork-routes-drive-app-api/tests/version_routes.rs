@@ -96,15 +96,19 @@ async fn version_routes_prefer_logical_node_version_ids() {
         .clone()
         .oneshot(
             Request::builder()
-            .header(
-                "authorization",
-                format!("Bearer {}", common::auth_token("tenant-001", "user-001", "appbase")),
-            )
-            .header("access-token", common::access_token("tenant-001", "user-001", "appbase"))
-                .method(Method::DELETE)
-                .uri(
-                    "/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1",
+                .header(
+                    "authorization",
+                    format!(
+                        "Bearer {}",
+                        common::auth_token("tenant-001", "user-001", "appbase")
+                    ),
                 )
+                .header(
+                    "access-token",
+                    common::access_token("tenant-001", "user-001", "appbase"),
+                )
+                .method(Method::DELETE)
+                .uri("/app/v3/api/drive/nodes/node-001/versions/version-node-001-v1")
                 .body(Body::empty())
                 .expect("version delete request should be built"),
         )
