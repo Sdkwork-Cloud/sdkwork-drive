@@ -18,6 +18,7 @@ import {
   resolveDevProfileId,
   resolveGatewayBind,
   resolveIamDevEnv,
+  resolveTemporaryDatabaseDriverEnv,
   IAM_APPLICATION_BOOTSTRAP_ENV,
   shouldAutostartGateway,
 } from './lib/drive-topology.mjs';
@@ -508,6 +509,7 @@ function createStandaloneGatewayProcess({ env, gatewayWillStart }) {
   const configPath = resolveStandaloneGatewayConfigPath(env);
   const gatewayEnv = {
     ...resolveIamDevEnv(env, repoRoot),
+    ...resolveTemporaryDatabaseDriverEnv(env),
     SDKWORK_DRIVE_STANDALONE_GATEWAY_BIND: resolveSdkworkApiGatewayBind(env),
     SDKWORK_DRIVE_STANDALONE_GATEWAY_CONFIG: configPath,
     SDKWORK_DRIVE_STANDALONE_GATEWAY_ENVIRONMENT:

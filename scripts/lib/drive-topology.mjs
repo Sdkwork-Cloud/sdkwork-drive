@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -43,6 +44,11 @@ export const IAM_APPLICATION_BOOTSTRAP_ENV = {
   SDKWORK_IAM_APP_ROOT: IAM_REPO_ROOT,
 };
 
+const TEMPORARY_DATABASE_DRIVER_ENV_KEYS = [
+  'SDKWORK_DATABASE_TEMPORARY_ANY_POOL_EXCEPTION',
+  'SDKWORK_DATABASE_TEMPORARY_DRIVER_POOL_COUNT',
+];
+
 export function resolveDevProfileId(deploymentProfile) {
   runtime.assertDeploymentProfile(deploymentProfile);
   return buildProfileId(deploymentProfile, 'development');
@@ -70,10 +76,27 @@ export const resolveIamDatabaseEnv = runtime.resolveIamDatabaseEnv;
 export const resolveIamDevEnv = runtime.resolveIamDevEnv;
 export const describeIamDatabaseTarget = runtime.describeIamDatabaseTarget;
 export const assertPostgresReachableForIam = runtime.assertPostgresReachableForIam;
-export const resolveStandaloneGatewayConfigPath = runtime.resolveStandaloneGatewayConfigPath;
 export const resolveCloudGatewayConfigPath = runtime.resolveCloudGatewayConfigPath;
 export const resolveSurfaceHttpUrl = runtime.resolveSurfaceHttpUrl.bind(runtime);
 export const resolveSurfaceBind = runtime.resolveSurfaceBind.bind(runtime);
+
+export function resolveTemporaryDatabaseDriverEnv(env = process.env) {
+  return Object.fromEntries(
+    TEMPORARY_DATABASE_DRIVER_ENV_KEYS.flatMap((key) => {
+      const value = normalizeText(env[key]);
+      return value ? [[key, value]] : [];
+    }),
+  );
+}
+
+export function resolveStandaloneGatewayConfigPath(env = process.env) {
+  const configPath = runtime.resolveStandaloneGatewayConfigPath(env, REPO_ROOT);
+  const developmentExamplePath = `${configPath}.example`;
+  if (!existsSync(configPath) && existsSync(developmentExamplePath)) {
+    return developmentExamplePath;
+  }
+  return configPath;
+}
 
 export function findGatewayPackageTarget(targetId) {
   return runtime.findPackageTarget(targetId);

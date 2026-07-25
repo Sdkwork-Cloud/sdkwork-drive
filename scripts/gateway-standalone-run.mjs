@@ -9,9 +9,12 @@ import { fileURLToPath } from 'node:url';
 import {
   IAM_APPLICATION_BOOTSTRAP_ENV,
   loadEnvFile,
+  loadProfile,
+  mergeRuntimeEnv,
   REPO_ROOT,
   resolveIamDevEnv,
   resolveStandaloneGatewayConfigPath,
+  resolveTemporaryDatabaseDriverEnv,
 } from './lib/drive-topology.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -121,9 +124,12 @@ function main() {
     process.exit(1);
   }
 
+  const profileEnv = loadProfile(`standalone.${settings.environment}`);
   const fileEnv = loadDevEnvFile(settings.devEnvFile);
+  const runtimeEnv = mergeRuntimeEnv(process.env, profileEnv, fileEnv);
   const gatewayEnv = {
-    ...resolveIamDevEnv({ ...process.env, ...fileEnv }, repoRoot),
+    ...resolveIamDevEnv(runtimeEnv, repoRoot),
+    ...resolveTemporaryDatabaseDriverEnv(runtimeEnv),
     ...IAM_APPLICATION_BOOTSTRAP_ENV,
     SDKWORK_DRIVE_STANDALONE_GATEWAY_CONFIG: configPath,
     SDKWORK_DRIVE_STANDALONE_GATEWAY_ENVIRONMENT: settings.environment,
