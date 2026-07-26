@@ -40,8 +40,16 @@
     "publicExports": [
       "."
     ],
+    "providedPorts": [
+      {
+        "name": "driveAppApiContribution",
+        "export": ".",
+        "target": "sdkwork_api_drive_assembly::assemble_app_api_contribution"
+      }
+    ],
     "runtimeEntrypoints": [
       "sdkwork_api_drive_assembly::assemble_api_router",
+      "sdkwork_api_drive_assembly::assemble_app_api_contribution",
       "sdkwork_api_drive_assembly::assemble_business_routes",
       "sdkwork_api_drive_assembly::assemble_business_routes_from_env",
       "sdkwork_api_drive_assembly::assemble_business_routes_with_config",

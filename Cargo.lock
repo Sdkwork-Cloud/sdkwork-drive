@@ -3579,6 +3579,10 @@ dependencies = [
  "sdkwork-routes-drive-internal-api",
  "sdkwork-routes-drive-open-api",
  "sdkwork-routes-storage-backend-api",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-contract",
+ "sdkwork-web-core",
+ "serde_json",
  "sqlx",
  "tokio",
 ]

@@ -381,18 +381,23 @@ pub async fn gateway_mount_business(pool: AnyPool) -> Router {
     build_gateway_business_router_with_pool(pool).await
 }
 
-/// Deprecated alias; prefer [`gateway_mount_business`].
-pub async fn build_gateway_business_router_with_pool(pool: AnyPool) -> Router {
+/// Raw App API router for a composing gateway that owns the Web Framework layer.
+pub fn build_app_business_router(pool: AnyPool) -> Router {
     let state = AppState::with_urls(
         pool,
         std::env::var("SDKWORK_DRIVE_PUBLIC_BASE_URL")
             .unwrap_or_else(|_| DEFAULT_DOWNLOAD_PUBLIC_BASE_URL.to_string()),
     );
-    let router = build_business_router_layers(state);
-    let router = crate::web_bootstrap::wrap_router_with_web_framework_from_env(router).await;
-    router.layer(middleware::from_fn(
+    build_business_router_layers(state).layer(middleware::from_fn(
         sdkwork_drive_http::metrics::record_request_metrics,
     ))
+}
+
+/// Deprecated alias; prefer [`gateway_mount_business`].
+pub async fn build_gateway_business_router_with_pool(pool: AnyPool) -> Router {
+    let router = build_app_business_router(pool);
+    let router = crate::web_bootstrap::wrap_router_with_web_framework_from_env(router).await;
+    router
 }
 
 pub async fn gateway_mount(pool: sqlx::AnyPool) -> axum::Router {

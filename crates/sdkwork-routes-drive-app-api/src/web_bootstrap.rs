@@ -20,6 +20,10 @@ pub fn drive_app_public_path_prefixes() -> Vec<String> {
 #[derive(Clone, Default)]
 struct DriveAppContextInjector;
 
+pub fn drive_app_context_injector() -> Arc<dyn DomainContextInjector> {
+    Arc::new(DriveAppContextInjector)
+}
+
 impl DomainContextInjector for DriveAppContextInjector {
     fn inject(&self, request: &mut http::Request<axum::body::Body>, context: &WebRequestContext) {
         let Some(principal) = context.principal.as_ref() else {
@@ -125,7 +129,7 @@ where
         })
         .with_security_policy(security_policy)
         .with_route_manifest(route_manifest)
-        .with_domain_injector(Arc::new(DriveAppContextInjector))
+        .with_domain_injector(drive_app_context_injector())
 }
 
 pub async fn wrap_router_with_web_framework_from_env(router: Router) -> Router {
