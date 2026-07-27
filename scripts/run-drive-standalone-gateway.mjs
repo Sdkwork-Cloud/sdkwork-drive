@@ -312,7 +312,7 @@ function printHelp() {
 
 Database policy:
   pnpm dev          uses PostgreSQL via .env.postgres
-  pnpm dev:browser:sqlite uses sqlite://target/dev/sdkwork-drive.sqlite
+  Public application-server development profiles do not select SQLite.
 
 Runtime policy:
   The script starts only sdkwork-api-drive-standalone-gateway.

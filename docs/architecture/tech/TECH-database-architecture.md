@@ -14,10 +14,9 @@ SDKWork Drive uses PostgreSQL for server deployments and SQLite for local lightw
 Root package scripts define the local development modes:
 
 - `pnpm dev --database postgres` resolves PostgreSQL configuration.
-- `pnpm dev:browser:sqlite` passes `sqlite://target/dev/sdkwork-drive.sqlite`.
 - `pnpm topology:plan` renders the same launch plan without starting services.
 
-Both PostgreSQL and SQLite modes start the same API service set: app API on `127.0.0.1:18080`, backend API on `127.0.0.1:18081`, open API on `127.0.0.1:18082`, and admin storage API on `127.0.0.1:18083`.
+Public application-server development starts the app, backend, open, and admin storage API surfaces with PostgreSQL. SQLite remains available to internal persistence tests and migration compatibility checks, but is not exposed as an application-server development profile.
 
 The Rust configuration boundary is `sdkwork-drive-config::DatabaseConfig`. It accepts:
 
@@ -45,7 +44,7 @@ Runtime SQL must use PostgreSQL-compatible `$1`, `$2`, ... bind placeholders. SQ
 
 Supported runtime database engines are PostgreSQL and SQLite only. Enabling `sqlx::AnyPool` may pull SQLx MySQL internals into Cargo dependency resolution, but Drive configuration rejects MySQL URLs and Drive does not expose MySQL as a supported database backend.
 
-Direct SQL in request handlers is still allowed for narrow API-specific read models, but shared business persistence must be implemented through workspace-service store ports. New SQL must be validated against both PostgreSQL and SQLite semantics before being exposed through `pnpm dev` or `pnpm dev:browser:sqlite`.
+Direct SQL in request handlers is still allowed for narrow API-specific read models, but shared business persistence must be implemented through workspace-service store ports. New SQL must be validated against both PostgreSQL and SQLite semantics before being exposed through `pnpm dev`.
 
 ## Lifecycle And Migrations
 

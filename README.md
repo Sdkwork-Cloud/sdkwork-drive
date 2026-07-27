@@ -43,7 +43,6 @@ generated language workspaces, and generated transport output live under
 
 ```bash
 pnpm dev --database postgres          # PostgreSQL profile (default)
-pnpm dev:browser:sqlite               # SQLite local database at target/dev/sdkwork-drive.sqlite
 pnpm topology:plan                    # Render the local launch plan without starting services
 ```
 

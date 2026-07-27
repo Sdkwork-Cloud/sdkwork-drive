@@ -11,7 +11,7 @@ fn workspace_root() -> PathBuf {
 }
 
 #[test]
-fn package_scripts_use_the_shared_lifecycle_and_keep_sqlite_explicit() {
+fn package_scripts_use_the_shared_lifecycle_without_sqlite_server_aliases() {
     let root = workspace_root();
     let package_json_path = root.join("package.json");
     let package_json =
@@ -27,10 +27,6 @@ fn package_scripts_use_the_shared_lifecycle_and_keep_sqlite_explicit() {
         .get("dev")
         .and_then(serde_json::Value::as_str)
         .expect("pnpm dev script should exist");
-    let dev_sqlite_script = scripts
-        .get("dev:browser:sqlite")
-        .and_then(serde_json::Value::as_str)
-        .expect("pnpm dev:browser:sqlite script should exist");
     let dev_standalone_script = scripts
         .get("dev:standalone")
         .and_then(serde_json::Value::as_str)
@@ -58,15 +54,8 @@ fn package_scripts_use_the_shared_lifecycle_and_keep_sqlite_explicit() {
         "pnpm dev:standalone must use the shared sdkwork-app lifecycle, got: {dev_standalone_script}"
     );
 
-    assert!(
-        dev_sqlite_script.contains("sdkwork-command.mjs"),
-        "pnpm dev:browser:sqlite must delegate through sdkwork-command.mjs, got: {dev_sqlite_script}"
-    );
-    assert!(
-        dispatcher.contains("'--database', 'sqlite'")
-            && dispatcher.contains("'--deployment-profile', 'standalone'"),
-        "sdkwork-command.mjs must dispatch dev:browser:sqlite with SQLite and standalone profile"
-    );
+    assert!(scripts.get("dev:browser:sqlite").is_none());
+    assert!(scripts.get("dev:desktop:sqlite").is_none());
 
     assert!(
         dev_desktop_script == "pnpm dev:desktop:postgres:standalone",
@@ -410,7 +399,7 @@ fn database_architecture_doc_records_runtime_boundary() {
         "PostgreSQL is the server, Docker, Kubernetes, and production target",
         "SQLite is the local/private lightweight mode",
         "pnpm dev",
-        "pnpm dev:browser:sqlite",
+        "SQLite remains available to internal persistence tests",
         "SDKWORK_DRIVE_CONFIG_FILE=./etc/drive.database.example.toml",
         "SDKWORK_CLAW_DATABASE_ENGINE=postgresql",
         "SDKWORK_CLAW_DATABASE_SSL_MODE",

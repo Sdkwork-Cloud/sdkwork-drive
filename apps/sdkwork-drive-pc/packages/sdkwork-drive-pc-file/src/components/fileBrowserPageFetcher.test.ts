@@ -29,4 +29,26 @@ describe('fileBrowserPageFetcher', () => {
     );
     expect(merged.map((file) => file.id)).toEqual(['a', 'b']);
   });
+
+  it('deduplicates repeated resources within the first page', () => {
+    const firstOccurrence = {
+      ...makeFile('recent-file'),
+      name: 'Newest recent entry',
+    };
+    const duplicateOccurrence = {
+      ...makeFile('recent-file'),
+      name: 'Older duplicate entry',
+    };
+
+    const merged = mergeUniqueDriveFiles(
+      [],
+      [firstOccurrence, duplicateOccurrence, makeFile('another-file')],
+    );
+
+    expect(merged.map((file) => file.id)).toEqual([
+      'recent-file',
+      'another-file',
+    ]);
+    expect(merged[0]?.name).toBe('Newest recent entry');
+  });
 });

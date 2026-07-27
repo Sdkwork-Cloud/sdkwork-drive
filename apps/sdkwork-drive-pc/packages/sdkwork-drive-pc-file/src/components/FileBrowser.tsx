@@ -43,7 +43,10 @@ import {
   sortDriveFiles,
   type FileBrowserSortField,
 } from "./fileBrowserSort";
-import { isDefaultFileBrowserSort } from "./fileBrowserPageFetcher";
+import {
+  isDefaultFileBrowserSort,
+  mergeUniqueDriveFiles,
+} from "./fileBrowserPageFetcher";
 import { supportsServerSideFileBrowserSort } from "./fileBrowserSortSupport";
 import { useFileBrowserVirtualWindow } from "./useFileBrowserVirtualWindow";
 import {
@@ -816,7 +819,7 @@ export function FileBrowser({
         if (!latestLoadGuardRef.current.isCurrent(loadSequence)) {
           return;
         }
-        setFiles(page.files);
+        setFiles(mergeUniqueDriveFiles([], page.files));
         setNextPageToken(page.nextPageToken);
         setLoading(false);
       })
@@ -878,16 +881,7 @@ export function FileBrowser({
       sortOrder,
     })
       .then((page) => {
-        setFiles((current) => {
-          const seen = new Set(current.map((file) => file.id));
-          const merged = [...current];
-          for (const file of page.files) {
-            if (!seen.has(file.id)) {
-              merged.push(file);
-            }
-          }
-          return merged;
-        });
+        setFiles((current) => mergeUniqueDriveFiles(current, page.files));
         setNextPageToken(page.nextPageToken);
       })
       .catch((err: unknown) => {

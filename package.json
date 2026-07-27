@@ -24,8 +24,6 @@
     "dev:desktop": "pnpm dev:desktop:postgres:standalone",
     "dev:browser:cloud": "pnpm exec sdkwork-app dev --runtime-target browser --deployment-profile cloud",
     "dev:desktop:cloud": "pnpm exec sdkwork-app dev --runtime-target desktop --deployment-profile cloud",
-    "dev:browser:sqlite": "node scripts/sdkwork-command.mjs dev --runtime-target browser --database sqlite --deployment-profile standalone",
-    "dev:desktop:sqlite": "node scripts/sdkwork-command.mjs dev --runtime-target desktop --database sqlite --deployment-profile standalone",
     "build": "pnpm exec sdkwork-app build",
     "build:standalone": "pnpm exec sdkwork-app build --deployment-profile standalone",
     "build:debug": "node scripts/drive-build.mjs --deployment-profile standalone --debug",
