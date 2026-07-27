@@ -25,6 +25,8 @@ coverage/
 .env.*
 !.env.example
 !.env.*.example
+!apps/sdkwork-drive-pc/.env.standalone.*
+!apps/sdkwork-drive-pc/.env.cloud.*
 
 # Database files
 *.db

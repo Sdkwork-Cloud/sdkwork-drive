@@ -14,6 +14,8 @@
     "@sdkwork/app-topology": "workspace:*"
   },
   "scripts": {
+    "workflow:materialize-client-env": "node ../sdkwork-specs/tools/materialize-client-env.mjs --root .",
+    "check:client-env": "node ../sdkwork-specs/tools/materialize-client-env.mjs --root . --check",
     "stop": "pnpm exec sdkwork-app stop",
     "dev": "pnpm dev:standalone",
     "dev:standalone": "pnpm exec sdkwork-app dev --deployment-profile standalone",

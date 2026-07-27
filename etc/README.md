@@ -5,8 +5,8 @@ SDKWork Drive. It selects a typed profile from `topology/`; the topology
 contract is `../specs/topology.spec.json` and the global authority is
 `../sdkwork-specs/SOURCE_CONFIG_SPEC.md`.
 
-Supported source profiles are `standalone.development`,
-`standalone.production`, `cloud.development`, and `cloud.production`.
+The canonical matrix contains `standalone|cloud` crossed with
+`development|test|staging|production`.
 Standalone development owns the local Drive standalone gateway. Cloud
 development starts clients only and consumes the deployed
 `platform.api-gateway` surface URL.
@@ -27,5 +27,6 @@ Validate this authority with:
 
 ```powershell
 node ../sdkwork-specs/tools/check-source-config-standard.mjs --root .
+pnpm check:client-env
 pnpm topology:validate
 ```
