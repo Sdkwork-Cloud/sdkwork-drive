@@ -462,7 +462,7 @@ where
         command: UploadBytesCommand,
     ) -> Result<DriveUploadItem, DriveServiceError>
     where
-        O: DriveObjectStore,
+        O: DriveObjectStore + ?Sized,
     {
         if command.uploaded_at_epoch_ms <= 0 {
             return Err(DriveServiceError::Validation(
@@ -852,6 +852,15 @@ fn resolve_auto_upload_space_profile(scene: Option<&str>) -> (&'static str, &'st
     match scene {
         Some(value) if value.eq_ignore_ascii_case("rtc") => ("rtc", "RTC Records"),
         Some(value) if value.eq_ignore_ascii_case("im") => ("im", "IM"),
+        Some(value)
+            if value.eq_ignore_ascii_case("deployment")
+                || value.eq_ignore_ascii_case("application-source") =>
+        {
+            ("deployment", "Deployment")
+        }
+        Some(value) if value.eq_ignore_ascii_case("git-repository") => {
+            ("git_repository", "Git Repository")
+        }
         _ => ("app_upload", "Upload"),
     }
 }
