@@ -655,8 +655,9 @@ for (const relativePath of [
       `${relativePath} must declare canonical unified workspace database key ${key}`,
     );
   }
+  const retiredDriveDatabasePrefix = ['SDKWORK', 'DRIVE', 'DATABASE', ''].join('_');
   assert(
-    !text.includes('SDKWORK_DRIVE_DATABASE_'),
+    !text.includes(retiredDriveDatabasePrefix),
     `${relativePath} must not use per-application database identity keys; use SDKWORK_DATABASE_* per ENVIRONMENT_SPEC.md section 7.1`,
   );
 }
