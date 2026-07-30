@@ -3,6 +3,11 @@ name = "sdkwork-drive-workspace-service"
 version.workspace = true
 edition.workspace = true
 
+[features]
+default = ["postgres"]
+postgres = ["sdkwork-database-repository/postgres"]
+sqlite = ["postgres", "sdkwork-database-repository/sqlite"]
+
 [dependencies]
 sdkwork-drive-database-host.workspace = true
 sdkwork-database-config.workspace = true
