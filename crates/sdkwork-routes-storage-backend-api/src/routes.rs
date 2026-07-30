@@ -6,14 +6,14 @@ use axum::middleware;
 use axum::{Extension, Router};
 use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_http::infra::{drive_service_router_config, mount_drive_infra_routes};
-use sdkwork_drive_workspace_service::infrastructure::sql::connect_any_database_and_install_schema;
-use sqlx::AnyPool;
+use sdkwork_drive_workspace_service::infrastructure::sql::connect_postgres_database_and_install_schema;
+use sqlx::PgPool;
 
-pub fn build_router_with_pool(pool: AnyPool) -> Router {
+pub fn build_router_with_pool(pool: PgPool) -> Router {
     build_router_with_pool_and_config(pool, AdminStorageConfig::default())
 }
 
-pub fn build_router_with_pool_and_config(pool: AnyPool, config: AdminStorageConfig) -> Router {
+pub fn build_router_with_pool_and_config(pool: PgPool, config: AdminStorageConfig) -> Router {
     let router = build_router_with_state(AdminStorageState::new(pool, config), true);
     wrap_router_with_web_framework(
         sdkwork_web_core::DefaultWebRequestContextResolver::default(),
@@ -22,7 +22,7 @@ pub fn build_router_with_pool_and_config(pool: AnyPool, config: AdminStorageConf
 }
 
 pub async fn build_protected_router_with_pool_and_config(
-    pool: AnyPool,
+    pool: PgPool,
     config: AdminStorageConfig,
 ) -> Router {
     let router = build_router_inner_with_infra(AdminStorageState::new(pool, config), true, None);
@@ -30,24 +30,28 @@ pub async fn build_protected_router_with_pool_and_config(
 }
 
 /// Business-only admin storage router for multi-surface assembly.
-pub async fn gateway_mount_business(pool: AnyPool) -> Router {
+pub async fn gateway_mount_business(pool: PgPool) -> Router {
     gateway_mount_business_with_config(pool, AdminStorageConfig::default()).await
 }
 
 /// Business-only admin storage router with explicit provider configuration.
 pub async fn gateway_mount_business_with_config(
-    pool: AnyPool,
+    pool: PgPool,
     config: AdminStorageConfig,
 ) -> Router {
-    let router = build_business_router_inner(AdminStorageState::new(pool, config), true, None);
-    crate::web_bootstrap::wrap_router_with_web_framework_from_env(router).await
+    build_admin_storage_business_router(pool, config)
 }
 
-pub fn build_router_with_pool_and_iam(pool: AnyPool) -> Router {
+/// Raw admin-storage router for a composing gateway that owns the Web Framework layer.
+pub fn build_admin_storage_business_router(pool: PgPool, config: AdminStorageConfig) -> Router {
+    build_business_router_inner(AdminStorageState::new(pool, config), true, None)
+}
+
+pub fn build_router_with_pool_and_iam(pool: PgPool) -> Router {
     build_router_with_pool_and_config(pool, AdminStorageConfig::default())
 }
 
-pub fn build_router_with_pool_without_iam(pool: AnyPool) -> Router {
+pub fn build_router_with_pool_without_iam(pool: PgPool) -> Router {
     build_router_with_state(
         AdminStorageState::new(pool, AdminStorageConfig::default()),
         false,
@@ -55,7 +59,7 @@ pub fn build_router_with_pool_without_iam(pool: AnyPool) -> Router {
 }
 
 pub fn build_router_with_pool_without_iam_and_test_tenant(
-    pool: AnyPool,
+    pool: PgPool,
     tenant_id: impl Into<String>,
 ) -> Router {
     build_router_with_state_and_test_tenant(
@@ -65,7 +69,7 @@ pub fn build_router_with_pool_without_iam_and_test_tenant(
 }
 
 pub fn build_router_with_pool_config_without_iam(
-    pool: AnyPool,
+    pool: PgPool,
     config: AdminStorageConfig,
 ) -> Router {
     build_router_with_state(AdminStorageState::new(pool, config), false)
@@ -100,7 +104,7 @@ pub async fn build_router_with_database_config_and_admin_storage_config(
     config: &DatabaseConfig,
     admin_storage_config: AdminStorageConfig,
 ) -> Result<Router, Box<dyn std::error::Error + Send + Sync>> {
-    let pool = connect_any_database_and_install_schema(config).await?;
+    let pool = connect_postgres_database_and_install_schema(config).await?;
     Ok(build_protected_router_with_pool_and_config(pool, admin_storage_config).await)
 }
 
@@ -108,7 +112,7 @@ async fn build_router_with_database_url_config_parts(
     config: &DatabaseConfig,
     admin_storage_config: AdminStorageConfig,
 ) -> Result<Router, sqlx::Error> {
-    let pool = connect_any_database_and_install_schema(config).await?;
+    let pool = connect_postgres_database_and_install_schema(config).await?;
     Ok(build_protected_router_with_pool_and_config(pool, admin_storage_config).await)
 }
 

@@ -1,8 +1,3 @@
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-use sqlx::any::AnyPoolOptions;
-
-const SQLITE_CORE_SQL: &str = include_str!("../src/infrastructure/sql/sqlite_core.sql");
 const POSTGRES_CORE_SQL: &str = include_str!("../src/infrastructure/sql/postgres_core.sql");
 const AUDIT_STORE: &str = include_str!("../src/infrastructure/sql/audit_store.rs");
 const CHANGE_RECORDER: &str = include_str!("../src/infrastructure/change_recorder.rs");
@@ -11,10 +6,7 @@ const UPLOADER_STORE: &str = include_str!("../src/infrastructure/sql/uploader_st
 
 #[test]
 fn drive_runtime_id_tables_do_not_use_database_allocated_ids() {
-    for (path, source) in [
-        ("sqlite_core.sql", SQLITE_CORE_SQL),
-        ("postgres_core.sql", POSTGRES_CORE_SQL),
-    ] {
+    for (path, source) in [("postgres_core.sql", POSTGRES_CORE_SQL)] {
         let upper = source.to_ascii_uppercase();
         for forbidden in [
             "AUTOINCREMENT",
@@ -69,16 +61,11 @@ fn drive_runtime_repositories_bind_explicit_ids_before_insert() {
 }
 
 #[tokio::test]
-async fn sqlite_runtime_id_tables_reject_missing_ids() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+async fn postgres_runtime_id_tables_reject_missing_ids() {
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     assert!(
         sqlx::query(
@@ -116,7 +103,7 @@ async fn sqlite_runtime_id_tables_reject_missing_ids() {
                 job_type, status, dry_run, scanned_count, affected_count,
                 operator_id, started_at, finished_at
              ) VALUES (
-                'object_sweep', 'completed', 0, 0, 0, 'admin-runtime-id',
+                'object_sweep', 'completed', false, 0, 0, 'admin-runtime-id',
                 CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
              )",
         )

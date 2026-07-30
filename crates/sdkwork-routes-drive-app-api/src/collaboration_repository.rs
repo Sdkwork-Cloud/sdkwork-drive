@@ -8,11 +8,11 @@ use crate::time::current_epoch_ms;
 use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_workspace_service::drive_share_token_hash;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use sqlx::Row;
 
 pub(crate) async fn find_comment(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     comment_id: &str,
@@ -36,7 +36,7 @@ pub(crate) async fn find_comment(
 }
 
 pub(crate) async fn find_comment_reply(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     comment_id: &str,
@@ -68,7 +68,7 @@ pub(crate) async fn find_comment_reply(
 }
 
 pub(crate) async fn find_share_link(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     share_link_id: &str,
 ) -> Result<ShareLinkRecord, (StatusCode, Json<ProblemDetail>)> {
@@ -90,7 +90,7 @@ pub(crate) async fn find_share_link(
 }
 
 pub(crate) async fn find_active_share_link_by_token_for_tenant(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     token: &str,
 ) -> Result<ShareLinkRecord, (StatusCode, Json<ProblemDetail>)> {
@@ -121,7 +121,7 @@ pub(crate) async fn find_active_share_link_by_token_for_tenant(
 }
 
 pub(crate) async fn claim_share_link_download_slot(
-    pool: &AnyPool,
+    pool: &PgPool,
     share_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let now_epoch_ms = current_epoch_ms();
@@ -149,7 +149,7 @@ pub(crate) async fn claim_share_link_download_slot(
 }
 
 async fn map_share_link_download_slot_failure(
-    pool: &AnyPool,
+    pool: &PgPool,
     share_id: &str,
     now_epoch_ms: i64,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
@@ -193,7 +193,7 @@ async fn map_share_link_download_slot_failure(
 }
 
 pub(crate) async fn enforce_share_link_download_limit_for_subject(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     node_id: &str,

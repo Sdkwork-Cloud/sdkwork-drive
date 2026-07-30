@@ -107,6 +107,7 @@
     }
   ],
   "contracts": {
+    "layerRole": "runtime-composition",
     "publicExports": [
       "crates/sdkwork-drive-contract",
       "crates/sdkwork-drive-config",
@@ -114,6 +115,8 @@
       "crates/sdkwork-drive-storage-contract",
       "crates/sdkwork-drive-workspace-service"
     ],
+    "providedPorts": [],
+    "requiredPorts": [],
     "runtimeEntrypoints": [
       "crates/sdkwork-api-drive-standalone-gateway/src/main.rs",
       "crates/sdkwork-routes-drive-app-api/src/main.rs",

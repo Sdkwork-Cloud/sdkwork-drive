@@ -1,14 +1,14 @@
 use crate::config::AdminStorageConfig;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 #[derive(Clone, Debug)]
 pub struct AdminStorageState {
-    pub(crate) pool: AnyPool,
+    pub(crate) pool: PgPool,
     pub(crate) config: AdminStorageConfig,
 }
 
 impl AdminStorageState {
-    pub(crate) fn new(pool: AnyPool, config: AdminStorageConfig) -> Self {
+    pub(crate) fn new(pool: PgPool, config: AdminStorageConfig) -> Self {
         Self { pool, config }
     }
 }

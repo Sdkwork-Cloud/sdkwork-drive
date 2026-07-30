@@ -1,15 +1,15 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::sandbox_service::DriveSandboxService;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::sandbox_store::SqlSandboxStore;
 use sdkwork_drive_workspace_service::ports::sandbox_principal_resolver::EffectiveSandboxPrincipal;
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 #[tokio::test]
 async fn sandbox_service_lists_only_explicit_grants_with_stable_pagination() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     insert_sandbox(&pool, "sandbox-alpha", "tenant-a", "Alpha", "active").await;
     insert_sandbox(&pool, "sandbox-bravo", "tenant-a", "Bravo", "read_only").await;
@@ -90,7 +90,10 @@ async fn sandbox_service_lists_only_explicit_grants_with_stable_pagination() {
 
 #[tokio::test]
 async fn sandbox_service_requires_active_full_grants_and_valid_requests() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     insert_sandbox(&pool, "sandbox-full", "tenant-a", "Full", "active").await;
     insert_sandbox(
@@ -189,7 +192,10 @@ async fn sandbox_service_requires_active_full_grants_and_valid_requests() {
 
 #[tokio::test]
 async fn sandbox_service_collapses_multi_principal_grants_with_distinct_total() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     insert_sandbox(&pool, "sandbox-alpha", "tenant-a", "Alpha", "active").await;
     insert_sandbox(&pool, "sandbox-bravo", "tenant-a", "Bravo", "active").await;
@@ -314,7 +320,10 @@ async fn sandbox_service_collapses_multi_principal_grants_with_distinct_total() 
 
 #[tokio::test]
 async fn read_only_sandbox_lifecycle_allows_reads_but_rejects_writes() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     insert_sandbox(
         &pool,
@@ -350,21 +359,8 @@ async fn read_only_sandbox_lifecycle_allows_reads_but_rejects_writes() {
     ));
 }
 
-async fn test_pool() -> AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
-    pool
-}
-
 async fn insert_sandbox(
-    pool: &AnyPool,
+    pool: &PgPool,
     sandbox_id: &str,
     tenant_id: &str,
     display_name: &str,
@@ -374,7 +370,7 @@ async fn insert_sandbox(
         "INSERT INTO dr_drive_sandbox_volume (
             id, tenant_id, display_name, root_entry_id, provider_kind, provider_root_ref,
             lifecycle_status, default_access, version, created_by, updated_by
-         ) VALUES (?1, ?2, ?3, ?4, 'local_filesystem', ?5, ?6, 'full', 1, 'test', 'test')",
+         ) VALUES ($1, $2, $3, $4, 'local_filesystem', $5, $6, 'full', 1, 'test', 'test')",
     )
     .bind(sandbox_id)
     .bind(tenant_id)
@@ -388,7 +384,7 @@ async fn insert_sandbox(
 }
 
 async fn insert_grant(
-    pool: &AnyPool,
+    pool: &PgPool,
     grant_id: &str,
     sandbox_id: &str,
     subject_id: &str,
@@ -398,7 +394,7 @@ async fn insert_grant(
 }
 
 async fn insert_typed_grant(
-    pool: &AnyPool,
+    pool: &PgPool,
     grant_id: &str,
     sandbox_id: &str,
     subject_type: &str,
@@ -408,7 +404,7 @@ async fn insert_typed_grant(
     sqlx::query(
         "INSERT INTO dr_drive_sandbox_grant (
             id, sandbox_id, subject_type, subject_id, access_level, granted_by
-         ) VALUES (?1, ?2, ?3, ?4, ?5, 'test')",
+         ) VALUES ($1, $2, $3, $4, $5, 'test')",
     )
     .bind(grant_id)
     .bind(sandbox_id)

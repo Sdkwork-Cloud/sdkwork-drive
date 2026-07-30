@@ -1636,7 +1636,7 @@ pub(crate) async fn delete_node(
 }
 
 struct MoveDestinationFolderScope<'a> {
-    pool: &'a sqlx::AnyPool,
+    pool: &'a sqlx::PgPool,
     tenant_id: &'a str,
     space_id: &'a str,
     is_space_owner: bool,

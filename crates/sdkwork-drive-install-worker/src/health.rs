@@ -1,9 +1,9 @@
 use sdkwork_drive_http::infra::{drive_service_router_config, mount_drive_infra_routes};
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use std::net::SocketAddr;
 
 pub async fn spawn_install_worker_health_server(
-    pool: AnyPool,
+    pool: PgPool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let bind = std::env::var("SDKWORK_DRIVE_INSTALL_WORKER_HEALTH_BIND")
         .unwrap_or_else(|_| "127.0.0.1:18084".to_string());

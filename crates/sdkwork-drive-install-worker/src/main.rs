@@ -1,7 +1,7 @@
 use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_install_worker::health::spawn_install_worker_health_server;
 use sdkwork_drive_install_worker::scheduler::{Scheduler, SchedulerConfig};
-use sdkwork_drive_workspace_service::infrastructure::sql::connect_any_database_and_install_schema;
+use sdkwork_drive_workspace_service::infrastructure::sql::connect_postgres_database_and_install_schema;
 use std::time::Duration;
 
 #[tokio::main]
@@ -12,7 +12,7 @@ async fn main() {
     let args: Vec<String> = std::env::args().collect();
     let database_config =
         DatabaseConfig::from_env_and_cli_args(&args).expect("resolve drive database config");
-    let pool = connect_any_database_and_install_schema(&database_config)
+    let pool = connect_postgres_database_and_install_schema(&database_config)
         .await
         .expect("connect drive database for install worker");
 
@@ -29,7 +29,7 @@ async fn main() {
     });
 
     let mut scheduler = Scheduler::new(read_scheduler_config());
-    scheduler.start(pool, database_config.engine());
+    scheduler.start(pool);
     tracing::info!(
         target: "sdkwork.drive",
         event = "drive.install_worker.started",

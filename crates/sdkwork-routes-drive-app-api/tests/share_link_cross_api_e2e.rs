@@ -2,25 +2,17 @@
 
 use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_routes_drive_open_api::build_router_with_pool as build_open_router_with_pool;
-use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 
 mod common;
 
 #[tokio::test]
 async fn share_link_create_via_app_api_and_resolve_via_open_api_with_access_code() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (

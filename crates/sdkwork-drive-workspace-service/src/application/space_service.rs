@@ -2,7 +2,7 @@ use crate::domain::space::{DriveSpace, DriveSpaceType};
 use crate::infrastructure::sql::space_store::SqlSpaceStore;
 use crate::ports::space_store::{DriveSpaceStore, ListAccessibleSpacesQuery, NewDriveSpace};
 use crate::DriveServiceError;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 #[derive(Debug, Clone)]
 pub struct CreateSpaceCommand {
@@ -24,7 +24,7 @@ pub struct SqlDriveSpaceService {
 }
 
 impl SqlDriveSpaceService {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self {
             service: DriveSpaceService::new(SqlSpaceStore::new(pool)),
         }

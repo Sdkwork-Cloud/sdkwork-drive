@@ -3,181 +3,132 @@
   "kind": "sdkwork.component.spec",
   "component": {
     "name": "sdkwork-api-drive-standalone-gateway",
-    "displayName": "Sdkwork Drive Standalone Gateway",
+    "displayName": "SDKWork Drive Standalone Gateway",
     "version": "0.1.0",
     "type": "rust-api-standalone-gateway",
     "root": ".",
-    "domain": "drive",
+    "domain": "application",
     "capability": "api-gateway",
     "surface": "gateway-api",
-    "languages": [
-      "rust"
-    ],
+    "languages": ["rust"],
     "generated": false,
-    "manifests": [
-      "Cargo.toml"
-    ]
+    "private": true,
+    "manifests": ["Cargo.toml"]
   },
   "canonicalSpecs": [
     {
       "file": "COMPONENT_SPEC.md",
       "path": "../../../sdkwork-specs/COMPONENT_SPEC.md",
-      "purpose": "Component-local contract and discovery rules."
+      "purpose": "Component-local contract and public port rules."
     },
     {
       "file": "CODE_STYLE_SPEC.md",
       "path": "../../../sdkwork-specs/CODE_STYLE_SPEC.md",
-      "purpose": "Authored source structure and generated code boundaries."
+      "purpose": "Focused authored source and process-host boundaries."
     },
     {
       "file": "NAMING_SPEC.md",
       "path": "../../../sdkwork-specs/NAMING_SPEC.md",
-      "purpose": "Canonical SDKWork naming rules."
-    },
-    {
-      "file": "MODULE_SPEC.md",
-      "path": "../../../sdkwork-specs/MODULE_SPEC.md",
-      "purpose": "Reusable module and package boundary rules."
-    },
-    {
-      "file": "TEST_SPEC.md",
-      "path": "../../../sdkwork-specs/TEST_SPEC.md",
-      "purpose": "Verification and contract testing expectations."
+      "purpose": "Canonical standalone gateway naming."
     },
     {
       "file": "RUST_CODE_SPEC.md",
       "path": "../../../sdkwork-specs/RUST_CODE_SPEC.md",
-      "purpose": "Rust crate and module rules."
+      "purpose": "Rust runtime-gateway dependency direction."
     },
     {
-      "file": "WEB_BACKEND_SPEC.md",
-      "path": "../../../sdkwork-specs/WEB_BACKEND_SPEC.md",
-      "purpose": "HTTP backend controller, service, repository, and route boundary rules."
+      "file": "API_ASSEMBLY_SPEC.md",
+      "path": "../../../sdkwork-specs/API_ASSEMBLY_SPEC.md",
+      "purpose": "Complete owner and dependency contribution composition."
     },
     {
-      "file": "API_SPEC.md",
-      "path": "../../../sdkwork-specs/API_SPEC.md",
-      "purpose": "HTTP API contract authority rules."
+      "file": "APPLICATION_GATEWAY_SPEC.md",
+      "path": "../../../sdkwork-specs/APPLICATION_GATEWAY_SPEC.md",
+      "purpose": "Thin standalone host and single-ingress rules."
     },
     {
-      "file": "DOMAIN_SPEC.md",
-      "path": "../../../sdkwork-specs/DOMAIN_SPEC.md",
-      "purpose": "Domain and capability boundary rules."
+      "file": "WEB_FRAMEWORK_SPEC.md",
+      "path": "../../../sdkwork-specs/WEB_FRAMEWORK_SPEC.md",
+      "purpose": "One process-wide framework pipeline and request context."
     },
     {
-      "file": "SECURITY_SPEC.md",
-      "path": "../../../sdkwork-specs/SECURITY_SPEC.md",
-      "purpose": "Protected backend behavior rules."
+      "file": "APP_RUNTIME_TOPOLOGY_SPEC.md",
+      "path": "../../../sdkwork-specs/APP_RUNTIME_TOPOLOGY_SPEC.md",
+      "purpose": "Standalone profile and public-ingress binding."
     },
     {
-      "file": "DATABASE_SPEC.md",
-      "path": "../../../sdkwork-specs/DATABASE_SPEC.md",
-      "purpose": "Database contract and runtime pool boundary."
+      "file": "DATABASE_SPEC_PROCESS_SHARED_POOL.md",
+      "path": "../../../sdkwork-specs/DATABASE_SPEC_PROCESS_SHARED_POOL.md",
+      "purpose": "One process-shared PostgreSQL pool for Drive and IAM."
     },
     {
-      "file": "CONFIG_SPEC.md",
-      "path": "../../../sdkwork-specs/CONFIG_SPEC.md",
-      "purpose": "Typed runtime config and gateway profile resolution."
-    },
-    {
-      "file": "DEPLOYMENT_SPEC.md",
-      "path": "../../../sdkwork-specs/DEPLOYMENT_SPEC.md",
-      "purpose": "Standalone deployment profile rules."
+      "file": "TEST_SPEC.md",
+      "path": "../../../sdkwork-specs/TEST_SPEC.md",
+      "purpose": "Gateway composition and runtime parity evidence."
     }
   ],
   "contracts": {
-    "publicExports": [
-      ".",
-      "sdkwork_routes_drive_app_api::build_router_with_pool_and_iam",
-      "sdkwork_routes_drive_backend_api::build_router_with_pool_and_iam",
-      "sdkwork_routes_drive_open_api::build_router_with_pool",
-      "sdkwork_routes_storage_backend_api::build_router_with_pool",
-      "sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router"
+    "layerRole": "runtime-gateway",
+    "publicExports": [],
+    "providedPorts": [],
+    "requiredPorts": [
+      {
+        "name": "driveApiAssembly",
+        "export": "sdkwork_api_drive_assembly::assemble_api_router_from_env",
+        "provider": "sdkwork-api-drive-assembly"
+      },
+      {
+        "name": "iamAppApiContribution",
+        "export": "sdkwork_api_iam_assembly::assemble_app_api_contribution_with_pool",
+        "provider": "sdkwork-api-iam-assembly"
+      }
     ],
     "runtimeEntrypoints": [
       "src/main.rs",
-      "sdkwork_routes_drive_app_api::build_router_with_pool_and_iam",
-      "sdkwork_routes_drive_backend_api::build_router_with_pool_and_iam",
-      "sdkwork_routes_drive_open_api::build_router_with_pool",
-      "sdkwork_routes_storage_backend_api::build_router_with_pool",
-      "sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router"
+      "Cargo.toml[[bin]].sdkwork-api-drive-standalone-gateway"
     ],
     "routeManifest": null,
     "sdkClients": [],
+    "sdkDependencies": [],
+    "permissionComposition": {},
+    "dependencyApiExports": [],
+    "dependencyApiSurfaces": [
+      {
+        "workspace": "sdkwork-iam",
+        "sdkFamily": "sdkwork-iam-app-sdk",
+        "apiAuthority": "sdkwork-iam-app-api",
+        "surface": "app-api",
+        "apiPrefixes": [
+          "/app/v3/api/auth",
+          "/app/v3/api/iam",
+          "/app/v3/api/oauth",
+          "/app/v3/api/system/iam"
+        ],
+        "runtimeMode": "same-origin",
+        "sameOriginAllowed": true,
+        "cargoDependency": "sdkwork-api-iam-assembly",
+        "embeddedExecutableExport": "sdkwork_api_iam_assembly::assemble_app_api_contribution_with_pool",
+        "profileCoverage": ["standalone"],
+        "coverageEvidence": ["src/main.rs"]
+      }
+    ],
     "events": [],
     "configKeys": [
       "SDKWORK_DATABASE_URL",
+      "SDKWORK_DATABASE_SCHEMA",
+      "SDKWORK_DATABASE_MAX_CONNECTIONS",
       "SDKWORK_DRIVE_CONFIG_FILE",
-      "SDKWORK_DATABASE_ENGINE",
       "SDKWORK_DRIVE_STANDALONE_GATEWAY_CONFIG",
       "SDKWORK_DRIVE_STANDALONE_GATEWAY_ENVIRONMENT",
       "SDKWORK_ENVIRONMENT",
       "SDKWORK_CORS_ALLOWED_ORIGINS"
-    ],
-    "sdkDependencies": [],
-    "dependencyApiExports": [],
-    "dependencyApiSurfaces": [
-      {
-        "workspace": "sdkwork-drive",
-        "sdkFamily": "sdkwork-drive-app-sdk",
-        "apiAuthority": "sdkwork-drive-app-api",
-        "surface": "app-api",
-        "apiPrefix": "/app/v3/api",
-        "runtimeMode": "embedded",
-        "embeddedExecutableExport": "sdkwork_routes_drive_app_api::build_router_with_pool_and_iam",
-        "cargoDependency": "sdkwork-routes-drive-app-api",
-        "coverageEvidence": "crates/sdkwork-routes-drive-app-api/src/routes.rs"
-      },
-      {
-        "workspace": "sdkwork-drive",
-        "sdkFamily": "sdkwork-drive-backend-sdk",
-        "apiAuthority": "sdkwork-drive.backend",
-        "surface": "backend-api",
-        "apiPrefix": "/backend/v3/api",
-        "runtimeMode": "embedded",
-        "embeddedExecutableExport": "sdkwork_routes_drive_backend_api::build_router_with_pool_and_iam",
-        "cargoDependency": "sdkwork-routes-drive-backend-api",
-        "coverageEvidence": "crates/sdkwork-routes-drive-backend-api/src/routes.rs"
-      },
-      {
-        "workspace": "sdkwork-drive",
-        "sdkFamily": "sdkwork-drive-sdk",
-        "apiAuthority": "sdkwork-drive.open",
-        "surface": "open-api",
-        "apiPrefix": "/open/v3/api",
-        "runtimeMode": "embedded",
-        "embeddedExecutableExport": "sdkwork_routes_drive_open_api::build_router_with_pool",
-        "cargoDependency": "sdkwork-routes-drive-open-api",
-        "coverageEvidence": "crates/sdkwork-routes-drive-open-api/src/routes.rs"
-      },
-      {
-        "workspace": "sdkwork-drive",
-        "sdkFamily": "sdkwork-drive-admin-storage-sdk",
-        "apiAuthority": "sdkwork-drive.admin.storage",
-        "surface": "backend-api",
-        "apiPrefix": "/backend/v3/api",
-        "runtimeMode": "embedded",
-        "embeddedExecutableExport": "sdkwork_routes_storage_backend_api::build_router_with_pool",
-        "cargoDependency": "sdkwork-routes-storage-backend-api",
-        "coverageEvidence": "crates/sdkwork-routes-storage-backend-api/src/routes.rs"
-      },
-      {
-        "workspace": "sdkwork-appbase",
-        "sdkFamily": "sdkwork-iam-app-sdk",
-        "apiAuthority": "sdkwork.iam",
-        "surface": "app-api",
-        "apiPrefix": "/auth",
-        "runtimeMode": "embedded",
-        "embeddedExecutableExport": "sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router",
-        "cargoDependency": "sdkwork-routes-iam-app-api",
-        "coverageEvidence": "../sdkwork-iam/crates/sdkwork-routes-iam-app-api/src/routes.rs"
-      }
-    ],
-    "layerRole": "runtime-gateway"
+    ]
   },
   "verification": {
     "commands": [
-      "cargo build -p sdkwork-api-drive-standalone-gateway"
+      "cargo check -p sdkwork-api-drive-standalone-gateway",
+      "node ../sdkwork-specs/tools/audit-gateway-alignment-repo.mjs --root . --strict",
+      "node ../sdkwork-specs/tools/check-process-shared-database-pool.mjs --root ."
     ]
   }
 }

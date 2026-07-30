@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use sqlx::any::AnyRow;
-use sqlx::{AnyConnection, AnyPool, Row};
+use sqlx::postgres::PgRow;
+use sqlx::{PgConnection, PgPool, Row};
 
 use crate::domain::root_scope_subscription::DriveRootScopeSubscription;
 use crate::infrastructure::sql::{begin_transaction_sql, next_drive_runtime_id};
@@ -14,11 +14,11 @@ const SUBSCRIPTION_SELECT_COLUMNS: &str = "id, uuid, tenant_id, space_id, consum
 
 #[derive(Debug, Clone)]
 pub struct SqlRootScopeSubscriptionStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlRootScopeSubscriptionStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -101,7 +101,7 @@ impl DriveRootScopeSubscriptionStore for SqlRootScopeSubscriptionStore {
 }
 
 async fn register_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     registration: &RegisterDriveRootScopeSubscription,
 ) -> Result<RegisterDriveRootScopeSubscriptionResult, DriveServiceError> {
     validate_knowledgebase_raw_folder(connection, registration).await?;
@@ -160,7 +160,7 @@ async fn register_on_connection(
 }
 
 async fn validate_knowledgebase_raw_folder(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     registration: &RegisterDriveRootScopeSubscription,
 ) -> Result<(), DriveServiceError> {
     let valid_count: i64 = sqlx::query_scalar(
@@ -237,7 +237,7 @@ fn validate_existing(
 }
 
 async fn find_by_consumer_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     consumer_resource_id: &str,
 ) -> Result<Option<DriveRootScopeSubscription>, DriveServiceError> {
@@ -264,7 +264,7 @@ async fn find_by_consumer_on_connection(
     row.as_ref().map(map_subscription).transpose()
 }
 
-fn map_subscription(row: &AnyRow) -> Result<DriveRootScopeSubscription, DriveServiceError> {
+fn map_subscription(row: &PgRow) -> Result<DriveRootScopeSubscription, DriveServiceError> {
     Ok(DriveRootScopeSubscription {
         id: row.get("id"),
         uuid: row.get("uuid"),

@@ -30,3 +30,6 @@ tokio.workspace = true
 tower.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+
+[dev-dependencies]
+sdkwork-drive-test-support.workspace = true

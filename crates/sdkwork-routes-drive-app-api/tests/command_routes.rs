@@ -4,14 +4,10 @@ use axum::http::Uri;
 use axum::response::{IntoResponse, Response};
 use axum::Router;
 use http::{Method, Request, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::storage_key_service::{
     BuildStorageObjectKeyCommand, DriveStorageKeyService,
 };
 use sdkwork_drive_workspace_service::drive_share_token_hash;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-
-use sqlx::any::AnyPoolOptions;
 use std::io::{Cursor, Write};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -302,15 +298,10 @@ fn build_archive_fixture_zip() -> Vec<u8> {
 
 #[tokio::test]
 async fn create_space_route_persists_space_with_special_type() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool.clone());
     let request_body = r#"{
@@ -346,7 +337,7 @@ async fn create_space_route_persists_space_with_special_type() {
 
     assert_eq!(response.status(), StatusCode::CREATED);
     let count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(1) FROM dr_drive_space WHERE id=?1 AND space_type='knowledge_base'",
+        "SELECT COUNT(1) FROM dr_drive_space WHERE id=$1 AND space_type='knowledge_base'",
     )
     .bind("space-kb-001")
     .fetch_one(&pool)
@@ -364,15 +355,10 @@ async fn create_space_route_persists_space_with_special_type() {
 
 #[tokio::test]
 async fn create_space_route_persists_user_git_repository_space() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool.clone());
     let request_body = r#"{
@@ -409,7 +395,7 @@ async fn create_space_route_persists_user_git_repository_space() {
     assert_eq!(response.status(), StatusCode::CREATED);
     let count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1) FROM dr_drive_space
-         WHERE id=?1 AND owner_subject_type='user' AND owner_subject_id='user-001' AND space_type='git_repository'",
+         WHERE id=$1 AND owner_subject_type='user' AND owner_subject_id='user-001' AND space_type='git_repository'",
     )
     .bind("space-git-repository-001")
     .fetch_one(&pool)
@@ -420,15 +406,10 @@ async fn create_space_route_persists_user_git_repository_space() {
 
 #[tokio::test]
 async fn delete_space_route_rejects_user_git_repository_space() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -516,15 +497,10 @@ async fn delete_space_route_rejects_user_git_repository_space() {
 
 #[tokio::test]
 async fn list_nodes_route_validates_active_space_and_folder_parent() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -563,7 +539,7 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-list-guard', 'space-list-guard', ?2, ?3, ?4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-list-guard', 'space-list-guard', $2, $3, $4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(parent_node_id)
@@ -739,15 +715,10 @@ async fn list_nodes_route_validates_active_space_and_folder_parent() {
 
 #[tokio::test]
 async fn list_nodes_rejects_invalid_sort_by() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -793,15 +764,10 @@ async fn list_nodes_rejects_invalid_sort_by() {
 
 #[tokio::test]
 async fn list_nodes_sort_by_name_desc_orders_active_children() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -832,7 +798,7 @@ async fn list_nodes_sort_by_name_desc_orders_active_children() {
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-sort-name', 'space-sort-name', 'folder-sort-parent', 'file', ?2, 'ready', 'active', 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-sort-name', 'space-sort-name', 'folder-sort-parent', 'file', $2, 'ready', 'active', 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(node_name)
@@ -882,15 +848,10 @@ async fn list_nodes_sort_by_name_desc_orders_active_children() {
 
 #[tokio::test]
 async fn list_nodes_includes_ui_folder_color_from_node_properties() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -963,15 +924,10 @@ async fn list_nodes_includes_ui_folder_color_from_node_properties() {
 
 #[tokio::test]
 async fn recent_search_and_favorite_routes_hide_uploading_nodes_until_ready() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -991,7 +947,7 @@ async fn recent_search_and_favorite_routes_hide_uploading_nodes_until_ready() {
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-visibility', 'space-visibility', NULL, 'file', ?2, ?3, 'active', 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-visibility', 'space-visibility', NULL, 'file', $2, $3, 'active', 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(name)
@@ -1082,21 +1038,16 @@ async fn quota_summary_route_counts_active_storage_objects() {
         previous: previous_quota,
     };
 
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, 'user', 'user-001', 'personal', 'Main', 'active', 1, 'user-001', 'user-001')",
+        ) VALUES ($1, $2, 'user', 'user-001', 'personal', 'Main', 'active', 1, 'user-001', 'user-001')",
     )
     .bind("space-quota")
     .bind("tenant-quota")
@@ -1109,7 +1060,7 @@ async fn quota_summary_route_counts_active_storage_objects() {
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-quota', 'space-quota', NULL, 'file', ?2, 'ready', 'active', 1, 'user-001', 'user-001')",
+            ) VALUES ($1, 'tenant-quota', 'space-quota', NULL, 'file', $2, 'ready', 'active', 1, 'user-001', 'user-001')",
         )
         .bind(node_id)
         .bind(format!("{node_id}.bin"))
@@ -1211,21 +1162,16 @@ impl Drop for RestoreEnvVar {
 #[tokio::test]
 async fn create_upload_session_route_is_idempotent() {
     let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -1243,7 +1189,7 @@ async fn create_upload_session_route_is_idempotent() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, ?4, ?5, 'ready', 'active', 1, ?6, ?7)",
+        ) VALUES ($1, $2, $3, NULL, $4, $5, 'ready', 'active', 1, $6, $7)",
     )
     .bind("node-001")
     .bind("tenant-001")
@@ -1261,7 +1207,7 @@ async fn create_upload_session_route_is_idempotent() {
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-idempotent', 's3_compatible', 'Mock S3', ?1, 'us-east-1',
+            'provider-idempotent', 's3_compatible', 'Mock S3', $1, 'us-east-1',
             'bucket-001', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-001', 'admin-001'
         )",
@@ -1368,15 +1314,10 @@ async fn create_upload_session_route_is_idempotent() {
 #[tokio::test]
 async fn app_api_rejects_storage_provider_administration_routes_without_s3_side_effects() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -1384,7 +1325,7 @@ async fn app_api_rejects_storage_provider_administration_routes_without_s3_side_
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-app-admin-boundary', 's3_compatible', 'App Boundary S3', ?1, 'us-east-1',
+            'provider-app-admin-boundary', 's3_compatible', 'App Boundary S3', $1, 'us-east-1',
             'bucket-s3', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-app', 'admin-app'
         )",
@@ -1456,15 +1397,10 @@ async fn app_api_rejects_storage_provider_administration_routes_without_s3_side_
 #[tokio::test]
 async fn create_upload_session_rejects_existing_session_id_before_storage_side_effects() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -1597,15 +1533,10 @@ async fn create_upload_session_rejects_existing_session_id_before_storage_side_e
 async fn create_upload_session_resolves_default_bucket_and_generates_standard_key_when_client_omits_storage_target(
 ) {
     let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -1631,7 +1562,7 @@ async fn create_upload_session_resolves_default_bucket_and_generates_standard_ke
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-keygen', 's3_compatible', 'Mock S3', ?1, 'us-east-1',
+            'provider-keygen', 's3_compatible', 'Mock S3', $1, 'us-east-1',
             'bucket-keygen', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-keygen', 'admin-keygen'
         )",
@@ -1722,15 +1653,10 @@ async fn create_upload_session_resolves_default_bucket_and_generates_standard_ke
 #[tokio::test]
 async fn create_upload_session_rejects_trashed_node_before_storage_side_effects() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -1832,15 +1758,10 @@ async fn create_upload_session_rejects_trashed_node_before_storage_side_effects(
 #[tokio::test]
 async fn create_upload_session_rejects_past_expiration_before_storage_side_effects() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -1950,15 +1871,10 @@ async fn create_upload_session_rejects_past_expiration_before_storage_side_effec
 #[tokio::test]
 async fn create_upload_session_rejects_empty_idempotency_key_before_storage_side_effects() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -2078,15 +1994,10 @@ async fn create_upload_session_rejects_empty_idempotency_key_before_storage_side
 #[tokio::test]
 async fn create_upload_session_normalizes_identifiers_before_idempotency_and_storage() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -2278,15 +2189,10 @@ async fn create_upload_session_normalizes_identifiers_before_idempotency_and_sto
 
 #[tokio::test]
 async fn create_upload_session_requires_active_object_store_provider() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -2373,15 +2279,10 @@ async fn create_upload_session_requires_active_object_store_provider() {
 #[tokio::test]
 async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complete() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -2407,7 +2308,7 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-s3-upload', 's3_compatible', 'Mock S3', ?1, 'us-east-1',
+            'provider-s3-upload', 's3_compatible', 'Mock S3', $1, 'us-east-1',
             'bucket-s3', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-s3', 'admin-s3'
         )",
@@ -2584,15 +2485,10 @@ async fn s3_upload_session_uses_real_multipart_upload_id_for_presign_and_complet
 #[tokio::test]
 async fn uploader_prepare_creates_upload_space_item_and_real_multipart_upload() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -2600,7 +2496,7 @@ async fn uploader_prepare_creates_upload_space_item_and_real_multipart_upload() 
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-uploader-s3', 's3_compatible', 'Uploader S3', ?1, 'us-east-1',
+            'provider-uploader-s3', 's3_compatible', 'Uploader S3', $1, 'us-east-1',
             'bucket-s3', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-uploader', 'admin-uploader'
         )",
@@ -2731,15 +2627,10 @@ async fn uploader_prepare_creates_upload_space_item_and_real_multipart_upload() 
 #[tokio::test]
 async fn uploader_prepare_to_target_space_enforces_writer_permission_and_preserves_locator_key() {
     let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -2748,7 +2639,7 @@ async fn uploader_prepare_to_target_space_enforces_writer_permission_and_preserv
             status, version, created_by, updated_by
         ) VALUES (
             'provider-uploader-permission', 's3_compatible', 'Uploader Permission S3',
-            ?1, 'us-east-1', 'bucket-s3', 1, 0,
+            $1, 'us-east-1', 'bucket-s3', 1, 0,
             'plain:test-access-key:test-secret-key', 'AES256', 'STANDARD',
             'active', 1, 'admin-uploader', 'admin-uploader'
         )",
@@ -2959,15 +2850,10 @@ async fn uploader_prepare_to_target_space_enforces_writer_permission_and_preserv
 #[tokio::test]
 async fn uploader_prepare_anonymous_target_space_requires_public_writer_share_token() {
     let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -2976,7 +2862,7 @@ async fn uploader_prepare_anonymous_target_space_requires_public_writer_share_to
             status, version, created_by, updated_by
         ) VALUES (
             'provider-uploader-anon-share', 's3_compatible', 'Uploader Anonymous Share S3',
-            ?1, 'us-east-1', 'bucket-s3', 1, 0,
+            $1, 'us-east-1', 'bucket-s3', 1, 0,
             'plain:test-access-key:test-secret-key', 'AES256', 'STANDARD',
             'active', 1, 'admin-uploader', 'admin-uploader'
         )",
@@ -3051,7 +2937,7 @@ async fn uploader_prepare_anonymous_target_space_requires_public_writer_share_to
             created_by, updated_by
         ) VALUES (
             'share-uploader-anon-writer', 'tenant-uploader-anon-share',
-            'folder-uploader-anon-share', ?1, 'writer', 1800000000000,
+            'folder-uploader-anon-share', $1, 'writer', 1800000000000,
             NULL, 0, 'active', 1, 'space-owner', 'space-owner'
         )",
     )
@@ -3131,15 +3017,10 @@ async fn uploader_prepare_anonymous_target_space_requires_public_writer_share_to
 
 #[tokio::test]
 async fn uploader_mark_part_uploaded_records_resumable_part_progress() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -3266,15 +3147,10 @@ async fn uploader_mark_part_uploaded_records_resumable_part_progress() {
 #[tokio::test]
 async fn uploader_upload_session_complete_updates_upload_item_and_sensitive_operation_log() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -3283,7 +3159,7 @@ async fn uploader_upload_session_complete_updates_upload_item_and_sensitive_oper
             status, version, created_by, updated_by
         ) VALUES (
             'provider-uploader-complete', 's3_compatible', 'Uploader Complete S3',
-            ?1, 'us-east-1', 'bucket-s3', 1, 0,
+            $1, 'us-east-1', 'bucket-s3', 1, 0,
             'plain:test-access-key:test-secret-key', 'AES256', 'STANDARD',
             'active', 1, 'admin-uploader', 'admin-uploader'
         )",
@@ -3515,15 +3391,10 @@ async fn uploader_upload_session_complete_updates_upload_item_and_sensitive_oper
 #[tokio::test]
 async fn uploader_routes_accept_generated_sdk_int64_strings() {
     let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -3532,7 +3403,7 @@ async fn uploader_routes_accept_generated_sdk_int64_strings() {
             status, version, created_by, updated_by
         ) VALUES (
             'provider-uploader-string-int', 's3_compatible', 'Uploader String Int S3',
-            ?1, 'us-east-1', 'bucket-s3', 1, 0,
+            $1, 'us-east-1', 'bucket-s3', 1, 0,
             'plain:test-access-key:test-secret-key', 'AES256', 'STANDARD',
             'active', 1, 'admin-uploader', 'admin-uploader'
         )",
@@ -3662,15 +3533,10 @@ async fn uploader_routes_accept_generated_sdk_int64_strings() {
 #[tokio::test]
 async fn create_upload_session_for_existing_file_uses_next_storage_version_in_object_key() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -3850,15 +3716,10 @@ async fn create_upload_session_for_existing_file_uses_next_storage_version_in_ob
 #[tokio::test]
 async fn presign_upload_part_rejects_ttl_outside_contract_before_object_store_call() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -3884,7 +3745,7 @@ async fn presign_upload_part_rejects_ttl_outside_contract_before_object_store_ca
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-upload-ttl', 's3_compatible', 'TTL S3', ?1, 'us-east-1',
+            'provider-upload-ttl', 's3_compatible', 'TTL S3', $1, 'us-east-1',
             'bucket-upload-ttl', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-upload-ttl', 'admin-upload-ttl'
         )",
@@ -3962,15 +3823,10 @@ async fn presign_upload_part_rejects_ttl_outside_contract_before_object_store_ca
 #[tokio::test]
 async fn upload_session_presign_rejects_when_persisted_provider_is_disabled() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -3996,7 +3852,7 @@ async fn upload_session_presign_rejects_when_persisted_provider_is_disabled() {
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-original', 's3_compatible', 'Original S3', ?1, 'us-east-1',
+            'provider-original', 's3_compatible', 'Original S3', $1, 'us-east-1',
             'bucket-s3', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-s3', 'admin-s3'
         )",
@@ -4139,15 +3995,10 @@ async fn upload_session_presign_rejects_when_persisted_provider_is_disabled() {
 async fn complete_upload_session_allows_only_one_in_flight_completion() {
     let (s3_endpoint, captured_requests) =
         start_s3_mock_server_with_complete_delay(Duration::from_millis(100)).await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(2)
-        .connect("sqlite:file:complete_race?mode=memory&cache=shared")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -4173,7 +4024,7 @@ async fn complete_upload_session_allows_only_one_in_flight_completion() {
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-complete-race', 's3_compatible', 'Mock S3', ?1, 'us-east-1',
+            'provider-complete-race', 's3_compatible', 'Mock S3', $1, 'us-east-1',
             'bucket-s3', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-race', 'admin-race'
         )",
@@ -4196,7 +4047,7 @@ async fn complete_upload_session_allows_only_one_in_flight_completion() {
             expires_at_epoch_ms, version, created_by, updated_by
         ) VALUES (
             'upload-complete-race', 'tenant-complete-race', 'space-complete-race',
-            'node-complete-race', 'bucket-s3', ?1,
+            'node-complete-race', 'bucket-s3', $1,
             'idem-complete-race', 'provider-complete-race', 'mock-s3-upload-id',
             'uploading', 4102444800000, 1, 'user-race', 'user-race'
         )",
@@ -4307,15 +4158,10 @@ async fn complete_upload_session_allows_only_one_in_flight_completion() {
 #[tokio::test]
 async fn complete_upload_session_rejects_metadata_conflict_before_object_store_complete() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -4339,8 +4185,8 @@ async fn complete_upload_session_rejects_metadata_conflict_before_object_store_c
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-complete-metadata-conflict',
-                'space-complete-metadata-conflict', NULL, 'file', ?2,
+                $1, 'tenant-complete-metadata-conflict',
+                'space-complete-metadata-conflict', NULL, 'file', $2,
                 'uploading', 'active', 1, 'user-complete', 'user-complete'
             )",
         )
@@ -4375,7 +4221,7 @@ async fn complete_upload_session_rejects_metadata_conflict_before_object_store_c
         ) VALUES (
             'upload-metadata-conflict', 'tenant-complete-metadata-conflict',
             'space-complete-metadata-conflict', 'node-complete-metadata-conflict',
-            'bucket-complete-metadata-conflict', ?1,
+            'bucket-complete-metadata-conflict', $1,
             'idem-upload-metadata-conflict', 'provider-complete-metadata-conflict',
             'mock-s3-upload-id', 'uploading', 4102444800000, 1,
             'user-complete', 'user-complete'
@@ -4474,15 +4320,10 @@ async fn complete_upload_session_rejects_metadata_conflict_before_object_store_c
 #[tokio::test]
 async fn complete_upload_session_rejects_storage_version_drift_before_object_store_complete() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -4591,7 +4432,7 @@ async fn complete_upload_session_rejects_storage_version_drift_before_object_sto
         ) VALUES (
             'upload-complete-version-drift', 'tenant-complete-version-drift',
             'space-complete-version-drift', 'node-complete-version-drift',
-            'bucket-complete-version-drift', ?1,
+            'bucket-complete-version-drift', $1,
             'idem-complete-version-drift', 'provider-complete-version-drift',
             'mock-s3-upload-id', 'uploading', 4102444800000, 1,
             'user-complete-version-drift', 'user-complete-version-drift'
@@ -4673,15 +4514,10 @@ async fn complete_upload_session_rejects_storage_version_drift_before_object_sto
 #[tokio::test]
 async fn s3_upload_session_abort_calls_object_store_abort() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -4707,7 +4543,7 @@ async fn s3_upload_session_abort_calls_object_store_abort() {
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-s3-abort', 's3_compatible', 'Mock S3', ?1, 'us-east-1',
+            'provider-s3-abort', 's3_compatible', 'Mock S3', $1, 'us-east-1',
             'bucket-s3', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-s3', 'admin-s3'
         )",
@@ -4806,15 +4642,10 @@ async fn s3_upload_session_abort_calls_object_store_abort() {
 #[tokio::test]
 async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_and_delete() {
     let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -4845,7 +4676,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-life', 'space-life', ?2, ?3, ?4, ?5, 'active', 1, 'user-life', 'user-life')",
+            ) VALUES ($1, 'tenant-life', 'space-life', $2, $3, $4, $5, 'active', 1, 'user-life', 'user-life')",
         )
         .bind(id)
         .bind(parent_id)
@@ -4862,7 +4693,7 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-life', 's3_compatible', 'Mock S3', ?1, 'us-east-1',
+            'provider-life', 's3_compatible', 'Mock S3', $1, 'us-east-1',
             'bucket-life', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-life', 'admin-life'
         )",
@@ -5271,15 +5102,10 @@ async fn app_drive_file_lifecycle_routes_get_move_copy_upload_complete_download_
 
 #[tokio::test]
 async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_metadata() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -5324,7 +5150,7 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-tree-delete', 'space-tree-delete', ?2, ?3, ?4, ?5, 'active', 1, 'user-tree-delete', 'user-tree-delete')",
+            ) VALUES ($1, 'tenant-tree-delete', 'space-tree-delete', $2, $3, $4, $5, 'active', 1, 'user-tree-delete', 'user-tree-delete')",
         )
         .bind(id)
         .bind(parent_id)
@@ -5493,15 +5319,10 @@ async fn app_drive_delete_folder_recursively_deletes_descendants_and_storage_met
 
 #[tokio::test]
 async fn app_drive_trash_folder_recursively_trashes_descendants() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -5546,7 +5367,7 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-tree-trash', 'space-tree-trash', ?2, ?3, ?4, ?5, 'active', 1, 'user-tree-trash', 'user-tree-trash')",
+            ) VALUES ($1, 'tenant-tree-trash', 'space-tree-trash', $2, $3, $4, $5, 'active', 1, 'user-tree-trash', 'user-tree-trash')",
         )
         .bind(id)
         .bind(parent_id)
@@ -5684,15 +5505,10 @@ async fn app_drive_trash_folder_recursively_trashes_descendants() {
 
 #[tokio::test]
 async fn app_drive_restore_folder_recursively_restores_descendants_and_requires_active_parent() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -5757,7 +5573,7 @@ async fn app_drive_restore_folder_recursively_restores_descendants_and_requires_
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-tree-restore', 'space-tree-restore', ?2, ?3, ?4, 'ready', 'trashed', 1, 'user-tree-restore', 'user-tree-restore')",
+            ) VALUES ($1, 'tenant-tree-restore', 'space-tree-restore', $2, $3, $4, 'ready', 'trashed', 1, 'user-tree-restore', 'user-tree-restore')",
         )
         .bind(id)
         .bind(parent_id)
@@ -5889,15 +5705,10 @@ async fn app_drive_restore_folder_recursively_restores_descendants_and_requires_
 #[tokio::test]
 async fn app_dr_drive_upload_session_abort_marks_session_aborted() {
     let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -5979,15 +5790,10 @@ async fn app_dr_drive_upload_session_abort_marks_session_aborted() {
 #[tokio::test]
 async fn app_dr_drive_upload_session_abort_rejects_terminal_sessions_without_object_store_call() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -6013,7 +5819,7 @@ async fn app_dr_drive_upload_session_abort_rejects_terminal_sessions_without_obj
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-abort-terminal', 's3_compatible', 'Mock S3', ?1, 'us-east-1',
+            'provider-abort-terminal', 's3_compatible', 'Mock S3', $1, 'us-east-1',
             'bucket-abort-terminal', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-abort', 'admin-abort'
         )",
@@ -6083,15 +5889,10 @@ async fn app_dr_drive_upload_session_abort_rejects_terminal_sessions_without_obj
 
 #[tokio::test]
 async fn presign_upload_part_requires_active_object_store_provider() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -6176,15 +5977,10 @@ async fn presign_upload_part_requires_active_object_store_provider() {
 
 #[tokio::test]
 async fn complete_upload_session_rejects_invalid_multipart_parts() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -6282,15 +6078,10 @@ async fn complete_upload_session_rejects_invalid_multipart_parts() {
 #[tokio::test]
 async fn upload_session_mutations_reject_trashed_node_before_storage_side_effects() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -6338,9 +6129,9 @@ async fn upload_session_mutations_reject_trashed_node_before_storage_side_effect
                 idempotency_key, storage_provider_id, storage_upload_id, state,
                 expires_at_epoch_ms, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-upload-trashed', 'space-upload-trashed',
-                'node-upload-trashed', 'bucket-upload-trashed', ?2,
-                ?3, 'provider-upload-trashed', 'mock-s3-upload-id', 'created',
+                $1, 'tenant-upload-trashed', 'space-upload-trashed',
+                'node-upload-trashed', 'bucket-upload-trashed', $2,
+                $3, 'provider-upload-trashed', 'mock-s3-upload-id', 'created',
                 1800000000000, 1, 'user-upload', 'user-upload'
             )",
         )
@@ -6491,15 +6282,10 @@ async fn upload_session_mutations_reject_trashed_node_before_storage_side_effect
 #[tokio::test]
 async fn complete_upload_session_rejects_invalid_object_metadata_before_storage_call() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -6525,7 +6311,7 @@ async fn complete_upload_session_rejects_invalid_object_metadata_before_storage_
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-invalid-metadata', 's3_compatible', 'Metadata S3', ?1, 'us-east-1',
+            'provider-invalid-metadata', 's3_compatible', 'Metadata S3', $1, 'us-east-1',
             'bucket-invalid-metadata', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'user-invalid-metadata', 'user-invalid-metadata'
         )",
@@ -6621,21 +6407,16 @@ async fn complete_upload_session_rejects_invalid_object_metadata_before_storage_
 
 #[tokio::test]
 async fn list_spaces_route_returns_tenant_scoped_items() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -6652,7 +6433,7 @@ async fn list_spaces_route_returns_tenant_scoped_items() {
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-002")
     .bind("tenant-001")
@@ -6669,7 +6450,7 @@ async fn list_spaces_route_returns_tenant_scoped_items() {
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-003")
     .bind("tenant-002")
@@ -6729,21 +6510,16 @@ async fn list_spaces_route_returns_tenant_scoped_items() {
 
 #[tokio::test]
 async fn create_download_url_and_resolve_token_redirects_to_signed_source() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -6760,7 +6536,7 @@ async fn create_download_url_and_resolve_token_redirects_to_signed_source() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, ?4, ?5, 'ready', 'active', 1, ?6, ?7)",
+        ) VALUES ($1, $2, $3, NULL, $4, $5, 'ready', 'active', 1, $6, $7)",
     )
     .bind("node-001")
     .bind("tenant-001")
@@ -6896,21 +6672,16 @@ async fn create_download_url_and_resolve_token_redirects_to_signed_source() {
 
 #[tokio::test]
 async fn create_download_grant_via_canonical_route_returns_created() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -6927,7 +6698,7 @@ async fn create_download_grant_via_canonical_route_returns_created() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, ?4, ?5, 'ready', 'active', 1, ?6, ?7)",
+        ) VALUES ($1, $2, $3, NULL, $4, $5, 'ready', 'active', 1, $6, $7)",
     )
     .bind("node-001")
     .bind("tenant-001")
@@ -7035,15 +6806,10 @@ async fn create_download_grant_via_canonical_route_returns_created() {
 
 #[tokio::test]
 async fn create_download_url_rejects_ttl_outside_contract() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -7139,15 +6905,10 @@ async fn create_download_url_rejects_ttl_outside_contract() {
 
 #[tokio::test]
 async fn resolve_download_token_requires_active_object_store_provider() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -7250,21 +7011,16 @@ async fn resolve_download_token_requires_active_object_store_provider() {
 
 #[tokio::test]
 async fn resolve_download_token_uses_active_s3_provider_configuration_when_present() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -7281,7 +7037,7 @@ async fn resolve_download_token_uses_active_s3_provider_configuration_when_prese
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, ?4, ?5, 'ready', 'active', 1, ?6, ?7)",
+        ) VALUES ($1, $2, $3, NULL, $4, $5, 'ready', 'active', 1, $6, $7)",
     )
     .bind("node-001")
     .bind("tenant-001")
@@ -7298,7 +7054,7 @@ async fn resolve_download_token_uses_active_s3_provider_configuration_when_prese
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
             credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'active', 1, ?11, ?12)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', 1, $11, $12)",
     )
     .bind("provider-s3-001")
     .bind("s3_compatible")
@@ -7418,21 +7174,16 @@ async fn resolve_download_token_uses_active_s3_provider_configuration_when_prese
 
 #[tokio::test]
 async fn resolve_download_token_uses_aliyun_oss_provider_kind_with_s3_signer() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-oss-001")
     .bind("tenant-001")
@@ -7449,7 +7200,7 @@ async fn resolve_download_token_uses_aliyun_oss_provider_kind_with_s3_signer() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, ?4, ?5, 'ready', 'active', 1, ?6, ?7)",
+        ) VALUES ($1, $2, $3, NULL, $4, $5, 'ready', 'active', 1, $6, $7)",
     )
     .bind("node-oss-001")
     .bind("tenant-001")
@@ -7466,7 +7217,7 @@ async fn resolve_download_token_uses_aliyun_oss_provider_kind_with_s3_signer() {
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
             credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'active', 1, ?11, ?12)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', 1, $11, $12)",
     )
     .bind("provider-oss-001")
     .bind("aliyun_oss")
@@ -7608,15 +7359,11 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
             "node-tos-001",
         ),
     ] {
-        sqlx::any::install_default_drivers();
-        let pool = AnyPoolOptions::new()
-            .max_connections(1)
-            .connect("sqlite::memory:")
-            .await
-            .expect("sqlite in-memory pool should be created");
-        install_any_schema(&pool, DatabaseEngine::Sqlite)
-            .await
-            .expect("sqlite schema should be installed");
+        let Some((pool, _database_guard)) =
+            sdkwork_drive_test_support::postgres_test_database().await
+        else {
+            return;
+        };
 
         let space_id = format!("space-{provider_kind}");
         let object_id = format!("obj-{provider_kind}");
@@ -7627,7 +7374,7 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
             "INSERT INTO dr_drive_space (
                 id, tenant_id, owner_subject_type, owner_subject_id, space_type,
                 display_name, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-cloud-s3', 'user', 'user-cloud-s3', 'personal',
+            ) VALUES ($1, 'tenant-cloud-s3', 'user', 'user-cloud-s3', 'personal',
                 'Cloud S3', 'active', 1, 'user-cloud-s3', 'user-cloud-s3')",
         )
         .bind(&space_id)
@@ -7638,7 +7385,7 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-cloud-s3', ?2, NULL, 'file', 'v1.bin',
+            ) VALUES ($1, 'tenant-cloud-s3', $2, NULL, 'file', 'v1.bin',
                 'ready', 'active', 1, 'user-cloud-s3', 'user-cloud-s3')",
         )
         .bind(node_id)
@@ -7651,7 +7398,7 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
                 id, provider_kind, name, endpoint_url, region, bucket, path_style,
                 strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
                 status, version, created_by, updated_by
-            ) VALUES (?1, ?2, 'Cloud S3', ?3, ?4, ?5, 0, ?6,
+            ) VALUES ($1, $2, 'Cloud S3', $3, $4, $5, 0, $6,
                 'plain:test-access-key:test-secret-key', 'AES256', 'STANDARD',
                 'active', 1, 'admin-cloud-s3', 'admin-cloud-s3')",
         )
@@ -7787,15 +7534,10 @@ async fn resolve_download_token_uses_explicit_cloud_s3_provider_kinds_with_s3_si
 #[tokio::test]
 async fn create_download_package_for_multiple_files_writes_zip_archive_and_returns_download_url() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_download_package_fixture(&pool, &s3_endpoint)
         .await
         .expect("download package fixture should be seeded");
@@ -7865,7 +7607,7 @@ async fn create_download_package_for_multiple_files_writes_zip_archive_and_retur
     assert_eq!(items[1]["archivePath"].as_str(), Some("beta.txt"));
 
     let db_state: String = sqlx::query_scalar(
-        "SELECT state FROM dr_drive_download_package WHERE tenant_id=?1 LIMIT 1",
+        "SELECT state FROM dr_drive_download_package WHERE tenant_id=$1 LIMIT 1",
     )
     .bind("tenant-bulk")
     .fetch_one(&pool)
@@ -7900,15 +7642,10 @@ async fn create_download_package_for_multiple_files_writes_zip_archive_and_retur
 async fn create_download_package_reads_objects_from_their_bound_provider_when_bucket_is_shared() {
     let (wrong_endpoint, wrong_requests) = start_s3_mock_server().await;
     let (bound_endpoint, bound_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -8063,15 +7800,10 @@ async fn create_download_package_reads_objects_from_their_bound_provider_when_bu
 #[tokio::test]
 async fn list_archive_entries_reads_zip_contents_from_drive_storage() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_archive_fixture(&pool, &s3_endpoint)
         .await
         .expect("archive fixture should be seeded");
@@ -8134,15 +7866,10 @@ async fn list_archive_entries_reads_zip_contents_from_drive_storage() {
 #[tokio::test]
 async fn extract_archive_entries_creates_drive_nodes_and_writes_objects_to_default_storage() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_archive_fixture(&pool, &s3_endpoint)
         .await
         .expect("archive fixture should be seeded");
@@ -8200,7 +7927,7 @@ async fn extract_archive_entries_creates_drive_nodes_and_writes_objects_to_defau
 
     let docs_parent_id: String = sqlx::query_scalar(
         "SELECT id FROM dr_drive_node
-         WHERE tenant_id=?1 AND space_id=?2 AND parent_node_id IS NULL
+         WHERE tenant_id=$1 AND space_id=$2 AND parent_node_id IS NULL
            AND node_name='docs' AND node_type='folder' AND lifecycle_status='active'",
     )
     .bind("tenant-archive")
@@ -8210,7 +7937,7 @@ async fn extract_archive_entries_creates_drive_nodes_and_writes_objects_to_defau
     .expect("docs folder should be created");
     let extracted_node_id: String = sqlx::query_scalar(
         "SELECT id FROM dr_drive_node
-         WHERE tenant_id=?1 AND space_id=?2 AND parent_node_id=?3
+         WHERE tenant_id=$1 AND space_id=$2 AND parent_node_id=$3
            AND node_name='readme.txt' AND node_type='file' AND content_state='ready'
            AND lifecycle_status='active'",
     )
@@ -8225,7 +7952,7 @@ async fn extract_archive_entries_creates_drive_nodes_and_writes_objects_to_defau
     let object: (String, String, String, i64, String) = sqlx::query_as(
         "SELECT id, bucket, object_key, content_length, checksum_sha256_hex
          FROM dr_drive_storage_object
-         WHERE tenant_id=?1 AND node_id=?2 AND lifecycle_status='active'",
+         WHERE tenant_id=$1 AND node_id=$2 AND lifecycle_status='active'",
     )
     .bind("tenant-archive")
     .bind(&extracted_node_id)
@@ -8251,7 +7978,7 @@ async fn extract_archive_entries_creates_drive_nodes_and_writes_objects_to_defau
         sqlx::query_as(
             "SELECT storage_object_id, version_no, version_kind, change_source, scene, source
              FROM dr_drive_node_version
-             WHERE tenant_id=?1 AND node_id=?2 AND lifecycle_status='active'",
+             WHERE tenant_id=$1 AND node_id=$2 AND lifecycle_status='active'",
         )
         .bind("tenant-archive")
         .bind(&extracted_node_id)
@@ -8290,15 +8017,10 @@ async fn extract_archive_entries_creates_drive_nodes_and_writes_objects_to_defau
 #[tokio::test]
 async fn extract_archive_entries_rejects_trashed_source_before_storage_side_effects() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_archive_fixture(&pool, &s3_endpoint)
         .await
         .expect("archive fixture should be seeded");
@@ -8391,15 +8113,10 @@ async fn extract_archive_entries_rejects_trashed_source_before_storage_side_effe
 #[tokio::test]
 async fn extract_archive_entries_auto_renames_file_conflicts_and_completes_atomically() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_archive_fixture(&pool, &s3_endpoint)
         .await
         .expect("archive fixture should be seeded");
@@ -8517,15 +8234,10 @@ async fn extract_archive_entries_auto_renames_file_conflicts_and_completes_atomi
 #[tokio::test]
 async fn create_download_package_rejects_ttl_outside_contract_before_writing_package() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_download_package_fixture(&pool, &s3_endpoint)
         .await
         .expect("download package fixture should be seeded");
@@ -8574,7 +8286,7 @@ async fn create_download_package_rejects_ttl_outside_contract_before_writing_pac
         .contains("requestedTtlSeconds"));
 
     let package_count: i64 =
-        sqlx::query_scalar("SELECT COUNT(1) FROM dr_drive_download_package WHERE tenant_id=?1")
+        sqlx::query_scalar("SELECT COUNT(1) FROM dr_drive_download_package WHERE tenant_id=$1")
             .bind("tenant-bulk")
             .fetch_one(&pool)
             .await
@@ -8592,15 +8304,10 @@ async fn create_download_package_rejects_ttl_outside_contract_before_writing_pac
 #[tokio::test]
 async fn create_download_package_reads_files_from_multiple_storage_buckets() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_download_package_fixture(&pool, &s3_endpoint)
         .await
         .expect("download package fixture should be seeded");
@@ -8610,7 +8317,7 @@ async fn create_download_package_reads_files_from_multiple_storage_buckets() {
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-bulk-alt', 's3_compatible', 'Bulk S3 Alt', ?1, 'us-east-1',
+            'provider-bulk-alt', 's3_compatible', 'Bulk S3 Alt', $1, 'us-east-1',
             'bucket-s3-alt', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'user-bulk', 'user-bulk'
         )",
@@ -8697,15 +8404,10 @@ async fn create_download_package_reads_files_from_multiple_storage_buckets() {
 
 #[tokio::test]
 async fn create_download_package_rejects_empty_node_selection() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool);
     let response = app
@@ -8750,15 +8452,10 @@ async fn create_download_package_rejects_empty_node_selection() {
 #[tokio::test]
 async fn create_download_package_rejects_trashed_selected_node_before_reading_objects() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_download_package_fixture(&pool, &s3_endpoint)
         .await
         .expect("download package fixture should be seeded");
@@ -8824,15 +8521,10 @@ async fn create_download_package_rejects_trashed_selected_node_before_reading_ob
 async fn create_download_package_rejects_folder_expansion_above_file_limit_before_reading_objects()
 {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -8849,7 +8541,7 @@ async fn create_download_package_rejects_folder_expansion_above_file_limit_befor
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-package-limit', 's3_compatible', 'Bulk S3', ?1, 'us-east-1',
+            'provider-package-limit', 's3_compatible', 'Bulk S3', $1, 'us-east-1',
             'bucket-package-limit', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'user-bulk', 'user-bulk'
         )",
@@ -8876,8 +8568,8 @@ async fn create_download_package_rejects_folder_expansion_above_file_limit_befor
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-package-limit', 'space-package-limit', 'folder-package-limit',
-                'file', ?2, 'ready', 'active', 1, 'user-bulk', 'user-bulk')",
+            ) VALUES ($1, 'tenant-package-limit', 'space-package-limit', 'folder-package-limit',
+                'file', $2, 'ready', 'active', 1, 'user-bulk', 'user-bulk')",
         )
         .bind(&node_id)
         .bind(format!("{index:03}.txt"))
@@ -8958,15 +8650,10 @@ async fn create_download_package_rejects_folder_expansion_above_file_limit_befor
 #[tokio::test]
 async fn create_download_package_expands_selected_folder_descendants() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_download_package_fixture(&pool, &s3_endpoint)
         .await
         .expect("download package fixture should be seeded");
@@ -9029,15 +8716,10 @@ async fn create_download_package_expands_selected_folder_descendants() {
 #[tokio::test]
 async fn resolve_download_package_treats_subsecond_remaining_ttl_as_expired() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_download_package_fixture(&pool, &s3_endpoint)
         .await
         .expect("download package fixture should be seeded");
@@ -9065,7 +8747,7 @@ async fn resolve_download_package_treats_subsecond_remaining_ttl_as_expired() {
             'package-subsecond', 'tenant-bulk', 'Almost expired', 'ready',
             'provider-bulk', 'bucket-s3',
             'sdkwork-drive/v1/t/te/tenants/tenant-bulk/download-packages/package-subsecond/archive.zip',
-            'application/zip', 1, 10, 200, '[\"node-file-a\"]', ?1, ?2,
+            'application/zip', 1, 10, 200, '[\"node-file-a\"]', $1, $2,
             1, 'user-bulk', 'user-bulk'
         )",
     )
@@ -9117,15 +8799,10 @@ async fn resolve_download_package_treats_subsecond_remaining_ttl_as_expired() {
 
 #[tokio::test]
 async fn resolve_expired_download_token_returns_gone() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool);
     let now_epoch_ms = SystemTime::now()
@@ -9160,15 +8837,10 @@ async fn resolve_expired_download_token_returns_gone() {
 
 #[tokio::test]
 async fn resolve_download_token_rejects_node_after_it_is_moved_to_trash() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -9326,15 +8998,10 @@ async fn resolve_download_token_rejects_node_after_it_is_moved_to_trash() {
 
 #[tokio::test]
 async fn resolve_download_token_treats_subsecond_remaining_ttl_as_expired() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -9432,7 +9099,7 @@ fn current_epoch_ms() -> i64 {
 }
 
 async fn seed_storage_metadata_provider_fixture(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     provider_id: &str,
     bucket: &str,
     actor_id: &str,
@@ -9443,9 +9110,9 @@ async fn seed_storage_metadata_provider_fixture(
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            ?1, 's3_compatible', ?1, 'https://s3.fixture.local', 'us-east-1',
-            ?2, 1, 1, 'plain:test-access-key:test-secret-key', 'AES256',
-            'STANDARD', 'active', 1, ?3, ?3
+            $1, 's3_compatible', $1, 'https://s3.fixture.local', 'us-east-1',
+            $2, 1, 1, 'plain:test-access-key:test-secret-key', 'AES256',
+            'STANDARD', 'active', 1, $3, $3
         )",
     )
     .bind(provider_id)
@@ -9472,7 +9139,7 @@ struct StorageObjectFixture<'a> {
 }
 
 async fn seed_storage_object_fixture(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     fixture: StorageObjectFixture<'_>,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
@@ -9480,7 +9147,7 @@ async fn seed_storage_object_fixture(
             id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,
             content_type, content_length, checksum_sha256_hex, lifecycle_status,
             created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?12)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)",
     )
     .bind(fixture.object_id)
     .bind(fixture.tenant_id)
@@ -9500,7 +9167,7 @@ async fn seed_storage_object_fixture(
 }
 
 async fn seed_s3_provider_fixture(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     provider_id: &str,
     provider_name: &str,
     endpoint_url: &str,
@@ -9514,9 +9181,9 @@ async fn seed_s3_provider_fixture(
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            ?1, 's3_compatible', ?2, ?3, 'us-east-1',
-            ?4, 1, ?5, 'plain:test-access-key:test-secret-key',
-            'AES256', 'STANDARD', ?6, 1, ?7, ?7
+            $1, 's3_compatible', $2, $3, 'us-east-1',
+            $4, 1, $5, 'plain:test-access-key:test-secret-key',
+            'AES256', 'STANDARD', $6, 1, $7, $7
         )",
     )
     .bind(provider_id)
@@ -9548,7 +9215,7 @@ struct ObjectStoreProviderFixture<'a> {
 }
 
 async fn seed_object_store_provider_fixture(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     fixture: ObjectStoreProviderFixture<'_>,
 ) {
     sqlx::query(
@@ -9557,9 +9224,9 @@ async fn seed_object_store_provider_fixture(
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8,
+            $1, $2, $3, $4, $5, $6, $7, $8,
             'plain:test-access-key:test-secret-key', 'AES256', 'STANDARD',
-            'active', 1, ?9, ?9
+            'active', 1, $9, $9
         )",
     )
     .bind(fixture.provider_id)
@@ -9583,7 +9250,7 @@ async fn seed_object_store_provider_fixture(
 }
 
 async fn seed_download_package_fixture(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     s3_endpoint: &str,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
@@ -9600,7 +9267,7 @@ async fn seed_download_package_fixture(
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-bulk', 's3_compatible', 'Bulk S3', ?1, 'us-east-1',
+            'provider-bulk', 's3_compatible', 'Bulk S3', $1, 'us-east-1',
             'bucket-s3', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'user-bulk', 'user-bulk'
         )",
@@ -9623,7 +9290,7 @@ async fn seed_download_package_fixture(
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-bulk', 'space-bulk', ?2, ?3, ?4, 'ready', 'active', 1, 'user-bulk', 'user-bulk')",
+            ) VALUES ($1, 'tenant-bulk', 'space-bulk', $2, $3, $4, 'ready', 'active', 1, 'user-bulk', 'user-bulk')",
         )
         .bind(id)
         .bind(parent_id)
@@ -9660,7 +9327,7 @@ async fn seed_download_package_fixture(
                 id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,
                 content_type, content_length, checksum_sha256_hex, lifecycle_status,
                 created_by, updated_by
-            ) VALUES (?1, 'tenant-bulk', ?2, 1, 'provider-bulk', 'bucket-s3', ?3, 'text/plain', ?4, ?5, 'active', 'user-bulk', 'user-bulk')",
+            ) VALUES ($1, 'tenant-bulk', $2, 1, 'provider-bulk', 'bucket-s3', $3, 'text/plain', $4, $5, 'active', 'user-bulk', 'user-bulk')",
         )
         .bind(id)
         .bind(node_id)
@@ -9673,7 +9340,7 @@ async fn seed_download_package_fixture(
     Ok(())
 }
 
-async fn seed_archive_fixture(pool: &sqlx::AnyPool, s3_endpoint: &str) -> Result<(), sqlx::Error> {
+async fn seed_archive_fixture(pool: &sqlx::PgPool, s3_endpoint: &str) -> Result<(), sqlx::Error> {
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
@@ -9688,7 +9355,7 @@ async fn seed_archive_fixture(pool: &sqlx::AnyPool, s3_endpoint: &str) -> Result
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-archive', 's3_compatible', 'Archive S3', ?1, 'us-east-1',
+            'provider-archive', 's3_compatible', 'Archive S3', $1, 'us-east-1',
             'bucket-archive', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'user-archive', 'user-archive'
         )",
@@ -9836,15 +9503,10 @@ async fn assert_git_repository_root_directory_error(response: Response) {
 #[tokio::test]
 async fn create_file_rejects_existing_node_id_before_storage_side_effects() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -9979,15 +9641,10 @@ async fn create_file_rejects_existing_node_id_before_storage_side_effects() {
 #[tokio::test]
 async fn create_file_rejects_past_expiration_before_storage_side_effects() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -10113,15 +9770,10 @@ async fn create_file_rejects_past_expiration_before_storage_side_effects() {
 #[tokio::test]
 async fn create_file_aborts_multipart_when_atomic_website_root_rejects_publication() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -10265,15 +9917,10 @@ async fn create_file_aborts_multipart_when_atomic_website_root_rejects_publicati
 #[tokio::test]
 async fn create_file_route_is_idempotent_without_repeating_storage_or_changes() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -10440,15 +10087,10 @@ async fn create_file_route_is_idempotent_without_repeating_storage_or_changes() 
 #[tokio::test]
 async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes() {
     let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -10464,7 +10106,7 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
-        ) VALUES ('provider-pro', 's3_compatible', 'Primary S3', ?1, 'us-east-1', 'bucket-pro', 1, 0, 'plain:test-access-key:test-secret-key', 'AES256', 'STANDARD', 'active', 1, 'admin-pro', 'admin-pro')",
+        ) VALUES ('provider-pro', 's3_compatible', 'Primary S3', $1, 'us-east-1', 'bucket-pro', 1, 0, 'plain:test-access-key:test-secret-key', 'AES256', 'STANDARD', 'active', 1, 'admin-pro', 'admin-pro')",
     )
     .bind(&s3_endpoint)
     .execute(&pool)
@@ -10689,15 +10331,10 @@ async fn app_drive_professional_file_create_upload_status_and_empty_trash_routes
 
 #[tokio::test]
 async fn empty_trash_rejects_missing_or_deleted_explicit_space_before_deleting_nodes() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
@@ -10780,15 +10417,10 @@ async fn empty_trash_rejects_missing_or_deleted_explicit_space_before_deleting_n
 
 #[tokio::test]
 async fn create_folder_assigns_server_id_when_client_id_is_omitted() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -10850,15 +10482,10 @@ async fn create_folder_assigns_server_id_when_client_id_is_omitted() {
 
 #[tokio::test]
 async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -11137,15 +10764,10 @@ async fn app_drive_core_routes_create_browse_share_search_and_emit_changes() {
 #[tokio::test]
 async fn app_dr_drive_node_share_link_create_rejects_negative_download_limit_before_database_write()
 {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -11216,15 +10838,10 @@ async fn app_dr_drive_node_share_link_create_rejects_negative_download_limit_bef
 
 #[tokio::test]
 async fn app_dr_drive_node_share_link_create_stores_access_code_hash_and_reports_required_flag() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -11298,15 +10915,10 @@ async fn app_dr_drive_node_share_link_create_stores_access_code_hash_and_reports
 
 #[tokio::test]
 async fn app_dr_drive_node_share_link_create_rejects_past_expiration_before_database_write() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -11377,15 +10989,10 @@ async fn app_dr_drive_node_share_link_create_rejects_past_expiration_before_data
 
 #[tokio::test]
 async fn app_dr_drive_node_share_link_update_rejects_past_expiration_before_database_write() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -11468,15 +11075,10 @@ async fn app_dr_drive_node_share_link_update_rejects_past_expiration_before_data
 #[tokio::test]
 async fn app_dr_drive_node_permission_create_rejects_invalid_dictionaries_before_database_constraints(
 ) {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -11584,15 +11186,10 @@ async fn app_dr_drive_node_permission_create_rejects_invalid_dictionaries_before
 
 #[tokio::test]
 async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_contents() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -11846,15 +11443,10 @@ async fn app_dr_drive_space_resource_routes_get_update_delete_and_retire_content
 
 #[tokio::test]
 async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_changes() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -11917,7 +11509,7 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
                 id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,
                 content_type, content_length, checksum_sha256_hex,
                 lifecycle_status, created_by, updated_by
-            ) VALUES (?1, 'tenant-gov', 'node-gov', ?2, 'provider-gov', 'bucket-gov', ?3, 'application/pdf', 256, ?4, 'active', 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-gov', 'node-gov', $2, 'provider-gov', 'bucket-gov', $3, 'application/pdf', 256, $4, 'active', 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(version_no)
@@ -12364,15 +11956,10 @@ async fn app_drive_collaboration_and_version_governance_routes_update_and_emit_c
 
 #[tokio::test]
 async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecycle() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -12919,15 +12506,10 @@ async fn app_dr_drive_node_comment_and_reply_routes_support_collaboration_lifecy
 
 #[tokio::test]
 async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -12942,7 +12524,7 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
         sqlx::query(
             "INSERT INTO dr_drive_change_log (
                 id, tenant_id, space_id, node_id, sequence_no, event_type, actor_id
-             ) VALUES (?1, 'tenant-changes', 'space-changes', ?2, ?3, ?4, 'user-owner')",
+             ) VALUES ($1, 'tenant-changes', 'space-changes', $2, $3, $4, 'user-owner')",
         )
         .bind(10_470_000_i64 + sequence_no)
         .bind(format!("node-change-{sequence_no}"))
@@ -13083,15 +12665,10 @@ async fn app_drive_changes_support_start_page_token_and_standard_pagination() {
 
 #[tokio::test]
 async fn app_drive_changes_validate_explicit_space_filter() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -13206,15 +12783,10 @@ async fn app_drive_changes_validate_explicit_space_filter() {
 
 #[tokio::test]
 async fn app_drive_changes_rejects_page_size_outside_contract() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -13273,15 +12845,10 @@ async fn app_drive_changes_rejects_page_size_outside_contract() {
 
 #[tokio::test]
 async fn app_drive_change_feed_allocates_unique_sequences_for_concurrent_writes() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -13364,15 +12931,10 @@ async fn app_drive_change_feed_allocates_unique_sequences_for_concurrent_writes(
 
 #[tokio::test]
 async fn app_dr_drive_node_path_route_returns_ordered_breadcrumbs() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -13402,7 +12964,7 @@ async fn app_dr_drive_node_path_route_returns_ordered_breadcrumbs() {
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-path', 'space-path', ?2, ?3, ?4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-path', 'space-path', $2, $3, $4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(parent_id)
@@ -13498,15 +13060,10 @@ async fn app_dr_drive_node_path_route_returns_ordered_breadcrumbs() {
 
 #[tokio::test]
 async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -13528,7 +13085,7 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-views', 'space-views', NULL, 'file', ?2, 'ready', ?3, 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-views', 'space-views', NULL, 'file', $2, 'ready', $3, 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(node_name)
@@ -13932,15 +13489,10 @@ async fn app_drive_standard_views_list_trash_recent_shared_and_favorites() {
 
 #[tokio::test]
 async fn app_drive_standard_views_validate_explicit_space_filter() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -13983,15 +13535,10 @@ async fn app_drive_standard_views_validate_explicit_space_filter() {
 
 #[tokio::test]
 async fn app_drive_list_routes_support_standard_page_tokens() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -14012,7 +13559,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by, updated_at
-            ) VALUES (?1, 'tenant-page', 'space-page', NULL, 'file', ?2, 'ready', 'active', 1, 'user-page', 'user-page', ?3)",
+            ) VALUES ($1, 'tenant-page', 'space-page', NULL, 'file', $2, 'ready', 'active', 1, 'user-page', 'user-page', $3)",
         )
         .bind(id)
         .bind(node_name)
@@ -14030,7 +13577,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
                 id, tenant_id, node_id, subject_type, subject_id, role,
                 inherited, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-page', 'node-page-a', 'user', ?2,
+                $1, 'tenant-page', 'node-page-a', 'user', $2,
                 'reader', 0, 'active', 1, 'user-page', 'user-page'
             )",
         )
@@ -14049,8 +13596,8 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
                 id, tenant_id, node_id, token_hash, role, download_count,
                 lifecycle_status, version, created_by, updated_by, created_at
             ) VALUES (
-                ?1, 'tenant-page', 'node-page-a', ?2, 'reader', 0,
-                'active', 1, 'user-page', 'user-page', ?3
+                $1, 'tenant-page', 'node-page-a', $2, 'reader', 0,
+                'active', 1, 'user-page', 'user-page', $3
             )",
         )
         .bind(id)
@@ -14066,7 +13613,7 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
                 id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,
                 content_type, content_length, checksum_sha256_hex,
                 lifecycle_status, created_by, updated_by
-            ) VALUES (?1, 'tenant-page', 'node-page-a', ?2, 'provider-page', 'bucket-page', ?3, 'text/plain', 10, ?4, 'active', 'user-page', 'user-page')",
+            ) VALUES ($1, 'tenant-page', 'node-page-a', $2, 'provider-page', 'bucket-page', $3, 'text/plain', 10, $4, 'active', 'user-page', 'user-page')",
         )
         .bind(id)
         .bind(version_no)
@@ -14176,15 +13723,10 @@ async fn app_drive_list_routes_support_standard_page_tokens() {
 
 #[tokio::test]
 async fn app_drive_move_destinations_pages_without_replaying_prior_folders() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -14211,8 +13753,8 @@ async fn app_drive_move_destinations_pages_without_replaying_prior_folders() {
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-move-destination-page', 'space-move-destination-page',
-                NULL, 'folder', ?2, 'ready', 'active', 1,
+                $1, 'tenant-move-destination-page', 'space-move-destination-page',
+                NULL, 'folder', $2, 'ready', 'active', 1,
                 'user-move-destination-page', 'user-move-destination-page'
             )",
         )
@@ -14273,15 +13815,10 @@ async fn app_drive_move_destinations_pages_without_replaying_prior_folders() {
 
 #[tokio::test]
 async fn app_drive_list_routes_reject_page_size_outside_contract() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -14336,15 +13873,10 @@ async fn app_drive_list_routes_reject_page_size_outside_contract() {
 
 #[tokio::test]
 async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_tokens() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -14374,7 +13906,7 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-effective-perm', 'space-effective-perm', ?2, ?3, ?4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-effective-perm', 'space-effective-perm', $2, $3, $4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(parent_node_id)
@@ -14412,8 +13944,8 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
                 id, tenant_id, node_id, subject_type, subject_id, role,
                 inherited, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-effective-perm', ?2, ?3, ?4,
-                ?5, 0, 'active', 1, 'user-owner', 'user-owner'
+                $1, 'tenant-effective-perm', $2, $3, $4,
+                $5, 0, 'active', 1, 'user-owner', 'user-owner'
             )",
         )
         .bind(id)
@@ -14492,15 +14024,10 @@ async fn app_drive_effective_permissions_include_direct_inherited_acl_and_page_t
 
 #[tokio::test]
 async fn app_drive_effective_permissions_prefer_direct_then_nearest_acl_for_same_subject() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -14530,7 +14057,7 @@ async fn app_drive_effective_permissions_prefer_direct_then_nearest_acl_for_same
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-effective-override', 'space-effective-override', ?2, ?3, ?4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-effective-override', 'space-effective-override', $2, $3, $4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(parent_node_id)
@@ -14550,8 +14077,8 @@ async fn app_drive_effective_permissions_prefer_direct_then_nearest_acl_for_same
                 id, tenant_id, node_id, subject_type, subject_id, role,
                 inherited, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-effective-override', ?2, 'user', 'user-overlap',
-                ?3, 0, 'active', 1, 'user-owner', 'user-owner'
+                $1, 'tenant-effective-override', $2, 'user', 'user-overlap',
+                $3, 0, 'active', 1, 'user-owner', 'user-owner'
             )",
         )
         .bind(id)
@@ -14585,15 +14112,10 @@ async fn app_drive_effective_permissions_prefer_direct_then_nearest_acl_for_same
 
 #[tokio::test]
 async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missing_access() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -14618,7 +14140,7 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-capability', 'space-capability', ?2, ?3, ?4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-capability', 'space-capability', $2, $3, $4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(parent_node_id)
@@ -14647,8 +14169,8 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
                 id, tenant_id, node_id, subject_type, subject_id, role,
                 inherited, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-capability', ?2, 'user', ?3,
-                ?4, 0, 'active', 1, 'user-owner', 'user-owner'
+                $1, 'tenant-capability', $2, 'user', $3,
+                $4, 0, 'active', 1, 'user-owner', 'user-owner'
             )",
         )
         .bind(id)
@@ -14724,15 +14246,10 @@ async fn app_dr_drive_node_capabilities_resolve_direct_inherited_owner_and_missi
 
 #[tokio::test]
 async fn app_dr_drive_node_capabilities_support_trashed_nodes_with_restore_only_actions() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -14820,15 +14337,10 @@ async fn app_dr_drive_node_capabilities_support_trashed_nodes_with_restore_only_
 
 #[tokio::test]
 async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page_tokens() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -15047,15 +14559,10 @@ async fn app_dr_drive_node_properties_support_custom_metadata_lifecycle_and_page
 
 #[tokio::test]
 async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_without_side_effects() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -15287,15 +14794,10 @@ async fn app_drive_collaboration_and_metadata_writes_reject_trashed_nodes_withou
 
 #[tokio::test]
 async fn app_drive_metadata_deletes_reject_trashed_nodes_without_side_effects() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -15477,15 +14979,10 @@ async fn app_drive_metadata_deletes_reject_trashed_nodes_without_side_effects() 
 
 #[tokio::test]
 async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_without_side_effects() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -15596,8 +15093,8 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
                 content_type, content_length, checksum_sha256_hex, lifecycle_status,
                 created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-trashed-update', 'node-trashed-update', ?2,
-                'provider-trashed-update', 'bucket-trashed-update', ?3, 'application/pdf', 128, ?4, ?5,
+                $1, 'tenant-trashed-update', 'node-trashed-update', $2,
+                'provider-trashed-update', 'bucket-trashed-update', $3, 'application/pdf', 128, $4, $5,
                 'user-owner', 'user-owner'
             )",
         )
@@ -15916,15 +15413,10 @@ async fn app_drive_collaboration_updates_and_versions_reject_trashed_nodes_witho
 
 #[tokio::test]
 async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -15957,7 +15449,7 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-shortcut', 'space-shortcut', ?2, ?3, ?4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-shortcut', 'space-shortcut', $2, $3, $4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(parent_node_id)
@@ -16100,15 +15592,10 @@ async fn app_drive_shortcuts_create_and_resolve_target_metadata() {
 
 #[tokio::test]
 async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_conflicts() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -16136,7 +15623,7 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-hierarchy', 'space-hierarchy', ?2, ?3, ?4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-hierarchy', 'space-hierarchy', $2, $3, $4, 'ready', 'active', 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(parent_node_id)
@@ -16306,15 +15793,10 @@ async fn app_dr_drive_node_hierarchy_mutations_validate_parent_type_and_name_con
 #[tokio::test]
 async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_without_side_effects()
 {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -16349,8 +15831,8 @@ async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_wi
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-node-mutation-trash', 'space-node-mutation-trash',
-                ?2, ?3, ?4, 'ready', ?5, 1, 'user-owner', 'user-owner'
+                $1, 'tenant-node-mutation-trash', 'space-node-mutation-trash',
+                $2, $3, $4, 'ready', $5, 1, 'user-owner', 'user-owner'
             )",
         )
         .bind(id)
@@ -16512,15 +15994,10 @@ async fn app_drive_node_mutations_reject_trashed_sources_and_shortcut_targets_wi
 
 #[tokio::test]
 async fn app_dr_drive_git_repository_space_root_accepts_only_repository_directories() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     for (space_id, space_type, display_name) in [
         (
@@ -16534,7 +16011,7 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
             "INSERT INTO dr_drive_space (
                 id, tenant_id, owner_subject_type, owner_subject_id, space_type,
                 display_name, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-git-repository-root', 'user', 'user-owner', ?2, ?3, 'active', 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-git-repository-root', 'user', 'user-owner', $2, $3, 'active', 1, 'user-owner', 'user-owner')",
         )
         .bind(space_id)
         .bind(space_type)
@@ -16573,7 +16050,7 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-git-repository-root', ?2, ?3, ?4, ?5, ?6, 'active', 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-git-repository-root', $2, $3, $4, $5, $6, 'active', 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(space_id)
@@ -16764,15 +16241,10 @@ async fn app_dr_drive_git_repository_space_root_accepts_only_repository_director
 
 #[tokio::test]
 async fn app_drive_copy_shortcut_preserves_target_node_reference() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -16848,15 +16320,10 @@ async fn app_drive_copy_shortcut_preserves_target_node_reference() {
 
 #[tokio::test]
 async fn app_drive_copy_node_rejects_missing_or_deleted_target_space() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -16944,15 +16411,10 @@ async fn app_drive_copy_node_rejects_missing_or_deleted_target_space() {
 
 #[tokio::test]
 async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -16985,7 +16447,7 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
             "INSERT INTO dr_drive_label (
                 id, tenant_id, label_key, display_name, color, description,
                 lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-label', ?2, ?3, ?4, NULL, 'active', 1, 'admin-label', 'admin-label')",
+            ) VALUES ($1, 'tenant-label', $2, $3, $4, NULL, 'active', 1, 'admin-label', 'admin-label')",
         )
         .bind(id)
         .bind(label_key)
@@ -17151,15 +16613,10 @@ async fn app_dr_drive_node_labels_apply_list_filter_remove_and_emit_changes() {
 
 #[tokio::test]
 async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -17411,15 +16868,10 @@ async fn app_dr_drive_watch_channels_create_list_get_stop_and_emit_changes() {
 
 #[tokio::test]
 async fn app_dr_drive_watch_channel_create_rejects_past_expiration_before_database_write() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -17488,15 +16940,10 @@ async fn app_dr_drive_watch_channel_create_rejects_past_expiration_before_databa
 
 #[tokio::test]
 async fn app_dr_drive_watch_node_rejects_trashed_node_before_creating_channel() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -17576,15 +17023,10 @@ async fn app_dr_drive_watch_node_rejects_trashed_node_before_creating_channel() 
 
 #[tokio::test]
 async fn app_drive_share_link_routes_enforce_acl_roles() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -17616,7 +17058,7 @@ async fn app_drive_share_link_routes_enforce_acl_roles() {
             download_limit, download_count, lifecycle_status, version,
             created_by, updated_by
         ) VALUES (
-            'share-acl-existing', 'tenant-share-acl', 'node-share-acl', ?1, 'reader',
+            'share-acl-existing', 'tenant-share-acl', 'node-share-acl', $1, 'reader',
             1800000000000, NULL, 0, 'active', 1, 'user-owner', 'user-owner'
         )",
     )
@@ -17810,15 +17252,10 @@ async fn app_drive_share_link_routes_enforce_acl_roles() {
 
 #[tokio::test]
 async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_results() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -17843,7 +17280,7 @@ async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_r
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-search-acl', 'space-search-acl', NULL, 'file', ?2,
+                $1, 'tenant-search-acl', 'space-search-acl', NULL, 'file', $2,
                 'ready', 'active', 1, 'user-owner', 'user-owner'
             )",
         )
@@ -17860,7 +17297,7 @@ async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_r
                 id, tenant_id, node_id, subject_type, subject_id, role,
                 inherited, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-search-acl', ?2, 'user', 'user-reviewer', 'reader',
+                $1, 'tenant-search-acl', $2, 'user', 'user-reviewer', 'reader',
                 0, 'active', 1, 'user-owner', 'user-owner'
             )",
         )
@@ -17966,15 +17403,10 @@ async fn app_drive_search_skips_nodes_without_reader_acl_and_paginates_visible_r
 
 #[tokio::test]
 async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_results() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -18025,7 +17457,7 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-list-acl', 'space-list-acl', NULL, 'file', ?2,
+                $1, 'tenant-list-acl', 'space-list-acl', NULL, 'file', $2,
                 'ready', 'active', 1, 'user-owner', 'user-owner'
             )",
         )
@@ -18042,7 +17474,7 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
                 id, tenant_id, node_id, subject_type, subject_id, role,
                 inherited, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-list-acl', ?2, 'user', 'user-reviewer', 'reader',
+                $1, 'tenant-list-acl', $2, 'user', 'user-reviewer', 'reader',
                 0, 'active', 1, 'user-owner', 'user-owner'
             )",
         )
@@ -18183,15 +17615,10 @@ async fn app_drive_list_skips_nodes_without_reader_acl_and_paginates_visible_res
 
 #[tokio::test]
 async fn uploader_mark_part_uploaded_requires_writer_acl() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -18322,15 +17749,10 @@ async fn uploader_mark_part_uploaded_requires_writer_acl() {
 
 #[tokio::test]
 async fn app_drive_comment_routes_enforce_acl_roles() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -18488,15 +17910,10 @@ async fn app_drive_comment_routes_enforce_acl_roles() {
 
 #[tokio::test]
 async fn app_drive_legacy_download_url_route_enforces_reader_acl() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -18563,15 +17980,10 @@ async fn app_drive_legacy_download_url_route_enforces_reader_acl() {
 
 #[tokio::test]
 async fn app_drive_changes_require_space_id() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool);
     for uri in [
@@ -18614,15 +18026,10 @@ async fn app_drive_changes_require_space_id() {
 
 #[tokio::test]
 async fn app_drive_change_feed_skips_nodes_without_reader_acl_and_paginates_visible_results() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -18658,7 +18065,7 @@ async fn app_drive_change_feed_skips_nodes_without_reader_acl_and_paginates_visi
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-change-acl', 'space-change-acl', NULL, 'file', ?1,
+                $1, 'tenant-change-acl', 'space-change-acl', NULL, 'file', $1,
                 'ready', 'active', 1, 'user-owner', 'user-owner'
             )",
         )
@@ -18670,7 +18077,7 @@ async fn app_drive_change_feed_skips_nodes_without_reader_acl_and_paginates_visi
             "INSERT INTO dr_drive_change_log (
                 id, tenant_id, space_id, node_id, sequence_no, event_type, actor_id
             ) VALUES (
-                ?1, 'tenant-change-acl', 'space-change-acl', ?2, ?3, ?4, 'user-owner'
+                $1, 'tenant-change-acl', 'space-change-acl', $2, $3, $4, 'user-owner'
             )",
         )
         .bind(format!("change-{seq}"))
@@ -18698,7 +18105,7 @@ async fn app_drive_change_feed_skips_nodes_without_reader_acl_and_paginates_visi
                 id, tenant_id, node_id, subject_type, subject_id, role,
                 inherited, lifecycle_status, version, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-change-acl', ?2, 'user', 'user-reviewer', 'reader',
+                $1, 'tenant-change-acl', $2, 'user', 'user-reviewer', 'reader',
                 0, 'active', 1, 'user-owner', 'user-owner'
             )",
         )
@@ -18824,15 +18231,10 @@ async fn app_drive_change_feed_skips_nodes_without_reader_acl_and_paginates_visi
 
 #[tokio::test]
 async fn app_drive_standard_views_hide_nodes_without_reader_acl() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -18854,7 +18256,7 @@ async fn app_drive_standard_views_hide_nodes_without_reader_acl() {
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, 'tenant-view-acl', 'space-view-acl', NULL, 'file', ?1, 'ready', ?2, 1, 'user-owner', 'user-owner')",
+            ) VALUES ($1, 'tenant-view-acl', 'space-view-acl', NULL, 'file', $1, 'ready', $2, 1, 'user-owner', 'user-owner')",
         )
         .bind(id)
         .bind(lifecycle_status)
@@ -18924,15 +18326,10 @@ async fn app_drive_standard_views_hide_nodes_without_reader_acl() {
 
 #[tokio::test]
 async fn app_drive_shared_with_me_includes_inherited_and_share_link_nodes() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -19029,15 +18426,10 @@ async fn app_drive_shared_with_me_includes_inherited_and_share_link_nodes() {
 
 #[tokio::test]
 async fn app_drive_space_routes_enforce_acl_roles() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -19154,15 +18546,10 @@ async fn app_drive_space_routes_enforce_acl_roles() {
 
 #[tokio::test]
 async fn app_drive_list_spaces_includes_collaborator_granted_team_space() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -19242,15 +18629,10 @@ async fn app_drive_list_spaces_includes_collaborator_granted_team_space() {
 
 #[tokio::test]
 async fn app_drive_get_space_denies_outsider_on_empty_space_without_leaking_metadata() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -19292,15 +18674,10 @@ async fn app_drive_get_space_denies_outsider_on_empty_space_without_leaking_meta
 
 #[tokio::test]
 async fn app_drive_create_space_rejects_foreign_owner_for_personal_space() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool);
     let response = app
@@ -19338,15 +18715,10 @@ async fn app_drive_create_space_rejects_foreign_owner_for_personal_space() {
 
 #[tokio::test]
 async fn app_drive_create_team_space_rejects_foreign_group_owner() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool);
     let response = app
@@ -19394,15 +18766,10 @@ async fn app_drive_create_team_space_rejects_foreign_group_owner() {
 
 #[tokio::test]
 async fn app_drive_create_team_space_bootstraps_creator_owner_access() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool.clone());
     let response = app
@@ -19524,15 +18891,10 @@ async fn app_drive_create_team_space_bootstraps_creator_owner_access() {
 
 #[tokio::test]
 async fn app_drive_delete_team_space_allows_root_owner_creator() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool.clone());
     let create_response = app
@@ -19623,15 +18985,10 @@ async fn app_drive_delete_team_space_allows_root_owner_creator() {
 
 #[tokio::test]
 async fn app_drive_create_team_space_allows_organization_owner_matching_token() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool.clone());
     let response = app
@@ -19726,15 +19083,10 @@ async fn app_drive_create_team_space_allows_organization_owner_matching_token() 
 
 #[tokio::test]
 async fn app_drive_create_team_space_rejects_foreign_organization_owner() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool);
     let response = app
@@ -19782,15 +19134,10 @@ async fn app_drive_create_team_space_rejects_foreign_organization_owner() {
 
 #[tokio::test]
 async fn app_drive_claim_share_link_grants_access_and_lists_in_shared_with_me() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -19823,7 +19170,7 @@ async fn app_drive_claim_share_link_grants_access_and_lists_in_shared_with_me() 
             id, tenant_id, node_id, token_hash, role, expires_at_epoch_ms,
             download_limit, download_count, lifecycle_status, version, created_by, updated_by
         ) VALUES (
-            'share-claim', 'tenant-claim', 'node-claim-target', ?1, 'reader',
+            'share-claim', 'tenant-claim', 'node-claim-target', $1, 'reader',
             1800000000000, NULL, 0, 'active', 1, 'user-owner', 'user-owner'
         )",
     )
@@ -19905,15 +19252,10 @@ async fn app_drive_claim_share_link_grants_access_and_lists_in_shared_with_me() 
 
 #[tokio::test]
 async fn app_drive_claim_share_link_is_idempotent_and_rejects_cross_tenant() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -19946,7 +19288,7 @@ async fn app_drive_claim_share_link_is_idempotent_and_rejects_cross_tenant() {
             id, tenant_id, node_id, token_hash, role, expires_at_epoch_ms,
             download_limit, download_count, lifecycle_status, version, created_by, updated_by
         ) VALUES (
-            'share-claim-idempotent', 'tenant-claim-idempotent', 'node-claim-idempotent', ?1, 'reader',
+            'share-claim-idempotent', 'tenant-claim-idempotent', 'node-claim-idempotent', $1, 'reader',
             1800000000000, NULL, 0, 'active', 1, 'user-owner', 'user-owner'
         )",
     )
@@ -20026,14 +19368,10 @@ async fn app_drive_claim_share_link_is_idempotent_and_rejects_cross_tenant() {
 
 #[tokio::test]
 async fn drive_problem_responses_include_correlation_ids() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect_lazy("sqlite::memory:")
-        .expect("create in-memory sqlite pool");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("schema should install");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let app = common::test_router_with_pool(pool);
 
     let response = app

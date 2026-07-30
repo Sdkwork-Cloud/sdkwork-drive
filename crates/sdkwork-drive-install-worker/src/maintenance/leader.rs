@@ -1,5 +1,4 @@
-use sdkwork_drive_config::DatabaseEngine;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use sqlx::Row;
 use std::sync::OnceLock;
 use std::time::Duration;
@@ -22,24 +21,19 @@ fn maintenance_holder_id() -> &'static str {
     })
 }
 
-pub async fn run_if_maintenance_leader<F, Fut>(
-    pool: &AnyPool,
-    engine: DatabaseEngine,
-    task_name: &str,
-    task: F,
-) where
+pub async fn run_if_maintenance_leader<F, Fut>(pool: &PgPool, task_name: &str, task: F)
+where
     F: FnOnce() -> Fut,
     Fut: std::future::Future<Output = ()>,
 {
     let holder_id = maintenance_holder_id();
-    let acquired = acquire_table_maintenance_leader(pool, engine, task_name, holder_id).await;
+    let acquired = acquire_table_maintenance_leader(pool, task_name, holder_id).await;
 
     if !acquired {
         tracing::debug!(
             target: "sdkwork.drive",
             event = "drive.install_worker.leader_skipped",
             task = task_name,
-            engine = ?engine,
             holder_id = holder_id,
             "another install-worker replica holds the maintenance lock"
         );
@@ -68,12 +62,7 @@ pub async fn run_if_maintenance_leader<F, Fut>(
     release_table_maintenance_leader(pool, task_name, holder_id).await;
 }
 
-async fn acquire_table_maintenance_leader(
-    pool: &AnyPool,
-    engine: DatabaseEngine,
-    task_name: &str,
-    holder_id: &str,
-) -> bool {
+async fn acquire_table_maintenance_leader(pool: &PgPool, task_name: &str, holder_id: &str) -> bool {
     let mut connection = match pool.acquire().await {
         Ok(connection) => connection,
         Err(error) => {
@@ -88,11 +77,7 @@ async fn acquire_table_maintenance_leader(
         }
     };
 
-    let begin_sql = match engine {
-        DatabaseEngine::Sqlite => "BEGIN IMMEDIATE",
-        DatabaseEngine::Postgresql => "BEGIN",
-    };
-    if let Err(error) = sqlx::query(begin_sql).execute(&mut *connection).await {
+    if let Err(error) = sqlx::query("BEGIN").execute(&mut *connection).await {
         tracing::warn!(
             target: "sdkwork.drive",
             event = "drive.install_worker.leader_acquire_failed",
@@ -103,26 +88,20 @@ async fn acquire_table_maintenance_leader(
         return false;
     }
 
-    let acquired = match evaluate_table_maintenance_leader(
-        &mut connection,
-        engine,
-        task_name,
-        holder_id,
-    )
-    .await
-    {
-        Ok(value) => value,
-        Err(error) => {
-            tracing::warn!(
-                target: "sdkwork.drive",
-                event = "drive.install_worker.leader_acquire_failed",
-                task = task_name,
-                error = %error,
-                "maintenance leader evaluation failed"
-            );
-            false
-        }
-    };
+    let acquired =
+        match evaluate_table_maintenance_leader(&mut connection, task_name, holder_id).await {
+            Ok(value) => value,
+            Err(error) => {
+                tracing::warn!(
+                    target: "sdkwork.drive",
+                    event = "drive.install_worker.leader_acquire_failed",
+                    task = task_name,
+                    error = %error,
+                    "maintenance leader evaluation failed"
+                );
+                false
+            }
+        };
 
     let finish_result = if acquired {
         sqlx::query("COMMIT").execute(&mut *connection).await
@@ -144,35 +123,20 @@ async fn acquire_table_maintenance_leader(
 }
 
 async fn evaluate_table_maintenance_leader(
-    connection: &mut sqlx::pool::PoolConnection<sqlx::Any>,
-    engine: DatabaseEngine,
+    connection: &mut sqlx::pool::PoolConnection<sqlx::Postgres>,
     task_name: &str,
     holder_id: &str,
 ) -> Result<bool, sqlx::Error> {
     let lock_key = maintenance_leader_lock_key(task_name);
-    let existing = match engine {
-        DatabaseEngine::Postgresql => {
-            sqlx::query(
-                "SELECT holder_id, CAST(acquired_at AS TEXT) AS acquired_at
-                 FROM dr_drive_maintenance_leader
-                 WHERE lock_key = $1
-                 FOR UPDATE",
-            )
-            .bind(&lock_key)
-            .fetch_optional(&mut **connection)
-            .await?
-        }
-        DatabaseEngine::Sqlite => {
-            sqlx::query(
-                "SELECT holder_id, acquired_at
-                 FROM dr_drive_maintenance_leader
-                 WHERE lock_key = $1",
-            )
-            .bind(&lock_key)
-            .fetch_optional(&mut **connection)
-            .await?
-        }
-    };
+    let existing = sqlx::query(
+        "SELECT holder_id, CAST(acquired_at AS TEXT) AS acquired_at
+         FROM dr_drive_maintenance_leader
+         WHERE lock_key = $1
+         FOR UPDATE",
+    )
+    .bind(&lock_key)
+    .fetch_optional(&mut **connection)
+    .await?;
 
     if let Some(row) = existing {
         let current_holder: String = row.get("holder_id");
@@ -196,7 +160,7 @@ async fn evaluate_table_maintenance_leader(
     Ok(true)
 }
 
-async fn renew_maintenance_leader_lease(pool: &AnyPool, task_name: &str, holder_id: &str) {
+async fn renew_maintenance_leader_lease(pool: &PgPool, task_name: &str, holder_id: &str) {
     let lock_key = maintenance_leader_lock_key(task_name);
     if let Err(error) = sqlx::query(
         "UPDATE dr_drive_maintenance_leader
@@ -219,7 +183,7 @@ async fn renew_maintenance_leader_lease(pool: &AnyPool, task_name: &str, holder_
     }
 }
 
-fn leader_lock_is_stale(row: &sqlx::any::AnyRow) -> bool {
+fn leader_lock_is_stale(row: &sqlx::postgres::PgRow) -> bool {
     let acquired_at: String = row.get("acquired_at");
     let parsed = chrono::DateTime::parse_from_rfc3339(&acquired_at)
         .map(|value| value.with_timezone(&chrono::Utc))
@@ -238,7 +202,7 @@ fn leader_lock_is_stale(row: &sqlx::any::AnyRow) -> bool {
     }
 }
 
-async fn release_table_maintenance_leader(pool: &AnyPool, task_name: &str, holder_id: &str) {
+async fn release_table_maintenance_leader(pool: &PgPool, task_name: &str, holder_id: &str) {
     let lock_key = maintenance_leader_lock_key(task_name);
     if let Err(error) = sqlx::query(
         "DELETE FROM dr_drive_maintenance_leader
@@ -262,8 +226,6 @@ async fn release_table_maintenance_leader(pool: &AnyPool, task_name: &str, holde
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sdkwork_drive_config::DatabaseEngine;
-    use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
     fn maintenance_leader_lock_keys_include_task_name() {
@@ -279,35 +241,5 @@ mod tests {
         let second = maintenance_holder_id();
         assert_eq!(first, second);
         assert!(first.contains(&format!("{}", std::process::id())));
-    }
-
-    #[tokio::test]
-    async fn sqlite_table_leader_lock_supports_back_to_back_runs() {
-        use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-
-        sqlx::any::install_default_drivers();
-        let pool = sqlx::any::AnyPoolOptions::new()
-            .max_connections(1)
-            .connect("sqlite::memory:")
-            .await
-            .expect("sqlite memory pool");
-        install_any_schema(&pool, DatabaseEngine::Sqlite)
-            .await
-            .expect("sqlite schema should install");
-
-        static RUNS: AtomicUsize = AtomicUsize::new(0);
-        for _ in 0..2 {
-            run_if_maintenance_leader(
-                &pool,
-                DatabaseEngine::Sqlite,
-                "upload_session_cleanup",
-                || async {
-                    RUNS.fetch_add(1, Ordering::SeqCst);
-                },
-            )
-            .await;
-        }
-
-        assert_eq!(RUNS.load(Ordering::SeqCst), 2);
     }
 }

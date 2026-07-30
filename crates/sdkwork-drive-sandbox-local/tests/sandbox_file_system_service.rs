@@ -1,24 +1,24 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_sandbox_local::LocalSandboxDirectoryProvider;
 use sdkwork_drive_workspace_service::application::sandbox_file_system_service::{
     CreateSandboxFileCommand, DeleteSandboxEntryCommand, DriveSandboxFileSystemService,
     MoveSandboxEntryCommand, ReadSandboxFileCommand, SandboxMutationContext,
     UpdateSandboxFileCommand,
 };
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::sandbox_mutation_operation_store::SqlSandboxMutationOperationStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::sandbox_store::SqlSandboxStore;
 use sdkwork_drive_workspace_service::ports::sandbox_principal_resolver::EffectiveSandboxPrincipal;
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 #[tokio::test]
 async fn service_completes_file_lifecycle_idempotently_with_audit_and_concurrency() {
     let root = tempfile::tempdir().expect("sandbox root");
     std::fs::create_dir(root.path().join("src")).expect("src");
     std::fs::create_dir(root.path().join("archive")).expect("archive");
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_sandbox(&pool, root.path().to_string_lossy().as_ref(), "full").await;
     let service = service(&pool);
 
@@ -138,7 +138,10 @@ async fn service_completes_file_lifecycle_idempotently_with_audit_and_concurrenc
 #[tokio::test]
 async fn service_rejects_read_only_mutation_before_provider_side_effect() {
     let root = tempfile::tempdir().expect("sandbox root");
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_sandbox(&pool, root.path().to_string_lossy().as_ref(), "read_only").await;
     let error = service(&pool)
         .create_file(CreateSandboxFileCommand {
@@ -163,7 +166,7 @@ async fn service_rejects_read_only_mutation_before_provider_side_effect() {
 }
 
 fn service(
-    pool: &AnyPool,
+    pool: &PgPool,
 ) -> DriveSandboxFileSystemService<
     SqlSandboxStore,
     LocalSandboxDirectoryProvider,
@@ -192,20 +195,7 @@ fn mutation(idempotency_key: &str) -> SandboxMutationContext {
     }
 }
 
-async fn test_pool() -> AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite pool");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("schema");
-    pool
-}
-
-async fn seed_sandbox(pool: &AnyPool, provider_root_ref: &str, access_level: &str) {
+async fn seed_sandbox(pool: &PgPool, provider_root_ref: &str, access_level: &str) {
     sqlx::query(
         "INSERT INTO dr_drive_sandbox_volume (
             id, tenant_id, display_name, root_entry_id, provider_kind, provider_root_ref,

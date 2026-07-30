@@ -1,7 +1,7 @@
 use async_trait::async_trait;
-use sqlx::any::AnyRow;
+use sqlx::postgres::PgRow;
 use sqlx::Row;
-use sqlx::{AnyConnection, AnyPool};
+use sqlx::{PgConnection, PgPool};
 
 use crate::domain::node_version::{
     CreateDriveNodeVersionCommand, DriveNodeVersion, DriveNodeVersionChangeSource,
@@ -14,11 +14,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlDriveNodeVersionStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlDriveNodeVersionStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -117,7 +117,7 @@ impl DriveNodeVersionStore for SqlDriveNodeVersionStore {
 }
 
 async fn create_node_version_in_transaction(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: &CreateDriveNodeVersionCommand,
 ) -> Result<DriveNodeVersion, DriveServiceError> {
     super::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed(
@@ -208,7 +208,7 @@ fn node_version_select_sql(predicate: &str) -> String {
     )
 }
 
-fn map_row_to_node_version(row: &AnyRow) -> Result<DriveNodeVersion, DriveServiceError> {
+fn map_row_to_node_version(row: &PgRow) -> Result<DriveNodeVersion, DriveServiceError> {
     let version_kind_raw: String = row.get("version_kind");
     let version_kind = DriveNodeVersionKind::try_from_str(&version_kind_raw).ok_or_else(|| {
         DriveServiceError::Internal(format!(

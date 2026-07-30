@@ -351,7 +351,7 @@ fn drive_launch_plan_rejects_legacy_database_aliases() {
 }
 
 #[test]
-fn drive_launch_plan_accepts_explicit_sqlite_database_url() {
+fn drive_launch_plan_rejects_explicit_sqlite_database_url() {
     let root = workspace_root();
     let output = run_node_command_in(
         &root,
@@ -366,21 +366,15 @@ fn drive_launch_plan_accepts_explicit_sqlite_database_url() {
     .expect("drive product runner should start");
 
     assert!(
-        output.status.success(),
-        "stdout:\n{}\nstderr:\n{}",
+        !output.status.success(),
+        "SQLite must fail closed, stdout:\n{}\nstderr:\n{}",
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stdout.contains("databaseEngine=sqlite"),
-        "plan should report SQLite engine, stdout:\n{stdout}"
-    );
-    assert!(
-        stdout
-            .lines()
-            .any(|line| line.contains("[sdkwork-drive] databaseEngine=sqlite maxConnections=1")),
-        "SQLite local mode should default to a single connection, stdout:\n{stdout}"
+        stderr.contains("PostgreSQL") || stderr.contains("postgres"),
+        "error should identify the PostgreSQL-only contract, stderr:\n{stderr}"
     );
 }
 
@@ -392,17 +386,15 @@ fn database_architecture_doc_records_runtime_boundary() {
             .expect("database architecture doc should exist");
 
     for required in [
-        "PostgreSQL is the server, Docker, Kubernetes, and production target",
-        "SQLite is the local/private lightweight mode",
+        "PostgreSQL is the only server runtime database",
         "pnpm dev",
-        "SQLite remains available to internal persistence tests",
         "SDKWORK_DRIVE_CONFIG_FILE=./etc/drive.database.example.toml",
         "SDKWORK_DATABASE_ENGINE=postgresql",
         "SDKWORK_DATABASE_SSL_MODE",
         "build_router_with_database_config",
-        "sqlx::AnyPool",
+        "sqlx::PgPool",
         "Runtime SQL must use PostgreSQL-compatible `$1`, `$2`, ... bind placeholders",
-        "Supported runtime database engines are PostgreSQL and SQLite only",
+        "SQLite is rejected",
     ] {
         assert!(
             doc.contains(required),

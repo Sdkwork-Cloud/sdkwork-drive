@@ -18,7 +18,7 @@ use sdkwork_drive_contract::drive::events::DriveNodeEligibility;
 use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
 use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed;
 use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use sqlx::Row;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -167,7 +167,7 @@ pub(crate) async fn set_node_lifecycle(
 }
 
 async fn rename_restoring_nodes_for_live_name_uniqueness(
-    connection: &mut sqlx::AnyConnection,
+    connection: &mut sqlx::PgConnection,
     tenant_id: &str,
     operator_id: &str,
     nodes: &[DriveNodeResponse],
@@ -201,7 +201,7 @@ async fn rename_restoring_nodes_for_live_name_uniqueness(
 }
 
 async fn resolve_restore_unique_name(
-    connection: &mut sqlx::AnyConnection,
+    connection: &mut sqlx::PgConnection,
     tenant_id: &str,
     node: &DriveNodeResponse,
     reserved_names: &BTreeSet<(String, Option<String>, String)>,
@@ -235,7 +235,7 @@ async fn resolve_restore_unique_name(
 }
 
 async fn restore_name_is_available(
-    connection: &mut sqlx::AnyConnection,
+    connection: &mut sqlx::PgConnection,
     tenant_id: &str,
     node: &DriveNodeResponse,
     candidate: &str,
@@ -272,7 +272,7 @@ async fn restore_name_is_available(
 }
 
 pub(crate) async fn ensure_restorable_subtree(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     nodes: &[DriveNodeResponse],
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {

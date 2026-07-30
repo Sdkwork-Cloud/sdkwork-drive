@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use sdkwork_drive_contract::api::pagination_cursor::{decode_offset_cursor, encode_offset_cursor};
 use sdkwork_utils_rust::{DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE};
-use sqlx::{AnyPool, Row};
+use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 use crate::ports::permission_store::{
@@ -14,11 +14,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlDrivePermissionStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlDrivePermissionStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 

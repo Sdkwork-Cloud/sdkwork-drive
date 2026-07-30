@@ -18,4 +18,5 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal", "
 tracing.workspace = true
 
 [dev-dependencies]
+sdkwork-drive-test-support.workspace = true
 tempfile.workspace = true

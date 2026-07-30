@@ -1,5 +1,5 @@
-use sqlx::any::AnyRow;
-use sqlx::AnyPool;
+use sqlx::postgres::PgRow;
+use sqlx::PgPool;
 use sqlx::Row;
 
 use crate::domain::change::DriveChangeRecord;
@@ -8,11 +8,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlChangeFeedStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlChangeFeedStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
@@ -116,7 +116,7 @@ impl SqlChangeFeedStore {
     }
 }
 
-fn map_change_row(row: &AnyRow) -> Result<DriveChangeRecord, DriveServiceError> {
+fn map_change_row(row: &PgRow) -> Result<DriveChangeRecord, DriveServiceError> {
     Ok(DriveChangeRecord {
         sequence_no: row.get("sequence_no"),
         tenant_id: row.get("tenant_id"),

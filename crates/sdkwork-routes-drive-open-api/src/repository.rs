@@ -6,14 +6,14 @@ use crate::time::now_epoch_ms;
 use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_workspace_service::{drive_share_token_hash, share_link_access_code_matches};
-use sqlx::any::AnyRow;
-use sqlx::{AnyPool, Row};
+use sqlx::postgres::PgRow;
+use sqlx::{PgPool, Row};
 
 pub(crate) async fn find_active_share_link(
-    pool: &AnyPool,
+    pool: &PgPool,
     token: &str,
     access_code: Option<&str>,
-) -> Result<AnyRow, (StatusCode, Json<ProblemDetail>)> {
+) -> Result<PgRow, (StatusCode, Json<ProblemDetail>)> {
     let token_hash = drive_share_token_hash(token);
     let row = sqlx::query(
         "SELECT
@@ -84,7 +84,7 @@ pub(crate) async fn find_active_share_link(
 }
 
 pub(crate) async fn claim_share_link_download_slot(
-    pool: &AnyPool,
+    pool: &PgPool,
     share_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let now_epoch_ms = now_epoch_ms();
@@ -112,7 +112,7 @@ pub(crate) async fn claim_share_link_download_slot(
 }
 
 async fn map_share_link_claim_failure(
-    pool: &AnyPool,
+    pool: &PgPool,
     share_id: &str,
     now_epoch_ms: i64,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
@@ -178,7 +178,7 @@ async fn map_share_link_claim_failure(
 }
 
 pub(crate) async fn release_share_link_download_slot(
-    pool: &AnyPool,
+    pool: &PgPool,
     share_id: &str,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
@@ -192,7 +192,7 @@ pub(crate) async fn release_share_link_download_slot(
     .map(|_| ())
 }
 
-pub(crate) fn map_share_link_row(row: &AnyRow) -> OpenShareLinkResponse {
+pub(crate) fn map_share_link_row(row: &PgRow) -> OpenShareLinkResponse {
     OpenShareLinkResponse {
         id: row.get("share_id"),
         tenant_id: row.get("share_tenant_id"),

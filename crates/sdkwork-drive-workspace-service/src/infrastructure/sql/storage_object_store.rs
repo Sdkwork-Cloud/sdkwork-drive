@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use sqlx::Row;
 
 use crate::ports::storage_object_store::{DriveStorageObject, DriveStorageObjectStore};
@@ -7,11 +7,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlStorageObjectStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlStorageObjectStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }

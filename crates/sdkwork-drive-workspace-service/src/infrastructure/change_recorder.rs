@@ -12,7 +12,7 @@ use sdkwork_drive_contract::drive::events::{
 };
 use serde::Serialize;
 use serde_json::json;
-use sqlx::{AnyConnection, AnyPool, Row};
+use sqlx::{PgConnection, PgPool, Row};
 
 #[derive(Debug, Clone, Copy)]
 pub struct RecordDriveChangeCommand<'a> {
@@ -103,7 +103,7 @@ pub struct RecordDriveWebsiteRootGenerationChangedCommand<'a> {
 }
 
 pub async fn record_drive_change_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: RecordDriveChangeCommand<'_>,
 ) -> Result<(), DriveServiceError> {
     let sequence_no =
@@ -113,7 +113,7 @@ pub async fn record_drive_change_on_connection(
 }
 
 pub async fn record_drive_node_version_committed_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: RecordDriveNodeVersionCommittedCommand<'_>,
 ) -> Result<(), DriveServiceError> {
     let sequence_no =
@@ -180,7 +180,7 @@ pub async fn record_drive_node_version_committed_on_connection(
 }
 
 pub async fn resolve_drive_node_location_snapshot_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
     node_id: &str,
@@ -222,7 +222,7 @@ pub async fn resolve_drive_node_location_snapshot_on_connection(
 }
 
 pub async fn record_drive_node_path_changed_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: RecordDriveNodePathChangedCommand<'_>,
 ) -> Result<(), DriveServiceError> {
     let drive_uri = drive_node_uri(command.space_id, command.node_id);
@@ -253,7 +253,7 @@ pub async fn record_drive_node_path_changed_on_connection(
 }
 
 pub async fn record_drive_node_eligibility_changed_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: RecordDriveNodeEligibilityChangedCommand<'_>,
 ) -> Result<(), DriveServiceError> {
     let drive_uri = drive_node_uri(command.space_id, command.node_id);
@@ -287,7 +287,7 @@ pub async fn record_drive_node_eligibility_changed_on_connection(
 }
 
 pub async fn record_drive_node_deleted_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: RecordDriveNodeDeletedCommand<'_>,
 ) -> Result<(), DriveServiceError> {
     let drive_uri = drive_node_uri(command.space_id, command.node_id);
@@ -322,7 +322,7 @@ pub async fn record_drive_node_deleted_on_connection(
 }
 
 pub async fn record_drive_website_root_generation_changed_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: RecordDriveWebsiteRootGenerationChangedCommand<'_>,
 ) -> Result<(), DriveServiceError> {
     let sequence_no =
@@ -386,7 +386,7 @@ struct TypedDriveNodeEventCommand<'a> {
 }
 
 async fn record_typed_node_event_on_connection<T: Serialize>(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: TypedDriveNodeEventCommand<'_>,
     data: T,
 ) -> Result<(), DriveServiceError> {
@@ -430,7 +430,7 @@ fn drive_node_uri(space_id: &str, node_id: &str) -> String {
 const MAX_ROOT_SCOPE_EFFECTS_PER_EVENT: i64 = 256;
 
 async fn resolve_root_scope_effects(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
     node_id: &str,
@@ -512,7 +512,7 @@ async fn resolve_root_scope_effects(
 }
 
 pub async fn record_drive_change(
-    pool: &AnyPool,
+    pool: &PgPool,
     command: RecordDriveChangeCommand<'_>,
 ) -> Result<(), DriveServiceError> {
     let mut connection = pool.acquire().await.map_err(sql_internal)?;
@@ -543,13 +543,13 @@ pub async fn record_drive_change(
     }
 }
 
-pub fn notify_drive_event_committed(pool: AnyPool) {
+pub fn notify_drive_event_committed(pool: PgPool) {
     sdkwork_drive_observability::metrics::record_outbox_pending();
     trigger_immediate_outbox_dispatch(pool);
 }
 
 async fn allocate_change_sequence(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
 ) -> Result<i64, DriveServiceError> {
@@ -576,7 +576,7 @@ async fn allocate_change_sequence(
 }
 
 async fn insert_change_log_and_outbox(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: RecordDriveChangeCommand<'_>,
     sequence_no: i64,
 ) -> Result<(), DriveServiceError> {
@@ -602,7 +602,7 @@ async fn insert_change_log_and_outbox(
 }
 
 async fn insert_change_log_and_outbox_with_payload(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: RecordDriveChangeCommand<'_>,
     sequence_no: i64,
     outbox_id: i64,
@@ -650,7 +650,7 @@ async fn insert_change_log_and_outbox_with_payload(
 }
 
 async fn resolve_space_relative_path(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
     node_id: &str,

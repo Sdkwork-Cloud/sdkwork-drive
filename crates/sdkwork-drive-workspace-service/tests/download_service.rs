@@ -1,14 +1,11 @@
 use async_trait::async_trait;
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::download_service::{
     CreateDownloadUrlCommand, DriveDownloadService, ResolveDownloadTokenCommand,
 };
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::storage_object_store::SqlStorageObjectStore;
 use sdkwork_drive_workspace_service::ports::storage_object_store::{
     DownloadSignCommand, DriveDownloadSigner, SignedDownloadPayload,
 };
-use sqlx::any::AnyPoolOptions;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
@@ -32,15 +29,15 @@ impl DriveDownloadSigner for FakeDownloadSigner {
     }
 }
 
-async fn seed_storage_provider(pool: &sqlx::AnyPool, provider_id: &str, bucket: &str) {
+async fn seed_storage_provider(pool: &sqlx::PgPool, provider_id: &str, bucket: &str) {
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            ?1, 's3_compatible', ?1, 'https://s3.example.com', 'us-east-1',
-            ?2, 1, 1, 'plain:test-access:test-secret', NULL, NULL,
+            $1, 's3_compatible', $1, 'https://s3.example.com', 'us-east-1',
+            $2, 1, 1, 'plain:test-access:test-secret', NULL, NULL,
             'active', 1, 'test', 'test'
         )",
     )
@@ -53,22 +50,17 @@ async fn seed_storage_provider(pool: &sqlx::AnyPool, provider_id: &str, bucket: 
 
 #[tokio::test]
 async fn download_url_is_short_lived_and_hides_object_key() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_storage_provider(&pool, "provider-001", "bucket-001").await;
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -86,7 +78,7 @@ async fn download_url_is_short_lived_and_hides_object_key() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, ?4, ?5, 'ready', 'active', 1, ?6, ?7)",
+        ) VALUES ($1, $2, $3, NULL, $4, $5, 'ready', 'active', 1, $6, $7)",
     )
     .bind("node-001")
     .bind("tenant-001")
@@ -104,7 +96,7 @@ async fn download_url_is_short_lived_and_hides_object_key() {
             id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,
             content_type, content_length, checksum_sha256_hex, lifecycle_status,
             created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'active', ?11, ?12)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11, $12)",
     )
     .bind("obj-001")
     .bind("tenant-001")
@@ -157,15 +149,10 @@ async fn download_url_is_short_lived_and_hides_object_key() {
 
 #[tokio::test]
 async fn create_download_url_rejects_ttl_outside_contract() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_storage_provider(&pool, "provider-trashed", "bucket-trashed").await;
 
     let store = SqlStorageObjectStore::new(pool);
@@ -194,22 +181,17 @@ async fn create_download_url_rejects_ttl_outside_contract() {
 
 #[tokio::test]
 async fn create_download_url_rejects_trashed_node_even_when_storage_object_is_active() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_storage_provider(&pool, "provider-trashed", "bucket-trashed").await;
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-trashed")
     .bind("tenant-trashed")
@@ -227,7 +209,7 @@ async fn create_download_url_rejects_trashed_node_even_when_storage_object_is_ac
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, ?4, ?5, 'ready', 'trashed', 1, ?6, ?7)",
+        ) VALUES ($1, $2, $3, NULL, $4, $5, 'ready', 'trashed', 1, $6, $7)",
     )
     .bind("node-trashed")
     .bind("tenant-trashed")
@@ -245,7 +227,7 @@ async fn create_download_url_rejects_trashed_node_even_when_storage_object_is_ac
             id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,
             content_type, content_length, checksum_sha256_hex, lifecycle_status,
             created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'active', ?11, ?12)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11, $12)",
     )
     .bind("obj-trashed")
     .bind("tenant-trashed")
@@ -289,22 +271,17 @@ async fn create_download_url_rejects_trashed_node_even_when_storage_object_is_ac
 
 #[tokio::test]
 async fn resolve_download_token_restores_node_and_signs_source_url() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_storage_provider(&pool, "provider-001", "bucket-001").await;
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -322,7 +299,7 @@ async fn resolve_download_token_restores_node_and_signs_source_url() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, ?4, ?5, 'ready', 'active', 1, ?6, ?7)",
+        ) VALUES ($1, $2, $3, NULL, $4, $5, 'ready', 'active', 1, $6, $7)",
     )
     .bind("node-001")
     .bind("tenant-001")
@@ -340,7 +317,7 @@ async fn resolve_download_token_restores_node_and_signs_source_url() {
             id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,
             content_type, content_length, checksum_sha256_hex, lifecycle_status,
             created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'active', ?11, ?12)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11, $12)",
     )
     .bind("obj-001")
     .bind("tenant-001")

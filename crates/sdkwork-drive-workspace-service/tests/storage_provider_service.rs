@@ -1,4 +1,3 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::storage_provider_service::{
     CreateStorageProviderCommand, DeleteStorageProviderCommand, DriveStorageProviderService,
     GetStorageProviderCommand, ListStorageProvidersCommand, RotateStorageProviderCredentialCommand,
@@ -6,22 +5,15 @@ use sdkwork_drive_workspace_service::application::storage_provider_service::{
     TestStorageProviderCommand, UpdateStorageProviderCommand,
 };
 use sdkwork_drive_workspace_service::domain::storage_provider::DriveStorageProviderKind;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::storage_provider_store::SqlStorageProviderStore;
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::any::AnyPoolOptions;
 
 #[tokio::test]
 async fn create_and_list_storage_providers_with_status_filter() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
 
@@ -86,15 +78,10 @@ async fn create_and_list_storage_providers_with_status_filter() {
 
 #[tokio::test]
 async fn create_storage_provider_rejects_duplicate_id() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
     let command = CreateStorageProviderCommand {
@@ -131,15 +118,10 @@ async fn create_storage_provider_rejects_duplicate_id() {
 
 #[tokio::test]
 async fn update_test_and_delete_storage_provider_flow() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
     service
@@ -234,15 +216,10 @@ async fn update_test_and_delete_storage_provider_flow() {
 
 #[tokio::test]
 async fn delete_storage_provider_rejects_active_provider_bindings() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool.clone()));
     service
@@ -306,15 +283,10 @@ async fn delete_storage_provider_rejects_active_provider_bindings() {
 
 #[tokio::test]
 async fn storage_provider_service_rejects_deleted_status_when_active_bindings_exist() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool.clone()));
     service
@@ -404,15 +376,10 @@ async fn storage_provider_service_rejects_deleted_status_when_active_bindings_ex
 
 #[tokio::test]
 async fn storage_provider_service_rejects_reactivating_deleted_provider() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
     service
@@ -491,15 +458,10 @@ async fn storage_provider_service_rejects_reactivating_deleted_provider() {
 
 #[tokio::test]
 async fn storage_provider_service_rejects_rotating_credentials_for_deleted_provider() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
     service
@@ -558,15 +520,10 @@ async fn storage_provider_service_rejects_rotating_credentials_for_deleted_provi
 
 #[tokio::test]
 async fn storage_provider_service_rejects_location_changes_when_active_bindings_exist() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool.clone()));
     service
@@ -716,15 +673,10 @@ async fn storage_provider_service_rejects_location_changes_when_active_bindings_
 
 #[tokio::test]
 async fn create_storage_provider_supports_custom_provider_kind_prefix() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
     let created = service
@@ -754,15 +706,10 @@ async fn create_storage_provider_supports_custom_provider_kind_prefix() {
 
 #[tokio::test]
 async fn create_storage_provider_applies_provider_default_path_style_when_not_provided() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
     let created_oss = service
@@ -808,15 +755,10 @@ async fn create_storage_provider_applies_provider_default_path_style_when_not_pr
 
 #[tokio::test]
 async fn storage_provider_service_persists_strict_tls_and_defaults_by_endpoint_scheme() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
     let https_provider = service
@@ -882,15 +824,10 @@ async fn storage_provider_service_persists_strict_tls_and_defaults_by_endpoint_s
 
 #[tokio::test]
 async fn storage_provider_service_rejects_strict_tls_true_for_http_endpoint() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
     let create_error = service
@@ -960,15 +897,10 @@ async fn storage_provider_service_rejects_strict_tls_true_for_http_endpoint() {
 
 #[tokio::test]
 async fn create_storage_provider_supports_explicit_s3_cloud_provider_kinds() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
     for (id, provider_kind, endpoint_url, region) in [
@@ -1032,15 +964,10 @@ async fn create_storage_provider_supports_explicit_s3_cloud_provider_kinds() {
 
 #[tokio::test]
 async fn storage_provider_service_rejects_invalid_endpoint_and_bucket_before_database_write() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool.clone()));
     let invalid_endpoint = service
@@ -1104,15 +1031,10 @@ async fn storage_provider_service_rejects_invalid_endpoint_and_bucket_before_dat
 
 #[tokio::test]
 async fn storage_provider_service_rejects_non_dns_object_store_bucket_names() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool.clone()));
 
@@ -1183,15 +1105,10 @@ async fn storage_provider_service_rejects_non_dns_object_store_bucket_names() {
 
 #[tokio::test]
 async fn storage_provider_service_returns_detail_capabilities_status_and_rotates_credentials() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
     service
@@ -1274,15 +1191,10 @@ async fn storage_provider_service_returns_detail_capabilities_status_and_rotates
 
 #[tokio::test]
 async fn storage_provider_service_rejects_invalid_status_before_database_constraints() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveStorageProviderService::new(SqlStorageProviderStore::new(pool));
     let create_error = service

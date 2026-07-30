@@ -1,7 +1,6 @@
 use std::time::Duration as StdDuration;
 
 use chrono::{Duration, SecondsFormat, Utc};
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::space_service::{
     CreateSpaceCommand, DriveSpaceService,
 };
@@ -12,22 +11,20 @@ use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
 use sdkwork_drive_workspace_service::domain::website_sync::{
     validate_website_sync_tree, DriveWebsiteSyncTreeEntry,
 };
+use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
 use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_parent_mutation_allowed;
 use sdkwork_drive_workspace_service::infrastructure::sql::node_store::SqlNodeStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::website_sync_store::SqlWebsiteSyncStore;
-use sdkwork_drive_workspace_service::infrastructure::sql::{
-    begin_transaction_sql, install_any_schema,
-};
 use sdkwork_drive_workspace_service::ports::node_store::{DriveNodeStore, NewDriveNode};
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use tokio::sync::oneshot;
 use tokio::time::timeout;
 
 #[tokio::test]
 async fn postgres_mutation_first_blocks_finalize_and_finalize_observes_committed_tree() {
-    let Some(pool) = postgres_pool().await else {
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
         return;
     };
     let fixture = create_fixture(&pool, "mutation-first").await;
@@ -152,7 +149,8 @@ async fn postgres_mutation_first_blocks_finalize_and_finalize_observes_committed
 
 #[tokio::test]
 async fn postgres_validation_first_blocks_mutation_then_rejects_it_without_partial_write() {
-    let Some(pool) = postgres_pool().await else {
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
         return;
     };
     let fixture = create_fixture(&pool, "validation-first").await;
@@ -233,29 +231,7 @@ struct WebsiteFixture {
     provider_id: String,
 }
 
-async fn postgres_pool() -> Option<AnyPool> {
-    let database_url = match std::env::var("SDKWORK_DRIVE_POSTGRES_URL") {
-        Ok(value) if !value.trim().is_empty() => value,
-        _ => {
-            eprintln!(
-                "skip postgres WebsiteSync concurrency: SDKWORK_DRIVE_POSTGRES_URL is not set"
-            );
-            return None;
-        }
-    };
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(8)
-        .connect(&database_url)
-        .await
-        .expect("PostgreSQL AnyPool should connect");
-    install_any_schema(&pool, DatabaseEngine::Postgresql)
-        .await
-        .expect("PostgreSQL Drive schema should install");
-    Some(pool)
-}
-
-async fn create_fixture(pool: &AnyPool, label: &str) -> WebsiteFixture {
+async fn create_fixture(pool: &PgPool, label: &str) -> WebsiteFixture {
     let suffix = uuid::Uuid::new_v4();
     let tenant_id = format!("tenant-pg-{label}-{suffix}");
     let space_id = format!("space-pg-{label}-{suffix}");

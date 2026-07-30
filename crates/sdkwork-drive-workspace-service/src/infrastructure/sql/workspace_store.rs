@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::{AnyConnection, AnyPool, Row};
+use sqlx::{PgConnection, PgPool, Row};
 
 use crate::infrastructure::sql::begin_transaction_sql;
 use crate::ports::workspace_store::{
@@ -10,11 +10,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlDriveWorkspaceStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlDriveWorkspaceStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -399,7 +399,7 @@ impl SqlDriveWorkspaceStore {
 
     async fn replace_active_object_ref_in_transaction(
         &self,
-        connection: &mut AnyConnection,
+        connection: &mut PgConnection,
         record: &NewDriveWorkspaceObjectRecord,
         next_version_no: i64,
     ) -> Result<bool, DriveServiceError> {
@@ -462,7 +462,7 @@ impl SqlDriveWorkspaceStore {
 }
 
 async fn ensure_workspace_node_in_transaction(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     record: &NewDriveWorkspaceNodeRecord,
 ) -> Result<DriveWorkspaceNodeRecord, DriveServiceError> {
     if let Some(existing) = find_workspace_child_node_in_transaction(
@@ -523,7 +523,7 @@ async fn ensure_workspace_node_in_transaction(
 }
 
 async fn find_workspace_child_node_in_transaction(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
     parent_node_id: Option<&str>,
@@ -582,7 +582,7 @@ async fn find_workspace_child_node_in_transaction(
 }
 
 fn map_workspace_node_row(
-    row: &sqlx::any::AnyRow,
+    row: &sqlx::postgres::PgRow,
 ) -> Result<DriveWorkspaceNodeRecord, DriveServiceError> {
     Ok(DriveWorkspaceNodeRecord {
         id: row.get("id"),

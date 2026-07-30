@@ -1,4 +1,3 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::node_service::{
     CreateNodeCommand, DriveNodeService,
 };
@@ -7,16 +6,16 @@ use sdkwork_drive_workspace_service::application::space_service::{
 };
 use sdkwork_drive_workspace_service::domain::node::DriveNodeType;
 use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::node_store::SqlNodeStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
 
 #[tokio::test]
 async fn create_folder_enforces_live_name_uniqueness_per_parent() {
-    let pool = sqlite_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let space_service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
     let node_service = DriveNodeService::new(SqlNodeStore::new(pool.clone()));
 
@@ -54,7 +53,10 @@ async fn create_folder_enforces_live_name_uniqueness_per_parent() {
 
 #[tokio::test]
 async fn create_folder_rejects_parent_from_another_space() {
-    let pool = sqlite_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let space_service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
     let node_service = DriveNodeService::new(SqlNodeStore::new(pool.clone()));
     let source_space = create_space(&space_service, "space-source", "tenant-001", "user-001").await;
@@ -92,7 +94,10 @@ async fn create_folder_rejects_parent_from_another_space() {
 
 #[tokio::test]
 async fn create_folder_rejects_file_parent() {
-    let pool = sqlite_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let space_service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
     let node_service = DriveNodeService::new(SqlNodeStore::new(pool.clone()));
     let space = create_space(&space_service, "space-main", "tenant-001", "user-001").await;
@@ -129,7 +134,10 @@ async fn create_folder_rejects_file_parent() {
 
 #[tokio::test]
 async fn create_folder_rejects_trashed_parent() {
-    let pool = sqlite_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let space_service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
     let node_service = DriveNodeService::new(SqlNodeStore::new(pool.clone()));
     let space = create_space(&space_service, "space-main", "tenant-001", "user-001").await;
@@ -147,7 +155,7 @@ async fn create_folder_rejects_trashed_parent() {
         .await
         .expect("parent folder should be created");
 
-    sqlx::query("UPDATE dr_drive_node SET lifecycle_status='trashed' WHERE id=?1")
+    sqlx::query("UPDATE dr_drive_node SET lifecycle_status='trashed' WHERE id=$1")
         .bind(&parent.id)
         .execute(&pool)
         .await
@@ -172,7 +180,10 @@ async fn create_folder_rejects_trashed_parent() {
 
 #[tokio::test]
 async fn create_folder_rejects_self_parent() {
-    let pool = sqlite_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let space_service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
     let node_service = DriveNodeService::new(SqlNodeStore::new(pool));
     let space = create_space(&space_service, "space-main", "tenant-001", "user-001").await;
@@ -197,7 +208,10 @@ async fn create_folder_rejects_self_parent() {
 #[tokio::test]
 async fn create_node_rejects_file_at_git_repository_space_root_but_allows_files_inside_repository_directory(
 ) {
-    let pool = sqlite_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let space_service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
     let node_service = DriveNodeService::new(SqlNodeStore::new(pool));
     let git_repository_space = create_space_with_type(
@@ -254,7 +268,10 @@ async fn create_node_rejects_file_at_git_repository_space_root_but_allows_files_
 
 #[tokio::test]
 async fn create_node_allows_file_at_deployment_space_root() {
-    let pool = sqlite_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let space_service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
     let node_service = DriveNodeService::new(SqlNodeStore::new(pool));
     let deployment_space = create_space_with_type(
@@ -284,7 +301,10 @@ async fn create_node_allows_file_at_deployment_space_root() {
 
 #[tokio::test]
 async fn create_node_denormalizes_notary_space_type_from_parent_space() {
-    let pool = sqlite_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let space_service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
     let node_service = DriveNodeService::new(SqlNodeStore::new(pool.clone()));
     let notary_space = space_service
@@ -319,25 +339,12 @@ async fn create_node_denormalizes_notary_space_type_from_parent_space() {
     assert_eq!(case_folder.space_type, DriveSpaceType::Notary);
 
     let persisted_space_type: String =
-        sqlx::query_scalar("SELECT space_type FROM dr_drive_node WHERE id=?1")
+        sqlx::query_scalar("SELECT space_type FROM dr_drive_node WHERE id=$1")
             .bind(&case_folder.id)
             .fetch_one(&pool)
             .await
             .expect("node space_type should be persisted on dr_drive_node");
     assert_eq!(persisted_space_type, "notary");
-}
-
-async fn sqlite_pool() -> AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
-    pool
 }
 
 async fn create_space(

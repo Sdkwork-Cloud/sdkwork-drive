@@ -14,6 +14,7 @@ tracing.workspace = true
 uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
+sdkwork-drive-test-support.workspace = true
 sdkwork-drive-config.workspace = true
 sqlx.workspace = true
 tempfile.workspace = true

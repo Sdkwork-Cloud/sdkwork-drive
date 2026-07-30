@@ -1,10 +1,7 @@
 use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use serde_json::Value;
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use tower::util::ServiceExt;
 
 mod common;
@@ -56,7 +53,10 @@ fn sandbox_file_openapi_inlines_problem_json_for_every_error_response() {
 
 #[tokio::test]
 async fn sandbox_list_collapses_effective_grants_and_never_exposes_provider_details() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_sandbox(
         &pool,
         "sandbox-alpha",
@@ -184,7 +184,10 @@ async fn sandbox_list_collapses_effective_grants_and_never_exposes_provider_deta
 
 #[tokio::test]
 async fn sandbox_list_enforces_auth_pagination_and_explicit_grants() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_sandbox(
         &pool,
         "sandbox-private",
@@ -259,7 +262,10 @@ async fn sandbox_directory_routes_list_create_paginate_and_audit_without_path_le
     std::fs::create_dir(temp.path().join("beta")).expect("beta should be created");
     std::fs::write(temp.path().join("README.md"), b"sandbox").expect("readme should be created");
 
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_sandbox(
         &pool,
         "sandbox-directory",
@@ -462,7 +468,10 @@ async fn sandbox_directory_routes_list_create_paginate_and_audit_without_path_le
 #[tokio::test]
 async fn sandbox_directory_routes_enforce_grants_read_only_and_logical_path_validation() {
     let temp = tempfile::tempdir().expect("sandbox root should be created");
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_sandbox(
         &pool,
         "sandbox-read-only",
@@ -638,7 +647,10 @@ async fn sandbox_file_routes_complete_binary_safe_optimistic_and_recursive_workf
     std::fs::create_dir(temp.path().join("tree")).expect("tree should be created");
     std::fs::write(temp.path().join("tree/leaf.txt"), b"leaf").expect("leaf should be created");
 
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_sandbox(
         &pool,
         "sandbox-files",
@@ -1038,19 +1050,6 @@ fn authed_sandbox_mutation(
         .expect("sandbox mutation request should be built")
 }
 
-async fn test_pool() -> AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
-    pool
-}
-
 fn organization_request(uri: &str) -> Request<Body> {
     Request::builder()
         .method(Method::GET)
@@ -1081,7 +1080,7 @@ fn organization_request(uri: &str) -> Request<Body> {
 }
 
 async fn seed_sandbox(
-    pool: &AnyPool,
+    pool: &PgPool,
     id: &str,
     display_name: &str,
     lifecycle_status: &str,
@@ -1106,7 +1105,7 @@ async fn seed_sandbox(
 }
 
 async fn seed_grant(
-    pool: &AnyPool,
+    pool: &PgPool,
     id: &str,
     sandbox_id: &str,
     subject_type: &str,

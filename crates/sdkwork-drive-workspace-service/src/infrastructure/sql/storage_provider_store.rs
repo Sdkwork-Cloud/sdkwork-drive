@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use sqlx::any::AnyRow;
-use sqlx::AnyPool;
+use sqlx::postgres::PgRow;
+use sqlx::PgPool;
 use sqlx::Row;
 
 use crate::domain::storage_provider::{DriveStorageProvider, DriveStorageProviderKind};
@@ -12,11 +12,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlStorageProviderStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlStorageProviderStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -258,7 +258,7 @@ impl DriveStorageProviderStore for SqlStorageProviderStore {
     }
 }
 
-fn map_row_to_storage_provider(row: &AnyRow) -> Result<DriveStorageProvider, DriveServiceError> {
+fn map_row_to_storage_provider(row: &PgRow) -> Result<DriveStorageProvider, DriveServiceError> {
     let provider_kind_raw: String = row.get("provider_kind");
     let provider_kind =
         DriveStorageProviderKind::try_from_str(&provider_kind_raw).ok_or_else(|| {
@@ -290,7 +290,7 @@ fn map_row_to_storage_provider(row: &AnyRow) -> Result<DriveStorageProvider, Dri
     })
 }
 
-fn get_bool(row: &AnyRow, column: &str) -> Result<bool, DriveServiceError> {
+fn get_bool(row: &PgRow, column: &str) -> Result<bool, DriveServiceError> {
     row.try_get::<bool, _>(column)
         .or_else(|_| row.try_get::<i64, _>(column).map(|value| value != 0))
         .map_err(|error| {

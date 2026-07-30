@@ -1,4 +1,4 @@
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 /// Quota reconciliation result.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -10,7 +10,7 @@ pub struct QuotaRecalculationResult {
 
 /// Reconcile tenant storage usage by retiring active objects whose nodes are no longer active
 /// and reporting tenants that exceed configured quota caps.
-pub async fn recalculate_quotas(pool: &AnyPool) -> Result<QuotaRecalculationResult, sqlx::Error> {
+pub async fn recalculate_quotas(pool: &PgPool) -> Result<QuotaRecalculationResult, sqlx::Error> {
     let storage_objects_retired = sqlx::query(
         "UPDATE dr_drive_storage_object
          SET lifecycle_status = 'deleted',
@@ -64,20 +64,15 @@ pub async fn recalculate_quotas(pool: &AnyPool) -> Result<QuotaRecalculationResu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sdkwork_drive_config::DatabaseEngine;
-    use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
+    
 
     #[tokio::test]
     async fn recalculate_quotas_retires_objects_for_inactive_nodes() {
-        sqlx::any::install_default_drivers();
-        let pool = sqlx::any::AnyPoolOptions::new()
-            .max_connections(1)
-            .connect("sqlite::memory:")
-            .await
-            .expect("sqlite memory pool");
-        install_any_schema(&pool, DatabaseEngine::Sqlite)
-            .await
-            .expect("sqlite schema should install");
+        let Some((pool, _database_guard)) =
+            sdkwork_drive_test_support::postgres_test_database().await
+        else {
+            return;
+        };
 
         sqlx::query(
             "INSERT INTO dr_drive_storage_provider (

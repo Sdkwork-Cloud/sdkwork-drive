@@ -1,4 +1,4 @@
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 use crate::infrastructure::sql::permission_store::SqlDrivePermissionStore;
 use crate::ports::permission_store::DrivePermissionStore;
@@ -17,7 +17,7 @@ pub struct SqlDrivePermissionService {
 }
 
 impl SqlDrivePermissionService {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self {
             store: SqlDrivePermissionStore::new(pool),
         }

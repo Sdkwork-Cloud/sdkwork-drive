@@ -1,4 +1,4 @@
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 /// Schema migration status.
 #[derive(Debug, Clone)]
@@ -13,7 +13,7 @@ pub struct MigrationStatus {
 ///
 /// This function applies pending migrations to bring the database
 /// schema up to date with the current application version.
-pub async fn run_migrations(pool: &AnyPool) -> Result<MigrationStatus, sqlx::Error> {
+pub async fn run_migrations(pool: &PgPool) -> Result<MigrationStatus, sqlx::Error> {
     // Check current schema version
     let current_version = get_current_schema_version(pool).await?;
 
@@ -38,7 +38,7 @@ pub async fn run_migrations(pool: &AnyPool) -> Result<MigrationStatus, sqlx::Err
 }
 
 /// Get the current schema version from the database.
-async fn get_current_schema_version(pool: &AnyPool) -> Result<i64, sqlx::Error> {
+async fn get_current_schema_version(pool: &PgPool) -> Result<i64, sqlx::Error> {
     // Try to read from schema_version table
     let result = sqlx::query_scalar::<_, i64>(
         "SELECT version FROM _drive_schema_version ORDER BY version DESC LIMIT 1",
@@ -70,7 +70,7 @@ fn get_pending_migrations(current_version: i64) -> Vec<String> {
 }
 
 /// Apply a single migration.
-async fn apply_migration(pool: &AnyPool, migration: &str) -> Result<(), sqlx::Error> {
+async fn apply_migration(pool: &PgPool, migration: &str) -> Result<(), sqlx::Error> {
     tracing::info!("Applying migration: {}", migration);
 
     // Execute migration SQL based on migration name

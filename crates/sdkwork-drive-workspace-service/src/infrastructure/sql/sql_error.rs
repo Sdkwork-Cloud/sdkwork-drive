@@ -1,6 +1,5 @@
 pub(crate) fn is_unique_constraint_violation(message: &str) -> bool {
-    message.contains("UNIQUE constraint failed")
-        || message.contains("duplicate key value violates unique constraint")
+    message.contains("duplicate key value violates unique constraint")
 }
 
 pub(crate) fn normalize_timestamp_text(value: String) -> String {
@@ -19,13 +18,6 @@ pub(crate) fn normalize_timestamp_text(value: String) -> String {
 #[cfg(test)]
 mod tests {
     use super::{is_unique_constraint_violation, normalize_timestamp_text};
-
-    #[test]
-    fn detects_sqlite_unique_constraint_message() {
-        assert!(is_unique_constraint_violation(
-            "UNIQUE constraint failed: dr_drive_storage_provider.id"
-        ));
-    }
 
     #[test]
     fn detects_postgres_unique_constraint_message() {

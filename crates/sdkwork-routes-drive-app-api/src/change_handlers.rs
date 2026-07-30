@@ -97,7 +97,7 @@ pub(crate) async fn get_changes_start_page_token(
 }
 
 pub(crate) async fn query_start_page_token(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     tenant_id: &str,
     space_id: Option<&str>,
 ) -> Result<i64, (StatusCode, Json<ProblemDetail>)> {

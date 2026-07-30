@@ -1,12 +1,12 @@
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 #[derive(Clone, Debug)]
 pub struct BackendState {
-    pub(crate) pool: AnyPool,
+    pub(crate) pool: PgPool,
 }
 
 impl BackendState {
-    pub(crate) fn new(pool: AnyPool) -> Self {
+    pub(crate) fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }

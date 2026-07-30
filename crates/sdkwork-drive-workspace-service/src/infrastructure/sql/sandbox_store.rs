@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::{AnyPool, Row};
+use sqlx::{PgPool, Row};
 
 use crate::domain::sandbox::{AuthorizedSandboxMount, DriveSandboxGrant, DriveSandboxVolume};
 use crate::ports::sandbox_principal_resolver::EffectiveSandboxPrincipal;
@@ -8,11 +8,11 @@ use crate::DriveServiceError;
 
 #[derive(Clone, Debug)]
 pub struct SqlSandboxStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlSandboxStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -168,7 +168,7 @@ fn principal_predicate_sql(principal_count: usize, first_bind_index: usize) -> S
         .join(" OR ")
 }
 
-fn map_volume(row: sqlx::any::AnyRow) -> DriveSandboxVolume {
+fn map_volume(row: sqlx::postgres::PgRow) -> DriveSandboxVolume {
     DriveSandboxVolume {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),

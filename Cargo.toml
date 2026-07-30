@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "crates/sdkwork-api-drive-assembly",
-    "crates/sdkwork-api-drive-assembly",
     "crates/sdkwork-drive-contract",
     "crates/sdkwork-drive-config",
     "crates/sdkwork-drive-database-host",
@@ -32,9 +31,7 @@ edition = "2021"
 version = "0.1.0"
 
 [workspace.dependencies]
-sdkwork_routes_iam_app_api = { path = "../sdkwork-iam/crates/sdkwork-routes-iam-app-api", package = "sdkwork-routes-iam-app-api" }
-sdkwork-iam-database-host = { path = "../sdkwork-iam/crates/sdkwork-iam-database-host" }
-sdkwork-iam-embedded-application-bootstrap = { path = "../sdkwork-iam/crates/sdkwork-iam-embedded-application-bootstrap" }
+sdkwork-api-iam-assembly = { path = "../sdkwork-iam/crates/sdkwork-api-iam-assembly" }
 anyhow = "1.0"
 async-trait = "0.1"
 cap-std = "3.4"
@@ -46,7 +43,7 @@ opendal = { version = "0.57.0", default-features = false, features = ["services-
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 jsonwebtoken = { version = "9", default-features = false, features = ["use_pem"] }
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "any", "sqlite", "postgres", "chrono"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "chrono"] }
 tempfile = "3.12"
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
 toml = "0.8"

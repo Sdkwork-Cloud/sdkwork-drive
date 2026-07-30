@@ -1,29 +1,21 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::maintenance_service::{
     DriveMaintenanceService, ListMaintenanceJobsCommand, SweepAbandonedUploadTasksCommand,
     SweepExpiredUploadContentCommand, SweepObjectStoreCommand, SweepUploadSessionsCommand,
 };
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::maintenance_store::SqlMaintenanceStore;
-use sqlx::any::AnyPoolOptions;
 
 #[tokio::test]
 async fn upload_session_sweep_marks_expired_sessions() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -41,7 +33,7 @@ async fn upload_session_sweep_marks_expired_sessions() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, 'file', ?4, 'ready', 'active', 1, ?5, ?6)",
+        ) VALUES ($1, $2, $3, NULL, 'file', $4, 'ready', 'active', 1, $5, $6)",
     )
     .bind("node-001")
     .bind("tenant-001")
@@ -60,7 +52,7 @@ async fn upload_session_sweep_marks_expired_sessions() {
             id, tenant_id, space_id, node_id, bucket, object_key,
             idempotency_key, storage_provider_id, storage_upload_id, state,
             expires_at_epoch_ms, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'provider-001', ?1, 'created', ?8, 1, ?9, ?10)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'provider-001', $1, 'created', $8, 1, $9, $10)",
     )
     .bind("session-001")
     .bind("tenant-001")
@@ -101,15 +93,10 @@ async fn upload_session_sweep_marks_expired_sessions() {
 
 #[tokio::test]
 async fn upload_session_sweep_expires_stale_completing_sessions() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -173,15 +160,10 @@ async fn upload_session_sweep_expires_stale_completing_sessions() {
 
 #[tokio::test]
 async fn abandoned_upload_task_sweep_marks_stuck_items_failed_when_session_expired() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -273,21 +255,16 @@ async fn abandoned_upload_task_sweep_marks_stuck_items_failed_when_session_expir
 
 #[tokio::test]
 async fn object_sweep_deletes_deleted_storage_objects() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -305,7 +282,7 @@ async fn object_sweep_deletes_deleted_storage_objects() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, 'file', ?4, 'ready', 'active', 1, ?5, ?6)",
+        ) VALUES ($1, $2, $3, NULL, 'file', $4, 'ready', 'active', 1, $5, $6)",
     )
     .bind("node-001")
     .bind("tenant-001")
@@ -325,8 +302,8 @@ async fn object_sweep_deletes_deleted_storage_objects() {
             content_type, content_length, checksum_sha256_hex, lifecycle_status,
             created_by, updated_by
         ) VALUES
-            (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, 'deleted', ?10, ?11),
-            (?12, ?13, ?14, 2, ?15, ?16, ?17, ?18, ?19, ?20, 'active', ?21, ?22)",
+            ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9, 'deleted', $10, $11),
+            ($12, $13, $14, 2, $15, $16, $17, $18, $19, $20, 'active', $21, $22)",
     )
     .bind("obj-001")
     .bind("tenant-001")
@@ -377,15 +354,10 @@ async fn object_sweep_deletes_deleted_storage_objects() {
 
 #[tokio::test]
 async fn expired_upload_content_sweep_soft_deletes_nodes_and_records_sensitive_operation() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -517,15 +489,10 @@ async fn expired_upload_content_sweep_soft_deletes_nodes_and_records_sensitive_o
 
 #[tokio::test]
 async fn expired_upload_content_sweep_hard_deletes_objects_and_records_sensitive_operation() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -666,21 +633,16 @@ async fn expired_upload_content_sweep_hard_deletes_objects_and_records_sensitive
 
 #[tokio::test]
 async fn maintenance_service_records_jobs_and_lists_with_filters() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -698,7 +660,7 @@ async fn maintenance_service_records_jobs_and_lists_with_filters() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, 'file', ?4, 'ready', 'active', 1, ?5, ?6)",
+        ) VALUES ($1, $2, $3, NULL, 'file', $4, 'ready', 'active', 1, $5, $6)",
     )
     .bind("node-001")
     .bind("tenant-001")
@@ -717,7 +679,7 @@ async fn maintenance_service_records_jobs_and_lists_with_filters() {
             id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,
             content_type, content_length, checksum_sha256_hex, lifecycle_status,
             created_by, updated_by
-        ) VALUES (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, 'deleted', ?10, ?11)",
+        ) VALUES ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9, 'deleted', $10, $11)",
     )
     .bind("obj-001")
     .bind("tenant-001")
@@ -739,7 +701,7 @@ async fn maintenance_service_records_jobs_and_lists_with_filters() {
             id, tenant_id, space_id, node_id, bucket, object_key,
             idempotency_key, storage_provider_id, storage_upload_id, state,
             expires_at_epoch_ms, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'provider-001', ?1, 'created', ?8, 1, ?9, ?10)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'provider-001', $1, 'created', $8, 1, $9, $10)",
     )
     .bind("session-001")
     .bind("tenant-001")
@@ -816,15 +778,10 @@ async fn maintenance_service_records_jobs_and_lists_with_filters() {
 
 #[tokio::test]
 async fn maintenance_service_records_failed_job_when_sweep_errors() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query("DROP TABLE dr_drive_storage_object")
         .execute(&pool)
@@ -866,15 +823,10 @@ async fn maintenance_service_records_failed_job_when_sweep_errors() {
 
 #[tokio::test]
 async fn maintenance_service_records_failed_upload_sweep_job_when_table_missing() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query("DROP TABLE dr_drive_upload_session")
         .execute(&pool)
@@ -917,15 +869,10 @@ async fn maintenance_service_records_failed_upload_sweep_job_when_table_missing(
 
 #[tokio::test]
 async fn maintenance_service_rejects_invalid_identifier_inputs() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveMaintenanceService::new(SqlMaintenanceStore::new(pool));
     let invalid_operator_error = service
@@ -962,15 +909,15 @@ async fn maintenance_service_rejects_invalid_identifier_inputs() {
     );
 }
 
-async fn seed_storage_provider(pool: &sqlx::AnyPool, provider_id: &str, bucket: &str) {
+async fn seed_storage_provider(pool: &sqlx::PgPool, provider_id: &str, bucket: &str) {
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
             credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            ?1, 's3_compatible', ?1, 'https://s3.example.com', 'us-east-1',
-            ?2, 1, 'plain:test-access-key:test-secret-key',
+            $1, 's3_compatible', $1, 'https://s3.example.com', 'us-east-1',
+            $2, 1, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-001', 'admin-001'
         )",
     )

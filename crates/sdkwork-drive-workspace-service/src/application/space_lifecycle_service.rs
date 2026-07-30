@@ -46,11 +46,11 @@ pub struct DeleteSpaceWithContentsResult {
 pub struct SqlDriveSpaceLifecycleService {
     lifecycle_store: SqlSpaceLifecycleStore,
     permission_service: SqlDrivePermissionService,
-    pool: sqlx::AnyPool,
+    pool: sqlx::PgPool,
 }
 
 impl SqlDriveSpaceLifecycleService {
-    pub fn new(pool: sqlx::AnyPool) -> Self {
+    pub fn new(pool: sqlx::PgPool) -> Self {
         Self {
             lifecycle_store: SqlSpaceLifecycleStore::new(pool.clone()),
             permission_service: SqlDrivePermissionService::new(pool.clone()),

@@ -1,11 +1,10 @@
 use async_trait::async_trait;
-use sdkwork_drive_config::DatabaseEngine;
-use sqlx::{AnyConnection, AnyPool, Row};
+use sqlx::{PgConnection, PgPool, Row};
 
 use crate::infrastructure::sql::managed_website_tree_guard::{
     ManagedWebsiteTreeSystemOverride, ManagedWebsiteTreeSystemOverrideReason,
 };
-use crate::infrastructure::sql::{begin_transaction_sql_for_engine, next_drive_runtime_id};
+use crate::infrastructure::sql::{begin_transaction_sql, next_drive_runtime_id};
 use crate::ports::website_publishing_maintenance::{
     DriveWebsitePublishingMaintenanceStore, WebsiteTreeCleanupCandidate, WebsiteTreeCleanupKind,
     WebsiteTreeStorageObject,
@@ -16,20 +15,19 @@ const MAXIMUM_TREE_DEPTH: i64 = 128;
 
 #[derive(Debug, Clone)]
 pub struct SqlWebsitePublishingMaintenanceStore {
-    pool: AnyPool,
-    engine: DatabaseEngine,
+    pool: PgPool,
 }
 
 impl SqlWebsitePublishingMaintenanceStore {
-    pub fn new(pool: AnyPool, engine: DatabaseEngine) -> Self {
-        Self { pool, engine }
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
     }
 
-    async fn begin(&self) -> Result<sqlx::pool::PoolConnection<sqlx::Any>, DriveServiceError> {
+    async fn begin(&self) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, DriveServiceError> {
         let mut connection = self.pool.acquire().await.map_err(|error| {
             internal("acquire website publishing maintenance connection", error)
         })?;
-        sqlx::query(begin_transaction_sql_for_engine(self.engine))
+        sqlx::query(begin_transaction_sql())
             .execute(&mut *connection)
             .await
             .map_err(|error| internal("begin website publishing maintenance transaction", error))?;
@@ -367,7 +365,7 @@ impl DriveWebsitePublishingMaintenanceStore for SqlWebsitePublishingMaintenanceS
 }
 
 async fn select_generation_candidate(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     status: &str,
 ) -> Result<Option<(String, String, String)>, DriveServiceError> {
     let row = sqlx::query(
@@ -390,7 +388,7 @@ async fn ensure_candidate_current<'e, E>(
     candidate: &WebsiteTreeCleanupCandidate,
 ) -> Result<(), DriveServiceError>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Any>,
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
     let current: i64 = match candidate.kind {
         WebsiteTreeCleanupKind::ExpiredGeneration => {
@@ -432,7 +430,7 @@ where
 }
 
 async fn tree_has_live_reference(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     root_node_id: &str,
     excluded_generation_id: Option<&str>,
@@ -459,7 +457,7 @@ async fn tree_has_live_reference(
 }
 
 async fn count_active_tree_objects(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     root_node_id: &str,
 ) -> Result<i64, DriveServiceError> {
@@ -486,7 +484,7 @@ async fn count_active_tree_objects(
 }
 
 async fn insert_audit(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     action: &str,
     resource_type: &str,
@@ -513,7 +511,7 @@ async fn insert_audit(
 }
 
 async fn finish_transaction<T>(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     result: Result<T, DriveServiceError>,
 ) -> Result<T, DriveServiceError> {
     match result {

@@ -74,8 +74,7 @@
       "SDKWORK_DRIVE_APP_ROOT",
       "SDKWORK_DATABASE_URL",
       "SDKWORK_DRIVE_CONFIG_FILE",
-      "SDKWORK_DATABASE_ENGINE",
-      "SDKWORK_DATABASE_SQLITE_URL"
+      "SDKWORK_DATABASE_ENGINE"
     ],
     "sdkDependencies": [],
     "dependencyApiExports": [],

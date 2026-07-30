@@ -25,7 +25,7 @@ pub struct SqlDriveChangeFeedService {
 }
 
 impl SqlDriveChangeFeedService {
-    pub fn new(pool: sqlx::AnyPool) -> Self {
+    pub fn new(pool: sqlx::PgPool) -> Self {
         Self {
             store: SqlChangeFeedStore::new(pool),
         }

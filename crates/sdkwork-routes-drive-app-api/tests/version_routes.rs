@@ -1,24 +1,16 @@
 use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 
-use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 
 mod common;
 
 #[tokio::test]
 async fn version_routes_prefer_logical_node_version_ids() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_file_version(&pool).await;
 
     let app = common::test_router_with_pool(pool.clone());
@@ -171,7 +163,7 @@ async fn version_routes_prefer_logical_node_version_ids() {
     );
 }
 
-async fn seed_file_version(pool: &sqlx::AnyPool) {
+async fn seed_file_version(pool: &sqlx::PgPool) {
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
@@ -227,9 +219,9 @@ async fn seed_file_version(pool: &sqlx::AnyPool) {
                 content_type, content_length, checksum_sha256_hex, lifecycle_status,
                 created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-001', 'node-001', ?2,
-                'provider-001', 'bucket-001', ?3,
-                'text/markdown', 42, ?4, 'active', 'user-001', 'user-001'
+                $1, 'tenant-001', 'node-001', $2,
+                'provider-001', 'bucket-001', $3,
+                'text/markdown', 42, $4, 'active', 'user-001', 'user-001'
             )",
         )
         .bind(object_id)
@@ -248,8 +240,8 @@ async fn seed_file_version(pool: &sqlx::AnyPool) {
                 app_id, app_resource_type, app_resource_id, scene, source,
                 lifecycle_status, created_by, updated_by
             ) VALUES (
-                ?1, 'tenant-001', 'space-001', 'node-001', ?2, ?3,
-                'text/markdown', 42, ?4, 'auto', 'Draft', 'uploader',
+                $1, 'tenant-001', 'space-001', 'node-001', $2, $3,
+                'text/markdown', 42, $4, 'auto', 'Draft', 'uploader',
                 'Created from upload', NULL, 'sdkwork-notes', 'page', 'page-001',
                 'notes_page', 'editor', 'active', 'user-001', 'user-001'
             )",

@@ -1,24 +1,16 @@
 use axum::body::{to_bytes, Body};
 use axum::response::Response;
 use http::{header, Method, Request, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_routes_drive_backend_api::build_router_with_pool;
 use serde_json::{json, Value};
-use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 
 #[tokio::test]
 async fn sandbox_admin_routes_complete_volume_and_grant_lifecycle_without_path_leakage() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let app = build_router_with_pool(pool.clone());
     let root = tempfile::tempdir().expect("sandbox root should be created");
     let canonical_root = std::fs::canonicalize(root.path())

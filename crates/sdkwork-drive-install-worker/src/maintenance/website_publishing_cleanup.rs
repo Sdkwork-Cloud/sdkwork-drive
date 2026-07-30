@@ -1,4 +1,3 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_object_runtime::DriveObjectStoreRuntime;
 use sdkwork_drive_storage_contract::{
     DeleteObjectRequest, DriveObjectLocator, DriveObjectStoreErrorKind,
@@ -7,20 +6,19 @@ use sdkwork_drive_workspace_service::infrastructure::sql::website_publishing_mai
 use sdkwork_drive_workspace_service::ports::website_publishing_maintenance::{
     DriveWebsitePublishingMaintenanceStore, WebsitePublishingMaintenanceResult,
 };
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 const OBJECT_DELETE_BATCH_SIZE: i64 = 256;
 const MAINTENANCE_OPERATOR_ID: &str = "sdkwork-drive-install-worker";
 
 pub async fn cleanup_website_publishing(
-    pool: &AnyPool,
-    engine: DatabaseEngine,
+    pool: &PgPool,
     work_limit: i64,
 ) -> Result<WebsitePublishingMaintenanceResult, String> {
     if work_limit <= 0 {
         return Err("website publishing cleanup work_limit must be positive".to_string());
     }
-    let store = SqlWebsitePublishingMaintenanceStore::new(pool.clone(), engine);
+    let store = SqlWebsitePublishingMaintenanceStore::new(pool.clone());
     let object_runtime = DriveObjectStoreRuntime::new(pool.clone());
     let mut result = WebsitePublishingMaintenanceResult {
         expired_syncs: store

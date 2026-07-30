@@ -404,15 +404,6 @@ function parseArgs(argv) {
       index += 1;
       continue;
     }
-    if (arg === '--database') {
-      const value = argv[index + 1];
-      if (!value || value.startsWith('--')) {
-        throw new Error('--database requires a value (postgres or sqlite)');
-      }
-      settings.database = value;
-      index += 1;
-      continue;
-    }
     if (arg === '--dev-env-file') {
       const value = argv[index + 1];
       if (!value || value.startsWith('--')) {
@@ -433,51 +424,6 @@ function parseArgs(argv) {
     }
   }
   return settings;
-}
-
-function normalizeSqliteDatabaseUrl(url) {
-  if (!url.startsWith('sqlite:')) {
-    return url;
-  }
-  if (url.startsWith('sqlite:///')) {
-    return url;
-  }
-  if (url.startsWith('sqlite://')) {
-    const relativePath = url.slice('sqlite://'.length);
-    const absolutePath = path.resolve(repoRoot, relativePath);
-    return `sqlite:///${absolutePath.split(path.sep).join('/')}`;
-  }
-  if (url.startsWith('sqlite:./') || url.startsWith('sqlite:../')) {
-    const relativePath = url.slice('sqlite:'.length);
-    const absolutePath = path.resolve(repoRoot, relativePath);
-    return `sqlite:///${absolutePath.split(path.sep).join('/')}`;
-  }
-  return url;
-}
-
-function resolveDefaultSqliteDatabaseUrl(env) {
-  const configured = normalizeText(env.SDKWORK_DATABASE_SQLITE_URL);
-  if (configured) {
-    return normalizeSqliteDatabaseUrl(configured);
-  }
-
-  const sqliteFile = path.join(repoRoot, 'target', 'dev', 'sdkwork-drive.sqlite');
-  const normalizedPath = sqliteFile.split(path.sep).join('/');
-  return `sqlite:///${normalizedPath}`;
-}
-
-function resolveDatabaseEnv(baseEnv, databaseProfile) {
-  const env = { ...baseEnv };
-  if (databaseProfile === 'sqlite') {
-    fs.mkdirSync(path.join(repoRoot, 'target', 'dev'), { recursive: true });
-    const sqliteUrl = resolveDefaultSqliteDatabaseUrl(env);
-    env.SDKWORK_DATABASE_ENGINE = 'sqlite';
-    env.SDKWORK_DATABASE_SQLITE_URL = sqliteUrl;
-    env.SDKWORK_DATABASE_URL = sqliteUrl;
-    env.SDKWORK_DATABASE_MAX_CONNECTIONS =
-      normalizeText(env.SDKWORK_DATABASE_MAX_CONNECTIONS) || '1';
-  }
-  return env;
 }
 
 function resolveStandaloneGatewayConfigPath(env) {
@@ -655,7 +601,6 @@ function printHelp() {
 
 Options:
   --target <browser|desktop>       Target platform (default: browser)
-  --database <postgres|sqlite>     Database profile (default: postgres)
   --deployment-profile <standalone|cloud> Deployment profile (default: standalone)
   --dev-env-file <path>            Path to env file
   --dry-run                        Print plan without executing
@@ -688,12 +633,8 @@ async function main() {
       process.exit(0);
     }
 
-    const defaultDatabaseProfile = 'postgres';
-    const databaseProfile = settings.database || defaultDatabaseProfile;
-
     const postgresEnvFile = '.env.postgres';
-    const envFile = settings.devEnvFile
-      || (databaseProfile === 'postgres' ? postgresEnvFile : undefined);
+    const envFile = settings.devEnvFile || postgresEnvFile;
     const profileId = resolveDevProfileId(settings.deploymentProfile);
     const profileEnv = loadProfile(profileId);
     const postgresEnv = loadEnvFile(postgresEnvFile);

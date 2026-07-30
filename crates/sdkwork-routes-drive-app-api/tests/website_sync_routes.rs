@@ -2,21 +2,20 @@ use axum::body::{to_bytes, Body};
 use axum::Router;
 use chrono::{Duration, SecondsFormat, Utc};
 use http::{Method, Response, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::domain::website_sync::{
     validate_website_sync_tree, DriveWebsiteSyncTreeEntry,
 };
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use serde_json::{json, Value};
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use tower::util::ServiceExt;
 
 mod common;
 
 #[tokio::test]
 async fn website_sync_routes_create_retrieve_finalize_replay_and_enforce_tenant_scope() {
-    let (pool, app) = setup().await;
+    let Some((pool, app, _database_guard)) = setup().await else {
+        return;
+    };
     create_space(&app).await;
     seed_storage_provider(&pool).await;
     let (root_uuid, root_node_id): (String, String) = sqlx::query_as(
@@ -271,18 +270,15 @@ async fn website_sync_routes_create_retrieve_finalize_replay_and_enforce_tenant_
     assert_ne!(staging_node_id, root_node_id);
 }
 
-async fn setup() -> (AnyPool, Router) {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("SQLite pool should connect");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("Drive schema should install");
+async fn setup() -> Option<(
+    PgPool,
+    Router,
+    sdkwork_drive_test_support::test_database::PostgresTestDatabaseGuard,
+)> {
+    let (pool, database_guard) =
+        sdkwork_drive_test_support::test_database::postgres_test_database().await?;
     let app = common::test_router_with_pool(pool.clone());
-    (pool, app)
+    Some((pool, app, database_guard))
 }
 
 async fn create_space(app: &Router) {
@@ -309,7 +305,7 @@ async fn create_space(app: &Router) {
     assert_eq!(response.status(), StatusCode::CREATED);
 }
 
-async fn seed_storage_provider(pool: &AnyPool) {
+async fn seed_storage_provider(pool: &PgPool) {
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,

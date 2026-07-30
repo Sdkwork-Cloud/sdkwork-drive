@@ -2,10 +2,10 @@
 
 # SDKWork Drive Database Architecture
 
-SDKWork Drive uses PostgreSQL for server deployments and SQLite for local lightweight mode.
+SDKWork Drive uses PostgreSQL for authoritative server persistence.
 
 - PostgreSQL is the server, Docker, Kubernetes, and production target.
-- SQLite is the local/private lightweight mode and the fast in-memory test target.
+- SQLite is limited to client-local data and test fixtures; it is not a Drive gateway/server profile.
 - Schema Registry, PostgreSQL DDL, SQLite DDL, OpenAPI, and SDK contracts must stay synchronized.
 - Health and dry-run output may expose only safe database facts: configured flag, engine, and max connection count. It must not expose URLs, usernames, passwords, hosts, file paths, or query strings.
 
@@ -23,7 +23,7 @@ The Rust configuration boundary is `sdkwork-drive-config::DatabaseConfig`. It ac
 - Explicit override: `SDKWORK_DATABASE_URL`.
 - Runtime TOML file: `SDKWORK_DRIVE_CONFIG_FILE=./etc/drive.database.example.toml`, reading the `[database]` section.
 - PostgreSQL structured fields: `SDKWORK_DATABASE_ENGINE=postgresql`, host, port, database name, username, password, `SDKWORK_DATABASE_SSL_MODE`, and max connections.
-- SQLite structured fields: `SDKWORK_DATABASE_ENGINE=sqlite` and `SDKWORK_DATABASE_SQLITE_URL`.
+- Client-local SQLite adapters use `SDKWORK_DATABASE_ENGINE=sqlite` with `SDKWORK_DATABASE_FILE`; Drive server entrypoints reject that profile.
 
 Configuration precedence is explicit URL, runtime TOML, then structured environment fields. `SDKWORK_DATABASE_URL` remains an explicit operator override and wins over TOML and structured fields.
 

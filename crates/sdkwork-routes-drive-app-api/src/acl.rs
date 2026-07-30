@@ -14,8 +14,8 @@ use sdkwork_drive_workspace_service::ports::permission_store::{
     DriveEffectiveNodeAccess, ResolveEffectiveNodeAccessCommand,
 };
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::any::AnyRow;
-use sqlx::AnyPool;
+use sqlx::postgres::PgRow;
+use sqlx::PgPool;
 use sqlx::Row;
 use std::collections::{BTreeSet, HashMap};
 use std::future::Future;
@@ -33,7 +33,7 @@ impl ReaderPaginationAclCache {
 
     async fn is_space_owner(
         &mut self,
-        pool: &AnyPool,
+        pool: &PgPool,
         tenant_id: &str,
         space_id: &str,
         subject_type: &str,
@@ -53,7 +53,7 @@ impl ReaderPaginationAclCache {
 }
 
 pub(crate) async fn is_subject_space_owner(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     subject_type: &str,
@@ -68,11 +68,11 @@ pub(crate) async fn is_subject_space_owner(
 pub(crate) async fn paginate_offset_limited_items<T, F, Fut>(
     page: crate::dto::PageRequest,
     mut fetch_batch: F,
-    map_row: fn(&AnyRow) -> T,
+    map_row: fn(&PgRow) -> T,
 ) -> Result<(Vec<T>, Option<String>), (StatusCode, Json<ProblemDetail>)>
 where
     F: FnMut(i64, usize) -> Fut,
-    Fut: Future<Output = Result<Vec<AnyRow>, (StatusCode, Json<ProblemDetail>)>>,
+    Fut: Future<Output = Result<Vec<PgRow>, (StatusCode, Json<ProblemDetail>)>>,
 {
     let batch_limit = (page.limit + 1) as usize;
     let rows = fetch_batch(page.offset, batch_limit).await?;
@@ -100,7 +100,7 @@ pub(crate) fn permission_denied_problem() -> (StatusCode, Json<ProblemDetail>) {
 }
 
 pub(crate) async fn ensure_subject_role(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     node_id: &str,
@@ -126,7 +126,7 @@ pub(crate) async fn ensure_subject_role(
 }
 
 pub(crate) async fn ensure_ctx_node_role(
-    pool: &AnyPool,
+    pool: &PgPool,
     ctx: &DriveRequestContext,
     space_id: &str,
     node_id: &str,
@@ -147,7 +147,7 @@ pub(crate) async fn ensure_ctx_node_role(
 }
 
 pub(crate) async fn ensure_list_parent_reader(
-    pool: &AnyPool,
+    pool: &PgPool,
     ctx: &DriveRequestContext,
     space_id: &str,
     parent_node_id: Option<&str>,
@@ -166,7 +166,7 @@ pub(crate) async fn ensure_list_parent_reader(
 }
 
 pub(crate) async fn ensure_subject_space_scoped_reader(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     parent_node_id: Option<&str>,
@@ -226,7 +226,7 @@ pub(crate) async fn ensure_subject_space_scoped_reader(
 }
 
 async fn subject_has_any_space_permission_grant(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     subject_type: &str,
@@ -257,7 +257,7 @@ async fn subject_has_any_space_permission_grant(
 }
 
 pub(crate) async fn ensure_space_owner(
-    pool: &AnyPool,
+    pool: &PgPool,
     ctx: &DriveRequestContext,
     space_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
@@ -294,7 +294,7 @@ pub(crate) async fn ensure_space_owner(
 }
 
 pub(crate) async fn ensure_parent_writer(
-    pool: &AnyPool,
+    pool: &PgPool,
     ctx: &DriveRequestContext,
     space_id: &str,
     parent_node_id: Option<&str>,
@@ -330,7 +330,7 @@ pub(crate) async fn ensure_parent_writer(
 }
 
 async fn is_space_owner_any_lifecycle(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     subject_type: &str,
@@ -353,7 +353,7 @@ async fn is_space_owner_any_lifecycle(
 }
 
 pub(crate) async fn ensure_space_change_feed_reader(
-    pool: &AnyPool,
+    pool: &PgPool,
     ctx: &DriveRequestContext,
     space_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
@@ -366,7 +366,7 @@ pub(crate) async fn ensure_space_change_feed_reader(
 }
 
 pub(crate) async fn ensure_watch_channel_role(
-    pool: &AnyPool,
+    pool: &PgPool,
     ctx: &DriveRequestContext,
     channel: &DriveWatchChannelResponse,
     required_role: &str,
@@ -393,7 +393,7 @@ pub(crate) async fn ensure_watch_channel_role(
 }
 
 pub(crate) async fn ensure_node_ids_role(
-    pool: &AnyPool,
+    pool: &PgPool,
     ctx: &DriveRequestContext,
     node_ids: &[String],
     required_role: &str,

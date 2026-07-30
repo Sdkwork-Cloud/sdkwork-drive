@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use sqlx::any::AnyRow;
-use sqlx::AnyPool;
+use sqlx::postgres::PgRow;
+use sqlx::PgPool;
 use sqlx::Row;
 
 use crate::domain::audit::DriveAuditEvent;
@@ -13,11 +13,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlAuditStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlAuditStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -132,7 +132,7 @@ impl DriveAuditStore for SqlAuditStore {
     }
 }
 
-fn map_row_to_audit_event(row: &AnyRow) -> Result<DriveAuditEvent, DriveServiceError> {
+fn map_row_to_audit_event(row: &PgRow) -> Result<DriveAuditEvent, DriveServiceError> {
     let action: String = row.get("action");
     if action.trim().is_empty() {
         return Err(DriveServiceError::Internal(

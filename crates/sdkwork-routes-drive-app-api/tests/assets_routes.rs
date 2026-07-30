@@ -1,14 +1,11 @@
 use axum::body::{to_bytes, Body};
 use http::StatusCode;
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use tower::util::ServiceExt;
 
 mod common;
 
-async fn seed_asset_fixture(pool: &AnyPool) {
+async fn seed_asset_fixture(pool: &PgPool) {
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
@@ -33,28 +30,23 @@ async fn seed_asset_fixture(pool: &AnyPool) {
     .expect("asset test node should be seeded");
 }
 
-async fn build_asset_test_pool_and_app() -> (AnyPool, axum::Router) {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+async fn build_asset_test_pool_and_app() -> Option<(
+    PgPool,
+    axum::Router,
+    sdkwork_drive_test_support::test_database::PostgresTestDatabaseGuard,
+)> {
+    let (pool, database_guard) =
+        sdkwork_drive_test_support::test_database::postgres_test_database().await?;
     seed_asset_fixture(&pool).await;
     let app = common::test_router_with_pool(pool.clone());
-    (pool, app)
-}
-
-async fn build_asset_test_app() -> axum::Router {
-    build_asset_test_pool_and_app().await.1
+    Some((pool, app, database_guard))
 }
 
 #[tokio::test]
 async fn assets_list_and_get_expose_drive_nodes_as_global_assets() {
-    let app = build_asset_test_app().await;
+    let Some((_pool, app, _database_guard)) = build_asset_test_pool_and_app().await else {
+        return;
+    };
 
     let list_response = app
         .clone()
@@ -110,7 +102,9 @@ async fn assets_list_and_get_expose_drive_nodes_as_global_assets() {
 
 #[tokio::test]
 async fn assets_create_bind_existing_node_and_support_collections_and_relations() {
-    let (pool, app) = build_asset_test_pool_and_app().await;
+    let Some((pool, app, _database_guard)) = build_asset_test_pool_and_app().await else {
+        return;
+    };
 
     let create_response = app
         .clone()

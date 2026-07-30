@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use sdkwork_drive_config::DatabaseEngine;
 use tokio::task::JoinHandle;
 
 /// Scheduler configuration.
@@ -46,22 +45,19 @@ impl Scheduler {
     }
 
     /// Start all scheduled tasks.
-    pub fn start(&mut self, pool: sqlx::AnyPool, engine: DatabaseEngine) {
+    pub fn start(&mut self, pool: sqlx::PgPool) {
         let pool_clone = pool.clone();
         let interval = self.config.upload_cleanup_interval;
         self.handles.push(tokio::spawn(async move {
             loop {
                 tokio::time::sleep(interval).await;
                 let pool_for_task = pool_clone.clone();
-                let engine_for_task = engine;
                 crate::maintenance::leader::run_if_maintenance_leader(
                     &pool_clone,
-                    engine,
                     "upload_session_cleanup",
                     || async move {
                         match crate::maintenance::upload_session_cleanup::cleanup_expired_sessions(
                             &pool_for_task,
-                            engine_for_task,
                         )
                         .await
                         {
@@ -92,15 +88,12 @@ impl Scheduler {
             loop {
                 tokio::time::sleep(interval).await;
                 let pool_for_task = pool_clone.clone();
-                let engine_for_task = engine;
                 crate::maintenance::leader::run_if_maintenance_leader(
                     &pool_clone,
-                    engine,
                     "orphan_object_cleanup",
                     || async move {
                         match crate::maintenance::orphan_object_cleanup::cleanup_orphan_objects(
                             &pool_for_task,
-                            engine_for_task,
                         )
                         .await
                         {
@@ -131,7 +124,6 @@ impl Scheduler {
                 let pool_for_task = pool_clone.clone();
                 crate::maintenance::leader::run_if_maintenance_leader(
                     &pool_clone,
-                    engine,
                     "quota_recalculation",
                     || async move {
                         match crate::maintenance::quota_recalculation::recalculate_quotas(
@@ -175,7 +167,6 @@ impl Scheduler {
                 let pool_for_task = pool_clone.clone();
                 crate::maintenance::leader::run_if_maintenance_leader(
                     &pool_clone,
-                    engine,
                     "domain_outbox_dispatch",
                     || async move {
                         match crate::maintenance::domain_outbox_dispatch::dispatch_pending_outbox_events(
@@ -211,11 +202,10 @@ impl Scheduler {
                 let pool_for_task = pool_clone.clone();
                 crate::maintenance::leader::run_if_maintenance_leader(
                     &pool_clone,
-                    engine,
                     "website_publishing_cleanup",
                     || async move {
                         match crate::maintenance::website_publishing_cleanup::
-                            cleanup_website_publishing(&pool_for_task, engine, 1_000)
+                            cleanup_website_publishing(&pool_for_task, 1_000)
                             .await
                         {
                             Ok(result) => {

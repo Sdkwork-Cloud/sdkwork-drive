@@ -33,4 +33,5 @@ tempfile.workspace = true
 zip.workspace = true
 
 [dev-dependencies]
+sdkwork-drive-test-support.workspace = true
 sdkwork-routes-drive-open-api.workspace = true

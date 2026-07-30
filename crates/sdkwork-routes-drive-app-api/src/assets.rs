@@ -27,7 +27,6 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Extension;
 use axum::Json;
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_contract::api::pagination_cursor::{decode_offset_cursor, encode_offset_cursor};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
 use sdkwork_drive_contract::{
@@ -37,13 +36,11 @@ use sdkwork_drive_contract::{
 use sdkwork_drive_workspace_service::infrastructure::change_recorder::{
     self, RecordDriveChangeCommand,
 };
+use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
 use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed;
-use sdkwork_drive_workspace_service::infrastructure::sql::{
-    begin_transaction_sql, detect_any_pool_database_engine,
-};
 use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 use serde_json::{json, Value};
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use sqlx::Row;
 
 const PROP_DESCRIPTION: &str = "global.asset.description";
@@ -748,7 +745,7 @@ fn next_asset_cursor<T>(items: &mut Vec<T>, page: PageRequest) -> Option<String>
     }
 }
 
-fn map_asset_node_row(row: &sqlx::any::AnyRow) -> AssetNodeRow {
+fn map_asset_node_row(row: &sqlx::postgres::PgRow) -> AssetNodeRow {
     AssetNodeRow {
         node: map_node_row(row),
         created_at: row.get("created_at"),
@@ -900,7 +897,7 @@ fn build_resource_snapshot(node: &crate::dto::DriveNodeResponse) -> Option<Media
 }
 
 async fn load_asset_item(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     asset_id: &str,
     organization_id: Option<&str>,
@@ -941,7 +938,7 @@ async fn load_asset_item(
 }
 
 async fn load_space_owner_user_id(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
 ) -> Result<Option<String>, (StatusCode, Json<ProblemDetail>)> {
@@ -959,7 +956,7 @@ async fn load_space_owner_user_id(
 }
 
 async fn load_asset_property_text(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     property_key: &str,
@@ -980,7 +977,7 @@ async fn load_asset_property_text(
 }
 
 async fn load_asset_property_json(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     property_key: &str,
@@ -999,7 +996,7 @@ async fn load_asset_property_json(
 }
 
 async fn clear_asset_property(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     property_key: &str,
@@ -1022,7 +1019,7 @@ async fn clear_asset_property(
 }
 
 async fn upsert_asset_property(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     space_id: &str,
@@ -1080,7 +1077,7 @@ fn build_node_property_id(
 }
 
 async fn record_change(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     node_id: Option<&str>,
@@ -1191,7 +1188,7 @@ async fn set_asset_archived_flag(
 }
 
 async fn update_node_name_if_needed(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     space_id: &str,
@@ -1218,7 +1215,7 @@ async fn update_node_name_if_needed(
 }
 
 async fn update_node_scene(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     scene: &str,
@@ -1244,7 +1241,7 @@ async fn update_node_scene(
 }
 
 async fn update_node_source(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     source: &str,
@@ -1276,7 +1273,7 @@ enum AssetNodeMetadataUpdate<'a> {
 }
 
 async fn update_asset_node_metadata(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     update: AssetNodeMetadataUpdate<'_>,
@@ -1379,7 +1376,7 @@ struct CreateVirtualReferenceAssetNode<'a> {
 }
 
 async fn create_virtual_reference_asset_node(
-    pool: &AnyPool,
+    pool: &PgPool,
     request: CreateVirtualReferenceAssetNode<'_>,
 ) -> Result<crate::dto::DriveNodeResponse, (StatusCode, Json<ProblemDetail>)> {
     let CreateVirtualReferenceAssetNode {
@@ -1514,7 +1511,7 @@ async fn create_virtual_reference_asset_node(
 }
 
 async fn resolve_personal_space_id(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     user_id: &str,
 ) -> Result<Option<String>, (StatusCode, Json<ProblemDetail>)> {
@@ -1537,7 +1534,7 @@ async fn resolve_personal_space_id(
 }
 
 async fn ensure_asset_catalog_anchor(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     user_id: &str,
     ctx: &DriveRequestContext,
@@ -1665,7 +1662,7 @@ fn parse_collection_from_property(
 }
 
 async fn load_collection_for_user(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     user_id: &str,
     catalog_node_id: &str,
@@ -1737,70 +1734,37 @@ fn parse_relation_from_property(
 }
 
 async fn find_collection_item_property_key(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     catalog_node_id: &str,
     collection_id: &str,
     item_id: &str,
 ) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
-    let engine = resolve_pool_database_engine(pool).await?;
     let property_key_prefix = format!("{COLLECTION_ITEM_KEY_PREFIX}{collection_id}.%");
-    let row = match engine {
-        DatabaseEngine::Postgresql => {
-            sqlx::query(
-                "SELECT property_key
-                 FROM dr_drive_node_property
-                 WHERE tenant_id=$1
-                   AND node_id=$2
-                   AND visibility=$3
-                   AND lifecycle_status='active'
-                   AND property_key LIKE $4
-                   AND (property_value::jsonb->>'id') = $5
-                 LIMIT 1",
-            )
-            .bind(tenant_id)
-            .bind(catalog_node_id)
-            .bind(PROPERTY_VISIBILITY)
-            .bind(&property_key_prefix)
-            .bind(item_id)
-            .fetch_optional(pool)
-            .await
-        }
-        DatabaseEngine::Sqlite => {
-            sqlx::query(
-                "SELECT property_key
-                 FROM dr_drive_node_property
-                 WHERE tenant_id=$1
-                   AND node_id=$2
-                   AND visibility=$3
-                   AND lifecycle_status='active'
-                   AND property_key LIKE $4
-                   AND json_extract(property_value, '$.id') = $5
-                 LIMIT 1",
-            )
-            .bind(tenant_id)
-            .bind(catalog_node_id)
-            .bind(PROPERTY_VISIBILITY)
-            .bind(&property_key_prefix)
-            .bind(item_id)
-            .fetch_optional(pool)
-            .await
-        }
-    }
+    let row = sqlx::query(
+        "SELECT property_key
+         FROM dr_drive_node_property
+         WHERE tenant_id=$1
+           AND node_id=$2
+           AND visibility=$3
+           AND lifecycle_status='active'
+           AND property_key LIKE $4
+           AND (property_value::jsonb->>'id') = $5
+         LIMIT 1",
+    )
+    .bind(tenant_id)
+    .bind(catalog_node_id)
+    .bind(PROPERTY_VISIBILITY)
+    .bind(&property_key_prefix)
+    .bind(item_id)
+    .fetch_optional(pool)
+    .await
     .map_err(internal_sql_error("find asset collection item failed"))?;
 
     let Some(row) = row else {
         return Err(not_found_problem("collection item not found"));
     };
     Ok(row.get("property_key"))
-}
-
-async fn resolve_pool_database_engine(
-    pool: &AnyPool,
-) -> Result<DatabaseEngine, (StatusCode, Json<ProblemDetail>)> {
-    detect_any_pool_database_engine(pool)
-        .await
-        .map_err(internal_sql_error("resolve asset database engine failed"))
 }
 
 fn build_collection_item_id(collection_id: &str, asset_id: &str) -> String {

@@ -1,4 +1,3 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::space_service::{
     CreateSpaceCommand, DriveSpaceService,
 };
@@ -8,23 +7,16 @@ use sdkwork_drive_workspace_service::application::workspace_service::{
     ListDriveWorkspaceChildrenCommand, ResolveDriveWorkspacePathCommand,
 };
 use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::workspace_store::SqlDriveWorkspaceStore;
-use sqlx::any::AnyPoolOptions;
 use std::sync::Arc;
 
 #[tokio::test]
 async fn workspace_service_ensures_nodes_and_lists_children_from_drive_schema() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_storage_provider(&pool, "provider-kb", "kb-bucket").await;
 
     let space = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()))
@@ -150,15 +142,10 @@ async fn workspace_service_ensures_nodes_and_lists_children_from_drive_schema() 
 
 #[tokio::test]
 async fn workspace_service_gets_node_by_id_with_resolved_path() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_storage_provider(&pool, "provider-kb", "kb-bucket").await;
 
     let space = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()))
@@ -232,15 +219,10 @@ async fn workspace_service_gets_node_by_id_with_resolved_path() {
 
 #[tokio::test]
 async fn workspace_service_versions_file_metadata_when_same_path_content_changes() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_storage_provider(&pool, "provider-kb", "kb-bucket").await;
 
     let space = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()))
@@ -350,15 +332,10 @@ async fn workspace_service_versions_file_metadata_when_same_path_content_changes
 
 #[tokio::test]
 async fn workspace_service_concurrently_ensures_same_nodes_idempotently() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(8)
-        .connect("sqlite:file:workspace_concurrent_ensure?mode=memory&cache=shared")
-        .await
-        .expect("shared sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_storage_provider(&pool, "provider-kb", "kb-bucket").await;
 
     let space = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()))
@@ -476,15 +453,15 @@ async fn workspace_service_concurrently_ensures_same_nodes_idempotently() {
     assert_eq!(page.nodes[0].name, "schema");
 }
 
-async fn seed_storage_provider(pool: &sqlx::AnyPool, provider_id: &str, bucket: &str) {
+async fn seed_storage_provider(pool: &sqlx::PgPool, provider_id: &str, bucket: &str) {
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            ?1, 's3_compatible', ?1, 'https://s3.example.com', 'us-east-1',
-            ?2, 1, 1, 'plain:test-access:test-secret', NULL, NULL,
+            $1, 's3_compatible', $1, 'https://s3.example.com', 'us-east-1',
+            $2, 1, 1, 'plain:test-access:test-secret', NULL, NULL,
             'active', 1, 'test', 'test'
         )",
     )

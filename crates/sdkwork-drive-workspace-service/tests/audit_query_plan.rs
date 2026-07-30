@@ -1,19 +1,11 @@
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-use sqlx::any::AnyPoolOptions;
 use sqlx::Row;
 
 #[tokio::test]
 async fn audit_event_query_plan_uses_filter_indexes_for_list_and_count_patterns() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     for index in 0..600 {
         let action = if index % 2 == 0 {
@@ -34,7 +26,7 @@ async fn audit_event_query_plan_uses_filter_indexes_for_list_and_count_patterns(
         sqlx::query(
             "INSERT INTO dr_drive_audit_event (
                 id, tenant_id, action, resource_type, resource_id, operator_id, request_id, trace_id
-            ) VALUES (?1, ?2, ?3, 'storage_provider', ?4, 'admin-001', ?5, ?6)",
+            ) VALUES ($1, $2, $3, 'storage_provider', $4, 'admin-001', $5, $6)",
         )
         .bind(10_000_i64 + i64::from(index))
         .bind("tenant-001")
@@ -52,9 +44,9 @@ async fn audit_event_query_plan_uses_filter_indexes_for_list_and_count_patterns(
         "EXPLAIN QUERY PLAN
          SELECT id
          FROM dr_drive_audit_event
-         WHERE action = ?1
+         WHERE action = $1
          ORDER BY id DESC
-         LIMIT ?2 OFFSET ?3",
+         LIMIT $2 OFFSET $3",
         &["drive.storage_provider.created", "20", "0"],
         "ix_dr_drive_audit_event_action_created",
     )
@@ -65,7 +57,7 @@ async fn audit_event_query_plan_uses_filter_indexes_for_list_and_count_patterns(
         "EXPLAIN QUERY PLAN
          SELECT COUNT(1)
          FROM dr_drive_audit_event
-         WHERE request_id = ?1",
+         WHERE request_id = $1",
         &["request-001"],
         "ix_dr_drive_audit_event_request_created",
     )
@@ -76,7 +68,7 @@ async fn audit_event_query_plan_uses_filter_indexes_for_list_and_count_patterns(
         "EXPLAIN QUERY PLAN
          SELECT COUNT(1)
          FROM dr_drive_audit_event
-         WHERE trace_id = ?1",
+         WHERE trace_id = $1",
         &["trace-001"],
         "ix_dr_drive_audit_event_trace_created",
     )
@@ -84,7 +76,7 @@ async fn audit_event_query_plan_uses_filter_indexes_for_list_and_count_patterns(
 }
 
 async fn assert_query_plan_uses_index(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     sql: &str,
     binds: &[&str],
     expected_index_name: &str,

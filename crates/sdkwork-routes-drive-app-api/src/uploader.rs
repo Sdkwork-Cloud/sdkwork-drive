@@ -117,7 +117,7 @@ fn require_uploader_actor_id(actor_id: &str) -> Result<String, (StatusCode, Json
 }
 
 pub(crate) fn map_uploader_upload_item_row(
-    row: &sqlx::any::AnyRow,
+    row: &sqlx::postgres::PgRow,
 ) -> Result<DriveUploadItem, (StatusCode, Json<ProblemDetail>)> {
     Ok(DriveUploadItem {
         id: row.get("id"),

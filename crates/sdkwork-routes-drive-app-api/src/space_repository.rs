@@ -3,10 +3,10 @@ use crate::error::{
 };
 use axum::http::StatusCode;
 use axum::Json;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 pub(crate) async fn validate_space_exists(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
@@ -27,7 +27,7 @@ pub(crate) async fn validate_space_exists(
 }
 
 pub(crate) async fn validate_space_exists_for_change_history(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
@@ -50,7 +50,7 @@ pub(crate) async fn validate_space_exists_for_change_history(
 }
 
 pub(crate) async fn ensure_git_repository_space_root_accepts_node_type(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     parent_node_id: Option<&str>,

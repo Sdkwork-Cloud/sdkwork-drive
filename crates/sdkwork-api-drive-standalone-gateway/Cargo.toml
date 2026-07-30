@@ -9,21 +9,13 @@ path = "src/main.rs"
 
 [dependencies]
 axum.workspace = true
-http.workspace = true
 serde = { workspace = true }
-serde_json = { workspace = true }
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "net", "signal"] }
 toml = { workspace = true }
-tower = { version = "0.5", features = ["util"] }
 tracing = { workspace = true }
-sdkwork-drive-config.workspace = true
-sdkwork-drive-http = { workspace = true, features = ["redis-rate-limit"] }
 sdkwork-drive-observability = { workspace = true, features = ["otlp"] }
-sqlx.workspace = true
-sdkwork-drive-security.workspace = true
-sdkwork-drive-workspace-service.workspace = true
 sdkwork-api-drive-assembly.workspace = true
-sdkwork-routes-storage-backend-api.workspace = true
-sdkwork_routes_iam_app_api = { workspace = true }
-sdkwork-iam-embedded-application-bootstrap = { workspace = true }
-sdkwork-iam-database-host = { workspace = true }
+sdkwork-api-iam-assembly.workspace = true
+sdkwork-database-sqlx.workspace = true
+sdkwork-iam-web-adapter.workspace = true
+sdkwork-web-bootstrap.workspace = true

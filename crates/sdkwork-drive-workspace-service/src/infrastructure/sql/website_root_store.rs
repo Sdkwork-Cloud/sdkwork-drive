@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use sqlx::any::AnyRow;
-use sqlx::{AnyConnection, AnyPool, Row};
+use sqlx::postgres::PgRow;
+use sqlx::{PgConnection, PgPool, Row};
 
 use crate::domain::website_root::{
     DriveWebsiteContentMode, DriveWebsiteRoot, DriveWebsiteSourceRootMode,
@@ -15,11 +15,11 @@ const WEBSITE_ROOT_SELECT_COLUMNS: &str = "id, uuid, tenant_id, space_id, root_k
 
 #[derive(Debug, Clone)]
 pub struct SqlWebsiteRootStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlWebsiteRootStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -131,7 +131,7 @@ impl DriveWebsiteRootStore for SqlWebsiteRootStore {
 }
 
 async fn create_or_get_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     root: &CreateDriveWebsiteRoot,
     selector_key: &str,
 ) -> Result<CreateDriveWebsiteRootResult, DriveServiceError> {
@@ -263,7 +263,7 @@ fn website_root_selector_key(root: &CreateDriveWebsiteRoot) -> Result<String, Dr
 }
 
 async fn validate_selected_folder(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
     folder_node_id: &str,
@@ -331,7 +331,7 @@ async fn validate_selected_folder(
 }
 
 async fn find_by_selector_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
     selector_key: &str,
@@ -355,7 +355,7 @@ async fn find_by_selector_on_connection(
     row.as_ref().map(map_website_root).transpose()
 }
 
-fn map_website_root(row: &AnyRow) -> Result<DriveWebsiteRoot, DriveServiceError> {
+fn map_website_root(row: &PgRow) -> Result<DriveWebsiteRoot, DriveServiceError> {
     let source_root_mode_raw: String = row.get("source_root_mode");
     let source_root_mode = DriveWebsiteSourceRootMode::try_from_str(&source_root_mode_raw)
         .ok_or_else(|| {

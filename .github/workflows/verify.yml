@@ -63,11 +63,11 @@ jobs:
         env:
           POSTGRES_USER: sdkwork
           POSTGRES_PASSWORD: sdkwork
-          POSTGRES_DB: sdkwork_drive_test
+          POSTGRES_DB: sdkwork_ai_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U sdkwork -d sdkwork_drive_test"
+          --health-cmd "pg_isready -U sdkwork -d sdkwork_ai_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -75,19 +75,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepare SDKWork source dependencies
+        env:
+          SDKWORK_RELEASE_TOKEN: ${{ secrets.SDKWORK_RELEASE_TOKEN || github.token }}
+        run: node scripts/prepare-ci-dependencies.mjs --apply
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Rust artifacts
         uses: swatinem/rust-cache@v2
 
-      - name: Run PostgreSQL workspace-service integration tests
+      - name: Run PostgreSQL integration tests
         env:
-          SDKWORK_DRIVE_POSTGRES_URL: postgres://sdkwork:sdkwork@localhost:5432/sdkwork_drive_test
-        run: |
-          cargo test -p sdkwork-drive-workspace-service postgres -- --nocapture
-          cargo test -p sdkwork-drive-workspace-service outbox -- --nocapture
-          cargo test -p sdkwork-drive-workspace-service delete_space_with_contents -- --nocapture
+          SDKWORK_DATABASE_URL: postgres://sdkwork:sdkwork@localhost:5432/sdkwork_ai_test
+        run: cargo test --workspace -- --nocapture
 
   release-readiness-strict:
     name: Strict Release Readiness

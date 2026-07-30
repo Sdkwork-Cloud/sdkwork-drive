@@ -3,7 +3,7 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use sdkwork_drive_workspace_service::domain::space::DriveSpace;
 use sqlx::Row;
 
-pub(crate) fn map_node_row(row: &sqlx::any::AnyRow) -> DriveNodeResponse {
+pub(crate) fn map_node_row(row: &sqlx::postgres::PgRow) -> DriveNodeResponse {
     DriveNodeResponse {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),
@@ -100,7 +100,7 @@ pub(crate) fn map_space_response(space: DriveSpace) -> CreateSpaceResponse {
     }
 }
 
-pub(crate) fn map_permission_row(row: &sqlx::any::AnyRow) -> PermissionResponse {
+pub(crate) fn map_permission_row(row: &sqlx::postgres::PgRow) -> PermissionResponse {
     let inherited: i64 = row.get("inherited");
     PermissionResponse {
         id: row.get("id"),
@@ -115,7 +115,7 @@ pub(crate) fn map_permission_row(row: &sqlx::any::AnyRow) -> PermissionResponse 
     }
 }
 
-pub(crate) fn map_file_version_row(row: &sqlx::any::AnyRow) -> FileVersionResponse {
+pub(crate) fn map_file_version_row(row: &sqlx::postgres::PgRow) -> FileVersionResponse {
     FileVersionResponse {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),
@@ -130,7 +130,7 @@ pub(crate) fn map_file_version_row(row: &sqlx::any::AnyRow) -> FileVersionRespon
     }
 }
 
-pub(crate) fn map_share_link_row(row: &sqlx::any::AnyRow) -> ShareLinkResponse {
+pub(crate) fn map_share_link_row(row: &sqlx::postgres::PgRow) -> ShareLinkResponse {
     ShareLinkResponse {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),
@@ -150,7 +150,7 @@ pub(crate) fn map_share_link_row(row: &sqlx::any::AnyRow) -> ShareLinkResponse {
     }
 }
 
-pub(crate) fn map_share_link_record(row: &sqlx::any::AnyRow) -> ShareLinkRecord {
+pub(crate) fn map_share_link_record(row: &sqlx::postgres::PgRow) -> ShareLinkRecord {
     ShareLinkRecord {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),
@@ -166,7 +166,7 @@ pub(crate) fn map_share_link_record(row: &sqlx::any::AnyRow) -> ShareLinkRecord 
     }
 }
 
-pub(crate) fn map_comment_row(row: &sqlx::any::AnyRow) -> CommentRecord {
+pub(crate) fn map_comment_row(row: &sqlx::postgres::PgRow) -> CommentRecord {
     let resolved: i64 = row.get("resolved");
     CommentRecord {
         id: row.get("id"),
@@ -184,7 +184,7 @@ pub(crate) fn map_comment_row(row: &sqlx::any::AnyRow) -> CommentRecord {
     }
 }
 
-pub(crate) fn map_comment_reply_row(row: &sqlx::any::AnyRow) -> CommentReplyRecord {
+pub(crate) fn map_comment_reply_row(row: &sqlx::postgres::PgRow) -> CommentReplyRecord {
     CommentReplyRecord {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),
@@ -200,7 +200,7 @@ pub(crate) fn map_comment_reply_row(row: &sqlx::any::AnyRow) -> CommentReplyReco
     }
 }
 
-pub(crate) fn map_node_property_row(row: &sqlx::any::AnyRow) -> NodePropertyResponse {
+pub(crate) fn map_node_property_row(row: &sqlx::postgres::PgRow) -> NodePropertyResponse {
     NodePropertyResponse {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),
@@ -213,7 +213,7 @@ pub(crate) fn map_node_property_row(row: &sqlx::any::AnyRow) -> NodePropertyResp
     }
 }
 
-pub(crate) fn map_label_summary_row(row: &sqlx::any::AnyRow) -> LabelSummaryResponse {
+pub(crate) fn map_label_summary_row(row: &sqlx::postgres::PgRow) -> LabelSummaryResponse {
     LabelSummaryResponse {
         id: row.get("label_id"),
         tenant_id: row.get("tenant_id"),
@@ -226,7 +226,7 @@ pub(crate) fn map_label_summary_row(row: &sqlx::any::AnyRow) -> LabelSummaryResp
     }
 }
 
-pub(crate) fn map_node_label_row(row: &sqlx::any::AnyRow) -> NodeLabelResponse {
+pub(crate) fn map_node_label_row(row: &sqlx::postgres::PgRow) -> NodeLabelResponse {
     NodeLabelResponse {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),
@@ -238,7 +238,7 @@ pub(crate) fn map_node_label_row(row: &sqlx::any::AnyRow) -> NodeLabelResponse {
     }
 }
 
-pub(crate) fn map_watch_channel_row(row: &sqlx::any::AnyRow) -> DriveWatchChannelResponse {
+pub(crate) fn map_watch_channel_row(row: &sqlx::postgres::PgRow) -> DriveWatchChannelResponse {
     DriveWatchChannelResponse {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),
@@ -334,7 +334,7 @@ mod tests {
     use super::normalize_timestamp_text;
 
     #[test]
-    fn normalizes_sqlite_timestamp_to_rfc3339_utc() {
+    fn normalizes_naive_sql_timestamp_to_rfc3339_utc() {
         assert_eq!(
             normalize_timestamp_text("2026-06-04 12:00:00".to_string()),
             "2026-06-04T12:00:00Z"

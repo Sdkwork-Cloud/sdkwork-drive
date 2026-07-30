@@ -2,7 +2,7 @@ use crate::dto::{DownloadPackageItemResponse, LabelResponse, SpaceResponse};
 use sdkwork_drive_workspace_service::domain::space::DriveSpace;
 use sqlx::Row;
 
-pub(crate) fn map_label_row(row: &sqlx::any::AnyRow) -> LabelResponse {
+pub(crate) fn map_label_row(row: &sqlx::postgres::PgRow) -> LabelResponse {
     LabelResponse {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),
@@ -15,7 +15,7 @@ pub(crate) fn map_label_row(row: &sqlx::any::AnyRow) -> LabelResponse {
     }
 }
 
-pub(crate) fn map_download_package_row(row: &sqlx::any::AnyRow) -> DownloadPackageItemResponse {
+pub(crate) fn map_download_package_row(row: &sqlx::postgres::PgRow) -> DownloadPackageItemResponse {
     DownloadPackageItemResponse {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),

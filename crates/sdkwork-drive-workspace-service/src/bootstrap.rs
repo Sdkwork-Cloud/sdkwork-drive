@@ -33,15 +33,8 @@ pub async fn connect_drive_database_pool_from_env() -> Result<DatabasePool, Pool
 fn drive_database_config_to_sdkwork(
     config: &DriveDatabaseConfig,
 ) -> Result<DatabaseConfig, String> {
-    use sdkwork_drive_config::DatabaseEngine as DriveEngine;
-
-    let engine = match config.engine() {
-        DriveEngine::Postgresql => DatabaseEngine::Postgres,
-        DriveEngine::Sqlite => DatabaseEngine::Sqlite,
-    };
-
     Ok(DatabaseConfig {
-        engine,
+        engine: DatabaseEngine::Postgres,
         url: config.url().to_string(),
         max_connections: config.max_connections(),
         ..Default::default()

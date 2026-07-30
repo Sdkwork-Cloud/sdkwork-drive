@@ -1,12 +1,12 @@
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 #[derive(Debug, Clone)]
 pub struct OpenState {
-    pub(crate) pool: AnyPool,
+    pub(crate) pool: PgPool,
 }
 
 impl OpenState {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
-use sqlx::any::AnyRow;
-use sqlx::AnyConnection;
-use sqlx::AnyPool;
+use sqlx::postgres::PgRow;
+use sqlx::PgConnection;
+use sqlx::PgPool;
 use sqlx::Row;
 
 use crate::domain::space::{DriveSpace, DriveSpaceType};
@@ -14,16 +14,16 @@ const SPACE_SELECT_COLUMNS: &str = "id, tenant_id, owner_subject_type, owner_sub
 
 #[derive(Debug, Clone)]
 pub struct SqlSpaceStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlSpaceStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
     pub async fn delete_space_on_connection(
-        connection: &mut AnyConnection,
+        connection: &mut PgConnection,
         tenant_id: &str,
         space_id: &str,
         operator_id: &str,
@@ -421,7 +421,7 @@ async fn insert_space_on_executor<'e, E>(
     new_space: &NewDriveSpace,
 ) -> Result<(), DriveServiceError>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Any>,
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
     let result = sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -465,7 +465,7 @@ async fn read_inserted_space<'e, E>(
     space_id: &str,
 ) -> Result<DriveSpace, DriveServiceError>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Any>,
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
     let row = sqlx::query(&format!(
         "SELECT {SPACE_SELECT_COLUMNS}
@@ -481,7 +481,7 @@ where
     map_row_to_space(&row)
 }
 
-fn map_row_to_space(row: &AnyRow) -> Result<DriveSpace, DriveServiceError> {
+fn map_row_to_space(row: &PgRow) -> Result<DriveSpace, DriveServiceError> {
     let space_type_raw: String = row.get("space_type");
     let space_type = DriveSpaceType::try_from_str(&space_type_raw).ok_or_else(|| {
         DriveServiceError::Internal(format!("unknown space_type in database: {space_type_raw}"))

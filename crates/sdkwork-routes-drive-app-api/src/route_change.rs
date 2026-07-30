@@ -6,10 +6,10 @@ use sdkwork_drive_workspace_service::infrastructure::change_recorder::{
     self, DriveNodeLocationSnapshot, RecordDriveChangeCommand, RecordDriveNodeDeletedCommand,
     RecordDriveNodeEligibilityChangedCommand, RecordDriveNodePathChangedCommand,
 };
-use sqlx::{AnyConnection, AnyPool};
+use sqlx::{PgConnection, PgPool};
 
 pub(crate) async fn record_change(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     node_id: Option<&str>,
@@ -31,7 +31,7 @@ pub(crate) async fn record_change(
 }
 
 pub(crate) async fn resolve_node_location_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
     node_id: &str,
@@ -45,7 +45,7 @@ pub(crate) async fn resolve_node_location_on_connection(
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn record_node_path_changed_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     organization_id: Option<&str>,
     space_id: &str,
@@ -74,7 +74,7 @@ pub(crate) async fn record_node_path_changed_on_connection(
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn record_node_eligibility_changed_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     organization_id: Option<&str>,
     space_id: &str,
@@ -107,7 +107,7 @@ pub(crate) async fn record_node_eligibility_changed_on_connection(
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn record_node_deleted_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     organization_id: Option<&str>,
     space_id: &str,
@@ -134,6 +134,6 @@ pub(crate) async fn record_node_deleted_on_connection(
     .map_err(map_service_error)
 }
 
-pub(crate) fn notify_committed(pool: AnyPool) {
+pub(crate) fn notify_committed(pool: PgPool) {
     change_recorder::notify_drive_event_committed(pool);
 }

@@ -1,11 +1,11 @@
-use sqlx::AnyConnection;
+use sqlx::PgConnection;
 
 use crate::infrastructure::sql::next_drive_runtime_id;
 use crate::ports::space_store::NewDriveSpace;
 use crate::DriveServiceError;
 
 pub(super) async fn provision_default_website_root_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     space: &NewDriveSpace,
 ) -> Result<(), DriveServiceError> {
     if space.space_type != "website" {

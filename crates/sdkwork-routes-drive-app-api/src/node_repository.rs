@@ -8,11 +8,11 @@ use crate::space_repository::validate_space_exists;
 use axum::http::StatusCode;
 use axum::Json;
 use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use std::collections::{BTreeSet, VecDeque};
 
 pub(crate) async fn find_node(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
 ) -> Result<DriveNodeResponse, (StatusCode, Json<ProblemDetail>)> {
@@ -33,7 +33,7 @@ pub(crate) async fn find_node(
 }
 
 pub(crate) async fn find_active_node(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
 ) -> Result<DriveNodeResponse, (StatusCode, Json<ProblemDetail>)> {
@@ -46,7 +46,7 @@ pub(crate) async fn find_active_node(
 }
 
 pub(crate) async fn collect_node_subtree(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     root: &DriveNodeResponse,
 ) -> Result<Vec<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
@@ -107,7 +107,7 @@ pub(crate) async fn collect_node_subtree(
 }
 
 pub(crate) async fn resolve_node_path(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
 ) -> Result<Vec<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {

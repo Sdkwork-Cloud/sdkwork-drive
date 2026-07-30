@@ -1,28 +1,12 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::resource_resolution_service::{
     DriveResourceResolutionService, ResolveDriveResourceCommand,
 };
 use sdkwork_drive_workspace_service::domain::resource_resolution::DriveResourceScopeKind;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::resource_resolution_store::SqlResourceResolutionStore;
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
-async fn setup() -> AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
-    pool
-}
-
-async fn insert_provider(pool: &AnyPool) {
+async fn insert_provider(pool: &PgPool) {
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
@@ -38,7 +22,7 @@ async fn insert_provider(pool: &AnyPool) {
 }
 
 async fn insert_file_version(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     node_id: &str,
@@ -86,7 +70,7 @@ async fn insert_file_version(
     .expect("node version should be inserted");
 }
 
-async fn insert_website_fixture(pool: &AnyPool) {
+async fn insert_website_fixture(pool: &PgPool) {
     insert_provider(pool).await;
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -192,7 +176,7 @@ async fn insert_website_fixture(pool: &AnyPool) {
     .expect("WebsiteRoot generation should be inserted");
 }
 
-async fn insert_knowledgebase_fixture(pool: &AnyPool) {
+async fn insert_knowledgebase_fixture(pool: &PgPool) {
     insert_provider(pool).await;
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -277,7 +261,10 @@ fn resolve_command(
 
 #[tokio::test]
 async fn website_root_resolution_returns_current_and_pinned_logical_versions() {
-    let pool = setup().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_website_fixture(&pool).await;
     let service =
         DriveResourceResolutionService::new(SqlResourceResolutionStore::new(pool.clone()));
@@ -322,7 +309,10 @@ async fn website_root_resolution_returns_current_and_pinned_logical_versions() {
 
 #[tokio::test]
 async fn resolution_rejects_cross_tenant_escape_reserved_and_wrong_version_paths() {
-    let pool = setup().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_website_fixture(&pool).await;
     let service =
         DriveResourceResolutionService::new(SqlResourceResolutionStore::new(pool.clone()));
@@ -370,7 +360,10 @@ async fn resolution_rejects_cross_tenant_escape_reserved_and_wrong_version_paths
 
 #[tokio::test]
 async fn knowledgebase_raw_subscription_resolves_only_paths_below_raw_root() {
-    let pool = setup().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_knowledgebase_fixture(&pool).await;
     let service =
         DriveResourceResolutionService::new(SqlResourceResolutionStore::new(pool.clone()));

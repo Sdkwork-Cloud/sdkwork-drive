@@ -498,7 +498,9 @@ describe('SandboxExplorerView', () => {
     resolveRefresh?.({ items: [sourceDirectory, readmeFile] });
     await screen.findByRole('button', { name: 'README.md' });
     expect(screen.queryByText('Refreshing\u2026')).toBeNull();
-    expect(screen.getByRole('button', { name: 'src' })).toBe(document.activeElement);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'src' })).toBe(document.activeElement);
+    });
   });
 
   it('retries sandbox discovery after an initial load failure', async () => {

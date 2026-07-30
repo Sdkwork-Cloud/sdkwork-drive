@@ -13,14 +13,12 @@ pub struct DriveRuntimeConfig {
 #[serde(rename_all = "snake_case")]
 pub enum DatabaseEngine {
     Postgresql,
-    Sqlite,
 }
 
 impl DatabaseEngine {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Postgresql => "postgresql",
-            Self::Sqlite => "sqlite",
         }
     }
 }
@@ -82,7 +80,6 @@ impl Error for DatabaseConfigError {}
 
 impl DatabaseConfig {
     pub const DEFAULT_POSTGRES_MAX_CONNECTIONS: u32 = 32;
-    pub const DEFAULT_SQLITE_MAX_CONNECTIONS: u32 = 1;
     pub const DEFAULT_MAX_CONNECTIONS: u32 = Self::DEFAULT_POSTGRES_MAX_CONNECTIONS;
 
     pub fn from_url(database_url: &str) -> Result<Self, DatabaseConfigError> {
@@ -90,8 +87,8 @@ impl DatabaseConfig {
         if url.is_empty() {
             return Err(DatabaseConfigError::new("database url must not be blank"));
         }
-        let engine = parse_database_engine_from_url(url)?;
-        Self::from_url_with_max_connections(url, default_max_connections_for_engine(engine))
+        parse_database_engine_from_url(url)?;
+        Self::from_url_with_max_connections(url, Self::DEFAULT_POSTGRES_MAX_CONNECTIONS)
     }
 
     pub fn from_url_with_max_connections(
@@ -121,12 +118,12 @@ impl DatabaseConfig {
 
     pub fn from_env_and_cli_args(args: &[String]) -> Result<Self, DatabaseConfigError> {
         if let Some(database_url) = parse_database_url_from_cli_args(args) {
-            let engine = parse_database_engine_from_url(&database_url)?;
+            parse_database_engine_from_url(&database_url)?;
             let max_connections = parse_max_connections(
                 std::env::var("SDKWORK_DATABASE_MAX_CONNECTIONS")
                     .ok()
                     .as_ref(),
-                default_max_connections_for_engine(engine),
+                Self::DEFAULT_POSTGRES_MAX_CONNECTIONS,
             )?;
             return Self::from_url_with_max_connections(&database_url, max_connections);
         }
@@ -148,10 +145,10 @@ impl DatabaseConfig {
             .map(String::as_str)
             .filter(|value| !value.trim().is_empty())
         {
-            let engine = parse_database_engine_from_url(url.trim())?;
+            parse_database_engine_from_url(url.trim())?;
             let max_connections = parse_max_connections(
                 env.get("SDKWORK_DATABASE_MAX_CONNECTIONS"),
-                default_max_connections_for_engine(engine),
+                Self::DEFAULT_POSTGRES_MAX_CONNECTIONS,
             )?;
             return Self::from_url_with_max_connections(url, max_connections);
         }
@@ -202,16 +199,8 @@ impl DatabaseConfig {
                 }
                 Self::from_url_with_max_connections(&url, max_connections)
             }
-            "sqlite" => {
-                let max_connections = parse_max_connections(
-                    env.get("SDKWORK_DATABASE_MAX_CONNECTIONS"),
-                    Self::DEFAULT_SQLITE_MAX_CONNECTIONS,
-                )?;
-                let url = required_env_value(&env, "SDKWORK_DATABASE_SQLITE_URL")?;
-                Self::from_url_with_max_connections(url, max_connections)
-            }
             other => Err(DatabaseConfigError::new(format!(
-                "unsupported database engine {other}; expected postgresql or sqlite"
+                "unsupported database engine {other}; expected postgresql"
             ))),
         }
     }
@@ -275,7 +264,7 @@ impl DatabaseConfig {
             }
         }
         let max_connections =
-            runtime_config_max_connections(content, default_max_connections_for_engine(engine))?;
+            runtime_config_max_connections(content, Self::DEFAULT_POSTGRES_MAX_CONNECTIONS)?;
         Self::from_url_with_max_connections(&database_url, max_connections)
     }
 }
@@ -300,14 +289,11 @@ fn parse_database_url_from_cli_args(args: &[String]) -> Option<String> {
 }
 
 fn parse_database_engine_from_url(url: &str) -> Result<DatabaseEngine, DatabaseConfigError> {
-    if url.starts_with("sqlite:") {
-        return Ok(DatabaseEngine::Sqlite);
-    }
     if url.starts_with("postgresql://") || url.starts_with("postgres://") {
         return Ok(DatabaseEngine::Postgresql);
     }
     Err(DatabaseConfigError::new(
-        "database url must be a PostgreSQL or SQLite connection string",
+        "database url must be a PostgreSQL connection string",
     ))
 }
 
@@ -316,7 +302,7 @@ fn reject_removed_database_env_aliases(
 ) -> Result<(), DatabaseConfigError> {
     let removed = [
         ("SDKWORK_DATABASE_PROVIDER", "SDKWORK_DATABASE_ENGINE"),
-        ("SDKWORK_DATABASE_SSLMODE", "SDKWORK_DATABASE_SSL_MODE"),
+        ("SDKWORK_DATABASE_SSLMODE", "SDKWORK_DATABASE_SSL_MODE"), // sdkwork-retired-database-key-rejection
     ]
     .into_iter()
     .filter_map(|(removed, replacement)| {
@@ -333,13 +319,6 @@ fn reject_removed_database_env_aliases(
         "removed database environment aliases are not supported: {}",
         removed.join(", ")
     )))
-}
-
-fn default_max_connections_for_engine(engine: DatabaseEngine) -> u32 {
-    match engine {
-        DatabaseEngine::Postgresql => DatabaseConfig::DEFAULT_POSTGRES_MAX_CONNECTIONS,
-        DatabaseEngine::Sqlite => DatabaseConfig::DEFAULT_SQLITE_MAX_CONNECTIONS,
-    }
 }
 
 fn runtime_config_max_connections(
@@ -360,9 +339,8 @@ fn runtime_config_max_connections(
 fn parse_database_engine_name(value: &str) -> Result<DatabaseEngine, DatabaseConfigError> {
     match value.trim().to_ascii_lowercase().as_str() {
         "postgresql" | "postgres" => Ok(DatabaseEngine::Postgresql),
-        "sqlite" => Ok(DatabaseEngine::Sqlite),
         other => Err(DatabaseConfigError::new(format!(
-            "unsupported runtime config [database].engine {other}; expected postgresql or sqlite"
+            "unsupported runtime config [database].engine {other}; expected postgresql"
         ))),
     }
 }
@@ -388,9 +366,6 @@ fn runtime_database_url(
 
     match declared_engine {
         Some(DatabaseEngine::Postgresql) => structured_postgres_url(database, config_path),
-        Some(DatabaseEngine::Sqlite) => Err(DatabaseConfigError::new(
-            "runtime config [database].url is required when [database].engine is sqlite",
-        )),
         None => Err(DatabaseConfigError::new(
             "runtime config [database] must declare engine and url or structured PostgreSQL fields",
         )),

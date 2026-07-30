@@ -1,7 +1,7 @@
 use axum::middleware;
 use axum::routing::{get, post, put};
 use axum::Router;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 use crate::content::retrieve_drive_resource_content;
 use crate::handlers::{
@@ -47,14 +47,14 @@ fn business_router(state: InternalApiState) -> Router {
         .with_state(state)
 }
 
-pub fn build_router_with_pool(pool: AnyPool) -> Router {
+pub fn build_router_with_pool(pool: PgPool) -> Router {
     let router = business_router(InternalApiState::new(pool));
     crate::web_bootstrap::wrap_with_default_resolver(router).layer(middleware::from_fn(
         sdkwork_drive_http::metrics::record_request_metrics,
     ))
 }
 
-pub async fn build_protected_router_with_pool(pool: AnyPool) -> Router {
+pub async fn build_protected_router_with_pool(pool: PgPool) -> Router {
     let router = business_router(InternalApiState::new(pool));
     crate::web_bootstrap::wrap_from_env(router)
         .await
@@ -63,10 +63,17 @@ pub async fn build_protected_router_with_pool(pool: AnyPool) -> Router {
         ))
 }
 
-pub async fn gateway_mount_business(pool: AnyPool) -> Router {
-    build_protected_router_with_pool(pool).await
+pub async fn gateway_mount_business(pool: PgPool) -> Router {
+    build_internal_business_router(pool)
 }
 
-pub async fn gateway_mount(pool: AnyPool) -> Router {
+/// Raw Internal API router for a composing gateway that owns the Web Framework layer.
+pub fn build_internal_business_router(pool: PgPool) -> Router {
+    business_router(InternalApiState::new(pool)).layer(middleware::from_fn(
+        sdkwork_drive_http::metrics::record_request_metrics,
+    ))
+}
+
+pub async fn gateway_mount(pool: PgPool) -> Router {
     build_protected_router_with_pool(pool).await
 }

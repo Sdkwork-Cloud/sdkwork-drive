@@ -37,7 +37,7 @@ use sdkwork_drive_storage_s3::S3DriveObjectStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
 use sdkwork_drive_workspace_service::ports::storage_object_store::SignedDownloadPayload;
 use sdkwork_utils_rust::SdkWorkApiResponse;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use sqlx::Row;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::io::{Cursor, Write};
@@ -289,7 +289,7 @@ fn normalize_package_name(package_name: Option<String>) -> String {
 }
 
 async fn collect_download_package_files(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     requested_node_ids: &[String],
 ) -> Result<Vec<DownloadPackageFileItem>, (StatusCode, Json<ProblemDetail>)> {
@@ -432,7 +432,7 @@ struct FolderDescendantFile {
 }
 
 async fn list_folder_descendant_files(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     root_node_id: &str,
     requested_node_ids: &BTreeSet<String>,
@@ -531,7 +531,7 @@ async fn list_folder_descendant_files(
 }
 
 async fn read_download_package_file(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node: &DriveNodeResponse,
     archive_path: String,
@@ -571,7 +571,7 @@ async fn read_download_package_file(
 }
 
 async fn build_download_package_zip(
-    pool: &AnyPool,
+    pool: &PgPool,
     files: &[DownloadPackageFileItem],
     total_source_bytes: i64,
 ) -> Result<BuiltPackageArchive, (StatusCode, Json<ProblemDetail>)> {
@@ -608,7 +608,7 @@ async fn build_download_package_zip(
 }
 
 async fn resolve_package_object_store<'a>(
-    pool: &AnyPool,
+    pool: &PgPool,
     file: &DownloadPackageFileItem,
     stores: &'a mut BTreeMap<String, S3DriveObjectStore>,
 ) -> Result<&'a S3DriveObjectStore, (StatusCode, Json<ProblemDetail>)> {
@@ -714,7 +714,7 @@ async fn upload_built_package_archive(
 }
 
 async fn insert_download_package_record(
-    pool: &AnyPool,
+    pool: &PgPool,
     command: InsertDownloadPackageRecord<'_>,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     sqlx::query(
@@ -768,7 +768,7 @@ async fn insert_download_package_record(
 }
 
 async fn find_download_package_record(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     package_id: &str,
 ) -> Result<DownloadPackageRecordView, (StatusCode, Json<ProblemDetail>)> {

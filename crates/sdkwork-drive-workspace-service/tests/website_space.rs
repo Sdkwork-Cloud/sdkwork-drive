@@ -1,4 +1,3 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_contract::drive::events::DriveNodeEligibility;
 use sdkwork_drive_workspace_service::application::space_service::{
     CreateSpaceCommand, DriveSpaceService,
@@ -18,22 +17,15 @@ use sdkwork_drive_workspace_service::infrastructure::change_recorder::{
     RecordDriveNodeEligibilityChangedCommand, RecordDriveNodePathChangedCommand,
     RecordDriveNodeVersionCommittedCommand,
 };
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::website_root_store::SqlWebsiteRootStore;
-use sqlx::any::AnyPoolOptions;
 
 #[tokio::test]
 async fn website_spaces_are_multi_instance_and_provision_complete_default_roots_atomically() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should install");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
     for (id, display_name) in [
@@ -303,15 +295,10 @@ async fn website_spaces_are_multi_instance_and_provision_complete_default_roots_
 
 #[tokio::test]
 async fn non_website_space_types_remain_singleton_per_owner() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should install");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveSpaceService::new(SqlSpaceStore::new(pool));
     for id in ["personal-one", "personal-two"] {
@@ -339,15 +326,10 @@ async fn non_website_space_types_remain_singleton_per_owner() {
 
 #[tokio::test]
 async fn folder_website_root_is_idempotent_and_rejects_reserved_namespaces() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should install");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let space_service = DriveSpaceService::new(SqlSpaceStore::new(pool.clone()));
     space_service
         .create_space(CreateSpaceCommand {

@@ -1,5 +1,4 @@
 use chrono::{Duration, SecondsFormat, Utc};
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::maintenance_service::{
     DriveMaintenanceService, SweepExpiredUploadContentCommand,
 };
@@ -22,6 +21,7 @@ use sdkwork_drive_workspace_service::domain::website_root::DriveWebsiteContentMo
 use sdkwork_drive_workspace_service::domain::website_sync::{
     validate_website_sync_tree, DriveWebsiteSyncStatus, DriveWebsiteSyncTreeEntry,
 };
+use sdkwork_drive_workspace_service::infrastructure::sql::begin_transaction_sql;
 use sdkwork_drive_workspace_service::infrastructure::sql::maintenance_store::SqlMaintenanceStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_guard::ensure_managed_website_node_mutation_allowed;
 use sdkwork_drive_workspace_service::infrastructure::sql::node_head_metadata::{
@@ -34,9 +34,6 @@ use sdkwork_drive_workspace_service::infrastructure::sql::uploader_store::SqlUpl
 use sdkwork_drive_workspace_service::infrastructure::sql::website_publishing_maintenance_store::SqlWebsitePublishingMaintenanceStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::website_sync_store::SqlWebsiteSyncStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::workspace_store::SqlDriveWorkspaceStore;
-use sdkwork_drive_workspace_service::infrastructure::sql::{
-    begin_transaction_sql, install_any_schema,
-};
 use sdkwork_drive_workspace_service::ports::node_store::{DriveNodeStore, NewDriveNode};
 use sdkwork_drive_workspace_service::ports::node_version_store::DriveNodeVersionStore;
 use sdkwork_drive_workspace_service::ports::website_publishing_maintenance::{
@@ -48,12 +45,14 @@ use sdkwork_drive_workspace_service::ports::website_sync_store::{
 use sdkwork_drive_workspace_service::ports::workspace_store::{
     DriveWorkspaceStore, NewDriveWorkspaceNodeRecord, NewDriveWorkspaceObjectRecord,
 };
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 #[tokio::test]
 async fn atomic_sync_is_idempotent_switches_once_and_rolls_back_as_a_new_generation() {
-    let pool = database().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     create_website_space(&pool).await;
     sqlx::query(
         "UPDATE dr_drive_space_website_profile
@@ -231,8 +230,7 @@ async fn atomic_sync_is_idempotent_switches_once_and_rolls_back_as_a_new_generat
     .execute(&pool)
     .await
     .expect("expired generation should become cleanup-eligible");
-    let maintenance =
-        SqlWebsitePublishingMaintenanceStore::new(pool.clone(), DatabaseEngine::Sqlite);
+    let maintenance = SqlWebsitePublishingMaintenanceStore::new(pool.clone());
     let candidate = maintenance
         .claim_next_cleanup_candidate("website-maintenance-test")
         .await
@@ -283,7 +281,10 @@ async fn atomic_sync_is_idempotent_switches_once_and_rolls_back_as_a_new_generat
 
 #[tokio::test]
 async fn invalid_manifest_fails_closed_and_abort_never_changes_the_active_root() {
-    let pool = database().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     create_website_space(&pool).await;
     let (root_uuid, root_node_id): (String, String) = sqlx::query_as(
         "SELECT uuid, active_node_id FROM dr_drive_website_root
@@ -360,7 +361,10 @@ async fn invalid_manifest_fails_closed_and_abort_never_changes_the_active_root()
 
 #[tokio::test]
 async fn sync_quota_is_reserved_on_create_and_rechecked_before_switch() {
-    let pool = database().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     create_website_space(&pool).await;
     let root_uuid: String = sqlx::query_scalar(
         "SELECT uuid FROM dr_drive_website_root
@@ -447,7 +451,10 @@ async fn sync_quota_is_reserved_on_create_and_rechecked_before_switch() {
 
 #[tokio::test]
 async fn disabled_storage_provider_blocks_generation_activation() {
-    let pool = database().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     create_website_space(&pool).await;
     let root_uuid: String = sqlx::query_scalar(
         "SELECT uuid FROM dr_drive_website_root
@@ -501,7 +508,10 @@ async fn disabled_storage_provider_blocks_generation_activation() {
 
 #[tokio::test]
 async fn expired_validation_lease_is_recoverable_and_fences_the_stale_finalizer() {
-    let pool = database().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     create_website_space(&pool).await;
     let root_uuid: String = sqlx::query_scalar(
         "SELECT uuid FROM dr_drive_website_root
@@ -631,7 +641,10 @@ async fn expired_validation_lease_is_recoverable_and_fences_the_stale_finalizer(
 
 #[tokio::test]
 async fn uploader_writes_only_to_writable_website_sync_staging() {
-    let pool = database().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     create_website_space(&pool).await;
     let root_uuid: String = sqlx::query_scalar(
         "SELECT uuid FROM dr_drive_website_root
@@ -713,7 +726,10 @@ async fn uploader_writes_only_to_writable_website_sync_staging() {
 
 #[tokio::test]
 async fn low_level_stores_cannot_mutate_activated_or_retained_atomic_generations() {
-    let pool = database().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     create_website_space(&pool).await;
     let (root_uuid, original_root_node_id): (String, String) = sqlx::query_as(
         "SELECT uuid, active_node_id
@@ -945,20 +961,7 @@ async fn low_level_stores_cannot_mutate_activated_or_retained_atomic_generations
     assert_eq!(forbidden_version_count, 0);
 }
 
-async fn database() -> AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("SQLite pool should connect");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("Drive schema should install");
-    pool
-}
-
-async fn assert_node_mutation_guard(pool: &AnyPool, node_id: &str, expected_allowed: bool) {
+async fn assert_node_mutation_guard(pool: &PgPool, node_id: &str, expected_allowed: bool) {
     let mut connection = pool
         .acquire()
         .await
@@ -980,7 +983,7 @@ async fn assert_node_mutation_guard(pool: &AnyPool, node_id: &str, expected_allo
     );
 }
 
-async fn create_website_space(pool: &AnyPool) {
+async fn create_website_space(pool: &PgPool) {
     DriveSpaceService::new(SqlSpaceStore::new(pool.clone()))
         .create_space(CreateSpaceCommand {
             id: "space-sync".to_string(),
@@ -1030,7 +1033,7 @@ fn uploader_command(id: &str, task_id: &str, parent_node_id: &str) -> PrepareUpl
     }
 }
 
-async fn seed_storage_provider(pool: &AnyPool) {
+async fn seed_storage_provider(pool: &PgPool) {
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
@@ -1094,7 +1097,7 @@ fn folder(path: &str) -> DriveWebsiteSyncTreeEntry {
     }
 }
 
-async fn insert_tree(pool: &AnyPool, staging_node_id: &str, entries: &[DriveWebsiteSyncTreeEntry]) {
+async fn insert_tree(pool: &PgPool, staging_node_id: &str, entries: &[DriveWebsiteSyncTreeEntry]) {
     let mut parent_id = staging_node_id.to_string();
     for (index, entry) in entries.iter().enumerate() {
         let node_id = format!("sync-entry-{index}");

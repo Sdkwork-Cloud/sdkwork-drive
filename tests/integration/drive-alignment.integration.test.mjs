@@ -616,7 +616,7 @@ assert.match(seedManifest, /"i18nVersion"/);
 assert.match(seedManifest, /"fallbackLocale"/);
 assert.match(seedManifest, /"localeSets"/);
 read('database/migrations/postgres/0003_drive_tenant_quota.up.sql');
-read('database/migrations/sqlite/0003_drive_tenant_quota.up.sql');
+read('tests/fixtures/database/sqlite/migrations/0003_drive_tenant_quota.up.sql');
 const adminOffsetNormalizer = read(
   'apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-operations/src/utils/normalizeBackendOffsetListPage.ts',
 );

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use sqlx::any::AnyRow;
-use sqlx::{AnyPool, Row};
+use sqlx::postgres::PgRow;
+use sqlx::{PgPool, Row};
 
 use crate::domain::resource_resolution::{
     DriveResourceContentLocator, DriveResourceScopeKind, ResolvedDriveResource,
@@ -10,11 +10,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlResourceResolutionStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlResourceResolutionStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -218,7 +218,7 @@ impl SqlResourceResolutionStore {
         request: &ResolveDriveResource,
         scope: &ResolvedScope,
         node_id: &str,
-    ) -> Result<AnyRow, DriveServiceError> {
+    ) -> Result<PgRow, DriveServiceError> {
         let row = if let Some(version_id) = request.pinned_node_version_id.as_deref() {
             sqlx::query(
                 "SELECT node.id AS node_id,
@@ -310,7 +310,7 @@ impl SqlResourceResolutionStore {
     }
 }
 
-fn map_scope(row: Option<AnyRow>) -> Option<ResolvedScope> {
+fn map_scope(row: Option<PgRow>) -> Option<ResolvedScope> {
     row.map(|row| ResolvedScope {
         space_id: row.get("space_id"),
         root_node_id: row.get("root_node_id"),
@@ -319,7 +319,7 @@ fn map_scope(row: Option<AnyRow>) -> Option<ResolvedScope> {
 }
 
 fn map_resource(
-    row: AnyRow,
+    row: PgRow,
     request: &ResolveDriveResource,
     scope_generation: i64,
 ) -> Result<ResolvedDriveResource, DriveServiceError> {

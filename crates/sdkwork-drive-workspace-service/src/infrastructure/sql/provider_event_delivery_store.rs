@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use sqlx::any::AnyRow;
-use sqlx::{AnyConnection, AnyPool, Row};
+use sqlx::postgres::PgRow;
+use sqlx::{PgConnection, PgPool, Row};
 
 use crate::domain::provider_event_delivery::DriveProviderEventDelivery;
 use crate::infrastructure::sql::begin_transaction_sql;
@@ -14,11 +14,11 @@ const DELIVERY_SELECT_COLUMNS: &str = "id, address, expiration_epoch_ms, lifecyc
 
 #[derive(Debug, Clone)]
 pub struct SqlProviderEventDeliveryStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlProviderEventDeliveryStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -64,7 +64,7 @@ impl DriveProviderEventDeliveryStore for SqlProviderEventDeliveryStore {
 }
 
 async fn ensure_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: &EnsureDriveProviderEventDelivery,
 ) -> Result<EnsureDriveProviderEventDeliveryResult, DriveServiceError> {
     let space_id = resolve_active_provider_resource(connection, command).await?;
@@ -149,7 +149,7 @@ async fn ensure_on_connection(
 }
 
 async fn resolve_active_provider_resource(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: &EnsureDriveProviderEventDelivery,
 ) -> Result<String, DriveServiceError> {
     let (table, status_column, required_status, extra_predicate) = match command.resource_kind {
@@ -187,7 +187,7 @@ async fn resolve_active_provider_resource(
 }
 
 fn validate_existing_channel(
-    row: &AnyRow,
+    row: &PgRow,
     space_id: &str,
     command: &EnsureDriveProviderEventDelivery,
 ) -> Result<(), DriveServiceError> {
@@ -210,7 +210,7 @@ fn validate_existing_channel(
 }
 
 async fn read_delivery(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: &EnsureDriveProviderEventDelivery,
     created: bool,
 ) -> Result<EnsureDriveProviderEventDeliveryResult, DriveServiceError> {
@@ -233,7 +233,7 @@ async fn read_delivery(
     })
 }
 
-fn map_delivery(row: &AnyRow, provider_resource_uuid: &str) -> DriveProviderEventDelivery {
+fn map_delivery(row: &PgRow, provider_resource_uuid: &str) -> DriveProviderEventDelivery {
     DriveProviderEventDelivery {
         channel_id: row.get("id"),
         provider_resource_uuid: provider_resource_uuid.to_string(),

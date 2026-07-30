@@ -1,27 +1,21 @@
 use axum::body::{to_bytes, Body};
 use axum::Router;
 use http::{Response, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use serde_json::{json, Value};
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use tower::util::ServiceExt;
 
 mod common;
 
-async fn setup() -> (AnyPool, Router) {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+async fn setup() -> Option<(
+    PgPool,
+    Router,
+    sdkwork_drive_test_support::test_database::PostgresTestDatabaseGuard,
+)> {
+    let (pool, database_guard) =
+        sdkwork_drive_test_support::test_database::postgres_test_database().await?;
     let app = common::test_router_with_pool(pool.clone());
-    (pool, app)
+    Some((pool, app, database_guard))
 }
 
 async fn response_json(response: Response<Body>) -> Value {
@@ -61,11 +55,11 @@ async fn create_space(
     assert_eq!(response.status(), StatusCode::CREATED);
 }
 
-async fn default_root(pool: &AnyPool, tenant_id: &str, space_id: &str) -> (String, String) {
+async fn default_root(pool: &PgPool, tenant_id: &str, space_id: &str) -> (String, String) {
     sqlx::query_as(
         "SELECT active_node_id, uuid
          FROM dr_drive_website_root
-         WHERE tenant_id=?1 AND space_id=?2 AND selector_key='space_root'",
+         WHERE tenant_id=$1 AND space_id=$2 AND selector_key='space_root'",
     )
     .bind(tenant_id)
     .bind(space_id)
@@ -75,7 +69,7 @@ async fn default_root(pool: &AnyPool, tenant_id: &str, space_id: &str) -> (Strin
 }
 
 async fn insert_folder(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     parent_node_id: &str,
@@ -87,7 +81,7 @@ async fn insert_folder(
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, space_type, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-         ) VALUES (?1, ?2, ?3, 'website', ?4, 'folder', ?5, 'ready', 'active', 1, ?6, ?6)",
+         ) VALUES ($1, $2, $3, 'website', $4, 'folder', $5, 'ready', 'active', 1, $6, $6)",
     )
     .bind(folder_node_id)
     .bind(tenant_id)
@@ -133,7 +127,9 @@ async fn create_folder_root(
 
 #[tokio::test]
 async fn website_root_routes_create_list_retrieve_and_replay_folder_selector() {
-    let (pool, app) = setup().await;
+    let Some((pool, app, _database_guard)) = setup().await else {
+        return;
+    };
     create_space(
         &app,
         "tenant-website",
@@ -192,7 +188,7 @@ async fn website_root_routes_create_list_retrieve_and_replay_folder_selector() {
     );
     let persisted_count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1) FROM dr_drive_website_root
-         WHERE tenant_id=?1 AND space_id=?2",
+         WHERE tenant_id=$1 AND space_id=$2",
     )
     .bind("tenant-website")
     .bind("space-website")
@@ -270,7 +266,9 @@ async fn website_root_routes_create_list_retrieve_and_replay_folder_selector() {
 
 #[tokio::test]
 async fn website_root_routes_enforce_owner_writes_reader_access_and_tenant_isolation() {
-    let (pool, app) = setup().await;
+    let Some((pool, app, _database_guard)) = setup().await else {
+        return;
+    };
     create_space(&app, "tenant-acl", "user-owner", "space-acl", "website").await;
     let (root_node_id, root_uuid) = default_root(&pool, "tenant-acl", "space-acl").await;
     insert_folder(
@@ -288,7 +286,7 @@ async fn website_root_routes_enforce_owner_writes_reader_access_and_tenant_isola
             id, tenant_id, node_id, subject_type, subject_id, role,
             inherited, lifecycle_status, version, created_by, updated_by
          ) VALUES (
-            'permission-website-reader', 'tenant-acl', ?1, 'user', 'user-reader', 'reader',
+            'permission-website-reader', 'tenant-acl', $1, 'user', 'user-reader', 'reader',
             1, 'active', 1, 'user-owner', 'user-owner'
          )",
     )
@@ -359,7 +357,9 @@ async fn website_root_routes_enforce_owner_writes_reader_access_and_tenant_isola
 
 #[tokio::test]
 async fn website_root_routes_reject_non_website_spaces_and_reserved_folders() {
-    let (pool, app) = setup().await;
+    let Some((pool, app, _database_guard)) = setup().await else {
+        return;
+    };
     create_space(
         &app,
         "tenant-validation",

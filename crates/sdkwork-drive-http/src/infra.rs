@@ -9,21 +9,21 @@ use sdkwork_web_bootstrap::{
     contract_fallback_handler, healthz_handler, livez_handler, mount_infra_routes, readyz_handler,
     ReadinessCheck, ReadinessFuture, ServiceRouterConfig,
 };
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
-/// Readiness probe for Drive `sqlx::AnyPool` databases.
+/// Readiness probe for Drive PostgreSQL databases.
 #[derive(Clone)]
-pub struct AnyPoolReadinessCheck {
-    pool: AnyPool,
+pub struct PostgresReadinessCheck {
+    pool: PgPool,
 }
 
-impl AnyPoolReadinessCheck {
-    pub fn new(pool: AnyPool) -> Self {
+impl PostgresReadinessCheck {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
 
-impl ReadinessCheck for AnyPoolReadinessCheck {
+impl ReadinessCheck for PostgresReadinessCheck {
     fn check(&self) -> ReadinessFuture<'_> {
         let pool = self.pool.clone();
         Box::pin(async move {
@@ -37,9 +37,9 @@ impl ReadinessCheck for AnyPoolReadinessCheck {
 }
 
 /// Builds a [`ServiceRouterConfig`] with database readiness for the given pool.
-pub fn drive_service_router_config(pool: &AnyPool) -> ServiceRouterConfig {
+pub fn drive_service_router_config(pool: &PgPool) -> ServiceRouterConfig {
     ServiceRouterConfig::default()
-        .with_readiness_check(Arc::new(AnyPoolReadinessCheck::new(pool.clone())))
+        .with_readiness_check(Arc::new(PostgresReadinessCheck::new(pool.clone())))
 }
 
 /// Mounts standard infrastructure routes on `router`.

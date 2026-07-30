@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 use sdkwork_drive_contract::drive::domain_events::admin_audit;
-use sqlx::any::AnyRow;
 use sqlx::pool::PoolConnection;
-use sqlx::{Any, AnyConnection, AnyPool, Row};
+use sqlx::postgres::PgRow;
+use sqlx::{PgConnection, PgPool, Postgres, Row};
 
 use crate::domain::sandbox_admin::{SandboxAdminGrant, SandboxAdminPage, SandboxAdminVolume};
 use crate::infrastructure::sql::runtime_id::next_drive_runtime_id;
@@ -19,11 +19,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlSandboxAdminStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlSandboxAdminStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -507,7 +507,9 @@ const VOLUME_SELECT_BY_ID: &str =
      WHERE tenant_id=$1 AND organization_id=$2 AND id=$3
      LIMIT 1";
 
-async fn begin_admin_transaction(pool: &AnyPool) -> Result<PoolConnection<Any>, DriveServiceError> {
+async fn begin_admin_transaction(
+    pool: &PgPool,
+) -> Result<PoolConnection<Postgres>, DriveServiceError> {
     let mut connection = pool
         .acquire()
         .await
@@ -520,7 +522,7 @@ async fn begin_admin_transaction(pool: &AnyPool) -> Result<PoolConnection<Any>, 
 }
 
 async fn finish_admin_transaction<T>(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     result: Result<T, DriveServiceError>,
 ) -> Result<T, DriveServiceError> {
     match result {
@@ -539,7 +541,7 @@ async fn finish_admin_transaction<T>(
 }
 
 async fn find_volume_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     organization_id: &str,
     sandbox_id: &str,
@@ -555,7 +557,7 @@ async fn find_volume_on_connection(
 }
 
 async fn volume_exists(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     organization_id: &str,
     sandbox_id: &str,
@@ -574,7 +576,7 @@ async fn volume_exists(
 }
 
 async fn insert_grant_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     grant: &NewSandboxAdminGrant,
 ) -> Result<(), DriveServiceError> {
     sqlx::query(
@@ -595,7 +597,7 @@ async fn insert_grant_on_connection(
 }
 
 async fn find_grant_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     organization_id: &str,
     sandbox_id: &str,
@@ -621,7 +623,7 @@ async fn find_grant_on_connection(
 }
 
 async fn insert_audit_event(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     audit: &SandboxAdminAuditContext,
     action: &str,
     resource_type: &str,
@@ -648,7 +650,7 @@ async fn insert_audit_event(
     Ok(())
 }
 
-fn map_volume(row: &AnyRow) -> Result<SandboxAdminVolume, DriveServiceError> {
+fn map_volume(row: &PgRow) -> Result<SandboxAdminVolume, DriveServiceError> {
     Ok(SandboxAdminVolume {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),
@@ -667,7 +669,7 @@ fn map_volume(row: &AnyRow) -> Result<SandboxAdminVolume, DriveServiceError> {
     })
 }
 
-fn map_grant(row: &AnyRow) -> Result<SandboxAdminGrant, DriveServiceError> {
+fn map_grant(row: &PgRow) -> Result<SandboxAdminGrant, DriveServiceError> {
     Ok(SandboxAdminGrant {
         id: row.get("id"),
         sandbox_id: row.get("sandbox_id"),

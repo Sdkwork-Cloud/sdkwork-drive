@@ -1,4 +1,3 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_storage_contract::{DriveObjectLocator, DriveObjectStore, HeadObjectRequest};
 use sdkwork_drive_storage_local::LocalDriveObjectStore;
 use sdkwork_drive_workspace_service::application::uploader_service::{
@@ -6,15 +5,16 @@ use sdkwork_drive_workspace_service::application::uploader_service::{
     PrepareUploaderUploadCommand, UploadBytesCommand, UploaderActor, UploaderRetention,
     UploaderTarget,
 };
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::uploader_store::SqlUploaderStore;
 use sdkwork_drive_workspace_service::{drive_share_token_hash, DriveServiceError};
-use sqlx::any::AnyPoolOptions;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[tokio::test]
 async fn prepare_upload_creates_logged_in_user_upload_space_and_task() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
 
     let prepared = service
@@ -62,7 +62,7 @@ async fn prepare_upload_creates_logged_in_user_upload_space_and_task() {
     let owner: (String, String, String) = sqlx::query_as(
         "SELECT owner_subject_type, owner_subject_id, space_type
          FROM dr_drive_space
-         WHERE id=?1",
+         WHERE id=$1",
     )
     .bind(&prepared.space_id)
     .fetch_one(&pool)
@@ -78,7 +78,7 @@ async fn prepare_upload_creates_logged_in_user_upload_space_and_task() {
     );
 
     let node_state: String =
-        sqlx::query_scalar("SELECT content_state FROM dr_drive_node WHERE id=?1")
+        sqlx::query_scalar("SELECT content_state FROM dr_drive_node WHERE id=$1")
             .bind(&prepared.node_id)
             .fetch_one(&pool)
             .await
@@ -86,7 +86,7 @@ async fn prepare_upload_creates_logged_in_user_upload_space_and_task() {
     assert_eq!(node_state, "uploading");
 
     let usage_context: (String, String) =
-        sqlx::query_as("SELECT scene, source FROM dr_drive_upload_item WHERE id=?1")
+        sqlx::query_as("SELECT scene, source FROM dr_drive_upload_item WHERE id=$1")
             .bind(&prepared.id)
             .fetch_one(&pool)
             .await
@@ -100,7 +100,7 @@ async fn prepare_upload_creates_logged_in_user_upload_space_and_task() {
     );
 
     let node_usage_context: (String, String) =
-        sqlx::query_as("SELECT scene, source FROM dr_drive_node WHERE id=?1")
+        sqlx::query_as("SELECT scene, source FROM dr_drive_node WHERE id=$1")
             .bind(&prepared.node_id)
             .fetch_one(&pool)
             .await
@@ -116,7 +116,10 @@ async fn prepare_upload_creates_logged_in_user_upload_space_and_task() {
 
 #[tokio::test]
 async fn prepare_upload_allocates_unique_name_when_file_already_exists() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
     let base_command = |id: &str, task_id: &str| PrepareUploaderUploadCommand {
         id: id.to_string(),
@@ -151,7 +154,7 @@ async fn prepare_upload_allocates_unique_name_when_file_already_exists() {
         .expect("first upload should be prepared");
     assert_eq!(first.original_file_name, "report.txt");
 
-    sqlx::query("UPDATE dr_drive_node SET content_state='ready', head_content_type='text/plain', head_content_type_group='text', head_content_length=42, head_version_no=1, file_extension='txt', head_checksum_sha256_hex='sha256:0000000000000000000000000000000000000000000000000000000000000000' WHERE id=?1")
+    sqlx::query("UPDATE dr_drive_node SET content_state='ready', head_content_type='text/plain', head_content_type_group='text', head_content_length=42, head_version_no=1, file_extension='txt', head_checksum_sha256_hex='sha256:0000000000000000000000000000000000000000000000000000000000000000' WHERE id=$1")
         .bind(&first.node_id)
         .execute(&pool)
         .await
@@ -163,7 +166,7 @@ async fn prepare_upload_allocates_unique_name_when_file_already_exists() {
         .expect("duplicate upload should be prepared with a unique name");
     assert_eq!(second.original_file_name, "report (1).txt");
 
-    let node_name: String = sqlx::query_scalar("SELECT node_name FROM dr_drive_node WHERE id=?1")
+    let node_name: String = sqlx::query_scalar("SELECT node_name FROM dr_drive_node WHERE id=$1")
         .bind(&second.node_id)
         .fetch_one(&pool)
         .await
@@ -173,7 +176,10 @@ async fn prepare_upload_allocates_unique_name_when_file_already_exists() {
 
 #[tokio::test]
 async fn prepare_upload_allocates_unique_name_for_stale_uploading_node() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
 
     let first = service
@@ -241,7 +247,10 @@ async fn prepare_upload_allocates_unique_name_for_stale_uploading_node() {
 
 #[tokio::test]
 async fn prepare_anonymous_upload_uses_app_owned_upload_space() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
 
     let prepared = service
@@ -288,7 +297,7 @@ async fn prepare_anonymous_upload_uses_app_owned_upload_space() {
     let owner: (String, String, String) = sqlx::query_as(
         "SELECT owner_subject_type, owner_subject_id, space_type
          FROM dr_drive_space
-         WHERE id=?1",
+         WHERE id=$1",
     )
     .bind(&prepared.space_id)
     .fetch_one(&pool)
@@ -306,7 +315,7 @@ async fn prepare_anonymous_upload_uses_app_owned_upload_space() {
     let object_key: String = sqlx::query_scalar(
         "SELECT object_key
          FROM dr_drive_upload_session
-         WHERE id=?1",
+         WHERE id=$1",
     )
     .bind(
         prepared
@@ -349,7 +358,10 @@ async fn prepare_anonymous_upload_uses_app_owned_upload_space() {
 
 #[tokio::test]
 async fn prepare_im_upload_uses_im_space_type_for_auto_upload_space() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
 
     let prepared = service
@@ -385,7 +397,7 @@ async fn prepare_im_upload_uses_im_space_type_for_auto_upload_space() {
     let owner: (String, String, String, String) = sqlx::query_as(
         "SELECT owner_subject_type, owner_subject_id, space_type, display_name
          FROM dr_drive_space
-         WHERE id=?1",
+         WHERE id=$1",
     )
     .bind(&prepared.space_id)
     .fetch_one(&pool)
@@ -404,7 +416,7 @@ async fn prepare_im_upload_uses_im_space_type_for_auto_upload_space() {
     let usage_context: (String, String, String) = sqlx::query_as(
         "SELECT scene, source, upload_profile_code
          FROM dr_drive_upload_item
-         WHERE id=?1",
+         WHERE id=$1",
     )
     .bind(&prepared.id)
     .fetch_one(&pool)
@@ -422,7 +434,10 @@ async fn prepare_im_upload_uses_im_space_type_for_auto_upload_space() {
 
 #[tokio::test]
 async fn prepare_rtc_upload_uses_rtc_space_type_for_auto_upload_space() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
 
     let prepared = service
@@ -458,7 +473,7 @@ async fn prepare_rtc_upload_uses_rtc_space_type_for_auto_upload_space() {
     let owner: (String, String, String, String) = sqlx::query_as(
         "SELECT owner_subject_type, owner_subject_id, space_type, display_name
          FROM dr_drive_space
-         WHERE id=?1",
+         WHERE id=$1",
     )
     .bind(&prepared.space_id)
     .fetch_one(&pool)
@@ -477,7 +492,7 @@ async fn prepare_rtc_upload_uses_rtc_space_type_for_auto_upload_space() {
     let usage_context: (String, String, String) = sqlx::query_as(
         "SELECT scene, source, upload_profile_code
          FROM dr_drive_upload_item
-         WHERE id=?1",
+         WHERE id=$1",
     )
     .bind(&prepared.id)
     .fetch_one(&pool)
@@ -495,7 +510,10 @@ async fn prepare_rtc_upload_uses_rtc_space_type_for_auto_upload_space() {
 
 #[tokio::test]
 async fn prepare_upload_to_target_space_requires_owner_or_writer_permission() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_space(
         &pool,
         "space-owned-by-user",
@@ -614,7 +632,10 @@ async fn prepare_upload_to_target_space_requires_owner_or_writer_permission() {
 
 #[tokio::test]
 async fn prepare_anonymous_upload_to_explicit_space_requires_public_writer_share() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_space(
         &pool,
         "space-public-upload",
@@ -729,7 +750,10 @@ async fn prepare_anonymous_upload_to_explicit_space_requires_public_writer_share
 
 #[tokio::test]
 async fn prepare_video_upload_selects_video_profile_and_temporary_retention() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool));
 
     let prepared = service
@@ -779,7 +803,10 @@ async fn prepare_video_upload_selects_video_profile_and_temporary_retention() {
 
 #[tokio::test]
 async fn prepare_ai_generated_upload_targets_ai_generated_space_for_user_and_anonymous_actor() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
 
     let user_prepared = service
@@ -815,7 +842,7 @@ async fn prepare_ai_generated_upload_targets_ai_generated_space_for_user_and_ano
     let user_space: (String, String, String) = sqlx::query_as(
         "SELECT owner_subject_type, owner_subject_id, space_type
          FROM dr_drive_space
-         WHERE id=?1",
+         WHERE id=$1",
     )
     .bind(&user_prepared.space_id)
     .fetch_one(&pool)
@@ -863,7 +890,7 @@ async fn prepare_ai_generated_upload_targets_ai_generated_space_for_user_and_ano
     let anonymous_space: (String, String, String) = sqlx::query_as(
         "SELECT owner_subject_type, owner_subject_id, space_type
          FROM dr_drive_space
-         WHERE id=?1",
+         WHERE id=$1",
     )
     .bind(&anonymous_prepared.space_id)
     .fetch_one(&pool)
@@ -881,7 +908,10 @@ async fn prepare_ai_generated_upload_targets_ai_generated_space_for_user_and_ano
 
 #[tokio::test]
 async fn mark_part_uploaded_is_idempotent_and_updates_upload_item_counters() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
     let prepared = service
         .prepare_upload(PrepareUploaderUploadCommand {
@@ -944,7 +974,7 @@ async fn mark_part_uploaded_is_idempotent_and_updates_upload_item_counters() {
     let counters: (i64, i64) = sqlx::query_as(
         "SELECT uploaded_parts_count, uploaded_bytes
          FROM dr_drive_upload_item
-         WHERE id=?1",
+         WHERE id=$1",
     )
     .bind(&prepared.id)
     .fetch_one(&pool)
@@ -955,7 +985,10 @@ async fn mark_part_uploaded_is_idempotent_and_updates_upload_item_counters() {
 
 #[tokio::test]
 async fn complete_stored_upload_marks_generated_object_ready_and_is_idempotent() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
     let prepared = service
         .prepare_upload(PrepareUploaderUploadCommand {
@@ -1039,7 +1072,7 @@ async fn complete_stored_upload_marks_generated_object_ready_and_is_idempotent()
     let node_state: String = sqlx::query_scalar(
         "SELECT content_state
          FROM dr_drive_node
-         WHERE tenant_id=?1 AND id=?2",
+         WHERE tenant_id=$1 AND id=$2",
     )
     .bind("tenant-ai-complete")
     .bind(&prepared.node_id)
@@ -1051,7 +1084,7 @@ async fn complete_stored_upload_marks_generated_object_ready_and_is_idempotent()
     let session_state: String = sqlx::query_scalar(
         "SELECT state
          FROM dr_drive_upload_session
-         WHERE tenant_id=?1 AND id=?2",
+         WHERE tenant_id=$1 AND id=$2",
     )
     .bind("tenant-ai-complete")
     .bind(
@@ -1068,7 +1101,7 @@ async fn complete_stored_upload_marks_generated_object_ready_and_is_idempotent()
     let storage_object: (String, i64, String, i64, String, String) = sqlx::query_as(
         "SELECT id, version_no, content_type, content_length, checksum_sha256_hex, lifecycle_status
          FROM dr_drive_storage_object
-         WHERE tenant_id=?1 AND node_id=?2",
+         WHERE tenant_id=$1 AND node_id=$2",
     )
     .bind("tenant-ai-complete")
     .bind(&prepared.node_id)
@@ -1090,7 +1123,7 @@ async fn complete_stored_upload_marks_generated_object_ready_and_is_idempotent()
     let node_versions: Vec<(String, i64, String)> = sqlx::query_as(
         "SELECT id, version_no, storage_object_id
          FROM dr_drive_node_version
-         WHERE tenant_id=?1 AND node_id=?2",
+         WHERE tenant_id=$1 AND node_id=$2",
     )
     .bind("tenant-ai-complete")
     .bind(&prepared.node_id)
@@ -1104,7 +1137,7 @@ async fn complete_stored_upload_marks_generated_object_ready_and_is_idempotent()
     let event_payload: String = sqlx::query_scalar(
         "SELECT payload_json
          FROM dr_drive_domain_outbox
-         WHERE tenant_id=?1 AND node_id=?2 AND event_type=?3",
+         WHERE tenant_id=$1 AND node_id=$2 AND event_type=$3",
     )
     .bind("tenant-ai-complete")
     .bind(&prepared.node_id)
@@ -1125,7 +1158,7 @@ async fn complete_stored_upload_marks_generated_object_ready_and_is_idempotent()
     let sensitive_operations: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
          FROM dr_drive_file_sensitive_operation
-         WHERE tenant_id=?1 AND upload_item_id=?2 AND operation_type='upload_completed'",
+         WHERE tenant_id=$1 AND upload_item_id=$2 AND operation_type='upload_completed'",
     )
     .bind("tenant-ai-complete")
     .bind(&prepared.id)
@@ -1137,7 +1170,10 @@ async fn complete_stored_upload_marks_generated_object_ready_and_is_idempotent()
 
 #[tokio::test]
 async fn upload_bytes_writes_object_and_completes_ai_generated_upload() {
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
     let object_store =
         LocalDriveObjectStore::new(unique_temp_storage_root("drive-uploader-upload-bytes"));
@@ -1218,7 +1254,7 @@ async fn upload_bytes_writes_object_and_completes_ai_generated_upload() {
     );
 
     let space_type: String =
-        sqlx::query_scalar("SELECT space_type FROM dr_drive_space WHERE id=?1")
+        sqlx::query_scalar("SELECT space_type FROM dr_drive_space WHERE id=$1")
             .bind(&completed.space_id)
             .fetch_one(&pool)
             .await
@@ -1230,7 +1266,10 @@ async fn upload_bytes_writes_object_and_completes_ai_generated_upload() {
 async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operation_and_aborts_session(
 ) {
     std::env::set_var("SDKWORK_DRIVE_CONTENT_SCAN_MODE", "quarantine");
-    let pool = create_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let service = DriveUploaderService::new(SqlUploaderStore::new(pool.clone()));
     let prepared = service
         .prepare_upload(PrepareUploaderUploadCommand {
@@ -1267,12 +1306,12 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
         .clone()
         .expect("prepare should create upload session");
 
-    sqlx::query("UPDATE dr_drive_space SET space_type='website' WHERE id=?1")
+    sqlx::query("UPDATE dr_drive_space SET space_type='website' WHERE id=$1")
         .bind(&prepared.space_id)
         .execute(&pool)
         .await
         .expect("quarantine test Space should become website-capable");
-    sqlx::query("UPDATE dr_drive_node SET space_type='website' WHERE id=?1")
+    sqlx::query("UPDATE dr_drive_node SET space_type='website' WHERE id=$1")
         .bind(&prepared.node_id)
         .execute(&pool)
         .await
@@ -1282,7 +1321,7 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
             id, tenant_id, space_id, space_type, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
          ) VALUES (
-            'quarantine-website-root', 'tenant-quarantine', ?1, 'website', NULL,
+            'quarantine-website-root', 'tenant-quarantine', $1, 'website', NULL,
             'folder', 'public', 'ready', 'active', 1,
             'user-quarantine', 'user-quarantine'
          )",
@@ -1294,7 +1333,7 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
     sqlx::query(
         "UPDATE dr_drive_node
          SET parent_node_id='quarantine-website-root'
-         WHERE tenant_id='tenant-quarantine' AND id=?1",
+         WHERE tenant_id='tenant-quarantine' AND id=$1",
     )
     .bind(&prepared.node_id)
     .execute(&pool)
@@ -1307,7 +1346,7 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
             active_node_id, active_generation, root_status, last_switch_by,
             version, created_by, updated_by
          ) VALUES (
-            'quarantine-root-record', 'quarantine-root-uuid', 'tenant-quarantine', ?1,
+            'quarantine-root-record', 'quarantine-root-uuid', 'tenant-quarantine', $1,
             'default', 'Default', 'folder', 'quarantine-website-root',
             'folder:quarantine-website-root', 'atomic_generation',
             'quarantine-website-root', 1, 'active', 'user-quarantine', 1,
@@ -1351,7 +1390,7 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
     );
 
     let node_lifecycle: String = sqlx::query_scalar(
-        "SELECT lifecycle_status FROM dr_drive_node WHERE tenant_id=?1 AND id=?2",
+        "SELECT lifecycle_status FROM dr_drive_node WHERE tenant_id=$1 AND id=$2",
     )
     .bind(&prepared.tenant_id)
     .bind(&prepared.node_id)
@@ -1361,7 +1400,7 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
     assert_eq!(node_lifecycle, "trashed");
 
     let upload_item_status: (String, String) =
-        sqlx::query_as("SELECT status, cleanup_status FROM dr_drive_upload_item WHERE id=?1")
+        sqlx::query_as("SELECT status, cleanup_status FROM dr_drive_upload_item WHERE id=$1")
             .bind(&prepared.id)
             .fetch_one(&pool)
             .await
@@ -1372,7 +1411,7 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
     );
 
     let session_state: String =
-        sqlx::query_scalar("SELECT state FROM dr_drive_upload_session WHERE id=?1")
+        sqlx::query_scalar("SELECT state FROM dr_drive_upload_session WHERE id=$1")
             .bind(&upload_session_id)
             .fetch_one(&pool)
             .await
@@ -1382,7 +1421,7 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
     let sensitive_operation: (String, String) = sqlx::query_as(
         "SELECT operation_type, operation_reason
          FROM dr_drive_file_sensitive_operation
-         WHERE upload_item_id=?1",
+         WHERE upload_item_id=$1",
     )
     .bind(&prepared.id)
     .fetch_one(&pool)
@@ -1394,7 +1433,7 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
     );
 
     let outbox_event: String = sqlx::query_scalar(
-        "SELECT event_type FROM dr_drive_domain_outbox WHERE tenant_id=?1 ORDER BY created_at DESC LIMIT 1",
+        "SELECT event_type FROM dr_drive_domain_outbox WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1",
     )
     .bind(&prepared.tenant_id)
     .fetch_one(&pool)
@@ -1405,7 +1444,7 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
     let override_audit_action: String = sqlx::query_scalar(
         "SELECT action
          FROM dr_drive_audit_event
-         WHERE tenant_id='tenant-quarantine' AND resource_id=?1",
+         WHERE tenant_id='tenant-quarantine' AND resource_id=$1",
     )
     .bind(&prepared.node_id)
     .fetch_one(&pool)
@@ -1419,20 +1458,6 @@ async fn complete_stored_upload_quarantine_trashes_node_records_sensitive_operat
     std::env::remove_var("SDKWORK_DRIVE_CONTENT_SCAN_MODE");
 }
 
-async fn create_pool() -> sqlx::AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
-    seed_storage_provider(&pool).await;
-    pool
-}
-
 fn unique_temp_storage_root(name: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -1441,26 +1466,8 @@ fn unique_temp_storage_root(name: &str) -> std::path::PathBuf {
     std::env::temp_dir().join(format!("{name}-{suffix}"))
 }
 
-async fn seed_storage_provider(pool: &sqlx::AnyPool) {
-    sqlx::query(
-        "INSERT INTO dr_drive_storage_provider (
-            id, provider_kind, name, endpoint_url, region, bucket, path_style,
-            strict_tls, credential_ref, server_side_encryption_mode,
-            default_storage_class, status, version, created_by, updated_by
-        ) VALUES (
-            'provider-uploader', 's3_compatible', 'Uploader Provider',
-            'https://s3.example.com', 'us-east-1', 'bucket-uploader', 1,
-            1, 'plain:test-access-key:test-secret-key', 'AES256',
-            'STANDARD', 'active', 1, 'test', 'test'
-        )",
-    )
-    .execute(pool)
-    .await
-    .expect("seed storage provider should succeed");
-}
-
 async fn seed_space(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     space_id: &str,
     tenant_id: &str,
     owner_subject_type: &str,
@@ -1471,7 +1478,7 @@ async fn seed_space(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?5, 'active', 1, ?4, ?4)",
+        ) VALUES ($1, $2, $3, $4, $5, $5, 'active', 1, $4, $4)",
     )
     .bind(space_id)
     .bind(tenant_id)
@@ -1484,7 +1491,7 @@ async fn seed_space(
 }
 
 async fn seed_folder(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     node_id: &str,
     tenant_id: &str,
     space_id: &str,
@@ -1497,7 +1504,7 @@ async fn seed_folder(
             id, tenant_id, space_id, parent_node_id, node_type,
             node_name, content_state, lifecycle_status, version,
             created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, 'folder', ?5, 'empty', 'active', 1, ?6, ?6)",
+        ) VALUES ($1, $2, $3, $4, 'folder', $5, 'empty', 'active', 1, $6, $6)",
     )
     .bind(node_id)
     .bind(tenant_id)
@@ -1511,7 +1518,7 @@ async fn seed_folder(
 }
 
 async fn seed_permission(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     permission_id: &str,
     tenant_id: &str,
     node_id: &str,
@@ -1523,7 +1530,7 @@ async fn seed_permission(
         "INSERT INTO dr_drive_node_permission (
             id, tenant_id, node_id, subject_type, subject_id, role,
             inherited, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 'active', 1, ?5, ?5)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 0, 'active', 1, $5, $5)",
     )
     .bind(permission_id)
     .bind(tenant_id)
@@ -1537,7 +1544,7 @@ async fn seed_permission(
 }
 
 async fn seed_share_link(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     share_link_id: &str,
     tenant_id: &str,
     node_id: &str,
@@ -1549,7 +1556,7 @@ async fn seed_share_link(
             id, tenant_id, node_id, token_hash, role, expires_at_epoch_ms,
             download_limit, download_count, lifecycle_status, version,
             created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, NULL, NULL, 0, 'active', 1, 'user-owner', 'user-owner')",
+        ) VALUES ($1, $2, $3, $4, $5, NULL, NULL, 0, 'active', 1, 'user-owner', 'user-owner')",
     )
     .bind(share_link_id)
     .bind(tenant_id)

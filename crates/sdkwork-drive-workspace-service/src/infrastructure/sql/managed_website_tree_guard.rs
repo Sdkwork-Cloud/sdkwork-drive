@@ -1,5 +1,4 @@
-use sdkwork_drive_config::DatabaseEngine;
-use sqlx::{AnyConnection, Row};
+use sqlx::{PgConnection, Row};
 
 use crate::DriveServiceError;
 
@@ -53,7 +52,7 @@ impl ManagedWebsiteTreeSystemOverride {
 
     pub async fn record_on_connection(
         &self,
-        connection: &mut AnyConnection,
+        connection: &mut PgConnection,
         tenant_id: &str,
         resource_type: &str,
         resource_id: &str,
@@ -87,10 +86,9 @@ impl ManagedWebsiteTreeSystemOverride {
 /// Rejects mutations that would change an immutable atomic website tree.
 ///
 /// Callers must invoke this function inside the same write transaction as the
-/// protected mutation. SQLite obtains its write fence through `BEGIN IMMEDIATE`;
-/// PostgreSQL locks the owning sync or generation rows selected below.
+/// protected mutation. PostgreSQL locks the owning sync or generation rows selected below.
 pub async fn ensure_managed_website_node_mutation_allowed(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     node_id: &str,
 ) -> Result<(), DriveServiceError> {
@@ -116,7 +114,7 @@ pub async fn ensure_managed_website_node_mutation_allowed(
 
 /// Rejects creation or copy into an immutable atomic website parent.
 pub async fn ensure_managed_website_parent_mutation_allowed(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
     parent_node_id: Option<&str>,
@@ -157,7 +155,7 @@ pub async fn ensure_managed_website_parent_mutation_allowed(
 
 /// Rejects bulk Space mutation when it would cross any managed atomic tree.
 pub async fn ensure_managed_website_space_mutation_allowed(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
 ) -> Result<(), DriveServiceError> {
@@ -215,7 +213,7 @@ pub async fn ensure_managed_website_space_mutation_allowed(
 }
 
 async fn find_owning_sync_status(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     node_id: &str,
 ) -> Result<Option<String>, DriveServiceError> {
@@ -252,7 +250,7 @@ async fn find_owning_sync_status(
 }
 
 async fn find_atomic_generation_status(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     node_id: &str,
 ) -> Result<Option<String>, DriveServiceError> {
@@ -294,9 +292,5 @@ async fn find_atomic_generation_status(
 }
 
 fn postgres_lock_clause(aliases: &str) -> String {
-    if super::installed_database_engine() == Some(DatabaseEngine::Postgresql) {
-        format!(" FOR UPDATE OF {aliases}")
-    } else {
-        String::new()
-    }
+    format!(" FOR UPDATE OF {aliases}")
 }

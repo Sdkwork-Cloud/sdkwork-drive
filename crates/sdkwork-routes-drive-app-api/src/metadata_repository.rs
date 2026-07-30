@@ -3,7 +3,7 @@ use crate::error::{internal_sql_error, not_found_problem, ProblemDetail};
 use crate::mappers::{map_label_summary_row, map_node_label_row, map_node_property_row};
 use axum::http::StatusCode;
 use axum::Json;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use sqlx::Row;
 use std::collections::HashMap;
 
@@ -11,7 +11,7 @@ pub(crate) const UI_FOLDER_COLOR_PROPERTY_KEY: &str = "ui.folderColor";
 const UI_FOLDER_COLOR_VISIBILITY: &str = "private";
 
 pub(crate) async fn find_node_property(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     property_key: &str,
@@ -41,7 +41,7 @@ pub(crate) async fn find_node_property(
 }
 
 pub(crate) async fn enrich_drive_nodes_with_folder_colors(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     nodes: &mut [crate::dto::DriveNodeResponse],
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
@@ -64,7 +64,7 @@ pub(crate) async fn enrich_drive_nodes_with_folder_colors(
 }
 
 pub(crate) async fn present_drive_node(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     mut node: crate::dto::DriveNodeResponse,
 ) -> Result<crate::dto::DriveNodeResponse, (StatusCode, Json<ProblemDetail>)> {
@@ -73,7 +73,7 @@ pub(crate) async fn present_drive_node(
 }
 
 pub(crate) async fn present_node_list(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     mut items: Vec<crate::dto::DriveNodeResponse>,
     page: crate::dto::PageRequest,
@@ -100,7 +100,7 @@ pub(crate) async fn present_node_list(
 }
 
 async fn load_ui_folder_colors_for_nodes(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_ids: &[String],
 ) -> Result<HashMap<String, String>, (StatusCode, Json<ProblemDetail>)> {
@@ -142,7 +142,7 @@ async fn load_ui_folder_colors_for_nodes(
 }
 
 pub(crate) async fn find_label(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     label_id: &str,
 ) -> Result<LabelSummaryResponse, (StatusCode, Json<ProblemDetail>)> {
@@ -165,7 +165,7 @@ pub(crate) async fn find_label(
 }
 
 pub(crate) async fn find_node_label(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     label_id: &str,

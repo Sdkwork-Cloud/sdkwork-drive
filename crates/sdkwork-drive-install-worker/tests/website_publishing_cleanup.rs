@@ -1,5 +1,4 @@
 use chrono::{Duration, SecondsFormat, Utc};
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_install_worker::maintenance::website_publishing_cleanup::cleanup_website_publishing;
 use sdkwork_drive_workspace_service::application::space_service::{
     CreateSpaceCommand, DriveSpaceService,
@@ -11,22 +10,15 @@ use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
 use sdkwork_drive_workspace_service::domain::website_sync::{
     validate_website_sync_tree, DriveWebsiteSyncTreeEntry,
 };
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::website_sync_store::SqlWebsiteSyncStore;
-use sqlx::any::AnyPoolOptions;
 
 #[tokio::test]
 async fn cleanup_expires_sync_deletes_provider_object_and_retires_staging_tree() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("cleanup test database should connect");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("cleanup test schema should install");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     DriveSpaceService::new(SqlSpaceStore::new(pool.clone()))
         .create_space(CreateSpaceCommand {
             id: "space-cleanup".to_string(),
@@ -152,7 +144,7 @@ async fn cleanup_expires_sync_deletes_provider_object_and_retires_staging_tree()
     .await
     .expect("cleanup WebsiteSync should be expired by the fixture");
 
-    let result = cleanup_website_publishing(&pool, DatabaseEngine::Sqlite, 100)
+    let result = cleanup_website_publishing(&pool, 100)
         .await
         .expect("website publishing cleanup should complete");
     assert_eq!(result.expired_syncs, 1);

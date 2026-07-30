@@ -1,29 +1,24 @@
 use axum::body::{to_bytes, Body};
 use axum::Router;
 use http::{Method, Request, Response, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use serde_json::{json, Value};
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use tempfile::TempDir;
 use tower::ServiceExt;
 
 const WEBSITE_ROOT_UUID: &str = "11111111-1111-4111-8111-111111111111";
 
-async fn setup() -> (AnyPool, Router, TempDir) {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+async fn setup() -> Option<(
+    PgPool,
+    Router,
+    TempDir,
+    sdkwork_drive_test_support::test_database::PostgresTestDatabaseGuard,
+)> {
+    let (pool, database_guard) =
+        sdkwork_drive_test_support::test_database::postgres_test_database().await?;
     let temp = tempfile::tempdir().expect("temp object root should be created");
     let app = sdkwork_routes_drive_internal_api::build_router_with_pool(pool.clone());
-    (pool, app, temp)
+    Some((pool, app, temp, database_guard))
 }
 
 fn ingress_token(tenant_id: &str, user_id: &str, app_id: &str) -> String {
@@ -98,7 +93,7 @@ async fn response_json(response: Response<Body>) -> Value {
     serde_json::from_slice(&body).expect("response body should be JSON")
 }
 
-async fn insert_knowledgebase_space(pool: &AnyPool) {
+async fn insert_knowledgebase_space(pool: &PgPool) {
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
@@ -111,7 +106,7 @@ async fn insert_knowledgebase_space(pool: &AnyPool) {
     .expect("knowledgebase Space should be inserted");
 }
 
-async fn insert_website_resource(pool: &AnyPool, temp: &TempDir) -> String {
+async fn insert_website_resource(pool: &PgPool, temp: &TempDir) -> String {
     let content = b"hello world";
     let checksum = format!("sha256:{}", sdkwork_utils_rust::sha256_hash(content));
     let endpoint = url::Url::from_directory_path(temp.path())
@@ -221,7 +216,9 @@ async fn insert_website_resource(pool: &AnyPool, temp: &TempDir) -> String {
 
 #[tokio::test]
 async fn subscription_routes_require_ingress_auth_replay_and_isolate_tenants() {
-    let (pool, app, _temp) = setup().await;
+    let Some((pool, app, _temp, _database_guard)) = setup().await else {
+        return;
+    };
     insert_knowledgebase_space(&pool).await;
     let payload = json!({
         "spaceId": "space-kb",
@@ -374,7 +371,9 @@ async fn subscription_routes_require_ingress_auth_replay_and_isolate_tenants() {
 
 #[tokio::test]
 async fn website_root_event_delivery_is_root_scoped_write_only_and_idempotent() {
-    let (pool, app, temp) = setup().await;
+    let Some((pool, app, temp, _database_guard)) = setup().await else {
+        return;
+    };
     insert_website_resource(&pool, &temp).await;
     let uri = format!(
         "/internal/v3/api/drive/website_roots/{WEBSITE_ROOT_UUID}/event_deliveries/web-node-1"
@@ -465,7 +464,9 @@ async fn website_root_event_delivery_is_root_scoped_write_only_and_idempotent() 
 
 #[tokio::test]
 async fn resolution_and_content_routes_hide_locators_and_implement_http_semantics() {
-    let (pool, app, temp) = setup().await;
+    let Some((pool, app, temp, _database_guard)) = setup().await else {
+        return;
+    };
     let checksum = insert_website_resource(&pool, &temp).await;
     let resolution = app
         .clone()
@@ -562,7 +563,9 @@ async fn resolution_and_content_routes_hide_locators_and_implement_http_semantic
 
 #[tokio::test]
 async fn website_root_retrieve_is_tenant_scoped_and_hides_drive_structure() {
-    let (pool, app, temp) = setup().await;
+    let Some((pool, app, temp, _database_guard)) = setup().await else {
+        return;
+    };
     insert_website_resource(&pool, &temp).await;
     let uri = format!("/internal/v3/api/drive/website_roots/{WEBSITE_ROOT_UUID}");
 

@@ -6,10 +6,10 @@ use crate::error::{
 use crate::mappers::map_watch_channel_row;
 use axum::http::StatusCode;
 use axum::Json;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 pub(crate) async fn find_watch_channel(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     channel_id: &str,
 ) -> Result<DriveWatchChannelResponse, (StatusCode, Json<ProblemDetail>)> {
@@ -31,7 +31,7 @@ pub(crate) async fn find_watch_channel(
 }
 
 pub(crate) async fn insert_watch_channel(
-    pool: &AnyPool,
+    pool: &PgPool,
     command: InsertWatchChannel<'_>,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let result = sqlx::query(

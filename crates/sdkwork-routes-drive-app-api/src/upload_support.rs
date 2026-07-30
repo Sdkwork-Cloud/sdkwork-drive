@@ -25,13 +25,13 @@ use sdkwork_drive_workspace_service::application::storage_key_service::{
 use sdkwork_drive_workspace_service::domain::upload::DriveUploadSessionState;
 use sdkwork_drive_workspace_service::domain::uploader::DriveUploadItem;
 use sdkwork_drive_workspace_service::infrastructure::sql::upload_query_columns::DRIVE_UPLOAD_ITEM_SELECT_COLUMNS;
-use sqlx::AnyConnection;
-use sqlx::AnyPool;
+use sqlx::PgConnection;
+use sqlx::PgPool;
 use sqlx::Row;
 use std::collections::BTreeMap;
 
 pub(crate) async fn resolve_storage_target(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     requested_bucket: Option<&str>,
@@ -79,7 +79,7 @@ pub(crate) async fn resolve_storage_target(
     })
 }
 pub(crate) async fn next_storage_object_version_no(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
 ) -> Result<i64, (StatusCode, Json<ProblemDetail>)> {
@@ -97,7 +97,7 @@ pub(crate) async fn next_storage_object_version_no(
     ))
 }
 pub(crate) async fn resolve_default_provider_target(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
 ) -> Result<DefaultStorageProviderTarget, (StatusCode, Json<ProblemDetail>)> {
@@ -188,7 +188,7 @@ pub(crate) async fn resolve_default_provider_target(
     ))
 }
 pub(crate) async fn read_node_content_state(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
 ) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
@@ -213,7 +213,7 @@ pub(crate) async fn insert_node_version_for_storage_object<'e, E>(
     operator_id: &str,
 ) -> Result<String, (StatusCode, Json<ProblemDetail>)>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Any>,
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
     insert_node_version_metadata(
         executor,
@@ -243,7 +243,7 @@ pub(crate) async fn insert_node_version_metadata<'e, E>(
     operator_id: &str,
 ) -> Result<String, (StatusCode, Json<ProblemDetail>)>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Any>,
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
     let version_id = next_drive_id("ver");
     sqlx::query(
@@ -283,7 +283,7 @@ where
     Ok(version_id)
 }
 pub(crate) async fn ensure_upload_session_id_available(
-    pool: &AnyPool,
+    pool: &PgPool,
     upload_session_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let count: i64 = sqlx::query_scalar(
@@ -308,7 +308,7 @@ pub(crate) async fn ensure_upload_session_id_available(
     Ok(())
 }
 pub(crate) async fn find_upload_session(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     upload_session_id: &str,
 ) -> Result<UploadSessionRecord, (StatusCode, Json<ProblemDetail>)> {
@@ -330,7 +330,7 @@ pub(crate) async fn find_upload_session(
     Ok(map_upload_session_row(&row))
 }
 pub(crate) async fn find_upload_session_by_idempotency(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     node_id: &str,
@@ -358,7 +358,7 @@ pub(crate) async fn find_upload_session_by_idempotency(
     ))?;
     Ok(row.as_ref().map(map_upload_session_row))
 }
-pub(crate) fn map_upload_session_row(row: &sqlx::any::AnyRow) -> UploadSessionRecord {
+pub(crate) fn map_upload_session_row(row: &sqlx::postgres::PgRow) -> UploadSessionRecord {
     UploadSessionRecord {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),
@@ -575,7 +575,7 @@ pub(crate) fn validate_mutable_upload_session(
     }
 }
 pub(crate) async fn plan_completed_storage_object_insert(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     upload_session: &UploadSessionRecord,
 ) -> Result<CompletedStorageObjectInsertPlan, (StatusCode, Json<ProblemDetail>)> {
@@ -767,7 +767,7 @@ pub(crate) async fn update_upload_session_state<'e, E>(
     operator_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Any>,
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
     let affected = sqlx::query(
         "UPDATE dr_drive_upload_session
@@ -790,7 +790,7 @@ where
     Ok(())
 }
 pub(crate) async fn claim_upload_session_completion(
-    pool: &AnyPool,
+    pool: &PgPool,
     upload_session: &UploadSessionRecord,
     operator_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
@@ -829,7 +829,7 @@ pub(crate) async fn claim_upload_session_completion(
 /// deletes the orphaned storage object.
 pub(crate) async fn recover_upload_completion_after_db_failure(
     state: &AppState,
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     upload_session: &UploadSessionRecord,
     operator_id: &str,
@@ -922,7 +922,7 @@ pub(crate) fn upload_session_state_as_str(state: &DriveUploadSessionState) -> &'
     }
 }
 pub(crate) async fn update_uploader_storage_target(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     upload_item_id: &str,
     upload_session_id: &str,
@@ -970,7 +970,7 @@ pub(crate) async fn update_uploader_storage_target(
     Ok(())
 }
 pub(crate) async fn find_uploader_upload_item(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     upload_item_id: &str,
 ) -> Result<Option<DriveUploadItem>, (StatusCode, Json<ProblemDetail>)> {
@@ -988,7 +988,7 @@ pub(crate) async fn find_uploader_upload_item(
         .transpose()
 }
 pub(crate) async fn find_uploader_upload_item_by_session(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     upload_session_id: &str,
 ) -> Result<Option<DriveUploadItem>, (StatusCode, Json<ProblemDetail>)> {
@@ -1008,7 +1008,7 @@ pub(crate) async fn find_uploader_upload_item_by_session(
         .transpose()
 }
 pub(crate) async fn complete_uploader_upload_item(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     completed: CompletedUploaderUploadItem<'_>,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     sqlx::query(
@@ -1051,7 +1051,7 @@ pub(crate) async fn complete_uploader_upload_item(
     .await
 }
 pub(crate) async fn record_uploader_upload_completed_operation(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     operation: UploaderUploadCompletedOperation<'_>,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     sqlx::query(

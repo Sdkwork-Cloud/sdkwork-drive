@@ -3,20 +3,13 @@ use http::{Method, Request, StatusCode};
 use sdkwork_routes_drive_app_api::build_router_with_pool_and_iam;
 use sdkwork_web_core::{access_token_jwt, auth_token_jwt};
 use serde_json::Value;
-use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 
 const DEFAULT_SESSION_ID: &str = "session-1";
 const DEFAULT_APP_ID: &str = "appbase";
 
 fn build_router() -> axum::Router {
-    sqlx::any::install_default_drivers();
-    build_router_with_pool_and_iam(
-        AnyPoolOptions::new()
-            .max_connections(1)
-            .connect_lazy("sqlite::memory:")
-            .expect("create app API test pool"),
-    )
+    build_router_with_pool_and_iam(sdkwork_drive_test_support::lazy_postgres_test_pool())
 }
 
 fn auth_token(tenant: &str, user: &str) -> String {
@@ -267,11 +260,7 @@ async fn app_routes_validate_token_derived_app_context() {
 }
 
 fn app_router_allowing_unsigned_context() -> axum::Router {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect_lazy("sqlite::memory:")
-        .expect("create in-memory sqlite pool");
+    let pool = sdkwork_drive_test_support::lazy_postgres_test_pool();
     build_router_with_pool_and_iam(pool)
 }
 

@@ -17,7 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const repoRoot = resolve(__dirname, "..");
 
-const ALLOWED_DATABASES = new Set(["postgres", "sqlite"]);
+const ALLOWED_DATABASES = new Set(["postgres"]);
 const ALLOWED_DEPLOYMENT_PROFILES = new Set(["standalone", "cloud"]);
 const ALLOWED_RUNTIME_TARGETS = new Set([
   "browser", "desktop", "server", "container",
@@ -116,7 +116,6 @@ function dispatch(args) {
     case "dev": {
       // Dispatch to drive-dev.mjs with standard axis values.
       // Default dev args: ['--database', 'postgres', '--deployment-profile', 'standalone']
-      // SQLite dev args: ['--database', 'sqlite', '--deployment-profile', 'standalone']
       const devArgs = [
         "--target", runtimeTarget,
         "--database", database,
@@ -178,8 +177,7 @@ function dispatch(args) {
     case "db:bootstrap":
     case "db:drift":
     case "db:drift:check": {
-      const dbFlag = database === "sqlite" ? "--sqlite" : "";
-      runShell(`cargo run -p sdkwork-drive-install-worker -- ${command.replace("db:", "--db-")}${dbFlag ? " " + dbFlag : ""}`);
+      runShell(`cargo run -p sdkwork-drive-install-worker -- ${command.replace("db:", "--db-")}`);
       break;
     }
     case "gateway:run":

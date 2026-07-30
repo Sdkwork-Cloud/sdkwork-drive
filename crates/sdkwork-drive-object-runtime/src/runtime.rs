@@ -10,7 +10,7 @@ use sdkwork_drive_storage_s3::{S3DriveObjectStore, S3StoreConfig};
 use sdkwork_drive_workspace_service::domain::storage_provider::DriveStorageProvider;
 use sdkwork_drive_workspace_service::infrastructure::sql::storage_provider_store::SqlStorageProviderStore;
 use sdkwork_drive_workspace_service::ports::storage_provider_store::DriveStorageProviderStore;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use tokio::sync::RwLock;
 use url::Url;
 
@@ -34,7 +34,7 @@ impl std::fmt::Debug for DriveObjectStoreRuntime {
 }
 
 impl DriveObjectStoreRuntime {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self {
             provider_store: SqlStorageProviderStore::new(pool),
             cache: Arc::new(RwLock::new(HashMap::new())),

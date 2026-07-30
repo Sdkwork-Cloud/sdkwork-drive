@@ -1,30 +1,22 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::upload_service::{
     CreateUploadSessionCommand, DriveUploadService,
 };
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::upload_session_store::SqlUploadSessionStore;
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::any::AnyPoolOptions;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[tokio::test]
 async fn create_upload_session_is_idempotent_for_same_key() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -42,7 +34,7 @@ async fn create_upload_session_is_idempotent_for_same_key() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, ?4, ?5, 'ready', 'active', 1, ?6, ?7)",
+        ) VALUES ($1, $2, $3, NULL, $4, $5, 'ready', 'active', 1, $6, $7)",
     )
     .bind("node-001")
     .bind("tenant-001")
@@ -100,15 +92,10 @@ async fn create_upload_session_is_idempotent_for_same_key() {
 
 #[tokio::test]
 async fn create_upload_session_rejects_past_expiration() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let store = SqlUploadSessionStore::new(pool);
     let service = DriveUploadService::new(store);
@@ -141,15 +128,10 @@ async fn create_upload_session_rejects_past_expiration() {
 
 #[tokio::test]
 async fn create_upload_session_rejects_untrimmed_bucket_and_object_key_before_database_write() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     seed_space_and_node(&pool, "space-upload-trim", "node-upload-trim").await;
 
     let service = DriveUploadService::new(SqlUploadSessionStore::new(pool.clone()));
@@ -195,12 +177,12 @@ async fn create_upload_session_rejects_untrimmed_bucket_and_object_key_before_da
     assert_eq!(stored_count, 0);
 }
 
-async fn seed_space_and_node(pool: &sqlx::AnyPool, space_id: &str, node_id: &str) {
+async fn seed_space_and_node(pool: &sqlx::PgPool, space_id: &str, node_id: &str) {
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, 'tenant-upload', 'user', 'user-upload', 'personal',
+        ) VALUES ($1, 'tenant-upload', 'user', 'user-upload', 'personal',
             'Upload', 'active', 1, 'user-upload', 'user-upload')",
     )
     .bind(space_id)
@@ -212,7 +194,7 @@ async fn seed_space_and_node(pool: &sqlx::AnyPool, space_id: &str, node_id: &str
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, 'tenant-upload', ?2, NULL, 'file', 'upload.bin',
+        ) VALUES ($1, 'tenant-upload', $2, NULL, 'file', 'upload.bin',
             'empty', 'active', 1, 'user-upload', 'user-upload')",
     )
     .bind(node_id)
@@ -223,7 +205,7 @@ async fn seed_space_and_node(pool: &sqlx::AnyPool, space_id: &str, node_id: &str
 }
 
 async fn seed_storage_provider(
-    pool: &sqlx::AnyPool,
+    pool: &sqlx::PgPool,
     provider_id: &str,
     bucket: &str,
     actor_id: &str,
@@ -234,9 +216,9 @@ async fn seed_storage_provider(
             credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            ?1, 's3_compatible', ?1, 'https://s3.example.com', 'us-east-1',
-            ?2, 1, 'plain:test-access-key:test-secret-key',
-            'AES256', 'STANDARD', 'active', 1, ?3, ?3
+            $1, 's3_compatible', $1, 'https://s3.example.com', 'us-east-1',
+            $2, 1, 'plain:test-access-key:test-secret-key',
+            'AES256', 'STANDARD', 'active', 1, $3, $3
         )",
     )
     .bind(provider_id)

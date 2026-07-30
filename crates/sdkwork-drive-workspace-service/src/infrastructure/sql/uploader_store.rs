@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use sqlx::any::AnyRow;
-use sqlx::{AnyConnection, AnyPool, Row};
+use sqlx::postgres::PgRow;
+use sqlx::{PgConnection, PgPool, Row};
 
 use crate::domain::uploader::{DriveUploadItem, DriveUploadPart};
 use crate::infrastructure::sql::managed_website_tree_guard::{
@@ -22,11 +22,11 @@ use crate::{drive_share_token_hash, DriveServiceError};
 
 #[derive(Debug, Clone)]
 pub struct SqlUploaderStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlUploaderStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -835,7 +835,7 @@ struct StoredUploadObject {
 }
 
 async fn complete_stored_upload_in_transaction(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     completion: &CompleteDriveStoredUpload,
 ) -> Result<DriveUploadItem, DriveServiceError> {
     let target = find_stored_upload_completion_target(connection, completion).await?;
@@ -1026,7 +1026,7 @@ async fn complete_stored_upload_in_transaction(
 }
 
 async fn insert_stored_upload_node_version(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     target: &StoredUploadCompletionTarget,
     storage_object: &StoredUploadObject,
     completion: &CompleteDriveStoredUpload,
@@ -1071,7 +1071,7 @@ async fn insert_stored_upload_node_version(
 }
 
 async fn find_stored_upload_completion_target(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     completion: &CompleteDriveStoredUpload,
 ) -> Result<StoredUploadCompletionTarget, DriveServiceError> {
     let row = sqlx::query(&format!(
@@ -1115,7 +1115,7 @@ async fn find_stored_upload_completion_target(
 }
 
 async fn read_upload_item_by_id(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     upload_item_id: &str,
 ) -> Result<DriveUploadItem, DriveServiceError> {
@@ -1143,7 +1143,7 @@ async fn read_upload_item_by_id(
 }
 
 async fn find_active_stored_upload_object(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     node_id: &str,
     bucket: &str,
@@ -1177,7 +1177,7 @@ async fn find_active_stored_upload_object(
 }
 
 async fn insert_stored_upload_object(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     completion: &CompleteDriveStoredUpload,
     item: &DriveUploadItem,
     storage_provider_id: &str,
@@ -1249,7 +1249,7 @@ fn ensure_stored_object_matches_completion(
 }
 
 async fn insert_upload_completed_sensitive_operation(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     completion: &CompleteDriveStoredUpload,
     target: &StoredUploadCompletionTarget,
     storage_object: &StoredUploadObject,
@@ -1316,7 +1316,7 @@ fn sensitive_operation_id(
         .to_string()
 }
 
-fn map_row_to_upload_item(row: &AnyRow) -> Result<DriveUploadItem, DriveServiceError> {
+fn map_row_to_upload_item(row: &PgRow) -> Result<DriveUploadItem, DriveServiceError> {
     Ok(DriveUploadItem {
         id: row.get("id"),
         task_id: row.get("task_id"),
@@ -1360,7 +1360,7 @@ fn map_row_to_upload_item(row: &AnyRow) -> Result<DriveUploadItem, DriveServiceE
     })
 }
 
-fn map_row_to_upload_part(row: &AnyRow) -> Result<DriveUploadPart, DriveServiceError> {
+fn map_row_to_upload_part(row: &PgRow) -> Result<DriveUploadPart, DriveServiceError> {
     Ok(DriveUploadPart {
         id: row.get("id"),
         tenant_id: row.get("tenant_id"),

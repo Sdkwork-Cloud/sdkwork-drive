@@ -2,7 +2,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::sandbox_directory_service::{
     CreateSandboxDirectoryCommand, DriveSandboxDirectoryService, ListSandboxDirectoryCommand,
     SANDBOX_DIRECTORY_CREATED_AUDIT_ACTION,
@@ -13,7 +12,6 @@ use sdkwork_drive_workspace_service::domain::sandbox_directory::{
     SandboxDirectoryPageRequest, SandboxEntryKind, SandboxEntryName, SandboxIdempotencyKey,
     SandboxLogicalPath,
 };
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::sandbox_mutation_operation_store::SqlSandboxMutationOperationStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::sandbox_store::SqlSandboxStore;
 use sdkwork_drive_workspace_service::ports::sandbox_directory_provider::DriveSandboxDirectoryProvider;
@@ -24,8 +22,7 @@ use sdkwork_drive_workspace_service::ports::sandbox_mutation_operation_store::{
 use sdkwork_drive_workspace_service::ports::sandbox_principal_resolver::EffectiveSandboxPrincipal;
 use sdkwork_drive_workspace_service::DriveServiceError;
 use sdkwork_utils_rust::sha256_hash;
-use sqlx::any::AnyPoolOptions;
-use sqlx::{AnyPool, Row};
+use sqlx::{PgPool, Row};
 
 #[derive(Clone, Default)]
 struct RecordingDirectoryProvider {
@@ -86,7 +83,10 @@ impl DriveSandboxDirectoryProvider for RecordingDirectoryProvider {
 
 #[tokio::test]
 async fn authorized_directory_read_reaches_provider_with_private_root_after_grant_lookup() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_sandbox_and_grant(&pool, "full").await;
     let provider = RecordingDirectoryProvider::default();
     let service = DriveSandboxDirectoryService::new(
@@ -114,7 +114,10 @@ async fn authorized_directory_read_reaches_provider_with_private_root_after_gran
 
 #[tokio::test]
 async fn read_only_grant_rejects_create_before_provider_and_audit() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_sandbox_and_grant(&pool, "read_only").await;
     let provider = RecordingDirectoryProvider::default();
     let service = DriveSandboxDirectoryService::new(
@@ -142,7 +145,10 @@ async fn read_only_grant_rejects_create_before_provider_and_audit() {
 
 #[tokio::test]
 async fn ungranted_directory_read_is_rejected_before_provider_access() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_sandbox_and_grant(&pool, "full").await;
     sqlx::query("DELETE FROM dr_drive_sandbox_grant")
         .execute(&pool)
@@ -173,7 +179,10 @@ async fn ungranted_directory_read_is_rejected_before_provider_access() {
 
 #[tokio::test]
 async fn successful_directory_create_records_correlated_sandbox_audit() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_sandbox_and_grant(&pool, "full").await;
     let provider = RecordingDirectoryProvider::default();
     let service = DriveSandboxDirectoryService::new(
@@ -209,7 +218,10 @@ async fn successful_directory_create_records_correlated_sandbox_audit() {
 
 #[tokio::test]
 async fn completed_idempotent_replay_returns_the_original_entry_without_duplicate_effects() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_sandbox_and_grant(&pool, "full").await;
     let provider = RecordingDirectoryProvider::default();
     let service = DriveSandboxDirectoryService::new(
@@ -245,7 +257,10 @@ async fn completed_idempotent_replay_returns_the_original_entry_without_duplicat
 
 #[tokio::test]
 async fn idempotency_key_reuse_with_a_different_request_conflicts_before_provider() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_sandbox_and_grant(&pool, "full").await;
     let provider = RecordingDirectoryProvider::default();
     let service = DriveSandboxDirectoryService::new(
@@ -273,7 +288,10 @@ async fn idempotency_key_reuse_with_a_different_request_conflicts_before_provide
 
 #[tokio::test]
 async fn pending_operation_recovers_a_directory_created_before_database_completion() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_sandbox_and_grant(&pool, "full").await;
     let provider = RecordingDirectoryProvider::default();
     *provider
@@ -287,7 +305,7 @@ async fn pending_operation_recovers_a_directory_created_before_database_completi
             id, tenant_id, sandbox_id, actor_id, idempotency_key_hash, request_fingerprint,
             mutation_kind, parent_logical_path, entry_name, operation_status, lease_token,
             lease_expires_at_ms
-         ) VALUES (9001, 'tenant-a', 'sandbox-a', 'user-a', ?1, ?2,
+         ) VALUES (9001, 'tenant-a', 'sandbox-a', 'user-a', $1, $2,
                    'create_directory', 'projects', 'recovered', 'pending', 'crashed-lease', 0)",
     )
     .bind(idempotency_key_hash)
@@ -324,7 +342,10 @@ async fn pending_operation_recovers_a_directory_created_before_database_completi
 
 #[tokio::test]
 async fn expired_pending_lease_recovers_a_crash_before_provider_creation() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_sandbox_and_grant(&pool, "full").await;
     let provider = RecordingDirectoryProvider::default();
     let idempotency_key_hash = create_directory_key_hash();
@@ -334,7 +355,7 @@ async fn expired_pending_lease_recovers_a_crash_before_provider_creation() {
             id, tenant_id, sandbox_id, actor_id, idempotency_key_hash, request_fingerprint,
             mutation_kind, parent_logical_path, entry_name, operation_status, lease_token,
             lease_expires_at_ms
-         ) VALUES (9002, 'tenant-a', 'sandbox-a', 'user-a', ?1, ?2,
+         ) VALUES (9002, 'tenant-a', 'sandbox-a', 'user-a', $1, $2,
                    'create_directory', 'projects', 'resumed', 'pending', 'expired-lease', 0)",
     )
     .bind(idempotency_key_hash)
@@ -366,7 +387,10 @@ async fn expired_pending_lease_recovers_a_crash_before_provider_creation() {
 
 #[tokio::test]
 async fn active_pending_lease_does_not_treat_a_preexisting_target_as_recovery() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_sandbox_and_grant(&pool, "full").await;
     let provider = RecordingDirectoryProvider::default();
     *provider
@@ -380,7 +404,7 @@ async fn active_pending_lease_does_not_treat_a_preexisting_target_as_recovery() 
             id, tenant_id, sandbox_id, actor_id, idempotency_key_hash, request_fingerprint,
             mutation_kind, parent_logical_path, entry_name, operation_status, lease_token,
             lease_expires_at_ms
-         ) VALUES (9003, 'tenant-a', 'sandbox-a', 'user-a', ?1, ?2,
+         ) VALUES (9003, 'tenant-a', 'sandbox-a', 'user-a', $1, $2,
                    'create_directory', 'projects', 'preexisting', 'pending', 'active-lease',
                    9223372036854775807)",
     )
@@ -409,7 +433,10 @@ async fn active_pending_lease_does_not_treat_a_preexisting_target_as_recovery() 
 
 #[tokio::test]
 async fn result_completion_rolls_back_when_atomic_audit_persistence_fails() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_sandbox_and_grant(&pool, "full").await;
     let store = SqlSandboxMutationOperationStore::new(pool.clone());
     let begin = store
@@ -467,7 +494,7 @@ async fn result_completion_rolls_back_when_atomic_audit_persistence_fails() {
 
     let row = sqlx::query(
         "SELECT operation_status, result_entry_id
-         FROM dr_drive_sandbox_mutation_operation WHERE id=?1",
+         FROM dr_drive_sandbox_mutation_operation WHERE id=$1",
     )
     .bind(operation_id)
     .fetch_one(&pool)
@@ -525,20 +552,7 @@ fn user_principals() -> Vec<EffectiveSandboxPrincipal> {
     }]
 }
 
-async fn test_pool() -> AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
-    pool
-}
-
-async fn insert_sandbox_and_grant(pool: &AnyPool, access_level: &str) {
+async fn insert_sandbox_and_grant(pool: &PgPool, access_level: &str) {
     sqlx::query(
         "INSERT INTO dr_drive_sandbox_volume (
             id, tenant_id, display_name, root_entry_id, provider_kind, provider_root_ref,
@@ -552,7 +566,7 @@ async fn insert_sandbox_and_grant(pool: &AnyPool, access_level: &str) {
     sqlx::query(
         "INSERT INTO dr_drive_sandbox_grant (
             id, sandbox_id, subject_type, subject_id, access_level, granted_by
-         ) VALUES ('grant-a', 'sandbox-a', 'user', 'user-a', ?1, 'test')",
+         ) VALUES ('grant-a', 'sandbox-a', 'user', 'user-a', $1, 'test')",
     )
     .bind(access_level)
     .execute(pool)

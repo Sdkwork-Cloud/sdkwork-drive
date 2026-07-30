@@ -18,7 +18,7 @@ use sdkwork_drive_storage_contract::{
     DriveByteRange, DriveObjectLocator, DriveObjectStore, ReadObjectRangeRequest,
 };
 use sdkwork_drive_storage_s3::S3DriveObjectStore;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use sqlx::Row;
 
 pub(crate) async fn read_archive_node_bytes(
@@ -51,7 +51,7 @@ pub(crate) async fn read_archive_node_bytes(
 }
 
 async fn find_active_storage_object_ref(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
 ) -> Result<ActiveStorageObjectRef, (StatusCode, Json<ProblemDetail>)> {

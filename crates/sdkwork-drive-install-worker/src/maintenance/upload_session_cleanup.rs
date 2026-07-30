@@ -1,5 +1,4 @@
-use sdkwork_drive_config::DatabaseEngine;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 /// Cleanup result for expired upload sessions.
 #[derive(Debug, Clone)]
@@ -14,18 +13,11 @@ pub struct CleanupResult {
 ///
 /// Marks expired `dr_drive_upload_session` rows, removes associated upload parts,
 /// soft-deletes uploading nodes, and retires active storage objects tied to those nodes.
-pub async fn cleanup_expired_sessions(
-    pool: &AnyPool,
-    engine: DatabaseEngine,
-) -> Result<CleanupResult, sqlx::Error> {
+pub async fn cleanup_expired_sessions(pool: &PgPool) -> Result<CleanupResult, sqlx::Error> {
     let now = chrono::Utc::now().timestamp_millis();
     let mut connection = pool.acquire().await?;
 
-    let begin_sql = match engine {
-        DatabaseEngine::Sqlite => "BEGIN IMMEDIATE",
-        DatabaseEngine::Postgresql => "BEGIN",
-    };
-    sqlx::query(begin_sql).execute(&mut *connection).await?;
+    sqlx::query("BEGIN").execute(&mut *connection).await?;
 
     let cleanup_result = async {
         let expired_sessions = sqlx::query(

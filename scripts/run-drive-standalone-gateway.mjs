@@ -142,7 +142,7 @@ function buildPostgresDatabaseUrl({
 function rejectRemovedDatabaseAliases(env) {
   const removedAliases = [
     ['SDKWORK_DATABASE_PROVIDER', 'SDKWORK_DATABASE_ENGINE'],
-    ['SDKWORK_DATABASE_SSLMODE', 'SDKWORK_DATABASE_SSL_MODE'],
+    ['SDKWORK_DATABASE_SSLMODE', 'SDKWORK_DATABASE_SSL_MODE'], // sdkwork-retired-database-key-rejection
   ].filter(([key]) => String(env[key] ?? '').trim());
   if (removedAliases.length > 0) {
     throw new Error(
@@ -171,28 +171,15 @@ function resolveDatabaseEnv(baseEnv, extraArgs) {
 
   if (explicitUrl) {
     env.SDKWORK_DATABASE_ENGINE = databaseEngineFromUrl(explicitUrl);
-    const defaultConnections = env.SDKWORK_DATABASE_ENGINE === 'sqlite' ? '1' : '32';
+    const defaultConnections = '32';
     env.SDKWORK_DATABASE_MAX_CONNECTIONS = normalizeMaxConnections(
       env.SDKWORK_DATABASE_MAX_CONNECTIONS,
       defaultConnections,
     );
     return env;
   }
-  if (engine === 'sqlite') {
-    env.SDKWORK_DATABASE_MAX_CONNECTIONS = normalizeMaxConnections(
-      env.SDKWORK_DATABASE_MAX_CONNECTIONS,
-      '1',
-    );
-    const sqliteUrl = String(env.SDKWORK_DATABASE_SQLITE_URL ?? '').trim();
-    if (!sqliteUrl) {
-      throw new Error('SDKWORK_DATABASE_SQLITE_URL must be set for sqlite engine');
-    }
-    env.SDKWORK_DATABASE_URL = sqliteUrl;
-    env.SDKWORK_DATABASE_ENGINE = 'sqlite';
-    return env;
-  }
   if (engine !== 'postgresql' && engine !== 'postgres') {
-    throw new Error('SDKWORK_DATABASE_ENGINE must be postgresql or sqlite');
+    throw new Error('Drive standalone gateway authoritative persistence requires PostgreSQL');
   }
   env.SDKWORK_DATABASE_MAX_CONNECTIONS = normalizeMaxConnections(
     env.SDKWORK_DATABASE_MAX_CONNECTIONS,
@@ -225,12 +212,12 @@ function resolveDatabaseEnv(baseEnv, extraArgs) {
 
 function databaseEngineFromUrl(url) {
   if (url.startsWith('sqlite:')) {
-    return 'sqlite';
+    throw new Error('Drive standalone gateway authoritative persistence requires PostgreSQL');
   }
   if (url.startsWith('postgres://') || url.startsWith('postgresql://')) {
     return 'postgresql';
   }
-  throw new Error('--database-url must be a PostgreSQL or SQLite connection string');
+  throw new Error('--database-url must be a PostgreSQL connection string');
 }
 
 function cargoCommand() {
@@ -312,7 +299,7 @@ function printHelp() {
 
 Database policy:
   pnpm dev          uses PostgreSQL via .env.postgres
-  Public application-server development profiles do not select SQLite.
+  Public application-server development profiles reject SQLite.
 
 Runtime policy:
   The script starts only sdkwork-api-drive-standalone-gateway.

@@ -21,6 +21,26 @@
   },
   "canonicalSpecs": [
     {
+      "file": "CODE_STYLE_SPEC.md",
+      "path": "../../../sdkwork-specs/CODE_STYLE_SPEC.md",
+      "purpose": "Focused authored source and generated boundaries."
+    },
+    {
+      "file": "NAMING_SPEC.md",
+      "path": "../../../sdkwork-specs/NAMING_SPEC.md",
+      "purpose": "Canonical API assembly naming."
+    },
+    {
+      "file": "RUST_CODE_SPEC.md",
+      "path": "../../../sdkwork-specs/RUST_CODE_SPEC.md",
+      "purpose": "Rust runtime-composition dependency direction."
+    },
+    {
+      "file": "API_ASSEMBLY_SPEC.md",
+      "path": "../../../sdkwork-specs/API_ASSEMBLY_SPEC.md",
+      "purpose": "Complete host-neutral API contribution contract."
+    },
+    {
       "file": "APPLICATION_GATEWAY_SPEC.md",
       "path": "../../../sdkwork-specs/APPLICATION_GATEWAY_SPEC.md",
       "purpose": "Gateway assembly discovery, business-only mounting, and verification rules."
@@ -38,17 +58,25 @@
   ],
   "contracts": {
     "publicExports": [
-      "."
+      "sdkwork_api_drive_assembly::assemble_api_router",
+      "sdkwork_api_drive_assembly::assemble_api_router_from_env",
+      "sdkwork_api_drive_assembly::assemble_app_api_contribution",
+      "sdkwork_api_drive_assembly::ApiAssembly",
+      "sdkwork_api_drive_assembly::ApiAssemblyContribution"
     ],
     "providedPorts": [
       {
+        "name": "driveApiAssembly",
+        "export": "sdkwork_api_drive_assembly::assemble_api_router_from_env"
+      },
+      {
         "name": "driveAppApiContribution",
-        "export": ".",
-        "target": "sdkwork_api_drive_assembly::assemble_app_api_contribution"
+        "export": "sdkwork_api_drive_assembly::assemble_app_api_contribution"
       }
     ],
     "runtimeEntrypoints": [
       "sdkwork_api_drive_assembly::assemble_api_router",
+      "sdkwork_api_drive_assembly::assemble_api_router_from_env",
       "sdkwork_api_drive_assembly::assemble_app_api_contribution",
       "sdkwork_api_drive_assembly::assemble_business_routes",
       "sdkwork_api_drive_assembly::assemble_business_routes_from_env",
@@ -63,7 +91,6 @@
     "dependencyApiSurfaces": [],
     "events": [],
     "configKeys": [
-      "SDKWORK_DATABASE_URL",
       "SDKWORK_DATABASE_URL",
       "SDKWORK_DATABASE_MAX_CONNECTIONS",
       "SDKWORK_DRIVE_APP_ROOT",

@@ -1,27 +1,14 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::permission_service::SqlDrivePermissionService;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::ports::permission_store::{
     GrantDriveNodePermissionCommand, ResolveEffectiveNodeAccessCommand,
 };
-use sqlx::any::AnyPoolOptions;
-
-async fn test_pool() -> sqlx::AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite memory pool");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("install schema");
-    pool
-}
 
 #[tokio::test]
 async fn inherited_folder_writer_allows_child_upload_permission_check() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
@@ -77,7 +64,10 @@ async fn inherited_folder_writer_allows_child_upload_permission_check() {
 
 #[tokio::test]
 async fn unrelated_subject_has_no_effective_access() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
@@ -115,7 +105,10 @@ async fn unrelated_subject_has_no_effective_access() {
 
 #[tokio::test]
 async fn commenter_role_does_not_grant_writer_access() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
@@ -166,7 +159,10 @@ async fn commenter_role_does_not_grant_writer_access() {
 
 #[tokio::test]
 async fn trashed_node_direct_reader_permission_resolves_for_acl_checks() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,

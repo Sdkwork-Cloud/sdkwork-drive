@@ -1,5 +1,4 @@
-use sdkwork_drive_config::DatabaseEngine;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 /// Cleanup result for orphan nodes.
 #[derive(Debug, Clone)]
@@ -9,16 +8,9 @@ pub struct OrphanCleanupResult {
 }
 
 /// Clean up orphan nodes that reference missing spaces or parents.
-pub async fn cleanup_orphan_objects(
-    pool: &AnyPool,
-    engine: DatabaseEngine,
-) -> Result<OrphanCleanupResult, sqlx::Error> {
+pub async fn cleanup_orphan_objects(pool: &PgPool) -> Result<OrphanCleanupResult, sqlx::Error> {
     let mut connection = pool.acquire().await?;
-    let begin_sql = match engine {
-        DatabaseEngine::Sqlite => "BEGIN IMMEDIATE",
-        DatabaseEngine::Postgresql => "BEGIN",
-    };
-    sqlx::query(begin_sql).execute(&mut *connection).await?;
+    sqlx::query("BEGIN").execute(&mut *connection).await?;
 
     let cleanup_result = async {
         let orphaned_without_space = sqlx::query(

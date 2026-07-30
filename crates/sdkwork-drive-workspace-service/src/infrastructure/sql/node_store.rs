@@ -1,7 +1,7 @@
 use async_trait::async_trait;
-use sqlx::any::AnyRow;
+use sqlx::postgres::PgRow;
 use sqlx::Row;
-use sqlx::{AnyConnection, AnyPool};
+use sqlx::{PgConnection, PgPool};
 
 use crate::domain::node::{DriveNode, DriveNodeType};
 use crate::domain::space::DriveSpaceType;
@@ -12,11 +12,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlNodeStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlNodeStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -149,7 +149,7 @@ impl DriveNodeStore for SqlNodeStore {
 }
 
 async fn insert_node_in_transaction(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     new_node: &NewDriveNode,
 ) -> Result<DriveNode, DriveServiceError> {
     super::managed_website_tree_guard::ensure_managed_website_parent_mutation_allowed(
@@ -204,7 +204,7 @@ async fn insert_node_in_transaction(
     drive_node_from_row(&row)
 }
 
-fn drive_node_from_row(row: &AnyRow) -> Result<DriveNode, DriveServiceError> {
+fn drive_node_from_row(row: &PgRow) -> Result<DriveNode, DriveServiceError> {
     let node_type_raw: String = row.get("node_type");
     let node_type = DriveNodeType::try_from_str(&node_type_raw).ok_or_else(|| {
         DriveServiceError::Internal(format!("unknown node_type in database: {node_type_raw}"))

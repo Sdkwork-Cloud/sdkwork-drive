@@ -33,12 +33,12 @@ pub use web_bootstrap::{
 };
 
 use sdkwork_web_core::HttpRouteManifest;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 pub fn gateway_route_manifest() -> HttpRouteManifest {
     storage_route_manifest()
 }
 
-pub fn gateway_mount(pool: AnyPool) -> axum::Router {
+pub fn gateway_mount(pool: PgPool) -> axum::Router {
     build_router_with_pool(pool)
 }

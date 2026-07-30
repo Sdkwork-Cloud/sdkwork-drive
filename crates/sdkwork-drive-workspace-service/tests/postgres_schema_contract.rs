@@ -1,4 +1,3 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::space_lifecycle_service::{
     DeleteSpaceWithContentsCommand, SqlDriveSpaceLifecycleService,
 };
@@ -6,31 +5,14 @@ use sdkwork_drive_workspace_service::application::space_service::{
     CreateSpaceCommand, DriveSpaceService,
 };
 use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
-use sqlx::postgres::PgPoolOptions;
 
 #[tokio::test]
 async fn postgres_installer_uses_drive_nodes_for_global_assets() {
-    let database_url = match std::env::var("SDKWORK_DRIVE_POSTGRES_URL") {
-        Ok(value) if !value.trim().is_empty() => value,
-        _ => {
-            eprintln!(
-                "skip postgres global assets contract: SDKWORK_DRIVE_POSTGRES_URL is not set"
-            );
-            return;
-        }
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
     };
-
-    let pool = PgPoolOptions::new()
-        .max_connections(1)
-        .connect(&database_url)
-        .await
-        .expect("postgres pool should be created");
-
-    sdkwork_drive_workspace_service::infrastructure::sql::install_postgres_schema(&pool)
-        .await
-        .expect("postgres schema installation should succeed");
 
     for table_name in [
         "dr_asset_item",
@@ -85,23 +67,10 @@ async fn postgres_installer_uses_drive_nodes_for_global_assets() {
 
 #[tokio::test]
 async fn postgres_installer_creates_special_space_profile_tables() {
-    let database_url = match std::env::var("SDKWORK_DRIVE_POSTGRES_URL") {
-        Ok(value) if !value.trim().is_empty() => value,
-        _ => {
-            eprintln!("skip postgres schema contract: SDKWORK_DRIVE_POSTGRES_URL is not set");
-            return;
-        }
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
     };
-
-    let pool = PgPoolOptions::new()
-        .max_connections(1)
-        .connect(&database_url)
-        .await
-        .expect("postgres pool should be created");
-
-    sdkwork_drive_workspace_service::infrastructure::sql::install_postgres_schema(&pool)
-        .await
-        .expect("postgres schema installation should succeed");
 
     for table_name in [
         "dr_drive_space_knowledge_profile",
@@ -325,26 +294,10 @@ async fn postgres_installer_creates_special_space_profile_tables() {
 
 #[tokio::test]
 async fn postgres_delete_space_with_contents_is_atomic() {
-    let database_url = match std::env::var("SDKWORK_DRIVE_POSTGRES_URL") {
-        Ok(value) if !value.trim().is_empty() => value,
-        _ => {
-            eprintln!(
-                "skip postgres delete space with contents: SDKWORK_DRIVE_POSTGRES_URL is not set"
-            );
-            return;
-        }
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
     };
-
-    sqlx::any::install_default_drivers();
-    let pool = sqlx::any::AnyPoolOptions::new()
-        .max_connections(2)
-        .connect(&database_url)
-        .await
-        .expect("postgres any pool should be created");
-
-    install_any_schema(&pool, DatabaseEngine::Postgresql)
-        .await
-        .expect("postgres schema installation should succeed");
 
     let tenant_id = format!("tenant-pg-delete-{}", uuid::Uuid::new_v4());
     let space_id = format!("space-pg-delete-{}", uuid::Uuid::new_v4());

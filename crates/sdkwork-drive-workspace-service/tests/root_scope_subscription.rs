@@ -1,30 +1,13 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::root_scope_subscription_service::{
     DriveRootScopeSubscriptionService, RegisterKnowledgebaseRawScopeCommand,
 };
+use sdkwork_drive_workspace_service::infrastructure::sql::next_drive_runtime_id;
 use sdkwork_drive_workspace_service::infrastructure::sql::root_scope_subscription_store::SqlRootScopeSubscriptionStore;
-use sdkwork_drive_workspace_service::infrastructure::sql::{
-    install_any_schema, next_drive_runtime_id,
-};
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
-
-async fn setup() -> AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
-    pool
-}
+use sqlx::PgPool;
 
 async fn insert_knowledgebase_raw_tree(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     owner_subject_id: &str,
     space_id: &str,
@@ -85,7 +68,10 @@ fn register_command(
 
 #[tokio::test]
 async fn knowledgebase_raw_registration_is_idempotent_and_cannot_be_retargeted() {
-    let pool = setup().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_knowledgebase_raw_tree(
         &pool,
         "tenant-kb",
@@ -156,7 +142,10 @@ async fn knowledgebase_raw_registration_is_idempotent_and_cannot_be_retargeted()
 
 #[tokio::test]
 async fn knowledgebase_raw_registration_requires_exact_sources_raw_identity() {
-    let pool = setup().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     insert_knowledgebase_raw_tree(
         &pool,
         "tenant-invalid",

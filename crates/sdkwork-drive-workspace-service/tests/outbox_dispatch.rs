@@ -1,34 +1,20 @@
 use async_trait::async_trait;
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::infrastructure::outbox_dispatch::{
     dispatch_pending_outbox_events, dispatch_pending_outbox_events_with_relay,
 };
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::ports::domain_outbox_embedded_relay::{
     DeliverDriveDomainOutboxEmbeddedEventRequest, DriveDomainOutboxEmbeddedRelay,
     DriveDomainOutboxEmbeddedRelayError, DriveDomainOutboxEmbeddedTarget,
     ResolveDriveDomainOutboxEmbeddedTargetsRequest,
 };
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-async fn sqlite_outbox_pool() -> AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite memory pool should connect");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should install");
-    pool
-}
-
 #[tokio::test]
-async fn sqlite_claims_pending_outbox_event_with_begin_immediate() {
-    let pool = sqlite_outbox_pool().await;
+async fn postgres_claims_pending_outbox_event() {
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     sqlx::query(
         "INSERT INTO dr_drive_domain_outbox (
             id, tenant_id, space_id, node_id, event_type, actor_id, sequence_no, payload_json
@@ -59,8 +45,11 @@ async fn sqlite_claims_pending_outbox_event_with_begin_immediate() {
 }
 
 #[tokio::test]
-async fn sqlite_embedded_relay_reuses_outbox_retry_and_channel_idempotency() {
-    let pool = sqlite_outbox_pool().await;
+async fn postgres_embedded_relay_reuses_outbox_retry_and_channel_idempotency() {
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     sqlx::query(
         "INSERT INTO dr_drive_domain_outbox (
             id, tenant_id, space_id, node_id, event_type, actor_id, sequence_no, payload_json
@@ -105,8 +94,11 @@ async fn sqlite_embedded_relay_reuses_outbox_retry_and_channel_idempotency() {
 }
 
 #[tokio::test]
-async fn sqlite_does_not_contact_an_unmatched_provider_root_channel() {
-    let pool = sqlite_outbox_pool().await;
+async fn postgres_does_not_contact_an_unmatched_provider_root_channel() {
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
@@ -174,23 +166,10 @@ async fn sqlite_does_not_contact_an_unmatched_provider_root_channel() {
 
 #[tokio::test]
 async fn postgres_claims_pending_outbox_event_with_skip_locked() {
-    let database_url = match std::env::var("SDKWORK_DRIVE_POSTGRES_URL") {
-        Ok(value) if !value.trim().is_empty() => value,
-        _ => {
-            eprintln!("skip postgres outbox dispatch: SDKWORK_DRIVE_POSTGRES_URL is not set");
-            return;
-        }
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
     };
-
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect(&database_url)
-        .await
-        .expect("postgres pool should connect");
-    install_any_schema(&pool, DatabaseEngine::Postgresql)
-        .await
-        .expect("postgres schema should install");
 
     let outbox_id = format!("outbox-pg-{}", uuid::Uuid::new_v4());
     sqlx::query(

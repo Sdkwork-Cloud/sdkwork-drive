@@ -4,15 +4,13 @@ use axum::http::Uri;
 use axum::response::{IntoResponse, Response};
 use axum::Router;
 use http::{Method, Request, StatusCode};
-use sdkwork_drive_config::{DatabaseConfig, DatabaseEngine};
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
+use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_routes_storage_backend_api::{
     build_router_with_database_config_and_admin_storage_config,
     build_router_with_pool_config_without_iam, build_router_with_pool_without_iam,
     build_router_with_pool_without_iam_and_test_tenant, AdminStorageConfig,
     DriveAdminStorageObjectStoreAdapter,
 };
-use sqlx::any::AnyPoolOptions;
 use std::sync::{Arc, Mutex};
 use tower::util::ServiceExt;
 
@@ -127,15 +125,10 @@ async fn mock_s3_endpoint(
 
 #[tokio::test]
 async fn admin_storage_provider_routes_mask_credentials_and_report_capabilities() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = build_router_with_pool_without_iam(pool);
     let create_response = app
@@ -247,15 +240,10 @@ async fn admin_storage_provider_routes_mask_credentials_and_report_capabilities(
 
 #[tokio::test]
 async fn admin_storage_default_binding_can_mount_provider_to_tenant_or_space() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -347,15 +335,10 @@ async fn admin_storage_default_binding_can_mount_provider_to_tenant_or_space() {
 
 #[tokio::test]
 async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -496,15 +479,10 @@ async fn admin_storage_delete_provider_rejects_active_provider_bindings() {
 
 #[tokio::test]
 async fn admin_storage_activate_rejects_deleted_provider() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = build_router_with_pool_without_iam(pool.clone());
     let create_provider = app
@@ -603,15 +581,10 @@ async fn admin_storage_activate_rejects_deleted_provider() {
 
 #[tokio::test]
 async fn admin_storage_binding_rejects_invalid_storage_root_prefix() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -659,15 +632,10 @@ async fn admin_storage_binding_rejects_invalid_storage_root_prefix() {
 
 #[tokio::test]
 async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -842,22 +810,17 @@ async fn admin_storage_binding_routes_list_and_delete_space_mounts_with_audit() 
 #[tokio::test]
 async fn admin_storage_provider_bucket_routes_list_account_buckets() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
             strict_tls, credential_ref, status, version, created_by, updated_by
         ) VALUES (
-            'provider-bucket-list-s3', 's3_compatible', 'Bucket List S3', ?1, 'us-east-1',
+            'provider-bucket-list-s3', 's3_compatible', 'Bucket List S3', $1, 'us-east-1',
             'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
             'active', 1, 'admin-storage', 'admin-storage'
         )",
@@ -916,15 +879,10 @@ async fn admin_storage_provider_bucket_routes_list_account_buckets() {
 #[tokio::test]
 async fn admin_storage_bucket_and_object_routes_use_configured_s3_store() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -932,7 +890,7 @@ async fn admin_storage_bucket_and_object_routes_use_configured_s3_store() {
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-admin-s3', 's3_compatible', 'Admin S3', ?1, 'us-east-1',
+            'provider-admin-s3', 's3_compatible', 'Admin S3', $1, 'us-east-1',
             'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-storage', 'admin-storage'
         )",
@@ -1038,15 +996,10 @@ async fn admin_storage_bucket_and_object_routes_use_configured_s3_store() {
 #[tokio::test]
 async fn admin_storage_object_routes_reject_leading_slash_object_keys_before_calling_s3() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -1054,7 +1007,7 @@ async fn admin_storage_object_routes_reject_leading_slash_object_keys_before_cal
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-admin-object-key', 's3_compatible', 'Admin Object Key S3', ?1, 'us-east-1',
+            'provider-admin-object-key', 's3_compatible', 'Admin Object Key S3', $1, 'us-east-1',
             'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-storage', 'admin-storage'
         )",
@@ -1088,15 +1041,10 @@ async fn admin_storage_object_routes_reject_leading_slash_object_keys_before_cal
 #[tokio::test]
 async fn admin_storage_copy_object_rejects_invalid_destination_bucket_before_calling_s3() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -1105,7 +1053,7 @@ async fn admin_storage_copy_object_rejects_invalid_destination_bucket_before_cal
             status, version, created_by, updated_by
         ) VALUES (
             'provider-copy-bucket-validation', 's3_compatible', 'Copy Bucket Validation S3',
-            ?1, 'us-east-1', 'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
+            $1, 'us-east-1', 'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-storage', 'admin-storage'
         )",
     )
@@ -1158,15 +1106,10 @@ async fn admin_storage_copy_object_rejects_invalid_destination_bucket_before_cal
 #[tokio::test]
 async fn admin_storage_opendal_plugin_adapter_is_default_disabled_without_feature() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -1174,7 +1117,7 @@ async fn admin_storage_opendal_plugin_adapter_is_default_disabled_without_featur
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-admin-opendal-disabled', 's3_compatible', 'Admin OpenDAL S3', ?1, 'us-east-1',
+            'provider-admin-opendal-disabled', 's3_compatible', 'Admin OpenDAL S3', $1, 'us-east-1',
             'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-storage', 'admin-storage'
         )",
@@ -1226,15 +1169,10 @@ async fn admin_storage_opendal_plugin_adapter_is_default_disabled_without_featur
 #[tokio::test]
 async fn admin_storage_bucket_admin_uses_full_s3_adapter_even_when_object_plugin_is_selected() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
@@ -1242,7 +1180,7 @@ async fn admin_storage_bucket_admin_uses_full_s3_adapter_even_when_object_plugin
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-admin-bucket-plugin-selected', 's3_compatible', 'Admin Bucket S3', ?1, 'us-east-1',
+            'provider-admin-bucket-plugin-selected', 's3_compatible', 'Admin Bucket S3', $1, 'us-east-1',
             'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-storage', 'admin-storage'
         )",
@@ -1347,38 +1285,33 @@ async fn admin_storage_database_router_can_receive_explicit_plugin_config() {
 }
 
 #[tokio::test]
-async fn admin_storage_database_url_router_preserves_sqlx_connection_errors() {
+async fn admin_storage_database_url_router_rejects_sqlite() {
     let error = sdkwork_routes_storage_backend_api::build_router_with_database_url(
         "sqlite://target/drive-admin-storage-tests/missing-parent/router.sqlite",
     )
     .await
-    .expect_err("database open with a missing parent directory should fail");
+    .expect_err("server runtime must reject SQLite URLs");
 
     assert!(
-        !matches!(error, sqlx::Error::Configuration(_)),
-        "database connection failures must not be collapsed into configuration errors: {error:?}"
+        matches!(error, sqlx::Error::Configuration(_)),
+        "SQLite rejection must remain a configuration error: {error:?}"
     );
 }
 
 #[tokio::test]
 async fn admin_storage_provider_test_route_checks_configured_s3_bucket() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
             strict_tls, credential_ref, status, version, created_by, updated_by
         ) VALUES (
-            'provider-test-s3', 's3_compatible', 'Admin S3', ?1, 'us-east-1',
+            'provider-test-s3', 's3_compatible', 'Admin S3', $1, 'us-east-1',
             'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
             'active', 1, 'admin-storage', 'admin-storage'
         )",
@@ -1423,22 +1356,17 @@ async fn admin_storage_provider_test_route_checks_configured_s3_bucket() {
 #[tokio::test]
 async fn admin_storage_provider_test_route_checks_disabled_s3_provider_bucket() {
     let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
             strict_tls, credential_ref, status, version, created_by, updated_by
         ) VALUES (
-            'provider-test-disabled-s3', 's3_compatible', 'Disabled S3', ?1, 'us-east-1',
+            'provider-test-disabled-s3', 's3_compatible', 'Disabled S3', $1, 'us-east-1',
             'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
             'disabled', 1, 'admin-storage', 'admin-storage'
         )",
@@ -1476,15 +1404,10 @@ async fn admin_storage_provider_test_route_checks_disabled_s3_provider_bucket() 
 #[tokio::test]
 async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
     let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -1675,22 +1598,17 @@ async fn admin_storage_provider_and_binding_routes_emit_audit_events() {
 #[tokio::test]
 async fn admin_storage_bucket_and_object_mutations_audit_authenticated_actor() {
     let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
             strict_tls, credential_ref, status, version, created_by, updated_by
         ) VALUES (
-            'provider-mutation-s3', 's3_compatible', 'Mutation S3', ?1, 'us-east-1',
+            'provider-mutation-s3', 's3_compatible', 'Mutation S3', $1, 'us-east-1',
             'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
             'active', 1, 'admin-storage', 'admin-storage'
         )",
@@ -1813,15 +1731,10 @@ async fn admin_storage_bucket_and_object_mutations_audit_authenticated_actor() {
 
 #[tokio::test]
 async fn admin_storage_legacy_admin_prefix_remains_compatible() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = build_router_with_pool_without_iam(pool);
     let response = app

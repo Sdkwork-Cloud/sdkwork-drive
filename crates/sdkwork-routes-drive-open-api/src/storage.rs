@@ -5,8 +5,8 @@ use sdkwork_drive_storage_contract::{DriveObjectStoreError, DriveObjectStoreErro
 use sdkwork_drive_storage_s3::{S3DriveObjectStore, S3StoreConfig};
 use sdkwork_drive_workspace_service::domain::storage_provider::DriveStorageProviderKind;
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::any::AnyRow;
-use sqlx::{AnyPool, Row};
+use sqlx::postgres::PgRow;
+use sqlx::{PgPool, Row};
 
 #[derive(Debug, Clone)]
 pub(crate) struct ActiveStorageProviderRecord {
@@ -32,7 +32,7 @@ pub(crate) fn unsupported_signing_provider_error(bucket: &str) -> DriveServiceEr
 }
 
 pub(crate) async fn find_active_storage_provider_by_id(
-    pool: &AnyPool,
+    pool: &PgPool,
     provider_id: &str,
 ) -> Result<Option<ActiveStorageProviderRecord>, DriveServiceError> {
     let row = sqlx::query(
@@ -68,7 +68,7 @@ pub(crate) async fn find_active_storage_provider_by_id(
     }))
 }
 
-fn get_bool(row: &AnyRow, column: &str) -> Result<bool, DriveServiceError> {
+fn get_bool(row: &PgRow, column: &str) -> Result<bool, DriveServiceError> {
     row.try_get::<bool, _>(column)
         .or_else(|_| row.try_get::<i64, _>(column).map(|value| value != 0))
         .map_err(|error| {

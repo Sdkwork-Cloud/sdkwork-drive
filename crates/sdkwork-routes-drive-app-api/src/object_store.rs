@@ -14,7 +14,7 @@ use sdkwork_drive_workspace_service::ports::storage_object_store::{
     DownloadSignCommand, DriveDownloadSigner, SignedDownloadPayload,
 };
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use sqlx::Row;
 use std::collections::BTreeMap;
 
@@ -29,7 +29,7 @@ pub(crate) fn build_download_service(
 
 #[derive(Debug, Clone)]
 pub(crate) struct AppDownloadSigner {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 #[derive(Debug, Clone)]
@@ -51,7 +51,7 @@ pub(crate) struct SignedUploadPartPayload {
 }
 
 impl AppDownloadSigner {
-    pub(crate) fn new(pool: AnyPool) -> Self {
+    pub(crate) fn new(pool: PgPool) -> Self {
         Self { pool }
     }
     pub(crate) async fn sign_upload_part(
@@ -154,7 +154,7 @@ pub(crate) struct ActiveStorageProviderRecord {
 }
 
 pub(crate) async fn find_active_storage_provider_by_bucket(
-    pool: &AnyPool,
+    pool: &PgPool,
     bucket: &str,
 ) -> Result<Option<ActiveStorageProviderRecord>, DriveServiceError> {
     let row = sqlx::query(
@@ -194,7 +194,7 @@ pub(crate) async fn find_active_storage_provider_by_bucket(
 }
 
 pub(crate) async fn find_storage_provider_by_id(
-    pool: &AnyPool,
+    pool: &PgPool,
     provider_id: &str,
 ) -> Result<Option<ActiveStorageProviderRecord>, DriveServiceError> {
     let row = sqlx::query(
@@ -243,7 +243,7 @@ pub(crate) fn require_active_storage_provider(
     }
 }
 
-fn get_bool(row: &sqlx::any::AnyRow, column: &str) -> Result<bool, DriveServiceError> {
+fn get_bool(row: &sqlx::postgres::PgRow, column: &str) -> Result<bool, DriveServiceError> {
     row.try_get::<bool, _>(column)
         .or_else(|_| row.try_get::<i64, _>(column).map(|value| value != 0))
         .map_err(|error| {

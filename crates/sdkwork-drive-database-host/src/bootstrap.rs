@@ -10,6 +10,9 @@ use crate::{
 };
 
 pub async fn bootstrap_drive_database(pool: DatabasePool) -> Result<DriveDatabaseHost, String> {
+    if pool.as_postgres().is_none() {
+        return Err("Drive authoritative server requires PostgreSQL".to_string());
+    }
     let app_root = resolve_app_root_for_bootstrap();
     let module = Arc::new(
         DefaultDatabaseModule::from_app_root(&app_root)
@@ -49,14 +52,7 @@ pub async fn bootstrap_drive_database_from_env() -> Result<DriveDatabaseHost, St
     let drive_config = sdkwork_drive_config::DatabaseConfig::from_env()
         .map_err(|error| format!("read drive database config failed: {error}"))?;
     let config = sdkwork_database_config::DatabaseConfig {
-        engine: match drive_config.engine() {
-            sdkwork_drive_config::DatabaseEngine::Postgresql => {
-                sdkwork_database_config::DatabaseEngine::Postgres
-            }
-            sdkwork_drive_config::DatabaseEngine::Sqlite => {
-                sdkwork_database_config::DatabaseEngine::Sqlite
-            }
-        },
+        engine: sdkwork_database_config::DatabaseEngine::Postgres,
         url: drive_config.url().to_string(),
         max_connections: drive_config.max_connections(),
         ..Default::default()

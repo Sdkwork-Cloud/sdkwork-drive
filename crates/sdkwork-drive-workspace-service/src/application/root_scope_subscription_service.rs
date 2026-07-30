@@ -6,7 +6,7 @@ use crate::ports::root_scope_subscription_store::{
     RegisterDriveRootScopeSubscriptionResult,
 };
 use crate::DriveServiceError;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 use super::space_service::{GetSpaceCommand, SqlDriveSpaceService};
 use super::workspace_service::{
@@ -43,11 +43,11 @@ pub struct EnsureKnowledgebaseRawScopeCommand {
 
 #[derive(Debug, Clone)]
 pub struct SqlDriveKnowledgebaseRawScopeService {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlDriveKnowledgebaseRawScopeService {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 

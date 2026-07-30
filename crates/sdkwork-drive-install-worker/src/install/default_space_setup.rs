@@ -1,4 +1,4 @@
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 /// Default space setup status.
 #[derive(Debug, Clone)]
@@ -12,7 +12,7 @@ pub struct SpaceSetupStatus {
 /// This function creates the default personal and system spaces
 /// for a newly created tenant.
 pub async fn setup_default_spaces(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
 ) -> Result<SpaceSetupStatus, sqlx::Error> {
     let now = chrono::Utc::now().timestamp_millis();

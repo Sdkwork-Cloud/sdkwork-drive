@@ -1,7 +1,7 @@
 # Deprecated runtime SQL entrypoints
 
-`postgres_core.sql` and `sqlite_core.sql` remain for SQLite test/runtime parity and schema contract tests.
+`postgres_core.sql` remains as the PostgreSQL schema contract used by focused installer tests.
 
-PostgreSQL production bootstrap MUST use `sdkwork-drive-database-host` via `bootstrap_drive_database_for_config()` instead of calling `install_postgres_schema()` directly.
+Production bootstrap MUST use `sdkwork-drive-database-host` via `bootstrap_drive_database()` instead of calling `install_postgres_schema()` directly.
 
 Canonical baseline: `database/ddl/baseline/postgres/0001_drive_baseline.sql`.

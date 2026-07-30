@@ -1,5 +1,5 @@
 import { appApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { AssetCollection, AssetCollectionItem, AssetCollectionListData, AssetRelation, CreateAssetCollectionItemRequest, CreateAssetCollectionRequest, CreateAssetRelationRequest } from '../types';
 
@@ -13,13 +13,13 @@ export class AssetsAssetRelationsApi {
 
 
 /** Create an asset relation */
-  async create(assetId: string, body: CreateAssetRelationRequest): Promise<AssetRelation> {
-    return this.client.post<AssetRelation>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/relations`), body, undefined, undefined, 'application/json');
+  async create(assetId: string, body: CreateAssetRelationRequest, requestOptions?: ApiRequestOptions): Promise<AssetRelation> {
+    return this.client.request<AssetRelation>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/relations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 
 /** Delete an asset relation */
-  async delete(assetId: string, relationId: string): Promise<void> {
-    return this.client.delete<void>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/relations/${serializePathParameter(relationId, { name: 'relationId', style: 'simple', explode: false })}`));
+  async delete(assetId: string, relationId: string, requestOptions?: ApiRequestOptions): Promise<void> {
+    return this.client.request<void>(appApiPath(`/assets/${serializePathParameter(assetId, { name: 'assetId', style: 'simple', explode: false })}/relations/${serializePathParameter(relationId, { name: 'relationId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 }
 
@@ -32,13 +32,13 @@ export class AssetsAssetCollectionItemsApi {
 
 
 /** Add an asset to a collection */
-  async create(collectionId: string, body: CreateAssetCollectionItemRequest): Promise<AssetCollectionItem> {
-    return this.client.post<AssetCollectionItem>(appApiPath(`/assets/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}/items`), body, undefined, undefined, 'application/json');
+  async create(collectionId: string, body: CreateAssetCollectionItemRequest, requestOptions?: ApiRequestOptions): Promise<AssetCollectionItem> {
+    return this.client.request<AssetCollectionItem>(appApiPath(`/assets/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}/items`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 
 /** Remove an asset from a collection */
-  async delete(collectionId: string, itemId: string): Promise<void> {
-    return this.client.delete<void>(appApiPath(`/assets/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'itemId', style: 'simple', explode: false })}`));
+  async delete(collectionId: string, itemId: string, requestOptions?: ApiRequestOptions): Promise<void> {
+    return this.client.request<void>(appApiPath(`/assets/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'itemId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 }
 
@@ -56,28 +56,28 @@ export class AssetsAssetCollectionsApi {
 
 
 /** List asset collections */
-  async list(params?: AssetsAssetCollectionsListParams): Promise<AssetCollectionListData> {
+  async list(params?: AssetsAssetCollectionsListParams, requestOptions?: ApiRequestOptions): Promise<AssetCollectionListData> {
     const query = buildQueryString([
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<AssetCollectionListData>(appendQueryString(appApiPath(`/assets/collections`), query));
+    return this.client.request<AssetCollectionListData>(appendQueryString(appApiPath(`/assets/collections`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create an asset collection */
-  async create(body: CreateAssetCollectionRequest): Promise<AssetCollection> {
-    return this.client.post<AssetCollection>(appApiPath(`/assets/collections`), body, undefined, undefined, 'application/json');
+  async create(body: CreateAssetCollectionRequest, requestOptions?: ApiRequestOptions): Promise<AssetCollection> {
+    return this.client.request<AssetCollection>(appApiPath(`/assets/collections`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
 export class AssetsApi {
-
+  private client: HttpClient;
   public readonly assetCollections: AssetsAssetCollectionsApi;
   public readonly assetCollectionItems: AssetsAssetCollectionItemsApi;
   public readonly assetRelations: AssetsAssetRelationsApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.assetCollections = new AssetsAssetCollectionsApi(client);
     this.assetCollectionItems = new AssetsAssetCollectionItemsApi(client);
     this.assetRelations = new AssetsAssetRelationsApi(client);

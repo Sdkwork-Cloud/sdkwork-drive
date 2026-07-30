@@ -1,5 +1,5 @@
 /// Domain-facing columns from `dr_drive_upload_item`.
-/// Excludes `created_at` / `updated_at` because sqlx Any cannot decode PostgreSQL TIMESTAMPTZ.
+/// Excludes timestamps that are not needed by upload projections.
 pub const DRIVE_UPLOAD_ITEM_SELECT_COLUMNS: &str = "\
 id, task_id, tenant_id, organization_id, user_id, \
 actor_type, actor_id, app_id, app_resource_type, app_resource_id, \

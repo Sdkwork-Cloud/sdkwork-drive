@@ -36,18 +36,6 @@
             "crates/sdkwork-api-drive-standalone-gateway/src/main.rs"
           ]
         }
-      ],
-      "temporaryDriverExceptions": [
-        {
-          "driver": "sqlx::AnyPool",
-          "owner": "sdkwork-drive maintainers",
-          "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-          "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
-          "evidence": [
-            "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"
-          ]
-        }
       ]
     },
     {
@@ -69,18 +57,6 @@
           "poolMode": "installed-process-pool",
           "evidence": [
             "crates/sdkwork-routes-drive-app-api/src/routes.rs"
-          ]
-        }
-      ],
-      "temporaryDriverExceptions": [
-        {
-          "driver": "sqlx::AnyPool",
-          "owner": "sdkwork-drive maintainers",
-          "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-          "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
-          "evidence": [
-            "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"
           ]
         }
       ]
@@ -106,18 +82,6 @@
             "crates/sdkwork-routes-drive-backend-api/src/routes.rs"
           ]
         }
-      ],
-      "temporaryDriverExceptions": [
-        {
-          "driver": "sqlx::AnyPool",
-          "owner": "sdkwork-drive maintainers",
-          "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-          "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
-          "evidence": [
-            "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"
-          ]
-        }
       ]
     },
     {
@@ -139,18 +103,6 @@
           "poolMode": "installed-process-pool",
           "evidence": [
             "crates/sdkwork-routes-drive-open-api/src/routes.rs"
-          ]
-        }
-      ],
-      "temporaryDriverExceptions": [
-        {
-          "driver": "sqlx::AnyPool",
-          "owner": "sdkwork-drive maintainers",
-          "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-          "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
-          "evidence": [
-            "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"
           ]
         }
       ]
@@ -176,18 +128,6 @@
             "crates/sdkwork-routes-storage-backend-api/src/routes.rs"
           ]
         }
-      ],
-      "temporaryDriverExceptions": [
-        {
-          "driver": "sqlx::AnyPool",
-          "owner": "sdkwork-drive maintainers",
-          "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-          "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
-          "evidence": [
-            "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"
-          ]
-        }
       ]
     },
     {
@@ -209,18 +149,6 @@
           "poolMode": "installed-process-pool",
           "evidence": [
             "crates/sdkwork-drive-install-worker/src/main.rs"
-          ]
-        }
-      ],
-      "temporaryDriverExceptions": [
-        {
-          "driver": "sqlx::AnyPool",
-          "owner": "sdkwork-drive maintainers",
-          "removalMilestone": "Migrate Drive PostgreSQL repositories to sqlx::PgPool before the next Drive production release",
-          "combinedConnectionBudget": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-          "adr": "docs/architecture/decisions/ADR-20260719-drive-pool-driver-migration.md",
-          "evidence": [
-            "crates/sdkwork-drive-workspace-service/src/infrastructure/sql/installer.rs"
           ]
         }
       ]

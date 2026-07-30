@@ -1,4 +1,3 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_security::{DriveAppContext, DRIVE_SANDBOXES_ADMIN_PERMISSION};
 use sdkwork_drive_workspace_service::application::sandbox_admin_service::{
     CreateSandboxAdminGrantCommand, CreateSandboxAdminVolumeCommand, DriveSandboxAdminService,
@@ -6,16 +5,16 @@ use sdkwork_drive_workspace_service::application::sandbox_admin_service::{
     UpdateSandboxAdminGrantCommand, UpdateSandboxAdminVolumeCommand,
 };
 use sdkwork_drive_workspace_service::application::sandbox_service::DriveSandboxService;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::sandbox_admin_store::SqlSandboxAdminStore;
 use sdkwork_drive_workspace_service::infrastructure::sql::sandbox_store::SqlSandboxStore;
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
 
 #[tokio::test]
 async fn volume_creation_canonicalizes_root_and_creates_explicit_current_user_grant() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let root = tempfile::tempdir().expect("sandbox root should be created");
     let canonical_root = std::fs::canonicalize(root.path())
         .expect("sandbox root should canonicalize")
@@ -103,7 +102,10 @@ async fn volume_creation_canonicalizes_root_and_creates_explicit_current_user_gr
 
 #[tokio::test]
 async fn default_access_never_creates_implicit_tenant_access() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let root = tempfile::tempdir().expect("sandbox root should be created");
     let context = admin_context("tenant-a", "organization-a", "user-a");
     let service = DriveSandboxAdminService::new(SqlSandboxAdminStore::new(pool.clone()));
@@ -182,7 +184,10 @@ async fn default_access_never_creates_implicit_tenant_access() {
 
 #[tokio::test]
 async fn admin_volume_list_pages_inside_the_verified_organization() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let context = admin_context("tenant-a", "organization-a", "user-a");
     let service = DriveSandboxAdminService::new(SqlSandboxAdminStore::new(pool));
     let mut roots = Vec::new();
@@ -229,7 +234,10 @@ async fn admin_volume_list_pages_inside_the_verified_organization() {
 
 #[tokio::test]
 async fn lifecycle_and_grant_mutations_are_tenant_scoped_versioned_and_audited() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let root = tempfile::tempdir().expect("sandbox root should be created");
     let context = admin_context("tenant-a", "organization-a", "user-a");
     let service = DriveSandboxAdminService::new(SqlSandboxAdminStore::new(pool.clone()));
@@ -375,7 +383,10 @@ async fn lifecycle_and_grant_mutations_are_tenant_scoped_versioned_and_audited()
 
 #[tokio::test]
 async fn service_rejects_unverified_scope_invalid_roots_and_unresolved_subject_types() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     let root = tempfile::tempdir().expect("sandbox root should be created");
     let service = DriveSandboxAdminService::new(SqlSandboxAdminStore::new(pool));
 
@@ -518,7 +529,10 @@ async fn service_rejects_unverified_scope_invalid_roots_and_unresolved_subject_t
 
 #[tokio::test]
 async fn audit_failure_rolls_back_volume_and_initial_grant_atomically() {
-    let pool = test_pool().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
     sqlx::query(
         "CREATE TRIGGER reject_sandbox_grant_audit
          BEFORE INSERT ON dr_drive_audit_event
@@ -562,19 +576,6 @@ async fn audit_failure_rolls_back_volume_and_initial_grant_atomically() {
         .await
         .expect("audit count should be readable");
     assert_eq!((volume_count, grant_count, audit_count), (0, 0, 0));
-}
-
-async fn test_pool() -> AnyPool {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
-    pool
 }
 
 fn admin_context(tenant_id: &str, organization_id: &str, user_id: &str) -> DriveAppContext {

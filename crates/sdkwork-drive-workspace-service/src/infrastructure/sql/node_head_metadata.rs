@@ -1,5 +1,5 @@
-use sqlx::AnyConnection;
-use sqlx::AnyPool;
+use sqlx::PgConnection;
+use sqlx::PgPool;
 use sqlx::Row;
 
 use crate::domain::uploader::content_type_group_for;
@@ -41,7 +41,7 @@ pub const NODE_API_SELECT_COLUMNS: &str = "\
     lifecycle_status, version, CAST(created_at AS TEXT) AS created_at, CAST(updated_at AS TEXT) AS updated_at";
 
 pub async fn apply_file_node_head_snapshot(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     operator_id: &str,
@@ -87,7 +87,7 @@ pub async fn apply_file_node_head_snapshot(
 }
 
 pub async fn apply_file_node_head_snapshot_in_transaction(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     node_id: &str,
     operator_id: &str,
@@ -138,7 +138,7 @@ pub async fn apply_file_node_head_snapshot_in_transaction(
 }
 
 pub async fn sync_file_node_head_from_active_storage(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     node_id: &str,
     operator_id: &str,

@@ -1,138 +1,117 @@
-use sqlx::AnyPool;
+use sdkwork_database_config::{DatabaseConfig, DatabaseEngine};
+use sdkwork_database_sqlx::{create_pool_from_config, enable_process_shared_database_pool};
+use sqlx::pool::PoolConnection;
+use sqlx::{PgPool, Postgres, Row};
 
-/// Create a test database with in-memory SQLite.
-///
-/// This function creates an in-memory SQLite database and applies
-/// the Drive schema migrations for testing purposes.
-pub async fn create_test_database() -> Result<AnyPool, sqlx::Error> {
-    let pool = AnyPool::connect("sqlite::memory:").await?;
+const DRIVE_TEST_ADVISORY_LOCK_KEY: i64 = 0x4452_4956_4554_4553;
+const LAZY_POSTGRES_TEST_URL: &str = "postgres://sdkwork:sdkwork@127.0.0.1:5432/sdkwork_ai_test";
 
-    // Apply schema migrations
-    sqlx::query(CREATE_SPACE_TABLE_SQL).execute(&pool).await?;
-    sqlx::query(CREATE_NODE_TABLE_SQL).execute(&pool).await?;
-    sqlx::query(CREATE_STORAGE_PROVIDER_TABLE_SQL)
-        .execute(&pool)
-        .await?;
-    sqlx::query(CREATE_UPLOAD_SESSION_TABLE_SQL)
-        .execute(&pool)
-        .await?;
-    sqlx::query(CREATE_UPLOAD_PART_TABLE_SQL)
-        .execute(&pool)
-        .await?;
-    sqlx::query(CREATE_DOWNLOAD_GRANT_TABLE_SQL)
-        .execute(&pool)
-        .await?;
-    sqlx::query(CREATE_QUOTA_USAGE_TABLE_SQL)
-        .execute(&pool)
-        .await?;
-    sqlx::query(CREATE_AUDIT_EVENT_TABLE_SQL)
-        .execute(&pool)
-        .await?;
-
-    Ok(pool)
+pub struct PostgresTestDatabaseGuard {
+    lock_connection: Option<PoolConnection<Postgres>>,
 }
 
-// Schema SQL constants
-const CREATE_SPACE_TABLE_SQL: &str = "
-CREATE TABLE IF NOT EXISTS drive_space (
-    id VARCHAR(128) PRIMARY KEY,
-    tenant_id VARCHAR(128) NOT NULL,
-    owner_type VARCHAR(64) NOT NULL,
-    owner_id VARCHAR(128) NOT NULL,
-    space_type VARCHAR(64) NOT NULL,
-    name VARCHAR(512) NOT NULL,
-    version BIGINT NOT NULL DEFAULT 1,
-    created_at_ms BIGINT NOT NULL,
-    updated_at_ms BIGINT NOT NULL
-);
-";
+/// Builds a non-connecting PostgreSQL pool for router tests that exit before data access.
+pub fn lazy_postgres_test_pool() -> PgPool {
+    sqlx::postgres::PgPoolOptions::new()
+        .max_connections(1)
+        .connect_lazy(LAZY_POSTGRES_TEST_URL)
+        .expect("create lazy PostgreSQL test pool")
+}
 
-const CREATE_NODE_TABLE_SQL: &str = "
-CREATE TABLE IF NOT EXISTS drive_node (
-    id VARCHAR(128) PRIMARY KEY,
-    space_id VARCHAR(128) NOT NULL,
-    parent_id VARCHAR(128),
-    node_type VARCHAR(64) NOT NULL,
-    name VARCHAR(512) NOT NULL,
-    version BIGINT NOT NULL DEFAULT 1,
-    content_state VARCHAR(64) NOT NULL DEFAULT 'active',
-    created_at_ms BIGINT NOT NULL,
-    updated_at_ms BIGINT NOT NULL
-);
-";
+impl Drop for PostgresTestDatabaseGuard {
+    fn drop(&mut self) {
+        if let Some(connection) = self.lock_connection.take() {
+            drop(connection.detach());
+        }
+    }
+}
 
-const CREATE_STORAGE_PROVIDER_TABLE_SQL: &str = "
-CREATE TABLE IF NOT EXISTS drive_storage_provider (
-    id VARCHAR(128) PRIMARY KEY,
-    provider_kind VARCHAR(64) NOT NULL,
-    name VARCHAR(256) NOT NULL,
-    endpoint_url VARCHAR(1024) NOT NULL,
-    region VARCHAR(128),
-    bucket VARCHAR(256) NOT NULL,
-    path_style BOOLEAN NOT NULL DEFAULT FALSE,
-    credential_ref VARCHAR(512),
-    status VARCHAR(64) NOT NULL DEFAULT 'active',
-    version BIGINT NOT NULL DEFAULT 1,
-    created_at_ms BIGINT NOT NULL,
-    updated_at_ms BIGINT NOT NULL
-);
-";
+/// Creates a serialized PostgreSQL test fixture from the standard workspace URL.
+///
+/// Tests skip only when SDKWORK_DATABASE_URL is absent. When the variable is set,
+/// connection, lifecycle, or cleanup failures fail the test immediately.
+pub async fn postgres_test_database() -> Option<(PgPool, PostgresTestDatabaseGuard)> {
+    let database_url = match std::env::var("SDKWORK_DATABASE_URL") {
+        Ok(value) if !value.trim().is_empty() => value,
+        _ => {
+            eprintln!("skip PostgreSQL integration test: SDKWORK_DATABASE_URL is not set");
+            return None;
+        }
+    };
 
-const CREATE_UPLOAD_SESSION_TABLE_SQL: &str = "
-CREATE TABLE IF NOT EXISTS drive_upload_session (
-    id VARCHAR(128) PRIMARY KEY,
-    space_id VARCHAR(128) NOT NULL,
-    node_id VARCHAR(128) NOT NULL,
-    idempotency_key VARCHAR(256),
-    state VARCHAR(64) NOT NULL DEFAULT 'created',
-    expires_at_ms BIGINT NOT NULL,
-    created_at_ms BIGINT NOT NULL,
-    updated_at_ms BIGINT NOT NULL
-);
-";
+    enable_process_shared_database_pool();
+    let process_pool = create_pool_from_config(DatabaseConfig {
+        engine: DatabaseEngine::Postgres,
+        url: database_url,
+        max_connections: 8,
+        min_connections: 1,
+        ..DatabaseConfig::default()
+    })
+    .await
+    .expect("create process-shared PostgreSQL test pool");
+    let pool = process_pool
+        .as_postgres()
+        .cloned()
+        .expect("Drive server tests require PostgreSQL");
+    let mut lock_connection = pool
+        .acquire()
+        .await
+        .expect("acquire PostgreSQL test lock connection");
+    sqlx::query("SELECT pg_advisory_lock($1)")
+        .bind(DRIVE_TEST_ADVISORY_LOCK_KEY)
+        .execute(&mut *lock_connection)
+        .await
+        .expect("acquire Drive PostgreSQL test advisory lock");
 
-const CREATE_UPLOAD_PART_TABLE_SQL: &str = "
-CREATE TABLE IF NOT EXISTS drive_upload_part (
-    id VARCHAR(128) PRIMARY KEY,
-    session_id VARCHAR(128) NOT NULL,
-    part_number INTEGER NOT NULL,
-    etag VARCHAR(256),
-    size_bytes BIGINT NOT NULL,
-    uploaded BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at_ms BIGINT NOT NULL
-);
-";
+    sdkwork_drive_database_host::bootstrap_drive_database(process_pool)
+        .await
+        .expect("bootstrap Drive PostgreSQL test schema");
+    truncate_drive_tables(&mut lock_connection).await;
 
-const CREATE_DOWNLOAD_GRANT_TABLE_SQL: &str = "
-CREATE TABLE IF NOT EXISTS drive_download_grant (
-    id VARCHAR(128) PRIMARY KEY,
-    tenant_id VARCHAR(128) NOT NULL,
-    node_id VARCHAR(128) NOT NULL,
-    expires_at_ms BIGINT NOT NULL,
-    created_at_ms BIGINT NOT NULL
-);
-";
+    Some((
+        pool,
+        PostgresTestDatabaseGuard {
+            lock_connection: Some(lock_connection),
+        },
+    ))
+}
 
-const CREATE_QUOTA_USAGE_TABLE_SQL: &str = "
-CREATE TABLE IF NOT EXISTS drive_quota_usage (
-    id VARCHAR(128) PRIMARY KEY,
-    tenant_id VARCHAR(128) NOT NULL,
-    space_id VARCHAR(128),
-    used_bytes BIGINT NOT NULL DEFAULT 0,
-    file_count BIGINT NOT NULL DEFAULT 0,
-    updated_at_ms BIGINT NOT NULL
-);
-";
+async fn truncate_drive_tables(connection: &mut PoolConnection<Postgres>) {
+    let rows = sqlx::query(
+        "SELECT tablename
+         FROM pg_tables
+         WHERE schemaname = current_schema()
+           AND tablename LIKE 'dr_drive_%'
+         ORDER BY tablename",
+    )
+    .fetch_all(&mut **connection)
+    .await
+    .expect("list Drive PostgreSQL test tables");
+    let table_names = rows
+        .into_iter()
+        .map(|row| row.get::<String, _>("tablename"))
+        .collect::<Vec<_>>();
+    if table_names.is_empty() {
+        return;
+    }
 
-const CREATE_AUDIT_EVENT_TABLE_SQL: &str = "
-CREATE TABLE IF NOT EXISTS drive_audit_event (
-    id VARCHAR(128) PRIMARY KEY,
-    tenant_id VARCHAR(128) NOT NULL,
-    operator_id VARCHAR(128) NOT NULL,
-    action VARCHAR(128) NOT NULL,
-    resource_type VARCHAR(128) NOT NULL,
-    resource_id VARCHAR(128) NOT NULL,
-    details TEXT,
-    created_at_ms BIGINT NOT NULL
-);
-";
+    let identifiers = table_names
+        .iter()
+        .map(|table_name| {
+            assert!(
+                table_name
+                    .bytes()
+                    .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_'),
+                "unexpected Drive table identifier {table_name}"
+            );
+            format!("\"{table_name}\"")
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    sqlx::raw_sql(&format!(
+        "TRUNCATE TABLE {identifiers} RESTART IDENTITY CASCADE"
+    ))
+    .execute(&mut **connection)
+    .await
+    .expect("truncate Drive PostgreSQL test tables");
+}

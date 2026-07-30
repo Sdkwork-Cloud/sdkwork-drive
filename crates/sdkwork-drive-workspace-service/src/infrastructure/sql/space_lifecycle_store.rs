@@ -1,5 +1,5 @@
-use sqlx::AnyConnection;
-use sqlx::AnyPool;
+use sqlx::PgConnection;
+use sqlx::PgPool;
 
 use crate::infrastructure::sql::begin_transaction_sql;
 use crate::infrastructure::sql::managed_website_tree_guard::{
@@ -10,11 +10,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlSpaceLifecycleStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlSpaceLifecycleStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
@@ -111,7 +111,7 @@ impl SqlSpaceLifecycleStore {
     }
 
     pub async fn retire_space_contents_on_connection(
-        connection: &mut AnyConnection,
+        connection: &mut PgConnection,
         tenant_id: &str,
         space_id: &str,
         operator_id: &str,

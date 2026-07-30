@@ -4,9 +4,8 @@ use std::time::Duration as StdDuration;
 
 use async_trait::async_trait;
 use chrono::{Duration, SecondsFormat};
-use sdkwork_drive_config::DatabaseEngine;
-use sqlx::any::AnyRow;
-use sqlx::{AnyConnection, AnyPool, Row};
+use sqlx::postgres::PgRow;
+use sqlx::{PgConnection, PgPool, Row};
 
 use crate::domain::website_root::{
     DriveWebsiteContentMode, DriveWebsiteRoot, DriveWebsiteSourceRootMode,
@@ -19,9 +18,7 @@ use crate::infrastructure::change_recorder::{
     notify_drive_event_committed, record_drive_website_root_generation_changed_on_connection,
     RecordDriveWebsiteRootGenerationChangedCommand,
 };
-use crate::infrastructure::sql::{
-    begin_transaction_sql_for_engine, detect_any_pool_database_engine, next_drive_runtime_id,
-};
+use crate::infrastructure::sql::{begin_transaction_sql, next_drive_runtime_id};
 use crate::ports::website_sync_store::{
     AbortDriveWebsiteSync, ActivateDriveWebsiteGeneration, ActivateValidatedWebsiteSync,
     CreateDriveWebsiteSync, CreateDriveWebsiteSyncResult, DriveWebsiteGenerationActivation,
@@ -41,11 +38,11 @@ type WebsiteSyncTransactionFuture<'a, T> =
 
 #[derive(Debug, Clone)]
 pub struct SqlWebsiteSyncStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlWebsiteSyncStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -56,9 +53,9 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         &self,
         command: &CreateDriveWebsiteSync,
     ) -> Result<CreateDriveWebsiteSyncResult, DriveServiceError> {
-        run_serializable_transaction(&self.pool, "create WebsiteSync", |connection, engine| {
+        run_serializable_transaction(&self.pool, "create WebsiteSync", |connection| {
             let command = command.clone();
-            Box::pin(async move { create_sync_on_connection(connection, &command, engine).await })
+            Box::pin(async move { create_sync_on_connection(connection, &command).await })
         })
         .await
     }
@@ -76,16 +73,10 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         &self,
         command: &ValidateDriveWebsiteSync,
     ) -> Result<DriveWebsiteSyncValidation, DriveServiceError> {
-        run_serializable_transaction(
-            &self.pool,
-            "begin WebsiteSync validation",
-            |connection, engine| {
-                let command = command.clone();
-                Box::pin(async move {
-                    begin_validation_on_connection(connection, &command, engine).await
-                })
-            },
-        )
+        run_serializable_transaction(&self.pool, "begin WebsiteSync validation", |connection| {
+            let command = command.clone();
+            Box::pin(async move { begin_validation_on_connection(connection, &command).await })
+        })
         .await
     }
 
@@ -103,17 +94,14 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         &self,
         command: &ActivateValidatedWebsiteSync,
     ) -> Result<DriveWebsiteSyncActivation, DriveServiceError> {
-        let activation = run_serializable_transaction(
-            &self.pool,
-            "activate WebsiteSync",
-            |connection, engine| {
+        let activation =
+            run_serializable_transaction(&self.pool, "activate WebsiteSync", |connection| {
                 let command = command.clone();
-                Box::pin(async move {
-                    activate_validated_on_connection(connection, &command, engine).await
-                })
-            },
-        )
-        .await?;
+                Box::pin(
+                    async move { activate_validated_on_connection(connection, &command).await },
+                )
+            })
+            .await?;
         notify_drive_event_committed(self.pool.clone());
         Ok(activation)
     }
@@ -160,7 +148,7 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         &self,
         command: &AbortDriveWebsiteSync,
     ) -> Result<DriveWebsiteSync, DriveServiceError> {
-        run_serializable_transaction(&self.pool, "abort WebsiteSync", |connection, _| {
+        run_serializable_transaction(&self.pool, "abort WebsiteSync", |connection| {
             let command = command.clone();
             Box::pin(async move { abort_on_connection(connection, &command).await })
         })
@@ -174,11 +162,11 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
         let activation = run_serializable_transaction(
             &self.pool,
             "activate retained WebsiteRoot generation",
-            |connection, engine| {
+            |connection| {
                 let command = command.clone();
-                Box::pin(async move {
-                    activate_generation_on_connection(connection, &command, engine).await
-                })
+                Box::pin(
+                    async move { activate_generation_on_connection(connection, &command).await },
+                )
             },
         )
         .await?;
@@ -188,9 +176,8 @@ impl DriveWebsiteSyncStore for SqlWebsiteSyncStore {
 }
 
 async fn create_sync_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: &CreateDriveWebsiteSync,
-    engine: DatabaseEngine,
 ) -> Result<CreateDriveWebsiteSyncResult, DriveServiceError> {
     if let Some(existing) =
         find_sync_by_idempotency(connection, &command.tenant_id, &command.idempotency_key).await?
@@ -271,7 +258,7 @@ async fn create_sync_on_connection(
     .execute(&mut *connection)
     .await
     .map_err(|error| internal("insert WebsiteSync staging node", error))?;
-    let expires_at_parameter = instant_parameter(engine, "$12");
+    let expires_at_parameter = instant_parameter("$12");
     sqlx::query(&format!(
         "INSERT INTO dr_drive_website_sync (
             id, tenant_id, website_root_id, space_id, idempotency_key,
@@ -321,9 +308,8 @@ async fn create_sync_on_connection(
 }
 
 async fn begin_validation_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: &ValidateDriveWebsiteSync,
-    engine: DatabaseEngine,
 ) -> Result<DriveWebsiteSyncValidation, DriveServiceError> {
     let sync = get_sync_on_connection(
         connection,
@@ -360,7 +346,7 @@ async fn begin_validation_on_connection(
     let lease_expires_at = (chrono::Utc::now()
         + Duration::minutes(WEBSITE_SYNC_VALIDATION_LEASE_MINUTES))
     .to_rfc3339_opts(SecondsFormat::Millis, true);
-    let lease_expires_at_parameter = instant_parameter(engine, "$3");
+    let lease_expires_at_parameter = instant_parameter("$3");
     let updated = sqlx::query(&format!(
         "UPDATE dr_drive_website_sync
          SET sync_status='validating', validated_at=CURRENT_TIMESTAMP,
@@ -416,9 +402,8 @@ async fn begin_validation_on_connection(
 }
 
 async fn activate_validated_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: &ActivateValidatedWebsiteSync,
-    engine: DatabaseEngine,
 ) -> Result<DriveWebsiteSyncActivation, DriveServiceError> {
     lock_website_root(connection, &command.tenant_id, &command.website_root_uuid).await?;
     lock_website_sync(
@@ -474,7 +459,7 @@ async fn activate_validated_on_connection(
     let next_generation = root.active_generation + 1;
     let retention_until =
         (chrono::Utc::now() + Duration::days(30)).to_rfc3339_opts(SecondsFormat::Millis, true);
-    let retention_until_parameter = instant_parameter(engine, "$1");
+    let retention_until_parameter = instant_parameter("$1");
     let retained = sqlx::query(&format!(
         "UPDATE dr_drive_website_root_generation
          SET generation_status='retained', retention_until={retention_until_parameter}
@@ -620,7 +605,7 @@ async fn activate_validated_on_connection(
 }
 
 async fn abort_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: &AbortDriveWebsiteSync,
 ) -> Result<DriveWebsiteSync, DriveServiceError> {
     let sync = get_sync_on_connection(
@@ -684,9 +669,8 @@ async fn abort_on_connection(
 }
 
 async fn activate_generation_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     command: &ActivateDriveWebsiteGeneration,
-    engine: DatabaseEngine,
 ) -> Result<DriveWebsiteGenerationActivation, DriveServiceError> {
     lock_website_root(connection, &command.tenant_id, &command.website_root_uuid).await?;
     let root =
@@ -729,7 +713,7 @@ async fn activate_generation_on_connection(
     let previous_root_node_id = root.active_node_id.clone();
     let retention_until =
         (chrono::Utc::now() + Duration::days(30)).to_rfc3339_opts(SecondsFormat::Millis, true);
-    let retention_until_parameter = instant_parameter(engine, "$1");
+    let retention_until_parameter = instant_parameter("$1");
     let retained = sqlx::query(&format!(
         "UPDATE dr_drive_website_root_generation
          SET generation_status='retained', retention_until={retention_until_parameter}
@@ -859,7 +843,7 @@ fn ensure_root_can_sync(
 }
 
 async fn lock_website_root(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     website_root_uuid: &str,
 ) -> Result<(), DriveServiceError> {
@@ -882,7 +866,7 @@ async fn lock_website_root(
 }
 
 async fn lock_website_sync(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     website_root_uuid: &str,
     sync_id: &str,
@@ -911,7 +895,7 @@ async fn lock_website_sync(
 }
 
 async fn ensure_validation_lease_current(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     sync: &DriveWebsiteSync,
     lease_token: &str,
 ) -> Result<(), DriveServiceError> {
@@ -940,7 +924,7 @@ async fn ensure_validation_lease_current(
 }
 
 async fn expire_excess_retained_generations(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     website_root_id: &str,
     space_id: &str,
@@ -998,7 +982,7 @@ async fn expire_excess_retained_generations(
 }
 
 async fn ensure_staging_parent(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
     anchor_node_id: &str,
@@ -1044,7 +1028,7 @@ async fn ensure_staging_parent(
 }
 
 async fn ensure_active_folder(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     space_id: &str,
     node_id: &str,
@@ -1071,7 +1055,7 @@ async fn ensure_active_folder(
 }
 
 async fn ensure_activation_eligibility(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     sync: &DriveWebsiteSync,
 ) -> Result<(), DriveServiceError> {
     let invalid_files: i64 = sqlx::query_scalar(
@@ -1137,7 +1121,7 @@ async fn ensure_activation_eligibility(
 }
 
 async fn ensure_tenant_sync_quota(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     additional_reserved_bytes: i64,
 ) -> Result<(), DriveServiceError> {
@@ -1217,7 +1201,7 @@ async fn list_staging_tree_on_connection<'e, E>(
     sync: &DriveWebsiteSync,
 ) -> Result<Vec<DriveWebsiteSyncTreeEntry>, DriveServiceError>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Any>,
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
     let rows = sqlx::query(
         "WITH RECURSIVE tree(
@@ -1277,7 +1261,7 @@ async fn get_sync_from_executor<'e, E>(
     sync_id: &str,
 ) -> Result<DriveWebsiteSync, DriveServiceError>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Any>,
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
     let row = sqlx::query(&format!(
         "SELECT {WEBSITE_SYNC_SELECT_COLUMNS}
@@ -1298,7 +1282,7 @@ where
 }
 
 async fn get_sync_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     website_root_uuid: &str,
     sync_id: &str,
@@ -1307,7 +1291,7 @@ async fn get_sync_on_connection(
 }
 
 async fn find_sync_by_idempotency(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     idempotency_key: &str,
 ) -> Result<Option<DriveWebsiteSync>, DriveServiceError> {
@@ -1336,7 +1320,7 @@ fn sync_matches_create(sync: &DriveWebsiteSync, command: &CreateDriveWebsiteSync
 }
 
 async fn get_root_on_connection(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     website_root_uuid: &str,
 ) -> Result<DriveWebsiteRoot, DriveServiceError> {
@@ -1359,7 +1343,7 @@ async fn get_root_on_connection(
         .ok_or_else(|| DriveServiceError::NotFound("active WebsiteRoot not found".to_string()))
 }
 
-fn map_sync(row: &AnyRow) -> Result<DriveWebsiteSync, DriveServiceError> {
+fn map_sync(row: &PgRow) -> Result<DriveWebsiteSync, DriveServiceError> {
     let status_raw: String = row.get("sync_status");
     let status = DriveWebsiteSyncStatus::try_from_str(&status_raw).ok_or_else(|| {
         DriveServiceError::Internal(format!("unknown WebsiteSync status: {status_raw}"))
@@ -1392,7 +1376,7 @@ fn map_sync(row: &AnyRow) -> Result<DriveWebsiteSync, DriveServiceError> {
     })
 }
 
-fn map_root(row: &AnyRow) -> Result<DriveWebsiteRoot, DriveServiceError> {
+fn map_root(row: &PgRow) -> Result<DriveWebsiteRoot, DriveServiceError> {
     let source_root_mode_raw: String = row.get("source_root_mode");
     let content_mode_raw: String = row.get("content_mode");
     Ok(DriveWebsiteRoot {
@@ -1425,7 +1409,7 @@ fn map_root(row: &AnyRow) -> Result<DriveWebsiteRoot, DriveServiceError> {
     })
 }
 
-fn map_generation(row: &AnyRow) -> DriveWebsiteGeneration {
+fn map_generation(row: &PgRow) -> DriveWebsiteGeneration {
     DriveWebsiteGeneration {
         generation_no: row.get("generation_no"),
         root_node_id: row.get("root_node_id"),
@@ -1438,7 +1422,7 @@ fn map_generation(row: &AnyRow) -> DriveWebsiteGeneration {
 }
 
 async fn insert_audit(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     action: &str,
     resource_type: &str,
@@ -1467,29 +1451,26 @@ async fn insert_audit(
 }
 
 async fn acquire(
-    pool: &AnyPool,
-) -> Result<sqlx::pool::PoolConnection<sqlx::Any>, DriveServiceError> {
+    pool: &PgPool,
+) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, DriveServiceError> {
     pool.acquire()
         .await
         .map_err(|error| internal("acquire WebsiteSync connection", error))
 }
 
 async fn run_serializable_transaction<T, F>(
-    pool: &AnyPool,
+    pool: &PgPool,
     operation: &str,
     mut action: F,
 ) -> Result<T, DriveServiceError>
 where
     T: Send,
-    F: for<'a> FnMut(&'a mut AnyConnection, DatabaseEngine) -> WebsiteSyncTransactionFuture<'a, T>,
+    F: for<'a> FnMut(&'a mut PgConnection) -> WebsiteSyncTransactionFuture<'a, T>,
 {
-    let engine = detect_any_pool_database_engine(pool)
-        .await
-        .map_err(|error| internal("resolve WebsiteSync database engine", error))?;
     for attempt in 1..=MAX_SERIALIZABLE_TRANSACTION_ATTEMPTS {
         let mut connection = acquire(pool).await?;
-        begin_serializable_write(&mut connection, engine).await?;
-        let result = action(&mut connection, engine).await;
+        begin_serializable_write(&mut connection).await?;
+        let result = action(&mut connection).await;
         let result = match result {
             Ok(value) => commit(&mut connection, operation).await.map(|()| value),
             Err(error) => Err(error),
@@ -1515,25 +1496,19 @@ where
     unreachable!("WebsiteSync transaction retry loop always returns")
 }
 
-async fn begin_serializable_write(
-    connection: &mut AnyConnection,
-    engine: DatabaseEngine,
-) -> Result<(), DriveServiceError> {
-    let begin = begin_transaction_sql_for_engine(engine);
-    sqlx::query(begin)
+async fn begin_serializable_write(connection: &mut PgConnection) -> Result<(), DriveServiceError> {
+    sqlx::query(begin_transaction_sql())
         .execute(&mut *connection)
         .await
         .map_err(|error| internal("begin WebsiteSync transaction", error))?;
-    if engine == DatabaseEngine::Postgresql {
-        sqlx::query("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
-            .execute(&mut *connection)
-            .await
-            .map_err(|error| internal("set WebsiteSync serializable isolation", error))?;
-    }
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
+        .execute(&mut *connection)
+        .await
+        .map_err(|error| internal("set WebsiteSync serializable isolation", error))?;
     Ok(())
 }
 
-async fn commit(connection: &mut AnyConnection, operation: &str) -> Result<(), DriveServiceError> {
+async fn commit(connection: &mut PgConnection, operation: &str) -> Result<(), DriveServiceError> {
     sqlx::query("COMMIT")
         .execute(&mut *connection)
         .await
@@ -1541,16 +1516,12 @@ async fn commit(connection: &mut AnyConnection, operation: &str) -> Result<(), D
     Ok(())
 }
 
-async fn rollback(connection: &mut AnyConnection) {
+async fn rollback(connection: &mut PgConnection) {
     let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
 }
 
-fn instant_parameter(engine: DatabaseEngine, parameter: &str) -> String {
-    if engine == DatabaseEngine::Postgresql {
-        format!("CAST({parameter} AS TIMESTAMPTZ)")
-    } else {
-        parameter.to_string()
-    }
+fn instant_parameter(parameter: &str) -> String {
+    format!("CAST({parameter} AS TIMESTAMPTZ)")
 }
 
 fn serializable_retry_delay(attempt: usize) -> StdDuration {

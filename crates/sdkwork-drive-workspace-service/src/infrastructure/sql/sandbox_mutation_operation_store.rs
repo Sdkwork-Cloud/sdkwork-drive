@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::{AnyPool, Row};
+use sqlx::{PgPool, Row};
 
 use crate::domain::sandbox_directory::{SandboxDirectoryEntry, SandboxEntryKind};
 use crate::infrastructure::sql::runtime_id::next_drive_runtime_id;
@@ -12,11 +12,11 @@ use crate::DriveServiceError;
 
 #[derive(Clone, Debug)]
 pub struct SqlSandboxMutationOperationStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlSandboxMutationOperationStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -257,12 +257,12 @@ impl DriveSandboxMutationOperationStore for SqlSandboxMutationOperationStore {
 }
 
 async fn load_by_idempotency_scope(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     sandbox_id: &str,
     actor_id: &str,
     idempotency_key_hash: &str,
-) -> Result<Option<sqlx::any::AnyRow>, DriveServiceError> {
+) -> Result<Option<sqlx::postgres::PgRow>, DriveServiceError> {
     sqlx::query(
         "SELECT id, tenant_id, sandbox_id, actor_id, request_fingerprint, mutation_kind,
                 parent_logical_path, entry_name, operation_status, lease_token,
@@ -285,10 +285,10 @@ async fn load_by_idempotency_scope(
 }
 
 async fn load_by_id_in_transaction(
-    transaction: &mut sqlx::Transaction<'_, sqlx::Any>,
+    transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     operation_id: i64,
     tenant_id: &str,
-) -> Result<Option<sqlx::any::AnyRow>, DriveServiceError> {
+) -> Result<Option<sqlx::postgres::PgRow>, DriveServiceError> {
     sqlx::query(
         "SELECT id, tenant_id, sandbox_id, actor_id, request_fingerprint, mutation_kind,
                 parent_logical_path, entry_name, operation_status, lease_token,
@@ -308,7 +308,7 @@ async fn load_by_id_in_transaction(
 }
 
 fn map_begin_result(
-    row: &sqlx::any::AnyRow,
+    row: &sqlx::postgres::PgRow,
 ) -> Result<SandboxMutationOperationBeginResult, DriveServiceError> {
     let status: String = row.get("operation_status");
     match status.as_str() {
@@ -327,7 +327,7 @@ fn map_begin_result(
 }
 
 fn map_completed_result(
-    row: &sqlx::any::AnyRow,
+    row: &sqlx::postgres::PgRow,
 ) -> Result<SandboxMutationResult, DriveServiceError> {
     let status: String = row.get("operation_status");
     if status != "completed" {
@@ -365,7 +365,7 @@ fn map_completed_result(
     }))
 }
 
-fn decode_result_deleted(row: &sqlx::any::AnyRow) -> Result<bool, DriveServiceError> {
+fn decode_result_deleted(row: &sqlx::postgres::PgRow) -> Result<bool, DriveServiceError> {
     if let Ok(value) = row.try_get::<bool, _>("result_deleted") {
         return Ok(value);
     }
@@ -378,7 +378,7 @@ fn decode_result_deleted(row: &sqlx::any::AnyRow) -> Result<bool, DriveServiceEr
         })
 }
 
-fn required_result(row: &sqlx::any::AnyRow, column: &str) -> Result<String, DriveServiceError> {
+fn required_result(row: &sqlx::postgres::PgRow, column: &str) -> Result<String, DriveServiceError> {
     row.get::<Option<String>, _>(column)
         .filter(|value| !value.is_empty())
         .ok_or_else(|| {

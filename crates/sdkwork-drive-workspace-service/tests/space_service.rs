@@ -1,13 +1,10 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::space_service::{
     CreateSpaceCommand, DeleteSpaceCommand, DriveSpaceService, GetSpaceCommand, ListSpacesCommand,
     SqlDriveSpaceService, UpdateSpaceCommand,
 };
 use sdkwork_drive_workspace_service::domain::space::DriveSpaceType;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_drive_workspace_service::infrastructure::sql::space_store::SqlSpaceStore;
 use sdkwork_drive_workspace_service::DriveServiceError;
-use sqlx::any::AnyPoolOptions;
 
 #[test]
 fn drive_space_type_maps_rtc_space_type() {
@@ -19,15 +16,10 @@ fn drive_space_type_maps_rtc_space_type() {
 
 #[tokio::test]
 async fn create_space_supports_knowledge_ai_git_repository_deployment_and_upload_types() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let store = SqlSpaceStore::new(pool.clone());
     let service = DriveSpaceService::new(store);
@@ -65,15 +57,10 @@ async fn create_space_supports_knowledge_ai_git_repository_deployment_and_upload
 
 #[tokio::test]
 async fn create_rtc_space_is_user_owned_and_unique_per_user() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveSpaceService::new(SqlSpaceStore::new(pool));
     let created = service
@@ -120,15 +107,10 @@ async fn create_rtc_space_is_user_owned_and_unique_per_user() {
 
 #[tokio::test]
 async fn create_rtc_space_rejects_non_user_owner() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveSpaceService::new(SqlSpaceStore::new(pool));
 
@@ -154,15 +136,10 @@ async fn create_rtc_space_rejects_non_user_owner() {
 
 #[tokio::test]
 async fn create_git_repository_space_rejects_non_user_owner() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveSpaceService::new(SqlSpaceStore::new(pool));
 
@@ -188,15 +165,10 @@ async fn create_git_repository_space_rejects_non_user_owner() {
 
 #[tokio::test]
 async fn create_deployment_space_allows_app_owner() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveSpaceService::new(SqlSpaceStore::new(pool));
 
@@ -223,15 +195,10 @@ async fn create_deployment_space_allows_app_owner() {
 
 #[tokio::test]
 async fn delete_space_rejects_user_git_repository_space() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveSpaceService::new(SqlSpaceStore::new(pool));
     service
@@ -273,15 +240,10 @@ async fn delete_space_rejects_user_git_repository_space() {
 
 #[tokio::test]
 async fn list_spaces_supports_tenant_and_owner_filters() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let store = SqlSpaceStore::new(pool);
     let service = DriveSpaceService::new(store);
@@ -362,15 +324,10 @@ async fn list_spaces_supports_tenant_and_owner_filters() {
 
 #[tokio::test]
 async fn space_service_get_update_and_delete_manage_space_lifecycle() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let store = SqlSpaceStore::new(pool.clone());
     let service = DriveSpaceService::new(store);
@@ -461,15 +418,10 @@ async fn space_service_get_update_and_delete_manage_space_lifecycle() {
 
 #[tokio::test]
 async fn sql_drive_space_service_exposes_space_operations_without_callers_using_sql_store() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = SqlDriveSpaceService::new(pool);
     let created = service
@@ -521,15 +473,10 @@ async fn sql_drive_space_service_exposes_space_operations_without_callers_using_
 
 #[tokio::test]
 async fn space_service_rejects_invalid_owner_and_operator_before_store_write() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = SqlDriveSpaceService::new(pool);
     let invalid_owner = service

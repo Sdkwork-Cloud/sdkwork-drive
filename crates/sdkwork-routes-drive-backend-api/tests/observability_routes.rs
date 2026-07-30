@@ -2,10 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_routes_drive_backend_api::build_router_with_pool;
-use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 use tracing::subscriber::set_default;
 use tracing_subscriber::fmt::MakeWriter;
@@ -70,21 +67,15 @@ fn buffer_to_string(buffer: &Arc<Mutex<Vec<u8>>>) -> String {
 async fn list_audit_events_emits_structured_observability_log() {
     let (guard, log_buffer) = install_capture_subscriber();
 
-    sqlx::any::install_default_drivers();
-
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_audit_event (
             id, tenant_id, action, resource_type, resource_id, operator_id, request_id, trace_id
-        ) VALUES (97001, ?1, ?2, 'storage_provider', ?3, ?4, ?5, ?6)",
+        ) VALUES (97001, $1, $2, 'storage_provider', $3, $4, $5, $6)",
     )
     .bind("tenant-001")
     .bind("drive.storage_provider.created")
@@ -141,22 +132,16 @@ async fn list_audit_events_emits_structured_observability_log() {
 async fn maintenance_sweeps_emit_structured_observability_logs() {
     let (guard, log_buffer) = install_capture_subscriber();
 
-    sqlx::any::install_default_drivers();
-
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
             id, tenant_id, owner_subject_type, owner_subject_id, space_type,
             display_name, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 1, ?7, ?8)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', 1, $7, $8)",
     )
     .bind("space-001")
     .bind("tenant-001")
@@ -174,7 +159,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, 'file', ?4, 'ready', 'active', 1, ?5, ?6)",
+        ) VALUES ($1, $2, $3, NULL, 'file', $4, 'ready', 'active', 1, $5, $6)",
     )
     .bind("node-001")
     .bind("tenant-001")
@@ -206,7 +191,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
             id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,
             content_type, content_length, checksum_sha256_hex, lifecycle_status,
             created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'deleted', ?11, ?12)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'deleted', $11, $12)",
     )
     .bind("obj-001")
     .bind("tenant-001")
@@ -229,7 +214,7 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
             id, tenant_id, space_id, node_id, bucket, object_key,
             idempotency_key, storage_provider_id, storage_upload_id, state,
             expires_at_epoch_ms, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'provider-001', ?1, 'created', ?8, 1, ?9, ?10)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'provider-001', $1, 'created', $8, 1, $9, $10)",
     )
     .bind("session-001")
     .bind("tenant-001")
@@ -407,16 +392,10 @@ async fn maintenance_sweeps_emit_structured_observability_logs() {
 async fn backend_route_errors_emit_structured_observability_logs() {
     let (guard, log_buffer) = install_capture_subscriber();
 
-    sqlx::any::install_default_drivers();
-
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = build_router_with_pool(pool);
     let audit_error_response = app

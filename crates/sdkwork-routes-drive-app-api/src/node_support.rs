@@ -24,7 +24,7 @@ use sdkwork_drive_workspace_service::infrastructure::sql::managed_website_tree_g
 use sdkwork_drive_workspace_service::infrastructure::sql::node_head_metadata::file_extension_from_name;
 use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
 use sqlx::Row;
-use sqlx::{AnyConnection, AnyPool};
+use sqlx::{PgConnection, PgPool};
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::route_change::record_change;
@@ -47,7 +47,7 @@ pub(crate) fn folder_create_request_matches(
 }
 
 pub(crate) async fn validate_archive_extraction_plan(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     root_parent_node_id: Option<&str>,
@@ -137,7 +137,7 @@ pub(crate) fn archive_extraction_target_conflict_problem() -> (StatusCode, Json<
     )
 }
 pub(crate) async fn ensure_archive_parent_folders(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     root_parent_node_id: Option<&str>,
@@ -235,7 +235,7 @@ pub(crate) async fn ensure_archive_parent_folders(
     Ok(current_parent)
 }
 pub(crate) async fn find_live_child_by_name(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     parent_node_id: Option<&str>,
@@ -477,7 +477,7 @@ pub(crate) async fn create_extracted_archive_file(
     find_node(&state.pool, tenant_id, &node_id).await
 }
 pub(crate) async fn validate_target_parent(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     target_parent_node_id: Option<&str>,
@@ -511,7 +511,7 @@ pub(crate) async fn validate_target_parent(
     Ok(())
 }
 pub(crate) async fn ensure_target_parent_is_not_descendant(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     target_parent_node_id: Option<&str>,
@@ -602,7 +602,7 @@ pub(crate) fn validate_create_file_idempotent_replay(
     ))
 }
 pub(crate) async fn ensure_no_live_name_conflict(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     parent_node_id: Option<&str>,
@@ -640,7 +640,7 @@ pub(crate) async fn ensure_no_live_name_conflict(
     Ok(())
 }
 pub(crate) async fn ensure_node_id_available(
-    pool: &AnyPool,
+    pool: &PgPool,
     node_id: &str,
 ) -> Result<(), (StatusCode, Json<ProblemDetail>)> {
     let count: i64 = sqlx::query_scalar(
@@ -663,7 +663,7 @@ pub(crate) async fn ensure_node_id_available(
     Ok(())
 }
 pub(crate) async fn copy_active_storage_object_metadata(
-    connection: &mut AnyConnection,
+    connection: &mut PgConnection,
     tenant_id: &str,
     target_space_id: &str,
     source_node_id: &str,
@@ -759,7 +759,7 @@ pub(crate) fn parents_equivalent(left: Option<&str>, right: Option<&str>) -> boo
 }
 
 pub(crate) async fn live_node_name_exists_in_parent(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     parent_node_id: Option<&str>,
@@ -790,7 +790,7 @@ pub(crate) async fn live_node_name_exists_in_parent(
 }
 
 pub(crate) async fn resolve_live_unique_node_name_in_parent(
-    pool: &AnyPool,
+    pool: &PgPool,
     tenant_id: &str,
     space_id: &str,
     parent_node_id: Option<&str>,

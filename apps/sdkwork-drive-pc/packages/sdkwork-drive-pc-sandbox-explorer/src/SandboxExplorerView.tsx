@@ -506,11 +506,21 @@ export function SandboxExplorerView({
   }, [selectedEntry, selectedVisibleIndex]);
 
   useLayoutEffect(() => {
+    if (refreshing) return;
     const entryId = pendingFocusEntryId.current;
     if (!entryId) return;
-    pendingFocusEntryId.current = null;
-    entryElementsById.current.get(entryId)?.focus({ preventScroll: true });
-  }, [entries]);
+    const target = entryElementsById.current.get(entryId);
+    if (!target) {
+      if (!entries.some((entry) => entry.id === entryId)) {
+        pendingFocusEntryId.current = null;
+      }
+      return;
+    }
+    target.focus({ preventScroll: true });
+    if (document.activeElement === target) {
+      pendingFocusEntryId.current = null;
+    }
+  }, [entries, refreshing]);
 
   const loadMoreSandboxes = async () => {
     if (loadingMoreSandboxes || sandboxPage >= sandboxTotalPages) return;

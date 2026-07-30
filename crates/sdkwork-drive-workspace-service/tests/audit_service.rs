@@ -1,22 +1,14 @@
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::application::audit_service::{
     DriveAuditService, ListAuditEventsCommand, RecordAuditEventCommand,
 };
 use sdkwork_drive_workspace_service::infrastructure::sql::audit_store::SqlAuditStore;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
-use sqlx::any::AnyPoolOptions;
 
 #[tokio::test]
 async fn record_audit_event_persists_append_only_row() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveAuditService::new(SqlAuditStore::new(pool.clone()));
     service
@@ -35,11 +27,11 @@ async fn record_audit_event_persists_append_only_row() {
     let count: i64 = sqlx::query_scalar(
         "SELECT COUNT(1)
          FROM dr_drive_audit_event
-         WHERE tenant_id=?1
-           AND action=?2
-           AND resource_type=?3
-           AND resource_id=?4
-           AND operator_id=?5",
+         WHERE tenant_id=$1
+           AND action=$2
+           AND resource_type=$3
+           AND resource_id=$4
+           AND operator_id=$5",
     )
     .bind("tenant-001")
     .bind("drive.storage_provider.created")
@@ -54,15 +46,10 @@ async fn record_audit_event_persists_append_only_row() {
 
 #[tokio::test]
 async fn list_audit_events_supports_filter_and_pagination() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     for (id, tenant_id, action, resource_id, request_id, trace_id) in [
         (
@@ -94,7 +81,7 @@ async fn list_audit_events_supports_filter_and_pagination() {
             "INSERT INTO dr_drive_audit_event (
                 id, tenant_id, action, resource_type, resource_id,
                 operator_id, request_id, trace_id
-            ) VALUES (?1, ?2, ?3, 'storage_provider', ?4, 'admin-001', ?5, ?6)",
+            ) VALUES ($1, $2, $3, 'storage_provider', $4, 'admin-001', $5, $6)",
         )
         .bind(id)
         .bind(tenant_id)
@@ -164,15 +151,10 @@ async fn list_audit_events_supports_filter_and_pagination() {
 
 #[tokio::test]
 async fn list_audit_events_rejects_invalid_identifier_filters() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let service = DriveAuditService::new(SqlAuditStore::new(pool));
 

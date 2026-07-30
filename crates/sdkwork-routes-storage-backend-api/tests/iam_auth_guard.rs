@@ -1,24 +1,15 @@
 use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_routes_storage_backend_api::build_router_with_pool_and_iam;
 use sdkwork_web_core::{access_token_jwt, auth_token_jwt, encode_unsigned_test_jwt};
 use serde_json::{json, Value};
-use sqlx::any::AnyPoolOptions;
 use tower::util::ServiceExt;
 
 const TEST_SESSION: &str = "session-1";
 const TEST_APP: &str = "appbase";
 
 fn build_router() -> axum::Router {
-    sqlx::any::install_default_drivers();
-    build_router_with_pool_and_iam(
-        AnyPoolOptions::new()
-            .max_connections(1)
-            .connect_lazy("sqlite::memory:")
-            .expect("create storage backend test pool"),
-    )
+    build_router_with_pool_and_iam(sdkwork_drive_test_support::lazy_postgres_test_pool())
 }
 
 fn auth_token(tenant: &str, user: &str) -> String {
@@ -178,7 +169,9 @@ async fn admin_storage_production_routes_require_valid_dual_tokens() {
 
 #[tokio::test]
 async fn admin_storage_routes_validate_token_derived_app_context() {
-    let app = admin_storage_router_allowing_unsigned_context().await;
+    let Some((app, _database_guard)) = admin_storage_router_allowing_unsigned_context().await else {
+        return;
+    };
 
     let tenant_conflict = app
         .clone()
@@ -256,7 +249,9 @@ async fn admin_storage_routes_validate_token_derived_app_context() {
 
 #[tokio::test]
 async fn admin_storage_routes_reject_personal_login_scope_session() {
-    let app = admin_storage_router_allowing_unsigned_context().await;
+    let Some((app, _database_guard)) = admin_storage_router_allowing_unsigned_context().await else {
+        return;
+    };
 
     let personal_session = app
         .oneshot(
@@ -284,7 +279,9 @@ async fn admin_storage_routes_reject_personal_login_scope_session() {
 
 #[tokio::test]
 async fn admin_storage_routes_reject_audit_only_scope() {
-    let app = admin_storage_router_allowing_unsigned_context().await;
+    let Some((app, _database_guard)) = admin_storage_router_allowing_unsigned_context().await else {
+        return;
+    };
     let audit_scope = "drive.audit.admin";
 
     let denied = app
@@ -311,17 +308,12 @@ async fn admin_storage_routes_reject_audit_only_scope() {
     assert_problem(denied, StatusCode::FORBIDDEN, 40301).await;
 }
 
-async fn admin_storage_router_allowing_unsigned_context() -> axum::Router {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("create in-memory sqlite pool");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
-    build_router_with_pool_and_iam(pool)
+async fn admin_storage_router_allowing_unsigned_context() -> Option<(
+    axum::Router,
+    sdkwork_drive_test_support::PostgresTestDatabaseGuard,
+)> {
+    let (pool, database_guard) = sdkwork_drive_test_support::postgres_test_database().await?;
+    Some((build_router_with_pool_and_iam(pool), database_guard))
 }
 
 async fn assert_problem(response: axum::response::Response, status: StatusCode, code: i64) {

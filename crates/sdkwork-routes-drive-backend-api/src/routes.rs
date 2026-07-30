@@ -8,10 +8,10 @@ use axum::{Extension, Router};
 use sdkwork_drive_config::DatabaseConfig;
 use sdkwork_drive_http::infra::{drive_service_router_config, mount_drive_infra_routes};
 use sdkwork_drive_security::DriveAppContext;
-use sdkwork_drive_workspace_service::infrastructure::sql::connect_any_database_and_install_schema;
-use sqlx::AnyPool;
+use sdkwork_drive_workspace_service::infrastructure::sql::connect_postgres_database_and_install_schema;
+use sqlx::PgPool;
 
-pub fn build_router_with_pool(pool: AnyPool) -> Router {
+pub fn build_router_with_pool(pool: PgPool) -> Router {
     build_router_with_state(BackendState::new(pool), false)
         .layer(Extension(default_test_app_context()))
 }
@@ -42,7 +42,7 @@ fn default_test_app_context() -> DriveAppContext {
     }
 }
 
-pub fn build_router_with_pool_and_iam(pool: AnyPool) -> Router {
+pub fn build_router_with_pool_and_iam(pool: PgPool) -> Router {
     let router = build_router_with_state(BackendState::new(pool), true);
     wrap_router_with_web_framework(
         sdkwork_web_core::DefaultWebRequestContextResolver::default(),
@@ -50,7 +50,7 @@ pub fn build_router_with_pool_and_iam(pool: AnyPool) -> Router {
     )
 }
 
-pub async fn build_protected_router_with_pool(pool: AnyPool) -> Router {
+pub async fn build_protected_router_with_pool(pool: PgPool) -> Router {
     let router = build_router_with_state(BackendState::new(pool), true);
     crate::web_bootstrap::wrap_router_with_web_framework_from_env(router).await
 }
@@ -58,14 +58,14 @@ pub async fn build_protected_router_with_pool(pool: AnyPool) -> Router {
 pub async fn build_router_with_database_url(database_url: &str) -> Result<Router, sqlx::Error> {
     let config = DatabaseConfig::from_url(database_url)
         .map_err(|error| sqlx::Error::Configuration(Box::new(error)))?;
-    let pool = connect_any_database_and_install_schema(&config).await?;
+    let pool = connect_postgres_database_and_install_schema(&config).await?;
     Ok(build_protected_router_with_pool(pool).await)
 }
 
 pub async fn build_router_with_database_config(
     config: &DatabaseConfig,
 ) -> Result<Router, Box<dyn std::error::Error + Send + Sync>> {
-    let pool = connect_any_database_and_install_schema(config)
+    let pool = connect_postgres_database_and_install_schema(config)
         .await
         .map_err(|error| Box::new(error) as Box<dyn std::error::Error + Send + Sync>)?;
     Ok(build_protected_router_with_pool(pool).await)
@@ -160,20 +160,23 @@ fn build_router_with_state(state: BackendState, require_iam: bool) -> Router {
 }
 
 /// Business router for multi-surface gateway assembly (infra mounted once by assembly).
-pub async fn gateway_mount_business(pool: AnyPool) -> Router {
-    build_gateway_business_router_with_pool(pool).await
+pub async fn gateway_mount_business(pool: PgPool) -> Router {
+    build_backend_business_router(pool)
 }
 
-/// Deprecated alias; prefer [`gateway_mount_business`].
-pub async fn build_gateway_business_router_with_pool(pool: AnyPool) -> Router {
+/// Raw Backend API router for a composing gateway that owns the Web Framework layer.
+pub fn build_backend_business_router(pool: PgPool) -> Router {
     let state = BackendState::new(pool);
-    let router = build_business_router_layers(state, true);
-    let router = crate::web_bootstrap::wrap_router_with_web_framework_from_env(router).await;
-    router.layer(middleware::from_fn(
+    build_business_router_layers(state, true).layer(middleware::from_fn(
         sdkwork_drive_http::metrics::record_request_metrics,
     ))
 }
 
-pub async fn gateway_mount(pool: sqlx::AnyPool) -> axum::Router {
+/// Raw Backend API router retained as an explicit assembly-oriented name.
+pub async fn build_gateway_business_router_with_pool(pool: PgPool) -> Router {
+    build_backend_business_router(pool)
+}
+
+pub async fn gateway_mount(pool: sqlx::PgPool) -> axum::Router {
     build_protected_router_with_pool(pool).await
 }

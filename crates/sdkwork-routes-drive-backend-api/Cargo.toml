@@ -25,4 +25,5 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 [dev-dependencies]
+sdkwork-drive-test-support.workspace = true
 tempfile.workspace = true

@@ -3,7 +3,6 @@ use crate::ports::domain_outbox_embedded_relay::{
     DriveDomainOutboxEmbeddedTarget, ResolveDriveDomainOutboxEmbeddedTargetsRequest,
     MAX_EMBEDDED_OUTBOX_TARGETS_PER_EVENT,
 };
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_contract::drive::events::{
     sign_webhook, WEBHOOK_CHANNEL_ID_HEADER, WEBHOOK_EVENT_ID_HEADER,
     WEBHOOK_EVENT_RETRY_COUNT_HEADER, WEBHOOK_EVENT_SIGNATURE_HEADER,
@@ -11,7 +10,7 @@ use sdkwork_drive_contract::drive::events::{
 };
 use sdkwork_drive_observability::metrics;
 use serde_json::Value;
-use sqlx::{AnyPool, Row};
+use sqlx::{PgPool, Row};
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -48,7 +47,7 @@ pub struct DomainOutboxDispatchResult {
 ///
 /// Cloud deployments that run `sdkwork-drive-install-worker` should set
 /// `SDKWORK_DRIVE_DOMAIN_OUTBOX_EMBEDDED_DISPATCH=false` on API pods.
-pub fn ensure_domain_outbox_dispatcher(pool: AnyPool) {
+pub fn ensure_domain_outbox_dispatcher(pool: PgPool) {
     if embedded_outbox_dispatch_disabled() {
         return;
     }
@@ -82,12 +81,12 @@ pub fn ensure_domain_outbox_dispatcher(pool: AnyPool) {
 }
 
 /// Backward-compatible alias for callers that previously spawned duplicate loops.
-pub fn spawn_pending_outbox_dispatch(pool: AnyPool) {
+pub fn spawn_pending_outbox_dispatch(pool: PgPool) {
     ensure_domain_outbox_dispatcher(pool);
 }
 
 /// Attempt one immediate outbox delivery pass without starting another periodic loop.
-pub fn trigger_immediate_outbox_dispatch(pool: AnyPool) {
+pub fn trigger_immediate_outbox_dispatch(pool: PgPool) {
     if embedded_outbox_dispatch_disabled() {
         return;
     }
@@ -113,20 +112,20 @@ pub fn trigger_immediate_outbox_dispatch(pool: AnyPool) {
 }
 
 pub async fn dispatch_pending_outbox_events(
-    pool: &AnyPool,
+    pool: &PgPool,
 ) -> Result<DomainOutboxDispatchResult, String> {
     dispatch_pending_outbox_events_with_optional_relay(pool, None).await
 }
 
 pub async fn dispatch_pending_outbox_events_with_relay(
-    pool: &AnyPool,
+    pool: &PgPool,
     relay: &dyn DriveDomainOutboxEmbeddedRelay,
 ) -> Result<DomainOutboxDispatchResult, String> {
     dispatch_pending_outbox_events_with_optional_relay(pool, Some(relay)).await
 }
 
 async fn dispatch_pending_outbox_events_with_optional_relay(
-    pool: &AnyPool,
+    pool: &PgPool,
     relay: Option<&dyn DriveDomainOutboxEmbeddedRelay>,
 ) -> Result<DomainOutboxDispatchResult, String> {
     let client = reqwest::Client::builder()
@@ -210,32 +209,26 @@ struct ClaimedOutboxEvent {
 }
 
 async fn claim_next_pending_outbox_event(
-    pool: &AnyPool,
+    pool: &PgPool,
     exclude_ids: &HashSet<String>,
 ) -> Result<Option<ClaimedOutboxEvent>, String> {
-    let engine = resolve_pool_database_engine(pool).await?;
     let exclude_clause = build_outbox_claim_exclude_clause(exclude_ids);
-    let row = match engine {
-        DatabaseEngine::Postgresql => {
-            sqlx::query(&format!(
-                "UPDATE dr_drive_domain_outbox
-                 SET attempt_count = attempt_count + 1
-                 WHERE id = (
-                   SELECT id
-                   FROM dr_drive_domain_outbox
-                   WHERE delivery_status = 'pending' AND attempt_count < $1{exclude_clause}
-                   ORDER BY created_at ASC
-                   LIMIT 1
-                   FOR UPDATE SKIP LOCKED
-                 )
-                 RETURNING id, tenant_id, space_id, event_type, attempt_count, payload_json",
-            ))
-            .bind(MAX_OUTBOX_ATTEMPTS)
-            .fetch_optional(pool)
-            .await
-        }
-        DatabaseEngine::Sqlite => claim_sqlite_outbox_event(pool, &exclude_clause).await,
-    }
+    let row = sqlx::query(&format!(
+        "UPDATE dr_drive_domain_outbox
+         SET attempt_count = attempt_count + 1
+         WHERE id = (
+           SELECT id
+           FROM dr_drive_domain_outbox
+           WHERE delivery_status = 'pending' AND attempt_count < $1{exclude_clause}
+           ORDER BY created_at ASC
+           LIMIT 1
+           FOR UPDATE SKIP LOCKED
+         )
+         RETURNING id, tenant_id, space_id, event_type, attempt_count, payload_json",
+    ))
+    .bind(MAX_OUTBOX_ATTEMPTS)
+    .fetch_optional(pool)
+    .await
     .map_err(|error| format!("claim pending domain outbox event failed: {error}"))?;
 
     let Some(row) = row else {
@@ -252,41 +245,7 @@ async fn claim_next_pending_outbox_event(
     }))
 }
 
-async fn claim_sqlite_outbox_event(
-    pool: &AnyPool,
-    exclude_clause: &str,
-) -> Result<Option<sqlx::any::AnyRow>, sqlx::Error> {
-    let mut connection = pool.acquire().await?;
-    sqlx::query("BEGIN IMMEDIATE")
-        .execute(&mut *connection)
-        .await?;
-    let claim_result = sqlx::query(&format!(
-        "UPDATE dr_drive_domain_outbox
-         SET attempt_count = attempt_count + 1
-         WHERE id = (
-           SELECT id
-           FROM dr_drive_domain_outbox
-           WHERE delivery_status = 'pending' AND attempt_count < $1{exclude_clause}
-           ORDER BY created_at ASC
-           LIMIT 1
-         )
-         RETURNING id, tenant_id, space_id, event_type, attempt_count, payload_json",
-    ))
-    .bind(MAX_OUTBOX_ATTEMPTS)
-    .fetch_optional(&mut *connection)
-    .await;
-    match &claim_result {
-        Ok(_) => {
-            sqlx::query("COMMIT").execute(&mut *connection).await?;
-        }
-        Err(_) => {
-            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
-        }
-    }
-    claim_result
-}
-
-async fn mark_outbox_event_delivered(pool: &AnyPool, outbox_id: &str) -> Result<(), String> {
+async fn mark_outbox_event_delivered(pool: &PgPool, outbox_id: &str) -> Result<(), String> {
     sqlx::query(
         "UPDATE dr_drive_domain_outbox
          SET delivery_status = 'delivered',
@@ -302,7 +261,7 @@ async fn mark_outbox_event_delivered(pool: &AnyPool, outbox_id: &str) -> Result<
 }
 
 async fn mark_outbox_event_attempt_failed(
-    pool: &AnyPool,
+    pool: &PgPool,
     outbox_id: &str,
     attempt_count: i32,
     delivery_status: &str,
@@ -325,7 +284,7 @@ async fn mark_outbox_event_attempt_failed(
 }
 
 async fn mark_outbox_event_failed(
-    pool: &AnyPool,
+    pool: &PgPool,
     outbox_id: &str,
     attempt_count: i32,
     error: &str,
@@ -342,7 +301,7 @@ struct OutboxChangeEvent<'a> {
 }
 
 async fn dispatch_outbox_event(
-    pool: &AnyPool,
+    pool: &PgPool,
     client: &reqwest::Client,
     relay: Option<&dyn DriveDomainOutboxEmbeddedRelay>,
     outbox_id: &str,
@@ -723,7 +682,7 @@ fn is_sha256_hex(value: &str) -> bool {
 }
 
 async fn outbox_channel_already_delivered(
-    pool: &AnyPool,
+    pool: &PgPool,
     outbox_id: &str,
     channel_id: &str,
 ) -> Result<bool, String> {
@@ -742,7 +701,7 @@ async fn outbox_channel_already_delivered(
 }
 
 async fn record_outbox_channel_delivery(
-    pool: &AnyPool,
+    pool: &PgPool,
     outbox_id: &str,
     channel_id: &str,
 ) -> Result<(), String> {
@@ -769,12 +728,6 @@ fn build_outbox_claim_exclude_clause(exclude_ids: &HashSet<String>) -> String {
         .collect::<Vec<_>>()
         .join(", ");
     format!(" AND id NOT IN ({quoted})")
-}
-
-async fn resolve_pool_database_engine(pool: &AnyPool) -> Result<DatabaseEngine, String> {
-    crate::infrastructure::sql::detect_any_pool_database_engine(pool)
-        .await
-        .map_err(|error| format!("resolve domain outbox database engine failed: {error}"))
 }
 
 #[cfg(test)]

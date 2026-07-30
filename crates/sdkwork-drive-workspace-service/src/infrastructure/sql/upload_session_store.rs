@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use sqlx::Row;
 
 use crate::domain::upload::{DriveUploadSession, DriveUploadSessionState};
@@ -9,11 +9,11 @@ use crate::DriveServiceError;
 
 #[derive(Debug, Clone)]
 pub struct SqlUploadSessionStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlUploadSessionStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }

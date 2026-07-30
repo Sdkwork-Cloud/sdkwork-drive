@@ -2,39 +2,19 @@ use sdkwork_drive_config::{DatabaseConfig, DatabaseEngine};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[test]
-fn parses_sqlite_database_urls_for_local_mode() {
-    let config = DatabaseConfig::from_url_with_max_connections(
-        "sqlite://target/dev/sdkwork-drive.sqlite",
-        1,
-    )
-    .expect("sqlite database url should parse");
+fn rejects_sqlite_database_urls() {
+    let direct = DatabaseConfig::from_url("sqlite://target/dev/sdkwork-drive.sqlite")
+        .expect_err("server runtime must reject SQLite URLs");
+    assert!(direct
+        .to_string()
+        .contains("database url must be a PostgreSQL connection string"));
 
-    assert_eq!(DatabaseEngine::Sqlite, config.engine());
-    assert_eq!("sqlite://target/dev/sdkwork-drive.sqlite", config.url());
-    assert_eq!(1, config.max_connections());
-    assert_eq!("sqlite", config.safe_health().engine);
-}
-
-#[test]
-fn sqlite_environment_url_defaults_to_single_connection() {
-    let env = [(
-        "SDKWORK_DATABASE_URL",
-        "sqlite://target/dev/sdkwork-drive.sqlite",
-    )];
-
-    let config = DatabaseConfig::from_env_pairs(env).expect("sqlite env url should parse");
-
-    assert_eq!(DatabaseEngine::Sqlite, config.engine());
-    assert_eq!(1, config.max_connections());
-}
-
-#[test]
-fn sqlite_direct_url_defaults_to_single_connection() {
-    let config = DatabaseConfig::from_url("sqlite://target/dev/sdkwork-drive.sqlite")
-        .expect("sqlite direct url should parse");
-
-    assert_eq!(DatabaseEngine::Sqlite, config.engine());
-    assert_eq!(1, config.max_connections());
+    let env = [("SDKWORK_DATABASE_URL", "sqlite::memory:")];
+    let from_env = DatabaseConfig::from_env_pairs(env)
+        .expect_err("server runtime environment must reject SQLite URLs");
+    assert!(from_env
+        .to_string()
+        .contains("database url must be a PostgreSQL connection string"));
 }
 
 #[test]
@@ -68,12 +48,12 @@ fn rejects_empty_unsupported_urls_and_invalid_pool_sizes() {
     )
     .unwrap_err();
     assert!(
-        mysql.to_string().contains("PostgreSQL or SQLite"),
+        mysql.to_string().contains("PostgreSQL connection string"),
         "unexpected unsupported url error: {mysql}"
     );
 
     let pool_size = DatabaseConfig::from_url_with_max_connections(
-        "sqlite://target/dev/sdkwork-drive.sqlite",
+        "postgresql://sdkwork_drive:secret@127.0.0.1/sdkwork_drive",
         0,
     )
     .unwrap_err();
@@ -109,20 +89,17 @@ fn resolves_postgres_from_structured_environment() {
 }
 
 #[test]
-fn resolves_sqlite_from_structured_environment_with_single_connection_default() {
+fn rejects_sqlite_from_structured_environment() {
     let env = [
         ("SDKWORK_DATABASE_ENGINE", "sqlite"),
-        (
-            "SDKWORK_DATABASE_SQLITE_URL",
-            "sqlite://target/dev/sdkwork-drive.sqlite",
-        ),
+        ("SDKWORK_DATABASE_FILE", "target/dev/sdkwork-drive.sqlite"),
     ];
 
-    let config = DatabaseConfig::from_env_pairs(env).expect("sqlite env should parse");
-
-    assert_eq!(DatabaseEngine::Sqlite, config.engine());
-    assert_eq!("sqlite://target/dev/sdkwork-drive.sqlite", config.url());
-    assert_eq!(1, config.max_connections());
+    let error = DatabaseConfig::from_env_pairs(env)
+        .expect_err("server runtime must reject the SQLite engine");
+    assert!(error
+        .to_string()
+        .contains("unsupported database engine sqlite; expected postgresql"));
 }
 
 #[test]
@@ -151,14 +128,20 @@ fn cli_database_url_overrides_structured_environment() {
     let args = vec![
         "sdkwork-routes-drive-app-api".to_string(),
         "--database-url".to_string(),
-        "sqlite://target/dev/cli.sqlite".to_string(),
+        "postgresql://sdkwork_drive:secret@127.0.0.1:5432/sdkwork_drive".to_string(),
     ];
     let config =
         DatabaseConfig::from_env_and_cli_args(&args).expect("cli database url should parse");
 
-    assert_eq!(DatabaseEngine::Sqlite, config.engine());
-    assert_eq!("sqlite://target/dev/cli.sqlite", config.url());
-    assert_eq!(1, config.max_connections());
+    assert_eq!(DatabaseEngine::Postgresql, config.engine());
+    assert_eq!(
+        "postgresql://sdkwork_drive:secret@127.0.0.1:5432/sdkwork_drive",
+        config.url()
+    );
+    assert_eq!(
+        DatabaseConfig::DEFAULT_POSTGRES_MAX_CONNECTIONS,
+        config.max_connections()
+    );
 }
 
 #[test]
@@ -166,7 +149,7 @@ fn explicit_database_url_overrides_structured_environment() {
     let env = [
         (
             "SDKWORK_DATABASE_URL",
-            "sqlite://target/dev/override.sqlite",
+            "postgresql://override:secret@db.internal:5432/sdkwork_ai_dev",
         ),
         ("SDKWORK_DATABASE_ENGINE", "postgresql"),
         ("SDKWORK_DATABASE_HOST", "127.0.0.1"),
@@ -179,8 +162,11 @@ fn explicit_database_url_overrides_structured_environment() {
 
     let config = DatabaseConfig::from_env_pairs(env).expect("explicit url should parse");
 
-    assert_eq!(DatabaseEngine::Sqlite, config.engine());
-    assert_eq!("sqlite://target/dev/override.sqlite", config.url());
+    assert_eq!(DatabaseEngine::Postgresql, config.engine());
+    assert_eq!(
+        "postgresql://override:secret@db.internal:5432/sdkwork_ai_dev",
+        config.url()
+    );
     assert_eq!(3, config.max_connections());
 }
 
@@ -207,19 +193,19 @@ fn rejects_removed_database_environment_aliases() {
 }
 
 #[test]
-fn parses_sqlite_runtime_toml() {
-    let config = DatabaseConfig::from_runtime_toml(
+fn rejects_sqlite_runtime_toml() {
+    let error = DatabaseConfig::from_runtime_toml(
         r#"
         [database]
         engine = "sqlite"
         url = "sqlite://target/dev/sdkwork-drive.sqlite"
         "#,
     )
-    .expect("sqlite runtime toml should parse");
+    .expect_err("server runtime TOML must reject SQLite");
 
-    assert_eq!(DatabaseEngine::Sqlite, config.engine());
-    assert_eq!("sqlite://target/dev/sdkwork-drive.sqlite", config.url());
-    assert_eq!(1, config.max_connections());
+    assert!(error
+        .to_string()
+        .contains("unsupported runtime config [database].engine sqlite; expected postgresql"));
 }
 
 #[test]
@@ -279,14 +265,20 @@ fn env_url_override_wins_over_config_file() {
         ("SDKWORK_DRIVE_CONFIG_FILE", config_path_string.as_str()),
         (
             "SDKWORK_DATABASE_URL",
-            "sqlite://target/dev/override.sqlite",
+            "postgresql://override:secret@db.internal:5432/sdkwork_ai_dev",
         ),
     ];
     let config = DatabaseConfig::from_env_pairs(env).expect("env override should parse");
 
-    assert_eq!(DatabaseEngine::Sqlite, config.engine());
-    assert_eq!("sqlite://target/dev/override.sqlite", config.url());
-    assert_eq!(1, config.max_connections());
+    assert_eq!(DatabaseEngine::Postgresql, config.engine());
+    assert_eq!(
+        "postgresql://override:secret@db.internal:5432/sdkwork_ai_dev",
+        config.url()
+    );
+    assert_eq!(
+        DatabaseConfig::DEFAULT_POSTGRES_MAX_CONNECTIONS,
+        config.max_connections()
+    );
 }
 
 #[test]

@@ -291,7 +291,7 @@ async fn find_storage_provider_binding(
 
 pub(crate) async fn map_storage_provider_binding_row(
     state: &AdminStorageState,
-    row: &sqlx::any::AnyRow,
+    row: &sqlx::postgres::PgRow,
 ) -> Result<StorageProviderBindingResponse, (StatusCode, Json<ProblemDetail>)> {
     let provider_id: String = row.get("provider_id");
     let provider = get_provider(state, &provider_id).await?;
@@ -301,7 +301,7 @@ pub(crate) async fn map_storage_provider_binding_row(
 }
 
 fn map_storage_provider_binding_row_with_provider(
-    row: &sqlx::any::AnyRow,
+    row: &sqlx::postgres::PgRow,
     provider: DriveStorageProvider,
 ) -> StorageProviderBindingResponse {
     StorageProviderBindingResponse {

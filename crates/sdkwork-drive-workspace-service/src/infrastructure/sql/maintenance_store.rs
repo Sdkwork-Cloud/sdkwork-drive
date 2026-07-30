@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use sqlx::any::AnyRow;
-use sqlx::AnyPool;
+use sqlx::postgres::PgRow;
+use sqlx::PgPool;
 use sqlx::Row;
 
 use crate::domain::maintenance::DriveSweepResult;
@@ -21,11 +21,11 @@ use sdkwork_drive_contract::drive::domain_events as drive_events;
 
 #[derive(Debug, Clone)]
 pub struct SqlMaintenanceStore {
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlMaintenanceStore {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
@@ -584,7 +584,7 @@ impl DriveMaintenanceStore for SqlMaintenanceStore {
     }
 }
 
-fn map_row_to_maintenance_job(row: &AnyRow) -> Result<DriveMaintenanceJob, DriveServiceError> {
+fn map_row_to_maintenance_job(row: &PgRow) -> Result<DriveMaintenanceJob, DriveServiceError> {
     let job_type: String = row.get("job_type");
     if job_type.trim().is_empty() {
         return Err(DriveServiceError::Internal(
@@ -628,7 +628,7 @@ fn normalize_timestamp_text(value: String) -> String {
     }
 }
 
-fn get_bool(row: &AnyRow, column: &str) -> Result<bool, DriveServiceError> {
+fn get_bool(row: &PgRow, column: &str) -> Result<bool, DriveServiceError> {
     row.try_get::<bool, _>(column)
         .or_else(|_| row.try_get::<i64, _>(column).map(|value| value != 0))
         .map_err(|error| {

@@ -6,10 +6,7 @@ use axum::http::Uri;
 use axum::response::{IntoResponse, Response};
 use axum::Router;
 use http::{Method, Request, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 
-use sqlx::any::AnyPoolOptions;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower::util::ServiceExt;
 use tracing::subscriber::set_default;
@@ -131,16 +128,10 @@ async fn app_routes_emit_standardized_observability_events() {
     let (guard, log_buffer) = install_capture_subscriber();
     let s3_endpoint = start_s3_mock_server().await;
 
-    sqlx::any::install_default_drivers();
-
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool.clone());
     let create_space_response = app
@@ -183,7 +174,7 @@ async fn app_routes_emit_standardized_observability_events() {
         "INSERT INTO dr_drive_node (
             id, tenant_id, space_id, parent_node_id, node_type, node_name,
             content_state, lifecycle_status, version, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, NULL, 'file', ?4, 'ready', 'active', 1, ?5, ?6)",
+        ) VALUES ($1, $2, $3, NULL, 'file', $4, 'ready', 'active', 1, $5, $6)",
     )
     .bind("node-obs-001")
     .bind("tenant-001")
@@ -200,7 +191,7 @@ async fn app_routes_emit_standardized_observability_events() {
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            'provider-obs-001', 's3_compatible', 'Obs S3', ?1, 'us-east-1',
+            'provider-obs-001', 's3_compatible', 'Obs S3', $1, 'us-east-1',
             'bucket-001', 1, 0, 'plain:test-access-key:test-secret-key',
             'AES256', 'STANDARD', 'active', 1, 'admin-001', 'admin-001'
         )",
@@ -253,7 +244,7 @@ async fn app_routes_emit_standardized_observability_events() {
             id, tenant_id, node_id, version_no, storage_provider_id, bucket, object_key,
             content_type, content_length, checksum_sha256_hex, lifecycle_status,
             created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'active', ?11, ?12)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11, $12)",
     )
     .bind("obj-obs-001")
     .bind("tenant-001")
@@ -495,16 +486,10 @@ async fn app_routes_emit_standardized_observability_events() {
 async fn app_route_errors_emit_standardized_observability_events() {
     let (guard, log_buffer) = install_capture_subscriber();
 
-    sqlx::any::install_default_drivers();
-
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     let app = common::test_router_with_pool(pool);
     let create_space_error_response = app

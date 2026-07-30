@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use sdkwork_utils_rust::MAX_LIST_PAGE_SIZE;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 use crate::infrastructure::sql::workspace_store::SqlDriveWorkspaceStore;
 use crate::ports::workspace_store::{
@@ -110,11 +110,11 @@ pub struct DriveWorkspaceChildrenPage {
 #[derive(Debug, Clone)]
 pub struct SqlDriveWorkspaceService {
     service: DriveWorkspaceService<SqlDriveWorkspaceStore>,
-    pool: AnyPool,
+    pool: PgPool,
 }
 
 impl SqlDriveWorkspaceService {
-    pub fn new(pool: AnyPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self {
             service: DriveWorkspaceService::new(SqlDriveWorkspaceStore::new(pool.clone())),
             pool,

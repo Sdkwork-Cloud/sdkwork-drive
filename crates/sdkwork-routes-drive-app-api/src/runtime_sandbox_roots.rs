@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use sdkwork_utils_rust::sha256_hash;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 
 use crate::app_context::DriveRequestContext;
 
@@ -51,7 +51,7 @@ fn discover_runtime_sandbox_roots_with(
 }
 
 pub(crate) async fn ensure_runtime_sandbox_roots(
-    pool: &AnyPool,
+    pool: &PgPool,
     context: &DriveRequestContext,
     roots: &[RuntimeSandboxRoot],
 ) -> Result<(), sqlx::Error> {
@@ -126,9 +126,8 @@ fn stable_hash(parts: &[&[u8]]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sdkwork_drive_config::DatabaseEngine;
+    
     use sdkwork_drive_sandbox_local::LocalSandboxDirectoryProvider;
-    use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
     use sdkwork_drive_workspace_service::{
         application::sandbox_directory_service::{
             DriveSandboxDirectoryService, ListSandboxDirectoryCommand,
@@ -140,7 +139,7 @@ mod tests {
         },
         ports::sandbox_principal_resolver::EffectiveSandboxPrincipal,
     };
-    use sqlx::any::AnyPoolOptions;
+    
     use sqlx::Row;
 
     #[cfg(windows)]
@@ -167,15 +166,11 @@ mod tests {
 
     #[tokio::test]
     async fn runtime_roots_and_user_grants_are_created_idempotently() {
-        sqlx::any::install_default_drivers();
-        let pool = AnyPoolOptions::new()
-            .max_connections(1)
-            .connect("sqlite::memory:")
-            .await
-            .expect("create runtime-root test database");
-        install_any_schema(&pool, DatabaseEngine::Sqlite)
-            .await
-            .expect("install Drive schema");
+        let Some((pool, _database_guard)) =
+            sdkwork_drive_test_support::postgres_test_database().await
+        else {
+            return;
+        };
         let root = tempfile::tempdir().expect("create runtime root");
         let context = DriveRequestContext {
             tenant_id: "tenant-runtime".to_owned(),

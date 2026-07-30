@@ -1,12 +1,9 @@
 use axum::body::{to_bytes, Body};
 use http::{Method, Request, StatusCode};
-use sdkwork_drive_config::DatabaseEngine;
 use sdkwork_drive_workspace_service::drive_share_token_hash;
-use sdkwork_drive_workspace_service::infrastructure::sql::install_any_schema;
 use sdkwork_routes_drive_open_api::{build_router_with_pool, open_route_manifest};
 use sdkwork_web_core::RouteAuth;
-use sqlx::any::AnyPoolOptions;
-use sqlx::AnyPool;
+use sqlx::PgPool;
 use tower::util::ServiceExt;
 
 fn envelope_item<'a>(payload: &'a serde_json::Value) -> &'a serde_json::Value {
@@ -41,15 +38,10 @@ fn open_route_manifest_declares_public_share_link_operations() {
 
 #[tokio::test]
 async fn open_share_link_resolves_and_creates_download_url_without_exposing_token_hash() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -118,7 +110,7 @@ async fn open_share_link_resolves_and_creates_download_url_without_exposing_toke
             id, tenant_id, node_id, token_hash, role, expires_at_epoch_ms,
             download_limit, download_count, lifecycle_status, version, created_by, updated_by
         ) VALUES (
-            'share-open', 'tenant-open', 'node-open', ?1, 'reader', 4102444800000,
+            'share-open', 'tenant-open', 'node-open', $1, 'reader', 4102444800000,
             2, 0, 'active', 1, 'user-open', 'user-open'
         )",
     )
@@ -198,15 +190,10 @@ async fn open_share_link_resolves_and_creates_download_url_without_exposing_toke
 
 #[tokio::test]
 async fn open_share_link_download_reads_object_from_its_bound_provider_when_bucket_is_shared() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -302,7 +289,7 @@ async fn open_share_link_download_reads_object_from_its_bound_provider_when_buck
             download_limit, download_count, lifecycle_status, version, created_by, updated_by
         ) VALUES (
             'share-open-shared-provider', 'tenant-open-shared-provider',
-            'node-open-shared-provider', ?1, 'reader', 4102444800000,
+            'node-open-shared-provider', $1, 'reader', 4102444800000,
             2, 0, 'active', 1, 'user-open-shared-provider',
             'user-open-shared-provider'
         )",
@@ -375,15 +362,11 @@ async fn open_share_link_download_uses_explicit_cloud_s3_provider_kinds_with_s3_
             "node-open-tos",
         ),
     ] {
-        sqlx::any::install_default_drivers();
-        let pool = AnyPoolOptions::new()
-            .max_connections(1)
-            .connect("sqlite::memory:")
-            .await
-            .expect("sqlite in-memory pool should be created");
-        install_any_schema(&pool, DatabaseEngine::Sqlite)
-            .await
-            .expect("sqlite schema should be installed");
+        let Some((pool, _database_guard)) =
+            sdkwork_drive_test_support::postgres_test_database().await
+        else {
+            return;
+        };
 
         let tenant_id = format!("tenant-{provider_kind}");
         let space_id = format!("space-{provider_kind}");
@@ -397,7 +380,7 @@ async fn open_share_link_download_uses_explicit_cloud_s3_provider_kinds_with_s3_
             "INSERT INTO dr_drive_space (
                 id, tenant_id, owner_subject_type, owner_subject_id, space_type,
                 display_name, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, ?2, 'user', 'user-open-cloud', 'personal',
+            ) VALUES ($1, $2, 'user', 'user-open-cloud', 'personal',
                 'Open Cloud', 'active', 1, 'user-open-cloud', 'user-open-cloud')",
         )
         .bind(&space_id)
@@ -409,7 +392,7 @@ async fn open_share_link_download_uses_explicit_cloud_s3_provider_kinds_with_s3_
             "INSERT INTO dr_drive_node (
                 id, tenant_id, space_id, parent_node_id, node_type, node_name,
                 content_state, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, ?2, ?3, NULL, 'file', 'public.pdf',
+            ) VALUES ($1, $2, $3, NULL, 'file', 'public.pdf',
                 'ready', 'active', 1, 'user-open-cloud', 'user-open-cloud')",
         )
         .bind(node_id)
@@ -457,7 +440,7 @@ async fn open_share_link_download_uses_explicit_cloud_s3_provider_kinds_with_s3_
             "INSERT INTO dr_drive_node_share_link (
                 id, tenant_id, node_id, token_hash, role, expires_at_epoch_ms,
                 download_limit, download_count, lifecycle_status, version, created_by, updated_by
-            ) VALUES (?1, ?2, ?3, ?4, 'reader', 4102444800000,
+            ) VALUES ($1, $2, $3, $4, 'reader', 4102444800000,
                 2, 0, 'active', 1, 'user-open-cloud', 'user-open-cloud')",
         )
         .bind(&share_id)
@@ -509,15 +492,10 @@ async fn open_share_link_download_uses_explicit_cloud_s3_provider_kinds_with_s3_
 
 #[tokio::test]
 async fn open_share_link_download_requires_active_object_store_provider() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -581,7 +559,7 @@ async fn open_share_link_download_requires_active_object_store_provider() {
             download_limit, download_count, lifecycle_status, version, created_by, updated_by
         ) VALUES (
             'share-open-no-provider', 'tenant-open-no-provider', 'node-open-no-provider',
-            ?1, 'reader', 4102444800000, 2, 0, 'active', 1, 'user-open-no-provider',
+            $1, 'reader', 4102444800000, 2, 0, 'active', 1, 'user-open-no-provider',
             'user-open-no-provider'
         )",
     )
@@ -629,15 +607,10 @@ async fn open_share_link_download_requires_active_object_store_provider() {
 
 #[tokio::test]
 async fn open_share_link_download_requires_active_storage_object() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -666,7 +639,7 @@ async fn open_share_link_download_requires_active_storage_object() {
             download_limit, download_count, lifecycle_status, version, created_by, updated_by
         ) VALUES (
             'share-open-no-object', 'tenant-open-no-object', 'node-open-no-object',
-            ?1, 'reader', 4102444800000, 2, 0, 'active', 1, 'user-open-no-object',
+            $1, 'reader', 4102444800000, 2, 0, 'active', 1, 'user-open-no-object',
             'user-open-no-object'
         )",
     )
@@ -726,15 +699,10 @@ async fn open_share_link_download_requires_active_storage_object() {
 
 #[tokio::test]
 async fn open_share_link_download_limit_is_consumed_atomically() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(2)
-        .connect("sqlite:file:open_share_download_limit?mode=memory&cache=shared")
-        .await
-        .expect("sqlite shared in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -805,7 +773,7 @@ async fn open_share_link_download_limit_is_consumed_atomically() {
             download_limit, download_count, lifecycle_status, version, created_by, updated_by
         ) VALUES (
             'share-open-limit', 'tenant-open-limit', 'node-open-limit',
-            ?1, 'reader', 4102444800000, 1, 0, 'active', 1,
+            $1, 'reader', 4102444800000, 1, 0, 'active', 1,
             'user-open-limit', 'user-open-limit'
         )",
     )
@@ -862,15 +830,10 @@ async fn open_share_link_download_limit_is_consumed_atomically() {
 
 #[tokio::test]
 async fn open_share_link_download_rejects_ttl_outside_contract_before_consuming_limit() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -941,7 +904,7 @@ async fn open_share_link_download_rejects_ttl_outside_contract_before_consuming_
             download_limit, download_count, lifecycle_status, version, created_by, updated_by
         ) VALUES (
             'share-open-ttl', 'tenant-open-ttl', 'node-open-ttl',
-            ?1, 'reader', 4102444800000, 1, 0, 'active', 1,
+            $1, 'reader', 4102444800000, 1, 0, 'active', 1,
             'user-open-ttl', 'user-open-ttl'
         )",
     )
@@ -989,15 +952,10 @@ async fn open_share_link_download_rejects_ttl_outside_contract_before_consuming_
 
 #[tokio::test]
 async fn open_share_link_download_treats_subsecond_remaining_share_ttl_as_expired() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -1073,7 +1031,7 @@ async fn open_share_link_download_treats_subsecond_remaining_share_ttl_as_expire
             download_limit, download_count, lifecycle_status, version, created_by, updated_by
         ) VALUES (
             'share-open-short-ttl', 'tenant-open-short-ttl', 'node-open-short-ttl',
-            ?1, 'reader', ?2, 1, 0, 'active', 1,
+            $1, 'reader', $2, 1, 0, 'active', 1,
             'user-open-short-ttl', 'user-open-short-ttl'
         )",
     )
@@ -1118,15 +1076,10 @@ async fn open_share_link_download_treats_subsecond_remaining_share_ttl_as_expire
 
 #[tokio::test]
 async fn open_share_link_requires_valid_access_code_when_configured() {
-    sqlx::any::install_default_drivers();
-    let pool = AnyPoolOptions::new()
-        .max_connections(1)
-        .connect("sqlite::memory:")
-        .await
-        .expect("sqlite in-memory pool should be created");
-    install_any_schema(&pool, DatabaseEngine::Sqlite)
-        .await
-        .expect("sqlite schema should be installed");
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
 
     sqlx::query(
         "INSERT INTO dr_drive_space (
@@ -1156,7 +1109,7 @@ async fn open_share_link_requires_valid_access_code_when_configured() {
             download_limit, download_count, lifecycle_status, version, created_by, updated_by
         ) VALUES (
             'share-open-access-code', 'tenant-open-access-code', 'node-open-access-code',
-            ?1, ?2, 'reader', 4102444800000, NULL, 0, 'active', 1, 'user-open-access-code',
+            $1, $2, 'reader', 4102444800000, NULL, 0, 'active', 1, 'user-open-access-code',
             'user-open-access-code'
         )",
     )
@@ -1204,12 +1157,7 @@ async fn open_share_link_requires_valid_access_code_when_configured() {
 
 #[tokio::test]
 async fn open_metrics_endpoint_exposes_http_histogram_and_counters() {
-    let app = build_router_with_pool(
-        AnyPoolOptions::new()
-            .max_connections(1)
-            .connect_lazy("sqlite::memory:")
-            .expect("sqlite in-memory pool should be created"),
-    );
+    let app = build_router_with_pool(sdkwork_drive_test_support::lazy_postgres_test_pool());
 
     let health = app
         .clone()
@@ -1255,15 +1203,15 @@ struct StorageProviderFixture<'a> {
     actor_id: &'a str,
 }
 
-async fn seed_storage_provider_fixture(pool: &AnyPool, fixture: StorageProviderFixture<'_>) {
+async fn seed_storage_provider_fixture(pool: &PgPool, fixture: StorageProviderFixture<'_>) {
     sqlx::query(
         "INSERT INTO dr_drive_storage_provider (
             id, provider_kind, name, endpoint_url, region, bucket, path_style,
             strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
             status, version, created_by, updated_by
         ) VALUES (
-            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8,
-            'plain:test-access:test-secret', NULL, NULL, ?9, 1, ?10, ?10
+            $1, $2, $3, $4, $5, $6, $7, $8,
+            'plain:test-access:test-secret', NULL, NULL, $9, 1, $10, $10
         )",
     )
     .bind(fixture.provider_id)
@@ -1303,7 +1251,7 @@ struct StorageObjectFixture<'a> {
 }
 
 async fn seed_storage_object_fixture(
-    pool: &AnyPool,
+    pool: &PgPool,
     fixture: StorageObjectFixture<'_>,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
@@ -1311,7 +1259,7 @@ async fn seed_storage_object_fixture(
             id, tenant_id, node_id, version_no, storage_provider_id, bucket,
             object_key, content_type, content_length, checksum_sha256_hex,
             lifecycle_status, created_by, updated_by
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?12)",
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)",
     )
     .bind(fixture.object_id)
     .bind(fixture.tenant_id)
