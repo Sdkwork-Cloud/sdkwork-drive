@@ -293,7 +293,7 @@ for (const routerCrate of routerCrates) {
     `${crateName} must resolve IAM sessions through iam_web_request_context_resolver_from_env per IAM_LOGIN_INTEGRATION_SPEC.md`,
   );
   assert(
-    !webBootstrap.includes('SDKWORK_CLAW_DATABASE_URL')
+    !webBootstrap.includes('SDKWORK_DATABASE_URL')
       || !webBootstrap.includes('wrap_router_with_web_framework_from_env'),
     `${crateName} must not gate IAM resolver wiring on Drive database env presence`,
   );
@@ -635,14 +635,14 @@ assert(
 );
 
 const canonicalWorkspaceDatabaseKeys = [
-  'SDKWORK_CLAW_DATABASE_ENGINE',
-  'SDKWORK_CLAW_DATABASE_HOST',
-  'SDKWORK_CLAW_DATABASE_PORT',
-  'SDKWORK_CLAW_DATABASE_NAME',
-  'SDKWORK_CLAW_DATABASE_SCHEMA',
-  'SDKWORK_CLAW_DATABASE_USERNAME',
-  'SDKWORK_CLAW_DATABASE_SSL_MODE',
-  'SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS',
+  'SDKWORK_DATABASE_ENGINE',
+  'SDKWORK_DATABASE_HOST',
+  'SDKWORK_DATABASE_PORT',
+  'SDKWORK_DATABASE_NAME',
+  'SDKWORK_DATABASE_SCHEMA',
+  'SDKWORK_DATABASE_USERNAME',
+  'SDKWORK_DATABASE_SSL_MODE',
+  'SDKWORK_DATABASE_MAX_CONNECTIONS',
 ];
 for (const relativePath of [
   '.env.postgres.example',
@@ -657,16 +657,16 @@ for (const relativePath of [
   }
   assert(
     !text.includes('SDKWORK_DRIVE_DATABASE_'),
-    `${relativePath} must not use per-application database identity keys; use SDKWORK_CLAW_DATABASE_* per ENVIRONMENT_SPEC.md section 7.1`,
+    `${relativePath} must not use per-application database identity keys; use SDKWORK_DATABASE_* per ENVIRONMENT_SPEC.md section 7.1`,
   );
 }
 assert(
-  readText('.env.postgres.example').includes('SDKWORK_CLAW_DATABASE_PASSWORD='),
+  readText('.env.postgres.example').includes('SDKWORK_DATABASE_PASSWORD='),
   '.env.postgres.example must declare a local-only placeholder database password',
 );
 assert(
   readText('etc/topology/standalone.production.env').includes(
-    'SDKWORK_CLAW_DATABASE_PASSWORD_FILE=',
+    'SDKWORK_DATABASE_PASSWORD_FILE=',
   ),
   'standalone.production.env must reference a protected database password file',
 );

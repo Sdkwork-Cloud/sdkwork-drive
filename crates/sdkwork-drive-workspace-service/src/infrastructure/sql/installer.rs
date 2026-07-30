@@ -5,7 +5,7 @@ use sqlx::any::AnyPoolOptions;
 use sqlx::AnyPool;
 use sqlx::Executor;
 
-use sdkwork_database_config::claw_database::postgres_url_with_search_path;
+use sdkwork_database_config::workspace_database::normalize_workspace_postgres_url;
 use sdkwork_database_config::{
     DatabaseConfig as StandardDatabaseConfig, DatabaseEngine as StandardDatabaseEngine,
 };
@@ -263,7 +263,8 @@ fn drive_database_config_with_unified_postgres_search_path(
         return Ok(config.clone());
     }
 
-    let url = postgres_url_with_search_path(config.url(), "SDKWORK_DRIVE");
+    let url = normalize_workspace_postgres_url(config.url())
+        .map_err(|error| sqlx::Error::Configuration(error.to_string().into()))?;
     DatabaseConfig::from_url_with_max_connections(url.as_str(), config.max_connections())
         .map_err(|error| sqlx::Error::Configuration(error.to_string().into()))
 }
