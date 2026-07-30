@@ -61,13 +61,13 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: sdkwork
+          POSTGRES_USER: sdkwork_ai_test
           POSTGRES_PASSWORD: sdkwork
           POSTGRES_DB: sdkwork_ai_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U sdkwork -d sdkwork_ai_test"
+          --health-cmd "pg_isready -U sdkwork_ai_test -d sdkwork_ai_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -93,7 +93,7 @@ jobs:
 
       - name: Run PostgreSQL integration tests
         env:
-          SDKWORK_DATABASE_URL: postgres://sdkwork:sdkwork@localhost:5432/sdkwork_ai_test
+          SDKWORK_DATABASE_URL: postgres://sdkwork_ai_test:sdkwork@localhost:5432/sdkwork_ai_test
         run: cargo test --workspace -- --nocapture
 
   release-readiness-strict:
