@@ -126,7 +126,7 @@ fn stable_hash(parts: &[&[u8]]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     use sdkwork_drive_sandbox_local::LocalSandboxDirectoryProvider;
     use sdkwork_drive_workspace_service::{
         application::sandbox_directory_service::{
@@ -139,7 +139,7 @@ mod tests {
         },
         ports::sandbox_principal_resolver::EffectiveSandboxPrincipal,
     };
-    
+
     use sqlx::Row;
 
     #[cfg(windows)]

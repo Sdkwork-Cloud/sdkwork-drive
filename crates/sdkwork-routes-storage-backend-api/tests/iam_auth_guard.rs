@@ -169,7 +169,8 @@ async fn admin_storage_production_routes_require_valid_dual_tokens() {
 
 #[tokio::test]
 async fn admin_storage_routes_validate_token_derived_app_context() {
-    let Some((app, _database_guard)) = admin_storage_router_allowing_unsigned_context().await else {
+    let Some((app, _database_guard)) = admin_storage_router_allowing_unsigned_context().await
+    else {
         return;
     };
 
@@ -249,7 +250,8 @@ async fn admin_storage_routes_validate_token_derived_app_context() {
 
 #[tokio::test]
 async fn admin_storage_routes_reject_personal_login_scope_session() {
-    let Some((app, _database_guard)) = admin_storage_router_allowing_unsigned_context().await else {
+    let Some((app, _database_guard)) = admin_storage_router_allowing_unsigned_context().await
+    else {
         return;
     };
 
@@ -279,7 +281,8 @@ async fn admin_storage_routes_reject_personal_login_scope_session() {
 
 #[tokio::test]
 async fn admin_storage_routes_reject_audit_only_scope() {
-    let Some((app, _database_guard)) = admin_storage_router_allowing_unsigned_context().await else {
+    let Some((app, _database_guard)) = admin_storage_router_allowing_unsigned_context().await
+    else {
         return;
     };
     let audit_scope = "drive.audit.admin";

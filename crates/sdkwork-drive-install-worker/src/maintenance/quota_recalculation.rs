@@ -64,7 +64,6 @@ pub async fn recalculate_quotas(pool: &PgPool) -> Result<QuotaRecalculationResul
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[tokio::test]
     async fn recalculate_quotas_retires_objects_for_inactive_nodes() {
