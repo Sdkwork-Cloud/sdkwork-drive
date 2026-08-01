@@ -5,10 +5,15 @@ import { Clock, FolderOpen, CloudUpload, Zap } from 'lucide-react';
 
 interface CloudDriveActionGridProps {
   activeTab: string;
-  setActiveTab: (tab: "recent" | "files" | "shared") => void;
+  setActiveTab: (tab: "recent" | "files") => void;
+  onUnavailableAction: () => void;
 }
 
-export const CloudDriveActionGrid: React.FC<CloudDriveActionGridProps> = ({ activeTab, setActiveTab }) => {
+export const CloudDriveActionGrid: React.FC<CloudDriveActionGridProps> = ({
+  activeTab,
+  setActiveTab,
+  onUnavailableAction,
+}) => {
   const { t } = useTranslation();
 const actions = [
     {
@@ -48,11 +53,13 @@ const actions = [
           <div
             key={item.id}
             className="flex flex-col items-center gap-2 cursor-pointer group"
-            onClick={() =>
-              item.id === "recent" || item.id === "files"
-                ? setActiveTab(item.id as any)
-                : null
-            }
+            onClick={() => {
+              if (item.id === "recent" || item.id === "files") {
+                setActiveTab(item.id);
+                return;
+              }
+              onUnavailableAction();
+            }}
           >
             <div
               className={cn(
