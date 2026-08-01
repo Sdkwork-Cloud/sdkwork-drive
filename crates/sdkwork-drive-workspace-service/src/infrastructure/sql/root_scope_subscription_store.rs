@@ -79,11 +79,11 @@ impl DriveRootScopeSubscriptionStore for SqlRootScopeSubscriptionStore {
         tenant_id: &str,
         subscription_uuid: &str,
     ) -> Result<DriveRootScopeSubscription, DriveServiceError> {
-        let row = sqlx::query(&format!(
+        let row = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT {SUBSCRIPTION_SELECT_COLUMNS}
              FROM dr_drive_root_scope_subscription
              WHERE tenant_id=$1 AND uuid=$2",
-        ))
+        )))
         .bind(tenant_id)
         .bind(subscription_uuid)
         .fetch_optional(&self.pool)
@@ -241,7 +241,7 @@ async fn find_by_consumer_on_connection(
     tenant_id: &str,
     consumer_resource_id: &str,
 ) -> Result<Option<DriveRootScopeSubscription>, DriveServiceError> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {SUBSCRIPTION_SELECT_COLUMNS}
          FROM dr_drive_root_scope_subscription
          WHERE tenant_id=$1
@@ -250,7 +250,7 @@ async fn find_by_consumer_on_connection(
          ORDER BY CASE scope_status WHEN 'active' THEN 0 WHEN 'suspended' THEN 1 ELSE 2 END,
                   created_at DESC
          LIMIT 1",
-    ))
+    )))
     .bind(tenant_id)
     .bind(KNOWLEDGEBASE_RAW_CONSUMER_KIND)
     .bind(consumer_resource_id)

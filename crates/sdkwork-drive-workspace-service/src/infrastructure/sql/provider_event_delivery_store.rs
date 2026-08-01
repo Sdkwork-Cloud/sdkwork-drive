@@ -68,11 +68,11 @@ async fn ensure_on_connection(
     command: &EnsureDriveProviderEventDelivery,
 ) -> Result<EnsureDriveProviderEventDeliveryResult, DriveServiceError> {
     let space_id = resolve_active_provider_resource(connection, command).await?;
-    let existing = sqlx::query(&format!(
+    let existing = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {DELIVERY_SELECT_COLUMNS}, space_id, node_id, resource_type, resource_id, token_hash
          FROM dr_drive_watch_channel
          WHERE tenant_id=$1 AND id=$2",
-    ))
+    )))
     .bind(&command.tenant_id)
     .bind(&command.channel_id)
     .fetch_optional(&mut *connection)
@@ -163,11 +163,11 @@ async fn resolve_active_provider_resource(
             ("dr_drive_website_root", "root_status", "active", "")
         }
     };
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT space_id, {status_column} AS resource_status
          FROM {table}
          WHERE tenant_id=$1 AND uuid=$2{extra_predicate}",
-    ))
+    )))
     .bind(&command.tenant_id)
     .bind(&command.provider_resource_uuid)
     .fetch_optional(&mut *connection)
@@ -214,10 +214,10 @@ async fn read_delivery(
     command: &EnsureDriveProviderEventDelivery,
     created: bool,
 ) -> Result<EnsureDriveProviderEventDeliveryResult, DriveServiceError> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {DELIVERY_SELECT_COLUMNS}
          FROM dr_drive_watch_channel WHERE tenant_id=$1 AND id=$2",
-    ))
+    )))
     .bind(&command.tenant_id)
     .bind(&command.channel_id)
     .fetch_one(&mut *connection)

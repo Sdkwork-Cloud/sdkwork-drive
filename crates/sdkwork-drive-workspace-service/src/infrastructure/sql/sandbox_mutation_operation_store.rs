@@ -134,7 +134,7 @@ impl DriveSandboxMutationOperationStore for SqlSandboxMutationOperationStore {
         if operation.lease_token.is_some() {
             update_sql.push_str(" AND lease_token=$9");
         }
-        let mut update = sqlx::query(&update_sql)
+        let mut update = sqlx::query(sqlx::AssertSqlSafe(update_sql.as_str()))
             .bind(entry_id)
             .bind(parent_id)
             .bind(kind)

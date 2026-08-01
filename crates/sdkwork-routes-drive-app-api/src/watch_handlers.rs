@@ -184,7 +184,7 @@ pub(crate) async fn list_watch_channels(
             let reader_visible_predicate = reader_visible_predicate.clone();
             async move {
                 let rows = if let Some(resource_type) = resource_type.as_deref() {
-                    sqlx::query(&format!(
+                    sqlx::query(sqlx::AssertSqlSafe(format!(
                         "SELECT id, tenant_id, space_id, node_id, resource_type, resource_id,
                                 channel_type, address, expiration_epoch_ms, lifecycle_status, version
                          FROM dr_drive_watch_channel
@@ -194,7 +194,7 @@ pub(crate) async fn list_watch_channels(
                            AND ({reader_visible_predicate})
                          ORDER BY created_at ASC, id ASC
                          LIMIT $6 OFFSET $7",
-                    ))
+                    )))
                     .bind(&tenant_id)
                     .bind(&subject_type)
                     .bind(&subject_id)
@@ -205,7 +205,7 @@ pub(crate) async fn list_watch_channels(
                     .fetch_all(&pool)
                     .await
                 } else {
-                    sqlx::query(&format!(
+                    sqlx::query(sqlx::AssertSqlSafe(format!(
                         "SELECT id, tenant_id, space_id, node_id, resource_type, resource_id,
                                 channel_type, address, expiration_epoch_ms, lifecycle_status, version
                          FROM dr_drive_watch_channel
@@ -214,7 +214,7 @@ pub(crate) async fn list_watch_channels(
                            AND ({reader_visible_predicate})
                          ORDER BY created_at ASC, id ASC
                          LIMIT $5 OFFSET $6",
-                    ))
+                    )))
                     .bind(&tenant_id)
                     .bind(&subject_type)
                     .bind(&subject_id)

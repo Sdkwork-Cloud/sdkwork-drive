@@ -471,7 +471,7 @@ async fn list_folder_descendant_files(
                 ));
             }
             let batch_limit = remaining.min(500) as i64;
-            let rows = sqlx::query(&format!(
+            let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                 "SELECT {NODE_API_SELECT_COLUMNS}
                  FROM dr_drive_node
                  WHERE tenant_id=$1
@@ -479,7 +479,7 @@ async fn list_folder_descendant_files(
                    AND lifecycle_status='active'
                  ORDER BY node_type DESC, node_name ASC, id ASC
                  LIMIT $3 OFFSET $4",
-            ))
+            )))
             .bind(tenant_id)
             .bind(&parent_id)
             .bind(batch_limit)

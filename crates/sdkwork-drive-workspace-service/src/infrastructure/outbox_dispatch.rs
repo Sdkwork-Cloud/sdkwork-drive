@@ -213,7 +213,7 @@ async fn claim_next_pending_outbox_event(
     exclude_ids: &HashSet<String>,
 ) -> Result<Option<ClaimedOutboxEvent>, String> {
     let exclude_clause = build_outbox_claim_exclude_clause(exclude_ids);
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "UPDATE dr_drive_domain_outbox
          SET attempt_count = attempt_count + 1
          WHERE id = (
@@ -225,7 +225,7 @@ async fn claim_next_pending_outbox_event(
            FOR UPDATE SKIP LOCKED
          )
          RETURNING id, tenant_id, space_id, event_type, attempt_count, payload_json",
-    ))
+    )))
     .bind(MAX_OUTBOX_ATTEMPTS)
     .fetch_optional(pool)
     .await
@@ -329,7 +329,7 @@ async fn dispatch_outbox_event(
         ") ORDER BY created_at ASC LIMIT {}",
         MAX_WATCH_CHANNELS_PER_OUTBOX_EVENT + 1
     ));
-    let mut query = sqlx::query(&channel_query)
+    let mut query = sqlx::query(sqlx::AssertSqlSafe(channel_query.as_str()))
         .bind(event.tenant_id)
         .bind(event.space_id)
         .bind(now_epoch_ms)

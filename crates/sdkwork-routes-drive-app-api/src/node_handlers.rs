@@ -102,7 +102,7 @@ pub(crate) async fn list_nodes(
                 let parent_node_id = parent_node_id_for_fetch.clone();
                 let order_by = order_by.clone();
                 async move {
-                    let rows = sqlx::query(&format!(
+                    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                         "SELECT {NODE_API_SELECT_COLUMNS}
                          FROM dr_drive_node
                          WHERE tenant_id=$1
@@ -112,7 +112,7 @@ pub(crate) async fn list_nodes(
                            AND ((parent_node_id IS NULL AND $3 IS NULL) OR parent_node_id = $3)
                          ORDER BY {order_by}
                          LIMIT $4 OFFSET $5",
-                    ))
+                    )))
                     .bind(&tenant_id)
                     .bind(&space_id)
                     .bind(parent_node_id.as_deref())
@@ -142,7 +142,7 @@ pub(crate) async fn list_nodes(
                 let reader_acl_predicate = reader_acl_predicate.clone();
                 let order_by = order_by.clone();
                 async move {
-                    let rows = sqlx::query(&format!(
+                    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                         "SELECT {NODE_API_SELECT_COLUMNS}
                          FROM dr_drive_node
                          WHERE tenant_id=$1
@@ -153,7 +153,7 @@ pub(crate) async fn list_nodes(
                            AND ({reader_acl_predicate})
                          ORDER BY {order_by}
                          LIMIT $6 OFFSET $7",
-                    ))
+                    )))
                     .bind(&tenant_id)
                     .bind(&space_id)
                     .bind(parent_node_id.as_deref())
@@ -1651,7 +1651,7 @@ async fn fetch_folder_children_page(
     limit: i64,
 ) -> Result<Vec<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
     let rows = if scope.is_space_owner {
-        sqlx::query(&format!(
+        sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
              WHERE tenant_id=$1
@@ -1662,7 +1662,7 @@ async fn fetch_folder_children_page(
                AND ((parent_node_id IS NULL AND $3 IS NULL) OR parent_node_id = $3)
              ORDER BY node_name ASC, id ASC
              LIMIT $4 OFFSET $5",
-        ))
+        )))
         .bind(scope.tenant_id)
         .bind(scope.space_id)
         .bind(parent_node_id)
@@ -1676,7 +1676,7 @@ async fn fetch_folder_children_page(
     } else {
         let reader_acl_predicate =
             acl_sql::reader_inherited_permission_exists_sql("dr_drive_node", "$4", "$5");
-        sqlx::query(&format!(
+        sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
              WHERE tenant_id=$1
@@ -1688,7 +1688,7 @@ async fn fetch_folder_children_page(
                AND ({reader_acl_predicate})
              ORDER BY node_name ASC, id ASC
              LIMIT $6 OFFSET $7",
-        ))
+        )))
         .bind(scope.tenant_id)
         .bind(scope.space_id)
         .bind(parent_node_id)

@@ -122,7 +122,7 @@ async fn load_ui_folder_colors_for_nodes(
                AND lifecycle_status='active'
                AND node_id IN ({placeholders})"
         );
-        let mut query = sqlx::query(&sql).bind(tenant_id);
+        let mut query = sqlx::query(sqlx::AssertSqlSafe(sql.as_str())).bind(tenant_id);
         for node_id in chunk {
             query = query.bind(node_id);
         }

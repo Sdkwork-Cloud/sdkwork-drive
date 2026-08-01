@@ -130,7 +130,7 @@ pub(crate) async fn list_trashed_nodes(
                     let order_by = order_by_for_fetch.clone();
                     async move {
                         let rows = if let Some(parent_node_id) = parent_node_id.as_deref() {
-                            sqlx::query(&format!(
+                            sqlx::query(sqlx::AssertSqlSafe(format!(
                                 "SELECT {NODE_API_SELECT_COLUMNS}
                                  FROM dr_drive_node
                                  WHERE tenant_id=$1
@@ -139,7 +139,7 @@ pub(crate) async fn list_trashed_nodes(
                                    AND parent_node_id=$3
                                  ORDER BY {order_by}
                                  LIMIT $4 OFFSET $5",
-                            ))
+                            )))
                             .bind(&tenant_id)
                             .bind(&space_id)
                             .bind(parent_node_id)
@@ -148,7 +148,7 @@ pub(crate) async fn list_trashed_nodes(
                             .fetch_all(&pool)
                             .await
                         } else {
-                            sqlx::query(&format!(
+                            sqlx::query(sqlx::AssertSqlSafe(format!(
                                 "SELECT {NODE_API_SELECT_COLUMNS}
                                  FROM dr_drive_node
                                  WHERE tenant_id=$1
@@ -156,7 +156,7 @@ pub(crate) async fn list_trashed_nodes(
                                    AND lifecycle_status='trashed'
                                  ORDER BY {order_by}
                                  LIMIT $3 OFFSET $4",
-                            ))
+                            )))
                             .bind(&tenant_id)
                             .bind(&space_id)
                             .bind(batch_limit as i64)
@@ -184,7 +184,7 @@ pub(crate) async fn list_trashed_nodes(
                     let reader_acl_predicate = reader_acl_predicate.clone();
                     let order_by = order_by_for_fetch.clone();
                     async move {
-                        let rows = sqlx::query(&format!(
+                        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                              FROM dr_drive_node
                              WHERE tenant_id=$1
@@ -194,7 +194,7 @@ pub(crate) async fn list_trashed_nodes(
                                AND ({reader_acl_predicate})
                              ORDER BY {order_by}
                              LIMIT $6 OFFSET $7",
-                        ))
+                        )))
                         .bind(&tenant_id)
                         .bind(&space_id)
                         .bind(parent_node_id)
@@ -223,7 +223,7 @@ pub(crate) async fn list_trashed_nodes(
                     let reader_acl_predicate = reader_acl_predicate.clone();
                     let order_by = order_by_for_fetch.clone();
                     async move {
-                        let rows = sqlx::query(&format!(
+                        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                              FROM dr_drive_node
                              WHERE tenant_id=$1
@@ -232,7 +232,7 @@ pub(crate) async fn list_trashed_nodes(
                                AND ({reader_acl_predicate})
                              ORDER BY {order_by}
                              LIMIT $5 OFFSET $6",
-                        ))
+                        )))
                         .bind(&tenant_id)
                         .bind(&space_id)
                         .bind(&subject_type)
@@ -266,7 +266,7 @@ pub(crate) async fn list_trashed_nodes(
                 async move {
                     let rows = if let Some(space_id) = space_id.as_deref() {
                         if let Some(parent_node_id) = parent_node_id.as_deref() {
-                            sqlx::query(&format!(
+                            sqlx::query(sqlx::AssertSqlSafe(format!(
                                 "SELECT {NODE_API_SELECT_COLUMNS}
                                  FROM dr_drive_node
                                  WHERE tenant_id=$1
@@ -276,7 +276,7 @@ pub(crate) async fn list_trashed_nodes(
                                    AND ({reader_acl_predicate})
                                  ORDER BY {order_by}
                                  LIMIT $6 OFFSET $7",
-                            ))
+                            )))
                             .bind(&tenant_id)
                             .bind(space_id)
                             .bind(parent_node_id)
@@ -287,14 +287,14 @@ pub(crate) async fn list_trashed_nodes(
                             .fetch_all(&pool)
                             .await
                         } else {
-                            sqlx::query(&format!(
+                            sqlx::query(sqlx::AssertSqlSafe(format!(
                                 "SELECT {NODE_API_SELECT_COLUMNS}
                                  FROM dr_drive_node
                                  WHERE tenant_id=$1 AND space_id=$2 AND lifecycle_status='trashed'
                                    AND ({reader_acl_predicate})
                                  ORDER BY {order_by}
                                  LIMIT $5 OFFSET $6",
-                            ))
+                            )))
                             .bind(&tenant_id)
                             .bind(space_id)
                             .bind(&subject_type)
@@ -305,7 +305,7 @@ pub(crate) async fn list_trashed_nodes(
                             .await
                         }
                     } else if let Some(parent_node_id) = parent_node_id.as_deref() {
-                        sqlx::query(&format!(
+                        sqlx::query(sqlx::AssertSqlSafe(format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                              FROM dr_drive_node
                              WHERE tenant_id=$1
@@ -314,7 +314,7 @@ pub(crate) async fn list_trashed_nodes(
                                AND ({reader_acl_predicate})
                              ORDER BY {order_by}
                              LIMIT $5 OFFSET $6",
-                        ))
+                        )))
                         .bind(&tenant_id)
                         .bind(parent_node_id)
                         .bind(&subject_type)
@@ -324,14 +324,14 @@ pub(crate) async fn list_trashed_nodes(
                         .fetch_all(&pool)
                         .await
                     } else {
-                        sqlx::query(&format!(
+                        sqlx::query(sqlx::AssertSqlSafe(format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                              FROM dr_drive_node
                              WHERE tenant_id=$1 AND lifecycle_status='trashed'
                                AND ({reader_acl_predicate})
                              ORDER BY {order_by}
                              LIMIT $4 OFFSET $5",
-                        ))
+                        )))
                         .bind(&tenant_id)
                         .bind(&subject_type)
                         .bind(&subject_id)

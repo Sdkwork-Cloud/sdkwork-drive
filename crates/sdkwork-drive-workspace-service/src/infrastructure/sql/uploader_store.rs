@@ -457,7 +457,7 @@ impl DriveUploaderStore for SqlUploaderStore {
         tenant_id: &str,
         task_id: &str,
     ) -> Result<Option<DriveUploadItem>, DriveServiceError> {
-        let row = sqlx::query(&format!(
+        let row = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT {DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS},
                     us.bucket AS object_bucket,
                     us.object_key AS object_key
@@ -466,7 +466,7 @@ impl DriveUploaderStore for SqlUploaderStore {
                ON us.tenant_id=ui.tenant_id
               AND us.id=ui.upload_session_id
              WHERE ui.tenant_id=$1 AND ui.task_id=$2",
-        ))
+        )))
         .bind(tenant_id)
         .bind(task_id)
         .fetch_optional(&self.pool)
@@ -482,11 +482,11 @@ impl DriveUploaderStore for SqlUploaderStore {
         &self,
         part: &NewDriveUploadPart,
     ) -> Result<DriveUploadPart, DriveServiceError> {
-        let existing = sqlx::query(&format!(
+        let existing = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT {DRIVE_UPLOAD_PART_SELECT_COLUMNS}
              FROM dr_drive_upload_part
              WHERE tenant_id=$1 AND upload_item_id=$2 AND part_no=$3",
-        ))
+        )))
         .bind(&part.tenant_id)
         .bind(&part.upload_item_id)
         .bind(part.part_no)
@@ -546,11 +546,11 @@ impl DriveUploaderStore for SqlUploaderStore {
             ))
         })?;
 
-        let row = sqlx::query(&format!(
+        let row = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT {DRIVE_UPLOAD_PART_SELECT_COLUMNS}
              FROM dr_drive_upload_part
              WHERE tenant_id=$1 AND upload_item_id=$2 AND part_no=$3",
-        ))
+        )))
         .bind(&part.tenant_id)
         .bind(&part.upload_item_id)
         .bind(part.part_no)
@@ -1074,7 +1074,7 @@ async fn find_stored_upload_completion_target(
     connection: &mut PgConnection,
     completion: &CompleteDriveStoredUpload,
 ) -> Result<StoredUploadCompletionTarget, DriveServiceError> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS},
                 us.bucket AS object_bucket,
                 us.object_key AS object_key,
@@ -1091,7 +1091,7 @@ async fn find_stored_upload_completion_target(
          WHERE ui.tenant_id=$1
            AND ui.id=$2
            AND ui.upload_session_id=$3",
-    ))
+    )))
     .bind(&completion.tenant_id)
     .bind(&completion.upload_item_id)
     .bind(&completion.upload_session_id)
@@ -1119,7 +1119,7 @@ async fn read_upload_item_by_id(
     tenant_id: &str,
     upload_item_id: &str,
 ) -> Result<DriveUploadItem, DriveServiceError> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {DRIVE_UPLOAD_ITEM_UI_SELECT_COLUMNS},
                 us.bucket AS object_bucket,
                 us.object_key AS object_key
@@ -1128,7 +1128,7 @@ async fn read_upload_item_by_id(
             ON us.tenant_id=ui.tenant_id
            AND us.id=ui.upload_session_id
          WHERE ui.tenant_id=$1 AND ui.id=$2",
-    ))
+    )))
     .bind(tenant_id)
     .bind(upload_item_id)
     .fetch_optional(&mut *connection)

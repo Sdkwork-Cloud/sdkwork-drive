@@ -125,7 +125,7 @@ pub async fn ensure_managed_website_parent_mutation_allowed(
     }
 
     let lock_clause = postgres_lock_clause("root");
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT root.id
          FROM dr_drive_website_root root
          WHERE root.tenant_id=$1
@@ -135,7 +135,7 @@ pub async fn ensure_managed_website_parent_mutation_allowed(
            AND root.root_status != 'archived'
          ORDER BY root.id ASC
          LIMIT 1{lock_clause}"
-    ))
+    )))
     .bind(tenant_id)
     .bind(space_id)
     .fetch_optional(&mut *connection)
@@ -160,7 +160,7 @@ pub async fn ensure_managed_website_space_mutation_allowed(
     space_id: &str,
 ) -> Result<(), DriveServiceError> {
     let lock_clause = postgres_lock_clause("root");
-    let root = sqlx::query(&format!(
+    let root = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT root.id
          FROM dr_drive_website_root root
          WHERE root.tenant_id=$1
@@ -169,7 +169,7 @@ pub async fn ensure_managed_website_space_mutation_allowed(
            AND root.root_status != 'archived'
          ORDER BY root.id ASC
          LIMIT 1{lock_clause}"
-    ))
+    )))
     .bind(tenant_id)
     .bind(space_id)
     .fetch_optional(&mut *connection)
@@ -186,7 +186,7 @@ pub async fn ensure_managed_website_space_mutation_allowed(
     }
 
     let lock_clause = postgres_lock_clause("sync");
-    let sync = sqlx::query(&format!(
+    let sync = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT sync.id
          FROM dr_drive_website_sync sync
          WHERE sync.tenant_id=$1
@@ -194,7 +194,7 @@ pub async fn ensure_managed_website_space_mutation_allowed(
            AND sync.sync_status NOT IN ('aborted', 'expired')
          ORDER BY sync.id ASC
          LIMIT 1{lock_clause}"
-    ))
+    )))
     .bind(tenant_id)
     .bind(space_id)
     .fetch_optional(&mut *connection)
@@ -218,7 +218,7 @@ async fn find_owning_sync_status(
     node_id: &str,
 ) -> Result<Option<String>, DriveServiceError> {
     let lock_clause = postgres_lock_clause("sync");
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "WITH RECURSIVE ancestry(id, parent_node_id, depth) AS (
             SELECT id, parent_node_id, 0
             FROM dr_drive_node
@@ -235,7 +235,7 @@ async fn find_owning_sync_status(
          WHERE sync.tenant_id=$1
          ORDER BY ancestry.depth ASC
          LIMIT 1{lock_clause}"
-    ))
+    )))
     .bind(tenant_id)
     .bind(node_id)
     .bind(MAXIMUM_ANCESTRY_DEPTH)
@@ -255,7 +255,7 @@ async fn find_atomic_generation_status(
     node_id: &str,
 ) -> Result<Option<String>, DriveServiceError> {
     let lock_clause = postgres_lock_clause("generation, root");
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "WITH RECURSIVE ancestry(id, parent_node_id, depth) AS (
             SELECT id, parent_node_id, 0
             FROM dr_drive_node
@@ -277,7 +277,7 @@ async fn find_atomic_generation_status(
            AND generation.generation_status IN ('current', 'retained')
          ORDER BY ancestry.depth ASC
          LIMIT 1{lock_clause}"
-    ))
+    )))
     .bind(tenant_id)
     .bind(node_id)
     .bind(MAXIMUM_ANCESTRY_DEPTH)

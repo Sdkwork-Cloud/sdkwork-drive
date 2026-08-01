@@ -259,7 +259,7 @@ async fn create_sync_on_connection(
     .await
     .map_err(|error| internal("insert WebsiteSync staging node", error))?;
     let expires_at_parameter = instant_parameter("$12");
-    sqlx::query(&format!(
+    sqlx::query(sqlx::AssertSqlSafe(format!(
         "INSERT INTO dr_drive_website_sync (
             id, tenant_id, website_root_id, space_id, idempotency_key,
             expected_root_version, expected_generation, staging_node_id,
@@ -268,7 +268,7 @@ async fn create_sync_on_connection(
             version, created_by, updated_by
          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
                    0, 0, 'created', {expires_at_parameter}, 1, $13, $13)"
-    ))
+    )))
     .bind(&sync_id)
     .bind(&command.tenant_id)
     .bind(&root.id)
@@ -347,7 +347,7 @@ async fn begin_validation_on_connection(
         + Duration::minutes(WEBSITE_SYNC_VALIDATION_LEASE_MINUTES))
     .to_rfc3339_opts(SecondsFormat::Millis, true);
     let lease_expires_at_parameter = instant_parameter("$3");
-    let updated = sqlx::query(&format!(
+    let updated = sqlx::query(sqlx::AssertSqlSafe(format!(
         "UPDATE dr_drive_website_sync
          SET sync_status='validating', validated_at=CURRENT_TIMESTAMP,
              lease_owner=$1, lease_token=$2, lease_expires_at={lease_expires_at_parameter},
@@ -359,7 +359,7 @@ async fn begin_validation_on_connection(
              OR (sync_status='validating' AND lease_expires_at <= CURRENT_TIMESTAMP)
            )
            AND expires_at > CURRENT_TIMESTAMP",
-    ))
+    )))
     .bind(&command.operator_id)
     .bind(&lease_token)
     .bind(&lease_expires_at)
@@ -460,11 +460,11 @@ async fn activate_validated_on_connection(
     let retention_until =
         (chrono::Utc::now() + Duration::days(30)).to_rfc3339_opts(SecondsFormat::Millis, true);
     let retention_until_parameter = instant_parameter("$1");
-    let retained = sqlx::query(&format!(
+    let retained = sqlx::query(sqlx::AssertSqlSafe(format!(
         "UPDATE dr_drive_website_root_generation
          SET generation_status='retained', retention_until={retention_until_parameter}
          WHERE tenant_id=$2 AND website_root_id=$3 AND generation_status='current'"
-    ))
+    )))
     .bind(&retention_until)
     .bind(&command.tenant_id)
     .bind(&root.id)
@@ -714,11 +714,11 @@ async fn activate_generation_on_connection(
     let retention_until =
         (chrono::Utc::now() + Duration::days(30)).to_rfc3339_opts(SecondsFormat::Millis, true);
     let retention_until_parameter = instant_parameter("$1");
-    let retained = sqlx::query(&format!(
+    let retained = sqlx::query(sqlx::AssertSqlSafe(format!(
         "UPDATE dr_drive_website_root_generation
          SET generation_status='retained', retention_until={retention_until_parameter}
          WHERE tenant_id=$2 AND website_root_id=$3 AND generation_status='current'"
-    ))
+    )))
     .bind(&retention_until)
     .bind(&command.tenant_id)
     .bind(&root.id)
@@ -1263,12 +1263,12 @@ async fn get_sync_from_executor<'e, E>(
 where
     E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {WEBSITE_SYNC_SELECT_COLUMNS}
          FROM dr_drive_website_sync sync
          INNER JOIN dr_drive_website_root root ON root.id=sync.website_root_id
          WHERE sync.tenant_id=$1 AND root.tenant_id=$1 AND root.uuid=$2 AND sync.id=$3"
-    ))
+    )))
     .bind(tenant_id)
     .bind(website_root_uuid)
     .bind(sync_id)
@@ -1295,12 +1295,12 @@ async fn find_sync_by_idempotency(
     tenant_id: &str,
     idempotency_key: &str,
 ) -> Result<Option<DriveWebsiteSync>, DriveServiceError> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {WEBSITE_SYNC_SELECT_COLUMNS}
          FROM dr_drive_website_sync sync
          INNER JOIN dr_drive_website_root root ON root.id=sync.website_root_id
          WHERE sync.tenant_id=$1 AND sync.idempotency_key=$2"
-    ))
+    )))
     .bind(tenant_id)
     .bind(idempotency_key)
     .fetch_optional(&mut *connection)
@@ -1324,14 +1324,14 @@ async fn get_root_on_connection(
     tenant_id: &str,
     website_root_uuid: &str,
 ) -> Result<DriveWebsiteRoot, DriveServiceError> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {WEBSITE_ROOT_SELECT_COLUMNS}
          FROM dr_drive_website_root root
          INNER JOIN dr_drive_space space
            ON space.id=root.space_id AND space.tenant_id=root.tenant_id
          WHERE root.tenant_id=$1 AND root.uuid=$2
            AND space.space_type='website' AND space.lifecycle_status='active'"
-    ))
+    )))
     .bind(tenant_id)
     .bind(website_root_uuid)
     .fetch_optional(&mut *connection)

@@ -16,11 +16,11 @@ pub(crate) async fn find_node(
     tenant_id: &str,
     node_id: &str,
 ) -> Result<DriveNodeResponse, (StatusCode, Json<ProblemDetail>)> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {NODE_API_SELECT_COLUMNS}
          FROM dr_drive_node
          WHERE tenant_id=$1 AND id=$2 AND lifecycle_status != 'deleted'",
-    ))
+    )))
     .bind(tenant_id)
     .bind(node_id)
     .fetch_optional(pool)
@@ -64,14 +64,14 @@ pub(crate) async fn collect_node_subtree(
             ));
         }
 
-        let rows = sqlx::query(&format!(
+        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT {NODE_API_SELECT_COLUMNS}
              FROM dr_drive_node
              WHERE tenant_id=$1
                AND parent_node_id=$2
                AND lifecycle_status != 'deleted'
              ORDER BY node_type ASC, node_name ASC, id ASC",
-        ))
+        )))
         .bind(tenant_id)
         .bind(&parent_id)
         .fetch_all(pool)

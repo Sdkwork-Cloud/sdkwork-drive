@@ -54,7 +54,7 @@ impl SqlChangeFeedStore {
         limit: i64,
     ) -> Result<Vec<DriveChangeRecord>, DriveServiceError> {
         let reader_acl_predicate = reader_inherited_permission_exists_sql("n", "$4", "$5");
-        let rows = sqlx::query(&format!(
+        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT cl.sequence_no, cl.tenant_id, cl.space_id, cl.node_id, cl.event_type, cl.actor_id,
                     CAST(cl.created_at AS TEXT) AS created_at
              FROM dr_drive_change_log cl
@@ -67,7 +67,7 @@ impl SqlChangeFeedStore {
                AND (cl.node_id IS NULL OR ({reader_acl_predicate}))
              ORDER BY cl.sequence_no ASC
              LIMIT $6",
-        ))
+        )))
         .bind(tenant_id)
         .bind(space_id)
         .bind(after_sequence)

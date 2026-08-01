@@ -108,9 +108,9 @@ async fn truncate_drive_tables(connection: &mut PoolConnection<Postgres>) {
         })
         .collect::<Vec<_>>()
         .join(", ");
-    sqlx::raw_sql(&format!(
+    sqlx::raw_sql(sqlx::AssertSqlSafe(format!(
         "TRUNCATE TABLE {identifiers} RESTART IDENTITY CASCADE"
-    ))
+    )))
     .execute(&mut **connection)
     .await
     .expect("truncate Drive PostgreSQL test tables");

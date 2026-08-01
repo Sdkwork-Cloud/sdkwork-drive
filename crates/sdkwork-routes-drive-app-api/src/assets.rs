@@ -122,7 +122,7 @@ pub(crate) async fn list_assets(
                     bind_index + 1
                 ));
 
-                let mut query = sqlx::query(&sql)
+                let mut query = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()))
                     .bind(&tenant_id)
                     .bind(&subject_type)
                     .bind(&subject_id);
@@ -902,11 +902,11 @@ async fn load_asset_item(
     asset_id: &str,
     organization_id: Option<&str>,
 ) -> Result<AssetItemResponse, (StatusCode, Json<ProblemDetail>)> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {ASSET_NODE_SELECT_COLUMNS}
          FROM dr_drive_node
          WHERE tenant_id=$1 AND id=$2 AND lifecycle_status != 'deleted'",
-    ))
+    )))
     .bind(tenant_id)
     .bind(asset_id)
     .fetch_optional(pool)

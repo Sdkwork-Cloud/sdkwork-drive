@@ -85,11 +85,11 @@ impl DriveWebsiteRootStore for SqlWebsiteRootStore {
         tenant_id: &str,
         root_uuid: &str,
     ) -> Result<DriveWebsiteRoot, DriveServiceError> {
-        let row = sqlx::query(&format!(
+        let row = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT {WEBSITE_ROOT_SELECT_COLUMNS}
              FROM dr_drive_website_root
              WHERE tenant_id=$1 AND uuid=$2",
-        ))
+        )))
         .bind(tenant_id)
         .bind(root_uuid)
         .fetch_optional(&self.pool)
@@ -108,7 +108,7 @@ impl DriveWebsiteRootStore for SqlWebsiteRootStore {
         offset: i64,
         limit: i64,
     ) -> Result<Vec<DriveWebsiteRoot>, DriveServiceError> {
-        let rows = sqlx::query(&format!(
+        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT {WEBSITE_ROOT_SELECT_COLUMNS}
              FROM dr_drive_website_root
              WHERE tenant_id=$1
@@ -116,7 +116,7 @@ impl DriveWebsiteRootStore for SqlWebsiteRootStore {
                AND root_status != 'archived'
              ORDER BY created_at ASC, id ASC
              LIMIT $3 OFFSET $4",
-        ))
+        )))
         .bind(tenant_id)
         .bind(space_id)
         .bind(limit)
@@ -336,14 +336,14 @@ async fn find_by_selector_on_connection(
     space_id: &str,
     selector_key: &str,
 ) -> Result<Option<DriveWebsiteRoot>, DriveServiceError> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {WEBSITE_ROOT_SELECT_COLUMNS}
          FROM dr_drive_website_root
          WHERE tenant_id=$1
            AND space_id=$2
            AND selector_key=$3
            AND root_status IN ('active', 'suspended', 'invalid')",
-    ))
+    )))
     .bind(tenant_id)
     .bind(space_id)
     .bind(selector_key)

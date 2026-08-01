@@ -974,11 +974,11 @@ pub(crate) async fn find_uploader_upload_item(
     tenant_id: &str,
     upload_item_id: &str,
 ) -> Result<Option<DriveUploadItem>, (StatusCode, Json<ProblemDetail>)> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {DRIVE_UPLOAD_ITEM_SELECT_COLUMNS}
          FROM dr_drive_upload_item
          WHERE tenant_id=$1 AND id=$2",
-    ))
+    )))
     .bind(tenant_id)
     .bind(upload_item_id)
     .fetch_optional(pool)
@@ -992,11 +992,11 @@ pub(crate) async fn find_uploader_upload_item_by_session(
     tenant_id: &str,
     upload_session_id: &str,
 ) -> Result<Option<DriveUploadItem>, (StatusCode, Json<ProblemDetail>)> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {DRIVE_UPLOAD_ITEM_SELECT_COLUMNS}
          FROM dr_drive_upload_item
          WHERE tenant_id=$1 AND upload_session_id=$2",
-    ))
+    )))
     .bind(tenant_id)
     .bind(upload_session_id)
     .fetch_optional(pool)

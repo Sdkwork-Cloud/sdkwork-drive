@@ -76,7 +76,7 @@ pub(crate) async fn list_recent_nodes(
                     let space_id = space_id.clone();
                     let order_by = order_by_for_fetch.clone();
                     async move {
-                        let rows = sqlx::query(&format!(
+                        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                              FROM dr_drive_node
                              WHERE tenant_id=$1
@@ -85,7 +85,7 @@ pub(crate) async fn list_recent_nodes(
                                AND content_state='ready'
                              ORDER BY {order_by}
                              LIMIT $3 OFFSET $4",
-                        ))
+                        )))
                         .bind(&tenant_id)
                         .bind(&space_id)
                         .bind(batch_limit as i64)
@@ -111,7 +111,7 @@ pub(crate) async fn list_recent_nodes(
                     let reader_acl_predicate = reader_acl_predicate.clone();
                     let order_by = order_by_for_fetch.clone();
                     async move {
-                        let rows = sqlx::query(&format!(
+                        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                              FROM dr_drive_node
                              WHERE tenant_id=$1
@@ -121,7 +121,7 @@ pub(crate) async fn list_recent_nodes(
                                AND ({reader_acl_predicate})
                              ORDER BY {order_by}
                              LIMIT $5 OFFSET $6",
-                        ))
+                        )))
                         .bind(&tenant_id)
                         .bind(&space_id)
                         .bind(&subject_type)
@@ -151,7 +151,7 @@ pub(crate) async fn list_recent_nodes(
                 let reader_acl_predicate = reader_acl_predicate.clone();
                 let order_by = order_by_for_fetch.clone();
                 async move {
-                    let rows = sqlx::query(&format!(
+                    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                         "SELECT {NODE_API_SELECT_COLUMNS}
                          FROM dr_drive_node
                          WHERE tenant_id=$1
@@ -160,7 +160,7 @@ pub(crate) async fn list_recent_nodes(
                            AND ({reader_acl_predicate})
                          ORDER BY {order_by}
                          LIMIT $4 OFFSET $5",
-                    ))
+                    )))
                     .bind(&tenant_id)
                     .bind(&subject_type)
                     .bind(&subject_id)
@@ -252,7 +252,7 @@ pub(crate) async fn list_shared_with_me(
                 let shared_with_me_predicate = shared_with_me_predicate_for_space.clone();
                 let order_by = order_by_for_fetch.clone();
                 async move {
-                    let rows = sqlx::query(&format!(
+                    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                         "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
                          FROM dr_drive_node n
                          WHERE n.tenant_id=$1
@@ -262,7 +262,7 @@ pub(crate) async fn list_shared_with_me(
                            AND {shared_with_me_predicate}
                          ORDER BY {order_by}
                          LIMIT $6 OFFSET $7",
-                    ))
+                    )))
                     .bind(&tenant_id)
                     .bind(&space_id)
                     .bind(&subject_type)
@@ -290,7 +290,7 @@ pub(crate) async fn list_shared_with_me(
                 let shared_with_me_predicate = shared_with_me_predicate_for_tenant.clone();
                 let order_by = order_by_for_fetch.clone();
                 async move {
-                    let rows = sqlx::query(&format!(
+                    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                         "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
                          FROM dr_drive_node n
                          WHERE n.tenant_id=$1
@@ -299,7 +299,7 @@ pub(crate) async fn list_shared_with_me(
                            AND {shared_with_me_predicate}
                          ORDER BY {order_by}
                          LIMIT $5 OFFSET $6",
-                    ))
+                    )))
                     .bind(&tenant_id)
                     .bind(&subject_type)
                     .bind(&subject_id)
@@ -373,7 +373,7 @@ pub(crate) async fn list_favorite_nodes(
                     let subject_id = subject_id_for_fetch.clone();
                     let order_by = order_by_for_fetch.clone();
                     async move {
-                        let rows = sqlx::query(&format!(
+                        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                             "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
                              FROM dr_drive_node_favorite f
                              INNER JOIN dr_drive_node n
@@ -388,7 +388,7 @@ pub(crate) async fn list_favorite_nodes(
                                AND f.lifecycle_status='active'
                              ORDER BY {order_by}
                              LIMIT $5 OFFSET $6",
-                        ))
+                        )))
                         .bind(&tenant_id)
                         .bind(&space_id)
                         .bind(&subject_type)
@@ -416,7 +416,7 @@ pub(crate) async fn list_favorite_nodes(
                     let reader_acl_predicate = reader_acl_predicate.clone();
                     let order_by = order_by_for_fetch.clone();
                     async move {
-                        let rows = sqlx::query(&format!(
+                        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                             "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
                              FROM dr_drive_node_favorite f
                              INNER JOIN dr_drive_node n
@@ -432,7 +432,7 @@ pub(crate) async fn list_favorite_nodes(
                                AND ({reader_acl_predicate})
                              ORDER BY {order_by}
                              LIMIT $5 OFFSET $6",
-                        ))
+                        )))
                         .bind(&tenant_id)
                         .bind(&space_id)
                         .bind(&subject_type)
@@ -462,7 +462,7 @@ pub(crate) async fn list_favorite_nodes(
                 let reader_acl_predicate = reader_acl_predicate.clone();
                 let order_by = order_by_for_fetch.clone();
                 async move {
-                    let rows = sqlx::query(&format!(
+                    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                         "SELECT {NODE_API_SELECT_JOIN_COLUMNS}
                          FROM dr_drive_node_favorite f
                          INNER JOIN dr_drive_node n
@@ -477,7 +477,7 @@ pub(crate) async fn list_favorite_nodes(
                            AND ({reader_acl_predicate})
                          ORDER BY {order_by}
                          LIMIT $4 OFFSET $5",
-                    ))
+                    )))
                     .bind(&tenant_id)
                     .bind(&subject_type)
                     .bind(&subject_id)
@@ -636,7 +636,7 @@ pub(crate) async fn check_favorite_nodes(
                AND lifecycle_status='active'
                AND node_id IN ({placeholders})"
         );
-        let mut query = sqlx::query(&sql)
+        let mut query = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()))
             .bind(&tenant_id)
             .bind(&subject_type)
             .bind(&subject_id);

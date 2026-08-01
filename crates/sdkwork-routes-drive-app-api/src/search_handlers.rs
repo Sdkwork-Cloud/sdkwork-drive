@@ -58,7 +58,7 @@ pub(crate) async fn search_nodes(
                     let space_id = space_id.clone();
                     let needle = needle_for_fetch.clone();
                     async move {
-                        let rows = sqlx::query(&format!(
+                        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                              FROM dr_drive_node
                              WHERE tenant_id=$1
@@ -68,7 +68,7 @@ pub(crate) async fn search_nodes(
                                AND content_state='ready'
                              ORDER BY updated_at DESC, id ASC
                              LIMIT $4 OFFSET $5",
-                        ))
+                        )))
                         .bind(&tenant_id)
                         .bind(&space_id)
                         .bind(&needle)
@@ -95,7 +95,7 @@ pub(crate) async fn search_nodes(
                     let subject_id = subject_id_for_fetch.clone();
                     let reader_acl_predicate = reader_acl_predicate.clone();
                     async move {
-                        let rows = sqlx::query(&format!(
+                        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                             "SELECT {NODE_API_SELECT_COLUMNS}
                              FROM dr_drive_node
                              WHERE tenant_id=$1
@@ -106,7 +106,7 @@ pub(crate) async fn search_nodes(
                                AND ({reader_acl_predicate})
                              ORDER BY updated_at DESC, id ASC
                              LIMIT $6 OFFSET $7",
-                        ))
+                        )))
                         .bind(&tenant_id)
                         .bind(&space_id)
                         .bind(&needle)
@@ -137,7 +137,7 @@ pub(crate) async fn search_nodes(
                 let subject_id = subject_id_for_fetch.clone();
                 let reader_acl_predicate = reader_acl_predicate.clone();
                 async move {
-                    let rows = sqlx::query(&format!(
+                    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
                         "SELECT {NODE_API_SELECT_COLUMNS}
                          FROM dr_drive_node
                          WHERE tenant_id=$1
@@ -147,7 +147,7 @@ pub(crate) async fn search_nodes(
                            AND ({reader_acl_predicate})
                          ORDER BY updated_at DESC, id ASC
                          LIMIT $5 OFFSET $6",
-                    ))
+                    )))
                     .bind(&tenant_id)
                     .bind(&subject_type)
                     .bind(&subject_id)

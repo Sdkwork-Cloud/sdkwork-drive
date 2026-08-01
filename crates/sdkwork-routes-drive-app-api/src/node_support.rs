@@ -241,7 +241,7 @@ pub(crate) async fn find_live_child_by_name(
     parent_node_id: Option<&str>,
     node_name: &str,
 ) -> Result<Option<DriveNodeResponse>, (StatusCode, Json<ProblemDetail>)> {
-    let row = sqlx::query(&format!(
+    let row = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT {NODE_API_SELECT_COLUMNS}
          FROM dr_drive_node
          WHERE tenant_id=$1
@@ -251,7 +251,7 @@ pub(crate) async fn find_live_child_by_name(
            AND ((parent_node_id IS NULL AND $4 IS NULL) OR parent_node_id=$4)
          ORDER BY id ASC
          LIMIT 1",
-    ))
+    )))
     .bind(tenant_id)
     .bind(space_id)
     .bind(node_name)

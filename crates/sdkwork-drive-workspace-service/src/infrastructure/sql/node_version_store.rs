@@ -70,7 +70,7 @@ impl DriveNodeVersionStore for SqlDriveNodeVersionStore {
         version_id: &str,
     ) -> Result<Option<DriveNodeVersion>, DriveServiceError> {
         let sql = node_version_select_sql("WHERE tenant_id=$1 AND node_id=$2 AND id=$3");
-        let row = sqlx::query(&sql)
+        let row = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()))
             .bind(tenant_id)
             .bind(node_id)
             .bind(version_id)
@@ -175,7 +175,7 @@ async fn create_node_version_in_transaction(
     }
 
     let sql = node_version_select_sql("WHERE tenant_id=$1 AND node_id=$2 AND id=$3");
-    let row = sqlx::query(&sql)
+    let row = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()))
         .bind(&command.tenant_id)
         .bind(&command.node_id)
         .bind(&command.id)
