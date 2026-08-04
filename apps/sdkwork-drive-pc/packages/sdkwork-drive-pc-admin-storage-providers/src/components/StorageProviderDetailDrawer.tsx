@@ -162,7 +162,7 @@ export function StorageProviderDetailDrawer({ provider, providers, service, pend
                         rel="noreferrer"
                         className="text-[11px] font-medium text-blue-600 hover:underline dark:text-blue-400"
                       >
-                        {t('openCloudConsole')} ↗
+                        {t('openClawConsole')} ↗
                       </a>
                     )}
                     <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={runDiagnostics}>

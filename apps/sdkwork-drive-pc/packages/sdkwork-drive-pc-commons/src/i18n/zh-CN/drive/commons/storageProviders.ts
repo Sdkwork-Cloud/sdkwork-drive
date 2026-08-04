@@ -96,7 +96,7 @@ export default {
   credentialAlreadyConfigured: '凭证已配置',
   credentialAlreadyConfiguredDesc: '出于安全考虑，已保存的密钥不会回显。如需更换，请点击下方按钮。',
   replaceCredential: '更换凭证',
-  openCloudConsole: '打开云控制台',
+  openClawConsole: '打开云控制台',
   bucketNamingHint: '命名规则',
   endpointRegionSection: '端点与区域',
   localPathSection: '本地路径',

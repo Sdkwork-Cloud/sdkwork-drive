@@ -117,7 +117,7 @@ export function StorageProviderCredentialFields({
             className="text-[11px] font-medium text-blue-600 hover:underline dark:text-blue-400"
           >
             <span className="inline-flex items-center gap-1">
-              {t('openCloudConsole')}
+              {t('openClawConsole')}
               <ExternalLink aria-hidden="true" size={12} />
             </span>
           </a>

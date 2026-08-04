@@ -8,7 +8,7 @@
 
 **Goal:** Build a contract-first, TDD-first Rust backend for `sdkwork-drive`, including workspace scaffolding, schema registry, OpenAPI contracts, generated SDK skeletons, S3-compatible storage abstraction, database model, and core app/backend APIs.
 
-**Architecture:** Use a modular monolith aligned with `sdkwork-claw-router` conventions. Keep clean boundaries between `domain`, `application`, `ports`, and `infrastructure`, expose app and backend routers as reusable components, and enforce storage provider isolation through `DriveObjectStore`.
+**Architecture:** Use a modular monolith aligned with `sdkwork-cloudrouter-router` conventions. Keep clean boundaries between `domain`, `application`, `ports`, and `infrastructure`, expose app and backend routers as reusable components, and enforce storage provider isolation through `DriveObjectStore`.
 
 **Tech Stack:** Rust 2021, `axum`, `tokio`, `sqlx` (PostgreSQL + SQLite), Redis, OpenAPI 3.1.x, SDKWork SDK generator (`--standard-profile sdkwork-v3`), S3-compatible object storage (AWS S3/MinIO first).
 

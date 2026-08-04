@@ -91,7 +91,7 @@ export default {
   credentialAlreadyConfigured: 'Credentials configured',
   credentialAlreadyConfiguredDesc: 'Stored secrets are not shown for security. Click below to replace them.',
   replaceCredential: 'Replace credentials',
-  openCloudConsole: 'Open cloud console',
+  openClawConsole: 'Open cloud console',
   bucketNamingHint: 'Naming rule',
   endpointRegionSection: 'Endpoint & region',
   localPathSection: 'Local path',
