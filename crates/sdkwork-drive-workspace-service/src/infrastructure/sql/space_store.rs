@@ -130,8 +130,9 @@ impl DriveSpaceStore for SqlSpaceStore {
         limit: i64,
     ) -> Result<Vec<DriveSpace>, DriveServiceError> {
         let rows = match (owner_subject_type, owner_subject_id, space_type) {
-            (Some(owner_type), Some(owner_id), Some(space_type)) => sqlx::query(sqlx::AssertSqlSafe(format!(
-                "SELECT {SPACE_SELECT_COLUMNS}
+            (Some(owner_type), Some(owner_id), Some(space_type)) => sqlx::query(
+                sqlx::AssertSqlSafe(format!(
+                    "SELECT {SPACE_SELECT_COLUMNS}
                     FROM dr_drive_space
                     WHERE tenant_id=$1
                       AND owner_subject_type=$2
@@ -140,7 +141,8 @@ impl DriveSpaceStore for SqlSpaceStore {
                       AND lifecycle_status='active'
                     ORDER BY id ASC
                     LIMIT $5 OFFSET $6",
-            )))
+                )),
+            )
             .bind(tenant_id)
             .bind(owner_type)
             .bind(owner_id)
@@ -226,8 +228,9 @@ impl DriveSpaceStore for SqlSpaceStore {
             query.owner_subject_id,
             query.space_type,
         ) {
-            (Some(owner_type), Some(owner_id), Some(space_type)) => sqlx::query(sqlx::AssertSqlSafe(format!(
-                "SELECT {SPACE_SELECT_COLUMNS}
+            (Some(owner_type), Some(owner_id), Some(space_type)) => {
+                sqlx::query(sqlx::AssertSqlSafe(format!(
+                    "SELECT {SPACE_SELECT_COLUMNS}
                  FROM dr_drive_space
                  WHERE tenant_id=$1
                    AND owner_subject_type=$4
@@ -237,22 +240,23 @@ impl DriveSpaceStore for SqlSpaceStore {
                    AND ({space_accessible_predicate})
                  ORDER BY id ASC
                  LIMIT $7 OFFSET $8",
-            )))
-            .bind(query.tenant_id)
-            .bind(query.viewer_subject_type)
-            .bind(query.viewer_subject_id)
-            .bind(owner_type)
-            .bind(owner_id)
-            .bind(space_type)
-            .bind(query.limit)
-            .bind(query.offset)
-            .fetch_all(&self.pool)
-            .await
-            .map_err(|error| {
-                DriveServiceError::Internal(format!(
-                    "list accessible dr_drive_space by owner failed: {error}"
-                ))
-            })?,
+                )))
+                .bind(query.tenant_id)
+                .bind(query.viewer_subject_type)
+                .bind(query.viewer_subject_id)
+                .bind(owner_type)
+                .bind(owner_id)
+                .bind(space_type)
+                .bind(query.limit)
+                .bind(query.offset)
+                .fetch_all(&self.pool)
+                .await
+                .map_err(|error| {
+                    DriveServiceError::Internal(format!(
+                        "list accessible dr_drive_space by owner failed: {error}"
+                    ))
+                })?
+            }
             (Some(owner_type), Some(owner_id), None) => sqlx::query(sqlx::AssertSqlSafe(format!(
                 "SELECT {SPACE_SELECT_COLUMNS}
                  FROM dr_drive_space

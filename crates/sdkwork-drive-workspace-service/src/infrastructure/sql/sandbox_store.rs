@@ -54,7 +54,8 @@ impl DriveSandboxStore for SqlSandboxStore {
         let count_query_sql = format!(
             "SELECT COUNT(DISTINCT v.id) AS total FROM dr_drive_sandbox_volume v JOIN dr_drive_sandbox_grant g ON g.sandbox_id = v.id WHERE v.tenant_id = $1 AND v.lifecycle_status <> 'disabled' AND ({principal_predicate})"
         );
-        let mut count_query = sqlx::query_scalar(sqlx::AssertSqlSafe(count_query_sql.as_str())).bind(tenant_id);
+        let mut count_query =
+            sqlx::query_scalar(sqlx::AssertSqlSafe(count_query_sql.as_str())).bind(tenant_id);
         for principal in principals {
             count_query = count_query
                 .bind(&principal.subject_type)
@@ -130,7 +131,9 @@ impl DriveSandboxStore for SqlSandboxStore {
              GROUP BY v.id, v.root_entry_id, v.provider_kind, v.provider_root_ref, \
                       v.lifecycle_status, v.version"
         );
-        let mut query = sqlx::query(sqlx::AssertSqlSafe(query_sql.as_str())).bind(tenant_id).bind(sandbox_id);
+        let mut query = sqlx::query(sqlx::AssertSqlSafe(query_sql.as_str()))
+            .bind(tenant_id)
+            .bind(sandbox_id);
         for principal in principals {
             query = query
                 .bind(&principal.subject_type)
