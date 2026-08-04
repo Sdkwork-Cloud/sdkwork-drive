@@ -237,7 +237,7 @@ fn drive_launch_plan_reports_database_engine_without_leaking_secrets() {
         "plan should report PostgreSQL engine, stdout:\n{stdout}"
     );
     assert!(
-        !stdout.contains("drive_pass") && !stdout.contains("sdkwork_drive:"),
+        !stdout.contains("drive_pass") && !stdout.contains("sdkwork_ai_dev:"),
         "plan output must not leak credentials, stdout:\n{stdout}"
     );
 

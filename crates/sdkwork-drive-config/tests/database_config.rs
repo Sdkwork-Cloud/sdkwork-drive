@@ -20,14 +20,14 @@ fn rejects_sqlite_database_urls() {
 #[test]
 fn parses_postgres_database_urls_for_server_mode() {
     let config = DatabaseConfig::from_url_with_max_connections(
-        "postgresql://sdkwork_drive:secret@127.0.0.1:5432/sdkwork_drive",
+        "postgresql://sdkwork_ai_dev:secret@127.0.0.1:5432/sdkwork_ai_dev",
         12,
     )
     .expect("postgres database url should parse");
 
     assert_eq!(DatabaseEngine::Postgresql, config.engine());
     assert_eq!(
-        "postgresql://sdkwork_drive:secret@127.0.0.1:5432/sdkwork_drive",
+        "postgresql://sdkwork_ai_dev:secret@127.0.0.1:5432/sdkwork_ai_dev",
         config.url()
     );
     assert_eq!(12, config.max_connections());
@@ -43,7 +43,7 @@ fn rejects_empty_unsupported_urls_and_invalid_pool_sizes() {
     );
 
     let mysql = DatabaseConfig::from_url_with_max_connections(
-        "mysql://sdkwork_drive:secret@127.0.0.1/sdkwork_drive",
+        "mysql://sdkwork_ai_dev:secret@127.0.0.1/sdkwork_ai_dev",
         5,
     )
     .unwrap_err();
@@ -53,7 +53,7 @@ fn rejects_empty_unsupported_urls_and_invalid_pool_sizes() {
     );
 
     let pool_size = DatabaseConfig::from_url_with_max_connections(
-        "postgresql://sdkwork_drive:secret@127.0.0.1/sdkwork_drive",
+        "postgresql://sdkwork_ai_dev:secret@127.0.0.1/sdkwork_ai_dev",
         0,
     )
     .unwrap_err();
@@ -71,8 +71,8 @@ fn resolves_postgres_from_structured_environment() {
         ("SDKWORK_DATABASE_ENGINE", "postgresql"),
         ("SDKWORK_DATABASE_HOST", "127.0.0.1"),
         ("SDKWORK_DATABASE_PORT", "15432"),
-        ("SDKWORK_DATABASE_NAME", "sdkwork_drive"),
-        ("SDKWORK_DATABASE_USERNAME", "sdkwork_drive"),
+        ("SDKWORK_DATABASE_NAME", "sdkwork_ai_dev"),
+        ("SDKWORK_DATABASE_USERNAME", "sdkwork_ai_dev"),
         ("SDKWORK_DATABASE_PASSWORD", "drive_pass"),
         ("SDKWORK_DATABASE_SSL_MODE", "disable"),
         ("SDKWORK_DATABASE_MAX_CONNECTIONS", "10"),
@@ -83,7 +83,7 @@ fn resolves_postgres_from_structured_environment() {
     assert_eq!(DatabaseEngine::Postgresql, config.engine());
     assert_eq!(10, config.max_connections());
     assert_eq!(
-        "postgresql://sdkwork_drive:drive_pass@127.0.0.1:15432/sdkwork_drive?sslmode=disable",
+        "postgresql://sdkwork_ai_dev:drive_pass@127.0.0.1:15432/sdkwork_ai_dev?sslmode=disable",
         config.url()
     );
 }
@@ -128,14 +128,14 @@ fn cli_database_url_overrides_structured_environment() {
     let args = vec![
         "sdkwork-routes-drive-app-api".to_string(),
         "--database-url".to_string(),
-        "postgresql://sdkwork_drive:secret@127.0.0.1:5432/sdkwork_drive".to_string(),
+        "postgresql://sdkwork_ai_dev:secret@127.0.0.1:5432/sdkwork_ai_dev".to_string(),
     ];
     let config =
         DatabaseConfig::from_env_and_cli_args(&args).expect("cli database url should parse");
 
     assert_eq!(DatabaseEngine::Postgresql, config.engine());
     assert_eq!(
-        "postgresql://sdkwork_drive:secret@127.0.0.1:5432/sdkwork_drive",
+        "postgresql://sdkwork_ai_dev:secret@127.0.0.1:5432/sdkwork_ai_dev",
         config.url()
     );
     assert_eq!(
@@ -154,8 +154,8 @@ fn explicit_database_url_overrides_structured_environment() {
         ("SDKWORK_DATABASE_ENGINE", "postgresql"),
         ("SDKWORK_DATABASE_HOST", "127.0.0.1"),
         ("SDKWORK_DATABASE_PORT", "15432"),
-        ("SDKWORK_DATABASE_NAME", "sdkwork_drive"),
-        ("SDKWORK_DATABASE_USERNAME", "sdkwork_drive"),
+        ("SDKWORK_DATABASE_NAME", "sdkwork_ai_dev"),
+        ("SDKWORK_DATABASE_USERNAME", "sdkwork_ai_dev"),
         ("SDKWORK_DATABASE_PASSWORD", "drive_pass"),
         ("SDKWORK_DATABASE_MAX_CONNECTIONS", "3"),
     ];
@@ -176,8 +176,8 @@ fn rejects_removed_database_environment_aliases() {
         ("SDKWORK_DATABASE_PROVIDER", "postgresql"),
         ("SDKWORK_DATABASE_SSLMODE", "disable"),
         ("SDKWORK_DATABASE_HOST", "127.0.0.1"),
-        ("SDKWORK_DATABASE_NAME", "sdkwork_drive"),
-        ("SDKWORK_DATABASE_USERNAME", "sdkwork_drive"),
+        ("SDKWORK_DATABASE_NAME", "sdkwork_ai_dev"),
+        ("SDKWORK_DATABASE_USERNAME", "sdkwork_ai_dev"),
         ("SDKWORK_DATABASE_PASSWORD", "drive_pass"),
     ];
 
@@ -253,8 +253,8 @@ fn env_url_override_wins_over_config_file() {
         [database]
         engine = "postgresql"
         host = "db.internal"
-        database = "sdkwork_drive"
-        username = "sdkwork_drive"
+        database = "sdkwork_ai_dev"
+        username = "sdkwork_ai_dev"
         password = "drive_pass"
         "#,
     )
@@ -284,7 +284,7 @@ fn env_url_override_wins_over_config_file() {
 #[test]
 fn safe_health_never_exposes_connection_string_material() {
     let config = DatabaseConfig::from_url_with_max_connections(
-        "postgresql://sdkwork_drive:secret@db.internal:5432/sdkwork_drive?sslmode=require",
+        "postgresql://sdkwork_ai_dev:secret@db.internal:5432/sdkwork_ai_dev?sslmode=require",
         7,
     )
     .expect("postgres database url should parse");
@@ -295,7 +295,7 @@ fn safe_health_never_exposes_connection_string_material() {
     assert!(health.contains("\"maxConnections\":7"));
     assert!(!health.contains("secret"));
     assert!(!health.contains("db.internal"));
-    assert!(!health.contains("sdkwork_drive"));
+    assert!(!health.contains("sdkwork_ai_dev"));
     assert!(!health.contains("sslmode"));
 }
 

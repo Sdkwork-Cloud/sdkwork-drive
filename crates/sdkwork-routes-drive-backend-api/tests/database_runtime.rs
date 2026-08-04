@@ -14,7 +14,7 @@ async fn backend_runtime_accepts_sqlite_database_config() {
 #[test]
 fn backend_runtime_recognizes_postgres_database_engine() {
     let config = DatabaseConfig::from_url_with_max_connections(
-        "postgresql://sdkwork_drive:secret@127.0.0.1:65535/sdkwork_drive",
+        "postgresql://sdkwork_ai_dev:secret@127.0.0.1:65535/sdkwork_ai_dev",
         5,
     )
     .expect("postgres config should parse");
