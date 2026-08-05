@@ -320,9 +320,9 @@ function DriveAppbaseAuthRouteHost({
   const authProps: SdkworkIamAuthRoutesProps = {
     appearance: resolveDriveAuthAppearance(),
     basePath: '/auth',
-    getRuntime,
+    getRuntime: getRuntime as unknown as SdkworkIamAuthRoutesProps['getRuntime'],
     homePath: '/',
-    locale: resolveDriveAuthLocale(),
+    locale: resolveDriveAuthLocale() ?? undefined,
     runtimeConfig: resolveDriveAuthRuntimeConfig(),
     viewportMode: 'fixed',
   };

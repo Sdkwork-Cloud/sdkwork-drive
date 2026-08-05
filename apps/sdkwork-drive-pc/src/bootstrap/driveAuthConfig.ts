@@ -1,33 +1,11 @@
-// Types from @sdkwork/auth-pc-react
-// These types are exported from the package but TypeScript may not resolve them correctly
-// from workspace dependencies, so we define them locally for type safety
-
-export interface SdkworkAuthAppearanceConfig {
-  asidePanelClassName?: string;
-  bodyClassName?: string;
-  contentContainerClassName?: string;
-  pageClassName?: string;
-  qrFrameClassName?: string;
-  shellClassName?: string;
-  slotProps?: {
-    background?: { className?: string };
-    page?: { className?: string };
-    shell?: { className?: string };
-  };
-  theme?: Record<string, string>;
-}
-
-export interface SdkworkAuthRuntimeConfig {
-  leftRailMode?: string;
-  loginMethods?: string[];
-  oauthLoginEnabled?: boolean;
-  oauthProviders?: string[];
-  qrLoginEnabled?: boolean;
-  recoveryMethods?: string[];
-  registerMethods?: string[];
-  verificationPolicy?: Record<string, boolean>;
-  developmentPrefill?: Record<string, unknown>;
-}
+import type {
+  SdkworkAuthAppearanceConfig,
+  SdkworkAuthRuntimeConfig,
+} from '@sdkwork/auth-pc-react';
+export type {
+  SdkworkAuthAppearanceConfig,
+  SdkworkAuthRuntimeConfig,
+};
 
 const DRIVE_VERIFICATION_POLICY = {
   emailCodeLoginEnabled: false,

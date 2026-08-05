@@ -36,33 +36,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
-        'sdkwork-drive-pc-types': path.resolve(__dirname, 'packages/sdkwork-drive-pc-types/src'),
-        'sdkwork-drive-pc-commons': path.resolve(__dirname, 'packages/sdkwork-drive-pc-commons/src'),
-        'sdkwork-drive-pc-file': path.resolve(__dirname, 'packages/sdkwork-drive-pc-file/src'),
-        'sdkwork-drive-pc-transfer': path.resolve(__dirname, 'packages/sdkwork-drive-pc-transfer/src'),
-        'sdkwork-drive-pc-core/types': path.resolve(__dirname, 'packages/sdkwork-drive-pc-core/src/types/index.ts'),
-        'sdkwork-drive-pc-core': path.resolve(__dirname, 'packages/sdkwork-drive-pc-core/src'),
-        'sdkwork-drive-pc-drive': path.resolve(__dirname, 'packages/sdkwork-drive-pc-drive/src'),
-        'sdkwork-drive-pc-admin-core': path.resolve(__dirname, 'packages/sdkwork-drive-pc-admin-core/src'),
-        'sdkwork-drive-pc-admin-storage-providers': path.resolve(
-          __dirname,
-          'packages/sdkwork-drive-pc-admin-storage-providers/src',
-        ),
-        'sdkwork-drive-pc-admin-operations': path.resolve(
-          __dirname,
-          'packages/sdkwork-drive-pc-admin-operations/src',
-        ),
-        'sdkwork-drive-pc-core/config/runtimeConfig': path.resolve(
-          __dirname,
-          'packages/sdkwork-drive-pc-core/src/config/runtimeConfig.ts',
-        ),
-        'sdkwork-drive-pc-core/session/sessionStore': path.resolve(
-          __dirname,
-          'packages/sdkwork-drive-pc-core/src/session/sessionStore.ts',
-        ),
         react: path.resolve(__dirname, 'node_modules/react'),
-        'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
-        'react/jsx-runtime': path.resolve(__dirname, 'node_modules/react/jsx-runtime.js'),
       },
       dedupe: ['react', 'react-dom'],
     },

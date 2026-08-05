@@ -20,6 +20,7 @@ import {
   createDriveUploaderClient,
   type DriveUploaderClient,
   type DriveUploaderClientOptions,
+  type DriveUploaderRequest,
   type DriveUploaderTransport,
 } from "../composed/uploader/index";
 

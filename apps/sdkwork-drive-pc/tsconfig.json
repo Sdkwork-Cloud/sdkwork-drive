@@ -72,60 +72,6 @@
       ],
       "react-router-dom": [
         "./node_modules/react-router-dom/dist/index.d.ts"
-      ],
-      "@sdkwork/appbase-pc-react": [
-        "../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react/src/index.ts"
-      ],
-      "@sdkwork/auth-pc-react": [
-        "./src/bootstrap/sdkworkAuthPcReactShim.d.ts"
-      ],
-      "@sdkwork/iam-app-sdk": [
-        "../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts"
-      ],
-      "@sdkwork/iam-backend-sdk": [
-        "../../../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript/src/index.ts"
-      ],
-      "@sdkwork/auth-runtime-pc-react": [
-        "../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-runtime-pc-react/src/index.ts"
-      ],
-      "@sdkwork/drive-app-sdk": [
-        "../../sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/src/index.ts"
-      ],
-      "@sdkwork/drive-admin-storage-sdk": [
-        "../../sdks/sdkwork-drive-admin-storage-sdk/sdkwork-drive-admin-storage-sdk-typescript/src/index.ts"
-      ],
-      "@sdkwork/drive-backend-sdk": [
-        "../../sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/src/index.ts"
-      ],
-      "@sdkwork/core-pc-react": [
-        "./src/bootstrap/sdkworkCorePcReactShim.ts"
-      ],
-      "@sdkwork/i18n-pc-react": [
-        "../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react/src/index.ts"
-      ],
-      "@sdkwork/iam-contracts": [
-        "../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-contracts/src/index.ts"
-      ],
-      "@sdkwork/iam-runtime": [
-        "../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-runtime/src/index.ts"
-      ],
-      "@sdkwork/iam-sdk-ports": [
-        "../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports/src/index.ts"
-      ],
-      "@sdkwork/iam-service": [
-        "../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-service/src/index.ts"
-      ],
-      "@sdkwork/runtime-bootstrap": [
-        "../../../sdkwork-appbase/packages/common/foundation/sdkwork-runtime-bootstrap/src/index.ts"
-      ],
-      "@sdkwork/sdk-common": [
-        "../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/src/index.ts"
-      ],
-      "@sdkwork/utils": [
-        "../../../sdkwork-utils/packages/sdkwork-utils-typescript/dist/index.d.ts"
-      ],
-      "@sdkwork/ui-pc-react": [
-        "../../../sdkwork-ui/sdkwork-ui-pc-react/src/index.ts"
       ]
     },
     "allowImportingTsExtensions": true,

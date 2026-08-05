@@ -10,7 +10,7 @@ import {
 
 export interface ExecuteDownloadTransferOptions {
   signal?: AbortSignal;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: (input: string, init?: RequestInit) => Promise<Response>;
   onProgress?: (downloadedBytes: number, totalBytes: number) => void;
 }
 
@@ -281,7 +281,7 @@ export interface RunManagedDownloadTransferParams {
   job: DownloadJob;
   grant: DownloadGrantLike;
   signal?: AbortSignal;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: (input: string, init?: RequestInit) => Promise<Response>;
   resumeExistingProgress?: boolean;
   onJobUpdate: (updater: (current: DownloadJob) => DownloadJob) => void;
   onOpenExternal?: (url: string) => void | Promise<void>;

@@ -1,31 +1,21 @@
-import type { ReactElement, ReactNode } from 'react';
 import type { SdkworkAuthAppearanceConfig, SdkworkAuthRuntimeConfig } from './driveAuthConfig';
 
 // ── SdkworkIamAuthRoutes Props ────────────────────────────────────────────────
+// Drive consumes the real auth-pc-react contracts; this shim only re-exports
+// them so the app keeps a single import surface.
 
-export interface SdkworkIamAuthRoutesProps {
-  appearance?: SdkworkAuthAppearanceConfig;
-  basePath?: string;
-  getRuntime: () => unknown;
-  homePath?: string;
-  locale?: string;
-  runtimeConfig?: SdkworkAuthRuntimeConfig;
-  viewportMode?: 'fixed' | 'page';
-}
-
-export function SdkworkIamAuthRoutes(
-  props: SdkworkIamAuthRoutesProps,
-): ReactElement | null;
-
-// ── SdkworkSessionAuthBrowserRoot ─────────────────────────────────────────────
-
-export interface SdkworkSessionAuthBrowserRootProps {
-  children?: ReactNode;
-}
-
-export function SdkworkSessionAuthBrowserRoot(
-  props: SdkworkSessionAuthBrowserRootProps,
-): ReactElement | null;
+export type {
+  SdkworkIamAuthRoutesProps,
+} from '@sdkwork/auth-pc-react';
+export {
+  SdkworkIamAuthRoutes,
+} from '@sdkwork/auth-pc-react';
+export type {
+  SdkworkSessionAuthBrowserRootProps,
+} from '@sdkwork/auth-pc-react';
+export {
+  SdkworkSessionAuthBrowserRoot,
+} from '@sdkwork/auth-pc-react';
 
 // ── Extended IamAppContext with Drive-specific actor fields ───────────────────
 

@@ -39,7 +39,7 @@ export type QueueFileBrowserUploadsParams = {
   releaseUploadAbortController: (jobId: string, controller?: AbortController) => void;
   loadFiles: () => void;
   triggerToast: FileBrowserUploadToast;
-  t: (key: string, params?: Record<string, unknown>) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 };
 
 export function queueFileBrowserUploads({

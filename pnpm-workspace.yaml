@@ -1,33 +1,29 @@
 packages:
-  - "../sdkwork-app-topology"
   - "apps/sdkwork-drive-pc"
   - "apps/sdkwork-drive-pc/packages/*"
   - "sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript"
   - "sdks/sdkwork-drive-admin-storage-sdk/sdkwork-drive-admin-storage-sdk-typescript"
   - "sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript"
-  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-contracts"
-  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-runtime"
-  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports"
-  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-adapter"
-  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-service"
-  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-application-bootstrap"
-  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react"
-  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-runtime-pc-react"
-  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-react"
-  - "../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript"
-  - "../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript"
-  - "../sdkwork-iam/sdks/sdkwork-iam-open-sdk/sdkwork-iam-open-sdk-typescript"
-  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry"
-  - "../sdkwork-appbase/packages/common/foundation/sdkwork-runtime-bootstrap"
-  - "../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react"
-  - "../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react"
-  - "../sdkwork-core/sdkwork-core-pc-react"
-  - "../sdkwork-ui/sdkwork-ui-pc-react"
-  - "../sdkwork-sdk-commons/sdkwork-sdk-common-typescript"
-  - "../sdkwork-utils/packages/sdkwork-utils-typescript"
-  - "../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts"
-  - "../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript/src/index.ts"
 
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-user-center-core-pc-react"
+  - "../sdkwork-ui/sdkwork-ui-pc-react"
+  - "../sdkwork-utils/packages/sdkwork-utils-typescript"
+  - "../sdkwork-app-topology"
+  - "../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react"
+  - "../sdkwork-appbase/packages/common/foundation/sdkwork-runtime-bootstrap"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react"
+  - "../sdkwork-core/sdkwork-core-pc-react"
+  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-contracts"
+  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-adapter"
+  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports"
+  - "../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-runtime-pc-react"
+  - "../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript"
+  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry"
+  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-runtime"
+  - "../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript"
+  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-service"
+  - "../sdkwork-sdk-commons/sdkwork-sdk-common-typescript"
 catalog:
   react: "^19.2.4"
   react-dom: "^19.2.4"
@@ -136,4 +132,20 @@ catalog:
   vite-plugin-dts: "^4.5.4"
   vitest: ^4.1.8
   zustand: ^5.0.12
-  - "../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-user-center-core-pc-react"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
