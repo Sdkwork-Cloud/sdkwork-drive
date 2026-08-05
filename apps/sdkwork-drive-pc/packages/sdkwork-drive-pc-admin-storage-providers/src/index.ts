@@ -3,3 +3,5 @@ export type { StorageProviderAdminService } from './services/storageProviderAdmi
 export { createStorageProviderAdminService } from './services/storageProviderAdminService';
 export { StorageProvidersAdminPage } from './pages/StorageProvidersAdminPage';
 export { StorageBindingsAdminPage } from './pages/StorageBindingsAdminPage';
+export { StorageProviderKindsAdminPage } from './pages/StorageProviderKindsAdminPage';
+export { StorageBucketsAdminPage } from './pages/StorageBucketsAdminPage';

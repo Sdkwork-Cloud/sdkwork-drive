@@ -1,4 +1,4 @@
-use axum::routing::{get, post};
+use axum::routing::{get, patch, post};
 use axum::Router;
 
 use crate::handlers::*;
@@ -9,6 +9,14 @@ pub(crate) fn storage_drive_routes(prefix: &str) -> Router<AdminStorageState> {
         .route(
             &format!("{prefix}/drive/storage/providers"),
             get(list_storage_providers).post(create_storage_provider),
+        )
+        .route(
+            &format!("{prefix}/drive/storage/provider-kinds"),
+            get(list_storage_provider_kinds).post(initialize_storage_provider_kinds),
+        )
+        .route(
+            &format!("{prefix}/drive/storage/provider-kinds/{{provider_kind}}"),
+            patch(set_storage_provider_kind_enabled),
         )
         .route(
             &format!("{prefix}/drive/storage/providers/{{provider_id}}"),

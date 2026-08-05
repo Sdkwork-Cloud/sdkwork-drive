@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -56,7 +56,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/http/HttpClient.java",
-      "sha256": "4c69819b5c794ce0a092bc94fba549422a0f4e4d6ecbf8cc8fb0c07cbdfd3447"
+      "sha256": "03b33e9dc9a1c4733d67238b05d3963a66beb64f4fba3a16f8e0e3273c8007f5"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/backend/sdk/generated/java/model/AuditEvent.java",

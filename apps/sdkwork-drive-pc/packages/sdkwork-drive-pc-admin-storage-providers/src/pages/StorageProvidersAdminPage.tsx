@@ -24,7 +24,7 @@ import type {
   StorageProviderView,
   UpdateStorageProviderInput,
 } from '../types/storageProviderAdminTypes';
-import { PRIMARY_BUTTON_CLASS, BADGE_BASE_CLASS, ICON_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from '../utils/uiPrimitives';
+import { PRIMARY_BUTTON_CLASS, BADGE_BASE_CLASS, ICON_BUTTON_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from '../utils/uiPrimitives';
 import { useTranslation } from '../hooks/useTranslation';
 
 interface StorageProvidersAdminPageProps {
@@ -44,6 +44,7 @@ export function StorageProvidersAdminPage({
     [adminStorageSdkClient, getSession],
   );
   const [providers, setProviders] = useState<StorageProviderView[]>([]);
+  const [kindFilter, setKindFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [pageCursors, setPageCursors] = useState<Record<number, string | undefined>>({ 1: undefined });
@@ -189,14 +190,42 @@ export function StorageProvidersAdminPage({
     (p) => p.status === 'active' && (!p.credentialConfigured || p.healthStatus === 'unreachable' || p.healthStatus === 'degraded'),
   ).length;
 
+  const visibleProviders =
+    kindFilter === 'all'
+      ? providers
+      : providers.filter(
+          (p) =>
+            p.providerKind === kindFilter ||
+            (kindFilter === 'custom' && p.providerKind.startsWith('custom:')),
+        );
+
   return (
     <main className="flex h-full flex-1 flex-col overflow-hidden bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
       <div aria-label={t('pageTitle')} className="px-4 pt-4 sm:px-6 sm:pt-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {!loading && <span className={`${BADGE_BASE_CLASS} bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300`}>{t('headerProviderCount', { count: providers.length })}</span>}
-            {issueCount > 0 && <span className={`${BADGE_BASE_CLASS} bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200`}>{t('issuesSummary', { count: issueCount })}</span>}
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {!loading && <span className={`${BADGE_BASE_CLASS} bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300`}>{t('headerProviderCount', { count: providers.length })}</span>}
+          {issueCount > 0 && <span className={`${BADGE_BASE_CLASS} bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200`}>{t('issuesSummary', { count: issueCount })}</span>}
+          <select
+            aria-label={t('filterByProviderKind')}
+            value={kindFilter}
+            onChange={(event) => {
+              setKindFilter(event.target.value);
+              setPage(1);
+            }}
+            className={`${SELECT_CLASS} !w-auto !py-1.5 text-xs`}
+          >
+            <option value="all">{t('filterAllKinds')}</option>
+            <option value="local_filesystem">Local Filesystem</option>
+            <option value="s3_compatible">Amazon S3 / S3 Compatible</option>
+            <option value="google_cloud_storage">Google Cloud Storage</option>
+            <option value="aliyun_oss">Alibaba Cloud OSS</option>
+            <option value="tencent_cos">Tencent Cloud COS</option>
+            <option value="huawei_obs">Huawei Cloud OBS</option>
+            <option value="volcengine_tos">Volcengine TOS</option>
+            <option value="custom">{t('filterCustomKinds')}</option>
+          </select>
+        </div>
           <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:!w-auto">
             <button type="button" className={SECONDARY_BUTTON_CLASS} disabled={loading} onClick={() => reload()}>
               <RefreshCw aria-hidden="true" className={loading ? 'animate-spin' : undefined} size={15} />
@@ -233,7 +262,7 @@ export function StorageProvidersAdminPage({
         ) : (
           <>
             <StorageProviderTable
-              providers={providers}
+              providers={visibleProviders}
               actionPending={pending}
               onNewProvider={() => { setEditingProvider(undefined); setEditorOpen(true); }}
               onEditProvider={(p) => { setEditingProvider(p); setEditorOpen(true); }}

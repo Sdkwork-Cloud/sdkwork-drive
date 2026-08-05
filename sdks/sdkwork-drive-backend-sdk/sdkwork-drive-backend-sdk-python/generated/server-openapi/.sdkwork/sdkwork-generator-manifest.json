@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -64,7 +64,7 @@
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/http_client.py",
-      "sha256": "a08ed4f35a2ae41b540115ed2f3d5fea98f07a921a6b3c653ed6e8e57ed043a4"
+      "sha256": "f773037dfb78398353cc5d6eef661d252b87a135205391c7ec45dad43c32bac3"
     },
     {
       "path": "sdkwork_drive_backend_sdk_generated_python/models/__init__.py",

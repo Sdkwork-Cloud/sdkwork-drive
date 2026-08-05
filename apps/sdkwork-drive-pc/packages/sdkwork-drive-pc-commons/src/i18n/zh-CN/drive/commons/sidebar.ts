@@ -17,6 +17,8 @@ export default {
   trash: '回收站',
   transferCenter: '传输中心',
   adminStorageProviders: '存储提供商',
+  adminStorageKinds: '服务商目录',
+  adminStorageBuckets: '存储桶',
   adminStorageBindings: '存储绑定',
   adminAudit: '审计日志',
   adminMaintenance: '运维维护',

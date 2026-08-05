@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -40,7 +40,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "a60c0c012e26c887f181be223e306d4746d9e572a7613f72562fe444388aacba"
+      "sha256": "01716f359b289e0357fb2200fdee23a2e439f5445e5f3960887b8286308f2d36"
     },
     {
       "path": "README.md",
@@ -56,7 +56,7 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "c78dd531b0d0017ddd2d1cfa9ba1c128c84108e750f1e6e52312bccf0a760e06"
+      "sha256": "426914cdd67fb4ce9c2e1d4885758aae426260d16f1de6ef847956eec7fe48db"
     },
     {
       "path": "src/api/index.ts",
@@ -72,7 +72,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "6e389d5c14fb5845365972b6776af185d8af8eb8da7bb398e59be6c29e394ddf"
+      "sha256": "8a0a4cb9cc3cb855091ccd790e99feb9b9beff7637db48869173393ab544b9af"
     },
     {
       "path": "src/http/index.ts",

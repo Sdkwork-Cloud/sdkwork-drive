@@ -12,7 +12,6 @@ cargo add sdkwork-drive-admin-storage-sdk-generated-rust
 
 ```rust
 use sdkwork_drive_admin_storage_sdk_generated_rust::{SdkworkCustomClient, SdkworkConfig};
-use std::collections::HashMap;
 
 
 #[tokio::main]
@@ -20,9 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = SdkworkCustomClient::new(SdkworkConfig::new("http://127.0.0.1:18080"))?;
     client.set_api_key("your-api-key");
 
-    let mut query = HashMap::new();
-    query.insert("status".to_string(), serde_json::json!("status"));
-    let result = client.drive().storage_providers_list(Some(&query)).await?;
+    let result = client.drive().storage_provider_kinds_list().await?;
     println!("{result:?}");
     Ok(())
 }
@@ -69,11 +66,8 @@ client.set_header("X-Custom-Header", "value");
 ### drive
 
 ```rust
-use std::collections::HashMap;
-// GET /backend/v3/api/drive/storage/providers
-let mut query = HashMap::new();
-query.insert("status".to_string(), serde_json::json!("status"));
-let result = client.drive().storage_providers_list(Some(&query)).await?;
+// GET /backend/v3/api/drive/storage/provider-kinds
+let result = client.drive().storage_provider_kinds_list().await?;
 println!("{result:?}");
 ```
 
@@ -81,15 +75,12 @@ println!("{result:?}");
 
 ```rust
 use sdkwork_drive_admin_storage_sdk_generated_rust::{SdkworkCustomClient, SdkworkConfig};
-use std::collections::HashMap;
 
 
 let client = SdkworkCustomClient::new(SdkworkConfig::new("http://127.0.0.1:18080"))?;
 
 let outcome: Result<(), _> = async {
-    let mut query = HashMap::new();
-    query.insert("status".to_string(), serde_json::json!("status"));
-    client.drive().storage_providers_list(Some(&query)).await?;
+    client.drive().storage_provider_kinds_list().await?;
     Ok(())
 }.await;
 

@@ -21,10 +21,7 @@ client = SdkworkCustomClient(config)
 client.set_api_key("your-api-key")
 
 # Use the SDK
-params = {
-    'status': 'status',
-}
-result = client.drive.storage_providers.list(params)
+result = client.drive.storage_provider_kinds.list()
 ```
 
 ## Authentication Modes (Mutually Exclusive)
@@ -76,11 +73,8 @@ client.set_header('X-Custom-Header', 'value')
 ### drive
 
 ```python
-# GET /backend/v3/api/drive/storage/providers
-params = {
-    'status': 'status',
-}
-result = client.drive.storage_providers.list(params)
+# GET /backend/v3/api/drive/storage/provider-kinds
+result = client.drive.storage_provider_kinds.list()
 print(result)
 ```
 
@@ -88,10 +82,7 @@ print(result)
 
 ```python
 try:
-    params = {
-        'status': 'status',
-    }
-    client.drive.storage_providers.list(params)
+    client.drive.storage_provider_kinds.list()
 except Exception as error:
     print(f"Error: {error}")
 ```

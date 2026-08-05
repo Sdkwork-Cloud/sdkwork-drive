@@ -39,6 +39,12 @@ pub(crate) struct RotateStorageProviderCredentialRequest {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct SetStorageProviderKindEnabledRequest {
+    pub(crate) enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ListStorageProvidersQuery {
     pub(crate) status: Option<String>,
@@ -144,6 +150,17 @@ pub(crate) struct StorageProviderCapabilitiesResponse {
     pub(crate) supports_credential_rotation: bool,
     pub(crate) supported_server_side_encryption_modes: Vec<String>,
     pub(crate) supported_storage_classes: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct StorageProviderKindResponse {
+    pub(crate) provider_kind: String,
+    pub(crate) display_name: String,
+    pub(crate) enabled: bool,
+    pub(crate) sort_order: i64,
+    pub(crate) version: i64,
+    pub(crate) config_count: i64,
 }
 
 #[derive(Debug, Serialize)]

@@ -14,6 +14,7 @@ import type {
   StorageProviderBucketListItemView,
   StorageProviderBucketView,
   StorageProviderCapabilitiesView,
+  StorageProviderKindView,
   StorageProviderMutationOptions,
   StorageProviderObjectView,
   StorageProviderView,
@@ -25,6 +26,13 @@ type JsonRecord = Record<string, unknown>;
 export interface StorageProviderAdminService {
   listProviders(input?: ListStorageProvidersInput): Promise<StorageProviderView[]>;
   listProvidersPage(input?: ListStorageProvidersInput): Promise<ListStorageProvidersPageResult>;
+  listKinds(input?: { signal?: AbortSignal }): Promise<StorageProviderKindView[]>;
+  setKindEnabled(
+    providerKind: string,
+    enabled: boolean,
+    options?: StorageProviderMutationOptions,
+  ): Promise<StorageProviderKindView>;
+  initializeKinds(options?: StorageProviderMutationOptions): Promise<StorageProviderKindView[]>;
   createProvider(
     input: CreateStorageProviderInput,
     options?: StorageProviderMutationOptions,
@@ -97,6 +105,30 @@ export function createStorageProviderAdminService({
     async listProviders(input = {}) {
       const page = await service.listProvidersPage(input);
       return page.items;
+    },
+    async listKinds(input = {}) {
+      const response = await adminStorageSdkClient.request<unknown>({
+        operationId: 'storageProviderKinds.list',
+        signal: input.signal,
+      });
+      return extractItems(response).map(responseToProviderKind);
+    },
+    async setKindEnabled(providerKind, enabled, options) {
+      const response = await adminStorageSdkClient.request<unknown>({
+        operationId: 'storageProviderKinds.update',
+        signal: options?.signal,
+        pathParams: { providerKind },
+        body: { enabled },
+      });
+      return responseToProviderKind(response);
+    },
+    async initializeKinds(options) {
+      const response = await adminStorageSdkClient.request<unknown>({
+        operationId: 'storageProviderKinds.initialize',
+        signal: options?.signal,
+        body: {},
+      });
+      return extractItems(response).map(responseToProviderKind);
     },
     async listProvidersPage(input = {}) {
       const response = await adminStorageSdkClient.request<unknown>({
@@ -440,6 +472,18 @@ function responseToStorageProvider(response: unknown): StorageProviderView {
     status: stringField(record, 'status') ?? 'unknown',
     version: numberField(record, 'version') ?? 0,
     strictTls: booleanField(record, 'strictTls') ?? true,
+  };
+}
+
+function responseToProviderKind(response: unknown): StorageProviderKindView {
+  const record = recordOf(response);
+  return {
+    providerKind: stringField(record, 'providerKind', 'provider_kind') ?? '',
+    displayName: stringField(record, 'displayName', 'display_name') ?? '',
+    enabled: booleanField(record, 'enabled') ?? false,
+    sortOrder: numberField(record, 'sortOrder', 'sort_order') ?? 0,
+    version: numberField(record, 'version') ?? 0,
+    configCount: numberField(record, 'configCount', 'config_count') ?? 0,
   };
 }
 

@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "api/base.go",
-      "sha256": "1ee6c1473b1880815f20b1ca043a6fa5b5f4a44a7c13bbc3041c06fd2678c4ea"
+      "sha256": "09503aa10fe08257ca8dab90843d4c2261132b80707275cc22cda10751c3620d"
     },
     {
       "path": "api/doc.go",
@@ -28,7 +28,7 @@
     },
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -52,7 +52,7 @@
     },
     {
       "path": "http/client.go",
-      "sha256": "be9e297a68a022d8ff4564625a7a9adc80cf49ce650f103a9b9a15406e3fceeb"
+      "sha256": "f3df614e72134be31d440adb40a7867c9bd2db848a8d57cfa577bdf81f960d47"
     },
     {
       "path": "http/doc.go",

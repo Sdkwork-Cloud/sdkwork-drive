@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "api/base.go",
-      "sha256": "833b0d8166ef868c8d4112e3f9f92951f5e17ded3d9836736b1722b02c33ed81"
+      "sha256": "d4b38b0631c448968a4cf4ed46880f630a618dd71343564f6facf2fa7ecfd90f"
     },
     {
       "path": "api/doc.go",
@@ -20,7 +20,7 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "1c649c06b5372da5ab81c6ee5f2074687cfeb8fcce2aaaa2fcdd840146f6059e"
+      "sha256": "1c9b247350f75cb9665d9aba287352b9768d1bd667b2f74e49093152caea4826"
     },
     {
       "path": "api/paths.go",
@@ -28,7 +28,7 @@
     },
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -52,7 +52,7 @@
     },
     {
       "path": "http/client.go",
-      "sha256": "e56a64ecc786f543c9954c7177ae8fc9ede046eaf8a320e995bfe9261a2f0482"
+      "sha256": "56ea3ce1326bda42739f11157e93ac570d4e5bcae7875aae4c7ab02ffdc02536"
     },
     {
       "path": "http/doc.go",
@@ -64,7 +64,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "e89bf835f2d589a8f442d21711ea8c5d66681b6b1766d31d384499b6d5c33b16"
+      "sha256": "3c3f20fb67f2564b7b6f96021e616a1afb1d5d55cd08ba88e6a992426eda624c"
     },
     {
       "path": "sdk.go",
@@ -159,6 +159,10 @@
       "sha256": "3e5e94066be8317599cada068a7dfde051bc68b3aa19a0242791b3b8d01fb3b5"
     },
     {
+      "path": "types/set_storage_provider_kind_enabled_request.go",
+      "sha256": "ee86ec9544477c1cdca837ad67574d6a744e5be881c03eed3bae2ce27ba1f4c4"
+    },
+    {
       "path": "types/storage_provider_binding.go",
       "sha256": "fe8045eae9d044cd7cd60330ad2c2f7271a5f5ed8d992fde0305c72a823aa958"
     },
@@ -177,6 +181,22 @@
     {
       "path": "types/storage_provider_capabilities.go",
       "sha256": "41935f3e39a271f7b1e5a4fc93d210803f5f1200bae91ecd740f8b33c90d5f62"
+    },
+    {
+      "path": "types/storage_provider_kind.go",
+      "sha256": "d0e52169856a0562ae13c4fb3d50409815a3ac238b802498fcf4102ab3bee48a"
+    },
+    {
+      "path": "types/storage_provider_kinds_initialize_response.go",
+      "sha256": "116e0860d0948d8727d20bf16f194d817f04780e8893383f8357c74dc3b0e4d9"
+    },
+    {
+      "path": "types/storage_provider_kinds_list_response.go",
+      "sha256": "f93e086f0c170789b5b7fc24b8dd412191f9bf564aad868a53de1f8c81a80305"
+    },
+    {
+      "path": "types/storage_provider_kinds_update_response.go",
+      "sha256": "77bf1ede194cca059554eb7032048735403abf29a195fb9b8eadc58e41e1a56f"
     },
     {
       "path": "types/storage_provider.go",

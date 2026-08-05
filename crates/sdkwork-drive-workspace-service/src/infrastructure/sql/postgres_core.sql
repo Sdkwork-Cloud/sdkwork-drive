@@ -1049,6 +1049,43 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_storage_provider_binding_space_typ
     ON dr_drive_storage_provider_binding (tenant_id, purpose)
     WHERE binding_scope = 'space_type' AND lifecycle_status = 'active';
 
+CREATE TABLE IF NOT EXISTS dr_drive_storage_provider_kind (
+    provider_kind VARCHAR(64) PRIMARY KEY,
+    display_name VARCHAR(128) NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    version BIGINT NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT ck_dr_drive_storage_provider_kind_provider_kind
+        CHECK (
+            provider_kind IN (
+                'local_filesystem',
+                's3_compatible',
+                'google_cloud_storage',
+                'aliyun_oss',
+                'tencent_cos',
+                'huawei_obs',
+                'volcengine_tos'
+            )
+        ),
+    CONSTRAINT ck_dr_drive_storage_provider_kind_display_name
+        CHECK (display_name = btrim(display_name) AND length(display_name) BETWEEN 1 AND 128),
+    CONSTRAINT ck_dr_drive_storage_provider_kind_version
+        CHECK (version >= 1)
+);
+
+INSERT INTO dr_drive_storage_provider_kind (provider_kind, display_name, enabled, sort_order)
+VALUES
+    ('local_filesystem', 'Local Filesystem', TRUE, 1),
+    ('s3_compatible', 'Amazon S3 / S3 Compatible', TRUE, 2),
+    ('google_cloud_storage', 'Google Cloud Storage', TRUE, 3),
+    ('aliyun_oss', 'Alibaba Cloud OSS', TRUE, 4),
+    ('tencent_cos', 'Tencent Cloud COS', TRUE, 5),
+    ('huawei_obs', 'Huawei Cloud OBS', TRUE, 6),
+    ('volcengine_tos', 'Volcengine TOS', TRUE, 7)
+ON CONFLICT (provider_kind) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS dr_drive_download_package (
     id VARCHAR(64) PRIMARY KEY,
     tenant_id VARCHAR(64) NOT NULL,

@@ -17,6 +17,8 @@ export default {
   trash: 'Trash',
   transferCenter: 'Transfer Center',
   adminStorageProviders: 'Storage Providers',
+  adminStorageKinds: 'Provider Catalog',
+  adminStorageBuckets: 'Storage Buckets',
   adminStorageBindings: 'Storage Bindings',
   adminAudit: 'Audit Log',
   adminMaintenance: 'Maintenance',

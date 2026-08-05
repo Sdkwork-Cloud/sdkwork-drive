@@ -15,6 +15,7 @@ pub mod sandbox_principal_resolver;
 pub mod sandbox_store;
 pub mod space_store;
 pub mod storage_object_store;
+pub mod storage_provider_kind_store;
 pub mod storage_provider_store;
 pub mod upload_session_store;
 pub mod uploader_store;

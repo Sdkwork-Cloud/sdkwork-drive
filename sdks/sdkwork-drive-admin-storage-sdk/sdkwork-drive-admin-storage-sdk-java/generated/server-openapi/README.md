@@ -26,8 +26,6 @@ implementation 'com.sdkwork:sdkwork-drive-admin-storage-sdk-generated-java:0.1.0
 import com.sdkwork.drive.admin.storage.sdk.generated.java.SdkworkCustomClient;
 import com.sdkwork.common.core.Types;
 import com.sdkwork.drive.admin.storage.sdk.generated.java.model.*;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -36,9 +34,7 @@ public class Main {
         client.setApiKey("your-api-key");
 
         // Use the SDK
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("status", "status");
-        StorageProvidersListResponse result = client.getDrive().storageProvidersList(params);
+        StorageProviderKindsListResponse result = client.getDrive().storageProviderKindsList();
         System.out.println(result);
     }
 }
@@ -90,10 +86,8 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 ### drive
 
 ```java
-// GET /backend/v3/api/drive/storage/providers
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("status", "status");
-StorageProvidersListResponse result = client.getDrive().storageProvidersList(params);
+// GET /backend/v3/api/drive/storage/provider-kinds
+StorageProviderKindsListResponse result = client.getDrive().storageProviderKindsList();
 System.out.println(result);
 ```
 
@@ -101,9 +95,7 @@ System.out.println(result);
 
 ```java
 try {
-    Map<String, Object> params = new LinkedHashMap<>();
-    params.put("status", "status");
-    StorageProvidersListResponse result = client.getDrive().storageProvidersList(params);
+    StorageProviderKindsListResponse result = client.getDrive().storageProviderKindsList();
     System.out.println(result);
 } catch (Exception e) {
     System.err.println("Error: " + e.getMessage());

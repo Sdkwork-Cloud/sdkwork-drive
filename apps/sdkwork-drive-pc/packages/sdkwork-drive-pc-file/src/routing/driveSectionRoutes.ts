@@ -11,6 +11,8 @@ const BUILTIN_SECTION_PATHS: Record<string, string> = {
   apps: '/apps',
   'admin-storage-providers': '/admin/storage-providers',
   'admin-storage-bindings': '/admin/storage-bindings',
+  'admin-storage-kinds': '/admin/storage-kinds',
+  'admin-storage-buckets': '/admin/storage-buckets',
   'admin-audit': '/admin/audit',
   'admin-maintenance': '/admin/maintenance',
   'admin-quotas': '/admin/quotas',

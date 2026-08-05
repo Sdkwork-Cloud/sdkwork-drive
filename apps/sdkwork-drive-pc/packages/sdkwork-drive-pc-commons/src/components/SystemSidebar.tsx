@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HardDrive, Settings, Activity, ServerCog, Link2, ScrollText, Wrench, PieChart, Tags, LayoutGrid, Package } from 'lucide-react';
+import { HardDrive, Settings, Activity, ServerCog, Link2, ScrollText, Wrench, PieChart, Tags, LayoutGrid, Package, Database, FolderCog } from 'lucide-react';
 import type { SettingsTab } from './SettingsModal';
 import {
   AccountAvatar,
@@ -11,6 +11,8 @@ import { useTranslation } from './LanguageProvider';
 export interface DriveAdminNavigationAccess {
   storageProviders: boolean;
   storageBindings: boolean;
+  storageKinds: boolean;
+  storageBuckets: boolean;
   audit: boolean;
   maintenance: boolean;
   quotas: boolean;
@@ -53,6 +55,8 @@ export function SystemSidebar({
   const adminSections = new Set([
     'admin-storage-providers',
     'admin-storage-bindings',
+    'admin-storage-kinds',
+    'admin-storage-buckets',
     'admin-audit',
     'admin-maintenance',
     'admin-quotas',
@@ -64,6 +68,8 @@ export function SystemSidebar({
   const isTransferActive = activeSection === 'transfer';
   const isAdminStorageProvidersActive = activeSection === 'admin-storage-providers';
   const isAdminStorageBindingsActive = activeSection === 'admin-storage-bindings';
+  const isAdminStorageKindsActive = activeSection === 'admin-storage-kinds';
+  const isAdminStorageBucketsActive = activeSection === 'admin-storage-buckets';
   const isAdminAuditActive = activeSection === 'admin-audit';
   const isAdminMaintenanceActive = activeSection === 'admin-maintenance';
   const isAdminQuotasActive = activeSection === 'admin-quotas';
@@ -114,6 +120,22 @@ export function SystemSidebar({
               title={t('sidebar.adminStorageBindings')}
               active={isAdminStorageBindingsActive}
               onClick={() => onSectionChange?.('admin-storage-bindings')}
+            />
+            ) : null}
+            {adminSectionAccess?.storageKinds ? (
+            <SidebarIcon
+              icon={<Database size={22} />}
+              title={t('sidebar.adminStorageKinds')}
+              active={isAdminStorageKindsActive}
+              onClick={() => onSectionChange?.('admin-storage-kinds')}
+            />
+            ) : null}
+            {adminSectionAccess?.storageBuckets ? (
+            <SidebarIcon
+              icon={<FolderCog size={22} />}
+              title={t('sidebar.adminStorageBuckets')}
+              active={isAdminStorageBucketsActive}
+              onClick={() => onSectionChange?.('admin-storage-buckets')}
             />
             ) : null}
             {adminSectionAccess?.audit ? (

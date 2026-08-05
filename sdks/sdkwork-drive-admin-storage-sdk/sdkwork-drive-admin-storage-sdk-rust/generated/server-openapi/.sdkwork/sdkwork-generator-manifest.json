@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -36,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "64bdbf5eb0ae94d6d2b50c2eda3012cd36293cab346f16cf689892a9cde6c52a"
+      "sha256": "c59dd275b5211ccbdb9bc7aa15d81eeff1a8ef765eec280a7213e12be58ab22e"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -48,7 +48,7 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "276b7a854b9eeadc08a073ebdb53f719c7f67bc2510b6ba918c28f948d028e1c"
+      "sha256": "c8fc07d4d360a3796bba95e258f171960fa9bdc29ffdcf0dfc4483659900bd1e"
     },
     {
       "path": "src/api/mod.rs",
@@ -64,7 +64,7 @@
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "3385b5f3fc4e15d5d93543cf66cdcdc8738257fd52777849402f48b041a7b4d4"
+      "sha256": "06e21768cdcf4533d0c9674b79905523986887598f88742b2b926e7913e09f13"
     },
     {
       "path": "src/http/mod.rs",
@@ -92,7 +92,7 @@
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "4425050ab0a7ff2dbb48a9a117f1a35534f901e2622a08a675919f989a2814cd"
+      "sha256": "03aaa26182ba6e7ff6a8ae3f0a4b98b46e168c24a72315e3cf317edaaa60beb7"
     },
     {
       "path": "src/models/page_info.rs",
@@ -155,6 +155,10 @@
       "sha256": "9c4a2ed8fe5472fa474ab6e24eb0930f64ec851632981a9ef50c5e9046dc548e"
     },
     {
+      "path": "src/models/set_storage_provider_kind_enabled_request.rs",
+      "sha256": "fd5ed036f713e767a3524545e680b6d6d07ec24696c0ef96560a5f2e72bfc2e2"
+    },
+    {
       "path": "src/models/storage_provider_binding.rs",
       "sha256": "9e6b93614fcec3a5da95dcdb03d227dec6a6c281a067b287f91ea181d58f5c7c"
     },
@@ -173,6 +177,22 @@
     {
       "path": "src/models/storage_provider_capabilities.rs",
       "sha256": "62a764f963745eac03dec119603a5b0927a7a753361ee91dd9f882b665ac4e3f"
+    },
+    {
+      "path": "src/models/storage_provider_kind.rs",
+      "sha256": "23eaf8bf4597d9b4c34d613d6d90ed0ca9d8178fc02bc7c430a5cb6f97c1383f"
+    },
+    {
+      "path": "src/models/storage_provider_kinds_initialize_response.rs",
+      "sha256": "d11e35f189859aed7086a078755bf2da7acaf97a46c27b9393fc0d8137584e7e"
+    },
+    {
+      "path": "src/models/storage_provider_kinds_list_response.rs",
+      "sha256": "345e455281d896b1f467c89092075a1783deb8aaf688806069927c402ae77b1e"
+    },
+    {
+      "path": "src/models/storage_provider_kinds_update_response.rs",
+      "sha256": "ca403df04d9a2ad466885d1cedaf8300d5360bd4ba4afed44ccb739d2b654646"
     },
     {
       "path": "src/models/storage_provider.rs",

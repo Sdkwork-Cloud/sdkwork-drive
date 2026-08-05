@@ -17,12 +17,12 @@ public class DriveApi {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("accessCode", accessCode, "form", true, false, null)
         ));
-        Object raw = client.request("GET", ApiPaths.appendQueryString(ApiPaths.customPath("/drive/share_links/" + serializePathParameter(token, new PathParameterSpec("token", "simple", false)) + ""), query), null, null, null, null, true);
+        Object raw = client.request("GET", ApiPaths.appendQueryString(ApiPaths.customPath("/drive/share_links/" + serializePathParameter(token, new PathParameterSpec("token", "simple", false)) + ""), query), null, null, null, null, true, false);
         return client.convertValue(raw, new TypeReference<OpenShareLinksRetrieveResponse>() {});
     }
 
     public OpenShareLinksDownloadUrlsCreateResponse201 openShareLinksDownloadUrlsCreate(String token, CreateOpenDownloadUrlRequest body) throws Exception {
-        Object raw = client.request("POST", ApiPaths.customPath("/drive/share_links/" + serializePathParameter(token, new PathParameterSpec("token", "simple", false)) + "/download_url"), body, null, null, "application/json", true);
+        Object raw = client.request("POST", ApiPaths.customPath("/drive/share_links/" + serializePathParameter(token, new PathParameterSpec("token", "simple", false)) + "/download_url"), body, null, null, "application/json", true, false);
         return client.convertValue(raw, new TypeReference<OpenShareLinksDownloadUrlsCreateResponse201>() {});
     }
 

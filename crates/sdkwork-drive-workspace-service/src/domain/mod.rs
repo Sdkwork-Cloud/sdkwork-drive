@@ -14,6 +14,7 @@ pub mod sandbox_admin;
 pub mod sandbox_directory;
 pub mod space;
 pub mod storage_provider;
+pub mod storage_provider_kind;
 pub mod upload;
 pub mod uploader;
 pub mod website_root;

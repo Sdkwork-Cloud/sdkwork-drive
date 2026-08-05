@@ -299,6 +299,42 @@ export default {
   bindingsTenantDefaultSaved: '租户默认绑定已更新。',
   bindingsTenantDefaultCleared: '租户默认绑定已清除。',
 
+  // Provider kinds (服务商)
+  kindsPageTitle: '存储服务商目录',
+  kindsSummary: '{total} 个服务商 · {enabled} 个已启用',
+  kindsInitialize: '初始化服务商配置',
+  kindsLoading: '正在加载服务商目录…',
+  kindsNoticeLoadFailed: '加载服务商目录失败。',
+  kindsNoticeInitialized: '服务商配置已初始化（{count} 个服务商）。',
+  kindsNoticeInitializeFailed: '初始化服务商配置失败。',
+  kindsNoticeEnabled: '已启用服务商“{label}”。',
+  kindsNoticeDisabled: '已禁用服务商“{label}”。',
+  kindsNoticeToggleFailed: '更新服务商状态失败。',
+  kindsColProvider: '服务商',
+  kindsColKind: '类型标识',
+  kindsColConfigs: '配置数',
+  kindsColStatus: '状态',
+  kindsColAction: '操作',
+  kindsEnabled: '已启用',
+  kindsDisabled: '已禁用',
+  kindsEnable: '启用',
+  kindsDisable: '禁用',
+  kindsDisableTitle: '禁用服务商',
+  kindsDisableMessage: '确定禁用“{label}”吗？禁用后无法再新建该服务商的配置，已停用的配置也无法重新激活。',
+
+  // Bucket admin (存储桶)
+  bucketsPageTitle: '存储桶管理',
+  bucketsSummary: '{count} 个可用配置',
+  bucketsLoading: '正在加载配置…',
+  bucketsNoticeLoadFailed: '加载存储配置失败。',
+  bucketsNoActiveProviders: '没有可用的存储配置。请先启用或新建一个服务商配置。',
+  bucketsSelectProvider: '存储服务商（配置）',
+
+  // Provider kind filter on the configurations page
+  filterByProviderKind: '按服务商筛选',
+  filterAllKinds: '全部服务商',
+  filterCustomKinds: '自定义',
+
   // Pagination
   pageLabel: '第 {page} 页',
   previousPage: '上一页',

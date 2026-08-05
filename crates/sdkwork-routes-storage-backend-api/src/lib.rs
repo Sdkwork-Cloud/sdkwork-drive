@@ -13,6 +13,7 @@ pub mod http_route_manifest;
 mod object_handlers;
 mod object_store;
 mod provider_handlers;
+mod provider_kind_handlers;
 mod provider_lookup;
 mod provider_mappers;
 mod rate_limit;

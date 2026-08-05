@@ -39,12 +39,6 @@
       "lifecycle_status": "active"
     },
     {
-      "table_name": "dr_drive_space_website_profile",
-      "owner": "drive-platform",
-      "compliance_level": "L2",
-      "lifecycle_status": "active"
-    },
-    {
       "table_name": "dr_drive_website_root",
       "owner": "drive-platform",
       "compliance_level": "L2",
@@ -52,6 +46,12 @@
     },
     {
       "table_name": "dr_drive_website_root_generation",
+      "owner": "drive-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "dr_drive_space_website_profile",
       "owner": "drive-platform",
       "compliance_level": "L2",
       "lifecycle_status": "active"
@@ -250,6 +250,12 @@
     },
     {
       "table_name": "dr_drive_sandbox_mutation_operation",
+      "owner": "drive-platform",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "dr_drive_storage_provider_kind",
       "owner": "drive-platform",
       "compliance_level": "L2",
       "lifecycle_status": "active"

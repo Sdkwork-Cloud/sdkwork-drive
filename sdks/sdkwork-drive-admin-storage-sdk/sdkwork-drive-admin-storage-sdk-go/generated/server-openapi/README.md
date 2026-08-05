@@ -26,10 +26,7 @@ func main() {
     client.SetApiKey("your-api-key")
     
     // Use the SDK
-    params := map[string]interface{}{
-        "status": "status",
-    }
-    result, err := client.Drive.StorageProvidersList(params)
+    result, err := client.Drive.StorageProviderKindsList()
     if err != nil {
         panic(err)
     }
@@ -83,11 +80,8 @@ client.SetHeader("X-Custom-Header", "value")
 ### drive
 
 ```go
-// GET /backend/v3/api/drive/storage/providers
-params := map[string]interface{}{
-    "status": "status",
-}
-result, err := client.Drive.StorageProvidersList(params)
+// GET /backend/v3/api/drive/storage/provider-kinds
+result, err := client.Drive.StorageProviderKindsList()
 if err != nil {
     panic(err)
 }
@@ -97,10 +91,7 @@ fmt.Println(result)
 ## Error Handling
 
 ```go
-params := map[string]interface{}{
-    "status": "status",
-}
-_, err := client.Drive.StorageProvidersList(params)
+_, err := client.Drive.StorageProviderKindsList()
 if err != nil {
     // Handle error
     fmt.Println("Error:", err)

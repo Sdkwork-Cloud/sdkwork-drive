@@ -1,5 +1,5 @@
 import { customApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { CreateOpenDownloadUrlRequest, OpenShareLinksDownloadUrlsCreateResponse201, OpenShareLinksRetrieveResponse } from '../types';
 
@@ -15,15 +15,15 @@ export class DriveApi {
     this.client = client;
   }
 
-async openShareLinksRetrieve(token: string, params?: DriveOpenShareLinksRetrieveParams): Promise<OpenShareLinksRetrieveResponse> {
+async openShareLinksRetrieve(token: string, params?: DriveOpenShareLinksRetrieveParams, requestOptions?: ApiRequestOptions): Promise<OpenShareLinksRetrieveResponse> {
     const query = buildQueryString([
       { name: 'accessCode', value: params?.accessCode, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenShareLinksRetrieveResponse>(appendQueryString(customApiPath(`/drive/share_links/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}`), query), { method: 'GET' as any, skipAuth: true });
+    return this.client.request<OpenShareLinksRetrieveResponse>(appendQueryString(customApiPath(`/drive/share_links/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, skipAuth: true });
   }
 
-async openShareLinksDownloadUrlsCreate(token: string, body?: CreateOpenDownloadUrlRequest): Promise<OpenShareLinksDownloadUrlsCreateResponse201> {
-    return this.client.request<OpenShareLinksDownloadUrlsCreateResponse201>(customApiPath(`/drive/share_links/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}/download_url`), { method: 'POST' as any, body, contentType: 'application/json', skipAuth: true });
+async openShareLinksDownloadUrlsCreate(token: string, body?: CreateOpenDownloadUrlRequest, requestOptions?: ApiRequestOptions): Promise<OpenShareLinksDownloadUrlsCreateResponse201> {
+    return this.client.request<OpenShareLinksDownloadUrlsCreateResponse201>(customApiPath(`/drive/share_links/${serializePathParameter(token, { name: 'token', style: 'simple', explode: false })}/download_url`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', skipAuth: true });
   }
 }
 

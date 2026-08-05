@@ -21,7 +21,7 @@ func (a *DriveApi) OpenShareLinksRetrieve(token string, accessCode *string) (sdk
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "accessCode", Value: func() interface{} { if accessCode == nil { return nil }; return *accessCode }(), Style: "form", Explode: true, AllowReserved: false},
     })
-    raw, err := a.client.Request("GET", AppendQueryString(CustomApiPath(fmt.Sprintf("/drive/share_links/%s", SerializePathParameter(token, PathParameterSpec{Name: "token", Style: "simple", Explode: false}))), query), nil, nil, nil, "", true)
+    raw, err := a.client.Request("GET", AppendQueryString(CustomApiPath(fmt.Sprintf("/drive/share_links/%s", SerializePathParameter(token, PathParameterSpec{Name: "token", Style: "simple", Explode: false}))), query), nil, nil, nil, "", true, false)
     if err != nil {
         var zero sdktypes.OpenShareLinksRetrieveResponse
         return zero, err
@@ -30,7 +30,7 @@ func (a *DriveApi) OpenShareLinksRetrieve(token string, accessCode *string) (sdk
 }
 
 func (a *DriveApi) OpenShareLinksDownloadUrlsCreate(token string, body *sdktypes.CreateOpenDownloadUrlRequest) (sdktypes.OpenShareLinksDownloadUrlsCreateResponse201, error) {
-    raw, err := a.client.Request("POST", CustomApiPath(fmt.Sprintf("/drive/share_links/%s/download_url", SerializePathParameter(token, PathParameterSpec{Name: "token", Style: "simple", Explode: false}))), body, nil, nil, "application/json", true)
+    raw, err := a.client.Request("POST", CustomApiPath(fmt.Sprintf("/drive/share_links/%s/download_url", SerializePathParameter(token, PathParameterSpec{Name: "token", Style: "simple", Explode: false}))), body, nil, nil, "application/json", true, false)
     if err != nil {
         var zero sdktypes.OpenShareLinksDownloadUrlsCreateResponse201
         return zero, err

@@ -11,6 +11,16 @@ export type StorageProviderKind =
 
 export type StorageProviderHealthStatus = 'unknown' | 'healthy' | 'degraded' | 'unreachable';
 
+/** Built-in provider kind registry row (服务商). */
+export interface StorageProviderKindView {
+  providerKind: string;
+  displayName: string;
+  enabled: boolean;
+  sortOrder: number;
+  version: number;
+  configCount: number;
+}
+
 export interface StorageProviderView {
   id: string;
   providerKind: string;

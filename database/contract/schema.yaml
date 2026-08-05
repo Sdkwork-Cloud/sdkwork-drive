@@ -27,13 +27,13 @@ tables:
   - name: dr_drive_node
     lifecycle_status: active
     owner: drive-platform
-  - name: dr_drive_space_website_profile
-    lifecycle_status: active
-    owner: drive-platform
   - name: dr_drive_website_root
     lifecycle_status: active
     owner: drive-platform
   - name: dr_drive_website_root_generation
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_space_website_profile
     lifecycle_status: active
     owner: drive-platform
   - name: dr_drive_website_sync
@@ -133,5 +133,8 @@ tables:
     lifecycle_status: active
     owner: drive-platform
   - name: dr_drive_sandbox_mutation_operation
+    lifecycle_status: active
+    owner: drive-platform
+  - name: dr_drive_storage_provider_kind
     lifecycle_status: active
     owner: drive-platform

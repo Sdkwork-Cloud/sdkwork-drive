@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -68,7 +68,7 @@
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "2e5bd0ae2159fce3ffbfa4950a0df83a6df97399be5c15196b284d3671da9b0a"
+      "sha256": "57c03de0e7f6b37ef5974527e558607cd2fc35f945198731490b2f8a5b8bfad2"
     },
     {
       "path": "src/http/mod.rs",

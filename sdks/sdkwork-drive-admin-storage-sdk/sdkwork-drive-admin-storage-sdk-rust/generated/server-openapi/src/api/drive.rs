@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::custom_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{CopyProviderObjectRequest, CreateStorageProviderRequest, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, StorageProviderBindingsDefaultRetrieveResponse, StorageProviderBindingsDefaultUpdateResponse, StorageProviderBindingsListResponse, StorageProvidersActivateResponse, StorageProvidersBucketRetrieveResponse, StorageProvidersBucketUpdateResponse, StorageProvidersBucketsListResponse, StorageProvidersCapabilitiesListResponse, StorageProvidersCreateResponse201, StorageProvidersCredentialsRotateResponse, StorageProvidersDeactivateResponse, StorageProvidersListResponse, StorageProvidersObjectsCopyResponse, StorageProvidersObjectsListResponse, StorageProvidersObjectsRetrieveResponse, StorageProvidersRetrieveResponse, StorageProvidersTestResponse, StorageProvidersUpdateResponse, UpdateStorageProviderRequest};
+use crate::models::{CopyProviderObjectRequest, CreateStorageProviderRequest, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, SetStorageProviderKindEnabledRequest, StorageProviderBindingsDefaultRetrieveResponse, StorageProviderBindingsDefaultUpdateResponse, StorageProviderBindingsListResponse, StorageProviderKindsInitializeResponse, StorageProviderKindsListResponse, StorageProviderKindsUpdateResponse, StorageProvidersActivateResponse, StorageProvidersBucketRetrieveResponse, StorageProvidersBucketUpdateResponse, StorageProvidersBucketsListResponse, StorageProvidersCapabilitiesListResponse, StorageProvidersCreateResponse201, StorageProvidersCredentialsRotateResponse, StorageProvidersDeactivateResponse, StorageProvidersListResponse, StorageProvidersObjectsCopyResponse, StorageProvidersObjectsListResponse, StorageProvidersObjectsRetrieveResponse, StorageProvidersRetrieveResponse, StorageProvidersTestResponse, StorageProvidersUpdateResponse, UpdateStorageProviderRequest};
 
 #[derive(Clone)]
 pub struct DriveApi {
@@ -152,6 +152,21 @@ impl DriveApi {
         ]);
         let path = append_query_string(custom_path(&"/drive/storage/bindings".to_string()), &query);
         self.client.get(&path, None, None).await
+    }
+
+    pub async fn storage_provider_kinds_list(&self) -> Result<StorageProviderKindsListResponse, SdkworkError> {
+        let path = custom_path(&"/drive/storage/provider-kinds".to_string());
+        self.client.get(&path, None, None).await
+    }
+
+    pub async fn storage_provider_kinds_initialize(&self) -> Result<StorageProviderKindsInitializeResponse, SdkworkError> {
+        let path = custom_path(&"/drive/storage/provider-kinds".to_string());
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
+    }
+
+    pub async fn storage_provider_kinds_update(&self, provider_kind: &str, body: &SetStorageProviderKindEnabledRequest) -> Result<StorageProviderKindsUpdateResponse, SdkworkError> {
+        let path = custom_path(&format!("/drive/storage/provider-kinds/{}", serialize_path_parameter(provider_kind, PathParameterSpec::new("providerKind", "simple", false))));
+        self.client.patch(&path, Some(body), None, None, Some("application/json")).await
     }
 
 }

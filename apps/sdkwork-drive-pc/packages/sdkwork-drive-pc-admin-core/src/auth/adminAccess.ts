@@ -15,6 +15,8 @@ export const DRIVE_DOWNLOAD_PACKAGES_ADMIN_PERMISSION = 'drive.download_packages
 export interface DriveAdminSectionAccess {
   storageProviders: boolean;
   storageBindings: boolean;
+  storageKinds: boolean;
+  storageBuckets: boolean;
   audit: boolean;
   maintenance: boolean;
   quotas: boolean;
@@ -79,6 +81,8 @@ export function resolveDriveAdminSectionAccess(session: SessionSnapshot): DriveA
   return {
     storageProviders: canAccessDriveStorageAdmin(session),
     storageBindings: canAccessDriveStorageAdmin(session),
+    storageKinds: canAccessDriveStorageAdmin(session),
+    storageBuckets: canAccessDriveStorageAdmin(session),
     audit: canAccessDriveAuditAdmin(session),
     maintenance: canAccessDriveMaintenanceAdmin(session),
     quotas: canAccessDriveQuotaAdmin(session),

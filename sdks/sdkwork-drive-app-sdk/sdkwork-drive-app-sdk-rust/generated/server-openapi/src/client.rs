@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::api::{AssetsApi, DriveApi};
+use crate::api::{DriveApi, AssetsApi};
 use crate::http::{SdkworkConfig, SdkworkError, SdkworkHttpClient};
 
 #[derive(Clone)]
@@ -28,6 +28,7 @@ impl SdkworkAppClient {
         self
     }
 
+
     pub fn set_header(&self, key: impl Into<String>, value: impl Into<String>) -> &Self {
         self.http.set_header(key, value);
         self
@@ -38,10 +39,10 @@ impl SdkworkAppClient {
     }
 
     pub fn drive(&self) -> DriveApi {
-        DriveApi::new(Arc::clone(&self.http))
-    }
+            DriveApi::new(Arc::clone(&self.http))
+        }
 
     pub fn assets(&self) -> AssetsApi {
-        AssetsApi::new(Arc::clone(&self.http))
-    }
+            AssetsApi::new(Arc::clone(&self.http))
+        }
 }

@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -40,11 +40,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "bfb11c16ad82216ea02ac3c58bdb6963d229eabe4df683c346992c73e0b7fcef"
+      "sha256": "14c266da2aae0ef0b7572b0d102d1beb9864913a31616cf53c82625fefb5d630"
     },
     {
       "path": "README.md",
-      "sha256": "c8951cddeb0f1d91ebfaa4b92c6afcc4a02769ef62cb2639ec245d05a400edd1"
+      "sha256": "16d276b2bf1f13b86e82adc569e46f2164be00cb03d85fe20bd71b87bb46a889"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -56,7 +56,7 @@
     },
     {
       "path": "src/api/drive.ts",
-      "sha256": "074ac9dd0698836bdee78d21f544398f8791d5c92d16f1b1d68a6ae74a521a50"
+      "sha256": "051a1a687fd2f1c00ab3a64a12877bb10c999f442efe61c5dca7f6604f3c67bc"
     },
     {
       "path": "src/api/index.ts",
@@ -72,7 +72,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "ce3eb0abf7fcf17ab6ada1d97bd962e44dd16d07e1a2b88af3347f34b6bea981"
+      "sha256": "7b21c982cf2431f1cc654517bec6a31c8db2316fd78ed9eb79de1adae588ed2c"
     },
     {
       "path": "src/http/index.ts",
@@ -104,7 +104,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "5a8f32c66f9270c95c24a6c7c3d4062d508333a42a3e3aa1661d343472f944bf"
+      "sha256": "186845db4e7c2bfd71112cc9e3f5dc23e8755eba54cebea711bb5f504cb1ff7a"
     },
     {
       "path": "src/types/page-info.ts",
@@ -171,6 +171,10 @@
       "sha256": "85475cfb03fdb4880b6b950ff75c2abf747dc77812a25d11268179e8f3e418e2"
     },
     {
+      "path": "src/types/set-storage-provider-kind-enabled-request.ts",
+      "sha256": "eda9fb3edf09dce4c7386ecdda8347de19877803d8155a1782944254989aeb3d"
+    },
+    {
       "path": "src/types/storage-provider-binding.ts",
       "sha256": "862d2c6cea62c8deffdb259a51ee8e5e1a063b3389f1c06b4a10fe321db7a30c"
     },
@@ -189,6 +193,22 @@
     {
       "path": "src/types/storage-provider-capabilities.ts",
       "sha256": "5a9f2ae158032e46bab502979acf8170f847aa187a18c979bf58004fa0cff71f"
+    },
+    {
+      "path": "src/types/storage-provider-kind.ts",
+      "sha256": "2040d01eda418e084ae86fb90629f367e3867dba3385487381b64eb953c6a824"
+    },
+    {
+      "path": "src/types/storage-provider-kinds-initialize-response.ts",
+      "sha256": "e6cb574461b05f0eadf1d7476af3301278e3dc78798fa8b099ddc33d71ce6ff3"
+    },
+    {
+      "path": "src/types/storage-provider-kinds-list-response.ts",
+      "sha256": "b72d59192271257b3683bd3f0813709d4d1df3ed91f3e56d8380bd242f9f04d3"
+    },
+    {
+      "path": "src/types/storage-provider-kinds-update-response.ts",
+      "sha256": "49b3bdb38abb6768874a7385d81ec43c2e1211616bb6e939dd0a04211b54d8d0"
     },
     {
       "path": "src/types/storage-provider.ts",

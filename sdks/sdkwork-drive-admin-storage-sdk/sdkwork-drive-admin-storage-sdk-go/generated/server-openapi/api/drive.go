@@ -244,6 +244,33 @@ func (a *DriveApi) StorageProviderBindingsList(spaceId *string, providerId *stri
     return decodeResult[sdktypes.StorageProviderBindingsListResponse](raw)
 }
 
+func (a *DriveApi) StorageProviderKindsList() (sdktypes.StorageProviderKindsListResponse, error) {
+    raw, err := a.client.Get(CustomApiPath("/drive/storage/provider-kinds"), nil, nil)
+    if err != nil {
+        var zero sdktypes.StorageProviderKindsListResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.StorageProviderKindsListResponse](raw)
+}
+
+func (a *DriveApi) StorageProviderKindsInitialize() (sdktypes.StorageProviderKindsInitializeResponse, error) {
+    raw, err := a.client.Post(CustomApiPath("/drive/storage/provider-kinds"), nil, nil, nil, "")
+    if err != nil {
+        var zero sdktypes.StorageProviderKindsInitializeResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.StorageProviderKindsInitializeResponse](raw)
+}
+
+func (a *DriveApi) StorageProviderKindsUpdate(providerKind string, body sdktypes.SetStorageProviderKindEnabledRequest) (sdktypes.StorageProviderKindsUpdateResponse, error) {
+    raw, err := a.client.Patch(CustomApiPath(fmt.Sprintf("/drive/storage/provider-kinds/%s", SerializePathParameter(providerKind, PathParameterSpec{Name: "providerKind", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.StorageProviderKindsUpdateResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.StorageProviderKindsUpdateResponse](raw)
+}
+
 type PathParameterSpec struct {
     Name    string
     Style   string

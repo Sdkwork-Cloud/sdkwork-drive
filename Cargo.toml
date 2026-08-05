@@ -34,7 +34,7 @@ version = "0.1.0"
 sdkwork-api-iam-assembly = { path = "../sdkwork-iam/crates/sdkwork-api-iam-assembly" }
 anyhow = "1.0"
 async-trait = "0.1"
-cap-std = "3.4"
+cap-std = "4.0.2"
 axum = { version = "0.8", features = ["macros"] }
 http = "1.4"
 httpdate = "1.0"

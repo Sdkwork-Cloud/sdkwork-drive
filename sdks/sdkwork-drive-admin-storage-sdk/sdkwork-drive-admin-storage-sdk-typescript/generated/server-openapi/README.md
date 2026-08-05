@@ -26,10 +26,7 @@ const client = new SdkworkCustomClient({
 client.setApiKey('your-api-key');
 
 // Use the SDK
-const params = {
-  status: 'status',
-};
-const result = await client.drive.storageProviders.list(params);
+const result = await client.drive.storageProviderKinds.list();
 ```
 
 ## Authentication Modes (Mutually Exclusive)
@@ -80,11 +77,8 @@ const client = new SdkworkCustomClient({
 ### drive
 
 ```typescript
-// GET /backend/v3/api/drive/storage/providers
-const params = {
-  status: 'status',
-};
-const result = await client.drive.storageProviders.list(params);
+// GET /backend/v3/api/drive/storage/provider-kinds
+const result = await client.drive.storageProviderKinds.list();
 ```
 
 ## Error Handling
@@ -93,10 +87,7 @@ const result = await client.drive.storageProviders.list(params);
 import { SdkworkCustomClient, NetworkError, TimeoutError, AuthenticationError } from 'sdkwork-drive-admin-storage-sdk-generated-typescript';
 
 try {
-  const params = {
-    status: 'status',
-  };
-  const result = await client.drive.storageProviders.list(params);
+  const result = await client.drive.storageProviderKinds.list();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

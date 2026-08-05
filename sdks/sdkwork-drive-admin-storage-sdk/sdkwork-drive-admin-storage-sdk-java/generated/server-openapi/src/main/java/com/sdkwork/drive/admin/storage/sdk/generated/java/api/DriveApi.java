@@ -152,6 +152,21 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<StorageProviderBindingsListResponse>() {});
     }
 
+    public StorageProviderKindsListResponse storageProviderKindsList() throws Exception {
+        Object raw = client.get(ApiPaths.customPath("/drive/storage/provider-kinds"));
+        return client.convertValue(raw, new TypeReference<StorageProviderKindsListResponse>() {});
+    }
+
+    public StorageProviderKindsInitializeResponse storageProviderKindsInitialize() throws Exception {
+        Object raw = client.post(ApiPaths.customPath("/drive/storage/provider-kinds"), null);
+        return client.convertValue(raw, new TypeReference<StorageProviderKindsInitializeResponse>() {});
+    }
+
+    public StorageProviderKindsUpdateResponse storageProviderKindsUpdate(String providerKind, SetStorageProviderKindEnabledRequest body) throws Exception {
+        Object raw = client.patch(ApiPaths.customPath("/drive/storage/provider-kinds/" + serializePathParameter(providerKind, new PathParameterSpec("providerKind", "simple", false)) + ""), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<StorageProviderKindsUpdateResponse>() {});
+    }
+
     private record PathParameterSpec(String name, String style, boolean explode) {}
 
     private static String serializePathParameter(Object value, PathParameterSpec spec) {

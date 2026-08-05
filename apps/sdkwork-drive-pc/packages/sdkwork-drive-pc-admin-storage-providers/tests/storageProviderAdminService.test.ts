@@ -36,6 +36,40 @@ function createFakeService() {
 }
 
 function responseFor(request: DriveAdminStorageSdkRequest): unknown {
+  if (request.operationId === 'storageProviderKinds.list' || request.operationId === 'storageProviderKinds.initialize') {
+    return {
+      items: [
+        {
+          providerKind: 'aliyun_oss',
+          displayName: 'Alibaba Cloud OSS',
+          enabled: true,
+          sortOrder: 4,
+          version: 1,
+          configCount: 2,
+        },
+        {
+          providerKind: 'tencent_cos',
+          displayName: 'Tencent Cloud COS',
+          enabled: false,
+          sortOrder: 5,
+          version: 2,
+          configCount: 0,
+        },
+      ],
+    };
+  }
+
+  if (request.operationId === 'storageProviderKinds.update') {
+    return {
+      providerKind: request.pathParams?.providerKind ?? 'aliyun_oss',
+      displayName: 'Alibaba Cloud OSS',
+      enabled: (request.body as { enabled?: boolean } | undefined)?.enabled === true,
+      sortOrder: 4,
+      version: 2,
+      configCount: 2,
+    };
+  }
+
   if (request.operationId === 'storageProviders.list') {
     return {
       items: [
@@ -329,5 +363,43 @@ describe('storage provider admin service', () => {
     });
 
     await expect(service.getDefaultBinding()).resolves.toBeUndefined();
+  });
+
+
+  it('lists provider kinds from the catalog operation', async () => {
+    const { calls, service } = createFakeService();
+
+    const kinds = await service.listKinds();
+
+    expect(calls[0].operationId).toBe('storageProviderKinds.list');
+    expect(kinds).toHaveLength(2);
+    expect(kinds[0]).toMatchObject({
+      providerKind: 'aliyun_oss',
+      displayName: 'Alibaba Cloud OSS',
+      enabled: true,
+      sortOrder: 4,
+      configCount: 2,
+    });
+    expect(kinds[1].enabled).toBe(false);
+  });
+
+  it('toggles a provider kind enabled state', async () => {
+    const { calls, service } = createFakeService();
+
+    const updated = await service.setKindEnabled('aliyun_oss', false);
+
+    expect(calls[0].operationId).toBe('storageProviderKinds.update');
+    expect(calls[0].pathParams).toEqual({ providerKind: 'aliyun_oss' });
+    expect(calls[0].body).toEqual({ enabled: false });
+    expect(updated.enabled).toBe(false);
+  });
+
+  it('initializes the provider kind catalog', async () => {
+    const { calls, service } = createFakeService();
+
+    const kinds = await service.initializeKinds();
+
+    expect(calls[0].operationId).toBe('storageProviderKinds.initialize');
+    expect(kinds).toHaveLength(2);
   });
 });

@@ -148,6 +148,13 @@ pub mod admin_audit {
         pub const OBJECT_COPIED: &str = "drive.storage_provider.object_copied";
     }
 
+    /// Storage provider kind registry mutations (backend-api).
+    pub mod storage_provider_kind {
+        pub const INITIALIZED: &str = "drive.storage_provider_kind.initialized";
+        pub const ENABLED: &str = "drive.storage_provider_kind.enabled";
+        pub const DISABLED: &str = "drive.storage_provider_kind.disabled";
+    }
+
     /// Default storage provider binding mutations (backend-api).
     pub mod storage_provider_binding {
         pub const DEFAULT_SET: &str = "drive.storage_provider_binding.default_set";
@@ -265,6 +272,9 @@ mod tests {
         admin_audit::storage_provider::BUCKET_DELETED,
         admin_audit::storage_provider::OBJECT_DELETED,
         admin_audit::storage_provider::OBJECT_COPIED,
+        admin_audit::storage_provider_kind::INITIALIZED,
+        admin_audit::storage_provider_kind::ENABLED,
+        admin_audit::storage_provider_kind::DISABLED,
         admin_audit::storage_provider_binding::DEFAULT_SET,
         admin_audit::storage_provider_binding::DEFAULT_DELETED,
         admin_audit::maintenance::OBJECT_SWEEP_EXECUTED,

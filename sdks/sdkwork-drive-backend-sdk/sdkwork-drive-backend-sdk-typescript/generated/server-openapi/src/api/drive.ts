@@ -1,5 +1,5 @@
 import { backendApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { CreateLabelRequest, CreateSandboxGrantRequest, CreateSandboxVolumeRequest, DriveLabel, SandboxLifecycleStatus, SandboxProviderKind, SweepObjectStoreRequest, SweepUploadSessionsRequest, UpdateLabelRequest, UpdateQuotaPolicyRequest, UpdateSandboxGrantRequest, UpdateSandboxVolumeRequest } from '../types';
 
@@ -18,32 +18,32 @@ export class DriveSandboxGrantsApi {
 
 
 /** List explicit sandbox grants */
-  async list(sandboxId: string, params?: DriveSandboxGrantsListParams): Promise<unknown> {
+  async list(sandboxId: string, params?: DriveSandboxGrantsListParams, requestOptions?: ApiRequestOptions): Promise<unknown> {
     const query = buildQueryString([
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants`), query));
+    return this.client.request<unknown>(appendQueryString(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Create an explicit sandbox grant */
-  async create(sandboxId: string, body: CreateSandboxGrantRequest): Promise<unknown> {
-    return this.client.post<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants`), body, undefined, undefined, 'application/json');
+  async create(sandboxId: string, body: CreateSandboxGrantRequest, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Retrieve a sandbox grant */
-  async retrieve(sandboxId: string, grantId: string): Promise<unknown> {
-    return this.client.get<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants/${serializePathParameter(grantId, { name: 'grantId', style: 'simple', explode: false })}`));
+  async retrieve(sandboxId: string, grantId: string, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants/${serializePathParameter(grantId, { name: 'grantId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update a sandbox grant */
-  async update(sandboxId: string, grantId: string, body: UpdateSandboxGrantRequest): Promise<unknown> {
-    return this.client.patch<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants/${serializePathParameter(grantId, { name: 'grantId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(sandboxId: string, grantId: string, body: UpdateSandboxGrantRequest, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants/${serializePathParameter(grantId, { name: 'grantId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete a sandbox grant */
-  async delete(sandboxId: string, grantId: string): Promise<void> {
-    return this.client.delete<void>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants/${serializePathParameter(grantId, { name: 'grantId', style: 'simple', explode: false })}`));
+  async delete(sandboxId: string, grantId: string, requestOptions?: ApiRequestOptions): Promise<void> {
+    return this.client.request<void>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}/grants/${serializePathParameter(grantId, { name: 'grantId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 }
 
@@ -63,34 +63,34 @@ export class DriveSandboxVolumesApi {
 
 
 /** List server sandbox volumes */
-  async list(params?: DriveSandboxVolumesListParams): Promise<unknown> {
+  async list(params?: DriveSandboxVolumesListParams, requestOptions?: ApiRequestOptions): Promise<unknown> {
     const query = buildQueryString([
       { name: 'lifecycle_status', value: params?.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
       { name: 'provider_kind', value: params?.providerKind, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/sandbox_volumes`), query));
+    return this.client.request<unknown>(appendQueryString(backendApiPath(`/drive/sandbox_volumes`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Create a server sandbox volume */
-  async create(body: CreateSandboxVolumeRequest): Promise<unknown> {
-    return this.client.post<unknown>(backendApiPath(`/drive/sandbox_volumes`), body, undefined, undefined, 'application/json');
+  async create(body: CreateSandboxVolumeRequest, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/sandbox_volumes`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Retrieve a server sandbox volume */
-  async retrieve(sandboxId: string): Promise<unknown> {
-    return this.client.get<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}`));
+  async retrieve(sandboxId: string, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update a server sandbox volume */
-  async update(sandboxId: string, body: UpdateSandboxVolumeRequest): Promise<unknown> {
-    return this.client.patch<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(sandboxId: string, body: UpdateSandboxVolumeRequest, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete a server sandbox volume */
-  async delete(sandboxId: string): Promise<void> {
-    return this.client.delete<void>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}`));
+  async delete(sandboxId: string, requestOptions?: ApiRequestOptions): Promise<void> {
+    return this.client.request<void>(backendApiPath(`/drive/sandbox_volumes/${serializePathParameter(sandboxId, { name: 'sandboxId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 }
 
@@ -108,13 +108,13 @@ export class DriveDownloadPackagesApi {
   }
 
 
-async list(params?: DriveDownloadPackagesListParams): Promise<unknown> {
+async list(params?: DriveDownloadPackagesListParams, requestOptions?: ApiRequestOptions): Promise<unknown> {
     const query = buildQueryString([
       { name: 'state', value: params?.state, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/download_packages`), query));
+    return this.client.request<unknown>(appendQueryString(backendApiPath(`/drive/download_packages`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -133,23 +133,23 @@ export class DriveSpacesAdminApi {
   }
 
 
-async list(params?: DriveSpacesAdminListParams): Promise<unknown> {
+async list(params?: DriveSpacesAdminListParams, requestOptions?: ApiRequestOptions): Promise<unknown> {
     const query = buildQueryString([
       { name: 'ownerSubjectType', value: params?.ownerSubjectType, style: 'form', explode: true, allowReserved: false },
       { name: 'ownerSubjectId', value: params?.ownerSubjectId, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/spaces`), query));
+    return this.client.request<unknown>(appendQueryString(backendApiPath(`/drive/spaces`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class DriveSpacesApi {
-
+  private client: HttpClient;
   public readonly admin: DriveSpacesAdminApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.admin = new DriveSpacesAdminApi(client);
   }
 
@@ -163,13 +163,13 @@ export class DriveQuotasApi {
   }
 
 
-async retrieve(): Promise<unknown> {
-    return this.client.get<unknown>(backendApiPath(`/drive/quotas`));
+async retrieve(requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/quotas`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update tenant quota policy */
-  async update(body: UpdateQuotaPolicyRequest): Promise<unknown> {
-    return this.client.put<unknown>(backendApiPath(`/drive/quotas`), body, undefined, undefined, 'application/json');
+  async update(body: UpdateQuotaPolicyRequest, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/quotas`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -189,7 +189,7 @@ export class DriveMaintenanceJobsApi {
   }
 
 
-async list(params?: DriveMaintenanceJobsListParams): Promise<unknown> {
+async list(params?: DriveMaintenanceJobsListParams, requestOptions?: ApiRequestOptions): Promise<unknown> {
     const query = buildQueryString([
       { name: 'jobType', value: params?.jobType, style: 'form', explode: true, allowReserved: false },
       { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
@@ -197,7 +197,7 @@ async list(params?: DriveMaintenanceJobsListParams): Promise<unknown> {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/maintenance/jobs`), query));
+    return this.client.request<unknown>(appendQueryString(backendApiPath(`/drive/maintenance/jobs`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -211,20 +211,20 @@ export class DriveMaintenanceApi {
   }
 
 
-async objectSweep(body: SweepObjectStoreRequest): Promise<unknown> {
-    return this.client.post<unknown>(backendApiPath(`/drive/maintenance/object_sweep`), body, undefined, undefined, 'application/json');
+async objectSweep(body: SweepObjectStoreRequest, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/maintenance/object_sweep`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
-async uploadSessionSweep(body: SweepUploadSessionsRequest): Promise<unknown> {
-    return this.client.post<unknown>(backendApiPath(`/drive/maintenance/upload_session_sweep`), body, undefined, undefined, 'application/json');
+async uploadSessionSweep(body: SweepUploadSessionsRequest, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/maintenance/upload_session_sweep`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
-async expiredUploadContentSweep(body: SweepUploadSessionsRequest): Promise<unknown> {
-    return this.client.post<unknown>(backendApiPath(`/drive/maintenance/expired_upload_content_sweep`), body, undefined, undefined, 'application/json');
+async expiredUploadContentSweep(body: SweepUploadSessionsRequest, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/maintenance/expired_upload_content_sweep`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
-async abandonedUploadTaskSweep(body: SweepUploadSessionsRequest): Promise<unknown> {
-    return this.client.post<unknown>(backendApiPath(`/drive/maintenance/abandoned_upload_task_sweep`), body, undefined, undefined, 'application/json');
+async abandonedUploadTaskSweep(body: SweepUploadSessionsRequest, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/maintenance/abandoned_upload_task_sweep`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -243,33 +243,33 @@ export class DriveLabelsApi {
 
 
 /** List Drive label definitions */
-  async list(params?: DriveLabelsListParams): Promise<unknown> {
+  async list(params?: DriveLabelsListParams, requestOptions?: ApiRequestOptions): Promise<unknown> {
     const query = buildQueryString([
       { name: 'lifecycleStatus', value: params?.lifecycleStatus, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/labels`), query));
+    return this.client.request<unknown>(appendQueryString(backendApiPath(`/drive/labels`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Create a Drive label definition */
-  async create(body: CreateLabelRequest): Promise<DriveLabel> {
-    return this.client.post<DriveLabel>(backendApiPath(`/drive/labels`), body, undefined, undefined, 'application/json');
+  async create(body: CreateLabelRequest, requestOptions?: ApiRequestOptions): Promise<DriveLabel> {
+    return this.client.request<DriveLabel>(backendApiPath(`/drive/labels`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 
 /** Get a Drive label definition */
-  async retrieve(labelId: string): Promise<unknown> {
-    return this.client.get<unknown>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`));
+  async retrieve(labelId: string, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update a Drive label definition */
-  async update(labelId: string, body: UpdateLabelRequest): Promise<unknown> {
-    return this.client.patch<unknown>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(labelId: string, body: UpdateLabelRequest, requestOptions?: ApiRequestOptions): Promise<unknown> {
+    return this.client.request<unknown>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete a Drive label definition */
-  async delete(labelId: string): Promise<void> {
-    return this.client.delete<void>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`));
+  async delete(labelId: string, requestOptions?: ApiRequestOptions): Promise<void> {
+    return this.client.request<void>(backendApiPath(`/drive/labels/${serializePathParameter(labelId, { name: 'labelId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 }
 
@@ -291,7 +291,7 @@ export class DriveAuditEventsApi {
   }
 
 
-async list(params?: DriveAuditEventsListParams): Promise<unknown> {
+async list(params?: DriveAuditEventsListParams, requestOptions?: ApiRequestOptions): Promise<unknown> {
     const query = buildQueryString([
       { name: 'action', value: params?.action, style: 'form', explode: true, allowReserved: false },
       { name: 'resourceType', value: params?.resourceType, style: 'form', explode: true, allowReserved: false },
@@ -301,12 +301,12 @@ async list(params?: DriveAuditEventsListParams): Promise<unknown> {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<unknown>(appendQueryString(backendApiPath(`/drive/audit_events`), query));
+    return this.client.request<unknown>(appendQueryString(backendApiPath(`/drive/audit_events`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class DriveApi {
-
+  private client: HttpClient;
   public readonly auditEvents: DriveAuditEventsApi;
   public readonly labels: DriveLabelsApi;
   public readonly maintenance: DriveMaintenanceApi;
@@ -317,7 +317,7 @@ export class DriveApi {
   public readonly sandboxGrants: DriveSandboxGrantsApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.auditEvents = new DriveAuditEventsApi(client);
     this.labels = new DriveLabelsApi(client);
     this.maintenance = new DriveMaintenanceApi(client);

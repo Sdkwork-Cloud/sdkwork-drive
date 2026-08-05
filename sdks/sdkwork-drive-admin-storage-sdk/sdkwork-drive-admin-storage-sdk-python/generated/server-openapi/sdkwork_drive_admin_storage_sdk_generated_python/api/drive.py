@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import CopyProviderObjectRequest, CreateStorageProviderRequest, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, StorageProviderBindingsDefaultRetrieveResponse, StorageProviderBindingsDefaultUpdateResponse, StorageProviderBindingsListResponse, StorageProvidersActivateResponse, StorageProvidersBucketRetrieveResponse, StorageProvidersBucketsListResponse, StorageProvidersBucketUpdateResponse, StorageProvidersCapabilitiesListResponse, StorageProvidersCreateResponse201, StorageProvidersCredentialsRotateResponse, StorageProvidersDeactivateResponse, StorageProvidersListResponse, StorageProvidersObjectsCopyResponse, StorageProvidersObjectsListResponse, StorageProvidersObjectsRetrieveResponse, StorageProvidersRetrieveResponse, StorageProvidersTestResponse, StorageProvidersUpdateResponse, UpdateStorageProviderRequest
+from ..models import CopyProviderObjectRequest, CreateStorageProviderRequest, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, SetStorageProviderKindEnabledRequest, StorageProviderBindingsDefaultRetrieveResponse, StorageProviderBindingsDefaultUpdateResponse, StorageProviderBindingsListResponse, StorageProviderKindsInitializeResponse, StorageProviderKindsListResponse, StorageProviderKindsUpdateResponse, StorageProvidersActivateResponse, StorageProvidersBucketRetrieveResponse, StorageProvidersBucketsListResponse, StorageProvidersBucketUpdateResponse, StorageProvidersCapabilitiesListResponse, StorageProvidersCreateResponse201, StorageProvidersCredentialsRotateResponse, StorageProvidersDeactivateResponse, StorageProvidersListResponse, StorageProvidersObjectsCopyResponse, StorageProvidersObjectsListResponse, StorageProvidersObjectsRetrieveResponse, StorageProvidersRetrieveResponse, StorageProvidersTestResponse, StorageProvidersUpdateResponse, UpdateStorageProviderRequest
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -191,6 +191,7 @@ class DriveApi:
         self._client = client
         self.storage_provider_bindings = DriveStorageProviderBindingsApi(client)
         self.storage_providers = DriveStorageProvidersApi(client)
+        self.storage_provider_kinds = DriveStorageProviderKindsApi(client)
 
 
 class DriveStorageProviderBindingsApi:
@@ -341,3 +342,19 @@ class DriveStorageProvidersObjectsApi:
 
     def copy(self, provider_id: str, body: CopyProviderObjectRequest) -> StorageProvidersObjectsCopyResponse:
         return self._client.post(f"/backend/v3/api/drive/storage/providers/{serialize_path_parameter(provider_id, {'name': 'providerId', 'style': 'simple', 'explode': False})}/objects/copy", json=body)
+
+class DriveStorageProviderKindsApi:
+    """drive drive.storage_provider_kinds API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def list(self) -> StorageProviderKindsListResponse:
+        return self._client.get(f"/backend/v3/api/drive/storage/provider-kinds")
+
+    def initialize(self) -> StorageProviderKindsInitializeResponse:
+        return self._client.post(f"/backend/v3/api/drive/storage/provider-kinds")
+
+    def update(self, provider_kind: str, body: SetStorageProviderKindEnabledRequest) -> StorageProviderKindsUpdateResponse:
+        return self._client.patch(f"/backend/v3/api/drive/storage/provider-kinds/{serialize_path_parameter(provider_kind, {'name': 'providerKind', 'style': 'simple', 'explode': False})}", json=body)

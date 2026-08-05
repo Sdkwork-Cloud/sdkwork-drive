@@ -300,6 +300,42 @@ export default {
   bindingsTenantDefaultSaved: 'Tenant default binding updated.',
   bindingsTenantDefaultCleared: 'Tenant default binding cleared.',
 
+  // Provider kinds (服务商)
+  kindsPageTitle: 'Storage providers catalog',
+  kindsSummary: '{total} providers · {enabled} enabled',
+  kindsInitialize: 'Initialize provider catalog',
+  kindsLoading: 'Loading provider catalog…',
+  kindsNoticeLoadFailed: 'Failed to load the provider catalog.',
+  kindsNoticeInitialized: 'Provider catalog initialized ({count} providers).',
+  kindsNoticeInitializeFailed: 'Failed to initialize the provider catalog.',
+  kindsNoticeEnabled: '"{label}" is now enabled.',
+  kindsNoticeDisabled: '"{label}" is now disabled.',
+  kindsNoticeToggleFailed: 'Failed to update the provider status.',
+  kindsColProvider: 'Provider',
+  kindsColKind: 'Kind',
+  kindsColConfigs: 'Configurations',
+  kindsColStatus: 'Status',
+  kindsColAction: 'Action',
+  kindsEnabled: 'Enabled',
+  kindsDisabled: 'Disabled',
+  kindsEnable: 'Enable',
+  kindsDisable: 'Disable',
+  kindsDisableTitle: 'Disable provider',
+  kindsDisableMessage: 'Disable "{label}"? New configurations cannot be created and existing configurations cannot be reactivated while the provider is disabled.',
+
+  // Bucket admin (存储桶)
+  bucketsPageTitle: 'Storage buckets',
+  bucketsSummary: '{count} active configurations',
+  bucketsLoading: 'Loading configurations…',
+  bucketsNoticeLoadFailed: 'Failed to load storage configurations.',
+  bucketsNoActiveProviders: 'No active storage configuration found. Enable or create a provider configuration first.',
+  bucketsSelectProvider: 'Storage provider (configuration)',
+
+  // Provider kind filter on the configurations page
+  filterByProviderKind: 'Filter by provider',
+  filterAllKinds: 'All providers',
+  filterCustomKinds: 'Custom',
+
   // Pagination
   pageLabel: 'Page {page}',
   previousPage: 'Previous',

@@ -43,6 +43,8 @@ import type { SdkworkIamAuthRoutesProps } from './bootstrap/sdkworkAuthPcReactSh
 const ADMIN_SECTION_ACCESS_KEYS: Record<string, keyof DriveAdminSectionAccess> = {
   'admin-storage-providers': 'storageProviders',
   'admin-storage-bindings': 'storageBindings',
+  'admin-storage-kinds': 'storageKinds',
+  'admin-storage-buckets': 'storageBuckets',
   'admin-audit': 'audit',
   'admin-maintenance': 'maintenance',
   'admin-quotas': 'quotas',
@@ -62,6 +64,16 @@ const StorageProvidersAdminPage = React.lazy(() =>
 const StorageBindingsAdminPage = React.lazy(() =>
   import('sdkwork-drive-pc-admin-storage-providers').then((module) => ({
     default: module.StorageBindingsAdminPage,
+  })),
+);
+const StorageProviderKindsAdminPage = React.lazy(() =>
+  import('sdkwork-drive-pc-admin-storage-providers').then((module) => ({
+    default: module.StorageProviderKindsAdminPage,
+  })),
+);
+const StorageBucketsAdminPage = React.lazy(() =>
+  import('sdkwork-drive-pc-admin-storage-providers').then((module) => ({
+    default: module.StorageBucketsAdminPage,
   })),
 );
 const AuditAdminPage = React.lazy(() =>
@@ -250,6 +262,16 @@ export default function App({ runtime }: { runtime: DriveRuntime }) {
                   />
                 ) : adminSectionAccess.storageBindings && activeSection === 'admin-storage-bindings' ? (
                   <StorageBindingsAdminPage
+                    adminStorageSdkClient={runtime.admin.adminStorage}
+                    getSession={runtime.session.getSnapshot}
+                  />
+                ) : adminSectionAccess.storageKinds && activeSection === 'admin-storage-kinds' ? (
+                  <StorageProviderKindsAdminPage
+                    adminStorageSdkClient={runtime.admin.adminStorage}
+                    getSession={runtime.session.getSnapshot}
+                  />
+                ) : adminSectionAccess.storageBuckets && activeSection === 'admin-storage-buckets' ? (
+                  <StorageBucketsAdminPage
                     adminStorageSdkClient={runtime.admin.adminStorage}
                     getSession={runtime.session.getSnapshot}
                   />

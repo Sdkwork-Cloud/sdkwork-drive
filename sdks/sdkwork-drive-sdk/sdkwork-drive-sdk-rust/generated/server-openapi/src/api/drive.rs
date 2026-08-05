@@ -22,12 +22,12 @@ impl DriveApi {
             QueryParameterSpec::new("accessCode", access_code, "form", true, false, None),
         ]);
         let path = append_query_string(custom_path(&format!("/drive/share_links/{}", serialize_path_parameter(token, PathParameterSpec::new("token", "simple", false)))), &query);
-        self.client.request_method(Method::GET, &path, Option::<&serde_json::Value>::None, None, None, None, true).await
+        self.client.request_method(Method::GET, &path, Option::<&serde_json::Value>::None, None, None, None, true, false).await
     }
 
     pub async fn open_share_links_download_urls_create(&self, token: &str, body: &CreateOpenDownloadUrlRequest) -> Result<OpenShareLinksDownloadUrlsCreateResponse201, SdkworkError> {
         let path = custom_path(&format!("/drive/share_links/{}/download_url", serialize_path_parameter(token, PathParameterSpec::new("token", "simple", false))));
-        self.client.request_method(Method::POST, &path, Some(body), None, None, Some("application/json"), true).await
+        self.client.request_method(Method::POST, &path, Some(body), None, None, Some("application/json"), true, false).await
     }
 
 }

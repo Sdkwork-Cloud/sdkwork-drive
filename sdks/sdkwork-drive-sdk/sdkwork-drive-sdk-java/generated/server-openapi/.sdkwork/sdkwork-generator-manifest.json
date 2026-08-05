@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "582c020e50ece8a369ab0c5b2f18d6efe16a54d7c46cd4b29d0a2d560ea07d6c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -48,7 +48,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/api/DriveApi.java",
-      "sha256": "ad07542c68cf13a8146ae4861d126a790bab60bd680326c13975016beaa62c46"
+      "sha256": "461cf3ce1155c16c51a2fcfc30102dad6b454969a6a104efa7c9d72cb9a7c005"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/api/package-info.java",
@@ -56,7 +56,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/http/HttpClient.java",
-      "sha256": "ba3b2c9ec4ab5f11fd7593c2bc31e2221a4f9b0b823740fab572d56e6babc16c"
+      "sha256": "b5f4022014bf8cba17d2e35614837a6b39d8f1b23790c2ad03c23d1e64850d8e"
     },
     {
       "path": "src/main/java/com/sdkwork/drive/sdk/generated/java/model/CreateOpenDownloadUrlRequest.java",

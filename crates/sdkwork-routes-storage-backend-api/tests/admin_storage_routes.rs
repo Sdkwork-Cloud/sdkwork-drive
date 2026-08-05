@@ -1757,3 +1757,286 @@ async fn admin_storage_legacy_admin_prefix_remains_compatible() {
     assert_eq!(payload["code"], 0);
     assert!(payload["data"]["items"].is_array());
 }
+
+#[tokio::test]
+async fn admin_storage_provider_kinds_list_and_initialize() {
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
+
+    let app = build_router_with_pool_without_iam(pool);
+    let list_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/backend/v3/api/drive/storage/provider-kinds")
+                .body(Body::empty())
+                .expect("list provider kinds request should be built"),
+        )
+        .await
+        .expect("list provider kinds request should be handled");
+    assert_eq!(list_response.status(), StatusCode::OK);
+    let list_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(list_response.into_body(), usize::MAX)
+            .await
+            .expect("list provider kinds response body should be read"),
+    )
+    .expect("list provider kinds response should be json");
+    assert_eq!(list_payload["code"], 0);
+    let items = list_payload["data"]["items"]
+        .as_array()
+        .expect("provider kinds items should be an array");
+    assert_eq!(items.len(), 7);
+    assert!(items.iter().all(|item| item["enabled"] == true));
+    assert!(items.iter().all(|item| item["configCount"] == 0));
+    let kinds = items
+        .iter()
+        .map(|item| item["providerKind"].as_str().unwrap_or(""))
+        .collect::<Vec<_>>();
+    assert!(kinds.contains(&"aliyun_oss"));
+    assert!(kinds.contains(&"tencent_cos"));
+
+    // Initialize is idempotent and preserves the catalog.
+    let init_response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/backend/v3/api/drive/storage/provider-kinds/initialize")
+                .body(Body::empty())
+                .expect("initialize provider kinds request should be built"),
+        )
+        .await
+        .expect("initialize provider kinds request should be handled");
+    assert_eq!(init_response.status(), StatusCode::OK);
+    let init_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(init_response.into_body(), usize::MAX)
+            .await
+            .expect("initialize provider kinds response body should be read"),
+    )
+    .expect("initialize provider kinds response should be json");
+    assert_eq!(
+        init_payload["data"]["items"]
+            .as_array()
+            .expect("initialized provider kinds items should be an array")
+            .len(),
+        7
+    );
+}
+
+#[tokio::test]
+async fn admin_storage_provider_kind_disable_blocks_new_configurations() {
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
+
+    let app = build_router_with_pool_without_iam(pool);
+    let disable_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PATCH)
+                .uri("/backend/v3/api/drive/storage/provider-kinds/aliyun_oss")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"enabled":false}"#))
+                .expect("disable provider kind request should be built"),
+        )
+        .await
+        .expect("disable provider kind request should be handled");
+    assert_eq!(disable_response.status(), StatusCode::OK);
+    let disable_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(disable_response.into_body(), usize::MAX)
+            .await
+            .expect("disable provider kind response body should be read"),
+    )
+    .expect("disable provider kind response should be json");
+    assert_eq!(disable_payload["enabled"], false);
+    assert_eq!(disable_payload["providerKind"], "aliyun_oss");
+
+    // Creating a configuration for a disabled kind is rejected with 409.
+    let create_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/backend/v3/api/drive/storage/providers")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "id":"provider-disabled-kind",
+                        "providerKind":"aliyun_oss",
+                        "name":"Disabled Kind OSS",
+                        "endpointUrl":"https://oss-cn-hangzhou.aliyuncs.com",
+                        "region":"cn-hangzhou",
+                        "bucket":"drive-bucket",
+                        "credentialRef":"plain:access-key:secret-key"
+                    }"#,
+                ))
+                .expect("create provider request should be built"),
+        )
+        .await
+        .expect("create provider request should be handled");
+    assert_eq!(create_response.status(), StatusCode::CONFLICT);
+
+    // Custom kinds remain usable while a built-in kind is disabled.
+    let custom_create_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/backend/v3/api/drive/storage/providers")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "id":"provider-custom-minio",
+                        "providerKind":"custom:minio",
+                        "name":"MinIO",
+                        "endpointUrl":"https://minio.example.com",
+                        "region":"us-east-1",
+                        "bucket":"drive-bucket",
+                        "credentialRef":"plain:access-key:secret-key"
+                    }"#,
+                ))
+                .expect("create custom provider request should be built"),
+        )
+        .await
+        .expect("create custom provider request should be handled");
+    assert_eq!(custom_create_response.status(), StatusCode::CREATED);
+
+    // Re-enabling the kind allows creating new configurations again.
+    let enable_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PATCH)
+                .uri("/backend/v3/api/drive/storage/provider-kinds/aliyun_oss")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"enabled":true}"#))
+                .expect("enable provider kind request should be built"),
+        )
+        .await
+        .expect("enable provider kind request should be handled");
+    assert_eq!(enable_response.status(), StatusCode::OK);
+    let create_after_enable = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/backend/v3/api/drive/storage/providers")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "id":"provider-reenabled-kind",
+                        "providerKind":"aliyun_oss",
+                        "name":"Re-enabled OSS",
+                        "endpointUrl":"https://oss-cn-hangzhou.aliyuncs.com",
+                        "region":"cn-hangzhou",
+                        "bucket":"drive-bucket",
+                        "credentialRef":"plain:access-key:secret-key"
+                    }"#,
+                ))
+                .expect("create provider request should be built"),
+        )
+        .await
+        .expect("create provider request should be handled");
+    assert_eq!(create_after_enable.status(), StatusCode::CREATED);
+}
+#[tokio::test]
+async fn admin_storage_provider_kind_disable_blocks_reactivation() {
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
+
+    let app = build_router_with_pool_without_iam(pool.clone());
+    let create_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/backend/v3/api/drive/storage/providers")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{
+                        "id":"provider-reactivation-guard",
+                        "providerKind":"tencent_cos",
+                        "name":"COS Guard",
+                        "endpointUrl":"https://cos.ap-guangzhou.myqcloud.com",
+                        "region":"ap-guangzhou",
+                        "bucket":"drive-bucket",
+                        "credentialRef":"plain:secret-id:secret-key"
+                    }"#,
+                ))
+                .expect("create provider request should be built"),
+        )
+        .await
+        .expect("create provider request should be handled");
+    assert_eq!(create_response.status(), StatusCode::CREATED);
+
+    let deactivate_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/backend/v3/api/drive/storage/providers/provider-reactivation-guard/deactivate")
+                .body(Body::empty())
+                .expect("deactivate provider request should be built"),
+        )
+        .await
+        .expect("deactivate provider request should be handled");
+    assert_eq!(deactivate_response.status(), StatusCode::OK);
+
+    // Disable the provider kind while an existing configuration is disabled.
+    let disable_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PATCH)
+                .uri("/backend/v3/api/drive/storage/provider-kinds/tencent_cos")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"enabled":false}"#))
+                .expect("disable provider kind request should be built"),
+        )
+        .await
+        .expect("disable provider kind request should be handled");
+    assert_eq!(disable_response.status(), StatusCode::OK);
+
+    // Reactivation of the existing configuration is rejected with 409.
+    let activate_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/backend/v3/api/drive/storage/providers/provider-reactivation-guard/activate")
+                .body(Body::empty())
+                .expect("activate provider request should be built"),
+        )
+        .await
+        .expect("activate provider request should be handled");
+    assert_eq!(activate_response.status(), StatusCode::CONFLICT);
+
+    // Re-enabling the kind allows the configuration to be activated again.
+    app.clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PATCH)
+                .uri("/backend/v3/api/drive/storage/provider-kinds/tencent_cos")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"enabled":true}"#))
+                .expect("enable provider kind request should be built"),
+        )
+        .await
+        .expect("enable provider kind request should be handled");
+    let activate_after_enable = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/backend/v3/api/drive/storage/providers/provider-reactivation-guard/activate")
+                .body(Body::empty())
+                .expect("activate provider request should be built"),
+        )
+        .await
+        .expect("activate provider request should be handled");
+    assert_eq!(activate_after_enable.status(), StatusCode::OK);
+}
