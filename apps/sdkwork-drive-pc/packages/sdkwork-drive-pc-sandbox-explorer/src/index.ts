@@ -19,6 +19,8 @@ export type {
   SandboxSelection,
 } from './contracts';
 export type { SandboxExplorerViewProps } from './SandboxExplorerView';
+export type { SandboxExplorerLabels } from './SandboxExplorerView';
+export { DEFAULT_SANDBOX_EXPLORER_LABELS } from './SandboxExplorerView';
 export type { SandboxDirectoryPickerDialogProps } from './SandboxDirectoryPickerDialog';
 export type {
   PickSandboxDirectoryOptions,

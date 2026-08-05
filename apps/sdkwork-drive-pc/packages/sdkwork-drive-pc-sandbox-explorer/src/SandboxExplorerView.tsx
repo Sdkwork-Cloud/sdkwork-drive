@@ -29,6 +29,7 @@ import {
   Search,
   Server,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
 import {
@@ -53,6 +54,8 @@ import './SandboxExplorerView.css';
 
 const SANDBOX_PAGE_SIZE = 50;
 const DIRECTORY_PAGE_SIZE = 1_000;
+/** 后端 sandbox 文件内容解码后的硬限制（与 CreateDriveSandboxFileRequest 契约一致）。 */
+const SANDBOX_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 const DIRECTORY_NAME_COLLATOR = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: 'base',
@@ -111,12 +114,290 @@ function resolveDesktopPlatform(): DesktopPlatform {
   return 'windows';
 }
 
+export interface SandboxExplorerLabels {
+  /** 可访问名称与可见文本；所有键均可选，缺省时使用内置英文文案。 */
+  sandboxFileExplorer?: string;
+  back?: string;
+  forward?: string;
+  parentDirectory?: string;
+  refresh?: string;
+  navigationHistory?: string;
+  currentLogicalPath?: string;
+  sandboxAbsolutePath?: string;
+  noSandboxPath?: string;
+  copyPath?: string;
+  pathCopied?: string;
+  copyFullPath?: string;
+  pathCopiedAnnouncement?: string;
+  filterLoadedItems?: string;
+  searchPlaceholder?: string;
+  clearSearch?: string;
+  newFolder?: string;
+  newFile?: string;
+  uploadFile?: string;
+  uploadingFiles?: string;
+  fileTooLarge?: string;
+  uploadError?: string;
+  folderName?: string;
+  fileName?: string;
+  createFolder?: string;
+  createFile?: string;
+  cancelFileCreation?: string;
+  rename?: string;
+  delete?: string;
+  sort?: string;
+  sortAscending?: string;
+  sortDescending?: string;
+  switchToGridView?: string;
+  switchToDetailsView?: string;
+  view?: string;
+  moreOptions?: string;
+  gridView?: string;
+  detailsView?: string;
+  details?: string;
+  hideDetailsPane?: string;
+  showDetailsPane?: string;
+  reload?: string;
+  retry?: string;
+  dismiss?: string;
+  sandboxNavigation?: string;
+  sandboxes?: string;
+  sandbox?: string;
+  availableSandboxes?: string;
+  openSandbox?: string;
+  moreSandboxes?: string;
+  loading?: string;
+  loadingFolder?: string;
+  loadingFile?: string;
+  noAccessibleSandboxes?: string;
+  folderEmpty?: string;
+  noSearchMatches?: string;
+  directoryItems?: string;
+  itemDetails?: string;
+  nameColumn?: string;
+  typeColumn?: string;
+  locationColumn?: string;
+  loadMore?: string;
+  loadMoreItems?: string;
+  loadingMoreItems?: string;
+  moreItemsAvailable?: string;
+  allItemsLoaded?: string;
+  itemsLoadedOne?: string;
+  itemsLoadedMany?: string;
+  filteredFrom?: string;
+  filtering?: string;
+  refreshing?: string;
+  noSandboxSelected?: string;
+  selectDirectory?: string;
+  entryActions?: string;
+  currentFolderActions?: string;
+  open?: string;
+  openFile?: string;
+  copyAsPath?: string;
+  copyPathname?: string;
+  copyLocation?: string;
+  copyCurrentPath?: string;
+  moveTo?: string;
+  getInfo?: string;
+  properties?: string;
+  info?: string;
+  deletePermanently?: string;
+  selectItemDetails?: string;
+  editFile?: string;
+  closeFile?: string;
+  fileContent?: string;
+  binaryPreview?: string;
+  bytes?: string;
+  base64ReadOnly?: string;
+  sha256?: string;
+  utf8Text?: string;
+  close?: string;
+  save?: string;
+  name?: string;
+  kind?: string;
+  type?: string;
+  location?: string;
+  logicalPath?: string;
+  revision?: string;
+  ok?: string;
+  newName?: string;
+  renameDialogTitle?: string;
+  moveDialogTitle?: string;
+  deleteDialogTitle?: string;
+  destinationFolderPath?: string;
+  emptyForSandboxRoot?: string;
+  moveHint?: string;
+  move?: string;
+  cancel?: string;
+  deleteConfirm?: string;
+  fileKindNoun?: string;
+  directoryKindNoun?: string;
+  fileFolderType?: string;
+  fileTypeExtension?: string;
+  fileTypeGeneric?: string;
+  sandboxFolderType?: string;
+  loadDirectoryError?: string;
+  loadSandboxesError?: string;
+  loadMoreSandboxesError?: string;
+  loadMoreEntriesError?: string;
+  createDirectoryError?: string;
+  createFileError?: string;
+  readFileError?: string;
+  saveFileError?: string;
+  renameEntryError?: string;
+  moveEntryError?: string;
+  deleteEntryError?: string;
+  copyPathError?: string;
+}
+
+/** 内置英文文案；调用方可通过 labels 覆盖任意键。 */
+export const DEFAULT_SANDBOX_EXPLORER_LABELS: Required<SandboxExplorerLabels> = {
+  sandboxFileExplorer: 'Sandbox file explorer',
+  back: 'Back',
+  forward: 'Forward',
+  parentDirectory: 'Parent directory',
+  refresh: 'Refresh',
+  navigationHistory: 'Navigation history',
+  currentLogicalPath: 'Current logical path',
+  sandboxAbsolutePath: 'Sandbox absolute path',
+  noSandboxPath: 'No sandbox path available',
+  copyPath: 'Copy path',
+  pathCopied: 'Path copied',
+  copyFullPath: 'Copy full sandbox path',
+  pathCopiedAnnouncement: 'Sandbox path copied to clipboard.',
+  filterLoadedItems: 'Filter loaded items',
+  searchPlaceholder: 'Filter loaded items in {name}',
+  clearSearch: 'Clear search',
+  newFolder: 'New folder',
+  newFile: 'New file',
+  uploadFile: 'Upload file',
+  uploadingFiles: 'Uploading {current}/{total}…',
+  fileTooLarge: 'File exceeds the 4 MB sandbox limit.',
+  uploadError: 'Unable to upload the file.',
+  folderName: 'Folder name',
+  fileName: 'File name',
+  createFolder: 'Create folder',
+  createFile: 'Create file',
+  cancelFileCreation: 'Cancel file creation',
+  rename: 'Rename',
+  delete: 'Delete',
+  sort: 'Sort',
+  sortAscending: 'Sort ascending',
+  sortDescending: 'Sort descending',
+  switchToGridView: 'Switch to grid view',
+  switchToDetailsView: 'Switch to details view',
+  view: 'View',
+  moreOptions: 'More options',
+  gridView: 'Grid view',
+  detailsView: 'Details view',
+  details: 'Details',
+  hideDetailsPane: 'Hide details pane',
+  showDetailsPane: 'Show details pane',
+  reload: 'Reload',
+  retry: 'Retry',
+  dismiss: 'Dismiss',
+  sandboxNavigation: 'Sandbox navigation',
+  sandboxes: 'Sandboxes',
+  sandbox: 'Sandbox',
+  availableSandboxes: 'Available sandboxes',
+  openSandbox: 'Open sandbox {name}',
+  moreSandboxes: 'More sandboxes',
+  loading: 'Loading',
+  loadingFolder: 'Loading folder…',
+  loadingFile: 'Loading file…',
+  noAccessibleSandboxes: 'No accessible sandboxes.',
+  folderEmpty: 'This folder is empty.',
+  noSearchMatches: 'No items match your search.',
+  directoryItems: 'Directory items',
+  itemDetails: 'Item details',
+  nameColumn: 'Name',
+  typeColumn: 'Type',
+  locationColumn: 'Location',
+  loadMore: 'Load more',
+  loadMoreItems: 'Load more items',
+  loadingMoreItems: 'Loading more items…',
+  moreItemsAvailable: 'More items available',
+  allItemsLoaded: 'All items loaded',
+  itemsLoadedOne: '{count} item loaded',
+  itemsLoadedMany: '{count} items loaded',
+  filteredFrom: 'Filtered from {count}',
+  filtering: 'Filtering…',
+  refreshing: 'Refreshing…',
+  noSandboxSelected: 'No sandbox selected',
+  selectDirectory: 'Select directory',
+  entryActions: '{name} actions',
+  currentFolderActions: 'Current folder actions',
+  open: 'Open',
+  openFile: 'Open file',
+  copyAsPath: 'Copy as path',
+  copyPathname: 'Copy pathname',
+  copyLocation: 'Copy Location',
+  copyCurrentPath: 'Copy current path',
+  moveTo: 'Move to…',
+  getInfo: 'Get Info',
+  properties: 'Properties',
+  info: 'Info',
+  deletePermanently: 'Delete permanently',
+  selectItemDetails: 'Select an item to view its details.',
+  editFile: 'Edit {name}',
+  closeFile: 'Close file',
+  fileContent: 'File content',
+  binaryPreview: 'Binary preview',
+  bytes: '{count} bytes',
+  base64ReadOnly: 'Base64-encoded read-only content',
+  sha256: 'SHA-256 {digest}',
+  utf8Text: 'UTF-8 text',
+  close: 'Close',
+  save: 'Save',
+  name: 'Name',
+  kind: 'Kind',
+  type: 'Type',
+  location: 'Location',
+  logicalPath: 'Logical path',
+  revision: 'Revision',
+  ok: 'OK',
+  newName: 'New name',
+  renameDialogTitle: 'Rename {name}',
+  moveDialogTitle: 'Move {name}',
+  deleteDialogTitle: 'Delete {name}',
+  destinationFolderPath: 'Destination folder path',
+  emptyForSandboxRoot: 'Empty for sandbox root',
+  moveHint: 'Use a sandbox-relative path with forward slashes.',
+  move: 'Move',
+  cancel: 'Cancel',
+  deleteConfirm: 'This permanently deletes the {kind}. This action cannot be undone.',
+  fileKindNoun: 'file',
+  directoryKindNoun: 'directory',
+  fileFolderType: 'File folder',
+  fileTypeExtension: '{extension} file',
+  fileTypeGeneric: 'File',
+  sandboxFolderType: 'Sandbox folder',
+  loadDirectoryError: 'Unable to load the sandbox directory.',
+  loadSandboxesError: 'Unable to load available sandboxes.',
+  loadMoreSandboxesError: 'Unable to load more sandboxes.',
+  loadMoreEntriesError: 'Unable to load more directory entries.',
+  createDirectoryError: 'Unable to create the directory.',
+  createFileError: 'Unable to create the file.',
+  readFileError: 'Unable to read the file.',
+  saveFileError: 'Unable to save the file.',
+  renameEntryError: 'Unable to rename the entry.',
+  moveEntryError: 'Unable to move the entry.',
+  deleteEntryError: 'Unable to delete the entry.',
+  copyPathError: 'Unable to copy the sandbox path.',
+};
+
+function interpolateLabels(template: string, values: Readonly<Record<string, string>>): string {
+  return template.replace(/\{(\w+)\}/gu, (match, key: string) => values[key] ?? match);
+}
+
 export interface SandboxExplorerViewProps {
   readonly mode?: 'manage' | 'select-directory';
   readonly port?: SandboxExplorerPort;
   readonly onDirectorySelected?: (selection: SandboxSelection) => void;
   readonly onDirectoryChanged?: (selection: SandboxSelection) => void;
   readonly className?: string;
+  /** 界面文案覆盖；缺省使用内置英文文案。 */
+  readonly labels?: SandboxExplorerLabels;
 }
 
 function currentSelection(root: SandboxRoot, directory: DirectoryLocation): SandboxSelection {
@@ -183,10 +464,12 @@ function errorMessage(cause: unknown, fallback: string): string {
   return cause instanceof Error && cause.message.trim() ? cause.message : fallback;
 }
 
-function entryType(entry: SandboxEntry): string {
-  if (entry.kind === 'directory') return 'File folder';
+function entryType(entry: SandboxEntry, labels: Required<SandboxExplorerLabels>): string {
+  if (entry.kind === 'directory') return labels.fileFolderType;
   const extension = entry.name.includes('.') ? entry.name.split('.').at(-1) : undefined;
-  return extension ? `${extension.toUpperCase()} file` : 'File';
+  return extension
+    ? interpolateLabels(labels.fileTypeExtension, { extension: extension.toUpperCase() })
+    : labels.fileTypeGeneric;
 }
 
 function entryLocation(entry: SandboxEntry): string {
@@ -205,13 +488,31 @@ function preferredFileEncoding(name: string): 'utf8' | 'base64' {
   return extension && TEXT_FILE_EXTENSIONS.has(extension) ? 'utf8' : 'base64';
 }
 
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error('File read failed.'));
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      const comma = result.indexOf(',');
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export function SandboxExplorerView({
   mode = 'manage',
   port: injectedPort,
   onDirectorySelected,
   onDirectoryChanged,
   className,
+  labels: injectedLabels,
 }: SandboxExplorerViewProps) {
+  const labels = useMemo(
+    () => ({ ...DEFAULT_SANDBOX_EXPLORER_LABELS, ...injectedLabels }),
+    [injectedLabels],
+  );
   const port = useMemo(
     () => injectedPort ?? requireDriveSandboxExplorerPort(),
     [injectedPort],
@@ -226,6 +527,7 @@ export function SandboxExplorerView({
   const moreMenuRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const requestSequence = useRef(0);
   const loadingMoreRequestId = useRef<number | null>(null);
   const automaticLoadingPaused = useRef(false);
@@ -259,6 +561,7 @@ export function SandboxExplorerView({
   const [creatingFile, setCreatingFile] = useState(false);
   const [newFileName, setNewFileName] = useState('');
   const [createPending, setCreatePending] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [addressFocused, setAddressFocused] = useState(false);
@@ -417,7 +720,7 @@ export function SandboxExplorerView({
       onDirectoryChangedRef.current?.(currentSelection(nextRoot, nextDirectory));
     } catch (cause) {
       if (requestSequence.current === requestId) {
-        setError(errorMessage(cause, 'Unable to load the sandbox directory.'));
+        setError(errorMessage(cause, labels.loadDirectoryError));
       }
     } finally {
       if (requestSequence.current === requestId) {
@@ -449,7 +752,7 @@ export function SandboxExplorerView({
       })
       .catch((cause) => {
         if (!active) return;
-        setError(errorMessage(cause, 'Unable to load available sandboxes.'));
+        setError(errorMessage(cause, labels.loadSandboxesError));
         setLoading(false);
       });
     return () => {
@@ -538,7 +841,7 @@ export function SandboxExplorerView({
       setSandboxPage(result.page);
       setSandboxTotalPages(Math.max(result.totalPages, 1));
     } catch (cause) {
-      setError(errorMessage(cause, 'Unable to load more sandboxes.'));
+      setError(errorMessage(cause, labels.loadMoreSandboxesError));
     } finally {
       setLoadingMoreSandboxes(false);
     }
@@ -566,7 +869,7 @@ export function SandboxExplorerView({
     } catch (cause) {
       if (requestSequence.current === requestId) {
         automaticLoadingPaused.current = true;
-        setError(errorMessage(cause, 'Unable to load more directory entries.'));
+        setError(errorMessage(cause, labels.loadMoreEntriesError));
       }
     } finally {
       if (loadingMoreRequestId.current === requestId) {
@@ -621,7 +924,7 @@ export function SandboxExplorerView({
         await loadDirectory(root, directory, 'preserve');
       }
     } catch (cause) {
-      setError(errorMessage(cause, 'Unable to create the directory.'));
+      setError(errorMessage(cause, labels.createDirectoryError));
     } finally {
       setCreatePending(false);
     }
@@ -646,9 +949,46 @@ export function SandboxExplorerView({
       await loadDirectory(root, directory, 'preserve');
       setSelectedEntry(entry);
     } catch (cause) {
-      setError(errorMessage(cause, 'Unable to create the file.'));
+      setError(errorMessage(cause, labels.createFileError));
     } finally {
       setCreatePending(false);
+    }
+  };
+
+  const handleUploadFiles = async (files: FileList | null) => {
+    if (!root || !directory || !files || files.length === 0 || !root.capabilities.createFile || createPending) {
+      return;
+    }
+    const targets = Array.from(files);
+    const oversized = targets.find((file) => file.size > SANDBOX_UPLOAD_MAX_BYTES);
+    if (oversized) {
+      setError(errorMessage(new Error(labels.fileTooLarge), labels.fileTooLarge));
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    setCreatePending(true);
+    setError(null);
+    setUploadProgress({ current: 0, total: targets.length });
+    try {
+      for (let index = 0; index < targets.length; index += 1) {
+        const file = targets[index];
+        setUploadProgress({ current: index + 1, total: targets.length });
+        const content = await readFileAsBase64(file);
+        await port.createFile({
+          sandboxId: root.id,
+          parentPath: directory.logicalPath,
+          name: file.name,
+          content,
+          encoding: 'base64',
+        });
+      }
+      await loadDirectory(root, directory, 'preserve');
+    } catch (cause) {
+      setError(errorMessage(cause, labels.uploadError));
+    } finally {
+      setCreatePending(false);
+      setUploadProgress(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -772,7 +1112,7 @@ export function SandboxExplorerView({
       setFileEditor((current) => current ? {
         ...current,
         loading: false,
-        error: errorMessage(cause, 'Unable to read the file.'),
+        error: errorMessage(cause, labels.readFileError),
       } : null);
     }
   };
@@ -805,7 +1145,7 @@ export function SandboxExplorerView({
       setFileEditor((current) => current ? {
         ...current,
         saving: false,
-        error: errorMessage(cause, 'Unable to save the file.'),
+        error: errorMessage(cause, labels.saveFileError),
       } : null);
     }
   };
@@ -835,7 +1175,7 @@ export function SandboxExplorerView({
       await loadDirectory(root, directory, 'preserve');
       setSelectedEntry(entry);
     } catch (cause) {
-      setError(errorMessage(cause, 'Unable to rename the entry.'));
+      setError(errorMessage(cause, labels.renameEntryError));
     } finally {
       setMutationPending(false);
     }
@@ -865,7 +1205,7 @@ export function SandboxExplorerView({
       await loadDirectory(root, directory, 'preserve');
       setSelectedEntry(entry);
     } catch (cause) {
-      setError(errorMessage(cause, 'Unable to move the entry.'));
+      setError(errorMessage(cause, labels.moveEntryError));
     } finally {
       setMutationPending(false);
     }
@@ -886,7 +1226,7 @@ export function SandboxExplorerView({
       setDeletingEntry(null);
       await loadDirectory(root, directory, 'preserve');
     } catch (cause) {
-      setError(errorMessage(cause, 'Unable to delete the entry.'));
+      setError(errorMessage(cause, labels.deleteEntryError));
     } finally {
       setMutationPending(false);
     }
@@ -915,7 +1255,7 @@ export function SandboxExplorerView({
       if (copyFeedbackTimerRef.current) globalThis.clearTimeout(copyFeedbackTimerRef.current);
       copyFeedbackTimerRef.current = globalThis.setTimeout(() => setPathCopied(false), 1800);
     } catch (cause) {
-      setError(errorMessage(cause, 'Unable to copy the sandbox path.'));
+      setError(errorMessage(cause, labels.copyPathError));
     }
   };
 
@@ -936,7 +1276,7 @@ export function SandboxExplorerView({
       if (copyFeedbackTimerRef.current) globalThis.clearTimeout(copyFeedbackTimerRef.current);
       copyFeedbackTimerRef.current = globalThis.setTimeout(() => setPathCopied(false), 1800);
     } catch (cause) {
-      setError(errorMessage(cause, 'Unable to copy the sandbox path.'));
+      setError(errorMessage(cause, labels.copyPathError));
     }
   };
 
@@ -1005,9 +1345,9 @@ export function SandboxExplorerView({
     menuItems[nextIndex]?.focus();
   };
 
-  const currentLabel = breadcrumbs.at(-1)?.label ?? root?.displayName ?? 'Sandbox';
+  const currentLabel = breadcrumbs.at(-1)?.label ?? root?.displayName ?? labels.sandbox;
   const detailName = selectedEntry?.name ?? currentLabel;
-  const detailKind = selectedEntry ? entryType(selectedEntry) : 'Sandbox folder';
+  const detailKind = selectedEntry ? entryType(selectedEntry, labels) : labels.sandboxFolderType;
   const explorerClassName = [
     'sdkwork-sandbox-explorer',
     error ? 'has-error' : '',
@@ -1020,7 +1360,7 @@ export function SandboxExplorerView({
     <section
       ref={explorerRef}
       className={explorerClassName}
-      aria-label="Sandbox file explorer"
+      aria-label={labels.sandboxFileExplorer}
       onKeyDown={(event) => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === 'f') {
           event.preventDefault();
@@ -1092,11 +1432,11 @@ export function SandboxExplorerView({
       }}
     >
       <div className="sdkwork-sandbox-explorer__navigation">
-        <div className="sdkwork-sandbox-explorer__history" role="group" aria-label="Navigation history">
+        <div className="sdkwork-sandbox-explorer__history" role="group" aria-label={labels.navigationHistory}>
           <button
             type="button"
-            title="Back"
-            aria-label="Back"
+            title={labels.back}
+            aria-label={labels.back}
             className="sdkwork-sandbox-explorer__icon-button"
             disabled={historyIndex <= 0 || loading}
             onClick={() => navigateHistory(historyIndex - 1)}
@@ -1105,8 +1445,8 @@ export function SandboxExplorerView({
           </button>
           <button
             type="button"
-            title="Forward"
-            aria-label="Forward"
+            title={labels.forward}
+            aria-label={labels.forward}
             className="sdkwork-sandbox-explorer__icon-button"
             disabled={historyIndex < 0 || historyIndex >= history.length - 1 || loading}
             onClick={() => navigateHistory(historyIndex + 1)}
@@ -1115,8 +1455,8 @@ export function SandboxExplorerView({
           </button>
           <button
             type="button"
-            title="Parent directory"
-            aria-label="Parent directory"
+            title={labels.parentDirectory}
+            aria-label={labels.parentDirectory}
             className="sdkwork-sandbox-explorer__icon-button"
             disabled={!directory?.logicalPath || loading}
             onClick={navigateUp}
@@ -1125,8 +1465,8 @@ export function SandboxExplorerView({
           </button>
           <button
             type="button"
-            title="Refresh"
-            aria-label="Refresh"
+            title={labels.refresh}
+            aria-label={labels.refresh}
             className="sdkwork-sandbox-explorer__icon-button"
             disabled={!root || !directory || loading || refreshing}
             onClick={() => root && directory && void loadDirectory(root, directory, 'preserve')}
@@ -1137,9 +1477,9 @@ export function SandboxExplorerView({
 
         <nav
           className={`sdkwork-sandbox-explorer__address${addressFocused ? ' is-focused' : ''}`}
-          aria-label="Current logical path"
+          aria-label={labels.currentLogicalPath}
           tabIndex={0}
-          title={absolutePath || 'No sandbox path available'}
+          title={absolutePath || labels.noSandboxPath}
           onClick={(event) => {
             if ((event.target as HTMLElement).closest('.sdkwork-sandbox-explorer__address-copy')) return;
             setAddressFocused(true);
@@ -1158,7 +1498,7 @@ export function SandboxExplorerView({
             <input
               ref={addressInputRef}
               className="sdkwork-sandbox-explorer__address-input"
-              aria-label="Sandbox absolute path"
+              aria-label={labels.sandboxAbsolutePath}
               readOnly
               spellCheck={false}
               value={absolutePath}
@@ -1200,33 +1540,33 @@ export function SandboxExplorerView({
           <button
             type="button"
             className={`sdkwork-sandbox-explorer__address-copy${pathCopied ? ' is-copied' : ''}`}
-            aria-label={pathCopied ? 'Path copied' : 'Copy path'}
-            title={pathCopied ? 'Path copied' : 'Copy full sandbox path'}
+            aria-label={pathCopied ? labels.pathCopied : labels.copyPath}
+            title={pathCopied ? labels.pathCopied : labels.copyFullPath}
             disabled={!absolutePath}
             onClick={() => void copyCurrentPath()}
           >
             {pathCopied ? <Check size={14} /> : <Copy size={14} />}
           </button>
           <span className="sdkwork-sandbox-explorer__sr-only" aria-live="polite">
-            {pathCopied ? 'Sandbox path copied to clipboard.' : ''}
+            {pathCopied ? labels.pathCopiedAnnouncement : ''}
           </span>
         </nav>
 
         <div className="sdkwork-sandbox-explorer__search">
           <Search size={14} aria-hidden />
           <label className="sdkwork-sandbox-explorer__sr-only" htmlFor={searchId}>
-            Filter loaded items
+            {labels.filterLoadedItems}
           </label>
           <input
             ref={searchInputRef}
             id={searchId}
             type="search"
             value={searchQuery}
-            placeholder={`Filter loaded items in ${currentLabel}`}
+            placeholder={interpolateLabels(labels.searchPlaceholder, { name: currentLabel })}
             onChange={(event) => setSearchQuery(event.target.value)}
           />
           {searchQuery && (
-            <button type="button" aria-label="Clear search" onClick={() => setSearchQuery('')}>
+            <button type="button" aria-label={labels.clearSearch} onClick={() => setSearchQuery('')}>
               <X size={13} />
             </button>
           )}
@@ -1238,8 +1578,8 @@ export function SandboxExplorerView({
           <button
             type="button"
             className="sdkwork-sandbox-explorer__command sdkwork-sandbox-explorer__command--primary"
-            title="New folder"
-            aria-label="New folder"
+            title={labels.newFolder}
+            aria-label={labels.newFolder}
             disabled={!root?.capabilities.createDirectory || !directory || loading}
             onClick={() => {
               setNewDirectoryName('');
@@ -1247,15 +1587,15 @@ export function SandboxExplorerView({
             }}
           >
             <FolderPlus size={16} />
-            <span>New folder</span>
+            <span>{labels.newFolder}</span>
           </button>
         )}
         {mode === 'manage' && (
           <button
             type="button"
             className="sdkwork-sandbox-explorer__command sdkwork-sandbox-explorer__command--primary"
-            title="New file"
-            aria-label="New file"
+            title={labels.newFile}
+            aria-label={labels.newFile}
             disabled={!root?.capabilities.createFile || !directory || loading}
             onClick={() => {
               setNewFileName('');
@@ -1263,8 +1603,35 @@ export function SandboxExplorerView({
             }}
           >
             <FilePlus2 size={16} />
-            <span>New file</span>
+            <span>{labels.newFile}</span>
           </button>
+        )}
+        {mode === 'manage' && (
+          <>
+            <button
+              type="button"
+              className="sdkwork-sandbox-explorer__command sdkwork-sandbox-explorer__command--primary"
+              title={labels.uploadFile}
+              aria-label={labels.uploadFile}
+              disabled={!root?.capabilities.createFile || !directory || loading || createPending}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload size={16} />
+              <span>{uploadProgress
+                ? interpolateLabels(labels.uploadingFiles, {
+                  current: String(uploadProgress.current),
+                  total: String(uploadProgress.total),
+                })
+                : labels.uploadFile}</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              hidden
+              onChange={(event) => void handleUploadFiles(event.target.files)}
+            />
+          </>
         )}
         {mode === 'manage' && selectedEntry && (
           <>
@@ -1272,22 +1639,22 @@ export function SandboxExplorerView({
             <button
               type="button"
               className="sdkwork-sandbox-explorer__command"
-              title="Rename"
+              title={labels.rename}
               disabled={!root?.capabilities.moveEntry}
               onClick={() => startRename(selectedEntry)}
             >
               <Pencil size={15} />
-              <span>Rename</span>
+              <span>{labels.rename}</span>
             </button>
             <button
               type="button"
               className="sdkwork-sandbox-explorer__command"
-              title="Delete"
+              title={labels.delete}
               disabled={!root?.capabilities.deleteEntry}
               onClick={() => setDeletingEntry(selectedEntry)}
             >
               <Trash2 size={15} />
-              <span>Delete</span>
+              <span>{labels.delete}</span>
             </button>
           </>
         )}
@@ -1295,28 +1662,28 @@ export function SandboxExplorerView({
         <button
           type="button"
           className="sdkwork-sandbox-explorer__command"
-          title={sortAscending ? 'Sort descending' : 'Sort ascending'}
+          title={sortAscending ? labels.sortDescending : labels.sortAscending}
           onClick={() => setSortAscending((current) => !current)}
         >
-          <span>Sort</span>
+          <span>{labels.sort}</span>
           <ChevronDown size={13} />
         </button>
         <button
           type="button"
           className="sdkwork-sandbox-explorer__command"
-          title={viewMode === 'details' ? 'Switch to grid view' : 'Switch to details view'}
+          title={viewMode === 'details' ? labels.switchToGridView : labels.switchToDetailsView}
           onClick={() => setViewMode((current) => current === 'details' ? 'grid' : 'details')}
         >
           {viewMode === 'details' ? <List size={16} /> : <LayoutGrid size={16} />}
-          <span>View</span>
+          <span>{labels.view}</span>
           <ChevronDown size={13} />
         </button>
         <div ref={moreMenuRef} className="sdkwork-sandbox-explorer__more-wrap">
           <button
             type="button"
             className="sdkwork-sandbox-explorer__command sdkwork-sandbox-explorer__command--more"
-            title="More options"
-            aria-label="More options"
+            title={labels.moreOptions}
+            aria-label={labels.moreOptions}
             aria-haspopup="menu"
             aria-expanded={moreMenuOpen}
             onClick={() => setMoreMenuOpen((current) => !current)}
@@ -1324,7 +1691,7 @@ export function SandboxExplorerView({
             <MoreHorizontal size={18} />
           </button>
           {moreMenuOpen && (
-            <div className="sdkwork-sandbox-explorer__more-menu" role="menu" aria-label="More options">
+            <div className="sdkwork-sandbox-explorer__more-menu" role="menu" aria-label={labels.moreOptions}>
               <button
                 type="button"
                 role="menuitem"
@@ -1335,7 +1702,7 @@ export function SandboxExplorerView({
                 }}
               >
                 <RefreshCw size={15} />
-                Refresh
+                {labels.refresh}
                 <kbd>F5</kbd>
               </button>
               {mode === 'manage' && (
@@ -1351,7 +1718,7 @@ export function SandboxExplorerView({
                     }}
                   >
                     <FolderPlus size={15} />
-                    New folder
+                    {labels.newFolder}
                   </button>
                   <button
                     type="button"
@@ -1364,7 +1731,7 @@ export function SandboxExplorerView({
                     }}
                   >
                     <FilePlus2 size={15} />
-                    New file
+                    {labels.newFile}
                   </button>
                 </>
               )}
@@ -1378,7 +1745,7 @@ export function SandboxExplorerView({
                 }}
               >
                 {viewMode === 'details' ? <LayoutGrid size={15} /> : <List size={15} />}
-                {viewMode === 'details' ? 'Grid view' : 'Details view'}
+                {viewMode === 'details' ? labels.gridView : labels.detailsView}
               </button>
               <button
                 type="button"
@@ -1389,7 +1756,7 @@ export function SandboxExplorerView({
                 }}
               >
                 <PanelRight size={15} />
-                {detailsVisible ? 'Hide details pane' : 'Show details pane'}
+                {detailsVisible ? labels.hideDetailsPane : labels.showDetailsPane}
               </button>
             </div>
           )}
@@ -1397,13 +1764,13 @@ export function SandboxExplorerView({
         <button
           type="button"
           className={`sdkwork-sandbox-explorer__command sdkwork-sandbox-explorer__command--details${detailsVisible ? ' is-active' : ''}`}
-          title={detailsVisible ? 'Hide details pane' : 'Show details pane'}
-          aria-label={detailsVisible ? 'Hide details pane' : 'Show details pane'}
+          title={detailsVisible ? labels.hideDetailsPane : labels.showDetailsPane}
+          aria-label={detailsVisible ? labels.hideDetailsPane : labels.showDetailsPane}
           aria-pressed={detailsVisible}
           onClick={() => setDetailsVisible((current) => !current)}
         >
           <PanelRight size={16} />
-          <span>Details</span>
+          <span>{labels.details}</span>
         </button>
       </div>
 
@@ -1418,7 +1785,7 @@ export function SandboxExplorerView({
               disabled={loading || refreshing}
               onClick={() => void loadDirectory(root, directory, 'preserve')}
             >
-              Reload
+              {labels.reload}
             </button>
           )}
           {!root && (
@@ -1428,23 +1795,23 @@ export function SandboxExplorerView({
               disabled={loading}
               onClick={() => setSandboxLoadAttempt((current) => current + 1)}
             >
-              Retry
+              {labels.retry}
             </button>
           )}
-          <button type="button" title="Dismiss" aria-label="Dismiss" onClick={() => setError(null)}>
+          <button type="button" title={labels.dismiss} aria-label={labels.dismiss} onClick={() => setError(null)}>
             <X size={14} />
           </button>
         </div>
       )}
 
       <div className={`sdkwork-sandbox-explorer__workspace${detailsVisible ? '' : ' is-details-hidden'}`}>
-        <aside className="sdkwork-sandbox-explorer__sidebar" aria-label="Sandbox navigation">
+        <aside className="sdkwork-sandbox-explorer__sidebar" aria-label={labels.sandboxNavigation}>
           <div className="sdkwork-sandbox-explorer__sidebar-heading">
             <ChevronDown size={13} aria-hidden />
             <Server size={15} aria-hidden />
-            <span>Sandboxes</span>
+            <span>{labels.sandboxes}</span>
           </div>
-          <label className="sdkwork-sandbox-explorer__sr-only" htmlFor={sandboxSelectId}>Sandbox</label>
+          <label className="sdkwork-sandbox-explorer__sr-only" htmlFor={sandboxSelectId}>{labels.sandbox}</label>
           <select
             id={sandboxSelectId}
             value={root?.id ?? ''}
@@ -1464,7 +1831,7 @@ export function SandboxExplorerView({
             ))}
           </select>
 
-          <div className="sdkwork-sandbox-explorer__tree" role="tree" aria-label="Available sandboxes">
+          <div className="sdkwork-sandbox-explorer__tree" role="tree" aria-label={labels.availableSandboxes}>
             {roots.map((candidate) => {
               const active = candidate.id === root?.id;
               return (
@@ -1472,7 +1839,7 @@ export function SandboxExplorerView({
                   <button
                     type="button"
                     role="treeitem"
-                    aria-label={`Open sandbox ${candidate.displayName}`}
+                    aria-label={interpolateLabels(labels.openSandbox, { name: candidate.displayName })}
                     aria-selected={active}
                     className={`sdkwork-sandbox-explorer__tree-item${active ? ' is-active' : ''}`}
                     disabled={loading && !active}
@@ -1516,7 +1883,7 @@ export function SandboxExplorerView({
               onClick={() => void loadMoreSandboxes()}
             >
               {loadingMoreSandboxes ? <LoaderCircle size={14} className="is-spinning" /> : <MoreHorizontal size={15} />}
-              <span>More sandboxes</span>
+              <span>{labels.moreSandboxes}</span>
             </button>
           )}
         </aside>
@@ -1544,14 +1911,14 @@ export function SandboxExplorerView({
           {creatingDirectory && root?.capabilities.createDirectory && directory && (
             <form className="sdkwork-sandbox-explorer__create-row" onSubmit={(event) => void submitCreateDirectory(event)}>
               <Folder size={18} />
-              <label className="sdkwork-sandbox-explorer__sr-only" htmlFor={newDirectoryNameId}>Folder name</label>
+              <label className="sdkwork-sandbox-explorer__sr-only" htmlFor={newDirectoryNameId}>{labels.folderName}</label>
               <input
                 id={newDirectoryNameId}
                 autoFocus
                 required
                 maxLength={255}
                 value={newDirectoryName}
-                placeholder="Folder name"
+                placeholder={labels.folderName}
                 disabled={createPending}
                 onChange={(event) => setNewDirectoryName(event.target.value)}
                 onKeyDown={(event) => {
@@ -1561,13 +1928,13 @@ export function SandboxExplorerView({
                   }
                 }}
               />
-              <button type="submit" title="Create folder" aria-label="Create folder" disabled={!newDirectoryName.trim() || createPending}>
+              <button type="submit" title={labels.createFolder} aria-label={labels.createFolder} disabled={!newDirectoryName.trim() || createPending}>
                 {createPending ? <LoaderCircle size={15} className="is-spinning" /> : <Check size={15} />}
               </button>
               <button
                 type="button"
-                title="Cancel"
-                aria-label="Cancel"
+                title={labels.cancel}
+                aria-label={labels.cancel}
                 disabled={createPending}
                 onClick={() => {
                   setCreatingDirectory(false);
@@ -1582,14 +1949,14 @@ export function SandboxExplorerView({
           {creatingFile && root?.capabilities.createFile && directory && (
             <form className="sdkwork-sandbox-explorer__create-row" onSubmit={(event) => void submitCreateFile(event)}>
               <FilePlus2 size={18} />
-              <label className="sdkwork-sandbox-explorer__sr-only" htmlFor={`${newDirectoryNameId}-file`}>File name</label>
+              <label className="sdkwork-sandbox-explorer__sr-only" htmlFor={`${newDirectoryNameId}-file`}>{labels.fileName}</label>
               <input
                 id={`${newDirectoryNameId}-file`}
                 autoFocus
                 required
                 maxLength={255}
                 value={newFileName}
-                placeholder="File name"
+                placeholder={labels.fileName}
                 disabled={createPending}
                 onChange={(event) => setNewFileName(event.target.value)}
                 onKeyDown={(event) => {
@@ -1599,13 +1966,13 @@ export function SandboxExplorerView({
                   }
                 }}
               />
-              <button type="submit" title="Create file" aria-label="Create file" disabled={!newFileName.trim() || createPending}>
+              <button type="submit" title={labels.createFile} aria-label={labels.createFile} disabled={!newFileName.trim() || createPending}>
                 {createPending ? <LoaderCircle size={15} className="is-spinning" /> : <Check size={15} />}
               </button>
               <button
                 type="button"
-                title="Cancel"
-                aria-label="Cancel file creation"
+                title={labels.cancelFileCreation}
+                aria-label={labels.cancelFileCreation}
                 disabled={createPending}
                 onClick={() => {
                   setCreatingFile(false);
@@ -1619,25 +1986,25 @@ export function SandboxExplorerView({
 
           {loading ? (
             <div className="sdkwork-sandbox-explorer__state">
-              <LoaderCircle size={22} className="is-spinning" aria-label="Loading" />
-              <span>Loading folder…</span>
+              <LoaderCircle size={22} className="is-spinning" aria-label={labels.loading} />
+              <span>{labels.loadingFolder}</span>
             </div>
           ) : roots.length === 0 ? (
             <div className="sdkwork-sandbox-explorer__state">
               <Server size={34} />
-              <span>No accessible sandboxes.</span>
+              <span>{labels.noAccessibleSandboxes}</span>
             </div>
           ) : visibleEntries.length === 0 ? (
             <div className="sdkwork-sandbox-explorer__state">
               <FolderOpen size={34} />
-              <span>{searchQuery ? 'No items match your search.' : 'This folder is empty.'}</span>
+              <span>{searchQuery ? labels.noSearchMatches : labels.folderEmpty}</span>
             </div>
           ) : viewMode === 'details' ? (
-            <div className="sdkwork-sandbox-explorer__details-view" aria-label="Directory items">
+            <div className="sdkwork-sandbox-explorer__details-view" aria-label={labels.directoryItems}>
               <div className="sdkwork-sandbox-explorer__columns" aria-hidden>
-                <span>Name</span>
-                <span>Type</span>
-                <span>Location</span>
+                <span>{labels.nameColumn}</span>
+                <span>{labels.typeColumn}</span>
+                <span>{labels.locationColumn}</span>
               </div>
               {visibleEntries.map((entry) => (
                 <button
@@ -1666,13 +2033,13 @@ export function SandboxExplorerView({
                       : <File size={18} className="is-file" />}
                     <span title={entry.name}>{entry.name}</span>
                   </span>
-                  <span>{entryType(entry)}</span>
+                  <span>{entryType(entry, labels)}</span>
                   <span title={entryLocation(entry)}>{entryLocation(entry)}</span>
                 </button>
               ))}
             </div>
           ) : (
-            <div className="sdkwork-sandbox-explorer__grid-view" aria-label="Directory items">
+            <div className="sdkwork-sandbox-explorer__grid-view" aria-label={labels.directoryItems}>
               {visibleEntries.map((entry) => (
                 <button
                   key={entry.id}
@@ -1707,19 +2074,19 @@ export function SandboxExplorerView({
             <button
               ref={loadMoreRef}
               type="button"
-              aria-label="Load more"
+              aria-label={labels.loadMore}
               className="sdkwork-sandbox-explorer__load-more"
               disabled={loadingMore}
               onClick={() => void loadMoreEntries()}
             >
               {loadingMore && <LoaderCircle size={14} className="is-spinning" />}
-              {loadingMore ? 'Loading more items\u2026' : 'Load more items'}
+              {loadingMore ? labels.loadingMoreItems : labels.loadMoreItems}
             </button>
           )}
         </main>
 
         {detailsVisible && (
-          <aside className="sdkwork-sandbox-explorer__details-pane" aria-label="Item details">
+          <aside className="sdkwork-sandbox-explorer__details-pane" aria-label={labels.itemDetails}>
             <div className="sdkwork-sandbox-explorer__preview-icon">
               {selectedEntry?.kind === 'file'
                 ? <File size={64} className="is-file" />
@@ -1729,15 +2096,15 @@ export function SandboxExplorerView({
               <h2 title={detailName}>{detailName}</h2>
               <dl>
                 <div>
-                  <dt>Type</dt>
+                  <dt>{labels.type}</dt>
                   <dd>{detailKind}</dd>
                 </div>
                 <div>
-                  <dt>Sandbox</dt>
+                  <dt>{labels.sandbox}</dt>
                   <dd>{root?.displayName ?? '—'}</dd>
                 </div>
                 <div>
-                  <dt>Location</dt>
+                  <dt>{labels.location}</dt>
                   <dd>{selectedEntry ? entryLocation(selectedEntry) : directory?.logicalPath || '/'}</dd>
                 </div>
               </dl>
@@ -1747,7 +2114,7 @@ export function SandboxExplorerView({
                     {selectedEntry.kind === 'directory'
                       ? <FolderOpen size={14} />
                       : <FilePenLine size={14} />}
-                    {selectedEntry.kind === 'directory' ? 'Open' : 'Open file'}
+                    {selectedEntry.kind === 'directory' ? labels.open : labels.openFile}
                   </button>
                   <button
                     type="button"
@@ -1755,14 +2122,14 @@ export function SandboxExplorerView({
                     onClick={() => startRename(selectedEntry)}
                   >
                     <Pencil size={14} />
-                    Rename
+                    {labels.rename}
                   </button>
                 </div>
               )}
               {!selectedEntry && (
                 <div className="sdkwork-sandbox-explorer__detail-hint">
                   <Info size={15} />
-                  <span>Select an item to view its details.</span>
+                  <span>{labels.selectItemDetails}</span>
                 </div>
               )}
             </div>
@@ -1771,17 +2138,17 @@ export function SandboxExplorerView({
       </div>
 
       <footer className="sdkwork-sandbox-explorer__status-bar">
-        <span>{visibleEntries.length} {visibleEntries.length === 1 ? 'item' : 'items'} loaded</span>
-        {searchQuery && <span>Filtered from {entries.length}</span>}
-        {filtering && <span role="status">{'Filtering\u2026'}</span>}
-        {refreshing && <span role="status">{'Refreshing\u2026'}</span>}
+        <span>{interpolateLabels(visibleEntries.length === 1 ? labels.itemsLoadedOne : labels.itemsLoadedMany, { count: String(visibleEntries.length) })}</span>
+        {searchQuery && <span>{interpolateLabels(labels.filteredFrom, { count: String(entries.length) })}</span>}
+        {filtering && <span role="status">{labels.filtering}</span>}
+        {refreshing && <span role="status">{labels.refreshing}</span>}
         {!searchQuery && entries.length > 0 && (
           <span role="status" aria-live="polite">
-            {loadingMore ? 'Loading more items\u2026' : nextCursor ? 'More items available' : 'All items loaded'}
+            {loadingMore ? labels.loadingMoreItems : nextCursor ? labels.moreItemsAvailable : labels.allItemsLoaded}
           </span>
         )}
         <span className="sdkwork-sandbox-explorer__status-path">
-          {root && directory ? currentSelection(root, directory).displayPath : 'No sandbox selected'}
+          {root && directory ? currentSelection(root, directory).displayPath : labels.noSandboxSelected}
         </span>
         {mode === 'select-directory' && root && directory && (
           <button
@@ -1791,7 +2158,7 @@ export function SandboxExplorerView({
             onClick={selectCurrentDirectory}
           >
             <FolderOpen size={15} />
-            Select directory
+            {labels.selectDirectory}
           </button>
         )}
       </footer>
@@ -1802,8 +2169,8 @@ export function SandboxExplorerView({
           className={`sdkwork-sandbox-explorer__context-menu sdkwork-sandbox-explorer__context-menu--${platform}`}
           role="menu"
           aria-label={contextMenu.kind === 'entry'
-            ? `${contextMenu.entry?.name ?? 'Item'} actions`
-            : 'Current folder actions'}
+            ? interpolateLabels(labels.entryActions, { name: contextMenu.entry?.name ?? '' })
+            : labels.currentFolderActions}
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onKeyDown={handleContextMenuKeyDown}
         >
@@ -1811,7 +2178,7 @@ export function SandboxExplorerView({
             <>
               <button type="button" role="menuitem" className="is-default" onClick={() => activateEntry(contextMenu.entry!)}>
                 {contextMenu.entry.kind === 'directory' ? <FolderOpen size={15} /> : <FilePenLine size={15} />}
-                <span>Open</span>
+                <span>{labels.open}</span>
                 <kbd>{platform === 'macos' ? '⌘O' : 'Enter'}</kbd>
               </button>
               <span role="separator" />
@@ -1825,7 +2192,7 @@ export function SandboxExplorerView({
                 }}
               >
                 <Copy size={15} />
-                <span>{platform === 'windows' ? 'Copy as path' : platform === 'macos' ? 'Copy pathname' : 'Copy Location'}</span>
+                <span>{platform === 'windows' ? labels.copyAsPath : platform === 'macos' ? labels.copyPathname : labels.copyLocation}</span>
                 <kbd>{platform === 'macos' ? '⌥⌘C' : 'Ctrl+Shift+C'}</kbd>
               </button>
               {mode === 'manage' && (
@@ -1837,7 +2204,7 @@ export function SandboxExplorerView({
                     onClick={() => startRename(contextMenu.entry!)}
                   >
                     <Pencil size={15} />
-                    <span>Rename</span>
+                    <span>{labels.rename}</span>
                     <kbd>{platform === 'macos' ? 'Return' : 'F2'}</kbd>
                   </button>
                   <button
@@ -1847,7 +2214,7 @@ export function SandboxExplorerView({
                     onClick={() => startMove(contextMenu.entry!)}
                   >
                     <Move size={15} />
-                    <span>Move to…</span>
+                    <span>{labels.moveTo}</span>
                     <kbd />
                   </button>
                 </>
@@ -1862,7 +2229,7 @@ export function SandboxExplorerView({
                 }}
               >
                 <Info size={15} />
-                <span>{platform === 'macos' ? 'Get Info' : 'Properties'}</span>
+                <span>{platform === 'macos' ? labels.getInfo : labels.properties}</span>
                 <kbd>{platform === 'macos' ? '⌘I' : 'Alt+Enter'}</kbd>
               </button>
               {mode === 'manage' && (
@@ -1877,7 +2244,7 @@ export function SandboxExplorerView({
                   }}
                 >
                   <Trash2 size={15} />
-                  <span>Delete permanently…</span>
+                  <span>{labels.deletePermanently}…</span>
                   <kbd>{platform === 'macos' ? '⌥⌘⌫' : 'Shift+Del'}</kbd>
                 </button>
               )}
@@ -1897,7 +2264,7 @@ export function SandboxExplorerView({
                     }}
                   >
                     <FolderPlus size={15} />
-                    <span>New folder</span>
+                    <span>{labels.newFolder}</span>
                     <kbd>{platform === 'macos' ? '⇧⌘N' : 'Ctrl+Shift+N'}</kbd>
                   </button>
                   <button
@@ -1911,7 +2278,7 @@ export function SandboxExplorerView({
                     }}
                   >
                     <FilePlus2 size={15} />
-                    <span>New file</span>
+                    <span>{labels.newFile}</span>
                     <kbd />
                   </button>
                   <span role="separator" />
@@ -1927,7 +2294,7 @@ export function SandboxExplorerView({
                 }}
               >
                 <RefreshCw size={15} />
-                <span>Refresh</span>
+                <span>{labels.refresh}</span>
                 <kbd>{platform === 'macos' ? '⌘R' : 'F5'}</kbd>
               </button>
               <button
@@ -1940,7 +2307,7 @@ export function SandboxExplorerView({
                 }}
               >
                 <ArrowDown size={15} className={sortAscending ? 'is-ascending' : 'is-descending'} />
-                <span>{sortAscending ? 'Sort descending' : 'Sort ascending'}</span>
+                <span>{sortAscending ? labels.sortDescending : labels.sortAscending}</span>
                 <kbd />
               </button>
               <button
@@ -1953,7 +2320,7 @@ export function SandboxExplorerView({
                 }}
               >
                 {viewMode === 'details' ? <LayoutGrid size={15} /> : <List size={15} />}
-                <span>{viewMode === 'details' ? 'Grid view' : 'Details view'}</span>
+                <span>{viewMode === 'details' ? labels.gridView : labels.detailsView}</span>
                 <kbd />
               </button>
               <button
@@ -1966,7 +2333,7 @@ export function SandboxExplorerView({
                 }}
               >
                 <PanelRight size={15} />
-                <span>{detailsVisible ? 'Hide details pane' : 'Show details pane'}</span>
+                <span>{detailsVisible ? labels.hideDetailsPane : labels.showDetailsPane}</span>
                 <kbd />
               </button>
               <span role="separator" />
@@ -1980,7 +2347,7 @@ export function SandboxExplorerView({
                 }}
               >
                 <Copy size={15} />
-                <span>{platform === 'windows' ? 'Copy current path' : platform === 'macos' ? 'Copy pathname' : 'Copy Location'}</span>
+                <span>{platform === 'windows' ? labels.copyCurrentPath : platform === 'macos' ? labels.copyPathname : labels.copyLocation}</span>
                 <kbd />
               </button>
               <button
@@ -1993,7 +2360,7 @@ export function SandboxExplorerView({
                 }}
               >
                 <Info size={15} />
-                <span>{platform === 'macos' ? 'Get Info' : 'Properties'}</span>
+                <span>{platform === 'macos' ? labels.getInfo : labels.properties}</span>
                 <kbd>{platform === 'macos' ? '⌘I' : 'Alt+Enter'}</kbd>
               </button>
             </>
@@ -2003,32 +2370,38 @@ export function SandboxExplorerView({
 
       {fileEditor && (
         <div className="sdkwork-sandbox-explorer__modal-backdrop" role="presentation">
-          <section className="sdkwork-sandbox-explorer__operation-dialog sdkwork-sandbox-explorer__editor" role="dialog" aria-modal="true" aria-label={`Edit ${fileEditor.entry.name}`}>
+          <section className="sdkwork-sandbox-explorer__operation-dialog sdkwork-sandbox-explorer__editor" role="dialog" aria-modal="true" aria-label={interpolateLabels(labels.editFile, { name: fileEditor.entry.name })}>
             <header>
               <FilePenLine size={16} />
               <strong>{fileEditor.entry.name}</strong>
-              <span>{fileEditor.encoding === 'utf8' ? `${fileEditor.sizeBytes} bytes` : 'Binary preview'}</span>
-              <button type="button" aria-label="Close file" onClick={() => setFileEditor(null)}><X size={16} /></button>
+              <span>{fileEditor.encoding === 'utf8'
+                ? interpolateLabels(labels.bytes, { count: fileEditor.sizeBytes })
+                : labels.binaryPreview}</span>
+              <button type="button" aria-label={labels.closeFile} onClick={() => setFileEditor(null)}><X size={16} /></button>
             </header>
             {fileEditor.loading ? (
-              <div className="sdkwork-sandbox-explorer__operation-state"><LoaderCircle size={20} className="is-spinning" />Loading file…</div>
+              <div className="sdkwork-sandbox-explorer__operation-state"><LoaderCircle size={20} className="is-spinning" />{labels.loadingFile}</div>
             ) : (
               <>
                 {fileEditor.error && <div role="alert" className="sdkwork-sandbox-explorer__editor-error">{fileEditor.error}</div>}
                 <textarea
-                  aria-label="File content"
+                  aria-label={labels.fileContent}
                   readOnly={fileEditor.encoding === 'base64' || !root?.capabilities.writeFile}
                   value={fileEditor.content}
                   spellCheck={false}
                   onChange={(event) => setFileEditor((current) => current ? { ...current, content: event.target.value } : null)}
                 />
                 <footer>
-                  <span>{fileEditor.encoding === 'base64' ? 'Base64-encoded read-only content' : fileEditor.checksumSha256 ? `SHA-256 ${fileEditor.checksumSha256.slice(0, 12)}…` : 'UTF-8 text'}</span>
-                  <button type="button" onClick={() => setFileEditor(null)}>Close</button>
+                  <span>{fileEditor.encoding === 'base64'
+                    ? labels.base64ReadOnly
+                    : fileEditor.checksumSha256
+                      ? interpolateLabels(labels.sha256, { digest: `${fileEditor.checksumSha256.slice(0, 12)}…` })
+                      : labels.utf8Text}</span>
+                  <button type="button" onClick={() => setFileEditor(null)}>{labels.close}</button>
                   {fileEditor.encoding === 'utf8' && root?.capabilities.writeFile && (
                     <button type="button" className="is-primary" disabled={fileEditor.saving} onClick={() => void saveFile()}>
                       {fileEditor.saving ? <LoaderCircle size={14} className="is-spinning" /> : <Save size={14} />}
-                      Save
+                      {labels.save}
                     </button>
                   )}
                 </footer>
@@ -2040,7 +2413,8 @@ export function SandboxExplorerView({
 
       {propertiesTarget && root && directory && (
         <OperationDialog
-          title={platform === 'macos' ? 'Info' : 'Properties'}
+          title={platform === 'macos' ? labels.info : labels.properties}
+          closeLabel={labels.close}
           onCancel={() => setPropertiesTarget(null)}
         >
           <div className="sdkwork-sandbox-explorer__properties">
@@ -2050,12 +2424,12 @@ export function SandboxExplorerView({
                 : <FolderOpen size={42} className="is-folder" />}
             </div>
             <dl>
-              <div><dt>Name</dt><dd>{propertiesTarget.entry?.name ?? currentLabel}</dd></div>
-              <div><dt>Kind</dt><dd>{propertiesTarget.entry ? entryType(propertiesTarget.entry) : 'Sandbox folder'}</dd></div>
-              <div><dt>Sandbox</dt><dd>{root.displayName}</dd></div>
-              <div><dt>Location</dt><dd>{propertiesTarget.entry ? entryLocation(propertiesTarget.entry) : directory.logicalPath || '/'}</dd></div>
-              <div><dt>Logical path</dt><dd>{propertiesTarget.entry ? entryAbsolutePath(propertiesTarget.entry) : absolutePath}</dd></div>
-              {propertiesTarget.entry && <div><dt>Revision</dt><dd>{propertiesTarget.entry.revision}</dd></div>}
+              <div><dt>{labels.name}</dt><dd>{propertiesTarget.entry?.name ?? currentLabel}</dd></div>
+              <div><dt>{labels.kind}</dt><dd>{propertiesTarget.entry ? entryType(propertiesTarget.entry, labels) : labels.sandboxFolderType}</dd></div>
+              <div><dt>{labels.sandbox}</dt><dd>{root.displayName}</dd></div>
+              <div><dt>{labels.location}</dt><dd>{propertiesTarget.entry ? entryLocation(propertiesTarget.entry) : directory.logicalPath || '/'}</dd></div>
+              <div><dt>{labels.logicalPath}</dt><dd>{propertiesTarget.entry ? entryAbsolutePath(propertiesTarget.entry) : absolutePath}</dd></div>
+              {propertiesTarget.entry && <div><dt>{labels.revision}</dt><dd>{propertiesTarget.entry.revision}</dd></div>}
             </dl>
             <div className="sdkwork-sandbox-explorer__dialog-actions">
               <button
@@ -2063,43 +2437,45 @@ export function SandboxExplorerView({
                 onClick={() => void copyPath(propertiesTarget.entry ? entryAbsolutePath(propertiesTarget.entry) : absolutePath)}
               >
                 <Copy size={14} />
-                Copy path
+                {labels.copyPath}
               </button>
-              <button type="button" className="is-primary" onClick={() => setPropertiesTarget(null)}>OK</button>
+              <button type="button" className="is-primary" onClick={() => setPropertiesTarget(null)}>{labels.ok}</button>
             </div>
           </div>
         </OperationDialog>
       )}
 
       {renamingEntry && (
-        <OperationDialog title={`Rename ${renamingEntry.name}`} onCancel={() => setRenamingEntry(null)}>
+        <OperationDialog title={interpolateLabels(labels.renameDialogTitle, { name: renamingEntry.name })} closeLabel={labels.close} onCancel={() => setRenamingEntry(null)}>
           <form onSubmit={(event) => void submitRename(event)}>
-            <label htmlFor={`${newDirectoryNameId}-rename`}>New name</label>
+            <label htmlFor={`${newDirectoryNameId}-rename`}>{labels.newName}</label>
             <input id={`${newDirectoryNameId}-rename`} autoFocus required maxLength={255} value={renameValue} disabled={mutationPending} onChange={(event) => setRenameValue(event.target.value)} />
-            <DialogActions pending={mutationPending} submitLabel="Rename" onCancel={() => setRenamingEntry(null)} />
+            <DialogActions pending={mutationPending} submitLabel={labels.rename} cancelLabel={labels.cancel} onCancel={() => setRenamingEntry(null)} />
           </form>
         </OperationDialog>
       )}
 
       {movingEntry && (
-        <OperationDialog title={`Move ${movingEntry.name}`} onCancel={() => setMovingEntry(null)}>
+        <OperationDialog title={interpolateLabels(labels.moveDialogTitle, { name: movingEntry.name })} closeLabel={labels.close} onCancel={() => setMovingEntry(null)}>
           <form onSubmit={(event) => void submitMove(event)}>
-            <label htmlFor={`${newDirectoryNameId}-move`}>Destination folder path</label>
-            <input id={`${newDirectoryNameId}-move`} autoFocus placeholder="Empty for sandbox root" value={moveDestination} disabled={mutationPending} onChange={(event) => setMoveDestination(event.target.value)} />
-            <p>Use a sandbox-relative path with forward slashes.</p>
-            <DialogActions pending={mutationPending} submitLabel="Move" onCancel={() => setMovingEntry(null)} />
+            <label htmlFor={`${newDirectoryNameId}-move`}>{labels.destinationFolderPath}</label>
+            <input id={`${newDirectoryNameId}-move`} autoFocus placeholder={labels.emptyForSandboxRoot} value={moveDestination} disabled={mutationPending} onChange={(event) => setMoveDestination(event.target.value)} />
+            <p>{labels.moveHint}</p>
+            <DialogActions pending={mutationPending} submitLabel={labels.move} cancelLabel={labels.cancel} onCancel={() => setMovingEntry(null)} />
           </form>
         </OperationDialog>
       )}
 
       {deletingEntry && (
-        <OperationDialog title={`Delete ${deletingEntry.name}`} onCancel={() => setDeletingEntry(null)} danger>
-          <p>This permanently deletes the {deletingEntry.kind}. This action cannot be undone.</p>
+        <OperationDialog title={interpolateLabels(labels.deleteDialogTitle, { name: deletingEntry.name })} closeLabel={labels.close} onCancel={() => setDeletingEntry(null)} danger>
+          <p>{interpolateLabels(labels.deleteConfirm, {
+            kind: deletingEntry.kind === 'directory' ? labels.directoryKindNoun : labels.fileKindNoun,
+          })}</p>
           <div className="sdkwork-sandbox-explorer__dialog-actions">
-            <button type="button" onClick={() => setDeletingEntry(null)} disabled={mutationPending}>Cancel</button>
+            <button type="button" onClick={() => setDeletingEntry(null)} disabled={mutationPending}>{labels.cancel}</button>
             <button type="button" className="is-danger" onClick={() => void confirmDelete()} disabled={mutationPending}>
               {mutationPending && <LoaderCircle size={14} className="is-spinning" />}
-              Delete permanently
+              {labels.deletePermanently}
             </button>
           </div>
         </OperationDialog>
@@ -2113,16 +2489,18 @@ function OperationDialog({
   children,
   onCancel,
   danger = false,
+  closeLabel,
 }: {
   readonly title: string;
   readonly children: React.ReactNode;
   readonly onCancel: () => void;
   readonly danger?: boolean;
+  readonly closeLabel: string;
 }) {
   return (
     <div className="sdkwork-sandbox-explorer__modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onCancel()}>
       <section className={`sdkwork-sandbox-explorer__operation-dialog${danger ? ' is-danger' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
-        <header><strong>{title}</strong><button type="button" aria-label="Close" onClick={onCancel}><X size={16} /></button></header>
+        <header><strong>{title}</strong><button type="button" aria-label={closeLabel} onClick={onCancel}><X size={16} /></button></header>
         <div className="sdkwork-sandbox-explorer__operation-body">{children}</div>
       </section>
     </div>
@@ -2133,14 +2511,16 @@ function DialogActions({
   pending,
   submitLabel,
   onCancel,
+  cancelLabel,
 }: {
   readonly pending: boolean;
   readonly submitLabel: string;
   readonly onCancel: () => void;
+  readonly cancelLabel: string;
 }) {
   return (
     <div className="sdkwork-sandbox-explorer__dialog-actions">
-      <button type="button" onClick={onCancel} disabled={pending}>Cancel</button>
+      <button type="button" onClick={onCancel} disabled={pending}>{cancelLabel}</button>
       <button type="submit" className="is-primary" disabled={pending}>
         {pending && <LoaderCircle size={14} className="is-spinning" />}
         {submitLabel}
