@@ -24,7 +24,7 @@
     },
     {
       "path": "Cargo.toml",
-      "sha256": "bbd2d72de71271ecf556c1b5165e7376907ae2f3cb7b4cbeaf0bc584b066d327"
+      "sha256": "ec0413d6cbbc9b49da6bd3d4fa82fc5f25268bab1f01907d19deee016928a356"
     },
     {
       "path": "CHANGELOG.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "ddb0a60d3ba0e9b53b02110dbabb9d1e166487a720678a2aafb0db6df53b106b"
+      "sha256": "39f5c2241e127680d28fc9c4ce53977c220a8fb38e8d7f706f53189d154fed48"
     },
     {
       "path": "src/api/mod.rs",
@@ -68,11 +68,11 @@
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "57c03de0e7f6b37ef5974527e558607cd2fc35f945198731490b2f8a5b8bfad2"
+      "sha256": "6744c77f8c5d27ea5f0d35340b928589e8ed15c946174c184f67dd17a98b58ed"
     },
     {
       "path": "src/http/mod.rs",
-      "sha256": "fdf16d487ebd9180fb423d5630d4401ff18180721b86636dec085ad83940bb3d"
+      "sha256": "d09ef1f29c3fa0e631fc4f7287fc93dc7d3cee7e7261ac85091852a09243e90a"
     },
     {
       "path": "src/lib.rs",

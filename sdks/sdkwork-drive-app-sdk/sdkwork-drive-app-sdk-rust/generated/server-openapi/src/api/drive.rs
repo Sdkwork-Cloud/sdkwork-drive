@@ -328,6 +328,16 @@ impl DriveApi {
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
+    /// List nodes carrying an app_public property
+    pub async fn property_nodes_list(&self, property_key: &str, page_size: Option<i64>, cursor: Option<&str>) -> Result<DriveNodeListData, SdkworkError> {
+        let query = build_query_string(&[
+            QueryParameterSpec::new("page_size", page_size, "form", true, false, None),
+            QueryParameterSpec::new("cursor", cursor, "form", true, false, None),
+        ]);
+        let path = append_query_string(app_path(&format!("/drive/properties/{}/nodes", serialize_path_parameter(property_key, PathParameterSpec::new("propertyKey", "simple", false)))), &query);
+        self.client.get(&path, None, None).await
+    }
+
     pub async fn recent_list(&self, space_id: Option<&str>, page_size: Option<i64>, cursor: Option<&str>, sort_by: Option<&str>, sort_order: Option<&str>) -> Result<DriveNodeListData, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("spaceId", space_id, "form", true, false, None),

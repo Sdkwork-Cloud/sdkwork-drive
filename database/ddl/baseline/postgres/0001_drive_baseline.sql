@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS dr_drive_space (
 );
 
 DROP INDEX IF EXISTS ux_dr_drive_space_tenant_owner_type;
-CREATE UNIQUE INDEX ux_dr_drive_space_tenant_owner_type
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_space_tenant_owner_type
     ON dr_drive_space (tenant_id, owner_subject_type, owner_subject_id, space_type)
     WHERE space_type != 'website' AND lifecycle_status = 'active';
 CREATE INDEX IF NOT EXISTS ix_dr_drive_space_tenant_status
@@ -702,6 +702,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_node_property_key
     ON dr_drive_node_property (tenant_id, node_id, property_key, visibility);
 CREATE INDEX IF NOT EXISTS ix_dr_drive_node_property_node
     ON dr_drive_node_property (tenant_id, node_id, visibility, lifecycle_status, property_key ASC);
+-- Reverse lookup for property-marked nodes (propertyNodes.list app API).
+CREATE INDEX IF NOT EXISTS ix_dr_drive_node_property_key_reverse
+    ON dr_drive_node_property (tenant_id, property_key, visibility, lifecycle_status, node_id ASC);
 
 CREATE TABLE IF NOT EXISTS dr_drive_label (
     id VARCHAR(64) PRIMARY KEY,
@@ -1811,55 +1814,24 @@ ON CONFLICT (provider_kind) DO NOTHING;
 -- module: drive
 -- description: Tenant quota policy table used by quotas.summary app API.
 
-CREATE TABLE IF NOT EXISTS dr_drive_tenant_quota (
-    tenant_id VARCHAR(64) PRIMARY KEY,
-    max_bytes BIGINT,
-    updated_by VARCHAR(128) NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    version BIGINT NOT NULL DEFAULT 1,
-    CONSTRAINT ck_dr_drive_tenant_quota_version
-        CHECK (version >= 1),
-    CONSTRAINT ck_dr_drive_tenant_quota_max_bytes
-        CHECK (max_bytes IS NULL OR max_bytes > 0)
-);
+
 
 -- folded migration: migrations/postgres/0006_drive_node_name_active_only.up.sql
 -- Align sibling name uniqueness with active nodes only (trashed names do not block new items).
 DROP INDEX IF EXISTS ux_dr_drive_node_root_name_live;
 DROP INDEX IF EXISTS ux_dr_drive_node_child_name_live;
 
-CREATE UNIQUE INDEX ux_dr_drive_node_root_name_live
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_node_root_name_live
     ON dr_drive_node (tenant_id, space_id, node_name)
     WHERE parent_node_id IS NULL AND lifecycle_status = 'active';
 
-CREATE UNIQUE INDEX ux_dr_drive_node_child_name_live
+CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_node_child_name_live
     ON dr_drive_node (tenant_id, space_id, parent_node_id, node_name)
     WHERE parent_node_id IS NOT NULL AND lifecycle_status = 'active';
 
 -- folded migration: migrations/postgres/0007_drive_sandbox_workspace.up.sql
 -- Server sandbox volumes, explicit grants, and idempotent filesystem mutations.
-CREATE TABLE IF NOT EXISTS dr_drive_sandbox_volume (
-    id VARCHAR(128) NOT NULL PRIMARY KEY,
-    tenant_id VARCHAR(64) NOT NULL,
-    organization_id VARCHAR(64),
-    display_name VARCHAR(255) NOT NULL,
-    root_entry_id VARCHAR(128) NOT NULL,
-    provider_kind VARCHAR(32) NOT NULL,
-    provider_root_ref TEXT NOT NULL,
-    lifecycle_status VARCHAR(32) NOT NULL DEFAULT 'active',
-    default_access VARCHAR(32) NOT NULL DEFAULT 'full',
-    version BIGINT NOT NULL DEFAULT 1,
-    created_by VARCHAR(128) NOT NULL,
-    updated_by VARCHAR(128) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT ck_dr_drive_sandbox_volume_runtime_provider
-        CHECK (provider_kind = 'local_filesystem'),
-    CONSTRAINT ck_dr_drive_sandbox_volume_status
-        CHECK (lifecycle_status IN ('active', 'read_only', 'disabled')),
-    CONSTRAINT ck_dr_drive_sandbox_volume_default_access
-        CHECK (default_access IN ('full', 'read_only'))
-);
+
 
 DO $$
 DECLARE
@@ -1902,62 +1874,11 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_sandbox_volume_tenant_organization_status
 CREATE UNIQUE INDEX IF NOT EXISTS ux_dr_drive_sandbox_volume_root_entry
     ON dr_drive_sandbox_volume (id, root_entry_id);
 
-CREATE TABLE IF NOT EXISTS dr_drive_sandbox_grant (
-    id VARCHAR(128) NOT NULL PRIMARY KEY,
-    sandbox_id VARCHAR(128) NOT NULL
-        REFERENCES dr_drive_sandbox_volume(id) ON DELETE CASCADE,
-    subject_type VARCHAR(32) NOT NULL,
-    subject_id VARCHAR(128) NOT NULL,
-    access_level VARCHAR(32) NOT NULL DEFAULT 'full',
-    granted_by VARCHAR(128) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT uk_dr_drive_sandbox_grant_subject
-        UNIQUE (sandbox_id, subject_type, subject_id),
-    CONSTRAINT ck_dr_drive_sandbox_grant_subject_type
-        CHECK (subject_type IN ('user', 'organization', 'workspace', 'role')),
-    CONSTRAINT ck_dr_drive_sandbox_grant_access
-        CHECK (access_level IN ('full', 'read_only'))
-);
+
 CREATE INDEX IF NOT EXISTS ix_dr_drive_sandbox_grant_subject
     ON dr_drive_sandbox_grant (subject_type, subject_id, sandbox_id);
 
-CREATE TABLE IF NOT EXISTS dr_drive_sandbox_mutation_operation (
-    id BIGINT NOT NULL PRIMARY KEY,
-    tenant_id VARCHAR(64) NOT NULL,
-    sandbox_id VARCHAR(128) NOT NULL
-        REFERENCES dr_drive_sandbox_volume(id) ON DELETE CASCADE,
-    actor_id VARCHAR(128) NOT NULL,
-    idempotency_key_hash VARCHAR(64) NOT NULL,
-    request_fingerprint VARCHAR(64) NOT NULL,
-    mutation_kind VARCHAR(32) NOT NULL,
-    parent_logical_path TEXT NOT NULL,
-    entry_name VARCHAR(255) NOT NULL,
-    operation_status VARCHAR(32) NOT NULL DEFAULT 'pending',
-    lease_token VARCHAR(64) NOT NULL,
-    lease_expires_at_ms BIGINT NOT NULL,
-    result_entry_id VARCHAR(128),
-    result_parent_id VARCHAR(128),
-    result_entry_kind VARCHAR(32),
-    result_logical_path TEXT,
-    result_revision VARCHAR(128),
-    result_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT uk_dr_drive_sandbox_mutation_operation_key
-        UNIQUE (tenant_id, sandbox_id, actor_id, idempotency_key_hash),
-    CONSTRAINT ck_dr_drive_sandbox_mutation_operation_status
-        CHECK (operation_status IN ('pending', 'completed', 'failed_conflict')),
-    CONSTRAINT ck_dr_drive_sandbox_mutation_operation_result_kind
-        CHECK (result_entry_kind IS NULL OR result_entry_kind IN ('directory', 'file')),
-    CONSTRAINT ck_dr_drive_sandbox_mutation_operation_kind
-        CHECK (mutation_kind IN (
-            'create_directory',
-            'create_file',
-            'update_file',
-            'move_entry',
-            'delete_entry'
-        ))
-);
+
 CREATE INDEX IF NOT EXISTS ix_dr_drive_sandbox_mutation_operation_pending
     ON dr_drive_sandbox_mutation_operation (operation_status, lease_expires_at_ms);
 CREATE INDEX IF NOT EXISTS ix_dr_drive_sandbox_mutation_operation_sandbox_created
@@ -1969,31 +1890,7 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_sandbox_mutation_operation_sandbox_create
 -- (dr_drive_storage_provider rows); custom:<vendor> kinds are implicit and
 -- never stored here.
 
-CREATE TABLE IF NOT EXISTS dr_drive_storage_provider_kind (
-    provider_kind VARCHAR(64) PRIMARY KEY,
-    display_name VARCHAR(128) NOT NULL,
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    sort_order INTEGER NOT NULL DEFAULT 0,
-    version BIGINT NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT ck_dr_drive_storage_provider_kind_provider_kind
-        CHECK (
-            provider_kind IN (
-                'local_filesystem',
-                's3_compatible',
-                'google_cloud_storage',
-                'aliyun_oss',
-                'tencent_cos',
-                'huawei_obs',
-                'volcengine_tos'
-            )
-        ),
-    CONSTRAINT ck_dr_drive_storage_provider_kind_display_name
-        CHECK (display_name = btrim(display_name) AND length(display_name) BETWEEN 1 AND 128),
-    CONSTRAINT ck_dr_drive_storage_provider_kind_version
-        CHECK (version >= 1)
-);
+
 
 -- Initialize the built-in provider kind catalog. Idempotent: re-running the
 -- migration (or the admin initialize endpoint) never duplicates rows and

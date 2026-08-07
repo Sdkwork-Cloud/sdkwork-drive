@@ -529,6 +529,20 @@ func (a *DriveApi) NodesShortcutsCreate(body sdktypes.CreateShortcutRequest) (sd
     return decodeResult[sdktypes.DriveNodeHttpResponse](raw)
 }
 
+// List nodes carrying an app_public property
+func (a *DriveApi) PropertyNodesList(propertyKey string, pageSize *int, cursor *string) (sdktypes.DriveNodeListHttpResponse, error) {
+    query := BuildQueryString([]QueryParameterSpec{
+        {Name: "page_size", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "cursor", Value: func() interface{} { if cursor == nil { return nil }; return *cursor }(), Style: "form", Explode: true, AllowReserved: false},
+    })
+    raw, err := a.client.Get(AppendQueryString(AppApiPath(fmt.Sprintf("/drive/properties/%s/nodes", SerializePathParameter(propertyKey, PathParameterSpec{Name: "propertyKey", Style: "simple", Explode: false}))), query), nil, nil)
+    if err != nil {
+        var zero sdktypes.DriveNodeListHttpResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.DriveNodeListHttpResponse](raw)
+}
+
 func (a *DriveApi) RecentList(spaceId *string, pageSize *int, cursor *string, sortBy *string, sortOrder *string) (sdktypes.DriveNodeListHttpResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "spaceId", Value: func() interface{} { if spaceId == nil { return nil }; return *spaceId }(), Style: "form", Explode: true, AllowReserved: false},

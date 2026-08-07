@@ -180,6 +180,10 @@ fn build_business_router_layers(state: AppState) -> Router {
             put(set_node_property).delete(delete_node_property),
         )
         .route(
+            "/app/v3/api/drive/properties/{property_key}/nodes",
+            get(list_property_nodes),
+        )
+        .route(
             "/app/v3/api/drive/nodes/{node_id}/labels",
             get(list_node_labels),
         )

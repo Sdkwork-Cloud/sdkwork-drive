@@ -618,6 +618,29 @@ async list(params?: DriveRecentListParams, requestOptions?: ApiRequestOptions): 
   }
 }
 
+export interface DrivePropertyNodesListParams {
+  pageSize?: string;
+  cursor?: string;
+}
+
+export class DrivePropertyNodesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List nodes carrying an app_public property */
+  async list(propertyKey: string, params?: DrivePropertyNodesListParams, requestOptions?: ApiRequestOptions): Promise<DriveNodeListData> {
+    const query = buildQueryString([
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<DriveNodeListData>(appendQueryString(appApiPath(`/drive/properties/${serializePathParameter(propertyKey, { name: 'propertyKey', style: 'simple', explode: false })}/nodes`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+}
+
 export interface DriveVersionsListParams {
   pageSize?: string;
   cursor?: string;
@@ -1262,6 +1285,7 @@ export class DriveApi {
   public readonly shareLinks: DriveShareLinksApi;
   public readonly trash: DriveTrashApi;
   public readonly versions: DriveVersionsApi;
+  public readonly propertyNodes: DrivePropertyNodesApi;
   public readonly recent: DriveRecentApi;
   public readonly search: DriveSearchApi;
   public readonly sharedWithMe: DriveSharedWithMeApi;
@@ -1297,6 +1321,7 @@ export class DriveApi {
     this.shareLinks = new DriveShareLinksApi(client);
     this.trash = new DriveTrashApi(client);
     this.versions = new DriveVersionsApi(client);
+    this.propertyNodes = new DrivePropertyNodesApi(client);
     this.recent = new DriveRecentApi(client);
     this.search = new DriveSearchApi(client);
     this.sharedWithMe = new DriveSharedWithMeApi(client);

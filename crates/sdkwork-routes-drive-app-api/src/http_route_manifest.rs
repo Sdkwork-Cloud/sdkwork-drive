@@ -407,6 +407,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/app/v3/api/drive/properties/{propertyKey}/nodes",
+        "drive-app-api",
+        "propertyNodes.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/app/v3/api/drive/quotas/summary",
         "drive-app-api",
         "quotas.retrieve",

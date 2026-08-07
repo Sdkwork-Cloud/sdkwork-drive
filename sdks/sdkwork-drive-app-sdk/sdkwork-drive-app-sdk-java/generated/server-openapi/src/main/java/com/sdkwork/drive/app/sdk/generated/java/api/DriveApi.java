@@ -325,6 +325,16 @@ public class DriveApi {
         return client.convertValue(raw, new TypeReference<DriveNodeHttpResponse>() {});
     }
 
+    /** List nodes carrying an app_public property */
+    public DriveNodeListHttpResponse propertyNodesList(String propertyKey, Integer pageSize, String cursor) throws Exception {
+        String query = buildQueryString(List.of(
+            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("cursor", cursor, "form", true, false, null)
+        ));
+        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.appPath("/drive/properties/" + serializePathParameter(propertyKey, new PathParameterSpec("propertyKey", "simple", false)) + "/nodes"), query));
+        return client.convertValue(raw, new TypeReference<DriveNodeListHttpResponse>() {});
+    }
+
     public DriveNodeListHttpResponse recentList(String spaceId, Integer pageSize, String cursor, String sortBy, String sortOrder) throws Exception {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("spaceId", spaceId, "form", true, false, null),

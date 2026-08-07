@@ -24,7 +24,7 @@
     },
     {
       "path": "Cargo.toml",
-      "sha256": "8fc849dcb3c0619760ccffb3abf01f08e3248f80cee063650b288d569c43d3ca"
+      "sha256": "d6ef3b4d3072374cb136d26df45cefa29fbcd35803cc6bd6a403aa9ff4f44b19"
     },
     {
       "path": "CHANGELOG.md",
@@ -64,11 +64,11 @@
     },
     {
       "path": "src/http/client.rs",
-      "sha256": "8b03818034477c8295e5f1157135063a13327cc58f229f37d088d1cb3532cd4a"
+      "sha256": "21645ef6fede3e9994b78d148010fdddb872fa92bf7c2436b0dd250e47e73f30"
     },
     {
       "path": "src/http/mod.rs",
-      "sha256": "fdf16d487ebd9180fb423d5630d4401ff18180721b86636dec085ad83940bb3d"
+      "sha256": "d09ef1f29c3fa0e631fc4f7287fc93dc7d3cee7e7261ac85091852a09243e90a"
     },
     {
       "path": "src/lib.rs",

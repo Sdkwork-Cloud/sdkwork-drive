@@ -150,6 +150,7 @@ async fn postgres_installer_creates_special_space_profile_tables() {
         "ix_dr_drive_node_favorite_subject",
         "ux_dr_drive_node_property_key",
         "ix_dr_drive_node_property_node",
+        "ix_dr_drive_node_property_key_reverse",
         "ux_dr_drive_label_key",
         "ix_dr_drive_label_tenant_status",
         "ux_dr_drive_node_label_node_label",

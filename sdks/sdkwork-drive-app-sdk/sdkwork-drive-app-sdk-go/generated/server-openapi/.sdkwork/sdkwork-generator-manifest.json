@@ -24,7 +24,7 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "c551794c8094420670ec9ee0bdff0255f24668988e4ef82e9d34f996e4c2e1e9"
+      "sha256": "6e4ef6c46f2099ea8165afcbe19248ee804b0fa721e163938bd6d65e0341dbac"
     },
     {
       "path": "api/paths.go",

@@ -811,6 +811,15 @@ pub(crate) struct NodePropertyListQuery {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct PropertyNodeListQuery {
+    #[serde(rename = "page_size")]
+    pub(crate) page_size: Option<i64>,
+    #[serde(rename = "cursor")]
+    pub(crate) page_token: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct SetNodePropertyRequest {
     pub(crate) value: String,

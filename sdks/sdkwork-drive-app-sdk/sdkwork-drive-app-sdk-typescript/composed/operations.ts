@@ -76,6 +76,7 @@ export const operations = {
   "permissions.list": { method: "GET", path: "/app/v3/api/drive/nodes/{nodeId}/permissions" },
   "permissions.retrieve": { method: "GET", path: "/app/v3/api/drive/nodes/{nodeId}/permissions/{permissionId}" },
   "permissions.update": { method: "PATCH", path: "/app/v3/api/drive/nodes/{nodeId}/permissions/{permissionId}" },
+  "propertyNodes.list": { method: "GET", path: "/app/v3/api/drive/properties/{propertyKey}/nodes" },
   "quotas.retrieve": { method: "GET", path: "/app/v3/api/drive/quotas/summary" },
   "recent.list": { method: "GET", path: "/app/v3/api/drive/recent" },
   "sandboxDirectories.create": { method: "POST", path: "/app/v3/api/drive/sandboxes/{sandboxId}/directories" },

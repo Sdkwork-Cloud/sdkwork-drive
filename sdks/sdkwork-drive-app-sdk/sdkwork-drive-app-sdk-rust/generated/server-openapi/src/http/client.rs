@@ -94,6 +94,11 @@ impl BinaryResponseStream {
         self.remaining_bytes
     }
 
+    /// Declared 'Content-Length' of the response, when the server sent one.
+    pub fn content_length(&self) -> Option<u64> {
+        self.response.as_ref().and_then(|response| response.content_length())
+    }
+
     /// Reads the next bounded chunk; 'Ok(None)' marks the end of the body.
     pub async fn next_chunk(&mut self) -> Result<Option<Vec<u8>>, SdkworkError> {
         let Some(response) = self.response.as_mut() else {

@@ -1,16 +1,21 @@
 use crate::acl;
+use crate::acl_sql;
 use crate::app_context::DriveRequestContext;
 use crate::dto::{
     ApplyNodeLabelRequest, DeleteNodePropertyQuery, NodeLabelListQuery, NodeLabelResponse,
-    NodePropertyListQuery, NodePropertyResponse, RemoveNodeLabelQuery, SetNodePropertyRequest,
+    NodePropertyListQuery, NodePropertyResponse, PropertyNodeListQuery, RemoveNodeLabelQuery,
+    SetNodePropertyRequest,
 };
 use crate::error::{internal_sql_error, ProblemDetail};
 use crate::hashing::sha256_raw_hex_separated;
-use crate::mappers::{map_node_label_row, map_node_property_row};
-use crate::metadata_repository::{find_label, find_node_label, find_node_property};
+use crate::mappers::{map_node_label_row, map_node_property_row, map_node_row};
+use crate::metadata_repository::{
+    find_label, find_node_label, find_node_property, present_node_list,
+};
 use crate::node_repository::{find_active_node, find_node};
 use crate::response::{
     no_content, success_list_page_simple, success_resource, DriveListHttpResponse,
+    DriveNodeListHttpResponse,
 };
 use crate::route_change::record_change;
 use crate::state::AppState;
@@ -22,6 +27,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
 use sdkwork_drive_contract::drive::domain_events as drive_events;
+use sdkwork_drive_workspace_service::infrastructure::sql::NODE_API_SELECT_COLUMNS;
 use sdkwork_utils_rust::{SdkWorkApiResponse, SdkWorkResourceData};
 
 pub(crate) async fn list_node_properties(
@@ -81,6 +87,82 @@ pub(crate) async fn list_node_properties(
     let mut items = rows.iter().map(map_node_property_row).collect::<Vec<_>>();
     let next_page_token = next_page_token(&mut items, page);
     Ok(success_list_page_simple(items, page, next_page_token))
+}
+/// Lists nodes carrying an `app_public` custom property with the given key
+/// across the caller's tenant. Only nodes the caller can read are returned.
+pub(crate) async fn list_property_nodes(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<DriveRequestContext>,
+    Path(property_key): Path<String>,
+    Query(query): Query<PropertyNodeListQuery>,
+) -> Result<DriveNodeListHttpResponse, (StatusCode, Json<ProblemDetail>)> {
+    let tenant_id = ctx.resolve_tenant_id()?;
+    let property_key = validate_node_property_key(&property_key)?.to_string();
+    let page = parse_page_request(query.page_size, query.page_token)?;
+    let (subject_type, subject_id) = ctx.resolve_subject()?;
+    let reader_acl_predicate = acl_sql::node_reader_visible_sql("dr_drive_node", "$3", "$4");
+    let pool = state.pool.clone();
+    let tenant_id_for_fetch = tenant_id.clone();
+    let property_key_for_fetch = property_key.clone();
+    let subject_type_for_fetch = subject_type.clone();
+    let subject_id_for_fetch = subject_id.clone();
+    let reader_acl_predicate_for_fetch = reader_acl_predicate.clone();
+
+    let (items, next_page_token) = acl::paginate_offset_limited_items(
+        page,
+        move |scan_offset, batch_limit| {
+            let pool = pool.clone();
+            let tenant_id = tenant_id_for_fetch.clone();
+            let property_key = property_key_for_fetch.clone();
+            let subject_type = subject_type_for_fetch.clone();
+            let subject_id = subject_id_for_fetch.clone();
+            let reader_acl_predicate = reader_acl_predicate_for_fetch.clone();
+            async move {
+                let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
+                    "SELECT {NODE_API_SELECT_COLUMNS}
+                     FROM dr_drive_node
+                     WHERE tenant_id=$1
+                       AND lifecycle_status='active'
+                       AND content_state='ready'
+                       AND node_type='file'
+                       AND EXISTS (
+                           SELECT 1
+                           FROM dr_drive_node_property
+                           WHERE tenant_id=$1
+                             AND node_id=dr_drive_node.id
+                             AND property_key=$2
+                             AND visibility='app_public'
+                             AND lifecycle_status='active'
+                       )
+                       AND ({reader_acl_predicate})
+                     ORDER BY updated_at DESC, id ASC
+                     LIMIT $5 OFFSET $6",
+                )))
+                .bind(&tenant_id)
+                .bind(&property_key)
+                .bind(&subject_type)
+                .bind(&subject_id)
+                .bind(batch_limit as i64)
+                .bind(scan_offset)
+                .fetch_all(&pool)
+                .await
+                .map_err(internal_sql_error("list property nodes failed"))?;
+                Ok(rows)
+            }
+        },
+        map_node_row,
+    )
+    .await?;
+
+    present_node_list(
+        &state.pool,
+        &tenant_id,
+        items,
+        page,
+        next_page_token,
+        false,
+    )
+    .await
 }
 pub(crate) async fn set_node_property(
     State(state): State<AppState>,

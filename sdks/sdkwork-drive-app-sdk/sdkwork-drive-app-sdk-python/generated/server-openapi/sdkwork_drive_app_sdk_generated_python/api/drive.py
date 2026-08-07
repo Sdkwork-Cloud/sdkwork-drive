@@ -257,6 +257,7 @@ class DriveApi:
         self.share_links = DriveShareLinksApi(client)
         self.trash = DriveTrashApi(client)
         self.versions = DriveVersionsApi(client)
+        self.property_nodes = DrivePropertyNodesApi(client)
         self.recent = DriveRecentApi(client)
         self.search = DriveSearchApi(client)
         self.shared_with_me = DriveSharedWithMeApi(client)
@@ -703,6 +704,21 @@ class DriveVersionsApi:
 
     def restore(self, node_id: str, version_id: str, body: NodeCommandRequest) -> DriveNodeHttpResponse:
         return self._client.post(f"/app/v3/api/drive/nodes/{serialize_path_parameter(node_id, {'name': 'nodeId', 'style': 'simple', 'explode': False})}/versions/{serialize_path_parameter(version_id, {'name': 'versionId', 'style': 'simple', 'explode': False})}/restore", json=body)
+
+class DrivePropertyNodesApi:
+    """drive drive.property_nodes API client."""
+
+    def __init__(self, client: HttpClient):
+        self._client = client
+
+
+    def list(self, property_key: str, page_size: Optional[int] = None, cursor: Optional[str] = None) -> DriveNodeListHttpResponse:
+        """List nodes carrying an app_public property"""
+        query = build_query_string([
+            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'cursor', 'value': cursor, 'style': 'form', 'explode': True, 'allow_reserved': False},
+        ])
+        return self._client.get(_append_query_string(f"/app/v3/api/drive/properties/{serialize_path_parameter(property_key, {'name': 'propertyKey', 'style': 'simple', 'explode': False})}/nodes", query))
 
 class DriveRecentApi:
     """drive drive.recent API client."""
