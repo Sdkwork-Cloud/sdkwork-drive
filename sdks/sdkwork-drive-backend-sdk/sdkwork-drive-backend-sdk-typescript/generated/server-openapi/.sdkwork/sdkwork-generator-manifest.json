@@ -3,11 +3,11 @@
   "generator": "@sdkwork/sdk-generator",
   "sdk": {
     "name": "sdkwork-drive-backend-sdk",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "language": "typescript",
     "sdkType": "backend",
     "protocol": "http",
-    "packageName": "sdkwork-drive-backend-sdk-generated-typescript"
+    "packageName": "@sdkwork/drive-backend-sdk"
   },
   "generatedFiles": [
     {
@@ -32,7 +32,7 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+      "sha256": "ecb55fcda2ed37d190a142ed7f8fe40ecc076276324fd22efd4fd15ab8610ee5"
     },
     {
       "path": "LICENSE",
@@ -40,15 +40,15 @@
     },
     {
       "path": "package.json",
-      "sha256": "01716f359b289e0357fb2200fdee23a2e439f5445e5f3960887b8286308f2d36"
+      "sha256": "2e903ef603c301e2986ee96952332dafc1634c5718651a581859d85043b1d64f"
     },
     {
       "path": "README.md",
-      "sha256": "6f824caed30199e6357712dce36814b479a8377795a1c94f16bea1bccacbc801"
+      "sha256": "3b3d60fd7018e5afaa48efc33491369a23493cd2ed6f34d5d39157d6162e4345"
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "ca3304022073f95ee8793f5e93fafc20442c456b3510537d6fb1a33ed533e64b"
+      "sha256": "cac44badab374e936afc21fabc5b41b79d1a689472cd2dabd54c9f81f6faa103"
     },
     {
       "path": "src/api/base.ts",
@@ -72,7 +72,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "8a0a4cb9cc3cb855091ccd790e99feb9b9beff7637db48869173393ab544b9af"
+      "sha256": "8232d087b029fcd6897617116ca4f8609a728915cc0ca2f1796c66c00c8d89d9"
     },
     {
       "path": "src/http/index.ts",

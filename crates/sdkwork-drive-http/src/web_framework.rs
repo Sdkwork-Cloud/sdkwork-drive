@@ -6,10 +6,7 @@ const DRIVE_ENVIRONMENT_KEYS: &[&str] = &[
     "SDKWORK_DRIVE_STANDALONE_GATEWAY_ENVIRONMENT",
     "SDKWORK_ENV",
 ];
-const DRIVE_CORS_ALLOWED_ORIGIN_KEYS: &[&str] = &[
-    "SDKWORK_CORS_ALLOWED_ORIGINS",
-    "SDKWORK_DRIVE_CORS_ALLOWED_ORIGINS",
-];
+const DRIVE_CORS_ALLOWED_ORIGIN_KEYS: &[&str] = &["SDKWORK_CORS_ALLOWED_ORIGINS"];
 
 /// Resolve the canonical SDKWork web environment for Drive HTTP services.
 pub fn resolve_drive_web_environment_from_process_env() -> WebEnvironment {
