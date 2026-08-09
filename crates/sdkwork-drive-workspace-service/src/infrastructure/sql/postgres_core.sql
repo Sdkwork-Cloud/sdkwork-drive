@@ -1167,7 +1167,7 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_audit_event_trace_created
 CREATE TABLE IF NOT EXISTS dr_drive_sandbox_volume (
   id VARCHAR(128) NOT NULL PRIMARY KEY,
   tenant_id VARCHAR(64) NOT NULL,
-  organization_id VARCHAR(64),
+  organization_id VARCHAR(64) NOT NULL DEFAULT '0',
   display_name VARCHAR(255) NOT NULL,
   root_entry_id VARCHAR(128) NOT NULL,
   provider_kind VARCHAR(32) NOT NULL,
@@ -1531,7 +1531,7 @@ CREATE TABLE IF NOT EXISTS dr_drive_upload_item (
     id VARCHAR(64) PRIMARY KEY,
     task_id VARCHAR(128) NOT NULL,
     tenant_id VARCHAR(64) NOT NULL,
-    organization_id VARCHAR(128),
+    organization_id VARCHAR(128) NOT NULL DEFAULT '0',
     user_id VARCHAR(128),
     actor_type VARCHAR(32) NOT NULL,
     actor_id VARCHAR(128) NOT NULL,
@@ -1681,7 +1681,7 @@ CREATE INDEX IF NOT EXISTS ix_dr_drive_upload_part_session
 CREATE TABLE IF NOT EXISTS dr_drive_file_sensitive_operation (
     id VARCHAR(64) PRIMARY KEY,
     tenant_id VARCHAR(64) NOT NULL,
-    organization_id VARCHAR(128),
+    organization_id VARCHAR(128) NOT NULL DEFAULT '0',
     user_id VARCHAR(128),
     space_id VARCHAR(64) NOT NULL,
     node_id VARCHAR(64) NOT NULL,
