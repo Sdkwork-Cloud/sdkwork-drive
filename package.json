@@ -55,6 +55,7 @@
     "test:sdkwork-command-dev-topology": "node --test tests/contract/sdkwork-command-dev-topology.contract.test.mjs",
     "test:global-assets-contract": "node --test sdks/test/verify-global-assets-contract.test.mjs",
     "test:drive-integration": "node --test tests/integration/drive-alignment.integration.test.mjs",
+    "test:web-domain-routing-standard": "node scripts/dev/sdkwork-drive-web-domain-routing-standard.test.mjs",
     "smoke:staging-admin": "node scripts/operator/staging-admin-smoke.mjs",
     "test:staging-admin-smoke-contract": "node --test tests/operator/staging-admin-smoke.contract.test.mjs",
     "test:iam-application-bootstrap-standard": "node scripts/dev/sdkwork-drive-iam-application-bootstrap-standard.test.mjs",

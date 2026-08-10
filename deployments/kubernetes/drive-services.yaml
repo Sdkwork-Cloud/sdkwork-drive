@@ -538,7 +538,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: drive.example.com
+    - host: drive.sdkwork.com
       http:
         paths:
           - path: /open/v3/api/drive/share_links

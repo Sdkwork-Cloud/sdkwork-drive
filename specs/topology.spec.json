@@ -70,10 +70,20 @@
   },
   "cloudPublicHosts": {
     "application.public-ingress": {
-      "httpHost": "drive.sdkwork.com"
+      "httpHost": "drive.sdkwork.com",
+      "environments": {
+        "development": { "httpHost": "drive-dev.sdkwork.com" },
+        "test": { "httpHost": "drive-test.sdkwork.com" },
+        "staging": { "httpHost": "drive-staging.sdkwork.com" }
+      }
     },
     "platform.api-gateway": {
-      "httpHost": "api.sdkwork.com"
+      "httpHost": "api.sdkwork.com",
+      "environments": {
+        "development": { "httpHost": "api-dev.sdkwork.com" },
+        "test": { "httpHost": "api-test.sdkwork.com" },
+        "staging": { "httpHost": "api-staging.sdkwork.com" }
+      }
     }
   },
   "components": {

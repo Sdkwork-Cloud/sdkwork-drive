@@ -25,7 +25,9 @@
       "deploymentProfile": "cloud",
       "runtimeTarget": "browser",
       "profile": "browser",
-      "formats": ["zip"],
+      "formats": [
+        "zip"
+      ],
       "runner": "ubuntu-latest",
       "outputGlobs": [
         "dist/release/STABLE/0.1.0/web.zip",
@@ -41,7 +43,9 @@
       "deploymentProfile": "standalone",
       "runtimeTarget": "server",
       "profile": "server",
-      "formats": ["tar.gz"],
+      "formats": [
+        "tar.gz"
+      ],
       "runner": "ubuntu-latest",
       "outputGlobs": [
         "dist/standalone-gateway/sdkwork-api-drive-standalone-gateway-0.1.0-linux-x64-standalone-gateway.tar.gz",
@@ -57,7 +61,9 @@
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop",
       "profile": "desktop",
-      "formats": ["zip"],
+      "formats": [
+        "zip"
+      ],
       "runner": "windows-latest",
       "outputGlobs": [
         "dist/release/STABLE/0.1.0/windows/x64/app.zip",
@@ -73,7 +79,9 @@
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop",
       "profile": "desktop",
-      "formats": ["dmg"],
+      "formats": [
+        "dmg"
+      ],
       "runner": "macos-latest",
       "outputGlobs": [
         "dist/release/STABLE/0.1.0/macos/universal/app.dmg",
@@ -89,7 +97,9 @@
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop",
       "profile": "desktop",
-      "formats": ["appimage"],
+      "formats": [
+        "appimage"
+      ],
       "runner": "ubuntu-latest",
       "outputGlobs": [
         "dist/release/STABLE/0.1.0/linux/generic/x64/app.AppImage",
@@ -105,7 +115,9 @@
       "deploymentProfile": "cloud",
       "runtimeTarget": "container",
       "profile": "container",
-      "formats": ["oci"],
+      "formats": [
+        "oci"
+      ],
       "runner": "ubuntu-latest",
       "outputGlobs": [
         "deployments/container/sdkwork-drive-image.tar",
@@ -337,6 +349,22 @@
     "retentionDays": 30
   },
   "deployments": [
+    {
+      "id": "cloud-test-web",
+      "environment": "test",
+      "targetId": "web-universal-cloud-browser-zip",
+      "deploymentProfile": "cloud",
+      "lifecycle": "deploy",
+      "artifactEvidencePath": ".sdkwork/evidence/{packageId}.json"
+    },
+    {
+      "id": "cloud-staging-web",
+      "environment": "staging",
+      "targetId": "web-universal-cloud-browser-zip",
+      "deploymentProfile": "cloud",
+      "lifecycle": "deploy",
+      "artifactEvidencePath": ".sdkwork/evidence/{packageId}.json"
+    },
     {
       "id": "cloud-production-web",
       "environment": "production",

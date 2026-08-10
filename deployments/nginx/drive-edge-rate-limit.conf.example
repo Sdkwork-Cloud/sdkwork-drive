@@ -14,7 +14,7 @@ limit_req_zone $binary_remote_addr zone=drive_app_api:10m rate=120r/s;
 
 server {
     listen 443 ssl;
-    server_name drive.example.com;
+    server_name drive.sdkwork.com;
 
     location /open/v3/api/drive/share_links/ {
         limit_req zone=drive_open_api burst=60 nodelay;
