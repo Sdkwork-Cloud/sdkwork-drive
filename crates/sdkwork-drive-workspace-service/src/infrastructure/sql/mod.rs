@@ -2,7 +2,7 @@ pub mod acl_predicate;
 pub mod audit_store;
 pub mod change_feed_store;
 pub mod entities;
-mod installer;
+pub mod installer;
 pub mod maintenance_store;
 pub mod managed_website_tree_guard;
 pub mod node_head_metadata;
