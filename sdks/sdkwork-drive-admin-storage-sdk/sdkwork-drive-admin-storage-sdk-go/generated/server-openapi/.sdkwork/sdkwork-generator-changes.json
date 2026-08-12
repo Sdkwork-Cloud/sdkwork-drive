@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-admin-storage-sdk-generated-go"
   },
-  "changeFingerprint": "caacace78b3efea6e5946b5b748e6fa492f16cea76e22a656769561d9234a0bd",
+  "changeFingerprint": "8fe91f692ad29ff54051ac1d395e6fb9e6ed652d794f8c2af868a25fa0ebff9a",
   "changes": {
     "createdGeneratedFiles": [],
     "updatedGeneratedFiles": [],
@@ -40,6 +40,7 @@
       "types/provider_bucket_list_item.go",
       "types/provider_bucket_mutation.go",
       "types/provider_bucket.go",
+      "types/provider_object_content.go",
       "types/provider_object_mutation.go",
       "types/provider_object.go",
       "types/rotate_storage_provider_credential_request.go",
@@ -71,6 +72,8 @@
       "types/storage_providers_credentials_rotate_response.go",
       "types/storage_providers_deactivate_response.go",
       "types/storage_providers_list_response.go",
+      "types/storage_providers_objects_content_retrieve_response.go",
+      "types/storage_providers_objects_content_update_response.go",
       "types/storage_providers_objects_copy_response.go",
       "types/storage_providers_objects_list_response.go",
       "types/storage_providers_objects_retrieve_response.go",
@@ -78,6 +81,7 @@
       "types/storage_providers_test_response.go",
       "types/storage_providers_update_response.go",
       "types/test_storage_provider_response.go",
+      "types/update_provider_object_content.go",
       "types/update_storage_provider_request.go"
     ],
     "deletedGeneratedFiles": [],

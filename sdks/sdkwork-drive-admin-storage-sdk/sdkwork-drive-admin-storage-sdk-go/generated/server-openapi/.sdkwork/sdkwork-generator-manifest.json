@@ -20,7 +20,7 @@
     },
     {
       "path": "api/drive.go",
-      "sha256": "1c9b247350f75cb9665d9aba287352b9768d1bd667b2f74e49093152caea4826"
+      "sha256": "3bdf134e13a8382c3487796dd329f0094a3896fe6ee2ad976c87d489068a0e5b"
     },
     {
       "path": "api/paths.go",
@@ -113,6 +113,10 @@
     {
       "path": "types/provider_bucket.go",
       "sha256": "ff73361c4dbe11a7ea3304d83f201ae086a99abf6f667e7f2a8d86b72bede5a3"
+    },
+    {
+      "path": "types/provider_object_content.go",
+      "sha256": "0aefbcb6d5fc2bdd7d8684d21cf7043795802a8988bc46992558ab197a824af2"
     },
     {
       "path": "types/provider_object_mutation.go",
@@ -239,6 +243,14 @@
       "sha256": "a01567153eb9bda5a900031f408277651ac5cbebf6bd4c960a542bc00ee5a4e2"
     },
     {
+      "path": "types/storage_providers_objects_content_retrieve_response.go",
+      "sha256": "fbdef0e6c89c5ed6b769f0c14cb069a285066e6e1c978af1899f8c6533f698f7"
+    },
+    {
+      "path": "types/storage_providers_objects_content_update_response.go",
+      "sha256": "f57ab5258aa7938d649b838b95255889c41aba44ea11134f97298c63014ea23c"
+    },
+    {
       "path": "types/storage_providers_objects_copy_response.go",
       "sha256": "cf8bc4132d3beaf7fbaebfd5f12be2d227b99da18eef80e2e22e20585336ec36"
     },
@@ -265,6 +277,10 @@
     {
       "path": "types/test_storage_provider_response.go",
       "sha256": "14292a1ed7296953abe71686af4e65d642cacb5260e0dfc4c456b91c1e54da61"
+    },
+    {
+      "path": "types/update_provider_object_content.go",
+      "sha256": "30ab72eb1a637198730a75b7d744885f535792e633512d81a6a46ee44c908adb"
     },
     {
       "path": "types/update_storage_provider_request.go",

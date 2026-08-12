@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": false,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "a97e7cab7efdbb0183c3b7f91ada57cfe2f48a3fce80661e029970ce236bf5dc",
+  "changeFingerprint": "ade3ea98d07370a913a21dc631290200b03d75db542686ac5e4618610f58e4b8",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [],
@@ -56,8 +56,8 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 60,
-    "models": 46,
+    "totalFiles": 64,
+    "models": 50,
     "apis": 1,
     "types": 0
   },
@@ -67,10 +67,10 @@
     "controlPlaneEnabled": true,
     "writtenFiles": 0,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 59,
+    "skippedUnchangedGeneratedFiles": 63,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "a97e7cab7efdbb0183c3b7f91ada57cfe2f48a3fce80661e029970ce236bf5dc",
+    "changeFingerprint": "ade3ea98d07370a913a21dc631290200b03d75db542686ac5e4618610f58e4b8",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [],
@@ -96,6 +96,7 @@
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderBucketListItem.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderBucketMutation.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderObject.java",
+        "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderObjectContent.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/ProviderObjectMutation.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/RotateStorageProviderCredentialRequest.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/SdkWorkApiResponse.java",
@@ -125,6 +126,8 @@
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersCredentialsRotateResponse.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersDeactivateResponse.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersListResponse.java",
+        "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersObjectsContentRetrieveResponse.java",
+        "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersObjectsContentUpdateResponse.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersObjectsCopyResponse.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersObjectsListResponse.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersObjectsRetrieveResponse.java",
@@ -132,6 +135,7 @@
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersTestResponse.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/StorageProvidersUpdateResponse.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/TestStorageProviderResponse.java",
+        "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/UpdateProviderObjectContent.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/model/UpdateStorageProviderRequest.java",
         "src/main/java/com/sdkwork/drive/admin/storage/sdk/generated/java/SdkworkCustomClient.java"
       ],

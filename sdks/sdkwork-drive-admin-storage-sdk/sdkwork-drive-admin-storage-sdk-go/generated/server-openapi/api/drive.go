@@ -271,6 +271,26 @@ func (a *DriveApi) StorageProviderKindsUpdate(providerKind string, body sdktypes
     return decodeResult[sdktypes.StorageProviderKindsUpdateResponse](raw)
 }
 
+// Retrieve provider object content
+func (a *DriveApi) StorageProvidersObjectsContentRetrieve(providerId string, objectKey string) (sdktypes.StorageProvidersObjectsContentRetrieveResponse, error) {
+    raw, err := a.client.Get(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/objects/%s/content", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}), SerializePathParameter(objectKey, PathParameterSpec{Name: "objectKey", Style: "simple", Explode: false}))), nil, nil)
+    if err != nil {
+        var zero sdktypes.StorageProvidersObjectsContentRetrieveResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.StorageProvidersObjectsContentRetrieveResponse](raw)
+}
+
+// Write provider object content
+func (a *DriveApi) StorageProvidersObjectsContentUpdate(providerId string, objectKey string, body sdktypes.UpdateProviderObjectContent) (sdktypes.StorageProvidersObjectsContentUpdateResponse, error) {
+    raw, err := a.client.Put(CustomApiPath(fmt.Sprintf("/drive/storage/providers/%s/objects/%s/content", SerializePathParameter(providerId, PathParameterSpec{Name: "providerId", Style: "simple", Explode: false}), SerializePathParameter(objectKey, PathParameterSpec{Name: "objectKey", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.StorageProvidersObjectsContentUpdateResponse
+        return zero, err
+    }
+    return decodeResult[sdktypes.StorageProvidersObjectsContentUpdateResponse](raw)
+}
+
 type PathParameterSpec struct {
     Name    string
     Style   string

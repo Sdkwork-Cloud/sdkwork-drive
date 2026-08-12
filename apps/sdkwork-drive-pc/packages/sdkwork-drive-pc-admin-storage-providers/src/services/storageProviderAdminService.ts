@@ -4,6 +4,7 @@ import {
 } from 'sdkwork-drive-pc-admin-core';
 import type { SessionSnapshot } from 'sdkwork-drive-pc-core';
 import type {
+  CopyStorageProviderObjectInput,
   CreateStorageProviderInput,
   ListStorageProvidersInput,
   ListStorageProvidersPageResult,
@@ -16,9 +17,12 @@ import type {
   StorageProviderCapabilitiesView,
   StorageProviderKindView,
   StorageProviderMutationOptions,
+  StorageProviderObjectContentView,
+  StorageProviderObjectMutationResult,
   StorageProviderObjectView,
   StorageProviderView,
   UpdateStorageProviderInput,
+  WriteStorageProviderObjectContentInput,
 } from '../types/storageProviderAdminTypes';
 
 type JsonRecord = Record<string, unknown>;
@@ -83,6 +87,28 @@ export interface StorageProviderAdminService {
   deleteObject(
     providerId: string,
     objectKey: string,
+    options?: StorageProviderMutationOptions,
+  ): Promise<boolean>;
+  readObjectContent(
+    providerId: string,
+    objectKey: string,
+    options?: StorageProviderMutationOptions,
+  ): Promise<StorageProviderObjectContentView>;
+  writeObjectContent(
+    providerId: string,
+    objectKey: string,
+    input: WriteStorageProviderObjectContentInput,
+    options?: StorageProviderMutationOptions,
+  ): Promise<StorageProviderObjectView>;
+  copyObject(
+    providerId: string,
+    input: CopyStorageProviderObjectInput,
+    options?: StorageProviderMutationOptions,
+  ): Promise<StorageProviderObjectMutationResult>;
+  renameObject(
+    providerId: string,
+    sourceObjectKey: string,
+    destinationObjectKey: string,
     options?: StorageProviderMutationOptions,
   ): Promise<boolean>;
 }
@@ -190,7 +216,9 @@ export function createStorageProviderAdminService({
         query: {
         },
       });
-      return booleanField(recordOf(response), 'deleted') ?? false;
+      // 契约返回 204 无内容：请求成功即视为已删除。
+      return response === undefined || response === null
+        || booleanField(recordOf(response), 'deleted') === true;
     },
     async testProvider(providerId, options) {
       const identity = resolveAdminIdentity(getSession);
@@ -384,25 +412,7 @@ export function createStorageProviderAdminService({
       });
       const record = recordOf(response);
       const pageInfo = isRecord(record.pageInfo) ? record.pageInfo : {};
-      const items = extractItems(record).map((item) => {
-        const objectRecord = recordOf(item);
-        const objectKey =
-          stringField(objectRecord, 'objectKey', 'object_key', 'key') ?? '';
-        const objectKind = stringField(objectRecord, 'objectKind', 'object_kind');
-        const contentLength =
-          numberField(objectRecord, 'contentLength', 'content_length', 'sizeBytes') ?? 0;
-        const lastModifiedEpochMs = numberField(objectRecord, 'lastModifiedEpochMs');
-        return {
-          key: objectKey,
-          sizeBytes: contentLength,
-          contentType: stringField(objectRecord, 'contentType', 'content_type'),
-          etag: stringField(objectRecord, 'etag'),
-          lastModified: lastModifiedEpochMs
-            ? new Date(lastModifiedEpochMs).toLocaleString()
-            : undefined,
-          isFolder: objectKind === 'prefix',
-        } satisfies StorageProviderObjectView;
-      });
+      const items = extractItems(record).map((item) => objectRecordToView(recordOf(item)));
       const nextPageToken = stringField(pageInfo, 'nextCursor');
       return {
         items,
@@ -414,9 +424,69 @@ export function createStorageProviderAdminService({
       const response = await adminStorageSdkClient.request<unknown>({
         operationId: 'storageProviders.objects.delete',
         signal: options?.signal,
-        pathParams: { providerId, objectKey: encodeURIComponent(objectKey) },
+        pathParams: { providerId, objectKey },
       });
-      return booleanField(recordOf(response), 'deleted') ?? false;
+      // 契约返回 204 无内容：请求成功即视为已删除。
+      return response === undefined || response === null
+        || booleanField(recordOf(response), 'deleted') === true;
+    },
+    async readObjectContent(providerId, objectKey, options) {
+      const response = await adminStorageSdkClient.request<unknown>({
+        operationId: 'storageProviders.objects.content.retrieve',
+        signal: options?.signal,
+        pathParams: { providerId, objectKey },
+      });
+      const record = recordOf(response);
+      return {
+        providerId: stringField(record, 'providerId') ?? providerId,
+        bucket: stringField(record, 'bucket') ?? '',
+        objectKey: stringField(record, 'objectKey', 'object_key') ?? objectKey,
+        contentType: stringField(record, 'contentType', 'content_type'),
+        sizeBytes: numberField(record, 'sizeBytes', 'size_bytes') ?? 0,
+        encoding: 'base64',
+        content: stringField(record, 'content') ?? '',
+        checksumSha256: stringField(record, 'checksumSha256') ?? '',
+      };
+    },
+    async writeObjectContent(providerId, objectKey, input, options) {
+      const response = await adminStorageSdkClient.request<unknown>({
+        operationId: 'storageProviders.objects.content.update',
+        signal: options?.signal,
+        pathParams: { providerId, objectKey },
+        body: {
+          content: input.content,
+          ...(input.encoding !== undefined ? { encoding: input.encoding } : {}),
+          ...(input.contentType !== undefined ? { contentType: input.contentType } : {}),
+        },
+      });
+      return objectRecordToView(recordOf(response));
+    },
+    async copyObject(providerId, input, options) {
+      const response = await adminStorageSdkClient.request<unknown>({
+        operationId: 'storageProviders.objects.copy',
+        signal: options?.signal,
+        pathParams: { providerId },
+        body: {
+          sourceObjectKey: input.sourceObjectKey,
+          destinationObjectKey: input.destinationObjectKey,
+        },
+      });
+      const record = recordOf(response);
+      return {
+        providerId: stringField(record, 'providerId') ?? providerId,
+        bucket: stringField(record, 'bucket') ?? '',
+        objectKey: stringField(record, 'objectKey', 'object_key') ?? '',
+        changed: booleanField(record, 'changed') ?? false,
+      };
+    },
+    /**
+     * 重命名/移动对象 = 服务端 copy + 源删除，非原子：
+     * - copy 失败：源对象保持原样，无副作用；
+     * - delete 失败：目标已复制成功但源残留（双份），调用方可重试删除源对象。
+     */
+    async renameObject(providerId, sourceObjectKey, destinationObjectKey, options) {
+      await service.copyObject(providerId, { sourceObjectKey, destinationObjectKey }, options);
+      return service.deleteObject(providerId, sourceObjectKey, options);
     },
   };
 
@@ -517,6 +587,24 @@ function responseToBinding(response: unknown): StorageProviderBindingView {
     version: numberField(record, 'version') ?? 0,
     storageRootPrefix: stringField(record, 'storageRootPrefix'),
     storageProvider: isRecord(storageProvider) ? responseToStorageProvider(storageProvider) : undefined,
+  };
+}
+
+/** 对象条目响应（list / content write）→ 视图模型。 */
+function objectRecordToView(record: JsonRecord): StorageProviderObjectView {
+  const objectKey = stringField(record, 'objectKey', 'object_key', 'key') ?? '';
+  const objectKind = stringField(record, 'objectKind', 'object_kind');
+  const contentLength = numberField(record, 'contentLength', 'content_length', 'sizeBytes') ?? 0;
+  const lastModifiedEpochMs = numberField(record, 'lastModifiedEpochMs');
+  return {
+    key: objectKey,
+    sizeBytes: contentLength,
+    contentType: stringField(record, 'contentType', 'content_type'),
+    etag: stringField(record, 'etag'),
+    lastModified: lastModifiedEpochMs
+      ? new Date(lastModifiedEpochMs).toLocaleString()
+      : undefined,
+    isFolder: objectKind === 'prefix',
   };
 }
 

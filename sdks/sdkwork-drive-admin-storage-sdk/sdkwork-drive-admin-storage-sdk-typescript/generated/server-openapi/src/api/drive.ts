@@ -1,7 +1,7 @@
 import { customApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { CopyProviderObjectRequest, CreateStorageProviderRequest, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, SetStorageProviderKindEnabledRequest, StorageProviderBindingsDefaultRetrieveResponse, StorageProviderBindingsDefaultUpdateResponse, StorageProviderBindingsListResponse, StorageProviderKindsInitializeResponse, StorageProviderKindsListResponse, StorageProviderKindsUpdateResponse, StorageProvidersActivateResponse, StorageProvidersBucketRetrieveResponse, StorageProvidersBucketsListResponse, StorageProvidersBucketUpdateResponse, StorageProvidersCapabilitiesListResponse, StorageProvidersCreateResponse201, StorageProvidersCredentialsRotateResponse, StorageProvidersDeactivateResponse, StorageProvidersListResponse, StorageProvidersObjectsCopyResponse, StorageProvidersObjectsListResponse, StorageProvidersObjectsRetrieveResponse, StorageProvidersRetrieveResponse, StorageProvidersTestResponse, StorageProvidersUpdateResponse, UpdateStorageProviderRequest } from '../types';
+import type { CopyProviderObjectRequest, CreateStorageProviderRequest, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, SetStorageProviderKindEnabledRequest, StorageProviderBindingsDefaultRetrieveResponse, StorageProviderBindingsDefaultUpdateResponse, StorageProviderBindingsListResponse, StorageProviderKindsInitializeResponse, StorageProviderKindsListResponse, StorageProviderKindsUpdateResponse, StorageProvidersActivateResponse, StorageProvidersBucketRetrieveResponse, StorageProvidersBucketsListResponse, StorageProvidersBucketUpdateResponse, StorageProvidersCapabilitiesListResponse, StorageProvidersCreateResponse201, StorageProvidersCredentialsRotateResponse, StorageProvidersDeactivateResponse, StorageProvidersListResponse, StorageProvidersObjectsContentRetrieveResponse, StorageProvidersObjectsContentUpdateResponse, StorageProvidersObjectsCopyResponse, StorageProvidersObjectsListResponse, StorageProvidersObjectsRetrieveResponse, StorageProvidersRetrieveResponse, StorageProvidersTestResponse, StorageProvidersUpdateResponse, UpdateProviderObjectContent, UpdateStorageProviderRequest } from '../types';
 
 
 export class DriveStorageProviderKindsApi {
@@ -25,6 +25,25 @@ async update(providerKind: string, body: SetStorageProviderKindEnabledRequest, r
   }
 }
 
+export class DriveStorageProvidersObjectsContentApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Retrieve provider object content */
+  async retrieve(providerId: string, objectKey: string, requestOptions?: ApiRequestOptions): Promise<StorageProvidersObjectsContentRetrieveResponse> {
+    return this.client.request<StorageProvidersObjectsContentRetrieveResponse>(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/object-contents/${serializePathParameter(objectKey, { name: 'objectKey', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+
+/** Write provider object content */
+  async update(providerId: string, objectKey: string, body: UpdateProviderObjectContent, requestOptions?: ApiRequestOptions): Promise<StorageProvidersObjectsContentUpdateResponse> {
+    return this.client.request<StorageProvidersObjectsContentUpdateResponse>(customApiPath(`/drive/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/object-contents/${serializePathParameter(objectKey, { name: 'objectKey', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, contentType: 'application/json' });
+  }
+}
+
 export interface DriveStorageProvidersObjectsListParams {
   prefix?: string;
   delimiter?: string;
@@ -34,9 +53,11 @@ export interface DriveStorageProvidersObjectsListParams {
 
 export class DriveStorageProvidersObjectsApi {
   private client: HttpClient;
+  public readonly content: DriveStorageProvidersObjectsContentApi;
 
   constructor(client: HttpClient) {
     this.client = client;
+    this.content = new DriveStorageProvidersObjectsContentApi(client);
   }
 
 

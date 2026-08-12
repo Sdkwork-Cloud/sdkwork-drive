@@ -67,6 +67,12 @@ pub(crate) fn storage_drive_routes(prefix: &str) -> Router<AdminStorageState> {
             get(head_storage_provider_object).delete(delete_storage_provider_object),
         )
         .route(
+            &format!(
+                "{prefix}/drive/storage/providers/{{provider_id}}/object-contents/{{*object_key}}"
+            ),
+            get(read_storage_provider_object_content).put(write_storage_provider_object_content),
+        )
+        .route(
             &format!("{prefix}/drive/storage/bindings/default"),
             get(get_default_storage_provider_binding)
                 .put(set_default_storage_provider_binding)

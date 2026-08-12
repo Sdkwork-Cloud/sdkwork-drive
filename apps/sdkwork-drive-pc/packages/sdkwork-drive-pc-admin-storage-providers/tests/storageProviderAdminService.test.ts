@@ -161,6 +161,44 @@ function responseFor(request: DriveAdminStorageSdkRequest): unknown {
     return { deleted: true };
   }
 
+  if (request.operationId === 'storageProviders.objects.delete') {
+    return { deleted: true };
+  }
+
+  if (request.operationId === 'storageProviders.objects.content.retrieve') {
+    return {
+      providerId: request.pathParams?.providerId ?? 'provider-s3',
+      bucket: 'drive-prod',
+      objectKey: request.pathParams?.objectKey ?? 'docs/readme.txt',
+      contentType: 'text/plain',
+      sizeBytes: 5,
+      encoding: 'base64',
+      content: 'aGVsbG8=',
+      checksumSha256: '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+    };
+  }
+
+  if (request.operationId === 'storageProviders.objects.content.update') {
+    return {
+      providerId: request.pathParams?.providerId ?? 'provider-s3',
+      bucket: 'drive-prod',
+      objectKind: 'object',
+      objectKey: request.pathParams?.objectKey ?? 'docs/new.txt',
+      contentLength: 5,
+      contentType: (request.body as { contentType?: string } | undefined)?.contentType ?? null,
+    };
+  }
+
+  if (request.operationId === 'storageProviders.objects.copy') {
+    const body = request.body as { sourceObjectKey?: string; destinationObjectKey?: string } | undefined;
+    return {
+      providerId: request.pathParams?.providerId ?? 'provider-s3',
+      bucket: 'drive-prod',
+      objectKey: body?.destinationObjectKey ?? 'docs/copied.txt',
+      changed: true,
+    };
+  }
+
   return {
     id: request.pathParams?.providerId ?? 'provider-s3',
     providerKind: 's3_compatible',
@@ -401,5 +439,68 @@ describe('storage provider admin service', () => {
 
     expect(calls[0].operationId).toBe('storageProviderKinds.initialize');
     expect(kinds).toHaveLength(2);
+  });
+
+  it('reads object content through the content retrieve operation', async () => {
+    const { calls, service } = createFakeService();
+
+    const content = await service.readObjectContent('provider-s3', 'docs/readme.txt');
+
+    expect(calls[0].operationId).toBe('storageProviders.objects.content.retrieve');
+    expect(calls[0].pathParams).toEqual({ providerId: 'provider-s3', objectKey: 'docs/readme.txt' });
+    expect(content).toEqual({
+      providerId: 'provider-s3',
+      bucket: 'drive-prod',
+      objectKey: 'docs/readme.txt',
+      contentType: 'text/plain',
+      sizeBytes: 5,
+      encoding: 'base64',
+      content: 'aGVsbG8=',
+      checksumSha256: '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+    });
+  });
+
+  it('writes object content through the content update operation', async () => {
+    const { calls, service } = createFakeService();
+
+    const written = await service.writeObjectContent('provider-s3', 'docs/new.txt', {
+      content: 'aGVsbG8=',
+      encoding: 'base64',
+      contentType: 'text/plain',
+    });
+
+    expect(calls[0].operationId).toBe('storageProviders.objects.content.update');
+    expect(calls[0].body).toEqual({
+      content: 'aGVsbG8=',
+      encoding: 'base64',
+      contentType: 'text/plain',
+    });
+    expect(written.key).toBe('docs/new.txt');
+    expect(written.isFolder).toBe(false);
+  });
+
+  it('copies and renames objects through copy and delete operations', async () => {
+    const { calls, service } = createFakeService();
+
+    const copied = await service.copyObject('provider-s3', {
+      sourceObjectKey: 'docs/readme.txt',
+      destinationObjectKey: 'docs/copied.txt',
+    });
+    expect(calls[0].operationId).toBe('storageProviders.objects.copy');
+    expect(calls[0].body).toEqual({
+      sourceObjectKey: 'docs/readme.txt',
+      destinationObjectKey: 'docs/copied.txt',
+    });
+    expect(copied).toEqual({
+      providerId: 'provider-s3',
+      bucket: 'drive-prod',
+      objectKey: 'docs/copied.txt',
+      changed: true,
+    });
+
+    const renamed = await service.renameObject('provider-s3', 'docs/readme.txt', 'docs/renamed.txt');
+    expect(calls[1].operationId).toBe('storageProviders.objects.copy');
+    expect(calls[2].operationId).toBe('storageProviders.objects.delete');
+    expect(renamed).toBe(true);
   });
 });

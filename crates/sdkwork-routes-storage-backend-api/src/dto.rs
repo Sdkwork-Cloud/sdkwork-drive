@@ -218,6 +218,30 @@ pub(crate) struct ProviderObjectMutationResponse {
     pub(crate) changed: bool,
 }
 
+/// 对象内容读取响应：内容以 base64 传输（任意字节安全），配套大小与校验和。
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ProviderObjectContentResponse {
+    pub(crate) provider_id: String,
+    pub(crate) bucket: String,
+    pub(crate) object_key: String,
+    pub(crate) content_type: Option<String>,
+    pub(crate) size_bytes: u64,
+    pub(crate) encoding: String,
+    pub(crate) content: String,
+    pub(crate) checksum_sha256: String,
+}
+
+/// 对象内容写入请求：`encoding` 为 `utf8`（默认）或 `base64`；
+/// `object_key` 以 `/` 结尾且内容为空时创建目录占位对象。
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct UpdateProviderObjectContentRequest {
+    pub(crate) content: String,
+    pub(crate) encoding: Option<String>,
+    pub(crate) content_type: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct StorageProviderBindingResponse {

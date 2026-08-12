@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": false,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "f0dbaae6c0e93c898bf8f5481a28a6af8cf0f572e769ab7e27a51711195eee72",
+  "changeFingerprint": "95da46dcb151b415e4b65551124a174196f3debd3c0bed4073787a6088fc69a6",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [],
@@ -56,10 +56,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 64,
-    "models": 46,
+    "totalFiles": 68,
+    "models": 50,
     "apis": 1,
-    "types": 47
+    "types": 51
   },
   "warnings": [],
   "syncSummary": {
@@ -67,10 +67,10 @@
     "controlPlaneEnabled": true,
     "writtenFiles": 0,
     "skippedScaffoldFiles": 1,
-    "skippedUnchangedGeneratedFiles": 63,
+    "skippedUnchangedGeneratedFiles": 67,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "f0dbaae6c0e93c898bf8f5481a28a6af8cf0f572e769ab7e27a51711195eee72",
+    "changeFingerprint": "95da46dcb151b415e4b65551124a174196f3debd3c0bed4073787a6088fc69a6",
     "changes": {
       "createdGeneratedFiles": [],
       "updatedGeneratedFiles": [],
@@ -98,6 +98,7 @@
         "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_bucket_list_item.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_bucket_mutation.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_bucket.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_object_content.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_object_mutation.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_object.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/rotate_storage_provider_credential_request.py",
@@ -128,6 +129,8 @@
         "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_credentials_rotate_response.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_deactivate_response.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_list_response.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_objects_content_retrieve_response.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_objects_content_update_response.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_objects_copy_response.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_objects_list_response.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_objects_retrieve_response.py",
@@ -135,6 +138,7 @@
         "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_test_response.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_update_response.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/test_storage_provider_response.py",
+        "sdkwork_drive_admin_storage_sdk_generated_python/models/update_provider_object_content.py",
         "sdkwork_drive_admin_storage_sdk_generated_python/models/update_storage_provider_request.py",
         "sdkwork-sdk.json",
         "setup.py"

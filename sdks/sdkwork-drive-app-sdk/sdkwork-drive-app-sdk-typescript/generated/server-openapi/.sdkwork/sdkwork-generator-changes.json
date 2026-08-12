@@ -3,35 +3,34 @@
   "generator": "@sdkwork/sdk-generator",
   "sdk": {
     "name": "sdkwork-drive-app-sdk",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "language": "typescript",
     "sdkType": "app",
     "protocol": "http",
-    "packageName": "@sdkwork/drive-app-sdk"
+    "packageName": "sdkwork-drive-app-sdk-generated-typescript"
   },
-  "changeFingerprint": "4ca5092eec2198d1eaf0ac0af78e9b3c7a2271f28dc81cbb249b8a0b9bbf3457",
+  "changeFingerprint": "54c3547ea72807a990bbc81ea1cc8575f2950becb7ceb7f5d0fd74e1918e6a98",
   "changes": {
     "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [
-      "CHANGELOG.md",
-      "package.json",
-      "README.md",
-      "sdkwork-sdk.json",
-      "src/http/client.ts"
-    ],
+    "updatedGeneratedFiles": [],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
       "bin/publish.sh",
       "bin/sdk-gen.bat",
       "bin/sdk-gen.sh",
+      "CHANGELOG.md",
       "LICENSE",
+      "package.json",
+      "README.md",
+      "sdkwork-sdk.json",
       "src/api/assets.ts",
       "src/api/base.ts",
       "src/api/drive.ts",
       "src/api/index.ts",
       "src/api/paths.ts",
       "src/auth/index.ts",
+      "src/http/client.ts",
       "src/http/index.ts",
       "src/index.ts",
       "src/sdk.ts",
@@ -229,95 +228,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface",
-      "runtime",
-      "build-metadata",
-      "documentation"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "src/http/client.ts"
-        ]
-      },
-      {
-        "area": "runtime",
-        "paths": [
-          "src/http/client.ts"
-        ]
-      },
-      {
-        "area": "build-metadata",
-        "paths": [
-          "package.json",
-          "sdkwork-sdk.json"
-        ]
-      },
-      {
-        "area": "documentation",
-        "paths": [
-          "CHANGELOG.md",
-          "README.md"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, runtime, build-metadata, documentation. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, runtime, build-metadata, documentation. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, runtime, build-metadata, documentation.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "typescript",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action check"
-      },
-      {
-        "id": "build",
-        "title": "Unified package build",
-        "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, runtime, build-metadata, documentation.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-typescript\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "typescript",
-          "--project-dir",
-          ".",
-          "--action",
-          "build"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language typescript --project-dir . --action build"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

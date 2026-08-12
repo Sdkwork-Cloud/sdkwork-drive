@@ -144,6 +144,7 @@ pub mod admin_audit {
         pub const DELETED: &str = "drive.storage_provider.deleted";
         pub const BUCKET_CREATED: &str = "drive.storage_provider.bucket_created";
         pub const BUCKET_DELETED: &str = "drive.storage_provider.bucket_deleted";
+        pub const OBJECT_PUT: &str = "drive.storage_provider.object_put";
         pub const OBJECT_DELETED: &str = "drive.storage_provider.object_deleted";
         pub const OBJECT_COPIED: &str = "drive.storage_provider.object_copied";
     }

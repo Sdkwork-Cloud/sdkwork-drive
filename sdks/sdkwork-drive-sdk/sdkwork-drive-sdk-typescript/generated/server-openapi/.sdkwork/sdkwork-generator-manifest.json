@@ -72,7 +72,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "ea358745e642eab5379ced582302672f0b41e3d98f47e578ac748d0655e91596"
+      "sha256": "471d7af5ea31f2026191b4cee942c7fc0fdba3c56e9a9968514392a703ce631e"
     },
     {
       "path": "src/http/index.ts",

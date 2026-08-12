@@ -5,20 +5,20 @@ Generated SDKWork v3 dual-token transport SDK.
 ## Installation
 
 ```bash
-npm install @sdkwork/drive-app-sdk
+npm install sdkwork-drive-app-sdk-generated-typescript
 # or
-yarn add @sdkwork/drive-app-sdk
+yarn add sdkwork-drive-app-sdk-generated-typescript
 # or
-pnpm add @sdkwork/drive-app-sdk
+pnpm add sdkwork-drive-app-sdk-generated-typescript
 ```
 
 ## Quick Start
 
 ```typescript
-import { SdkworkAppClient } from '@sdkwork/drive-app-sdk';
+import { SdkworkAppClient } from 'sdkwork-drive-app-sdk-generated-typescript';
 
 const client = new SdkworkAppClient({
-  baseUrl: 'http://localhost:8080',
+  baseUrl: 'http://127.0.0.1:18080',
   timeout: 30000,
 });
 
@@ -41,10 +41,10 @@ Access-Token: <accessToken>
 ## Configuration (Non-Auth)
 
 ```typescript
-import { SdkworkAppClient } from '@sdkwork/drive-app-sdk';
+import { SdkworkAppClient } from 'sdkwork-drive-app-sdk-generated-typescript';
 
 const client = new SdkworkAppClient({
-  baseUrl: 'http://localhost:8080',
+  baseUrl: 'http://127.0.0.1:18080',
   timeout: 30000, // Request timeout in ms
   headers: {      // Custom headers
     'X-Custom-Header': 'value',
@@ -80,7 +80,7 @@ const result = await client.assets.assetCollections.list(params);
 ## Error Handling
 
 ```typescript
-import { SdkworkAppClient, NetworkError, TimeoutError, AuthenticationError } from '@sdkwork/drive-app-sdk';
+import { SdkworkAppClient, NetworkError, TimeoutError, AuthenticationError } from 'sdkwork-drive-app-sdk-generated-typescript';
 
 try {
   const result = await client.drive.quotas.retrieve();

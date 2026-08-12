@@ -20,6 +20,8 @@ export type { SdkWorkPlatformErrorCode } from './sdk-work-platform-error-code';
 export type { FieldError } from './field-error';
 export type { StorageProviderKind } from './storage-provider-kind';
 export type { SetStorageProviderKindEnabledRequest } from './set-storage-provider-kind-enabled-request';
+export type { ProviderObjectContent } from './provider-object-content';
+export type { UpdateProviderObjectContent } from './update-provider-object-content';
 export type { SdkWorkResourceData } from './sdk-work-resource-data';
 export type { SdkWorkPageData } from './sdk-work-page-data';
 export type { SdkWorkCommandData } from './sdk-work-command-data';
@@ -46,3 +48,5 @@ export type { StorageProviderBindingsListResponse } from './storage-provider-bin
 export type { StorageProviderKindsListResponse } from './storage-provider-kinds-list-response';
 export type { StorageProviderKindsInitializeResponse } from './storage-provider-kinds-initialize-response';
 export type { StorageProviderKindsUpdateResponse } from './storage-provider-kinds-update-response';
+export type { StorageProvidersObjectsContentRetrieveResponse } from './storage-providers-objects-content-retrieve-response';
+export type { StorageProvidersObjectsContentUpdateResponse } from './storage-providers-objects-content-update-response';

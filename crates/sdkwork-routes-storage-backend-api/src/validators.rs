@@ -4,27 +4,59 @@ use axum::Json;
 use sdkwork_drive_contract::api::pagination_cursor::{decode_offset_cursor, encode_offset_cursor};
 use sdkwork_utils_rust::{DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE};
 
-pub(crate) fn decode_object_key(raw: &str) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
-    let mut decoded = String::with_capacity(raw.len());
-    let bytes = raw.as_bytes();
-    let mut index = 0;
-    while index < bytes.len() {
-        if bytes[index] == b'%' {
-            if index + 2 >= bytes.len() {
-                return Err(validation_problem("object key path encoding is invalid"));
-            }
-            let hex = std::str::from_utf8(&bytes[index + 1..index + 3])
-                .map_err(|_| validation_problem("object key path encoding is invalid"))?;
-            let value = u8::from_str_radix(hex, 16)
-                .map_err(|_| validation_problem("object key path encoding is invalid"))?;
-            decoded.push(char::from(value));
-            index += 3;
-        } else {
-            decoded.push(char::from(bytes[index]));
-            index += 1;
+/// 路径参数形式的对象 key 解码与校验。
+///
+/// axum 的 `Path` 提取器已对路径段做一次 percent-decode，这里**不再手动解码**，
+/// 否则字面 `%` 字符会被二次解码静默改写（如 `50%20off.txt` → `50 off.txt`）。
+/// 允许单个尾斜杠（目录占位对象，如 `docs/`），拒绝前导斜杠、双斜杠与
+/// 空/`.`/`..` 段；返回规范化后的 key（尾斜杠折叠为单个）。
+pub(crate) fn decode_path_object_key(
+    raw: &str,
+) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
+    validate_path_object_key(raw, "objectKey")
+}
+
+fn validate_path_object_key(
+    value: &str,
+    field_name: &str,
+) -> Result<String, (StatusCode, Json<ProblemDetail>)> {
+    let trimmed = require_non_empty_text(value.to_string(), field_name)?;
+    if trimmed.len() > 1024 {
+        return Err(validation_problem(format!(
+            "{field_name} must be at most 1024 UTF-8 bytes"
+        )));
+    }
+    if trimmed.as_bytes().contains(&0) {
+        return Err(validation_problem(format!(
+            "{field_name} must not contain NUL bytes"
+        )));
+    }
+    if trimmed.starts_with('/') {
+        return Err(validation_problem(format!(
+            "{field_name} must not start with slash"
+        )));
+    }
+    let (effective, has_trailing_slash) = match trimmed.strip_suffix('/') {
+        Some(rest) => (rest, true),
+        None => (trimmed.as_str(), false),
+    };
+    if effective.is_empty() {
+        return Err(validation_problem(format!(
+            "{field_name} must not be only slashes"
+        )));
+    }
+    for segment in effective.split('/') {
+        if segment.is_empty() || segment == "." || segment == ".." {
+            return Err(validation_problem(format!(
+                "{field_name} must not contain empty or period-only path segments"
+            )));
         }
     }
-    validate_object_key(decoded, "objectKey")
+    Ok(if has_trailing_slash {
+        format!("{effective}/")
+    } else {
+        effective.to_string()
+    })
 }
 
 pub(crate) fn validate_object_key(
@@ -71,6 +103,11 @@ pub(crate) fn validate_object_prefix(
     }
     if trimmed.as_bytes().contains(&0) || trimmed.starts_with('/') {
         return Err(validation_problem(format!("{field_name} is invalid")));
+    }
+    if trimmed.contains("//") {
+        return Err(validation_problem(format!(
+            "{field_name} must not contain empty path segments"
+        )));
     }
     for segment in trimmed.trim_end_matches('/').split('/') {
         if segment.is_empty() || segment == "." || segment == ".." {

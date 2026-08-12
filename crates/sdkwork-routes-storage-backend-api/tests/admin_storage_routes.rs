@@ -72,8 +72,35 @@ async fn mock_s3_endpoint(
             query: query.clone(),
         });
 
+    if method == Method::HEAD && uri.path() == "/bucket-admin/missing.txt" {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    if method == Method::HEAD && uri.path() == "/bucket-admin/oversized.bin" {
+        return (
+            StatusCode::OK,
+            [("content-length", "8388609")],
+            Body::empty(),
+        )
+            .into_response();
+    }
     if method == Method::HEAD {
-        return StatusCode::OK.into_response();
+        return (
+            StatusCode::OK,
+            [("content-length", "0")],
+            Body::empty(),
+        )
+            .into_response();
+    }
+    if method == Method::GET && uri.path() == "/bucket-admin/objects/notes.txt" {
+        return (
+            StatusCode::OK,
+            [
+                ("content-type", "text/plain"),
+                ("content-length", "11"),
+            ],
+            Body::from("hello world"),
+        )
+            .into_response();
     }
     if method == Method::GET
         && uri.path() == "/"
@@ -1102,6 +1129,236 @@ async fn admin_storage_copy_object_rejects_invalid_destination_bucket_before_cal
     );
 }
 
+#[tokio::test]
+async fn admin_storage_object_content_routes_write_then_read_through_configured_s3_store() {
+    let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
+
+    sqlx::query(
+        "INSERT INTO dr_drive_storage_provider (
+            id, provider_kind, name, endpoint_url, region, bucket, path_style,
+            strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
+            status, version, created_by, updated_by
+        ) VALUES (
+            'provider-content-routes', 's3_compatible', 'Content Routes S3', $1, 'us-east-1',
+            'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
+            'AES256', 'STANDARD', 'active', 1, 'admin-storage', 'admin-storage'
+        )",
+    )
+    .bind(&s3_endpoint)
+    .execute(&pool)
+    .await
+    .expect("storage provider should be seeded");
+
+    let app = build_router_with_pool_without_iam(pool);
+
+    let put_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/backend/v3/api/drive/storage/providers/provider-content-routes/object-contents/objects/notes.txt")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"content":"hello world","contentType":"text/plain"}"#,
+                ))
+                .expect("object content write request should be built"),
+        )
+        .await
+        .expect("object content write request should be handled");
+    assert_eq!(put_response.status(), StatusCode::OK);
+    let put_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(put_response.into_body(), usize::MAX)
+            .await
+            .expect("object content write response body should be read"),
+    )
+    .expect("object content write response should be json");
+    assert_eq!(put_payload["code"], 0);
+    assert_eq!(
+        put_payload["data"]["item"]["objectKey"],
+        "objects/notes.txt"
+    );
+
+    let get_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/backend/v3/api/drive/storage/providers/provider-content-routes/object-contents/objects/notes.txt")
+                .body(Body::empty())
+                .expect("object content read request should be built"),
+        )
+        .await
+        .expect("object content read request should be handled");
+    assert_eq!(get_response.status(), StatusCode::OK);
+    let get_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(get_response.into_body(), usize::MAX)
+            .await
+            .expect("object content read response body should be read"),
+    )
+    .expect("object content read response should be json");
+    assert_eq!(get_payload["data"]["item"]["objectKey"], "objects/notes.txt");
+    assert_eq!(get_payload["data"]["item"]["sizeBytes"], 11);
+    assert_eq!(get_payload["data"]["item"]["encoding"], "base64");
+    assert_eq!(get_payload["data"]["item"]["content"], "aGVsbG8gd29ybGQ=");
+    assert_eq!(
+        get_payload["data"]["item"]["checksumSha256"],
+        "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
+    );
+
+    let put_b64_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/backend/v3/api/drive/storage/providers/provider-content-routes/object-contents/objects/blob.bin")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"content":"aGVsbG8=","encoding":"base64"}"#))
+                .expect("object content base64 write request should be built"),
+        )
+        .await
+        .expect("object content base64 write request should be handled");
+    assert_eq!(put_b64_response.status(), StatusCode::OK);
+
+    let put_dir_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/backend/v3/api/drive/storage/providers/provider-content-routes/object-contents/objects/folder/")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"content":""}"#))
+                .expect("object directory placeholder request should be built"),
+        )
+        .await
+        .expect("object directory placeholder request should be handled");
+    assert_eq!(put_dir_response.status(), StatusCode::OK);
+    let put_dir_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(put_dir_response.into_body(), usize::MAX)
+            .await
+            .expect("object directory placeholder response body should be read"),
+    )
+    .expect("object directory placeholder response should be json");
+    assert_eq!(put_dir_payload["data"]["item"]["objectKey"], "objects/folder/");
+
+    let requests = captured_requests
+        .lock()
+        .expect("captured s3 requests mutex should not be poisoned")
+        .clone();
+    assert!(
+        requests.iter().any(|request| request.method == "PUT"
+            && request.path == "/bucket-admin/objects/notes.txt"),
+        "object content write route should call S3 PutObject"
+    );
+    assert!(
+        requests.iter().any(|request| request.method == "PUT"
+            && request.path == "/bucket-admin/objects/blob.bin"),
+        "base64 object content write route should call S3 PutObject"
+    );
+    assert!(
+        requests.iter().any(|request| request.method == "PUT"
+            && request.path == "/bucket-admin/objects/folder/"),
+        "directory placeholder write route should call S3 PutObject with trailing slash key"
+    );
+    assert!(
+        requests.iter().any(|request| request.method == "GET"
+            && request.path == "/bucket-admin/objects/notes.txt"),
+        "object content read route should call S3 GetObject"
+    );
+}
+
+#[tokio::test]
+async fn admin_storage_object_content_routes_reject_invalid_keys_and_encodings() {
+    let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
+
+    sqlx::query(
+        "INSERT INTO dr_drive_storage_provider (
+            id, provider_kind, name, endpoint_url, region, bucket, path_style,
+            strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
+            status, version, created_by, updated_by
+        ) VALUES (
+            'provider-content-validation', 's3_compatible', 'Content Validation S3', $1, 'us-east-1',
+            'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
+            'AES256', 'STANDARD', 'active', 1, 'admin-storage', 'admin-storage'
+        )",
+    )
+    .bind(&s3_endpoint)
+    .execute(&pool)
+    .await
+    .expect("storage provider should be seeded");
+
+    let app = build_router_with_pool_without_iam(pool);
+
+    let invalid_dir_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/backend/v3/api/drive/storage/providers/provider-content-validation/object-contents/objects/folder/")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"content":"not empty"}"#))
+                .expect("object content request should be built"),
+        )
+        .await
+        .expect("object content request should be handled");
+    assert_eq!(invalid_dir_response.status(), StatusCode::BAD_REQUEST);
+
+    let invalid_encoding_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/backend/v3/api/drive/storage/providers/provider-content-validation/object-contents/objects/notes.txt")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"content":"AAAA","encoding":"hex"}"#))
+                .expect("object content request should be built"),
+        )
+        .await
+        .expect("object content request should be handled");
+    assert_eq!(invalid_encoding_response.status(), StatusCode::BAD_REQUEST);
+
+    let invalid_base64_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/backend/v3/api/drive/storage/providers/provider-content-validation/object-contents/objects/notes.txt")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"content":"!!!not-base64!!!","encoding":"base64"}"#))
+                .expect("object content request should be built"),
+        )
+        .await
+        .expect("object content request should be handled");
+    assert_eq!(invalid_base64_response.status(), StatusCode::BAD_REQUEST);
+
+    let leading_slash_response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/backend/v3/api/drive/storage/providers/provider-content-validation/object-contents/%2Fleading")
+                .body(Body::empty())
+                .expect("object content read request should be built"),
+        )
+        .await
+        .expect("object content read request should be handled");
+    assert_eq!(leading_slash_response.status(), StatusCode::BAD_REQUEST);
+
+    assert!(
+        captured_requests
+            .lock()
+            .expect("captured s3 requests mutex should not be poisoned")
+            .is_empty(),
+        "invalid content requests should fail before calling object storage"
+    );
+}
+
 #[cfg(not(feature = "opendal-s3-plugin"))]
 #[tokio::test]
 async fn admin_storage_opendal_plugin_adapter_is_default_disabled_without_feature() {
@@ -1260,8 +1517,14 @@ fn admin_storage_config_reads_object_store_adapter_from_env() {
 
 #[tokio::test]
 async fn admin_storage_database_router_can_receive_explicit_plugin_config() {
-    let database_config = DatabaseConfig::from_url("sqlite::memory:")
-        .expect("sqlite in-memory database config should parse");
+    // 服务端只支持 PostgreSQL（sqlite 被 admin_storage_database_url_router_rejects_sqlite
+    // 显式拒绝）：用测试库 URL 验证显式 DatabaseConfig + AdminStorageConfig 可构建路由。
+    let Ok(database_url) = std::env::var("SDKWORK_DATABASE_URL") else {
+        eprintln!("skip PostgreSQL integration test: SDKWORK_DATABASE_URL is not set");
+        return;
+    };
+    let database_config = DatabaseConfig::from_url(&database_url)
+        .expect("postgres database config should parse");
     let router = build_router_with_database_config_and_admin_storage_config(
         &database_config,
         AdminStorageConfig {
@@ -2039,4 +2302,248 @@ async fn admin_storage_provider_kind_disable_blocks_reactivation() {
         .await
         .expect("activate provider request should be handled");
     assert_eq!(activate_after_enable.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn admin_storage_object_content_routes_handle_literal_percent_keys_and_directory_placeholders() {
+    let (s3_endpoint, captured_requests) = start_s3_mock_server().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
+
+    sqlx::query(
+        "INSERT INTO dr_drive_storage_provider (
+            id, provider_kind, name, endpoint_url, region, bucket, path_style,
+            strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
+            status, version, created_by, updated_by
+        ) VALUES (
+            'provider-percent-keys', 's3_compatible', 'Percent Key S3', $1, 'us-east-1',
+            'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
+            'AES256', 'STANDARD', 'active', 1, 'admin-storage', 'admin-storage'
+        )",
+    )
+    .bind(&s3_endpoint)
+    .execute(&pool)
+    .await
+    .expect("storage provider should be seeded");
+
+    let app = build_router_with_pool_without_iam(pool);
+
+    // 字面 % 字符的 key：客户端 encodeURIComponent 后 axum 解码一次，
+    // 服务端不得二次解码（50%20off.txt 必须保持字面，不能变成 50 off.txt）。
+    let put_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/backend/v3/api/drive/storage/providers/provider-percent-keys/object-contents/objects/50%2520off.txt")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"content":"literal percent"}"#))
+                .expect("object content request should be built"),
+        )
+        .await
+        .expect("object content request should be handled");
+    assert_eq!(put_response.status(), StatusCode::OK);
+    let put_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(put_response.into_body(), usize::MAX)
+            .await
+            .expect("response body should be read"),
+    )
+    .expect("response should be json");
+    assert_eq!(
+        put_payload["data"]["item"]["objectKey"],
+        "objects/50%20off.txt",
+        "literal percent signs must survive exactly one decode"
+    );
+
+    // 非法尾序列（100%.txt）必须保持字面并成功，而不是被二次解码报 400。
+    let trailing_percent = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/backend/v3/api/drive/storage/providers/provider-percent-keys/object-contents/objects/100%25.txt")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"content":"x"}"#))
+                .expect("object content request should be built"),
+        )
+        .await
+        .expect("object content request should be handled");
+    assert_eq!(trailing_percent.status(), StatusCode::OK);
+
+    // 双斜杠 key 一律拒绝（避免幽灵空段对象）。
+    let double_slash = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/backend/v3/api/drive/storage/providers/provider-percent-keys/object-contents/objects/folder/")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"content":""}"#))
+                .expect("object content request should be built"),
+        )
+        .await
+        .expect("object content request should be handled");
+    assert_eq!(double_slash.status(), StatusCode::BAD_REQUEST);
+
+    // 目录占位对象（docs/）可通过 DELETE 管理（尾斜杠 key 合法）。
+    let put_dir = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/backend/v3/api/drive/storage/providers/provider-percent-keys/object-contents/objects/docs/")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"content":""}"#))
+                .expect("object content request should be built"),
+        )
+        .await
+        .expect("object content request should be handled");
+    assert_eq!(put_dir.status(), StatusCode::OK);
+
+    let delete_dir = app
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri("/backend/v3/api/drive/storage/providers/provider-percent-keys/objects/objects/docs/")
+                .body(Body::empty())
+                .expect("object delete request should be built"),
+        )
+        .await
+        .expect("object delete request should be handled");
+    assert_no_content_response(delete_dir).await;
+
+    let requests = captured_requests
+        .lock()
+        .expect("captured s3 requests mutex should not be poisoned")
+        .clone();
+    assert!(
+        requests.iter().any(|request| request.method == "PUT"
+            && request.path == "/bucket-admin/objects/50%20off.txt"),
+        "literal percent key should be stored verbatim"
+    );
+    assert!(
+        requests.iter().any(|request| request.method == "PUT"
+            && request.path == "/bucket-admin/objects/100%.txt"),
+        "trailing percent key should be stored verbatim"
+    );
+    assert!(
+        requests.iter().any(|request| request.method == "DELETE"
+            && request.path == "/bucket-admin/objects/docs/"),
+        "directory placeholder object should be deletable"
+    );
+}
+
+#[tokio::test]
+async fn admin_storage_object_content_routes_map_missing_and_empty_objects() {
+    let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
+
+    sqlx::query(
+        "INSERT INTO dr_drive_storage_provider (
+            id, provider_kind, name, endpoint_url, region, bucket, path_style,
+            strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
+            status, version, created_by, updated_by
+        ) VALUES (
+            'provider-empty-missing', 's3_compatible', 'Empty Missing S3', $1, 'us-east-1',
+            'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
+            'AES256', 'STANDARD', 'active', 1, 'admin-storage', 'admin-storage'
+        )",
+    )
+    .bind(&s3_endpoint)
+    .execute(&pool)
+    .await
+    .expect("storage provider should be seeded");
+
+    let app = build_router_with_pool_without_iam(pool);
+
+    // 空对象读取：head 返回 content-length 0，跳过 read，返回空 base64。
+    let empty_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/backend/v3/api/drive/storage/providers/provider-empty-missing/object-contents/objects/empty.bin")
+                .body(Body::empty())
+                .expect("object content request should be built"),
+        )
+        .await
+        .expect("object content request should be handled");
+    assert_eq!(empty_response.status(), StatusCode::OK);
+    let empty_payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(empty_response.into_body(), usize::MAX)
+            .await
+            .expect("response body should be read"),
+    )
+    .expect("response should be json");
+    assert_eq!(empty_payload["data"]["item"]["sizeBytes"], 0);
+    assert_eq!(empty_payload["data"]["item"]["content"], "");
+
+    // 不存在的对象读取 → 404（mock HEAD 对 missing.txt 返回 404）。
+    let missing_response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/backend/v3/api/drive/storage/providers/provider-empty-missing/object-contents/objects/missing.txt")
+                .body(Body::empty())
+                .expect("object content request should be built"),
+        )
+        .await
+        .expect("object content request should be handled");
+    assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn admin_storage_object_content_routes_reject_oversized_reads() {
+    let (s3_endpoint, _captured_requests) = start_s3_mock_server().await;
+    let Some((pool, _database_guard)) = sdkwork_drive_test_support::postgres_test_database().await
+    else {
+        return;
+    };
+
+    sqlx::query(
+        "INSERT INTO dr_drive_storage_provider (
+            id, provider_kind, name, endpoint_url, region, bucket, path_style,
+            strict_tls, credential_ref, server_side_encryption_mode, default_storage_class,
+            status, version, created_by, updated_by
+        ) VALUES (
+            'provider-oversized', 's3_compatible', 'Oversized S3', $1, 'us-east-1',
+            'bucket-admin', 1, 0, 'plain:test-access-key:test-secret-key',
+            'AES256', 'STANDARD', 'active', 1, 'admin-storage', 'admin-storage'
+        )",
+    )
+    .bind(&s3_endpoint)
+    .execute(&pool)
+    .await
+    .expect("storage provider should be seeded");
+
+    // 对象超过 8 MiB 读取上限：head 报 8 MiB+1 → 413，不发起 GetObject。
+    let response = build_router_with_pool_without_iam(pool)
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/backend/v3/api/drive/storage/providers/provider-oversized/object-contents/objects/oversized.bin")
+                .body(Body::empty())
+                .expect("object content request should be built"),
+        )
+        .await
+        .expect("object content request should be handled");
+    assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
+    let payload: serde_json::Value = serde_json::from_slice(
+        &to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("response body should be read"),
+    )
+    .expect("response should be json");
+    assert_eq!(413, payload["status"].as_i64().unwrap_or_default());
+    assert!(
+        payload["detail"]
+            .as_str()
+            .is_some_and(|detail| detail.contains("8 MiB") || detail.contains("8388608")),
+        "oversized read should name the limit: {payload}"
+    );
 }

@@ -9,12 +9,10 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-java"
   },
-  "changeFingerprint": "de8f613173c3718f9e89f795748c5a1dabdd8eb6b4b241a42ca74f663b207ae9",
+  "changeFingerprint": "a4201dc8aaab6b06e7951c3f0621f76a5866e17589269cf5fb55983d53786b8b",
   "changes": {
     "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [
-      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java"
-    ],
+    "updatedGeneratedFiles": [],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
@@ -26,6 +24,7 @@
       "sdkwork-sdk.json",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/ApiPaths.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/AssetsApi.java",
+      "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/package-info.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/http/HttpClient.java",
       "src/main/java/com/sdkwork/drive/app/sdk/generated/java/model/ActivateWebsiteGenerationRequest.java",
@@ -216,54 +215,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "src/main/java/com/sdkwork/drive/app/sdk/generated/java/api/DriveApi.java"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-java\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "java",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language java --project-dir . --action check"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

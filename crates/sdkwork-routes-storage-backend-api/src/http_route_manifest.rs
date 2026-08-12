@@ -125,6 +125,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/backend/v3/api/drive/storage/providers/{providerId}/object-contents/{objectKey}",
+        "drive-admin-storage-api",
+        "storageProviders.objects.content.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Put,
+        "/backend/v3/api/drive/storage/providers/{providerId}/object-contents/{objectKey}",
+        "drive-admin-storage-api",
+        "storageProviders.objects.content.update",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/backend/v3/api/drive/storage/providers/{providerId}/objects",
         "drive-admin-storage-api",
         "storageProviders.objects.list",

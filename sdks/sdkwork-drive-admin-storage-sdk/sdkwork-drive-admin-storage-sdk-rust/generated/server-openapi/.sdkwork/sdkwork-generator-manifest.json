@@ -48,7 +48,7 @@
     },
     {
       "path": "src/api/drive.rs",
-      "sha256": "c8fc07d4d360a3796bba95e258f171960fa9bdc29ffdcf0dfc4483659900bd1e"
+      "sha256": "f370508da8063bd55517259c89a15a4aa9697aab4e0e5fadc3cf87c83818fd44"
     },
     {
       "path": "src/api/mod.rs",
@@ -92,7 +92,7 @@
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "03aaa26182ba6e7ff6a8ae3f0a4b98b46e168c24a72315e3cf317edaaa60beb7"
+      "sha256": "acc77faaa2da9255811438f630a154329c02bd9d68eda96707d187991fb88da6"
     },
     {
       "path": "src/models/page_info.rs",
@@ -113,6 +113,10 @@
     {
       "path": "src/models/provider_bucket.rs",
       "sha256": "83736fb9a48d609116467b6a49ce5c9f8a50b4c1c686d777757a2804a8a675c1"
+    },
+    {
+      "path": "src/models/provider_object_content.rs",
+      "sha256": "a90397037101e2aaa44e5ec6edd59677a2b13774415a92d7aa9ae65ff74b380d"
     },
     {
       "path": "src/models/provider_object_mutation.rs",
@@ -235,6 +239,14 @@
       "sha256": "7f35ed0b04c80e348df5aca2e268799f3e5a2a69b469f24007f1fdeaad098217"
     },
     {
+      "path": "src/models/storage_providers_objects_content_retrieve_response.rs",
+      "sha256": "1a39e9c3503d222a8d583222eb241eb152858e8d1b2f61929725a980bfccd541"
+    },
+    {
+      "path": "src/models/storage_providers_objects_content_update_response.rs",
+      "sha256": "46aeeb90e56bb57ee5020b8f57efc83cee12fab43bc29d9fdb4224477cb40408"
+    },
+    {
       "path": "src/models/storage_providers_objects_copy_response.rs",
       "sha256": "1ce8e30ffedfb7f5c17289ee7ccd601b875810e273d51fc6895b53a5cca0fe27"
     },
@@ -261,6 +273,10 @@
     {
       "path": "src/models/test_storage_provider_response.rs",
       "sha256": "c852e5f262957a1e38e80aea6a83847e12dda7fe12a6aea5aec7bbaf9e01d130"
+    },
+    {
+      "path": "src/models/update_provider_object_content.rs",
+      "sha256": "fb7f48fcb9e01548f5ebf77576d368704618000af469de2ab259f038a0550bf7"
     },
     {
       "path": "src/models/update_storage_provider_request.rs",

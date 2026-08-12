@@ -9,28 +9,27 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-rust"
   },
-  "changeFingerprint": "f80ed847e5a477b9e91a13a0ff9b8d151da91271fcf133fdb2d0fd67480f82b9",
+  "changeFingerprint": "533fc9f0af7cf3144aec57d5b4ea92e65911c47787da0e5b34e19b4bb3614bb0",
   "changes": {
     "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [
-      "Cargo.toml",
-      "src/api/drive.rs",
-      "src/http/client.rs",
-      "src/http/mod.rs"
-    ],
+    "updatedGeneratedFiles": [],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
       "bin/publish.sh",
+      "Cargo.toml",
       "CHANGELOG.md",
       "LICENSE",
       "README.md",
       "sdkwork-sdk.json",
       "src/api/assets.rs",
       "src/api/base.rs",
+      "src/api/drive.rs",
       "src/api/mod.rs",
       "src/api/paths.rs",
       "src/client.rs",
+      "src/http/client.rs",
+      "src/http/mod.rs",
       "src/lib.rs",
       "src/models/activate_website_generation_request.rs",
       "src/models/apply_node_label_request.rs",
@@ -221,87 +220,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface",
-      "runtime",
-      "build-metadata"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "src/api/drive.rs"
-        ]
-      },
-      {
-        "area": "runtime",
-        "paths": [
-          "src/http/client.rs",
-          "src/http/mod.rs"
-        ]
-      },
-      {
-        "area": "build-metadata",
-        "paths": [
-          "Cargo.toml"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface, runtime, build-metadata. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface, runtime, build-metadata. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, runtime, build-metadata.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "rust",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action check"
-      },
-      {
-        "id": "build",
-        "title": "Unified package build",
-        "required": true,
-        "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, runtime, build-metadata.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-rust\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "rust",
-          "--project-dir",
-          ".",
-          "--action",
-          "build"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language rust --project-dir . --action build"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

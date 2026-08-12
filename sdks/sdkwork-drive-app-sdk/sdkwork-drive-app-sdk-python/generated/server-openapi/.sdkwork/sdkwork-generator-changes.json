@@ -9,12 +9,10 @@
     "protocol": "http",
     "packageName": "sdkwork-drive-app-sdk-generated-python"
   },
-  "changeFingerprint": "f38f1d460d1147faa1917a325cdb70164a5b28f5bf3fdcf4b02b580555121d8e",
+  "changeFingerprint": "7a742a526db04f1a2a2f453f625df5fbe8165fd35b429f4502f9796eee077fd9",
   "changes": {
     "createdGeneratedFiles": [],
-    "updatedGeneratedFiles": [
-      "sdkwork_drive_app_sdk_generated_python/api/drive.py"
-    ],
+    "updatedGeneratedFiles": [],
     "unchangedGeneratedFiles": [
       "bin/publish-core.mjs",
       "bin/publish.ps1",
@@ -28,6 +26,7 @@
       "sdkwork_drive_app_sdk_generated_python/__init__.py",
       "sdkwork_drive_app_sdk_generated_python/api/__init__.py",
       "sdkwork_drive_app_sdk_generated_python/api/assets.py",
+      "sdkwork_drive_app_sdk_generated_python/api/drive.py",
       "sdkwork_drive_app_sdk_generated_python/client.py",
       "sdkwork_drive_app_sdk_generated_python/http_client.py",
       "sdkwork_drive_app_sdk_generated_python/models/__init__.py",
@@ -220,54 +219,26 @@
   },
   "impact": {
     "schemaVersion": 1,
-    "areas": [
-      "api-surface"
-    ],
-    "details": [
-      {
-        "area": "api-surface",
-        "paths": [
-          "sdkwork_drive_app_sdk_generated_python/api/drive.py"
-        ]
-      }
-    ],
-    "requiresVerification": true,
-    "summary": "Detected impact areas: api-surface. Verification is required."
+    "areas": [],
+    "details": [],
+    "requiresVerification": false,
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped."
   },
   "verificationPlan": {
-    "shouldRun": true,
-    "runPhase": "now",
-    "summary": "Detected impact areas: api-surface. Verification is required. Run the required verification commands now against the generated SDK output.",
-    "steps": [
-      {
-        "id": "check",
-        "title": "Unified package check",
-        "required": true,
-        "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-drive\\sdks\\sdkwork-drive-app-sdk\\sdkwork-drive-app-sdk-python\\generated\\server-openapi",
-        "command": "node",
-        "args": [
-          "./bin/publish-core.mjs",
-          "--language",
-          "python",
-          "--project-dir",
-          ".",
-          "--action",
-          "check"
-        ],
-        "displayCommand": "node ./bin/publish-core.mjs --language python --project-dir . --action check"
-      }
-    ]
+    "shouldRun": false,
+    "runPhase": "skip",
+    "summary": "No generated, scaffold, or backup changes detected. Verification can be skipped.",
+    "steps": []
   },
   "executionDecision": {
     "schemaVersion": 1,
-    "riskLevel": "medium",
-    "nextAction": "verify",
+    "riskLevel": "low",
+    "nextAction": "skip",
     "requiresManualReview": false,
     "applyRequiresExpectedFingerprint": false,
-    "summary": "Changes have been applied. Run the required verification plan now.",
+    "summary": "No actionable changes were detected. No apply or verification step is required.",
     "reasons": [
-      "verification-required"
+      "no-actionable-changes"
     ]
   },
   "preservedLegacyFiles": false

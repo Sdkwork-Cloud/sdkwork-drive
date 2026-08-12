@@ -36,6 +36,17 @@ pub(crate) fn invalid_json_problem(_rejection: JsonRejection) -> (StatusCode, Js
     )
 }
 
+pub(crate) fn payload_too_large_problem(
+    detail: impl Into<String>,
+) -> (StatusCode, Json<ProblemDetail>) {
+    problem(
+        StatusCode::PAYLOAD_TOO_LARGE,
+        "payload too large",
+        detail,
+        SdkWorkResultCode::PayloadTooLarge,
+    )
+}
+
 pub(crate) fn map_object_store_route_error(
     error: DriveObjectStoreError,
 ) -> (StatusCode, Json<ProblemDetail>) {
@@ -47,6 +58,9 @@ pub(crate) fn map_object_store_route_error(
             DriveServiceError::PermissionDenied(error.message)
         }
         DriveObjectStoreErrorKind::NotSupported => DriveServiceError::Conflict(error.message),
+        // 读到的字节数与 head 声明不一致（对象在读取期间被并发改写）：
+        // 映射为冲突而不是 500，调用方可重试而非误判为服务故障。
+        DriveObjectStoreErrorKind::IntegrityFailed => DriveServiceError::Conflict(error.message),
         _ => DriveServiceError::Internal(error.message),
     })
 }

@@ -56,7 +56,7 @@
     },
     {
       "path": "sdkwork_drive_admin_storage_sdk_generated_python/api/drive.py",
-      "sha256": "24d44bc70fe46cbb5d79f59ac25a067c5fcbeb91ffe236bbc56e9c19282cad63"
+      "sha256": "be547f0a9ef5054820dc3251b43a9eff320db10f575fd011a82f4a5e9dfdc1a3"
     },
     {
       "path": "sdkwork_drive_admin_storage_sdk_generated_python/client.py",
@@ -68,7 +68,7 @@
     },
     {
       "path": "sdkwork_drive_admin_storage_sdk_generated_python/models/__init__.py",
-      "sha256": "014ca694c064c6bcb8f474fb08e7304e8af43ccb20cd46050a4a08f87829ce1b"
+      "sha256": "4a54fc1601b7d2d10e8aecc30a16bee45d9d7d07dd0b98e9dfb0f94120708855"
     },
     {
       "path": "sdkwork_drive_admin_storage_sdk_generated_python/models/copy_provider_object_request.py",
@@ -101,6 +101,10 @@
     {
       "path": "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_bucket.py",
       "sha256": "c3eafbd6d04733353d633f6453dd21d1283f41b3af346f5a0d657ee653d9e52a"
+    },
+    {
+      "path": "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_object_content.py",
+      "sha256": "39309187231bd624219f7355861266b70efd6d59c5df0ed44535d3d50798e685"
     },
     {
       "path": "sdkwork_drive_admin_storage_sdk_generated_python/models/provider_object_mutation.py",
@@ -223,6 +227,14 @@
       "sha256": "e37a23d80d150a16c92708df201a969ae6ca5974288bd6e2638ed802cde5f784"
     },
     {
+      "path": "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_objects_content_retrieve_response.py",
+      "sha256": "bf7c3a357e723d9f19e4807d38164ee6d875d8b4410c42494fe80d84e26fe765"
+    },
+    {
+      "path": "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_objects_content_update_response.py",
+      "sha256": "2749b62b38145527288817fe9509c1e2da58ace3214a7b2316f44e2ad71e3634"
+    },
+    {
       "path": "sdkwork_drive_admin_storage_sdk_generated_python/models/storage_providers_objects_copy_response.py",
       "sha256": "867da6c6b1cea2cbf1678fef47fb524d7495474258c1c861537ce981e542b269"
     },
@@ -249,6 +261,10 @@
     {
       "path": "sdkwork_drive_admin_storage_sdk_generated_python/models/test_storage_provider_response.py",
       "sha256": "d19db9309a332eb95c64e103a70549b537b0f754dd74c75a92bbea6ef3659ee1"
+    },
+    {
+      "path": "sdkwork_drive_admin_storage_sdk_generated_python/models/update_provider_object_content.py",
+      "sha256": "c31c50e6b5f9d7fe5e3f55ff89dc6edb7ee6284d45d9ed7a85b6aa28c69e8f4b"
     },
     {
       "path": "sdkwork_drive_admin_storage_sdk_generated_python/models/update_storage_provider_request.py",

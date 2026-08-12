@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::custom_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{CopyProviderObjectRequest, CreateStorageProviderRequest, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, SetStorageProviderKindEnabledRequest, StorageProviderBindingsDefaultRetrieveResponse, StorageProviderBindingsDefaultUpdateResponse, StorageProviderBindingsListResponse, StorageProviderKindsInitializeResponse, StorageProviderKindsListResponse, StorageProviderKindsUpdateResponse, StorageProvidersActivateResponse, StorageProvidersBucketRetrieveResponse, StorageProvidersBucketUpdateResponse, StorageProvidersBucketsListResponse, StorageProvidersCapabilitiesListResponse, StorageProvidersCreateResponse201, StorageProvidersCredentialsRotateResponse, StorageProvidersDeactivateResponse, StorageProvidersListResponse, StorageProvidersObjectsCopyResponse, StorageProvidersObjectsListResponse, StorageProvidersObjectsRetrieveResponse, StorageProvidersRetrieveResponse, StorageProvidersTestResponse, StorageProvidersUpdateResponse, UpdateStorageProviderRequest};
+use crate::models::{CopyProviderObjectRequest, CreateStorageProviderRequest, RotateStorageProviderCredentialRequest, SetDefaultStorageProviderBindingRequest, SetStorageProviderKindEnabledRequest, StorageProviderBindingsDefaultRetrieveResponse, StorageProviderBindingsDefaultUpdateResponse, StorageProviderBindingsListResponse, StorageProviderKindsInitializeResponse, StorageProviderKindsListResponse, StorageProviderKindsUpdateResponse, StorageProvidersActivateResponse, StorageProvidersBucketRetrieveResponse, StorageProvidersBucketUpdateResponse, StorageProvidersBucketsListResponse, StorageProvidersCapabilitiesListResponse, StorageProvidersCreateResponse201, StorageProvidersCredentialsRotateResponse, StorageProvidersDeactivateResponse, StorageProvidersListResponse, StorageProvidersObjectsContentRetrieveResponse, StorageProvidersObjectsContentUpdateResponse, StorageProvidersObjectsCopyResponse, StorageProvidersObjectsListResponse, StorageProvidersObjectsRetrieveResponse, StorageProvidersRetrieveResponse, StorageProvidersTestResponse, StorageProvidersUpdateResponse, UpdateProviderObjectContent, UpdateStorageProviderRequest};
 
 #[derive(Clone)]
 pub struct DriveApi {
@@ -167,6 +167,18 @@ impl DriveApi {
     pub async fn storage_provider_kinds_update(&self, provider_kind: &str, body: &SetStorageProviderKindEnabledRequest) -> Result<StorageProviderKindsUpdateResponse, SdkworkError> {
         let path = custom_path(&format!("/drive/storage/provider-kinds/{}", serialize_path_parameter(provider_kind, PathParameterSpec::new("providerKind", "simple", false))));
         self.client.patch(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// Retrieve provider object content
+    pub async fn storage_providers_objects_content_retrieve(&self, provider_id: &str, object_key: &str) -> Result<StorageProvidersObjectsContentRetrieveResponse, SdkworkError> {
+        let path = custom_path(&format!("/drive/storage/providers/{}/objects/{}/content", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false)), serialize_path_parameter(object_key, PathParameterSpec::new("objectKey", "simple", false))));
+        self.client.get(&path, None, None).await
+    }
+
+    /// Write provider object content
+    pub async fn storage_providers_objects_content_update(&self, provider_id: &str, object_key: &str, body: &UpdateProviderObjectContent) -> Result<StorageProvidersObjectsContentUpdateResponse, SdkworkError> {
+        let path = custom_path(&format!("/drive/storage/providers/{}/objects/{}/content", serialize_path_parameter(provider_id, PathParameterSpec::new("providerId", "simple", false)), serialize_path_parameter(object_key, PathParameterSpec::new("objectKey", "simple", false))));
+        self.client.put(&path, Some(body), None, None, Some("application/json")).await
     }
 
 }

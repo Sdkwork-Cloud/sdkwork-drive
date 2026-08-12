@@ -32,6 +32,8 @@ export const operations = {
   "storageProviders.deactivate": { method: "POST", path: "/backend/v3/api/drive/storage/providers/{providerId}/deactivate" },
   "storageProviders.delete": { method: "DELETE", path: "/backend/v3/api/drive/storage/providers/{providerId}" },
   "storageProviders.list": { method: "GET", path: "/backend/v3/api/drive/storage/providers" },
+  "storageProviders.objects.content.retrieve": { method: "GET", path: "/backend/v3/api/drive/storage/providers/{providerId}/object-contents/{objectKey}" },
+  "storageProviders.objects.content.update": { method: "PUT", path: "/backend/v3/api/drive/storage/providers/{providerId}/object-contents/{objectKey}" },
   "storageProviders.objects.copy": { method: "POST", path: "/backend/v3/api/drive/storage/providers/{providerId}/objects/copy" },
   "storageProviders.objects.delete": { method: "DELETE", path: "/backend/v3/api/drive/storage/providers/{providerId}/objects/{objectKey}" },
   "storageProviders.objects.list": { method: "GET", path: "/backend/v3/api/drive/storage/providers/{providerId}/objects" },
