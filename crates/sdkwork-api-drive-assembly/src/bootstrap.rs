@@ -139,6 +139,35 @@ pub async fn assemble_backend_business_router_from_env() -> Result<BusinessRoute
     })
 }
 
+/// Drive Admin Storage backend surface for a composing gateway that owns the
+/// Web Framework layer (same-origin dependency composition, API_ASSEMBLY_SPEC
+/// §3/§6.1). Mirrors `sdkwork-api-rtc-assembly::assemble_backend_api_contribution_with_pool`:
+/// the drive database module is bootstrapped on the shared pool, and the
+/// storage business router derives its request context from the host web
+/// framework instead of drive-owned domain injectors.
+pub async fn assemble_backend_admin_storage_contribution_with_pool(
+    pool: &sdkwork_database_sqlx::DatabasePool,
+) -> Result<ApiAssemblyContribution, String> {
+    bootstrap_drive_database(pool.clone()).await?;
+    let pg_pool = postgres_pool_from_database_pool(pool)?;
+    let admin_storage_config =
+        sdkwork_routes_storage_backend_api::AdminStorageConfig::from_env()
+            .map_err(|error| format!("resolve admin storage config failed: {error}"))?;
+    let router =
+        sdkwork_routes_storage_backend_api::build_admin_storage_business_router_for_host_framework(
+            pg_pool.clone(),
+            admin_storage_config,
+        );
+    ApiAssemblyContribution::from_manifest(
+        "sdkwork-drive",
+        "SDKWork Drive Admin Storage API",
+        router,
+        sdkwork_routes_storage_backend_api::storage_route_manifest(),
+        Vec::new(),
+        Arc::new(PostgresReadinessCheck::new(pg_pool)),
+    )
+}
+
 pub async fn assemble_api_router(pool: sqlx::PgPool) -> Result<ApiAssembly, String> {
     sdkwork_drive_security::ensure_drive_auth_policy_refresh_task();
     ensure_production_download_token_signing_configured()

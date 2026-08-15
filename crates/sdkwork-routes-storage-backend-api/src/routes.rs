@@ -47,6 +47,20 @@ pub fn build_admin_storage_business_router(pool: PgPool, config: AdminStorageCon
     build_business_router_inner(AdminStorageState::new(pool, config), true, None)
 }
 
+/// Raw admin-storage router for a composing gateway that owns the Web
+/// Framework layer but does not register drive-specific domain injectors
+/// (same-origin dependency composition, API_ASSEMBLY_SPEC §3/§6.1): the drive
+/// request context is derived from the host-injected `WebRequestContext` by a
+/// middleware inside this router instead.
+pub fn build_admin_storage_business_router_for_host_framework(
+    pool: PgPool,
+    config: AdminStorageConfig,
+) -> Router {
+    build_business_router_inner(AdminStorageState::new(pool, config), true, None).route_layer(
+        middleware::from_fn(crate::web_bootstrap::derive_drive_storage_context_from_web_context),
+    )
+}
+
 pub fn build_router_with_pool_and_iam(pool: PgPool) -> Router {
     build_router_with_pool_and_config(pool, AdminStorageConfig::default())
 }

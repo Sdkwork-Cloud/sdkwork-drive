@@ -42,6 +42,36 @@ impl DomainContextInjector for DriveAdminStorageContextInjector {
     }
 }
 
+/// Derives the drive storage request context from the host web framework's
+/// `WebRequestContext` extension for composing gateways that own the Web
+/// Framework layer and do not register drive-specific domain injectors
+/// (same-origin dependency composition, API_ASSEMBLY_SPEC §3/§6.1).
+/// No-ops when the host already injected a drive context (drive gateway path).
+pub async fn derive_drive_storage_context_from_web_context(
+    mut request: axum::extract::Request<axum::body::Body>,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    if request.extensions().get::<DriveRequestContext>().is_some() {
+        return next.run(request).await;
+    }
+    let Some(context) = request.extensions().get::<WebRequestContext>().cloned() else {
+        return next.run(request).await;
+    };
+    let Some(principal) = context.principal.as_ref() else {
+        return next.run(request).await;
+    };
+
+    let mut app_context = drive_app_context_from_web_principal(principal, &context);
+    sdkwork_drive_http::web_app_context::apply_trace_id_from_transport(
+        request.headers(),
+        &mut app_context,
+    );
+    let drive_context = DriveRequestContext::from_app_context(&app_context);
+    request.extensions_mut().insert(app_context);
+    request.extensions_mut().insert(drive_context);
+    next.run(request).await
+}
+
 #[derive(Clone, Default)]
 struct DriveAdminStorageAuthorizationPolicy;
 
@@ -170,4 +200,112 @@ where
 pub async fn wrap_router_with_web_framework_from_env(router: Router) -> Router {
     let resolver = sdkwork_iam_web_adapter::iam_web_request_context_resolver_from_env().await;
     wrap_router_with_iam_web_framework(resolver, router)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::extract::{Extension, Request};
+    use axum::http::{Method, StatusCode};
+    use axum::middleware;
+    use axum::routing::get;
+    use sdkwork_web_core::{
+        ServerRequestId, WebApiSurface, WebAuthLevel, WebAuthMode, WebDeploymentMode,
+        WebEnvironment, WebLoginScope, WebRequestPrincipal, WebTransportFacts,
+    };
+    use tower::util::ServiceExt;
+
+    fn web_context_with_principal() -> WebRequestContext {
+        let principal = WebRequestPrincipal::builder()
+            .tenant_id("100001")
+            .organization_id(Some("100002".to_owned()))
+            .login_scope(WebLoginScope::Organization)
+            .user_id("2")
+            .session_id(Some("session-test".to_owned()))
+            .app_id("sdkwork-cloudrouter")
+            .environment(WebEnvironment::Test)
+            .deployment_mode(WebDeploymentMode::Local)
+            .auth_level(WebAuthLevel::Password)
+            .permission_scope(vec!["cloudrouter.admin.access".to_owned()])
+            .build();
+        WebRequestContext {
+            request_id: ServerRequestId("request-test".to_owned()),
+            api_surface: WebApiSurface::BackendApi,
+            auth_mode: WebAuthMode::DualToken,
+            transport: WebTransportFacts {
+                path: "/backend/v3/api/drive/storage/providers".to_owned(),
+                method: "GET".to_owned(),
+                auth_token_present: true,
+                access_token_present: true,
+                api_key_present: false,
+                ingress_token_present: false,
+                oauth_bearer_present: false,
+                agent_token_present: false,
+            },
+            principal: Some(principal),
+            locale: None,
+            client_kind: None,
+            operation: None,
+            trace_id: None,
+            idempotency_key: None,
+        }
+    }
+
+    async fn echo_drive_tenant(Extension(ctx): Extension<DriveRequestContext>) -> String {
+        ctx.tenant_id
+    }
+
+    #[tokio::test]
+    async fn host_framework_middleware_derives_drive_request_context_from_web_context() {
+        let router = Router::new()
+            .route(
+                "/backend/v3/api/drive/storage/providers",
+                get(echo_drive_tenant),
+            )
+            .route_layer(middleware::from_fn(
+                derive_drive_storage_context_from_web_context,
+            ));
+
+        let request = Request::builder()
+            .method(Method::GET)
+            .uri("/backend/v3/api/drive/storage/providers")
+            .body(Body::empty())
+            .unwrap();
+        let mut request_with_context = request;
+        request_with_context
+            .extensions_mut()
+            .insert(web_context_with_principal());
+
+        let response = router.clone().oneshot(request_with_context).await.unwrap();
+        assert_eq!(
+            axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap(),
+            "100001"
+        );
+    }
+
+    #[tokio::test]
+    async fn host_framework_middleware_is_noop_without_host_web_context() {
+        let router = Router::new()
+            .route(
+                "/backend/v3/api/drive/storage/providers",
+                get(echo_drive_tenant),
+            )
+            .route_layer(middleware::from_fn(
+                derive_drive_storage_context_from_web_context,
+            ));
+
+        let request = Request::builder()
+            .method(Method::GET)
+            .uri("/backend/v3/api/drive/storage/providers")
+            .body(Body::empty())
+            .unwrap();
+
+        // Without a host `WebRequestContext` the middleware passes through and
+        // the handler fails on the missing drive extension (no derivation).
+        let response = router.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
 }
