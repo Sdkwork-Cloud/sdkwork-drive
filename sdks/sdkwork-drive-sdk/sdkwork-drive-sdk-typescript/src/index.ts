@@ -1,6 +1,6 @@
 export {
   createClient,
-  SdkworkClient,
+  SdkworkCustomClient,
 } from '../generated/server-openapi/src/index';
 export type { SdkworkConfig } from '../generated/server-openapi/src/types/common';
 export * from '../generated/server-openapi/src/types';
